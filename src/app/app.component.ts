@@ -4,6 +4,7 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { MenuComponent } from './shared/components/menu/menu.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -18,4 +19,5 @@ import { MenuComponent } from './shared/components/menu/menu.component';
 })
 export class AppComponent {
   title = 'cityfinance-ng-ui-v2';
+  baseUrl = environment.environment;
 }
