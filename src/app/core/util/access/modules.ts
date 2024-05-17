@@ -1,5 +1,6 @@
-import { USER_TYPE } from 'src/app/models/user/userType';
 
+
+import { USER_TYPE } from '../../models/user/userType';
 import { ACTIONS } from './actions';
 
 export enum MODULES_NAME {

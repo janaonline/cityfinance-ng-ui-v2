@@ -1,5 +1,5 @@
-import { USER_TYPE } from 'src/app/models/user/userType';
 
+import { USER_TYPE } from '../../models/user/userType';
 import { UserUtility } from '../user/user';
 import { ACTIONS } from './actions';
 import { MODULES, MODULES_NAME } from './modules';

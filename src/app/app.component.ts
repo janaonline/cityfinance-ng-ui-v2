@@ -3,8 +3,9 @@ import { HttpClientModule } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
-import { MenuComponent } from './shared/components/menu/menu.component';
+// import { MenuComponent } from './shared/components/menu/menu.component';
 import { environment } from '../environments/environment';
+import { HeaderComponent } from './shared/components/header/header.component';
 
 @Component({
   selector: 'app-root',
@@ -13,7 +14,7 @@ import { environment } from '../environments/environment';
     RouterOutlet,
     HttpClientModule,
     FooterComponent,
-    MenuComponent,],
+    HeaderComponent,],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

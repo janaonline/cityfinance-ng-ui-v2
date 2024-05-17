@@ -1,13 +1,12 @@
 import { OnDestroy, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { IUserLoggedInDetails } from 'src/app/models/login/userLoggedInDetails';
-
 import { USER_TYPE } from '../../models/user/userType';
+import { IUserLoggedInDetails } from '../../models/login/userLoggedInDetails';
 
 @Injectable()
 export class UserUtility implements OnDestroy {
   private static readonly loggedInDetails = new BehaviorSubject<
-    IUserLoggedInDetails
+    IUserLoggedInDetails | unknown
   >(null);
 
   static getUserLoggedInData() {
@@ -43,18 +42,18 @@ export class UserUtility implements OnDestroy {
 
   getLoggedInUserDetails() {
     try {
-      return JSON.parse(localStorage.getItem("userData"));
+      return JSON.parse(localStorage.getItem("userData") || '{}');
     } catch (error) {
       return null;
     }
   }
 
-  getUserType(): USER_TYPE {
-    let userData = localStorage.getItem("userData");
+  getUserType(): USER_TYPE | null {
+    let userData = localStorage.getItem("userData")  as any;
     if (!userData) {
       return null;
     }
-    userData = JSON.parse(userData);
+    userData = JSON.parse(userData) as IUserLoggedInDetails;
 
     return userData["role"] ? userData["role"] : null;
   }
