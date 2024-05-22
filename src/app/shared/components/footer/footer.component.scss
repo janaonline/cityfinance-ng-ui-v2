@@ -1,76 +1,86 @@
+@import "../../../../assets/scss/functions";
+@import "../../../../assets/scss/variables";
+@import "../../../../assets/scss/mixins";
+
 .home-footer a {
     color: #B2BFD8;
-  }
-  
-  h6 {
+}
+
+h6 {
     color: #B2BFD8;
-  }
-  
-  .city {
+}
+
+.city {
     color: #38CDFA;
     font: normal normal bold 28px/56px Cabin;
     letter-spacing: 0px;
-  }
-  
-  .fy {
+}
+
+.fy {
     font: normal normal normal 28px/56px Cabin;
     letter-spacing: 0px;
     color: #FFFFFF;
-  }
-  
-  .visit-count {
+}
+
+.visit-count {
     padding: 0.2rem 1rem 0.2rem 2rem;
     width: 11rem;
     border-radius: 16px;
     background-color: #304D89;
     color: #B2BFD8;
-  }
-  
-  .info-dir {
+}
+
+.info-dir {
     margin-top: 0;
     line-height: 1.7;
-  }
-  
-  .email-sec {
+}
+
+.email-sec {
     padding-left: 7rem;
-  }
-  
-  @media screen and (max-width: 768px) and (min-width: 500px) {
+}
+
+@media screen and (max-width:768px) and (min-width:500px) {
     .s-mt-f {
-      margin-top: 8px;
+        margin-top: 8px;
     }
     .visit-count {
-      margin-top: 10px;
+        margin-top: 10px;
     }
     .info-dir {
-      margin-top: 10px;
-      line-height: 1.7;
+        margin-top: 10px;
+        line-height: 1.7;
     }
-  }
-  
-  @media screen and (max-width: 480px) {
+}
+
+@media screen and (max-width:480px) {
     .s-mt-f {
-      margin-top: 15px;
+        margin-top: 15px;
     }
     .visit-count {
-      margin-top: 10px;
+        margin-top: 10px;
     }
     .info-dir {
-      margin-top: 10px;
-      line-height: 1.7;
+        margin-top: 10px;
+        line-height: 1.7;
     }
-  }
-  
-  @media screen and (max-width: 991px) {
+}
+
+@media screen and (max-width:991px) {
     .visit-count {
-      margin-top: 10px;
+        margin-top: 5%;
     }
     .info-dir {
-      margin-top: 10px;
-      line-height: 1.7;
+        margin-top: 10px;
+        line-height: 1.7;
     }
     .email-sec {
-      padding-left: 15px;
+        padding-left: 15px;
     }
-  }
-  /*# sourceMappingURL=footer.component.css.map */
+}
+
+.foot-links {
+    font-size: 0.875rem;
+    @include media-breakpoint-down(sm) {
+    font-size: 0.75rem;
+     }  
+}
