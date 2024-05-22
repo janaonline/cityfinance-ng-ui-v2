@@ -1,16 +1,8 @@
-
-{{baseUrl}}
-<br>
-<router-outlet></router-outlet>
-<app-footer></app-footer>
-
-
-
-
-<div class="wrapper app-wrapper" [ngClass]="true ? 'mt-4' : ''">
+<!-- <div class="wrapper app-wrapper" [ngClass]="true ? 'mt-4' : ''"> -->
+<div class="wrapper app-wrapper">
   <!-- <app-home-header></app-home-header> -->
   <app-header></app-header>
 
   <router-outlet></router-outlet>
 </div>
-<app-footer *ngIf="!true"></app-footer>
+<app-footer></app-footer>
