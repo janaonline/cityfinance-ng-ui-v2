@@ -1,50 +1,6 @@
 @import "../../../../assets/scss/functions";
 @import "../../../../assets/scss/variables";
 @import "../../../../assets/scss/mixins";
-.text-10px {
-  font-size: $font-size-base * 0.625;
-}
-
-.text-12px {
-  font-size: $font-size-base * 0.75;
-}
-
-// text sizes
-$text-sizes: (
-  "sm": $font-size-base * 0.75,
-  "rg": $font-size-base,
-  "lg": $font-size-base * 1.25,
-) !default;
-@each $size, $value in $text-sizes {
-  body.#{$size} {
-    font-size: $value;
-  }
-  .text-#{$size} {
-    font-size: $value;
-    @include border-radius(
-      $radius: $border-radius-sm,
-      $fallback-border-radius: false
-    );
-    border: $btn-border-width solid #444750;
-    width: 20px;
-    height: 20px;
-    display: inline-flex;
-    vertical-align: middle;
-    line-height: $value;
-    text-align: center;
-    margin-right: $spacer * 0.25;
-    align-items: center;
-    justify-content: center;
-    &.active {
-      background: $black;
-      color: $white;
-    }
-  }
-}
-
-.textIcon {
-  cursor: pointer;
-}
 
 .btn-login {
   background: $secondary;
@@ -114,58 +70,9 @@ a.disabled {
   visibility: hidden;
 }
 
-.mobile-nav {
-  @include media-breakpoint-up(sm) {
-    display: none !important;
-  }
-  position: fixed;
-  z-index: 100;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba($color: $white, $alpha: 0.9);
-  backdrop-filter: blur(40px);
-  &.show .navbar-toggler[aria-expanded="true"] {
-    visibility: visible;
-    & .navbar-toggler-icon {
-      background-image: url("data:image/svg+xml,%3Csvg viewPort='0 0 32 32' version='1.1' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='1' y1='25' x2='25' y2='1' stroke='%23939393' stroke-width='2'/%3E%3Cline x1='1' y1='1' x2='25' y2='25' stroke='%23939393' stroke-width='2'/%3E%3C/svg%3E");
-    }
-  }
-  & .navbar-nav {
-    margin-top: $spacer * 3;
-    & .nav-item {
-      & .nav-link {
-        padding: $spacer * 0.5 $spacer;
-        border-bottom: none;
-        &.active {
-          border-bottom: none;
-        }
-      }
-      & .dropdown-menu {
-        border: none;
-        background: transparent;
-        padding: 0;
-        margin-left: $spacer * 2;
-        & li {
-          border-bottom: 1px solid $gray-300;
-          &:last-child {
-            border: none;
-          }
-          & .dropdown-item {
-            font-size: $font-size-base * 0.8125;
-            color: $gray-600;
-            padding: $spacer 0;
-          }
-        }
-      }
-    }
-  }
-}
-
-.dropdown-divider {
-  margin: 0.2rem 0;
-}
+// .dropdown-divider {
+//   margin: 0.2rem 0;
+// }
 
 .dropdown-toggle::after {
   display: inline-block;

@@ -1,28 +1,38 @@
 <div class="bg-white">
-    <section class="d-lg-block d-none py-2 border-bottom">
-        <div class="container" style="max-width: 94%">
-            <div class="row">
-                <div class="col-sm-6">
-                    <img src="/assets/images/emblem-of-india.svg" width="16" alt="Emblem
-                      of India" srcset="" class="indian-emblem me-2" />
-                    <span class="text-10px">MINISTRY OF HOUSING AND URBAN
-                      AFFAIRS |
-                      GOVERNMENT OF INDIA</span>
-                </div>
-                <div class="col-sm-6 text-end">
-                    <span class="text-12px me-2"><a (click)="scroll()"
-                          class="text-decoration-none text-secondary">Skip To
-                          Main Content</a>
-                  </span>
-                    <ng-container *ngFor="let data of textSize">
-                        <span (click)="setFontSize(data)" class="text-{{ data }}
-                          textIcon" [ngClass]="currentTextSize == data ?
-                          'active' : ''">A</span>
-                    </ng-container>
-                </div>
-            </div>
+  <section class="d-lg-block d-none py-2 border-bottom">
+    <div class="container" style="max-width: 94%">
+      <div class="row">
+        <div class="col-sm-6">
+          <img
+            src="/assets/images/emblem-of-india.svg"
+            width="16"
+            alt="Emblem
+                      of India"
+            srcset=""
+            class="indian-emblem me-2"
+          />
+          <span class="text-10px"
+            >MINISTRY OF HOUSING AND URBAN AFFAIRS | GOVERNMENT OF INDIA</span
+          >
         </div>
-    </section>
-    <app-navbar></app-navbar>
-    
+        <div class="col-sm-6 text-end">
+          <span class="text-12px me-2"
+            ><a (click)="scroll()" class="text-decoration-none text-secondary"
+              >Skip To Main Content</a
+            >
+          </span>
+          <ng-container *ngFor="let data of textSize">
+            <span
+              (click)="setFontSize(data)"
+              class="text-{{ data }}
+                          textIcon"
+              [ngClass]="currentTextSize == data ? 'active' : ''"
+              >A</span
+            >
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </section>
+  <app-navbar></app-navbar>
 </div>

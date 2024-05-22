@@ -56,26 +56,29 @@ export class NavbarComponent {
   constructor(public _router: Router, private authService: AuthService,
   ) {
     this.initializeAccessChecking();
-    this._router.events.subscribe((event: any) => {
+    // this._router.events.subscribe((event: any) => {
 
-      this.isLoggedIn = this.authService.loggedIn();
-      this.user = this.isLoggedIn ? this.user : null;
 
-      this.initializeAccessChecking();
-
-      if (this.isLoggedIn) {
-        UserUtility.getUserLoggedInData().subscribe((value: any) => {
-          this.user = value;
-          this.setLoggedInUserMenu();
-        });
-        this.btnName = "Logout";
-      } else {
-        this.btnName = "Login for 15th FC Grants";
-      }
-    });
-
+    // });
+    this.checkUserLoggedIn();
   }
 
+  checkUserLoggedIn() {
+    this.isLoggedIn = this.authService.loggedIn();
+    this.user = this.isLoggedIn ? this.user : null;
+
+    this.initializeAccessChecking();
+
+    if (this.isLoggedIn) {
+      UserUtility.getUserLoggedInData().subscribe((value: any) => {
+        this.user = value;
+        this.setLoggedInUserMenu();
+      });
+      this.btnName = "Logout";
+    } else {
+      this.btnName = "Login for 15th FC Grants";
+    }
+  }
   setLoggedInUserMenu() {
     const role = this.user ? this.user.role : '';
     this.menus = [
@@ -89,7 +92,7 @@ export class NavbarComponent {
   }
   ngOnInit(): void {
     this.isProd = environment?.isProduction;
-    this.setLoggedInUserMenu();
+    // this.setLoggedInUserMenu();
   }
   initializeAccessChecking() {
     this.canViewUserList = this.accessChecker.hasAccess({
