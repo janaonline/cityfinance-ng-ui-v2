@@ -22,7 +22,8 @@ export class CustomHttpInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    const token = JSON.parse(localStorage.getItem("id_token") || '');
+    // const token = JSON.parse(localStorage.getItem("id_token") || '');
+    const token = localStorage.getItem("id_token");
     const sessionID = sessionStorage.getItem("sessionID");
     let headers = req.headers;
     if (!req.headers.has("Accept")) {

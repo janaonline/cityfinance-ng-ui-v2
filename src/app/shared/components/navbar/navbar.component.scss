@@ -1,0 +1,117 @@
+@import "../../../../assets/scss/functions";
+@import "../../../../assets/scss/variables";
+@import "../../../../assets/scss/mixins";
+
+.btn-login {
+  background: $secondary;
+  color: $white;
+  border-color: $secondary;
+  box-shadow: 0px 2px 6px #f7c199;
+  font-size: $font-size-base * 1;
+  padding-top: $spacer * 0.625;
+  padding-bottom: $spacer * 0.625;
+  padding-left: $spacer * 1;
+  padding-right: $spacer * 1;
+  letter-spacing: 1px;
+  &:hover {
+    background: shade-color($secondary, 10);
+    color: $white;
+    border-color: shade-color($secondary, 10);
+  }
+  @include media-breakpoint-down(sm) {
+    font-size: $font-size-base * 0.625;
+    padding-top: $spacer * 0.4375;
+    padding-bottom: $spacer * 0.4375;
+    padding-left: $spacer * 0.5;
+    padding-right: $spacer * 0.5;
+  }
+}
+.btn-l-fc {
+  background: #ddd5d5 !important;
+  color: #000 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.btn-login-icon {
+  background: $secondary;
+  color: $white;
+  border-color: $secondary;
+  box-shadow: 0px 2px 6px #f7c199;
+}
+
+.nav-item {
+  padding-top: $spacer * 0.125;
+  .nav-link {
+    padding-top: $spacer * 1.5;
+    padding-bottom: $spacer * 1.5;
+    border-bottom: 2px solid transparent;
+    color: #1d5290;
+    font-weight: bold;
+    font-size: $font-size-base * 1;
+    &:hover,
+    &.active {
+      color: #e87a1c;
+      border-bottom: 2px solid;
+    }
+  }
+}
+
+a.disabled {
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.btmBdr {
+  border-bottom: $border-width solid $gray-100;
+}
+
+.navbar-toggler[aria-expanded="true"] {
+  visibility: hidden;
+}
+
+// .dropdown-divider {
+//   margin: 0.2rem 0;
+// }
+
+.dropdown-toggle::after {
+  display: inline-block;
+  margin-left: 0.6em;
+  vertical-align: middle;
+  content: "";
+  border-top: 0.5em solid;
+  border-right: 0.5em solid transparent;
+  border-bottom: 0;
+  border-left: 0.5em solid transparent;
+}
+
+.navbar-brand {
+  visibility: visible;
+  opacity: 1;
+  display: inline-block;
+  ::ng-deep
+  img {
+    height: 28px !important;
+  }
+}
+
+.stiky-tp {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 999;
+}
+
+.cityLogo {
+  margin-top: 10%;
+}
+.navbar-nav {
+  align-items: baseline;
+}
+.navbar-expand-lg .navbar-nav .dropdown-menu {
+  border-top: none !important;
+}
+.dropdown-item {
+  padding: 0.5rem 1rem;
+}
+

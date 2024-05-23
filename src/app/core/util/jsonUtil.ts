@@ -9,9 +9,9 @@ export class JSONUtility {
    *  const original = {'a': {'b': {'c': {'d': 3}, 'e': 45}}};
    *  const newObject = convertToFlatJSON(original); // {'d': 3, 'e': 45}
    */
-  public convertToFlatJSON(original: {}) {
-    let newJSON = {};
-    Object.keys(original).forEach((key) => {
+  public convertToFlatJSON(original: any) {
+    let newJSON: any = {};
+    Object.keys(original).forEach((key: any) => {
       if (typeof original[key] === "object") {
         const nestedValue = this.convertToFlatJSON(original[key]);
         newJSON = { ...newJSON, ...nestedValue };
@@ -32,7 +32,7 @@ export class JSONUtility {
     if (!obj) {
       return null;
     }
-    const value = {};
+    const value: any = {};
     Object.keys(obj).forEach((key) => {
       if (obj[key] === null || obj[key] === undefined) {
         return;
@@ -65,13 +65,15 @@ export class JSONUtility {
   }
 
   filterOutEmptyArray(data: any[], deepFilter = true) {
-    const newArray = [];
+    const newArray: {}[] = [];
     data.forEach((obj) => {
       if (obj === null || obj === undefined) return;
       if (typeof obj === "object") {
         const newObj = this.filterEmptyValue(obj, deepFilter);
         if (!newObj || !Object.keys(newObj).length) return;
         return newArray.push(newObj);
+      } else {
+        return;
       }
 
       newArray.push(obj);
@@ -80,7 +82,7 @@ export class JSONUtility {
   }
 
   deepCopy(obj: any) {
-    let copy;
+    let copy: any;
 
     // Handle the 3 simple types, and null or undefined
     if (null == obj || "object" != typeof obj) return obj;
@@ -129,7 +131,7 @@ export class JSONUtility {
    * input = [2], output = ['2.00'],
    * input = [{'myKey': 23}], output = [{'myKey': '23.00'}],
    */
-  public convert(input: any) {
+  public convert(input: any): any {
     if (!input) return;
     if (typeof input === "number") {
       return Number(`${input}`).toFixed(2);
@@ -164,7 +166,7 @@ export class JSONUtility {
     return inputObj;
   }
 
-  private convertArrayValuesToDecimalValues(inputArray: any[]) {
+  private convertArrayValuesToDecimalValues(inputArray: any[]): any {
     return inputArray.map((value) => {
       if (typeof value === "number") return this.convert(value);
       if (Array.isArray(value)) {

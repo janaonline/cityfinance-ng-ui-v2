@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "local": "ng serve --configuration=local",
+    "staging": "ng serve --configuration=staging",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
@@ -25,6 +26,7 @@
     "ag-grid-community": "^31.3.2",
     "ngx-bootstrap": "^12.0.0",
     "rxjs": "~7.8.0",
+    "sass": "^1.77.2",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
   },
