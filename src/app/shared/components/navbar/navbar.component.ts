@@ -35,7 +35,7 @@ export class NavbarComponent {
 
   menus: any = [
     {
-      name: `<img src="/assets/images/city-finance-ranking.png"/>`,
+      name: `<img src="./assets/images/city-finance-ranking.png"/>`,
       class: 'navbar-brand cityLogo',
       link: '/rankings/home'
     },
