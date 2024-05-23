@@ -47,7 +47,7 @@ jobs:
         port: 22
         source: "dist/*"  # Adjust this path based on your project structure
         target: "/var/www/html/staging-cicd/cityfinance-ng-ui-v2/"  # Specify the destination path on your server
-    - name: Rename existing dist folder on server
+    - name: Rename existing dist folder on server to dist_liveserver
       run: |
             ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "
             if [ -d /var/www/html/staging-cicd/cityfinance-ng-ui-v2/dist ]; then
