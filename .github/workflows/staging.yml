@@ -32,11 +32,11 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
   
-    - name: Rename existing dist folder on server
+    - name: First change the name of backup folder 
       run: |
           ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "
-          if [ -d /var/www/html/staging-cicd/cityfinance-ng-ui-v2/dist_live_server ]; then
-            mv /var/www/html/staging-cicd/cityfinance-ng-ui-v2/dist_live_server /var/www/html/staging-cicd/cityfinance-ng-ui-v2/dist_$(date +'%Y-%m-%d_%I.%M%p');
+          if [ -d /var/www/html/staging-cicd/cityfinance-ng-ui-v2/dist ]; then
+            mv /var/www/html/staging-cicd/cityfinance-ng-ui-v2/dist /var/www/html/staging-cicd/cityfinance-ng-ui-v2/dist_$(date +'%Y-%m-%d_%I.%M%p');
           fi"
     - name: Copy dist files to server
       uses: appleboy/scp-action@master
