@@ -52,7 +52,7 @@
           </a>
           <ul class="dropdown-menu" id="dropdown-basic" *dropdownMenu>
             <li *ngFor="let childMenu of menu.child">
-              <a class="dropdown-item" [routerLink]="childMenu.link">{{
+              <a class="dropdown-item" [attr.href]="childMenu.href">{{
                 childMenu.name
               }}</a>
             </li>
@@ -63,9 +63,14 @@
           <a
             class="nav-link"
             [ngClass]="menu.class"
-            routerLinkActive="active"
             [routerLink]="menu.link"
-            [innerHTML]="menu.name"
+            [innerHTML]="menu.name" *ngIf="menu.link"
+          ></a>
+          <a
+            class="nav-link"
+            [ngClass]="menu.class"
+            [attr.href]="menu.href"
+            [innerHTML]="menu.name" *ngIf="menu.href"
           ></a>
         </li>
         } }

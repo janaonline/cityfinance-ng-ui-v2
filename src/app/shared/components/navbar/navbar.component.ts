@@ -35,22 +35,22 @@ export class NavbarComponent {
 
   menus: any = [
     {
-      name: `<img src="/assets/images/city-finance-ranking.png"/>`,
+      name: `<img src="./assets/images/city-finance-ranking.png"/>`,
       class: 'navbar-brand cityLogo',
-      link: '/rankings/home'
+      href: '/rankings/home'
     },
     {
-      name: 'Dashboard', link: '', child:
+      name: 'Dashboard', href: '', child:
         [
-          { name: 'National Performance', link: '/dashboard/national/61e150439ed0e8575c881028' },
-          { name: 'Own Revenue Performance', link: '/own-revenue-dashboard' },
-          { name: 'Service Level Benchmarks Performance', link: '/dashboard/slb' },
-          { name: 'Municipal Bonds', link: '/municipal-bonds' },
-          { name: 'Municipal Budgets', link: '/municipal-budgets' },
+          { name: 'National Performance', href: '/dashboard/national/61e150439ed0e8575c881028' },
+          { name: 'Own Revenue Performance', href: '/own-revenue-dashboard' },
+          { name: 'Service Level Benchmarks Performance', href: '/dashboard/slb' },
+          { name: 'Municipal Bonds', href: '/municipal-bonds' },
+          { name: 'Municipal Budgets', href: '/municipal-budgets' },
         ]
     },
 
-    { name: 'Resources', link: '/resources-dashboard/data-sets/income_statement' },
+    { name: 'Resources', href: '/resources-dashboard/data-sets/income_statement' },
   ];
 
   constructor(public _router: Router, private authService: AuthService,
@@ -87,11 +87,11 @@ export class NavbarComponent {
     const role = this.user ? this.user.role : '';
     this.menus = [
       ...this.menus,
-      (role === USER_TYPE.PMU && { name: 'State resources', link: '/mohua-form/state-resource-manager' }),
-      (role !== USER_TYPE.PMU && { name: '15<sup>th</sup> FC Grants', link: '/fc-home-page' }),
+      (role === USER_TYPE.PMU && { name: 'State resources', href: '/mohua-form/state-resource-manager' }),
+      (role !== USER_TYPE.PMU && { name: '15<sup>th</sup> FC Grants', href: '/fc-home-page' }),
       (role === USER_TYPE.ULB && { name: `XVI FC Data Collection`, link: '/xvifc-form' }),
-      (role !== USER_TYPE.ULB && { name: `Rankings'22 Dashboard`, link: '/rankings/review-rankings-ulbform' }),
-      (role !== USER_TYPE.PMU && { name: 'Users', link: '/user/list/ULB' }),
+      (role !== USER_TYPE.ULB && { name: `Rankings'22 Dashboard`, href: '/rankings/review-rankings-ulbform' }),
+      (role !== USER_TYPE.PMU && { name: 'Users', href: '/user/list/ULB' }),
     ];
   }
   ngOnInit(): void {
