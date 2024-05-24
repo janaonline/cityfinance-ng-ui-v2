@@ -1,10 +1,28 @@
+
+let baseUrl = window.location.origin;
+//let baseUrl = 'http://localhost:8080';
+let GoogleTagID: string = 'G-MDPDTZFW0N';
+let isProduction: boolean = false;
+let versionCheckURL = baseUrl + '/version.json';
+let STORAGE_BASEURL = 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com';
+let env = 'dev';
+
+if (window.location.hostname.includes('staging')) {
+    env = 'staging';
+} else if (window.location.origin === 'https://cityfinance.in') {
+    env = 'prod';
+    isProduction = true;
+    GoogleTagID = 'G-MDPDTZFW0N';
+    STORAGE_BASEURL = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
+}
+
 export const environment = {
     api: {
-        url: 'http://localhost:8080/api/v1/',
+        url: baseUrl + '/api/v1/',
     },
-    environment: 'prod',
-    isProduction: false,
+    environment: env,
+    isProduction,
     versionCheckURL: window.location.origin + '/version.json',
-    STORAGE_BASEURL: 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com',
-    storageType: 'S3Url',
+    STORAGE_BASEURL,
+    storageType: 'S3Url', // 'S3Url' for S3 storage type, for azure change this to 'BlobUrl'
 };
