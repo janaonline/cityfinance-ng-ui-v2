@@ -63,8 +63,14 @@
           <a
             class="nav-link"
             [ngClass]="menu.class"
+            [routerLink]="menu.link"
+            [innerHTML]="menu.name" *ngIf="menu.link"
+          ></a>
+          <a
+            class="nav-link"
+            [ngClass]="menu.class"
             [attr.href]="menu.href"
-            [innerHTML]="menu.name"
+            [innerHTML]="menu.name" *ngIf="menu.href"
           ></a>
         </li>
         } }
