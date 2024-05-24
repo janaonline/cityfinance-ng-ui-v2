@@ -3,6 +3,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
+// import { formJson } from './xvifc-formJson';
 import { formJson } from './formJson';
 
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -191,7 +192,7 @@ export class XviFCComponent {
     return date;
   }
 
-  onLoad() {
+  onLoad_bkp() {
     this.isLoader = true;
     this.fiscalService.getfiscalUlbForm(this.design_year, this.ulbId).subscribe((res: any) => {
       this.hideForm = res?.data?.hideForm;
@@ -217,6 +218,36 @@ export class XviFCComponent {
       this.msgForLedgerUpdate = res?.data?.messages;
       if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
     });
+  }
+  onLoad() {
+    console.log('-----dfdf----');
+    
+    this.isLoader = true;
+    // this.fiscalService.getfiscalUlbForm(this.design_year, this.ulbId).subscribe((res: any) => {
+      const res:any = formJson;
+      this.hideForm = res?.data?.hideForm;
+      this.notice = res?.data?.notice;
+      this.formId = res?.data?._id;
+      this.isDraft = res?.data?.isDraft;
+      this.ulbName = res?.data?.ulbName;
+      this.stateCode = res?.data?.stateCode;
+      this.currentFormStatus = res?.data?.currentFormStatus;
+      this.tabs = res?.data?.tabs;
+      this.financialYearTableHeader = res?.data?.financialYearTableHeader;
+      this.pmuSubmissionDate = res?.data?.pmuSubmissionDate;
+      this.isAutoApproved = res?.data?.isAutoApproved;
+
+      this.form = this.fb.array(this.tabs.map(tab => this.getTabFormGroup(tab)))
+      this.addSkipLogics();
+      // if (this.userData.role == this.userTypes.ULB) {
+      this.addSumLogics();
+      // }
+      this.addSubtractLogics();
+      this.form.markAsPristine();
+      this.isLoader = false;
+      this.msgForLedgerUpdate = res?.data?.messages;
+      if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
+    // });
   }
 
   getTabFormGroup(tab: Tab): any {
