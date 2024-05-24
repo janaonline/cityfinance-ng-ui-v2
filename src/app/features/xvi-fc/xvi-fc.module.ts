@@ -8,7 +8,8 @@ import { XviFCRoutingModule } from './xvi-fc-routing.module';
   declarations: [],
   imports: [
     CommonModule,
-    XviFCRoutingModule
+    XviFCRoutingModule,
+    // DecimalLimitDirective
   ]
 })
 export class XviFCModule { }

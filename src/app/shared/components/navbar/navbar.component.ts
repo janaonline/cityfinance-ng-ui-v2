@@ -60,8 +60,9 @@ export class NavbarComponent {
 
 
     // });
-    this.checkUserLoggedIn();
+
   }
+
 
   checkUserLoggedIn() {
     this.isLoggedIn = this.authService.loggedIn();
@@ -72,7 +73,7 @@ export class NavbarComponent {
     if (this.isLoggedIn) {
       UserUtility.getUserLoggedInData().subscribe((value: any) => {
         this.user = value;
-        this.setLoggedInUserMenu();
+        // this.setLoggedInUserMenu();
       });
       this.btnName = "Logout";
     } else {
@@ -80,19 +81,23 @@ export class NavbarComponent {
     }
   }
   setLoggedInUserMenu() {
+    if (!this.user) {
+      return;
+    }
     const role = this.user ? this.user.role : '';
     this.menus = [
       ...this.menus,
       (role === USER_TYPE.PMU && { name: 'State resources', link: '/mohua-form/state-resource-manager' }),
       (role !== USER_TYPE.PMU && { name: '15<sup>th</sup> FC Grants', link: '/fc-home-page' }),
-      (role === USER_TYPE.ULB && { name: `Rankings'22 Form`, link: '/rankings/ulb-form' }),
+      (role === USER_TYPE.ULB && { name: `XVI FC Data Collection`, link: '/xvifc-form' }),
       (role !== USER_TYPE.ULB && { name: `Rankings'22 Dashboard`, link: '/rankings/review-rankings-ulbform' }),
       (role !== USER_TYPE.PMU && { name: 'Users', link: '/user/list/ULB' }),
     ];
   }
   ngOnInit(): void {
     this.isProd = environment?.isProduction;
-    // this.setLoggedInUserMenu();
+    this.checkUserLoggedIn();
+    this.setLoggedInUserMenu();
   }
   initializeAccessChecking() {
     this.canViewUserList = this.accessChecker.hasAccess({
