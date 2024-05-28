@@ -1,0 +1,33 @@
+
+    <!-- <ng-container *ngFor="let field of fields;"> -->
+        @switch (field.type) {
+        @case ('input') {
+        <app-input [field]="field" [group]="group"></app-input>
+        }
+        @case ('radiobutton') {
+        <app-radiobutton [field]="field" [group]="group"></app-radiobutton>
+        }
+        @case ('checkbox') {
+        <app-checkbox [field]="field" [group]="group"></app-checkbox>
+        }
+        @case ('select') {
+        <app-select [field]="field" [group]="group"></app-select>
+        }
+        @case ('date') {
+        <app-date [field]="field" [group]="group"></app-date>
+        }
+        @case ('childform') {
+        <app-child-form [field]="field" [group]="group"></app-child-form>
+        }
+        @case ('table') {
+        <app-date [field]="field" [group]="group"></app-date>
+        }
+        @case ('button') {
+        <app-button [field]="field" [group]="group"></app-button>
+        }
+        <!-- @default {
+              <span>Default case (Not 0 or 1 or 2)</span>
+            } -->
+        }
+    <!-- </ng-container> -->
+<!-- </form> -->
