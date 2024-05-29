@@ -1,0 +1,25 @@
+<!-- <mat-form-field class="demo-full-width margin-top" [formGroup]="group.value">
+  <mat-label>{{group.value.controls['label'].value}}</mat-label>
+  <input matInput [formControlName]="value" [placeholder]="field.label" [type]="field.inputType">
+  <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+    <mat-error *ngIf="group.get(field.name)?.hasError(validation.name)">{{validation.message}}</mat-error>
+  </ng-container>
+</mat-form-field> -->
+<div class="row mt-4" [formGroup]="item.value">
+  <mat-form-field appearance="outline" [disabled]="item.value.controls['readonly'].value" [formGroup]="item.value"
+    *ngIf="textualFormFiledTypes.includes(item.value.controls['formFieldType'].value)">
+    <mat-label class="com-style">{{ item.value.controls["label"].value }}
+      <span *ngIf="item.value.controls['required'].value" class="text-danger">*</span>
+      <mat-icon style="font-size: 18px" *ngIf="item.value.controls['info'].value"
+        [matTooltip]="item.value.controls['info'].value">info_outline
+      </mat-icon>
+    </mat-label>
+    <input onwheel="this.blur()" class="com-style" appNoUpDown [appDecimalLimit]="
+                  item?.value?.controls['formFieldType']?.value != 'number'
+                    ? null
+                    : item?.value?.controls['decimalLimit']?.value || 0
+                " [readonly]="item.value.controls['readonly'].value"
+      [type]="item.value.controls['formFieldType'].value" matInput
+      placeholder="{{ item.value.controls['label'].value }}" formControlName="value" />
+  </mat-form-field>
+</div>

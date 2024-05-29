@@ -1,6 +1,7 @@
 
     <!-- <ng-container *ngFor="let field of fields;"> -->
-        @switch (field.type) {
+        <app-input [item]="group"></app-input>
+        <!-- @switch (field.type) {
         @case ('input') {
         <app-input [field]="field" [group]="group"></app-input>
         }
@@ -24,10 +25,10 @@
         }
         @case ('button') {
         <app-button [field]="field" [group]="group"></app-button>
-        }
+        } -->
         <!-- @default {
               <span>Default case (Not 0 or 1 or 2)</span>
             } -->
-        }
+        <!-- } -->
     <!-- </ng-container> -->
 <!-- </form> -->

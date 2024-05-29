@@ -1,12 +1,90 @@
-<p>form works!</p>
-<!-- <app-dynamic-form></app-dynamic-form> -->
-<form class="dynamic-form" [formGroup]="form" (submit)="onSubmit($event)">
-    <ng-container *ngFor="let field of fields;">
-        <app-dynamic-form [field]="field" [group]="form">
-        </app-dynamic-form>
-    </ng-container>
-</form>
+<div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
+    <!-- <app-dynamic-form></app-dynamic-form> -->
+    <!-- <form class="dynamic-form" [formGroup]="form" (submit)="onSubmit($event)"> -->
 
-<div class="margin-top">
-    {{ form.value | json }}
+    <mat-stepper *ngIf="!isLoader && form" linear="true" labelPosition="bottom" id="stepper" #stepper>
+        <mat-step state="state" *ngFor="let tab of form.controls; index as i">
+            <ng-template matStepLabel>
+                <span class="st-title com-style" [title]="tab?.value?.label">{{ (tab?.value?.label).split( " " )[0]
+                    }}
+                    {{ (tab?.value?.label).split(" ")[1] }}<br />
+                    {{ (tab?.value?.label).split(" ")[2] }}</span>
+            </ng-template>
+            <div class="container mt-4" [ngClass]="linearTabs.includes(tab?.value?.id) ? 'w-50' : 'w-80'"
+                [formGroup]="tab">
+                <h2 style="text-align: center" *ngIf="tab?.value?.id == 's1'">
+                    {{ ulbName }}
+                </h2>
+
+                <!-- tab 1, 2 -->
+                <div class="form" *ngIf="tab?.value?.id == 's1' || tab?.value?.id == 's2'">
+                    
+                    <ng-container *ngFor="let field of tab?.controls?.data?.controls | keyvalue : fiscalService.sortPosition">
+                        <app-dynamic-form [group]="field">
+                        </app-dynamic-form>
+                    </ng-container>
+                    <!-- <div class="" [ngClass]="{ disable: item.value.controls['readonly'].value }"
+                        *ngFor="let item of tab?.controls?.data?.controls | keyvalue : fiscalService.sortPosition">
+                        <div class="row mt-4" [formGroup]="item.value">
+                            <mat-form-field appearance="outline" [disabled]="item.value.controls['readonly'].value"
+                                *ngIf="textualFormFiledTypes.includes(item.value.controls['formFieldType'].value)">
+                                <mat-label class="com-style">{{ item.value.controls["label"].value }}
+                                    <span *ngIf="item.value.controls['required'].value" class="text-danger">*</span>
+                                    <mat-icon style="font-size: 18px" *ngIf="item.value.controls['info'].value"
+                                        [matTooltip]="item.value.controls['info'].value">info_outline
+                                    </mat-icon>
+                                </mat-label>
+                                <input onwheel="this.blur()" class="com-style" appNoUpDown [appDecimalLimit]="
+                        item?.value?.controls['formFieldType']?.value != 'number'
+                          ? null
+                          : item?.value?.controls['decimalLimit']?.value || 0
+                      " [readonly]="item.value.controls['readonly'].value"
+                                    [type]="item.value.controls['formFieldType'].value" matInput
+                                    placeholder="{{ item.value.controls['label'].value }}" formControlName="value" />
+                            </mat-form-field>
+                            <div class="col-sm-12 mt-1 row" *ngIf="
+                      item.value.controls['formFieldType'].value ==
+                      'radio-toggle'
+                    ">
+                                <div class="col-sm-8">
+                                    {{ item.value.controls["label"].value }}
+                                    <span *ngIf="item.value.controls['required'].value" class="text-danger">*</span>
+                                    <mat-icon style="font-size: 18px" *ngIf="item.value.controls['info'].value"
+                                        [matTooltip]="item.value.controls['info'].value">info_outline
+                                    </mat-icon>
+                                </div>
+                                <div class="col-sm-4">
+                                    <mat-radio-group aria-label="Select an option" formControlName="value"
+                                        [disabled]="item.value.controls['readonly'].value">
+                                        <mat-radio-button value="Yes">Yes</mat-radio-button>
+                                        <mat-radio-button value="No" class="ms-3">No</mat-radio-button>
+                                    </mat-radio-group>
+                                </div>
+                            </div>
+                            <app-common-action-radio class="mt-2" *ngIf="canSeeActions" formControlName="status"
+                                [title]="item.value.controls['label'].value" [isInvalid]="
+                      item.value.controls['status'].status == 'INVALID' &&
+                      (item.value.controls['status'].touched ||
+                        item.value.controls['status'].dirty)
+                    " [rejectReason]="item.value.controls['rejectReason']" [disabled]="!canTakeAction"
+                                [disableReject]="pmuSubmissionDate" (onReject)="updateControl(item?.value, $event)">
+                            </app-common-action-radio>
+                        </div>
+                    </div> -->
+                </div>
+            </div>
+            <!-- <ng-container *ngFor="let field of fields;">
+                <app-dynamic-form [field]="field" [group]="form">
+                </app-dynamic-form>
+            </ng-container> -->
+        </mat-step>
+        <ng-template matStepperIcon="state"><span class="material-icons n-circle">circle</span></ng-template>
+        <ng-template matStepperIcon="edit"><span class="material-icons n-circle">circle</span></ng-template>
+        <ng-template matStepperIcon="done"><span class="material-icons">check_circle</span></ng-template>
+    </mat-stepper>
+    <!-- </form> -->
+
+    <div class="margin-top">
+        <!-- {{ tabs | json }} -->
+    </div>
 </div>

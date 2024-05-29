@@ -29,6 +29,7 @@ const materialModules: (any[] | Type<any> | ModuleWithProviders<{}>) = [
   MatSelectModule,
   MatCheckboxModule,
   MatRadioModule,
+  MatStepperModule,
 
   CommonModule,
   FormsModule,

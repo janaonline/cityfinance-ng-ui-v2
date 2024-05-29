@@ -47,7 +47,8 @@ export class DynamicFormComponent {
   constructor(private fb: FormBuilder) { }
 
   ngOnInit() {
-
+    // console.log('group---',this.group);
+    
   }
 
 }

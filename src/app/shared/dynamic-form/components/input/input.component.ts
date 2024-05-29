@@ -6,20 +6,20 @@ import { MaterialModule } from '../../../../material.module';
   selector: "app-input",
   standalone: true,
   imports: [MaterialModule],
-  template: `
-    <mat-form-field class="demo-full-width margin-top" [formGroup]="group">
-    	<mat-label>{{field.label}}</mat-label>
-    	<input matInput [formControlName]="field.name" [placeholder]="field.label" [type]="field.inputType">
-    		<ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
-    			<mat-error *ngIf="group.get(field.name)?.hasError(validation.name)">{{validation.message}}</mat-error>
-    		</ng-container>
-    	</mat-form-field>`,
+  templateUrl: './input.component.html',
 
 })
 export class InputComponent {
   className: string = "box1";
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
+  @Input() item!: FormGroup;
+
+  textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
+
   constructor() { }
-  ngOnInit() { }
+  ngOnInit() {
+    console.log('----group in --', this.item.value);
+
+  }
 }
