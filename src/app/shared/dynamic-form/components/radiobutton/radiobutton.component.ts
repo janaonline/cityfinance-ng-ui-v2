@@ -9,8 +9,8 @@ import { MaterialModule } from '../../../../material.module';
   template: `
 <div class="demo-full-width margin-top" [formGroup]="group">
 <label class="radio-label-padding">{{field.label}}:</label>
-<mat-radio-group [formControlName]="field.name">
-<mat-radio-button *ngFor="let item of field.options" [value]="item">{{item}}</mat-radio-button>
+<mat-radio-group [formControlName]="field.key">
+<mat-radio-button *ngFor="let opt of field.options" [value]="opt">{{opt}}</mat-radio-button>
 </mat-radio-group>
 </div>
 `,
@@ -19,6 +19,11 @@ import { MaterialModule } from '../../../../material.module';
 export class RadiobuttonComponent implements OnInit {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
-  constructor() {}
-  ngOnInit() {}
+  @Input() item!: FormGroup;
+  constructor() { }
+  ngOnInit() { }
+
+  // getValue(name: string) {
+  //   return this.group.value.get(name) ? this.group.value.get(name).value : '';
+  // }
 }

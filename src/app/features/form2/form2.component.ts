@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { formJson, tabsJson } from './formJson';
+import { tabsJson } from './formJson';
 import { MaterialModule } from '../../material.module';
 import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
@@ -26,7 +26,7 @@ import { GlobalLoaderService } from '../../core/services/loaders/global-loader.s
 import { DataEntryService } from '../xvi-fc/services/data-entry.service';
 
 @Component({
-  selector: 'app-form',
+  selector: 'app-form2',
   standalone: true,
   imports: [
     // CommonModule,
@@ -44,14 +44,16 @@ import { DataEntryService } from '../xvi-fc/services/data-entry.service';
     CommonActionRadioComponent,
     LoaderComponent,
   ],
-  templateUrl: './form.component.html',
-  styleUrl: './form.component.scss'
+  templateUrl: './form2.component.html',
+  styleUrl: './form2.component.scss'
 })
-export class FormComponent {
+export class Form2Component {
 
-  fields: FieldConfig[] = formJson;
+  // fields: FieldConfig[] = formJson;
 
-  // form!: FormGroup;
+  form!: FormGroup;
+  dynamicForm!: FormGroup;
+  // form!: FormArray;
 
 
   @ViewChild('stepper') stepper: MatStepper | undefined;
@@ -83,10 +85,10 @@ export class FormComponent {
   validators: any = {};
   userTypes = USER_TYPE;
   statusTypes = StatusType;
-  form!: FormArray;
   status: '' | 'PENDING' | 'REJECTED' | 'APPROVED' = '';
   formSubmitted = false;
   msgForLedgerUpdate: string[] = [];
+  fields: any[] = tabsJson.data.tabs;
 
   get value() {
     return this.form.value;
@@ -101,48 +103,347 @@ export class FormComponent {
     // private dateAdapter: DateAdapter<Date>
   ) { }
 
+  setTableData(childField: any) {
+    const tableRow: any = [];
+    childField.tableRow.forEach((row: any) => {
+      if (row.tableData) {
+        const tableCol: any = [];
+        row.tableData.forEach((col: any) => {
+          tableCol.push(
+            // set validation here
+            new FormGroup({
+              // [col.key]: new FormControl(col.value),
+              [col.key]: this.createContorl(col),
+            }));
+        });
+        tableRow.push(
+          new FormGroup({
+            // [row.key]: new FormControl(childField.value),
+            [row.key]: new FormArray(tableCol),
+          }));
+      }
+
+    })
+
+    return new FormArray(tableRow);
+
+  }
+  formValidation(validations: string[]) {
+
+  }
+  bindValidations(validations: any) {
+    if (validations && validations.length > 0) {
+      const validators: any = [];
+      validations.forEach((row: any) => {
+        switch (row.name) {
+          case 'required':
+            validators.push(Validators.required);
+            break;
+          case 'nullValidator':
+            validators.push(Validators.nullValidator);
+            break;
+          case 'pattern':
+            validators.push(Validators.pattern(row.validator));
+            break;
+          case 'min':
+            validators.push(Validators.min(row.validator));
+            break;
+          case 'max':
+            validators.push(Validators.max(row.validator));
+            break;
+          case 'minLength':
+            validators.push(Validators.minLength(row.validator));
+            break;
+          case 'maxLength':
+            validators.push(Validators.maxLength(row.validator));
+            break;
+          case 'email':
+            validators.push(Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$'));
+            break;
+        }
+      });
+
+
+      return Validators.compose(validators);
+    }
+    return null;
+  }
+  //TODO: add validation here
+  createContorl(field: any) {
+    return new FormControl(field.value || '', this.bindValidations(field.validations));
+    // return new FormControl(field.value || '');
+  }
+  tabControl(fields: any[]) {
+    const form = this.fb.group({});
+    const group: any = {};
+    fields.forEach((field: any) => {
+      if (field.formArrays && field.formArrays.length) {
+        let formArrays: any[] = [];
+        field.formArrays.forEach((childField: any) => {
+          // table row
+          const childFieldData: any = {};
+          if (childField.tableRow) {
+            childFieldData[childField.key] = this.setTableData(childField);
+          } else {
+            // childFieldData[childField.key] = new FormControl(childField.value);
+            childFieldData[childField.key] = this.createContorl(childField);
+          }
+          formArrays.push(new FormGroup(childFieldData));
+
+          // group = new FormGroup({ [field.key]: new FormArray(formArrays) })
+        });
+        group[field.key] = new FormArray(formArrays);
+
+      }
+      // group[field.key] = new FormControl(field.value || '');
+
+      //  new FormGroup(group);
+    });
+    this.form = new FormGroup(group);
+  }
   ngOnInit() {
-    // this.form = this.createControl(this.fields);
+    // this.createControl(tabsJson.data.tabs);
+    this.tabControl(tabsJson.data.tabs);
+    // this.form = this.toFormGroup();
+    // console.log('this.form----', this.form);
+
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);
     // });
-    this.onLoad();
+    // this.onLoad();
   }
 
-  onSubmit(event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (this.form.valid) {
-      // this.submit.emit(this.form.value);
-    } else {
-      // this.validateAllFormFields(this.form);
+  createDynamicControl(field: any) {
+    console.log('createDynamicControl field', field);
+    const group: any = {};
+
+    if (field.tableRow && field.tableRow.length) {
+      let arr: any = [];
+      field.tableRow.forEach((row: any) => {
+        arr.push(new FormGroup({
+          key: new FormControl(''),
+          tableData: new FormControl('')
+        }));
+      })
+
+      return new FormGroup({ [field.key]: new FormArray(arr) })
+      // return new FormArray(arr);
+      // // group[field.key] = arr;
     }
+    const validators = [];
+    if (field.required) {
+      validators.push(Validators.required);
+    }
+    group[field.key] = new FormControl(field.value || '', validators);
+    return new FormGroup(group);
+    // const control = this.fb.control(
+    //   field.value,
+    //   // this.bindValidations(field.validations || [])
+    // );
   }
 
-  // createControl(fields: any[]) {
-  //   console.log("fields", fields)
-  //   const group = this.fb.group({});
-  //   fields.forEach((field: { type: string; formArrays: any[]; name: string; value: any; validations: any; }) => {
-  //     if (field.type === "button") return;
-  //     if (field.type === "childform") {
-  //       let items: any[] = [];
-  //       field.formArrays.forEach((fields: any) => {
-  //         items.push(this.createControl(fields));
-  //       });
-  //       let controlArray = this.fb.array(items);
-  //       group.addControl(field.name, controlArray);
-  //     } else {
-  //       const control = this.fb.control(
-  //         field.value,
-  //         this.bindValidations(field.validations || [])
-  //       );
-  //       group.addControl(field.name, control);
-  //     }
-  //   });
-  //   console.log(group);
-  //   return group;
-  // }
+  createControl(fields: any[]) {
+    console.log("fields", fields)
+    const group = this.fb.group({});
+    fields.forEach((field: any) => {
+      console.log('field.key----', field.key);
+      // const control = this.createDynamicControl(field);
+      // this.form.addControl(field.key, control);
+      if (field.type === "button") return;
+      //child form
+      // if (field.type === "childform") {
+      //   let items: any = [];
+      //   field.formArrays.forEach((fields: any) => {
+      //     items.push(this.createControl(fields));
+      //   });
+      //   let controlArray = this.fb.array(items);
+      //   this.form.addControl(field.name, controlArray);
+      // } 
+      // first child
+      if (field.formArrays && field.formArrays.length) {
+        let items: any[] = [];
+        field.formArrays.forEach((childField: any) => {
+          console.log('childField.key----', childField.key);
+          // second child
+          if (childField.formFieldType === 'table') {
+            let tableRow: any[] = [];
+            childField.tableRow.forEach((row: any) => {
+              console.log('row.key----', row.key);
+              tableRow.push(this.createDynamicControl(row));
+            });
+
+            console.log('tableRow', tableRow);
+            // items['tableRow'] = this.fb.array(tableRow);
+          }
+          items.push(this.createDynamicControl(childField));
+
+        });
+        let controlArray = this.fb.array(items);
+        // let controlArray = items
+        // let controlArray =  new FormGroup({arr: new FormControl(field.value || '')});
+        // let controlArray =  new FormGroup({arr: this.fb.array(items)});
+        console.log('controlArray---', controlArray);
+
+        group.addControl(field.key, controlArray);
+        // this.form.addControl(field.key, { 'formArrays': controlArray });
+      }
+
+      // if (false && field.formArrays && field.formArrays.length) {
+      //   let items: any[] = [];
+      //   field.formArrays.forEach((childField: any) => {
+      //     console.log('childField.key----', childField.key);
+      //     items.push(this.createDynamicControl(childField));
+      //   });
+      //   let controlArray = this.fb.array(items);
+      //   this.form.addControl('formArrays', controlArray);
+      // }
+    });
+
+    this.form = group;
+  }
+  createControl_new(fields: any[]) {
+    console.log("fields", fields)
+    const group = this.fb.group({});
+    fields.forEach((field: any) => {
+      console.log('field.key----', field.key);
+      // const control = this.createDynamicControl(field);
+      // this.form.addControl(field.key, control);
+      if (field.type === "button") return;
+      //child form
+      // if (field.type === "childform") {
+      //   let items: any = [];
+      //   field.formArrays.forEach((fields: any) => {
+      //     items.push(this.createControl(fields));
+      //   });
+      //   let controlArray = this.fb.array(items);
+      //   this.form.addControl(field.name, controlArray);
+      // } 
+      // first child
+      if (field.formArrays && field.formArrays.length) {
+        let items: any[] = [];
+        field.formArrays.forEach((childField: any) => {
+          console.log('childField.key----', childField.key);
+          // second child
+          if (childField.formFieldType === 'table') {
+            let tableRow: any[] = [];
+            childField.tableRow.forEach((row: any) => {
+              console.log('row.key----', row.key);
+              tableRow.push(this.createDynamicControl(row));
+            });
+
+            console.log('tableRow', tableRow);
+            // items['tableRow'] = this.fb.array(tableRow);
+          }
+          items.push(this.createDynamicControl(childField));
+
+        });
+        let controlArray = this.fb.array(items);
+        // let controlArray = items
+        // let controlArray =  new FormGroup({arr: new FormControl(field.value || '')});
+        // let controlArray =  new FormGroup({arr: this.fb.array(items)});
+        console.log('controlArray---', controlArray);
+
+        group.addControl(field.key, controlArray);
+        // this.form.addControl(field.key, { 'formArrays': controlArray });
+      }
+
+      // if (false && field.formArrays && field.formArrays.length) {
+      //   let items: any[] = [];
+      //   field.formArrays.forEach((childField: any) => {
+      //     console.log('childField.key----', childField.key);
+      //     items.push(this.createDynamicControl(childField));
+      //   });
+      //   let controlArray = this.fb.array(items);
+      //   this.form.addControl('formArrays', controlArray);
+      // }
+    });
+    // console.log('---createControl--------', group);
+    // return group;
+    this.form = group;
+  }
+  createControl1(fields: any) {
+    console.log("fields", fields)
+    const group = this.fb.group({});
+    fields.forEach((field: any) => {
+      if (field.type === "button") return;
+      if (field.type === "childform") {
+        let items: any = [];
+        field.formArrays.forEach((fields: any) => {
+          items.push(this.createControl(fields));
+        });
+        let controlArray = this.fb.array(items);
+        group.addControl(field.name, controlArray);
+      } else {
+        const control = this.fb.control(
+          field.value,
+          // this.bindValidations(field.validations || [])
+        );
+        group.addControl(field.name, control);
+      }
+    });
+    console.log(group);
+    return group;
+  }
+
+  getSubItems(itemIndex: number) {
+    return this.form.get('subItems') as FormArray;
+  }
+
+
+
+
+
+  createControl_bkp(fields: any[]) {
+    console.log("fields", fields)
+    const group = this.fb.group({});
+
+    fields.forEach((field: any) => {
+      if (field.type === "button") return;
+      //child form
+      if (field.formArrays && field.formArrays.length) {
+        let items: any[] = [];
+        field.formArrays.forEach((fields: any) => {
+          items.push(this.createControl(fields));
+        });
+        let controlArray = this.fb.array(items);
+        group.addControl(field.key, controlArray);
+      } else {
+        const control = this.fb.control(
+          field.value,
+          // this.bindValidations(field.validations || [])
+        );
+        group.addControl(field.key, control);
+      }
+    });
+    // console.log('---createControl--------', group);
+    return group;
+  }
+  createControl_bkp1(fields: any[]) {
+    console.log("fields", fields)
+    const group = this.fb.group({});
+
+    fields.forEach((field: any) => {
+      if (field.type === "button") return;
+      //child form
+      if (field.formArrays && field.formArrays.length) {
+        let items: any[] = [];
+        field.formArrays.forEach((fields: any) => {
+          items.push(this.createControl(fields));
+        });
+        let controlArray = this.fb.array(items);
+        group.addControl(field.key, controlArray);
+      } else {
+        const control = this.fb.control(
+          field.value,
+          // this.bindValidations(field.validations || [])
+        );
+        group.addControl(field.key, control);
+      }
+    });
+    // console.log('---createControl--------', group);
+    return group;
+  }
 
   // bindValidations(validations: any) {
   //   if (validations.length > 0) {
@@ -166,6 +467,35 @@ export class FormComponent {
 
 
 
+  onSubmit(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.form.valid) {
+      // this.submit.emit(this.form.value);
+    } else {
+      // this.validateAllFormFields(this.form);
+    }
+  }
+
+  toFormGroup() {
+    const group: any = {};
+    console.log('this.fields', this.fields);
+
+    this.fields.forEach(field => {
+      // group[field.key] = this.createFormControl(field);
+      //child form
+      if (field.formArrays.length) {
+        let items: any[] = [];
+        field.formArrays.forEach((fields: any) => {
+          // items.push(this.createFormControl(field));
+        });
+        let controlArray = this.fb.array(items);
+        group.addControl(field.name, controlArray);
+      }
+    });
+    return new FormGroup(group);
+  }
+
 
   onLoad() {
     console.log('-----dfdf----');
@@ -186,7 +516,7 @@ export class FormComponent {
     this.pmuSubmissionDate = res?.data?.pmuSubmissionDate;
     this.isAutoApproved = res?.data?.isAutoApproved;
 
-    this.form = this.fb.array(this.tabs.map(tab => this.getTabFormGroup(tab)))
+    // this.form = this.fb.array(this.tabs.map(tab => this.getTabFormGroup(tab)))
     // this.addSkipLogics();
     // if (this.userData.role == this.userTypes.ULB) {
     // this.addSumLogics();

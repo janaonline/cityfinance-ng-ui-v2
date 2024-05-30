@@ -12,7 +12,7 @@
 <form [formGroup]="form" (submit)="submit()">
     <div class="mb-3">
         <label for="rejectReason" class="form-label"><b>PMU initial reason</b></label>
-        <p>{{ this.form?.value?.rejectReason }}</p>
+        <p>{{ this.form.value?.rejectReason }}</p>
     </div>
     <ng-container *ngIf="data?.canSuggestValue">
         <div class="mb-3">

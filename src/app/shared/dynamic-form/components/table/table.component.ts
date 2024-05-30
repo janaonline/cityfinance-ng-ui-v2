@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
@@ -12,6 +12,14 @@ import { MaterialModule } from '../../../../material.module';
 })
 export class TableComponent {
 
-  field!: FieldConfig;
-  group!: FormGroup;
+  @Input() field!: FieldConfig;
+  @Input() group!: FormGroup;
+
+  constructor() { }
+  ngOnInit() {
+    console.log('----field table --',this.field);
+    console.log('----group table --',this.group.value);
+
+  }
+  
 }

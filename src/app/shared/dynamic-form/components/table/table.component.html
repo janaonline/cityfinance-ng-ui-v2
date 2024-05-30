@@ -1,12 +1,19 @@
-<table>
-    <tr>
+<div class="table-responsive-sm">
+    <table class="table">
+        <!-- <tr>
         <th>heading</th>
         <th>2021</th>
-    </tr>
-    <tr>
-        <td>DATA</td>
-        <td>
-            <input />
-        </td>
-    </tr>
-</table>
+    </tr> -->
+        <tr *ngFor="let row of field.tableRow">
+            <td>{{row.label}}</td>
+            <td *ngFor="let col of row.tableData">
+                @if (col.formFieldType === 'heading') {
+                {{col.label}}
+                }
+                @else {
+                <input />
+                }
+            </td>
+        </tr>
+    </table>
+</div>

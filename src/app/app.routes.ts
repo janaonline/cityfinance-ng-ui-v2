@@ -29,6 +29,11 @@ export const routes: Routes = [
             import('./features/form/form.component').then((x) => x.FormComponent),
     },
     {
+        path: 'form2',
+        loadComponent: () =>
+            import('./features/form2/form2.component').then((x) => x.Form2Component),
+    },
+    {
         path: '**',
         redirectTo: '',
     },

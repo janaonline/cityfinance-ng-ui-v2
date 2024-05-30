@@ -8,8 +8,12 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule],
   template: `
     <div class="demo-full-width margin-top" [formGroup]="group">
-    	<mat-checkbox [formControlName]="field.name">{{field.label}}</mat-checkbox>
-    </div>`,
+    	<mat-checkbox [formControlName]="field.key">{{field.label}}</mat-checkbox>
+    </div>
+    <!-- <div class="demo-full-width margin-top" [formGroup]="group.value">
+    	<mat-checkbox formControlName="value">{{ getValue('label') }}</mat-checkbox>
+    </div> -->
+    `,
   styles: []
 })
 export class CheckboxComponent implements OnInit {
@@ -17,4 +21,5 @@ export class CheckboxComponent implements OnInit {
   @Input() group!: FormGroup;
   constructor() { }
   ngOnInit() { }
+  
 }

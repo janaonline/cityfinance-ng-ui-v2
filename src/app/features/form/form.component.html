@@ -11,18 +11,21 @@
                     {{ (tab?.value?.label).split(" ")[2] }}</span>
             </ng-template>
             <div class="container mt-4" [ngClass]="linearTabs.includes(tab?.value?.id) ? 'w-50' : 'w-80'"
-                [formGroup]="tab">
+                >
                 <h2 style="text-align: center" *ngIf="tab?.value?.id == 's1'">
                     {{ ulbName }}
                 </h2>
 
                 <!-- tab 1, 2 -->
                 <div class="form" *ngIf="tab?.value?.id == 's1' || tab?.value?.id == 's2'">
-                    
-                    <ng-container *ngFor="let field of tab?.controls?.data?.controls | keyvalue : fiscalService.sortPosition">
-                        <app-dynamic-form [group]="field">
-                        </app-dynamic-form>
-                    </ng-container>
+
+                    <!-- <ng-container
+                        *ngFor="let field of tab?.controls?.data?.controls | keyvalue : fiscalService.sortPosition">
+                        <div class="row mt-4" >
+                            <app-dynamic-form [group]="field">
+                            </app-dynamic-form>
+                        </div>
+                    </ng-container> -->
                     <!-- <div class="" [ngClass]="{ disable: item.value.controls['readonly'].value }"
                         *ngFor="let item of tab?.controls?.data?.controls | keyvalue : fiscalService.sortPosition">
                         <div class="row mt-4" [formGroup]="item.value">

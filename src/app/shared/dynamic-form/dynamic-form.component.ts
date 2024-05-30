@@ -41,14 +41,18 @@ import { MaterialModule } from "../../material.module";
 })
 export class DynamicFormComponent {
 
-  @Input() field!: FieldConfig;
+  // @Input() field!: FieldConfig;
+  @Input() field!: any;
   @Input() group!: FormGroup;
 
+  formFieldType!: string;
   constructor(private fb: FormBuilder) { }
 
   ngOnInit() {
     // console.log('group---',this.group);
-    
+    // console.log('group---', this.group.value.get('formFieldType').value);
+    // const formFieldType = this.group.value.get('formFieldType').value;
+    this.formFieldType = ['text', 'url', 'email', 'number'].includes(this.field.formFieldType) ? 'input' : this.field.formFieldType;
   }
 
 }

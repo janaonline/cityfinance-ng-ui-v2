@@ -8,15 +8,32 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule],
   template: `
     <mat-form-field class="demo-full-width margin-top" [formGroup]="group">
-    	<mat-select [placeholder]="field.label" [formControlName]="field.name">
+    <mat-label>{{field.label}}</mat-label>
+    	<mat-select [formControlName]="field.key">
     		<mat-option *ngFor="let item of field.options" [value]="item">{{item}}</mat-option>
     	</mat-select>
-    </mat-form-field>`,
+    </mat-form-field>
+    <!-- <mat-form-field class="demo-full-width margin-top" [formGroup]="group.value">
+    <mat-label class="com-style">{{ getValue('label') }}
+    <span *ngIf="getValue('required')" class="text-danger">*</span>
+    <mat-icon style="font-size: 18px" *ngIf="getValue('info')" [matTooltip]="getValue('info')">info_outline
+    </mat-icon>
+  </mat-label>
+    	<mat-select formControlName="value">
+    		<mat-option *ngFor="let opt of getValue('options')" [value]="opt">{{opt}}</mat-option>
+    	</mat-select>
+    </mat-form-field> -->
+    `,
   styles: []
 })
 export class SelectComponent {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
+  @Input() item!: FormGroup;
   constructor() { }
-  ngOnInit() { }
+  ngOnInit() {
+  }
+  // getValue(name: string) {
+  //   return this.group.value.get(name).value;
+  // }
 }

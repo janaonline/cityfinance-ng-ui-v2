@@ -16,6 +16,6 @@ import { MaterialModule } from '../../../../material.module';
 export class ButtonComponent implements OnInit {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
-  constructor() {}
-  ngOnInit() {}
+  constructor() { }
+  ngOnInit() { }
 }
