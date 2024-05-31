@@ -26,7 +26,7 @@ export class YearwiseFilesComponent {
 
   constructor(public dialog: MatDialog) { }
   ngOnInit() {
-    // console.log('----field table --', this.field);
+    console.log('----field table --', this.field);
     // console.log('----group table --', this.group);
     // console.log('----group table --', this.group.value);
     // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
@@ -37,12 +37,6 @@ export class YearwiseFilesComponent {
   }
 
   getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
-    // return this.group.controls.products.controls;
-    // console.log('rowKey', fieldKey, '--i--', i, '----', rowKey, '----', j);
-    // console.log('this.group.get(rowKey)', this.group.get(fieldKey));
-    // console.log('this.group.get(rowKey)',(((this.group.get(fieldKey) as FormArray)
-    // .controls[i] as FormArray).get(rowKey) as FormArray).controls[j]);
-    // this.group.controls[fieldKey].controls[i];
     return ((((this.group.get(fieldKey) as FormArray)
       .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
     // return this.group.get('sourceOfFdTable')?.controls[0];

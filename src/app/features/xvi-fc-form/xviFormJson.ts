@@ -451,26 +451,21 @@ const accountPractice = {
             "key": 'accSysAndProcess',
             "label": "I. Accounting Systems and Processes",
             "section": 'accordion',
-            "formFieldType": "section",
+            "formFieldType": "questionnaire",
             "questions": [
                 {
                     "key": "accSystem",
                     "label": "What is the accounting system being followed by the ULB?",
                     "postion": "1",
                     "required": true,
-                    "info": {
-                        "Cash basis of accounting": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.",
-                        "Accrual basis of accounting": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.",
-                        "Modified": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
-                    },
+                    options: [
+                        { option: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
+                        { option: "Accrual Basis of Accounting", info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
+                        { option: "Modified Cash/ Accrual Accounting", info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." }
+                    ],
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        "Cash Basis of Accounting",
-                        "Accrual Basis of Accounting",
-                        "Modified Cash/ Accrual Accounting"
-                    ],
                     "showInputBox": "",
                     "inputBoxValue": "",
                     "value": "",
@@ -487,12 +482,12 @@ const accountPractice = {
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        "National Municipal Accounting Manual",
-                        "State-specific Municipal Accounting Manual",
-                        "Other (Please specify)"
+                    options: [
+                        { option: "National Municipal Accounting Manual", },
+                        { option: "State-specific Municipal Accounting Manual", },
+                        { option: "Other (Please specify)", 'showInputBox': true }
                     ],
-                    "showInputBox": "Other (Please specify)",
+                    // "showInputBox": "Other (Please specify)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -509,10 +504,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Yes (Please specify)",
-                        "No"
+                        { option: "Yes (Please specify)", 'showInputBox': true },
+                        { option: "No", }
                     ],
-                    "showInputBox": "Yes (Please specify)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -570,11 +564,10 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Recorded when cash is received",
-                        "Recorded when they are accrued",
-                        "Both (Please specify which transactions are recognised in accrual basis)"
+                        { option: "Recorded when cash is received" },
+                        { option: "Recorded when they are accrued" },
+                        { option: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true }
                     ],
-                    "showInputBox": "Both (Please specify which transactions are recognised in accrual basis)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -591,11 +584,10 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Recorded when cash is paid",
-                        "Recorded when they are accrued",
-                        "Both (Please specify which transactions are recognised in accrual basis)"
+                        { option: "Recorded when cash is paid" },
+                        { option: "Recorded when they are accrued" },
+                        { option: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true },
                     ],
-                    "showInputBox": "Both (Please specify which transactions are recognised in accrual basis)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -612,13 +604,12 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Centralized system provided by the State",
-                        "Standalone software",
-                        "Tally",
-                        "Other (Please specify)",
-                        "None"
+                        { option: "Centralized system provided by the State" },
+                        { option: "Standalone software" },
+                        { option: "Tally" },
+                        { option: "Other (Please specify)", showInputBox: true },
+                        { option: "None" }
                     ],
-                    "showInputBox": "Other (Please specify)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -635,10 +626,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)",
-                        "No"
+                        { option: "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)", showInputBox: true },
+                        { option: "No" }
                     ],
-                    "showInputBox": "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -758,17 +748,17 @@ const accountPractice = {
 
 const reviewSubmit = {
     key: 'reviewSubmit',
-    label: "Accounting Practice",
+    label: "Review & Submit",
+    "displayPriority": 5,
 }
 export const tabsJson = {
     data: {
         "tabs": [
-            basicTab,
-            financialData,
-            
+            // accountPractice,
+            // basicTab,
+            // financialData,
             uploadDoc,
-            accountPractice,
-            reviewSubmit
+            // reviewSubmit
         ]
     }
 };

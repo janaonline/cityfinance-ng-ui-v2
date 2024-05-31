@@ -1,5 +1,4 @@
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
-    <!-- <app-dynamic-form></app-dynamic-form> -->
     <!-- <form class="dynamic-form" [formGroup]="form" (submit)="onSubmit($event)"> -->
     <form [formGroup]="form">
 
@@ -8,9 +7,7 @@
         <!-- <app-question [question]="question" [form]="form"></app-question> -->
         <!-- </div> -->
 
-
-
-        <mat-stepper *ngIf="!isLoader && fields" linear="true" labelPosition="bottom" id="stepper" #stepper>
+        <mat-stepper *ngIf="!isLoader && fields" linear="false" labelPosition="bottom" id="stepper" #stepper>
             <mat-step state="state" *ngFor="let tab of fields; index as i">
                 <!-- {{tab.key}} ----------<br> -->
                 <ng-template matStepLabel>
@@ -19,9 +16,9 @@
                         {{ (tab?.label).split(" ")[1] }}<br />
                         {{ (tab?.label).split(" ")[2] }}</span>
                 </ng-template>
-                
-                <div class="container mt-4" >
-                <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
+
+                <div class="container mt-4">
+                    <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
                     <div class="text-bg-light border rounded mt-3 mb-3">
                         <p class="text-muted small pt-3 pb-2 ps-3">Section 1/ 4</p>
                         <h4 class="fw-bold pb-3 ps-3">{{tab.label}}</h4>
@@ -43,19 +40,27 @@
                         </div>
                     </ng-container>
                     }
-
+                    <div class="mt-4 float-end">
+                        <button mat-raised-button color="primary" matStepperPrevious>Back</button>
+                        <button mat-raised-button color="primary" matStepperNext class="ms-2">Continue to Next
+                            Section</button>
+                        <button mat-raised-button color="primary" matStepperNext class="ms-2">Save as Draft</button>
+                    </div>
                 </div>
-                <div class="mt-4 float-end">
+                <!-- <button mat-button matStepperPrevious>Back</button>
+                <button mat-button matStepperNext>Next</button> -->
+                <!-- <div class="mt-4 float-end">
                     <button class="my-btn primary-btn-2 me-2">Save as Draft</button>
                     <button matStepperNext class="my-btn primary-btn-1">Continue to Next Section</button>
-                </div>
+                    <button matStepperBack class="my-btn primary-btn-1">Back</button>
+                </div> -->
             </mat-step>
-            
+
             <ng-template matStepperIcon="state"><span class="material-icons n-circle">circle</span></ng-template>
             <ng-template matStepperIcon="edit"><span class="material-icons n-circle">circle</span></ng-template>
             <ng-template matStepperIcon="done"><span class="material-icons">check_circle</span></ng-template>
         </mat-stepper>
-        
+
         <!-- </form> -->
         <!-- <div class="form-row">
             <button type="submit" [disabled]="!form.valid">Save</button>

@@ -21,7 +21,7 @@
                 </mat-panel-title>
             </mat-expansion-panel-header>
             <div class="audited-statement-block">
-                <div class="statement-block-row">
+                <div class="statement-block-row" *ngFor="let year of field.formArrays">
                     <h5>FY 2022-23</h5>
                     <div class="file-upload-container">
                         <input type="file" id="file-input" class="file-upload-input" />
@@ -63,10 +63,9 @@
                                     <p class="file-size">1.5 MB</p>
                                 </div>
                                 <div class="align-self-center delete-doc-icon">
-                                    <!-- <button class="my-btn primary-btn-2 me-2" (click)="openDialog()">View &
-                                        Verify</button> -->
-                                    <button class="my-btn primary-btn-2 me-2">View &
+                                    <button class="my-btn primary-btn-2 me-2" (click)="openDialog()">View &
                                         Verify</button>
+
                                 </div>
                             </div>
                         </div>
