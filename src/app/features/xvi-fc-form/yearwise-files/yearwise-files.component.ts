@@ -1,0 +1,50 @@
+import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { FormGroup, FormArray } from '@angular/forms';
+import { MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MaterialModule } from '../../../material.module';
+import { FileComponent } from '../../../shared/dynamic-form/components/file/file.component';
+import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
+
+@Component({
+  selector: 'app-yearwise-files',
+  standalone: true,
+  imports: [MaterialModule, FileComponent],
+  templateUrl: './yearwise-files.component.html',
+  styleUrl: './yearwise-files.component.scss'
+})
+export class YearwiseFilesComponent {
+
+  @Input() field!: FieldConfig;
+  @Input() group!: FormGroup;
+  collapsed = false;
+  panelOpenState = true;
+
+  @ViewChild('viewAndVerifyDialog')
+  viewAndVerifyDialog!: TemplateRef<any>;
+
+  dialogRef!: MatDialogRef<any>;
+
+  constructor(public dialog: MatDialog) { }
+  ngOnInit() {
+    console.log('----field table --', this.field);
+    // console.log('----group table --', this.group);
+    // console.log('----group table --', this.group.value);
+    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
+    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0, 'fy2022-23_sourceOfFd'));
+    // console.log('getProducts--1---', this.getProducts1());
+
+
+  }
+
+  getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
+    return ((((this.group.get(fieldKey) as FormArray)
+      .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
+    // return this.group.get('sourceOfFdTable')?.controls[0];
+  }
+
+  openDialog(): void {
+    this.dialogRef = this.dialog.open(this.viewAndVerifyDialog, {
+      width: '1200px'
+    });
+  }
+}

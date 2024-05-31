@@ -221,323 +221,251 @@ const basicTab = {
 }
 
 const uploadDoc = {
-    "_id": "6657921b9ab1c13ac44d01f6",
-    "key": "uploadDoc",
-    "icon": "",
-    "text": "",
+    // "_id": "6657921b9ab1c13ac44d01f6",
+    // "key": "uploadDoc",
+    // "icon": "",
+    // "text": "",
     "formType": "form1",
     "label": "View/ Upload Document",
     "id": "s3",
     "displayPriority": 3,
-    "__v": 0,
+    "key": "auditedAnnualFySt",
+    // "label": "Copy of Audited Annual Financial Statements preferably in English",
+    "postion": "",
+    "required": true,
+    // "info": "",
+    // "placeHolder": "",
+    // "canShow": true,
+    // "max": 5,
+    // "min": 0,
+    "bottomText": "Maximum of 5MB",
+    "instruction": [
+        {
+            "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
+        },
+        {
+            "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
+        },
+        {
+            "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
+        }
+    ],
+    "status": "Na",
+    "value": "",
+    "isDraft": true,
+    "readonly": false,
+    "fileRejectOptions": [
+        "Balance Sheet",
+        "Schedules To Balance Sheet",
+        "Income And Expenditure",
+        "Schedules To Income And Expenditure",
+        "Cash Flow Statement",
+        "Auditor Report"
+    ],
     "formArrays": [
         {
-            "key": "auditedAnnualFySt",
-            "label": "Copy of Audited Annual Financial Statements preferably in English",
-            "postion": "",
-            "required": true,
-            "info": "",
-            "placeHolder": "",
+            "warning": [],
+            "label": "FY 2022-23",
+            "key": "fy2022-23_auditedAnnualFySt",
+            "postion": 1,
+            "type": "auditedAnnualFySt",
             "formFieldType": "file",
-            "canShow": true,
-            "max": 5,
-            "min": 0,
-            "bottomText": "Maximum of 5MB",
-            "instruction": [
-                {
-                    "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
-                },
-                {
-                    "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
-                },
-                {
-                    "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
-                }
-            ],
-            "yearsArray": [
-                {
-                    "warning": [],
-                    "label": "FY 2022-23",
-                    "key": "fy2022-23_auditedAnnualFySt",
-                    "postion": 1,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2021-22",
-                    "key": "fy2021-22_auditedAnnualFySt",
-                    "postion": 2,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2020-21",
-                    "key": "fy2020-21_auditedAnnualFySt",
-                    "postion": 3,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2019-20",
-                    "key": "fy2019-20_auditedAnnualFySt",
-                    "postion": 4,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2018-19",
-                    "key": "fy2018-19_auditedAnnualFySt",
-                    "postion": 5,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2017-18",
-                    "key": "fy2017-18_auditedAnnualFySt",
-                    "postion": 6,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2016-17",
-                    "key": "fy2016-17_auditedAnnualFySt",
-                    "postion": 7,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2015-16",
-                    "key": "fy2015-16_auditedAnnualFySt",
-                    "postion": 8,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": "",
-                    "file": {
-                        "name": "",
-                        "url": ""
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                }
-            ],
-            "status": "Na",
             "value": "",
-            "isDraft": true,
-            "readonly": false
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+
+        },
+        {
+            "warning": [],
+            "label": "FY 2021-22",
+            "key": "fy2021-22_auditedAnnualFySt",
+            "postion": 2,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2020-21",
+            "key": "fy2020-21_auditedAnnualFySt",
+            "postion": 3,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2019-20",
+            "key": "fy2019-20_auditedAnnualFySt",
+            "postion": 4,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2018-19",
+            "key": "fy2018-19_auditedAnnualFySt",
+            "postion": 5,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2017-18",
+            "key": "fy2017-18_auditedAnnualFySt",
+            "postion": 6,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2016-17",
+            "key": "fy2016-17_auditedAnnualFySt",
+            "postion": 7,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2015-16",
+            "key": "fy2015-16_auditedAnnualFySt",
+            "postion": 8,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
         }
-    ]
+    ],
 }
 const accountPractice = {
-    "_id": "6657921b9ab1c13ac44d01f7",
     "key": "accountPractice",
-    "icon": "",
-    "text": "",
-    "formType": "form1",
     "label": "Accounting Practice",
-    "id": "s4",
     "displayPriority": 4,
-    "__v": 0,
     "formArrays": [
         {
             "key": 'accSysAndProcess',
             "label": "I. Accounting Systems and Processes",
             "section": 'accordion',
-            "formFieldType": "section",
-            "formArrays": [
+            "formFieldType": "questionnaire",
+            "questions": [
                 {
                     "key": "accSystem",
                     "label": "What is the accounting system being followed by the ULB?",
                     "postion": "1",
                     "required": true,
-                    "info": {
-                        "Cash basis of accounting": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.",
-                        "Accrual basis of accounting": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.",
-                        "Modified": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
-                    },
+                    options: [
+                        { option: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
+                        { option: "Accrual Basis of Accounting", info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
+                        { option: "Modified Cash/ Accrual Accounting", info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." }
+                    ],
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        "Cash Basis of Accounting",
-                        "Accrual Basis of Accounting",
-                        "Modified Cash/ Accrual Accounting"
-                    ],
                     "showInputBox": "",
                     "inputBoxValue": "",
                     "value": "",
@@ -554,12 +482,12 @@ const accountPractice = {
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        "National Municipal Accounting Manual",
-                        "State-specific Municipal Accounting Manual",
-                        "Other (Please specify)"
+                    options: [
+                        { option: "National Municipal Accounting Manual", },
+                        { option: "State-specific Municipal Accounting Manual", },
+                        { option: "Other (Please specify)", 'showInputBox': true }
                     ],
-                    "showInputBox": "Other (Please specify)",
+                    // "showInputBox": "Other (Please specify)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -576,10 +504,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Yes (Please specify)",
-                        "No"
+                        { option: "Yes (Please specify)", 'showInputBox': true },
+                        { option: "No", }
                     ],
-                    "showInputBox": "Yes (Please specify)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -637,11 +564,10 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Recorded when cash is received",
-                        "Recorded when they are accrued",
-                        "Both (Please specify which transactions are recognised in accrual basis)"
+                        { option: "Recorded when cash is received" },
+                        { option: "Recorded when they are accrued" },
+                        { option: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true }
                     ],
-                    "showInputBox": "Both (Please specify which transactions are recognised in accrual basis)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -658,11 +584,10 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Recorded when cash is paid",
-                        "Recorded when they are accrued",
-                        "Both (Please specify which transactions are recognised in accrual basis)"
+                        { option: "Recorded when cash is paid" },
+                        { option: "Recorded when they are accrued" },
+                        { option: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true },
                     ],
-                    "showInputBox": "Both (Please specify which transactions are recognised in accrual basis)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -679,13 +604,12 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Centralized system provided by the State",
-                        "Standalone software",
-                        "Tally",
-                        "Other (Please specify)",
-                        "None"
+                        { option: "Centralized system provided by the State" },
+                        { option: "Standalone software" },
+                        { option: "Tally" },
+                        { option: "Other (Please specify)", showInputBox: true },
+                        { option: "None" }
                     ],
-                    "showInputBox": "Other (Please specify)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -702,10 +626,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)",
-                        "No"
+                        { option: "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)", showInputBox: true },
+                        { option: "No" }
                     ],
-                    "showInputBox": "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)",
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
@@ -739,7 +662,7 @@ const accountPractice = {
             "label": "II.Staffing - Finance & Accounts Department",
             "section": 'accordion',
             "formFieldType": "section",
-            "formArrays": [
+            "questions": [
                 {
                     "key": "totSanction",
                     "label": "What is the total sanctioned posts for finance & accounts related positions?",
@@ -822,14 +745,20 @@ const accountPractice = {
         }
     ]
 }
+
+const reviewSubmit = {
+    key: 'reviewSubmit',
+    label: "Review & Submit",
+    "displayPriority": 5,
+}
 export const tabsJson = {
     data: {
         "tabs": [
-            financialData,
-            basicTab,
-            
+            // accountPractice,
+            // basicTab,
+            // financialData,
             uploadDoc,
-            accountPractice
+            // reviewSubmit
         ]
     }
 };
