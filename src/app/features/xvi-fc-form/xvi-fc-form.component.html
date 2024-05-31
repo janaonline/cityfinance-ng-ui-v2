@@ -1,0 +1,48 @@
+<div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
+    <!-- <app-dynamic-form></app-dynamic-form> -->
+    <!-- <form class="dynamic-form" [formGroup]="form" (submit)="onSubmit($event)"> -->
+    <form [formGroup]="form">
+
+        <!-- <div *ngFor="let field of fields" class="form-row"> -->
+
+        <!-- <app-question [question]="question" [form]="form"></app-question> -->
+        <!-- </div> -->
+
+
+
+        <mat-stepper *ngIf="!isLoader && fields" linear="true" labelPosition="bottom" id="stepper" #stepper>
+            <mat-step state="state" *ngFor="let tab of fields; index as i">
+                <ng-template matStepLabel>
+                    <span class="st-title com-style" [title]="tab?.label">{{ (tab?.label).split( " " )[0]
+                        }}
+                        {{ (tab?.label).split(" ")[1] }}<br />
+                        {{ (tab?.label).split(" ")[2] }}</span>
+                </ng-template>
+                <div class="container mt-4" [formArrayName]="tab.key">
+                    <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
+                        <div class="row mt-4">
+                            <!-- <app-dynamic-form [field]="field" [group]="form.get(tab.key)?.controls[i]"> -->
+                            <app-dynamic-form [field]="field" [group]="this.getFG(tab.key,i)">
+                            </app-dynamic-form>
+                        </div>
+                    </ng-container>
+
+
+                </div>
+
+            </mat-step>
+
+            <ng-template matStepperIcon="state"><span class="material-icons n-circle">circle</span></ng-template>
+            <ng-template matStepperIcon="edit"><span class="material-icons n-circle">circle</span></ng-template>
+            <ng-template matStepperIcon="done"><span class="material-icons">check_circle</span></ng-template>
+        </mat-stepper>
+        <!-- </form> -->
+        <!-- <div class="form-row">
+            <button type="submit" [disabled]="!form.valid">Save</button>
+        </div> -->
+    </form>
+
+    <div class="margin-top">
+        <!-- <pre>  {{ this.form.getRawValue() | json }} </pre> -->
+    </div>
+</div>
