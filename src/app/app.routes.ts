@@ -20,8 +20,12 @@ export const routes: Routes = [
         canActivate: [MaintenanceGuard],
     },
     {
-        path: 'xvifc-form',
+        path: 'xvifc-form-old',
         loadChildren: () => import('./features/xvi-fc/xvi-fc.module').then(m => m.XviFCModule)
+    },
+    {
+        path: 'xvifc-form',
+        loadComponent: () => import('./features/xvi-fc-form/xvi-fc-form.component').then(m => m.XviFcFormComponent)
     },
     {
         path: 'form',
