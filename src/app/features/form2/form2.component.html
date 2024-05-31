@@ -21,7 +21,8 @@
                 <div class="container mt-4" [formArrayName]="tab.key">
                     <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
                         <div class="row mt-4">
-                            <app-dynamic-form [field]="field" [group]="form.get(tab.key)?.controls[i]">
+                            <!-- <app-dynamic-form [field]="field" [group]="form.get(tab.key)?.controls[i]"> -->
+                            <app-dynamic-form [field]="field" [group]="this.getFG(tab.key,i)">
                             </app-dynamic-form>
                         </div>
                     </ng-container>
@@ -42,6 +43,6 @@
     </form>
 
     <div class="margin-top">
-        <!-- <pre>  {{ this.form.getRawValue() | json }} </pre> -->
+        <pre>  {{ this.form.getRawValue() | json }} </pre>
     </div>
 </div>

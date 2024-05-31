@@ -6,8 +6,8 @@ export interface Validator {
 export interface FieldConfig {
   label: string;
   name: string;
-  key?: string;
-  formFieldType?: string;
+  key: string;
+  formFieldType: string;
   tableRow?: any[];
   inputType: string;
   options?: string[];
@@ -15,7 +15,7 @@ export interface FieldConfig {
   type: string;
   value?: any;
   validations?: Validator[];
-  formArrays?:any[];
+  formArrays?: any[];
 }
 
 export interface JsonFieldConfig {
@@ -27,5 +27,5 @@ export interface JsonFieldConfig {
   type: string;
   value?: any;
   validations?: Validator[];
-  formArrays?:any[];
+  formArrays?: any[];
 }

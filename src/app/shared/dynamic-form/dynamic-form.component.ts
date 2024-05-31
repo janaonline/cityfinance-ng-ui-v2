@@ -4,7 +4,8 @@ import {
 } from "@angular/core";
 import {
   FormGroup,
-  FormBuilder
+  FormBuilder,
+  FormArray
 } from "@angular/forms";
 import { FieldConfig } from "./field.interface";
 import { ButtonComponent } from "./components/button/button.component";
@@ -44,6 +45,7 @@ export class DynamicFormComponent {
   // @Input() field!: FieldConfig;
   @Input() field!: any;
   @Input() group!: FormGroup;
+  @Input() formArray!: FormArray;
 
   formFieldType!: string;
   constructor(private fb: FormBuilder) { }

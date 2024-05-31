@@ -49,7 +49,8 @@ import { DataEntryService } from '../xvi-fc/services/data-entry.service';
 })
 export class FormComponent {
 
-  fields: FieldConfig[] = formJson;
+  // fields: FieldConfig[] = formJson;
+  fields: any[] = formJson;
 
   // form!: FormGroup;
 

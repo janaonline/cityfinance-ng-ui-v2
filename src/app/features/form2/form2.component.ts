@@ -103,6 +103,13 @@ export class Form2Component {
     // private dateAdapter: DateAdapter<Date>
   ) { }
 
+  getFG(tabKey: string, i:number): any {
+    // return (((this.group.get(fieldKey) as FormArray)
+    //   .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j];
+    // console.log('(this.form.get(tabKey) as FormArray).controls[i]',(this.form.get(tabKey) as FormArray).controls[i]);
+    
+    return (this.form.get(tabKey) as FormArray).controls[i]
+  }
   setTableData(childField: any) {
     const tableRow: any = [];
     childField.tableRow.forEach((row: any) => {
@@ -205,6 +212,7 @@ export class Form2Component {
     this.tabControl(tabsJson.data.tabs);
     // this.form = this.toFormGroup();
     // console.log('this.form----', this.form);
+// console.log('this.form.getRawValue()---',this.form.getRawValue());
 
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);

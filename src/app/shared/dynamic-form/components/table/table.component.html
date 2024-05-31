@@ -1,29 +1,31 @@
+{{field.key}}----
 <div class="table-responsive-sm" [formGroup]="group">
     <table class="table" [formArrayName]="field.key">
         <!-- <tr>
         <th>heading</th>
         <th>2021</th>
     </tr> -->
-        <tr *ngFor="let row of field.tableRow;let i = index;"  >
-            <!-- <tr *ngFor="let row of field.tableRow;let i = index;" [formArrayName]="group.controls[row.key]"> -->
-            <td>{{row.label}}</td>
-            <td *ngFor="let col of row.tableData;let j = index;" >
-                @switch (col.formFieldType) {
-                @case ('input') {
-                <!-- <app-input [field]="field" [group]="getTableGroup(field.key, i, row.key, j)"></app-input> -->
-                <!-- <app-input [field]="field" [group]="group"  [group]="group.get(row.key).controls[i][col.key]"></app-input> -->
-                <!-- <input /> -->
-                }
-                @case ('heading') {
-                {{col.label}}
-                }
-                @case ('select') {
-                <app-select [field]="field" [options]="row.options"
-                    [group]="getTableGroup(field.key, i, row.key, j)"></app-select>
-                }
-                }
+        <tbody>
+            <tr *ngFor="let row of field.tableRow;let i = index;" [formGroupName]="i">
+                <!-- <tr *ngFor="let row of field.tableRow;let i = index;" > -->
+                <!-- <tr *ngFor="let row of field.tableRow;let i = index;" [formArrayName]="group.controls[row.key]"> -->
+                <td>{{row.label}}</td>
+                <td *ngFor="let col of row.tableData;let j = index;" [formArrayName]="row.key">
+                <!-- <td *ngFor="let col of row.tableData;let j = index;"> -->
+                    @switch (col.formFieldType) {
+                    @case ('input') {
+                    <app-input [field]="col" [group]="getTableGroup(field.key, i, row.key, j)"></app-input>
+                    }
+                    @case ('heading') {
+                    {{col.label}}
+                    }
+                    @case ('select') {
+                    <app-select [field]="col" [options]="row.options" [group]="getTableGroup(field.key, i, row.key, j)"></app-select>
+                    }
+                    }
 
-            </td>
-        </tr>
+                </td>
+            </tr>
+        </tbody>
     </table>
 </div>
