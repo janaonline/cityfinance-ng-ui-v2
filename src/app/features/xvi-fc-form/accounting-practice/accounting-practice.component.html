@@ -1,0 +1,64 @@
+
+        <div class="p-4 border rounded mb-3" *ngFor="let queHeader of field.formArrays">
+            <div class="headers-style">
+                <!-- <p>{{selectedTabData.data[queHeader].label}}</p> -->
+            </div>
+            <form class="ps-4 pe-4">
+                <!-- <ng-container *ngFor="let keyer of objectKeys(selectedTabData.data[queHeader])">
+                    <label class="pt-3 pb-1 fw-bold"
+                        for="{{selectedTabData.data[queHeader][keyer].key}}">
+                        {{selectedTabData.data[queHeader][keyer].postion}}.
+                        {{selectedTabData.data[queHeader][keyer].label}}
+                    </label>
+
+                    <ng-container
+                        *ngIf="selectedTabData.data[queHeader][keyer].formFieldType && selectedTabData.data[queHeader][keyer].formFieldType=='radio'">
+                        <div class="form-check pt-1"
+                            *ngFor="let optionValue of selectedTabData.data[queHeader][keyer].options; index as i">
+                            <label class="form-check-label"
+                                [attr.for]="selectedTabData.data[queHeader][keyer].key+i">
+                                <input class="form-check-input" type="radio"
+                                    [attr.id]="selectedTabData.data[queHeader][keyer].key+i"
+                                    name="{{selectedTabData.data[queHeader][keyer].key}}"
+                                    value="{{optionValue}}" />
+                                {{optionValue}}
+                            </label>
+                        </div>
+                    </ng-container>
+                    <input class="form-control"
+                        *ngIf="selectedTabData.data[queHeader][keyer].formFieldType && selectedTabData.data[queHeader][keyer].formFieldType=='number'"
+                        type={{selectedTabData.data[queHeader][keyer].formFieldType}}
+                        id={{selectedTabData.data[queHeader][keyer].key}}
+                        value={{selectedTabData.data[queHeader][keyer].value}} />
+                </ng-container> -->
+            </form>
+        </div>
+        <!-- 
+  <div class="form-group mb-2" *ngFor="let questionKey of selectedTabQuestion">
+      <ng-container *ngFor="let queHeader of questionHeader">
+          <p>{{selectedTabData.data[queHeader].label}}</p>
+
+          <div *ngFor="let keyer of objectKeys(selectedTabData.data[queHeader])">
+              <label> {{selectedTabData.data[queHeader][keyer].label}}</label>
+              <p *ngFor="let yearData of form1Data.data.financialYearTableHeader; index as i">
+                  <input class="form-control"
+                      *ngIf="selectedTabData.data[queHeader][keyer].formFieldType=='number'"
+                      type="{{selectedTabData.data[queHeader][keyer].formFieldType}}"
+                      id="{{selectedTabData.data[queHeader][keyer].key}}"
+                      value="{{selectedTabData.data[queHeader][keyer].year[i].value}}" />
+              </p>
+          </div>
+
+      </ng-container>
+
+      <ng-container
+          *ngIf="selectedTabData.data[questionKey].formFieldType && selectedTabData.data[questionKey].formFieldType == 'radio'">
+          <ng-container *ngFor="let option of selectedTabData.data[questionKey].options">
+              <input type="radio" id="{{selectedTabData.data[questionKey].key}}"
+                  name="{{selectedTabData.data[questionKey].key}}" value="{{option}}">
+              <label for="{{selectedTabData.data[questionKey].key}}">{{option}}</label>
+          </ng-container>
+      </ng-container>
+  </div> -->
+
+    

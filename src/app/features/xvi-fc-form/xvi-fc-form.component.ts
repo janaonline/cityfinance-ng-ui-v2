@@ -38,6 +38,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
 import { DataEntryService } from '../xvi-fc/services/data-entry.service';
+import { AccountingPracticeComponent } from './accounting-practice/accounting-practice.component';
+import { ReviewSubmitComponent } from './review-submit/review-submit.component';
+import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.component';
 
 @Component({
   selector: 'app-xvi-fc-form',
@@ -57,6 +60,10 @@ import { DataEntryService } from '../xvi-fc/services/data-entry.service';
     DecimalLimitDirective,
     CommonActionRadioComponent,
     LoaderComponent,
+
+    YearwiseFilesComponent,
+    AccountingPracticeComponent,
+    ReviewSubmitComponent,
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'

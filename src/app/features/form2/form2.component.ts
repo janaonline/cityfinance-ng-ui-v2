@@ -25,6 +25,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
 import { DataEntryService } from '../xvi-fc/services/data-entry.service';
+import { YearwiseFilesComponent } from '../xvi-fc-form/yearwise-files/yearwise-files.component';
+import { AccountingPracticeComponent } from '../xvi-fc-form/accounting-practice/accounting-practice.component';
+import { ReviewSubmitComponent } from '../xvi-fc-form/review-submit/review-submit.component';
 
 @Component({
   selector: 'app-form2',
@@ -44,6 +47,9 @@ import { DataEntryService } from '../xvi-fc/services/data-entry.service';
     DecimalLimitDirective,
     CommonActionRadioComponent,
     LoaderComponent,
+    YearwiseFilesComponent,
+    AccountingPracticeComponent,
+    ReviewSubmitComponent,
   ],
   templateUrl: './form2.component.html',
   styleUrl: './form2.component.scss'
