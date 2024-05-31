@@ -10,7 +10,7 @@ import { MaterialModule } from '../../../../material.module';
     <mat-form-field class="demo-full-width margin-top" [formGroup]="group">
     <mat-label>{{field.label}}</mat-label>
     	<mat-select [formControlName]="field.key">
-    		<mat-option *ngFor="let item of field.options" [value]="item">{{item}}</mat-option>
+    		<mat-option *ngFor="let item of options" [value]="item">{{item}}</mat-option>
     	</mat-select>
     </mat-form-field>
     <!-- <mat-form-field class="demo-full-width margin-top" [formGroup]="group.value">
@@ -29,9 +29,14 @@ import { MaterialModule } from '../../../../material.module';
 export class SelectComponent {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
+  @Input() options!: any[];
   @Input() item!: FormGroup;
   constructor() { }
   ngOnInit() {
+    // console.log('----group sel --',this.group);
+    this.options = this.options || this.field.options;
+    // console.log('this.options---',this.options);
+    
   }
   // getValue(name: string) {
   //   return this.group.value.get(name).value;

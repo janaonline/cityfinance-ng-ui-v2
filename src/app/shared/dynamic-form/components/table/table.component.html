@@ -1,18 +1,28 @@
-<div class="table-responsive-sm">
-    <table class="table">
+<div class="table-responsive-sm" [formGroup]="group">
+    <table class="table" [formArrayName]="field.key">
         <!-- <tr>
         <th>heading</th>
         <th>2021</th>
     </tr> -->
-        <tr *ngFor="let row of field.tableRow">
+        <tr *ngFor="let row of field.tableRow;let i = index;"  >
+            <!-- <tr *ngFor="let row of field.tableRow;let i = index;" [formArrayName]="group.controls[row.key]"> -->
             <td>{{row.label}}</td>
-            <td *ngFor="let col of row.tableData">
-                @if (col.formFieldType === 'heading') {
+            <td *ngFor="let col of row.tableData;let j = index;" >
+                @switch (col.formFieldType) {
+                @case ('input') {
+                <!-- <app-input [field]="field" [group]="getTableGroup(field.key, i, row.key, j)"></app-input> -->
+                <!-- <app-input [field]="field" [group]="group"  [group]="group.get(row.key).controls[i][col.key]"></app-input> -->
+                <!-- <input /> -->
+                }
+                @case ('heading') {
                 {{col.label}}
                 }
-                @else {
-                <input />
+                @case ('select') {
+                <app-select [field]="field" [options]="row.options"
+                    [group]="getTableGroup(field.key, i, row.key, j)"></app-select>
                 }
+                }
+
             </td>
         </tr>
     </table>
