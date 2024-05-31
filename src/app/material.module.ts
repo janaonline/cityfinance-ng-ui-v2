@@ -16,7 +16,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatSelectModule } from '@angular/material/select';
-
+import {MatAccordion, MatExpansionModule} from '@angular/material/expansion';
 
 const materialModules: (any[] | Type<any> | ModuleWithProviders<{}>) = [
   MatButtonModule,
@@ -31,6 +31,7 @@ const materialModules: (any[] | Type<any> | ModuleWithProviders<{}>) = [
   MatRadioModule,
   MatStepperModule,
   MatTooltipModule,
+  MatExpansionModule,
   
   CommonModule,
   FormsModule,

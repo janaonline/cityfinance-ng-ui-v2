@@ -1,7 +1,8 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { tabsJson } from './formJson';
+// import { tabsJson } from './formJson';
+import { tabsJson } from './xviFormJson';
 import { MaterialModule } from '../../material.module';
 import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';

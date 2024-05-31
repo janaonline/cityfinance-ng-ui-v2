@@ -197,318 +197,6 @@ const basicTab = {
                 "readonly": false
             }
         ]
-
-};
-const basicTab2 = {
-    "_id": "664b8179ea7f70385313396c",
-    "key": "demographicData2",
-    "icon": "",
-    "text": "",
-    "label": "Demographic Data2",
-    "id": "s1",
-    "displayPriority": 1,
-    "__v": 0,
-    "formArrays":
-        [
-            {
-                "key": "nameOfUlb1",
-                "label": "Name of ULB1",
-                "postion": "1",
-                "required": true,
-                "info": "",
-                "placeHolder": "",
-                "formFieldType": "text",
-                "canShow": true,
-                "value": "321",
-                "status": "Na",
-                "isDraft": true,
-                "readonly": false,
-                validations: [
-                    {
-                        name: "required",
-                        validator: 'required',
-                        message: "Name Required"
-                    },
-                    {
-                        name: "pattern",
-                        validator: "^[a-zA-Z]+$",
-                        message: "Accept only text"
-                    }
-                ]
-            },
-            {
-                "key": "nameOfState1",
-                "label": "Name of State/Union Territory 1",
-                "postion": "2",
-                "required": true,
-                "info": "",
-                "placeHolder": "",
-                "formFieldType": "text",
-                "canShow": true,
-                "value": "",
-                "status": "Na",
-                "isDraft": true,
-                "readonly": true
-            },
-
-        ]
-
-};
-const basicTab3 = {
-    "_id": "664b8179ea7f70385313396c",
-    "key": "demographicData3",
-    "icon": "",
-    "text": "",
-    "label": "Demographic Data3",
-    "id": "s1",
-    "displayPriority": 1,
-    "__v": 0,
-    "formArrays":
-        [
-            {
-                "key": "nameOfUlb12",
-                "label": "Name of ULB1",
-                "postion": "1",
-                "required": true,
-                "info": "",
-                "placeHolder": "",
-                "formFieldType": "text",
-                "canShow": true,
-                "value": "321",
-                "status": "Na",
-                "isDraft": true,
-                "readonly": false
-            },
-            {
-                "key": "nameOfState12",
-                "label": "Name of State/Union Territory 1",
-                "postion": "2",
-                "required": true,
-                "info": "",
-                "placeHolder": "",
-                "formFieldType": "text",
-                "canShow": true,
-                "value": "",
-                "status": "Na",
-                "isDraft": true,
-                "readonly": true
-            },
-
-        ]
-
-};
-const financeTab3 = {
-    "_id": "664b8179ea7f70385313396d",
-    "key": "financialData",
-    "icon": "",
-    "text": "",
-    "label": "Financial Data",
-    "id": "s2",
-    "displayPriority": 2,
-    "__v": 0,
-    "formArrays":
-        [
-            {
-                key: "sourceOfFdMain",
-                label: "",
-                section: 'accordion',
-                formFieldType: "table",
-                tableRow: [
-                    {
-                        "label": "",
-                        key: 'sourceOfFd',
-                        "postion": "*",
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "canShow": true,
-                        "options": [
-                            "Accounts Finalized & Audited",
-                            "Accounts Finalized but Not Audited",
-                            "Accounts not Finalized - Provisional data"
-                        ],
-                        "showInputBox": "",
-                        "inputBoxValue": "",
-                        "tableDataType": 'dynamicYear',
-                        tableData: [
-                            {
-                                "warning": [],
-                                "label": "FY 2022-23",
-                                "key": "fy2022-23_sourceOfFd",
-                                "postion": 1,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 6906
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2021-22",
-                                "key": "fy2021-22_sourceOfFd",
-                                "postion": 2,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 1604
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2020-21",
-                                "key": "fy2020-21_sourceOfFd",
-                                "postion": 3,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 3145
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2019-20",
-                                "key": "fy2019-20_sourceOfFd",
-                                "postion": 4,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 7967
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2018-19",
-                                "key": "fy2018-19_sourceOfFd",
-                                "postion": 5,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 476
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2017-18",
-                                "key": "fy2017-18_sourceOfFd",
-                                "postion": 6,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 832
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2016-17",
-                                "key": "fy2016-17_sourceOfFd",
-                                "postion": 7,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 2139
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2015-16",
-                                "key": "fy2015-16_sourceOfFd",
-                                "postion": 8,
-                                "type": "sourceOfFd",
-                                "formFieldType": "heading",
-                                "value": 8888
-                            }
-                        ],
-                        "status": "Na",
-                        "value": "",
-                        "isDraft": true,
-                        "readonly": false
-                    },
-                    {
-                        "label": "Please select the source of Financial Data",
-                        key: 'sourceOfFd2',
-                        "postion": "*",
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "canShow": true,
-                        "options": [
-                            "Accounts Finalized & Audited",
-                            "Accounts Finalized but Not Audited",
-                            "Accounts not Finalized - Provisional data"
-                        ],
-                        "showInputBox": "",
-                        "inputBoxValue": "",
-                        "tableDataType": 'dynamicYear',
-                        tableData: [
-                            {
-                                "warning": [],
-                                "label": "FY 2022-23",
-                                "key": "fy2022-23_sourceOfFd",
-                                "postion": 1,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 6906
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2021-22",
-                                "key": "fy2021-22_sourceOfFd",
-                                "postion": 2,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 1604
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2020-21",
-                                "key": "fy2020-21_sourceOfFd",
-                                "postion": 3,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 3145
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2019-20",
-                                "key": "fy2019-20_sourceOfFd",
-                                "postion": 4,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 7967
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2018-19",
-                                "key": "fy2018-19_sourceOfFd",
-                                "postion": 5,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 476
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2017-18",
-                                "key": "fy2017-18_sourceOfFd",
-                                "postion": 6,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 832
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2016-17",
-                                "key": "fy2016-17_sourceOfFd",
-                                "postion": 7,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 2139
-                            },
-                            {
-                                "warning": [],
-                                "label": "FY 2015-16",
-                                "key": "fy2015-16_sourceOfFd",
-                                "postion": 8,
-                                "type": "sourceOfFd",
-                                "formFieldType": "select",
-                                "value": 8888
-                            }
-                        ],
-                        "status": "Na",
-                        "value": "",
-                        "isDraft": true,
-                        "readonly": false
-                    },
-                ],
-            },
-
-        ]
-
 };
 const revenue = {
     key: 'revenue',
@@ -2162,1202 +1850,1210 @@ const revenue = {
 const ep = {
     key: 'expenditure',
     "label": "II. EXPENDITURE",
-    "establishmentExp": {
-        "key": "establishmentExp",
-        "label": "Establishment Expenses",
-        "postion": "6.1",
-        "required": true,
-        "info": "Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "",
-        "logic": "",
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_establishmentExp",
-                "postion": 1,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 9888
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_establishmentExp",
-                "postion": 2,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 8791
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_establishmentExp",
-                "postion": 3,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 3041
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_establishmentExp",
-                "postion": 4,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 4896
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_establishmentExp",
-                "postion": 5,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 2088
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_establishmentExp",
-                "postion": 6,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 4664
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_establishmentExp",
-                "postion": 7,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 7475
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_establishmentExp",
-                "postion": 8,
-                "type": "establishmentExp",
-                "formFieldType": "number",
-                "value": 3172
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    },
-    "oAndmExp": {
-        "key": "oAndmExp",
-        "label": "Operation and Maintenance Expenditure",
-        "postion": "6.2",
-        "required": true,
-        "info": "Operation and Maintenance Expenditure shall include O&M expense on water supply + O&M expense on sanitation / sewerage + All other O&M expenses.",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "",
-        "logic": "",
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_oAndmExp",
-                "postion": 1,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 4623
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_oAndmExp",
-                "postion": 2,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 7285
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_oAndmExp",
-                "postion": 3,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 6700
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_oAndmExp",
-                "postion": 4,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 8134
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_oAndmExp",
-                "postion": 5,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 4549
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_oAndmExp",
-                "postion": 6,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 6860
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_oAndmExp",
-                "postion": 7,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 8937
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_oAndmExp",
-                "postion": 8,
-                "type": "oAndmExp",
-                "formFieldType": "number",
-                "value": 2530
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    },
-    "interestAndfinacialChar": {
-        "key": "interestAndfinacialChar",
-        "label": "Interest and Finance Charges",
-        "postion": "6.3",
-        "required": true,
-        "info": "Interest and Finance Charges shall include Interest on Loans from Central Govt, State Govt, International agencies, govt bodies, banks, bank charges and other financial expenses, etc.",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "",
-        "logic": "",
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_interestAndfinacialChar",
-                "postion": 1,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 5717
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_interestAndfinacialChar",
-                "postion": 2,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 1819
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_interestAndfinacialChar",
-                "postion": 3,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 7402
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_interestAndfinacialChar",
-                "postion": 4,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 7204
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_interestAndfinacialChar",
-                "postion": 5,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 9329
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_interestAndfinacialChar",
-                "postion": 6,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 4091
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_interestAndfinacialChar",
-                "postion": 7,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 9032
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_interestAndfinacialChar",
-                "postion": 8,
-                "type": "interestAndfinacialChar",
-                "formFieldType": "number",
-                "value": 9585
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    },
-    "otherRevenueExp": {
-        "key": "otherRevenueExp",
-        "label": "Other Revenue Expenditure",
-        "postion": "6.4",
-        "required": true,
-        "info": "Other expenses shall include programme expenses, revenue grants, contributions & subsidies.",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "",
-        "logic": "",
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_otherRevenueExp",
-                "postion": 1,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 9151
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_otherRevenueExp",
-                "postion": 2,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 8988
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_otherRevenueExp",
-                "postion": 3,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 807
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_otherRevenueExp",
-                "postion": 4,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 4961
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_otherRevenueExp",
-                "postion": 5,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 9811
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_otherRevenueExp",
-                "postion": 6,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 9112
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_otherRevenueExp",
-                "postion": 7,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 7946
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_otherRevenueExp",
-                "postion": 8,
-                "type": "otherRevenueExp",
-                "formFieldType": "number",
-                "value": 1223
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    },
-    "totalRevenueExp": {
-        "key": "totalRevenueExp",
-        "label": "Total Revenue Expenditure",
-        "postion": "6",
-        "required": true,
-        "info": "Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "sum",
-        "logic": [
-            "6.1",
-            "6.2",
-            "6.3",
-            "6.4"
-        ],
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_totalRevenueExp",
-                "postion": 1,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 1211
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_totalRevenueExp",
-                "postion": 2,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 191
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_totalRevenueExp",
-                "postion": 3,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 5426
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_totalRevenueExp",
-                "postion": 4,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 8802
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_totalRevenueExp",
-                "postion": 5,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 5527
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_totalRevenueExp",
-                "postion": 6,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 8556
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_totalRevenueExp",
-                "postion": 7,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 4778
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_totalRevenueExp",
-                "postion": 8,
-                "type": "totalRevenueExp",
-                "formFieldType": "number",
-                "value": 8821
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    },
-    "capExp": {
-        "key": "capExp",
-        "label": "Capital Expenditure",
-        "postion": "7",
-        "required": true,
-        "info": "Capital Expenditure = (Closing Balance Gross Block + Closing Balance Capital Work in Progress) - (Opening Balance Gross Block + Opening Balance Capital Work in Progress)",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "",
-        "logic": "",
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_capExp",
-                "postion": 1,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 2936
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_capExp",
-                "postion": 2,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 1628
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_capExp",
-                "postion": 3,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 4601
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_capExp",
-                "postion": 4,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 5102
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_capExp",
-                "postion": 5,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 4311
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_capExp",
-                "postion": 6,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 116
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_capExp",
-                "postion": 7,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 4098
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_capExp",
-                "postion": 8,
-                "type": "capExp",
-                "formFieldType": "number",
-                "value": 4693
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    },
-    "totalExp": {
-        "key": "totalExp",
-        "label": "Total Expenditure",
-        "postion": "8",
-        "required": true,
-        "info": "Total Expenditure = Revenue Expenditure + Capital Expenditure",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "sum",
-        "logic": [
-            "6",
-            "7"
-        ],
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_totalExp",
-                "postion": 1,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 9767
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_totalExp",
-                "postion": 2,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 3785
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_totalExp",
-                "postion": 3,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 7566
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_totalExp",
-                "postion": 4,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 6343
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_totalExp",
-                "postion": 5,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 7302
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_totalExp",
-                "postion": 6,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 2765
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_totalExp",
-                "postion": 7,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 3100
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_totalExp",
-                "postion": 8,
-                "type": "totalExp",
-                "formFieldType": "number",
-                "value": 7953
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    }
+    section: 'accordion',
+    formFieldType: "table",
+    tableRow: [
+        {
+            "key": "establishmentExp",
+            "label": "Establishment Expenses",
+            "postion": "6.1",
+            "required": true,
+            "info": "Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "",
+            "logic": "",
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_establishmentExp",
+                    "postion": 1,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 9888
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_establishmentExp",
+                    "postion": 2,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 8791
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_establishmentExp",
+                    "postion": 3,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 3041
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_establishmentExp",
+                    "postion": 4,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 4896
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_establishmentExp",
+                    "postion": 5,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 2088
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_establishmentExp",
+                    "postion": 6,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 4664
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_establishmentExp",
+                    "postion": 7,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 7475
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_establishmentExp",
+                    "postion": 8,
+                    "type": "establishmentExp",
+                    "formFieldType": "number",
+                    "value": 3172
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        },
+        {
+            "key": "oAndmExp",
+            "label": "Operation and Maintenance Expenditure",
+            "postion": "6.2",
+            "required": true,
+            "info": "Operation and Maintenance Expenditure shall include O&M expense on water supply + O&M expense on sanitation / sewerage + All other O&M expenses.",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "",
+            "logic": "",
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_oAndmExp",
+                    "postion": 1,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 4623
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_oAndmExp",
+                    "postion": 2,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 7285
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_oAndmExp",
+                    "postion": 3,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 6700
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_oAndmExp",
+                    "postion": 4,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 8134
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_oAndmExp",
+                    "postion": 5,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 4549
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_oAndmExp",
+                    "postion": 6,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 6860
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_oAndmExp",
+                    "postion": 7,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 8937
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_oAndmExp",
+                    "postion": 8,
+                    "type": "oAndmExp",
+                    "formFieldType": "number",
+                    "value": 2530
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        },
+        {
+            "key": "interestAndfinacialChar",
+            "label": "Interest and Finance Charges",
+            "postion": "6.3",
+            "required": true,
+            "info": "Interest and Finance Charges shall include Interest on Loans from Central Govt, State Govt, International agencies, govt bodies, banks, bank charges and other financial expenses, etc.",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "",
+            "logic": "",
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_interestAndfinacialChar",
+                    "postion": 1,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 5717
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_interestAndfinacialChar",
+                    "postion": 2,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 1819
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_interestAndfinacialChar",
+                    "postion": 3,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 7402
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_interestAndfinacialChar",
+                    "postion": 4,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 7204
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_interestAndfinacialChar",
+                    "postion": 5,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 9329
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_interestAndfinacialChar",
+                    "postion": 6,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 4091
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_interestAndfinacialChar",
+                    "postion": 7,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 9032
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_interestAndfinacialChar",
+                    "postion": 8,
+                    "type": "interestAndfinacialChar",
+                    "formFieldType": "number",
+                    "value": 9585
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        },
+        {
+            "key": "otherRevenueExp",
+            "label": "Other Revenue Expenditure",
+            "postion": "6.4",
+            "required": true,
+            "info": "Other expenses shall include programme expenses, revenue grants, contributions & subsidies.",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "",
+            "logic": "",
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_otherRevenueExp",
+                    "postion": 1,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 9151
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_otherRevenueExp",
+                    "postion": 2,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 8988
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_otherRevenueExp",
+                    "postion": 3,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 807
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_otherRevenueExp",
+                    "postion": 4,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 4961
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_otherRevenueExp",
+                    "postion": 5,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 9811
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_otherRevenueExp",
+                    "postion": 6,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 9112
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_otherRevenueExp",
+                    "postion": 7,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 7946
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_otherRevenueExp",
+                    "postion": 8,
+                    "type": "otherRevenueExp",
+                    "formFieldType": "number",
+                    "value": 1223
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        },
+        {
+            "key": "totalRevenueExp",
+            "label": "Total Revenue Expenditure",
+            "postion": "6",
+            "required": true,
+            "info": "Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "sum",
+            "logic": [
+                "6.1",
+                "6.2",
+                "6.3",
+                "6.4"
+            ],
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_totalRevenueExp",
+                    "postion": 1,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 1211
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_totalRevenueExp",
+                    "postion": 2,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 191
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_totalRevenueExp",
+                    "postion": 3,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 5426
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_totalRevenueExp",
+                    "postion": 4,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 8802
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_totalRevenueExp",
+                    "postion": 5,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 5527
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_totalRevenueExp",
+                    "postion": 6,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 8556
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_totalRevenueExp",
+                    "postion": 7,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 4778
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_totalRevenueExp",
+                    "postion": 8,
+                    "type": "totalRevenueExp",
+                    "formFieldType": "number",
+                    "value": 8821
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        },
+        {
+            "key": "capExp",
+            "label": "Capital Expenditure",
+            "postion": "7",
+            "required": true,
+            "info": "Capital Expenditure = (Closing Balance Gross Block + Closing Balance Capital Work in Progress) - (Opening Balance Gross Block + Opening Balance Capital Work in Progress)",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "",
+            "logic": "",
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_capExp",
+                    "postion": 1,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 2936
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_capExp",
+                    "postion": 2,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 1628
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_capExp",
+                    "postion": 3,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 4601
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_capExp",
+                    "postion": 4,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 5102
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_capExp",
+                    "postion": 5,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 4311
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_capExp",
+                    "postion": 6,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 116
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_capExp",
+                    "postion": 7,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 4098
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_capExp",
+                    "postion": 8,
+                    "type": "capExp",
+                    "formFieldType": "number",
+                    "value": 4693
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        },
+        {
+            "key": "totalExp",
+            "label": "Total Expenditure",
+            "postion": "8",
+            "required": true,
+            "info": "Total Expenditure = Revenue Expenditure + Capital Expenditure",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "sum",
+            "logic": [
+                "6",
+                "7"
+            ],
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_totalExp",
+                    "postion": 1,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 9767
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_totalExp",
+                    "postion": 2,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 3785
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_totalExp",
+                    "postion": 3,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 7566
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_totalExp",
+                    "postion": 4,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 6343
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_totalExp",
+                    "postion": 5,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 7302
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_totalExp",
+                    "postion": 6,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 2765
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_totalExp",
+                    "postion": 7,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 3100
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_totalExp",
+                    "postion": 8,
+                    "type": "totalExp",
+                    "formFieldType": "number",
+                    "value": 7953
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        }
+    ]
 };
 const borrowings = {
     key: 'borrowings',
     "label": "III. BORROWINGS",
-    "grossBorrowing": {
-        "key": "grossBorrowing",
-        "label": "Gross Borrowings",
-        "postion": "9",
-        "required": true,
-        "info": "Gross Borrowings = Sum of All Secured and Unsecured Loans",
-        "placeHolder": "",
-        "formFieldType": "number",
-        "canShow": true,
-        "warning": [
-            {
-                "value": 0,
-                "condition": "eq",
-                "message": "Are you sure you want to continue with 0"
-            }
-        ],
-        "max": 999999999999999,
-        "min": -999999999999999,
-        "decimal": 0,
-        "validation": "",
-        "logic": "",
-        tableData: [
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2022-23",
-                "key": "fy2022-23_grossBorrowing",
-                "postion": 1,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 5782
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2021-22",
-                "key": "fy2021-22_grossBorrowing",
-                "postion": 2,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 5103
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2020-21",
-                "key": "fy2020-21_grossBorrowing",
-                "postion": 3,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 202
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2019-20",
-                "key": "fy2019-20_grossBorrowing",
-                "postion": 4,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 8748
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2018-19",
-                "key": "fy2018-19_grossBorrowing",
-                "postion": 5,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 7594
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2017-18",
-                "key": "fy2017-18_grossBorrowing",
-                "postion": 6,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 5515
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2016-17",
-                "key": "fy2016-17_grossBorrowing",
-                "postion": 7,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 2381
-            },
-            {
-                "warning": [
-                    {
-                        "value": 0,
-                        "condition": "eq",
-                        "message": "Are you sure you want to continue with 0"
-                    }
-                ],
-                "label": "FY 2015-16",
-                "key": "fy2015-16_grossBorrowing",
-                "postion": 8,
-                "type": "grossBorrowing",
-                "formFieldType": "number",
-                "value": 6418
-            }
-        ],
-        "status": "Na",
-        "value": "",
-        "isDraft": true,
-        "readonly": false
-    }
+    section: 'accordion',
+    formFieldType: "table",
+    tableRow: [
+        {
+            "key": "grossBorrowing",
+            "label": "Gross Borrowings",
+            "postion": "9",
+            "required": true,
+            "info": "Gross Borrowings = Sum of All Secured and Unsecured Loans",
+            "placeHolder": "",
+            "formFieldType": "number",
+            "canShow": true,
+            "warning": [
+                {
+                    "value": 0,
+                    "condition": "eq",
+                    "message": "Are you sure you want to continue with 0"
+                }
+            ],
+            "max": 999999999999999,
+            "min": -999999999999999,
+            "decimal": 0,
+            "validation": "",
+            "logic": "",
+            tableData: [
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_grossBorrowing",
+                    "postion": 1,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 5782
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_grossBorrowing",
+                    "postion": 2,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 5103
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_grossBorrowing",
+                    "postion": 3,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 202
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_grossBorrowing",
+                    "postion": 4,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 8748
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_grossBorrowing",
+                    "postion": 5,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 7594
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_grossBorrowing",
+                    "postion": 6,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 5515
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_grossBorrowing",
+                    "postion": 7,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 2381
+                },
+                {
+                    "warning": [
+                        {
+                            "value": 0,
+                            "condition": "eq",
+                            "message": "Are you sure you want to continue with 0"
+                        }
+                    ],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_grossBorrowing",
+                    "postion": 8,
+                    "type": "grossBorrowing",
+                    "formFieldType": "number",
+                    "value": 6418
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        }
+    ]
 };
 const financeTab = {
     "_id": "664b8179ea7f70385313396d",
@@ -3376,101 +3072,101 @@ const financeTab = {
                 section: 'accordion',
                 formFieldType: "table",
                 tableRow: [
-                    // {
-                    //     "label": "",
-                    //     key: 'sourceOfFd1',
-                    //     "postion": "*",
-                    //     "required": true,
-                    //     "info": "",
-                    //     "placeHolder": "",
-                    //     "canShow": true,
-                    //     "options": [
-                    //         "Accounts Finalized & Audited",
-                    //         "Accounts Finalized but Not Audited",
-                    //         "Accounts not Finalized - Provisional data"
-                    //     ],
-                    //     "showInputBox": "",
-                    //     "inputBoxValue": "",
-                    //     "tableDataType": 'dynamicYear',
-                    //     tableData: [
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2022-23",
-                    //             "key": "fy2022-23_sourceOfFd",
-                    //             "postion": 1,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 6906
-                    //         },
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2021-22",
-                    //             "key": "fy2021-22_sourceOfFd",
-                    //             "postion": 2,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 1604
-                    //         },
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2020-21",
-                    //             "key": "fy2020-21_sourceOfFd",
-                    //             "postion": 3,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 3145
-                    //         },
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2019-20",
-                    //             "key": "fy2019-20_sourceOfFd",
-                    //             "postion": 4,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 7967
-                    //         },
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2018-19",
-                    //             "key": "fy2018-19_sourceOfFd",
-                    //             "postion": 5,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 476
-                    //         },
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2017-18",
-                    //             "key": "fy2017-18_sourceOfFd",
-                    //             "postion": 6,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 832
-                    //         },
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2016-17",
-                    //             "key": "fy2016-17_sourceOfFd",
-                    //             "postion": 7,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 2139
-                    //         },
-                    //         {
-                    //             "warning": [],
-                    //             "label": "FY 2015-16",
-                    //             "key": "fy2015-16_sourceOfFd",
-                    //             "postion": 8,
-                    //             "type": "sourceOfFd",
-                    //             "formFieldType": "heading",
-                    //             "value": 8888
-                    //         }
-                    //     ],
-                    //     "status": "Na",
-                    //     "value": "",
-                    //     "isDraft": true,
-                    //     "readonly": false
-                    // },
+                    {
+                        "label": "",
+                        key: 'sourceOfFd1',
+                        "postion": "*",
+                        "required": true,
+                        "info": "",
+                        "placeHolder": "",
+                        "canShow": true,
+                        "options": [
+                            "Accounts Finalized & Audited",
+                            "Accounts Finalized but Not Audited",
+                            "Accounts not Finalized - Provisional data"
+                        ],
+                        "showInputBox": "",
+                        "inputBoxValue": "",
+                        "tableDataType": 'dynamicYear',
+                        tableData: [
+                            {
+                                "warning": [],
+                                "label": "FY 2022-23",
+                                "key": "fy2022-23_sourceOfFd",
+                                "postion": 1,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 6906
+                            },
+                            {
+                                "warning": [],
+                                "label": "FY 2021-22",
+                                "key": "fy2021-22_sourceOfFd",
+                                "postion": 2,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 1604
+                            },
+                            {
+                                "warning": [],
+                                "label": "FY 2020-21",
+                                "key": "fy2020-21_sourceOfFd",
+                                "postion": 3,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 3145
+                            },
+                            {
+                                "warning": [],
+                                "label": "FY 2019-20",
+                                "key": "fy2019-20_sourceOfFd",
+                                "postion": 4,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 7967
+                            },
+                            {
+                                "warning": [],
+                                "label": "FY 2018-19",
+                                "key": "fy2018-19_sourceOfFd",
+                                "postion": 5,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 476
+                            },
+                            {
+                                "warning": [],
+                                "label": "FY 2017-18",
+                                "key": "fy2017-18_sourceOfFd",
+                                "postion": 6,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 832
+                            },
+                            {
+                                "warning": [],
+                                "label": "FY 2016-17",
+                                "key": "fy2016-17_sourceOfFd",
+                                "postion": 7,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 2139
+                            },
+                            {
+                                "warning": [],
+                                "label": "FY 2015-16",
+                                "key": "fy2015-16_sourceOfFd",
+                                "postion": 8,
+                                "type": "sourceOfFd",
+                                "formFieldType": "heading",
+                                "value": 8888
+                            }
+                        ],
+                        "status": "Na",
+                        "value": "",
+                        "isDraft": true,
+                        "readonly": false
+                    },
                     {
                         "label": "Please select the source of Financial Data",
                         key: 'sourceOfFd',
@@ -3579,9 +3275,9 @@ const financeTab = {
                         "readonly": false
                     }],
             },
-            // revenue,
-            // ep,
-            // borrowings,
+            revenue,
+            ep,
+            borrowings,
         ]
 
 };

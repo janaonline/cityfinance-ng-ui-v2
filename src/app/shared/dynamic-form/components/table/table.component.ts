@@ -16,6 +16,8 @@ export class TableComponent {
 
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
+  collapsed = false;
+  panelOpenState = true;
 
   constructor() { }
   ngOnInit() {
