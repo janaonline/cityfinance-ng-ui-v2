@@ -64,7 +64,8 @@ import { ToStorageUrlPipe } from '../../core/pipes/to-storage-url.pipe';
     LoaderComponent,
   ],
   providers: [provideNativeDateAdapter()],
-  templateUrl: './xvi-fc.component.html',
+  // templateUrl: './xvi-fc.component.html',
+  template: ``,
   styleUrl: './xvi-fc.component.scss'
 })
 export class XviFCComponent {

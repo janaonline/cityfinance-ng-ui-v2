@@ -24,6 +24,16 @@ export const routes: Routes = [
         loadChildren: () => import('./features/xvi-fc/xvi-fc.module').then(m => m.XviFCModule)
     },
     {
+        path: 'form',
+        loadComponent: () =>
+            import('./features/form/form.component').then((x) => x.FormComponent),
+    },
+    {
+        path: 'form2',
+        loadComponent: () =>
+            import('./features/form2/form2.component').then((x) => x.Form2Component),
+    },
+    {
         path: '**',
         redirectTo: '',
     },

@@ -1,0 +1,52 @@
+<!-- {{field | json}} -->
+
+
+
+@switch (field.formFieldType) {
+@case ('amount') {
+<mat-form-field floatLabel="always" [formGroup]="group">
+<!-- <mat-form-field [formGroup]="group"> -->
+  <mat-label>{{field.label}}</mat-label>
+  <input matInput  [formControlName]="field.key" type="number" class="example-right-align" placeholder="0">
+  <span matTextPrefix>&#8377;&nbsp;</span>
+  <!-- <span matTextSuffix>.00</span> -->
+  <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+    <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
+  </ng-container>
+</mat-form-field>
+}
+@default {
+<mat-form-field class="demo-full-width margin-top" [formGroup]="group">
+  <mat-label>{{field.label}}</mat-label>
+  <input matInput [formControlName]="field.key" [type]="field.formFieldType">
+  <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+    <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
+  </ng-container>
+</mat-form-field>
+}
+}
+<!-- 
+<mat-form-field class="demo-full-width margin-top" [formGroup]="group">
+  <mat-label>{{field.label}}</mat-label>
+  <input matInput [formControlName]="field.name" [placeholder]="field.label" [type]="field.inputType">
+  <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+    <mat-error *ngIf="group.get(field.key)?.hasError(validation.name)">{{validation.message}}</mat-error>
+  </ng-container>
+</mat-form-field> -->
+<!-- <div class="demo-full-width margin-top" [formGroup]="group">
+  <mat-checkbox [formControlName]="field.name">{{field.label}}</mat-checkbox>
+</div>  -->
+<!-- <mat-form-field appearance="outline" [formGroup]="group.value">
+  <mat-label class="com-style">{{ getValue('label') }}
+    <span *ngIf="getValue('required')" class="text-danger">*</span>
+    <mat-icon style="font-size: 18px" *ngIf="getValue('info')" [matTooltip]="getValue('info')">info_outline
+    </mat-icon>
+  </mat-label>
+  <input onwheel="this.blur()" class="com-style" appNoUpDown
+    [appDecimalLimit]="getValue('formFieldType') != 'number' ? null: getValue('decimalLimit') || 0 "
+    [readonly]="getValue('readonly')" [type]="getValue('formFieldType')" matInput placeholder="{{ getValue('label') }}"
+    formControlName="value" />
+  <mat-error>error</mat-error>
+</mat-form-field> -->
+<!-- 
+{{item.value.controls['readonly'].value | json }}------ -->
