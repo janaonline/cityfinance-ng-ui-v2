@@ -13,7 +13,6 @@ export class InputComponent {
   className: string = "box1";
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
-  @Input() item!: FormGroup;
 
   // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 

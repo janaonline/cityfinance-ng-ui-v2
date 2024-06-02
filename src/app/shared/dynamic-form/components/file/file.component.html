@@ -1,1 +1,45 @@
-<input type="file">
+<!-- <input type="file" (change)="uploadFile($event, yearItem?.controls?.file, false, yearItem?.controls?.allowedFileTypes?.value)">------ -->
+<ng-container [formGroup]="group">/
+    <!-- <pre>{{group.getRawValue() | json}}</pre> -->
+    <!-- <pre>{{getControl?.controls['name'] | json}}</pre> -->
+    <!-- <ng-container [formGroupName]="field.key">
+        <input type="hidden" formControlName="name">
+        <input type="hidden" formControlName="url">
+    </ng-container> -->
+</ng-container>
+<input type="file" (change)="uploadFile($event,  false)">------
+<!-- <ng-container *ngIf="yearItem?.controls?.formFieldType?.value == 'file'">
+    <div class="col-sm-12 mb-3" *ngIf="yearItem?.controls?.readonly?.value == false"
+        [ngClass]="{'border-danger-file': yearItem.status == 'INVALID' && (yearItem.dirty || yearItem.touched)}">
+        <button (click)="bs_pdf1.click()" class="btn form-btn com-style w-100" [disabled]="isDisabled">
+            <div class="row">
+                <div class="col-sm-6 file-text ">
+                    File
+                </div>
+                <div class="col-sm-6 text-end">
+                    <img src="../../../assets/circle/cloud_upload_black_24dp.svg">
+                </div>
+            </div>
+        </button>
+        <input #bs_pdf1 style="display: none;" onclick="this.value=null;"
+            (change)="uploadFile($event, yearItem?.controls?.file, false, yearItem?.controls?.allowedFileTypes?.value)"
+            type="file" [accept]="yearItem?.controls?.allowedFileTypes?.value | allowedFileTypes" #file>
+    </div>
+    <div class="col-sm-12 com-style f-w mt-1" *ngIf="yearItem?.value?.file?.url">
+        <a class="w-90" style="word-break: break-all;" href="{{yearItem?.value?.file?.url | toStorageUrl }}"
+            target="_blank">{{yearItem?.value?.file?.name}} <mat-icon>cloud_download
+            </mat-icon></a>
+        <a *ngIf="!yearItem?.controls?.readonly?.value"
+            (click)="uploadFile($event, yearItem?.controls?.file, true)" class="w-10"
+            [ngClass]="{'pe-none': isDisabled}">
+            <img src="../../../assets/form-icon/close_black_24dp.svg">
+        </a>
+    </div>
+    <div class="col-sm-12 text-center w-70">
+        <app-loader [show]="yearItem?.controls?.file?.controls?.uploading?.value">
+        </app-loader>
+    </div>
+    <small class="text-danger"
+        *ngIf="yearItem.status == 'INVALID' && (yearItem.dirty || yearItem.touched)">File is
+        required</small>
+</ng-container> -->
