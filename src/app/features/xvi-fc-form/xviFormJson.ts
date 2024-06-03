@@ -30,6 +30,11 @@ const basicTab = {
                     validator: 'required',
                     message: "Name Required"
                 },
+                {
+                    name: "required",
+                    min: 'required',
+                    message: "Name Required"
+                },
                 // {
                 //     name: "pattern",
                 //     validator:"^[a-zA-Z]+$",
@@ -266,6 +271,7 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2022-23",
+            // "key": "fy2022-23_auditedAnnualFySt",
             "key": "fy2022-23_auditedAnnualFySt",
             "postion": 1,
             "type": "auditedAnnualFySt",
@@ -273,8 +279,8 @@ const uploadDoc = {
             "value": "",
             "isPdfAvailable": "",
             "file": {
-                "name": "",
-                "url": ""
+                "name": "123",
+                "url": "321"
             },
             "fileAlreadyOnCf": [
                 {
@@ -296,8 +302,8 @@ const uploadDoc = {
             "value": "",
             "isPdfAvailable": "",
             "file": {
-                "name": "",
-                "url": ""
+                "name": "567",
+                "url": "765"
             },
             "fileAlreadyOnCf": [
                 {

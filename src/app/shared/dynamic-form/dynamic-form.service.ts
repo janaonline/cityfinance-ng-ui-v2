@@ -75,6 +75,23 @@ export class DynamicFormService {
     return new FormArray(tableRow);
 
   }
+  setFilesData(childField: any) {
+    return new FormGroup({
+      name: new FormControl(childField.file.name || ''),
+      url: new FormControl(childField.file.url || ''),
+    });
+    // const childFieldData: any = [];
+    // childField.formArrays.forEach((row: any) => {
+    //   childFieldData.push(
+    //     new FormGroup({
+    //       name: new FormControl(row.file.name || ''),
+    //       url: new FormControl(row.file.url || ''),
+    //     }));
+    // })
+
+    // return new FormArray(childFieldData);
+
+  }
 
   bindValidations(validations: any) {
     if (validations && validations.length > 0) {
@@ -132,6 +149,9 @@ export class DynamicFormService {
           else if (childField.formFieldType === 'questionnaire') {
             childFieldData[childField.key] = this.setQuestionnaireData(childField);
           }
+          // else if (childField.formFieldType === 'file') {
+          //   childFieldData[childField.key] = this.setFilesData(childField);
+          // }
           else {
             // childFieldData[childField.key] = new FormControl(childField.value);
             childFieldData[childField.key] = this.createContorl(childField);

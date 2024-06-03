@@ -21,34 +21,12 @@
                 </mat-panel-title>
             </mat-expansion-panel-header>
             <div class="audited-statement-block">
-                <div class="statement-block-row" *ngFor="let year of field.formArrays">
-                    <h5>FY 2022-23</h5>
-                    <div class="file-upload-container">
-                        <input type="file" id="file-input" class="file-upload-input" />
-                        <div class="drag-drop-area" id="drag-drop-area">
-                            <div>
-                                <img src="../../../assets/images/upload_file.png" />
-                            </div>
-                            <span class="file-upload-name">Choose file</span>
-                            <p>Drag and drop the file here</p>
-                        </div>
-                    </div>
-                    <div class="uploaded-files">
-                        <div class="uploaded-files-label">Uploaded Files</div>
-                        <div class="media uploaded-block">
-                            <div class="align-self-center upload-doc-icon">
-                                <img src="../../../assets/images/pdf.png" alt="...">
-                            </div>
-                            <div class="media-body">
-                                <div class="upload-doc-label">financial document 2022-23.pdf</div>
-                                <p class="file-size">1.5 MB</p>
-                            </div>
-                            <div class="align-self-center delete-doc-icon">
-                                <img src="../../../assets/images/delete.png" alt="...">
-                            </div>
-                        </div>
-                    </div>
+                <div class="statement-block-row" *ngFor="let year of field.formArrays; index as i">
+                    <h5>{{year.label}}</h5>
+                    <!-- {{year.file | json}} -->
+                    <app-file [field]="year" [group]="getFileGroup(year.key,i)"></app-file>                    
                 </div>
+
                 <div class="statement-block-row">
                     <h5>FY 2021-22</h5>
                     <div class="uploaded-files">
