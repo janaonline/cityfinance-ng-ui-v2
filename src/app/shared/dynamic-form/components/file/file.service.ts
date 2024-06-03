@@ -116,8 +116,7 @@ export class FileService {
       headers: s3URL.includes('blob.core.windows.net') ? headers : {}
     });
   }
-  checkSpcialCharInFileName(files: any) {
-    let file = files[0];
+  checkSpcialCharInFileName(file: File) {
     let name = ((file.name).split('.'))[0];
     let iChars = "~`!#$%^&*+=[]\\\';,/{}|\":<>?@";
     for (let i = 0; i < name.length; i++) {
