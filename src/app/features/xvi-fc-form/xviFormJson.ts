@@ -14,7 +14,7 @@ const basicTab = {
         {
             "key": "nameOfUlb",
             "label": "Name of ULB",
-            "postion": "1",
+            "position": "1",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -30,11 +30,6 @@ const basicTab = {
                     validator: 'required',
                     message: "Name Required"
                 },
-                {
-                    name: "required",
-                    min: 'required',
-                    message: "Name Required"
-                },
                 // {
                 //     name: "pattern",
                 //     validator:"^[a-zA-Z]+$",
@@ -45,7 +40,7 @@ const basicTab = {
         {
             "key": "nameOfState",
             "label": "Name of State/Union Territory ",
-            "postion": "2",
+            "position": "2",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -59,7 +54,7 @@ const basicTab = {
         {
             "key": "pop2011",
             "label": "Population as per Census 2011",
-            "postion": "3",
+            "position": "3",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -85,7 +80,7 @@ const basicTab = {
         {
             "key": "popApril2024",
             "label": "Population as per 01 April 2024",
-            "postion": "4",
+            "position": "4",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -111,7 +106,7 @@ const basicTab = {
         {
             "key": "areaOfUlb",
             "label": "Area of the ULB (in Sq. Km.)",
-            "postion": "5",
+            "position": "5",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -137,7 +132,7 @@ const basicTab = {
         {
             "key": "yearOfElection",
             "label": "Which is the latest year when ULB's election was held?",
-            "postion": "6",
+            "position": "6",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -180,7 +175,7 @@ const basicTab = {
         {
             "key": "isElected",
             "label": "Is the elected body in place as on 01 April 2024?",
-            "postion": "7",
+            "position": "7",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -199,7 +194,7 @@ const basicTab = {
         {
             "key": "yearOfConstitution",
             "label": "In which year was the ULB constituted?",
-            "postion": "8",
+            "position": "8",
             "required": true,
             "info": "",
             "placeHolder": "",
@@ -236,7 +231,7 @@ const uploadDoc = {
     "displayPriority": 3,
     "key": "auditedAnnualFySt",
     // "label": "Copy of Audited Annual Financial Statements preferably in English",
-    "postion": "",
+    "position": "",
     "required": true,
     // "info": "",
     // "placeHolder": "",
@@ -271,9 +266,9 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2022-23",
-            // "key": "fy2022-23_auditedAnnualFySt",
-            "key": "fy2022-23_auditedAnnualFySt",
-            "postion": 1,
+            // "key": "2022-23",
+            "key": "2022-23",
+            "position": 1,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
@@ -295,34 +290,44 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2021-22",
-            "key": "fy2021-22_auditedAnnualFySt",
-            "postion": 2,
+            "key": "2021-22",
+            "position": 2,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
-            "isPdfAvailable": "",
+            "isPdfAvailable": true,
+            "isVerifiedStatus": 2, // 1- pending, 2- approved, 3-rejected by ulbs
             "file": {
                 "name": "567",
                 "url": "765"
             },
             "fileAlreadyOnCf": [
                 {
-                    "name": "",
-                    "url": "",
+                    "name": "file1.pdf",
+                    "url": "file1.pdf",
                     "type": "",
-                    "label": ""
+                    "label": "",
+                    "size": "12kb"
+                },
+                {
+                    "name": "file2.pdf",
+                    "url": "file1.pdf",
+                    "type": "",
+                    "label": "",
+                    "size": "12kb"
                 }
             ],
         },
         {
             "warning": [],
             "label": "FY 2020-21",
-            "key": "fy2020-21_auditedAnnualFySt",
-            "postion": 3,
+            "key": "2020-21",
+            "position": 3,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
-            "isPdfAvailable": "",
+            "isPdfAvailable": true,
+            "isVerifiedStatus": 3, // 1- pending, 2- approved, 3-rejected by ulbs
             "file": {
                 "name": "",
                 "url": ""
@@ -339,8 +344,8 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2019-20",
-            "key": "fy2019-20_auditedAnnualFySt",
-            "postion": 4,
+            "key": "2019-20",
+            "position": 4,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
@@ -361,8 +366,8 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2018-19",
-            "key": "fy2018-19_auditedAnnualFySt",
-            "postion": 5,
+            "key": "2018-19",
+            "position": 5,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
@@ -383,8 +388,8 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2017-18",
-            "key": "fy2017-18_auditedAnnualFySt",
-            "postion": 6,
+            "key": "2017-18",
+            "position": 6,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
@@ -405,8 +410,8 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2016-17",
-            "key": "fy2016-17_auditedAnnualFySt",
-            "postion": 7,
+            "key": "2016-17",
+            "position": 7,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
@@ -427,8 +432,8 @@ const uploadDoc = {
         {
             "warning": [],
             "label": "FY 2015-16",
-            "key": "fy2015-16_auditedAnnualFySt",
-            "postion": 8,
+            "key": "2015-16",
+            "position": 8,
             "type": "auditedAnnualFySt",
             "formFieldType": "file",
             "value": "",
@@ -462,7 +467,7 @@ const accountPractice = {
                 {
                     "key": "accSystem",
                     "label": "What is the accounting system being followed by the ULB?",
-                    "postion": "1",
+                    "position": "1",
                     "required": true,
                     options: [
                         { option: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
@@ -482,7 +487,7 @@ const accountPractice = {
                 {
                     "key": "accProvision",
                     "label": "What accounting provisions or framework does the ULB follow?",
-                    "postion": "2",
+                    "position": "2",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -503,7 +508,7 @@ const accountPractice = {
                 {
                     "key": "accInCashBasis",
                     "label": "Are there any accounts/books/registers maintained in cash basis?",
-                    "postion": "3",
+                    "position": "3",
                     "required": true,
                     "info": "Types of registers maintained: cash book, receipt register, register of bills for payment, collection register, deposit register, register of fixed assets etc.",
                     "placeHolder": "",
@@ -522,7 +527,7 @@ const accountPractice = {
                 {
                     "key": "fsTransactionRecord",
                     "label": "Does the ULB initially record transactions on a cash basis and subsequently prepare accrual accounts for consolidation of financial statements?",
-                    "postion": "4",
+                    "position": "4",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -542,7 +547,7 @@ const accountPractice = {
                 {
                     "key": "fsPreparedBy",
                     "label": "Are the Financial Statements prepared internally by the ULB's accounting department, or are they compiled by an external Chartered Accountant?",
-                    "postion": "5",
+                    "position": "5",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -563,7 +568,7 @@ const accountPractice = {
                 {
                     "key": "revReceiptRecord",
                     "label": "Is the revenue receipt recorded when the cash is received or when it is accrued/event occurs?",
-                    "postion": "6",
+                    "position": "6",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -583,7 +588,7 @@ const accountPractice = {
                 {
                     "key": "expRecord",
                     "label": "Is the expense recorded when it is paid or when it is incurred/event occurs?",
-                    "postion": "7",
+                    "position": "7",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -603,7 +608,7 @@ const accountPractice = {
                 {
                     "key": "accSoftware",
                     "label": "What accounting software is currently in use by the ULB?",
-                    "postion": "8",
+                    "position": "8",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -625,7 +630,7 @@ const accountPractice = {
                 {
                     "key": "onlineAccSysIntegrate",
                     "label": "Does the online accounting system integrate seamlessly with other municipal systems?",
-                    "postion": "9",
+                    "position": "9",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -644,7 +649,7 @@ const accountPractice = {
                 {
                     "key": "muniAudit",
                     "label": "Who does the municipal audit of financial statements ?",
-                    "postion": "10",
+                    "position": "10",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -672,7 +677,7 @@ const accountPractice = {
                 {
                     "key": "totSanction",
                     "label": "What is the total sanctioned posts for finance & accounts related positions?",
-                    "postion": "11",
+                    "position": "11",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -698,7 +703,7 @@ const accountPractice = {
                 {
                     "key": "totVacancy",
                     "label": "What is the total vacancy across finance & accounts related positions?",
-                    "postion": "12",
+                    "position": "12",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -724,7 +729,7 @@ const accountPractice = {
                 {
                     "key": "accPosition",
                     "label": "How many finance & accounts related positions currently are filled on contractual basis or outsourced?",
-                    "postion": "13",
+                    "position": "13",
                     "required": true,
                     "info": "",
                     "placeHolder": "",
@@ -757,12 +762,14 @@ const reviewSubmit = {
     label: "Review & Submit",
     "displayPriority": 5,
 }
+
 export const tabsJson = {
     data: {
         "tabs": [
-            // accountPractice,
+           
             // basicTab,
             // financialData,
+            // accountPractice,
             uploadDoc,
             // reviewSubmit
         ]

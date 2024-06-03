@@ -1,0 +1,85 @@
+<div class="verify-header">
+    <h2 class="verify-title">FY 2021-22</h2>
+    <p>Already available on City Finance</p>
+    <!-- <span class="verify-modal-close" (click)="closeDialog()"><img src="../../../assets/images/modal-close.png" -->
+    <span class="verify-modal-close" (click)="onNoClick()"><img src="../../../assets/images/modal-close.png" alt="..."></span>
+</div>
+<mat-dialog-content>
+    <div class="indro-block intro-box-in-modal">
+        <p>Instructions:</p>
+        <ol>
+            <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
+                Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+            <li>All documents pertaining to a specific financial year should be combined into a single PDF
+                before uploading & should not exceed 20 MB.</li>
+            <li>Please use the following format for naming the documents to be uploaded:
+                nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
+                    corporation</strong></li>
+        </ol>
+    </div>
+    <div class="statement-block-row block-row-in-modal">
+        <h5>FY 2021-22</h5>
+        <div class="uploaded-files">
+            <div class="uploaded-block already-availabe">
+                <div class="media media-in-modal">
+                    <div class="align-self-center upload-doc-icon">
+                        <img src="../../../assets/images/pdf.png" alt="...">
+                    </div>
+                    <div class="media-body">
+                        <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                        <p class="file-size">1.5 MB</p>
+                    </div>
+                    <div class="align-self-center delete-doc-icon">
+                        <button class="my-btn primary-btn-2 me-2"><img src="../../../assets/images/pdf.png" alt="...">
+                            Download</button>
+                    </div>
+                </div>
+                <div class="media media-in-modal">
+                    <div class="align-self-center upload-doc-icon">
+                        <img src="../../../assets/images/pdf.png" alt="...">
+                    </div>
+                    <div class="media-body">
+                        <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                        <p class="file-size">1.5 MB</p>
+                    </div>
+                    <div class="align-self-center delete-doc-icon">
+                        <button class="my-btn primary-btn-2 me-2"><img src="../../../assets/images/pdf.png" alt="...">
+                            Download</button>
+                    </div>
+                </div>
+                <div class="media media-in-modal">
+                    <div class="align-self-center upload-doc-icon">
+                        <img src="../../../assets/images/pdf.png" alt="...">
+                    </div>
+                    <div class="media-body">
+                        <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                        <p class="file-size">1.5 MB</p>
+                    </div>
+                    <div class="align-self-center delete-doc-icon">
+                        <button class="my-btn primary-btn-2 me-2"><img src="../../../assets/images/pdf.png" alt="...">
+                            Download</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="accept-return-block">
+        <div class="info">
+            If you feel the documents are correct, select the "Accept Existing Document" option and proceed with
+            acceptance. If the existing documents require corrections or do not meet your requirements, please
+            select the return option and provide a reason for the return.
+        </div>
+        <div class="radio-group">
+            <label class="radio-inline">
+                <input type="radio" name="options" value="option1" checked>
+                <span class="radio-custom"></span>
+                Accept Existing Document
+            </label>
+            <label class="radio-inline">
+                <input type="radio" name="options" value="option2">
+                <span class="radio-custom"></span>
+                Accept Existing Document
+            </label>
+        </div>
+    </div>
+</mat-dialog-content>
