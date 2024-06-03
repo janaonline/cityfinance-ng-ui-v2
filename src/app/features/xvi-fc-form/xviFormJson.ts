@@ -30,6 +30,11 @@ const basicTab = {
                     validator: 'required',
                     message: "Name Required"
                 },
+                {
+                    name: "required",
+                    min: 'required',
+                    message: "Name Required"
+                },
                 // {
                 //     name: "pattern",
                 //     validator:"^[a-zA-Z]+$",

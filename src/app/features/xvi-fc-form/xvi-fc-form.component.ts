@@ -159,6 +159,10 @@ export class XviFcFormComponent {
     }
   }
 
+  getTabGroup(tabKey: string): FormArray {
+    return (this.form.get(tabKey) as FormArray)
+  }
+
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i]
   }

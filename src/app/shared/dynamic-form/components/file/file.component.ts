@@ -33,9 +33,9 @@ export class FileComponent {
 
   ngOnInit() {
     console.log('----field file --', this.field.key);
-    console.log('----group file --', this.group.get(this.field.key));
-    this.group?.patchValue({ uploading: false, name: 'fgh', url: '' });
-    console.log('----group file -pat-', this.group.get(this.field.key));
+    console.log('----group file --', this.group);
+    // this.group?.get(this.field.key)?.patchValue({ uploading: false, name: 'fgh', url: '' });
+    // console.log('----group file -pat-', this.group.get(this.field.key));
   }
 
   get getControl() {
@@ -63,13 +63,16 @@ export class FileComponent {
     if ((file.size / 1024 / 1024) > maxFileSize) return swal("File Limit Error", `Maximum ${maxFileSize} mb file can be allowed.`, "error");
 
     // control.patchValue({ uploading: true });
+    this.field.uploading = true;
     this.fileService.newGetURLForFileUpload(file.name, file.type, this.uploadFolderName).subscribe({
       next: (s3Response: any) => {
         const { url, path } = s3Response.data[0];
         this.fileService.newUploadFileToS3(file, url).subscribe(res => {
           if (res.type !== HttpEventType.Response) return;
           // control.patchValue({ uploading: false, name: file.name, url: path });
-          this.group.get('');
+          this.field.uploading = false;
+          const fileData: any = { name: file.name, url: path };
+          this.group.get(this.field.key)?.patchValue({ file: fileData });
         });
       }, error: err => console.log(err)
     });
