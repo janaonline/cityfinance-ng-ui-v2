@@ -1,0 +1,204 @@
+<div class="container">
+    <!-- Tab header. -->
+    <div class="indro-block">
+        <p>Instructions:</p>
+        <ol>
+            <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to
+                IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+            <li>All documents pertaining to a specific financial year should be combined into a single PDF before
+                uploading & should not exceed 20 MB.</li>
+            <li>Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name.
+                <strong>Example: Annual accounts_15-16_Jaipur municipal corporation</strong>
+            </li>
+        </ol>
+    </div>
+
+    <mat-accordion>
+        <mat-expansion-panel class="audited-statement-panel" [expanded]="panelOpenState">
+            <mat-expansion-panel-header>
+                <mat-panel-title class="headers-style">
+                    Copy of Audited Annual Financial Statements
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="audited-statement-block">
+                <div class="statement-block-row" *ngFor="let year of field.formArrays; index as i">
+                    <h5>{{year.label}}</h5>
+                    <!-- {{year.file | json}} -->
+                    <app-file [field]="year" [group]="getFileGroup(year.key,i)"></app-file>                    
+                </div>
+
+                <div class="statement-block-row">
+                    <h5>FY 2021-22</h5>
+                    <div class="uploaded-files">
+                        <div class="uploaded-block already-availabe">
+                            <div class="uploaded-files-label">Already available on City Finance</div>
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/pdf.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                    <p class="file-size">1.5 MB</p>
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <button class="my-btn primary-btn-2 me-2" (click)="openDialog()">View &
+                                        Verify</button>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="verified-info">
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/accept-icon.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">You have successfully verified the document already
+                                        available on City Finance and accepted it.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="statement-block-row">
+                    <h5>FY 2020-21</h5>
+                    <div class="uploaded-files">
+                        <div class="uploaded-block already-availabe">
+                            <div class="uploaded-files-label">Already available on City Finance</div>
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/pdf.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                    <p class="file-size">1.5 MB</p>
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <button class="my-btn primary-btn-2 me-2">View & Verify</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="verified-info verified-info-reject">
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/reject-icon.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">You have rejected the document already available on
+                                        City Finance, re-uploaded another file, and provided the following reason:
+                                        <strong>Files are in correct</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="uploaded-files">
+                            <div class="uploaded-files-label">Uploaded Files</div>
+                            <div class="media uploaded-block">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/pdf.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                    <p class="file-size">1.5 MB</p>
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <img src="../../../assets/images/delete.png" alt="...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+    </mat-accordion>
+
+    <ng-template class="view-and-verify" #viewAndVerifyDialog>
+        <div class="verify-header">
+            <h2 class="verify-title">FY 2021-22</h2>
+            <p>Already available on City Finance</p>
+            <!-- <span class="verify-modal-close" (click)="closeDialog()"><img src="../../../assets/images/modal-close.png" -->
+            <span class="verify-modal-close"><img src="../../../assets/images/modal-close.png" alt="..."></span>
+        </div>
+        <mat-dialog-content>
+            <div class="indro-block intro-box-in-modal">
+                <p>Instructions:</p>
+                <ol>
+                    <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
+                        Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+                    <li>All documents pertaining to a specific financial year should be combined into a single PDF
+                        before uploading & should not exceed 20 MB.</li>
+                    <li>Please use the following format for naming the documents to be uploaded:
+                        nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
+                            corporation</strong></li>
+                </ol>
+            </div>
+            <div class="statement-block-row block-row-in-modal">
+                <h5>FY 2021-22</h5>
+                <div class="uploaded-files">
+                    <div class="uploaded-block already-availabe">
+                        <div class="media media-in-modal">
+                            <div class="align-self-center upload-doc-icon">
+                                <img src="../../../assets/images/pdf.png" alt="...">
+                            </div>
+                            <div class="media-body">
+                                <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                <p class="file-size">1.5 MB</p>
+                            </div>
+                            <div class="align-self-center delete-doc-icon">
+                                <button class="my-btn primary-btn-2 me-2" (click)="openDialog()"><img
+                                        src="../../../assets/images/pdf.png" alt="..."> Download</button>
+                            </div>
+                        </div>
+                        <div class="media media-in-modal">
+                            <div class="align-self-center upload-doc-icon">
+                                <img src="../../../assets/images/pdf.png" alt="...">
+                            </div>
+                            <div class="media-body">
+                                <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                <p class="file-size">1.5 MB</p>
+                            </div>
+                            <div class="align-self-center delete-doc-icon">
+                                <button class="my-btn primary-btn-2 me-2" (click)="openDialog()"><img
+                                        src="../../../assets/images/pdf.png" alt="..."> Download</button>
+                            </div>
+                        </div>
+                        <div class="media media-in-modal">
+                            <div class="align-self-center upload-doc-icon">
+                                <img src="../../../assets/images/pdf.png" alt="...">
+                            </div>
+                            <div class="media-body">
+                                <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                <p class="file-size">1.5 MB</p>
+                            </div>
+                            <div class="align-self-center delete-doc-icon">
+                                <button class="my-btn primary-btn-2 me-2" (click)="openDialog()"><img
+                                        src="../../../assets/images/pdf.png" alt="..."> Download</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accept-return-block">
+                <div class="info">
+                    If you feel the documents are correct, select the "Accept Existing Document" option and proceed with
+                    acceptance. If the existing documents require corrections or do not meet your requirements, please
+                    select the return option and provide a reason for the return.
+                </div>
+                <div class="radio-group">
+                    <label class="radio-inline">
+                        <input type="radio" name="options" value="option1" checked>
+                        <span class="radio-custom"></span>
+                        Accept Existing Document
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="options" value="option2">
+                        <span class="radio-custom"></span>
+                        Accept Existing Document
+                    </label>
+                </div>
+            </div>
+        </mat-dialog-content>
+    </ng-template>
+</div>

@@ -21,9 +21,8 @@ export class CustomHttpInterceptor implements HttpInterceptor {
     if (req.body instanceof File && req.method === "PUT") {
       return next.handle(req);
     }
-
-    // const token = JSON.parse(localStorage.getItem("id_token") || '');
-    const token = localStorage.getItem("id_token");
+    const id_token = localStorage.getItem("id_token")
+    const token = id_token ? JSON.parse(id_token) : '';
     const sessionID = sessionStorage.getItem("sessionID");
     let headers = req.headers;
     if (!req.headers.has("Accept")) {

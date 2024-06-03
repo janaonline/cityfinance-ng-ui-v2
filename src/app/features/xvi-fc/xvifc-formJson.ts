@@ -2,7 +2,15 @@ export const formJson = {
     "status": true,
     "message": "Success fetched data!",
     "data": {
-        "ulb": "5dd24b8f91344e2300876ca9",
+        "_id": "6469ebe60d11d477a54e6282",
+        "ulb": "5dd24b8d91344e2300876c8c",
+        "ulbName": "Basukinath Nagar Panchayat",
+        "stateCode": "JH",
+        "design_year": "606aafb14dff55e6c075d3ae",
+        "isDraft": false,
+        "pmuSubmissionDate": "2023-10-31T05:58:06.281Z",
+        "isAutoApproved": true,
+        "currentFormStatus": 11,
         "tabs": [
             {
                 "_id": "664b8179ea7f70385313396c",
@@ -216,7 +224,7 @@ export const formJson = {
                             ],
                             "showInputBox": "",
                             "inputBoxValue": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_sourceOfFd",
@@ -304,7 +312,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_taxRevenue",
@@ -389,7 +397,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_feeAndUserCharges",
@@ -474,7 +482,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_interestIncome",
@@ -559,7 +567,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_otherIncome",
@@ -649,7 +657,7 @@ export const formJson = {
                                 "1.3",
                                 "1.4"
                             ],
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_totOwnRevenue",
@@ -734,7 +742,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_centralGrants",
@@ -819,7 +827,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_otherGrants",
@@ -907,7 +915,7 @@ export const formJson = {
                                 "2.1",
                                 "2.2"
                             ],
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_totalGrants",
@@ -992,7 +1000,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_assignedRevAndCom",
@@ -1077,7 +1085,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_otherRevenue",
@@ -1167,7 +1175,7 @@ export const formJson = {
                                 "3",
                                 "4"
                             ],
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_totalRevenue",
@@ -1255,7 +1263,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_establishmentExp",
@@ -1340,7 +1348,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_oAndmExp",
@@ -1425,7 +1433,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_interestAndfinacialChar",
@@ -1510,7 +1518,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_otherRevenueExp",
@@ -1600,7 +1608,7 @@ export const formJson = {
                                 "6.3",
                                 "6.4"
                             ],
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_totalRevenueExp",
@@ -1685,7 +1693,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_capExp",
@@ -1773,7 +1781,7 @@ export const formJson = {
                                 "6",
                                 "7"
                             ],
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_totalExp",
@@ -1861,7 +1869,7 @@ export const formJson = {
                             "decimal": 0,
                             "validation": "",
                             "logic": "",
-                            "year": [
+                            "yearData": [
                                 {
                                     "label": "FY 2015-16",
                                     "key": "fy2015-16_grossBorrowing",
@@ -1968,7 +1976,7 @@ export const formJson = {
                                 "instruction_3": "Text 3"
                             }
                         ],
-                        "year": [
+                        "yearData": [
                             {
                                 "label": "FY 2015-16",
                                 "key": "fy2015-16_auditedAnnualFySt",
