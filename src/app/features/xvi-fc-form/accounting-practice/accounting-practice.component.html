@@ -4,7 +4,7 @@
     </div>
     <ng-container *ngFor="let question of field.questions">
         <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
-            {{question.postion}}.
+            {{question.position}}.
             {{question.label}}
         </label>
         @if (question.formFieldType === 'radio') {

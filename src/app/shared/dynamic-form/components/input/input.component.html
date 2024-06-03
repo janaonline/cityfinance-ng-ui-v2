@@ -17,7 +17,7 @@
 }
 @default {
 <mat-form-field class="demo-full-width margin-top" [formGroup]="group">
-  <mat-label>{{field.label}}</mat-label>
+  <mat-label>{{field.position}}.{{field.label}}</mat-label>
   <input matInput [formControlName]="field.key" [type]="field.formFieldType">
   <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
     <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>

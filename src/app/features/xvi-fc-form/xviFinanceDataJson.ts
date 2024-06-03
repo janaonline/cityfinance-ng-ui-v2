@@ -35,7 +35,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_sourceOfFd",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -44,7 +44,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_sourceOfFd",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -53,7 +53,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_sourceOfFd",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -62,7 +62,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_sourceOfFd",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -71,7 +71,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_sourceOfFd",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -80,7 +80,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_sourceOfFd",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -89,7 +89,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_sourceOfFd",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -98,7 +98,7 @@ export const financialData = {
                         {
                             "warning": [],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_sourceOfFd",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "sourceOfFd",
                             "formFieldType": "heading",
@@ -131,7 +131,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2022-23",
-                        "key": "fy2022-23_sourceOfFd",
+                        "key": "2022-23",
                         "postion": 1,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -140,7 +140,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2021-22",
-                        "key": "fy2021-22_sourceOfFd",
+                        "key": "2021-22",
                         "postion": 2,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -149,7 +149,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2020-21",
-                        "key": "fy2020-21_sourceOfFd",
+                        "key": "2020-21",
                         "postion": 3,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -158,7 +158,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2019-20",
-                        "key": "fy2019-20_sourceOfFd",
+                        "key": "2019-20",
                         "postion": 4,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -167,7 +167,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2018-19",
-                        "key": "fy2018-19_sourceOfFd",
+                        "key": "2018-19",
                         "postion": 5,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -176,7 +176,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2017-18",
-                        "key": "fy2017-18_sourceOfFd",
+                        "key": "2017-18",
                         "postion": 6,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -185,7 +185,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2016-17",
-                        "key": "fy2016-17_sourceOfFd",
+                        "key": "2016-17",
                         "postion": 7,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -194,7 +194,7 @@ export const financialData = {
                     {
                         "warning": [],
                         "label": "FY 2015-16",
-                        "key": "fy2015-16_sourceOfFd",
+                        "key": "2015-16",
                         "postion": 8,
                         "type": "sourceOfFd",
                         "formFieldType": "select",
@@ -245,7 +245,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_taxRevenue",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -260,7 +260,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_taxRevenue",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -275,7 +275,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_taxRevenue",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -290,7 +290,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_taxRevenue",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -305,7 +305,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_taxRevenue",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -320,7 +320,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_taxRevenue",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -335,7 +335,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_taxRevenue",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -350,7 +350,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_taxRevenue",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "taxRevenue",
                             "formFieldType": "amount",
@@ -394,7 +394,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_feeAndUserCharges",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -409,7 +409,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_feeAndUserCharges",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -424,7 +424,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_feeAndUserCharges",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -439,7 +439,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_feeAndUserCharges",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -454,7 +454,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_feeAndUserCharges",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -469,7 +469,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_feeAndUserCharges",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -484,7 +484,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_feeAndUserCharges",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -499,7 +499,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_feeAndUserCharges",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "feeAndUserCharges",
                             "formFieldType": "amount",
@@ -543,7 +543,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_interestIncome",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -558,7 +558,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_interestIncome",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -573,7 +573,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_interestIncome",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -588,7 +588,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_interestIncome",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -603,7 +603,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_interestIncome",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -618,7 +618,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_interestIncome",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -633,7 +633,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_interestIncome",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -648,7 +648,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_interestIncome",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "interestIncome",
                             "formFieldType": "amount",
@@ -692,7 +692,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_otherIncome",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -707,7 +707,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_otherIncome",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -722,7 +722,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_otherIncome",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -737,7 +737,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_otherIncome",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -752,7 +752,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_otherIncome",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -767,7 +767,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_otherIncome",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -782,7 +782,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_otherIncome",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -797,7 +797,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_otherIncome",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "otherIncome",
                             "formFieldType": "amount",
@@ -846,7 +846,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_totOwnRevenue",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -861,7 +861,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_totOwnRevenue",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -876,7 +876,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_totOwnRevenue",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -891,7 +891,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_totOwnRevenue",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -906,7 +906,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_totOwnRevenue",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -921,7 +921,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_totOwnRevenue",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -936,7 +936,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_totOwnRevenue",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -951,7 +951,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_totOwnRevenue",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "totOwnRevenue",
                             "formFieldType": "amount",
@@ -995,7 +995,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_centralGrants",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1010,7 +1010,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_centralGrants",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1025,7 +1025,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_centralGrants",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1040,7 +1040,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_centralGrants",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1055,7 +1055,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_centralGrants",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1070,7 +1070,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_centralGrants",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1085,7 +1085,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_centralGrants",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1100,7 +1100,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_centralGrants",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "centralGrants",
                             "formFieldType": "amount",
@@ -1144,7 +1144,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_otherGrants",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1159,7 +1159,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_otherGrants",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1174,7 +1174,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_otherGrants",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1189,7 +1189,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_otherGrants",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1204,7 +1204,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_otherGrants",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1219,7 +1219,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_otherGrants",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1234,7 +1234,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_otherGrants",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1249,7 +1249,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_otherGrants",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "otherGrants",
                             "formFieldType": "amount",
@@ -1296,7 +1296,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_totalGrants",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1311,7 +1311,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_totalGrants",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1326,7 +1326,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_totalGrants",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1341,7 +1341,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_totalGrants",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1356,7 +1356,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_totalGrants",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1371,7 +1371,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_totalGrants",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1386,7 +1386,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_totalGrants",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1401,7 +1401,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_totalGrants",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "totalGrants",
                             "formFieldType": "amount",
@@ -1445,7 +1445,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_assignedRevAndCom",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1460,7 +1460,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_assignedRevAndCom",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1475,7 +1475,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_assignedRevAndCom",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1490,7 +1490,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_assignedRevAndCom",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1505,7 +1505,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_assignedRevAndCom",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1520,7 +1520,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_assignedRevAndCom",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1535,7 +1535,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_assignedRevAndCom",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1550,7 +1550,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_assignedRevAndCom",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "assignedRevAndCom",
                             "formFieldType": "amount",
@@ -1594,7 +1594,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_otherRevenue",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1609,7 +1609,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_otherRevenue",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1624,7 +1624,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_otherRevenue",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1639,7 +1639,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_otherRevenue",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1654,7 +1654,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_otherRevenue",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1669,7 +1669,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_otherRevenue",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1684,7 +1684,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_otherRevenue",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1699,7 +1699,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_otherRevenue",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "otherRevenue",
                             "formFieldType": "amount",
@@ -1748,7 +1748,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_totalRevenue",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1763,7 +1763,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_totalRevenue",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1778,7 +1778,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_totalRevenue",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1793,7 +1793,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_totalRevenue",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1808,7 +1808,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_totalRevenue",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1823,7 +1823,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_totalRevenue",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1838,7 +1838,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_totalRevenue",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1853,7 +1853,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_totalRevenue",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "totalRevenue",
                             "formFieldType": "amount",
@@ -1905,7 +1905,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_establishmentExp",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -1920,7 +1920,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_establishmentExp",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -1935,7 +1935,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_establishmentExp",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -1950,7 +1950,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_establishmentExp",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -1965,7 +1965,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_establishmentExp",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -1980,7 +1980,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_establishmentExp",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -1995,7 +1995,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_establishmentExp",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -2010,7 +2010,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_establishmentExp",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "establishmentExp",
                             "formFieldType": "amount",
@@ -2054,7 +2054,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_oAndmExp",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2069,7 +2069,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_oAndmExp",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2084,7 +2084,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_oAndmExp",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2099,7 +2099,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_oAndmExp",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2114,7 +2114,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_oAndmExp",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2129,7 +2129,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_oAndmExp",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2144,7 +2144,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_oAndmExp",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2159,7 +2159,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_oAndmExp",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "oAndmExp",
                             "formFieldType": "amount",
@@ -2203,7 +2203,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_interestAndfinacialChar",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2218,7 +2218,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_interestAndfinacialChar",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2233,7 +2233,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_interestAndfinacialChar",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2248,7 +2248,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_interestAndfinacialChar",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2263,7 +2263,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_interestAndfinacialChar",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2278,7 +2278,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_interestAndfinacialChar",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2293,7 +2293,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_interestAndfinacialChar",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2308,7 +2308,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_interestAndfinacialChar",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "interestAndfinacialChar",
                             "formFieldType": "amount",
@@ -2352,7 +2352,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_otherRevenueExp",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2367,7 +2367,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_otherRevenueExp",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2382,7 +2382,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_otherRevenueExp",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2397,7 +2397,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_otherRevenueExp",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2412,7 +2412,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_otherRevenueExp",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2427,7 +2427,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_otherRevenueExp",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2442,7 +2442,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_otherRevenueExp",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2457,7 +2457,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_otherRevenueExp",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "otherRevenueExp",
                             "formFieldType": "amount",
@@ -2506,7 +2506,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_totalRevenueExp",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2521,7 +2521,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_totalRevenueExp",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2536,7 +2536,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_totalRevenueExp",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2551,7 +2551,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_totalRevenueExp",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2566,7 +2566,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_totalRevenueExp",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2581,7 +2581,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_totalRevenueExp",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2596,7 +2596,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_totalRevenueExp",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2611,7 +2611,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_totalRevenueExp",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "totalRevenueExp",
                             "formFieldType": "amount",
@@ -2655,7 +2655,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_capExp",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2670,7 +2670,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_capExp",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2685,7 +2685,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_capExp",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2700,7 +2700,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_capExp",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2715,7 +2715,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_capExp",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2730,7 +2730,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_capExp",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2745,7 +2745,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_capExp",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2760,7 +2760,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_capExp",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "capExp",
                             "formFieldType": "amount",
@@ -2807,7 +2807,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_totalExp",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2822,7 +2822,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_totalExp",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2837,7 +2837,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_totalExp",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2852,7 +2852,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_totalExp",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2867,7 +2867,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_totalExp",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2882,7 +2882,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_totalExp",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2897,7 +2897,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_totalExp",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2912,7 +2912,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_totalExp",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "totalExp",
                             "formFieldType": "amount",
@@ -2964,7 +2964,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2022-23",
-                            "key": "fy2022-23_grossBorrowing",
+                            "key": "2022-23",
                             "postion": 1,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",
@@ -2979,7 +2979,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2021-22",
-                            "key": "fy2021-22_grossBorrowing",
+                            "key": "2021-22",
                             "postion": 2,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",
@@ -2994,7 +2994,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2020-21",
-                            "key": "fy2020-21_grossBorrowing",
+                            "key": "2020-21",
                             "postion": 3,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",
@@ -3009,7 +3009,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2019-20",
-                            "key": "fy2019-20_grossBorrowing",
+                            "key": "2019-20",
                             "postion": 4,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",
@@ -3024,7 +3024,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2018-19",
-                            "key": "fy2018-19_grossBorrowing",
+                            "key": "2018-19",
                             "postion": 5,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",
@@ -3039,7 +3039,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2017-18",
-                            "key": "fy2017-18_grossBorrowing",
+                            "key": "2017-18",
                             "postion": 6,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",
@@ -3054,7 +3054,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2016-17",
-                            "key": "fy2016-17_grossBorrowing",
+                            "key": "2016-17",
                             "postion": 7,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",
@@ -3069,7 +3069,7 @@ export const financialData = {
                                 }
                             ],
                             "label": "FY 2015-16",
-                            "key": "fy2015-16_grossBorrowing",
+                            "key": "2015-16",
                             "postion": 8,
                             "type": "grossBorrowing",
                             "formFieldType": "amount",

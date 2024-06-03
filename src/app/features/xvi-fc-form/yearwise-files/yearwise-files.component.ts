@@ -4,6 +4,7 @@ import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { MaterialModule } from '../../../material.module';
 import { FileComponent } from '../../../shared/dynamic-form/components/file/file.component';
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
+import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/verify-documents-dialogue.component';
 
 @Component({
   selector: 'app-yearwise-files',
@@ -60,9 +61,21 @@ export class YearwiseFilesComponent {
     // return this.group.get('sourceOfFdTable')?.controls[0];
   }
 
-  openDialog(): void {
+  openDialog1(): void {
     this.dialogRef = this.dialog.open(this.viewAndVerifyDialog, {
       width: '1200px'
     });
   }
+
+  openDialog(): void {
+    const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {
+      data: { field: this.field },
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      console.log('The dialog was closed');
+      this.field = result;
+    });
+  }
 }
+

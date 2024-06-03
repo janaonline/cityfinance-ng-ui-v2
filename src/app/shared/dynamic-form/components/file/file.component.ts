@@ -159,7 +159,7 @@ export class FileComponent {
     // console.log({ event, control })
     // console.log({ event })
     // if (reset) return control.patchValue({ uploading: false, name: '', url: '' });
-    const maxFileSize = 15;
+    const maxFileSize = 20;
     if (!this.currentFile) return;
     const file = this.currentFile;
     let isfileValid = this.fileService.checkSpcialCharInFileName(file);
