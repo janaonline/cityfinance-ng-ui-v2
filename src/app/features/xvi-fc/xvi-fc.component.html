@@ -466,15 +466,28 @@
                                 </div>
                                 <div class="radio-group">
                                     <label class="radio-inline">
-                                        <input type="radio" name="options" value="option1" checked >
+                                        <input type="radio" name="options" value="option1"  >
                                         <span class="radio-custom"></span>
                                         Accept Existing Document
                                     </label>
                                     <label class="radio-inline">
-                                        <input type="radio" name="options" value="option2">
+                                        <input type="radio" name="options" value="option2" checked>
                                         <span class="radio-custom"></span>
                                         Accept Existing Document
                                     </label>
+                                </div>
+                                <div class="reject-section">
+                                    <mat-form-field class="demo-full-width margin-top">
+                                        <mat-label>Select the file which need to return*</mat-label>
+                                            <mat-select>
+                                                <mat-option value="">Select an Option</mat-option>
+                                                <mat-option></mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                        <mat-form-field class="demo-full-width margin-top">
+                                            <mat-label>Reason to uploadanother file*</mat-label>
+                                            <input>
+                                          </mat-form-field>
                                 </div>
                             </div>
                         </mat-dialog-content>
