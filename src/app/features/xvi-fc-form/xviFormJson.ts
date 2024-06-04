@@ -767,11 +767,11 @@ export const tabsJson = {
     data: {
         "tabs": [
            
-            // basicTab,
-            // financialData,
+            basicTab,
+            financialData,
             uploadDoc,
-            // accountPractice,
-            // reviewSubmit
+            accountPractice,
+            reviewSubmit
         ]
     }
 };
