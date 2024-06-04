@@ -1,11 +1,12 @@
 .container {
-    width: 450px;
-    height: 200px;
-    padding: 2rem;
+    border: 1px dotted rgba(230, 126, 21, 1);
+    padding: 20px;
     text-align: center;
-    border: dashed 1px #979797;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    background-color: rgba(250, 240, 230, 1);
+    border-radius: 10px;
     position: relative;
-    margin: 0 auto;
 
     input {
         opacity: 0;
@@ -20,7 +21,6 @@
     label {
         color: white;
         width: 183px;
-        height: 44px;
         border-radius: 21.5px;
         background-color: #db202f;
         padding: 8px 16px;

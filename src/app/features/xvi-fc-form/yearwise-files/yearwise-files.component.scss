@@ -1,4 +1,10 @@
-
+.headers-style {
+    color: var(--clr-neutral-100);
+    font-weight: var(--fw-bold);
+    padding: 1.125rem;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #193369 0%, #FFFFFF 100%);
+}
 ::ng-deep
 .audited-statement-panel .mat-expansion-panel-body{
     padding: 0 0 16px !important;
@@ -14,7 +20,16 @@
 .statement-block-row:last-child{
     border: 0;
 }
-
+.indro-block {
+    padding: 20px 30px 10px 30px;
+    border-radius: 10px;
+    border: 1px dotted rgba(108, 117, 125, 1);
+    margin: 20px 0;
+  
+    ol li {
+      line-height: 32px;
+    }
+  }
 .media {
     display: -ms-flexbox;
     display: flex;

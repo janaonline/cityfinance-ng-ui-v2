@@ -1,0 +1,11 @@
+.headers-style {
+    color: var(--clr-neutral-100);
+    font-weight: var(--fw-bold);
+    padding: 1.125rem;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #193369 0%, #ffffff 100%);
+
+    p{
+        margin: 0;
+    }
+  }
