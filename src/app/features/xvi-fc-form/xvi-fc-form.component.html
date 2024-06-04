@@ -40,11 +40,16 @@
                         </div>
                     </ng-container>
                     }
-                    <div class="mt-4 float-end">
-                        <button mat-raised-button color="primary" matStepperPrevious>Back</button>
-                        <button mat-raised-button color="primary" matStepperNext class="ms-2">Continue to Next
-                            Section</button>
-                        <button mat-raised-button color="primary" matStepperNext class="ms-2">Save as Draft</button>
+                    <div class="mt-4">
+                        <div class="float-start">
+                            <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
+                        </div>
+                        <div class="float-end">
+                            <button   matStepperNext class="ms-2 primary-btn-2">Save as Draft</button>
+                            <button  matStepperNext class="ms-2 primary-btn-1">Continue to Next
+                                Section</button>
+
+                        </div>
                     </div>
                 </div>
                 <!-- <button mat-button matStepperPrevious>Back</button>
@@ -68,6 +73,6 @@
     </form>
 
     <div class="margin-top">
-        <pre>  {{ this.form.getRawValue() | json }} </pre>
+        <!-- <pre>  {{ this.form.getRawValue() | json }} </pre> -->
     </div>
 </div>
