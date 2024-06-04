@@ -22,7 +22,8 @@ export class VerifyDocumentsDialogueComponent {
   ) { }
 
   ngOnInit() {
-    console.log('----field table --', this.data.field);
+    console.log('----field dialogue --', this.data);
+    // console.log('----field dialogue --', this.data.field);
     // console.log('----group table --', this.group);
     // console.log('----group table -val-', this.group.value);
     // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
