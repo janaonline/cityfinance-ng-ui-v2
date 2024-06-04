@@ -1,4 +1,10 @@
-
+.headers-style {
+    color: var(--clr-neutral-100);
+    font-weight: var(--fw-bold);
+    padding: 1.125rem;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #193369 0%, #FFFFFF 100%);
+}
 ::ng-deep
 .audited-statement-panel .mat-expansion-panel-body{
     padding: 0 0 16px !important;
@@ -14,28 +20,16 @@
 .statement-block-row:last-child{
     border: 0;
 }
-.file-upload-container {
-    position: relative;
-    width: 100%;
-    margin: auto;
-}
-.file-upload-input {
-    display: none;
-}
-.drag-drop-area {
-    border: 1px dotted rgba(230, 126, 21, 1);
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s;
-    background-color: rgba(250, 240, 230, 1);
+.indro-block {
+    padding: 20px 30px 10px 30px;
     border-radius: 10px;
-}
-.uploaded-files-label{
-    font-size: 18px;
-    color: #000;
-    margin-bottom: 10px;
-}
+    border: 1px dotted rgba(108, 117, 125, 1);
+    margin: 20px 0;
+  
+    ol li {
+      line-height: 32px;
+    }
+  }
 .media {
     display: -ms-flexbox;
     display: flex;
@@ -89,29 +83,6 @@
 .verified-info-reject{    
     border: 1px solid rgba(255, 0, 0, 1);
     background: rgba(255, 242, 242, 1);
-}
-// .drag-drop-area:hover {
-//     background-color: #e9f1ff;
-//     border-color: #0056b3;
-// }
-.drag-drop-area p {
-    margin: 0;
-    font-size: 16px;
-    font-size: 18px;
-    font-weight: 500;
-    line-height: 22px;
-    color: rgba(108, 117, 125, 1);
-
-    
-}
-.file-upload-name {
-    display: block;
-    margin: 10px 0;
-    color: rgba(0, 0, 0, 1);
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 22px;
-
 }
 .view-and-verify{
     padding: 20px;
@@ -186,124 +157,4 @@
     color: #E67E15;
     font-size: 12px;
 }
-.form-heading-block{
-    padding: 15px;
-    background-color: #efefef;
-    border-radius: 10px;
-    margin:0 0 25px;
 
-    .form-status{
-        font-size: 12px;
-        color: #ccc;
-        margin-bottom: 5px;
-    }
-    h3{
-        font-size: 18px;
-        margin: 0;
-    }
-}
-.accept-return-block{
-    margin-top: 30px;
-
-    .info{
-        margin-bottom: 20px;
-    }
-    .radio-group {
-        display: flex;
-        gap: 20px;
-    }
-    
-    .radio-inline {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        position: relative;
-        padding-left: 30px;
-        margin-right: 10px;
-        font-size: 16px;
-        user-select: none;
-    }
-    
-    .radio-inline input[type="radio"] {
-        display: none;
-    }
-    
-    .radio-custom {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 20px;
-        height: 20px;
-        background-color: white;
-        border: 2px solid #9e9e9e;
-        border-radius: 50%;
-        transform: translateY(-50%);
-        transition: border 0.3s, background-color 0.3s;
-    }
-    
-    .radio-custom::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 10px;
-        height: 10px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: translate(-50%, -50%) rotate(45deg) scale(0);
-        transition: transform 0.3s;
-    }
-    
-    .radio-inline input[type="radio"]:checked + .radio-custom {
-        border-color: rgba(52, 58, 64, 1);
-        background-color: rgba(52, 58, 64, 1);
-    
-    }
-    
-    .radio-inline input[type="radio"]:checked + .radio-custom::after {
-        transform: translate(-50%, -50%) rotate(45deg) scale(1);
-    }
-}
-.common-form{
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #efefef;
-}
-.btn-stepper {
-    background: #E67E15;
-    color: #fff;
-    border-color: #E67E15;
-    box-shadow: 0px 2px 6px #f7c199;
-    font-size: 1rem;
-    padding-top: 0.625rem;
-    padding-bottom: 0.625rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    letter-spacing: 1px;
-}
-.btn-draft{
-    background: #fff;
-    color: #E67E15;
-    border-color: #E67E15;
-    box-shadow: 0px 2px 6px #f7c199;
-    font-size: 1rem;
-    padding-top: 0.625rem;
-    padding-bottom: 0.625rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    letter-spacing: 1px;
-    margin-right: 20px;
-}
-.xvi-fc-from-container{
-    margin: 20px 0;
-    .financial-year{
-        text-align: center;
-        font-size: 16px;
-    }
-    .fy-header{
-        margin: 0 0 10px;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #efefef;
-    }
-}
