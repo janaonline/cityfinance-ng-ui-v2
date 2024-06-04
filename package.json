@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "local": "ng serve --configuration=local",
-    "staging": "ng serve --configuration=staging",
+    "local": "ng serve --configuration=local --port 4300",
+    "staging": "ng serve --configuration=staging --port 4300",
     "start": "ng serve",
     "build": "ng build --base-href /xvi-fc/",
     "watch": "ng build --watch --configuration development",
