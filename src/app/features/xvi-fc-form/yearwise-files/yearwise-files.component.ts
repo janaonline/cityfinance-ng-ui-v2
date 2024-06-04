@@ -73,8 +73,8 @@ export class YearwiseFilesComponent {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed');
-      this.field = result;
+      console.log('The dialog was closed',result);
+      // this.field = result;
     });
   }
 }

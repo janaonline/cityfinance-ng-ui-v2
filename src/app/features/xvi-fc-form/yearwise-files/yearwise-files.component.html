@@ -35,15 +35,16 @@
                                     <!-- <p class="file-size">1.5 MB</p> -->
                                 </div>
                                 <div class="align-self-center delete-doc-icon">
-                                    <button class="my-btn primary-btn-2 me-2" (click)="openDialog()">View &
-                                        Verify</button>
+                                    <!-- <button class="my-btn primary-btn-2 me-2" ></button> -->
+                                    <button mat-stroked-button color="warn" (click)="openDialog()">
+                                        View & Verify</button>
 
                                 </div>
                             </div>
                         </div>
                         <!-- verified by ulb -->
                         @if(year.isVerifiedStatus === 2) {
-                        <div class="verified-info" >
+                        <div class="verified-info">
                             <div class="media">
                                 <div class="align-self-center upload-doc-icon">
                                     <img src="../../../assets/images/accept-icon.png" alt="...">
@@ -182,5 +183,5 @@
             </div>
         </mat-expansion-panel>
     </mat-accordion>
-   
+
 </div>
