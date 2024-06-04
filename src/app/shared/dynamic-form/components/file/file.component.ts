@@ -106,6 +106,8 @@ export class FileComponent {
    */
   // fileBrowseHandler(files: any[]) {
   fileBrowseHandler(event: Event) {
+    console.log('event-----',event);
+    
     const files: FileList | null = (<HTMLInputElement>event.target).files;
     this.prepareFilesList(files);
   }
@@ -146,7 +148,7 @@ export class FileComponent {
    * @param files (Files List)
    */
   prepareFilesList(files: FileList | null) {
-    if (!files) return;
+    if (!files?.length) return;
 
     this.progress = 0;
     this.currentFile = files[0];
