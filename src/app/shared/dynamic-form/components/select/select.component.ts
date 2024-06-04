@@ -8,7 +8,7 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule],
   template: `
     <mat-form-field class="demo-full-width margin-top" [formGroup]="group">
-    <mat-label>{{field.label}}</mat-label>
+    <mat-label>{{field.position ? field.position+'. ':''}}{{field.label}}</mat-label>
     	<mat-select [formControlName]="field.key">
     		<mat-option value="">Select an Option</mat-option>
     		<mat-option *ngFor="let item of options" [value]="item">{{item}}</mat-option>

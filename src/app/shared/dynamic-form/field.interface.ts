@@ -16,6 +16,8 @@ export interface FieldConfig {
   value?: any;
   validations?: Validator[];
   formArrays?: any[];
+  uploading?: boolean;
+  position?: number;
 }
 
 export interface JsonFieldConfig {

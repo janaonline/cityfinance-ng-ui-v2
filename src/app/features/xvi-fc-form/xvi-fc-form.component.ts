@@ -38,6 +38,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
 import { DataEntryService } from '../xvi-fc/services/data-entry.service';
+import { AccountingPracticeComponent } from './accounting-practice/accounting-practice.component';
+import { ReviewSubmitComponent } from './review-submit/review-submit.component';
+import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.component';
+import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 
 @Component({
   selector: 'app-xvi-fc-form',
@@ -57,6 +61,10 @@ import { DataEntryService } from '../xvi-fc/services/data-entry.service';
     DecimalLimitDirective,
     CommonActionRadioComponent,
     LoaderComponent,
+
+    YearwiseFilesComponent,
+    AccountingPracticeComponent,
+    ReviewSubmitComponent,
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -109,7 +117,8 @@ export class XviFcFormComponent {
   }
   constructor(private fb: FormBuilder,
     public fiscalService: FiscalRankingService,
-    private dataEntryService: DataEntryService,
+    public formService: DynamicFormService
+    // private dataEntryService: DataEntryService,
     // private _router: Router,
     // private dialog: MatDialog,
     // private activatedRoute: ActivatedRoute,
@@ -117,114 +126,8 @@ export class XviFcFormComponent {
     // private dateAdapter: DateAdapter<Date>
   ) { }
 
-  getFG(tabKey: string, i: number): any {
-    // return (((this.group.get(fieldKey) as FormArray)
-    //   .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j];
-    // console.log('(this.form.get(tabKey) as FormArray).controls[i]',(this.form.get(tabKey) as FormArray).controls[i]);
-
-    return (this.form.get(tabKey) as FormArray).controls[i]
-  }
-  setTableData(childField: any) {
-    const tableRow: any = [];
-    childField.tableRow.forEach((row: any) => {
-      if (row.tableData) {
-        const tableCol: any = [];
-        row.tableData.forEach((col: any) => {
-          tableCol.push(
-            // set validation here
-            new FormGroup({
-              // [col.key]: new FormControl(col.value),
-              [col.key]: this.createContorl(col),
-            }));
-        });
-        tableRow.push(
-          new FormGroup({
-            // [row.key]: new FormControl(childField.value),
-            [row.key]: new FormArray(tableCol),
-          }));
-      }
-
-    })
-
-    return new FormArray(tableRow);
-
-  }
-  formValidation(validations: string[]) {
-
-  }
-  bindValidations(validations: any) {
-    if (validations && validations.length > 0) {
-      const validators: any = [];
-      validations.forEach((row: any) => {
-        switch (row.name) {
-          case 'required':
-            validators.push(Validators.required);
-            break;
-          case 'nullValidator':
-            validators.push(Validators.nullValidator);
-            break;
-          case 'pattern':
-            validators.push(Validators.pattern(row.validator));
-            break;
-          case 'min':
-            validators.push(Validators.min(row.validator));
-            break;
-          case 'max':
-            validators.push(Validators.max(row.validator));
-            break;
-          case 'minLength':
-            validators.push(Validators.minLength(row.validator));
-            break;
-          case 'maxLength':
-            validators.push(Validators.maxLength(row.validator));
-            break;
-          case 'email':
-            validators.push(Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$'));
-            break;
-        }
-      });
-
-
-      return Validators.compose(validators);
-    }
-    return null;
-  }
-  createContorl(field: any) {
-    return new FormControl(field.value || '', this.bindValidations(field.validations));
-    // return new FormControl(field.value || '');
-  }
-  tabControl(fields: any[]) {
-    const form = this.fb.group({});
-    const group: any = {};
-    fields.forEach((field: any) => {
-      if (field.formArrays && field.formArrays.length) {
-        let formArrays: any[] = [];
-        field.formArrays.forEach((childField: any) => {
-          // table row
-          const childFieldData: any = {};
-          if (childField.tableRow) {
-            childFieldData[childField.key] = this.setTableData(childField);
-          } else {
-            // childFieldData[childField.key] = new FormControl(childField.value);
-            childFieldData[childField.key] = this.createContorl(childField);
-          }
-          formArrays.push(new FormGroup(childFieldData));
-
-          // group = new FormGroup({ [field.key]: new FormArray(formArrays) })
-        });
-        group[field.key] = new FormArray(formArrays);
-
-      }
-      // group[field.key] = new FormControl(field.value || '');
-
-      //  new FormGroup(group);
-    });
-    this.form = new FormGroup(group);
-  }
   ngOnInit() {
-    // this.createControl(tabsJson.data.tabs);
-    this.tabControl(tabsJson.data.tabs);
-    // this.form = this.toFormGroup();
+    this.form = this.formService.tabControl(tabsJson.data.tabs);
     // console.log('this.form----', this.form);
     // console.log('this.form.getRawValue()---',this.form.getRawValue());
 
@@ -256,25 +159,13 @@ export class XviFcFormComponent {
     }
   }
 
-  toFormGroup() {
-    const group: any = {};
-    console.log('this.fields', this.fields);
-
-    this.fields.forEach(field => {
-      // group[field.key] = this.createFormControl(field);
-      //child form
-      if (field.formArrays.length) {
-        let items: any[] = [];
-        field.formArrays.forEach((fields: any) => {
-          // items.push(this.createFormControl(field));
-        });
-        let controlArray = this.fb.array(items);
-        group.addControl(field.name, controlArray);
-      }
-    });
-    return new FormGroup(group);
+  getTabGroup(tabKey: string): FormArray {
+    return (this.form.get(tabKey) as FormArray)
   }
 
+  getFG(tabKey: string, i: number): any {
+    return (this.form.get(tabKey) as FormArray).controls[i]
+  }
 
   onLoad() {
     console.log('-----dfdf----');

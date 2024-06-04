@@ -1,0 +1,187 @@
+<div class="container">
+    <!-- Tab header. -->
+    <div class="indro-block">
+        <p>Instructions:</p>
+        <ol>
+            <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to
+                IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+            <li>All documents pertaining to a specific financial year should be combined into a single PDF before
+                uploading & should not exceed 20 MB.</li>
+            <li>Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name.
+                <strong>Example: Annual accounts_15-16_Jaipur municipal corporation</strong>
+            </li>
+        </ol>
+    </div>
+
+    <mat-accordion>
+        <mat-expansion-panel class="audited-statement-panel" [expanded]="panelOpenState">
+            <mat-expansion-panel-header>
+                <mat-panel-title class="headers-style">
+                    Copy of Audited Annual Financial Statements
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="audited-statement-block">
+                <div class="statement-block-row" *ngFor="let year of field.formArrays; index as i">
+                    <h5>{{year.label}}</h5>
+                    <!-- {{year.file | json}} -->
+                    @if (year.isPdfAvailable) {
+                    <div class="uploaded-files">
+                        <div class="uploaded-block already-availabe">
+                            <!-- <div class="uploaded-files-label">Already available on City Finance</div>
+                             -->
+                            <div class="media">
+                                <div class="media-body">
+                                    <div class="upload-doc-label">Already available on City Finance</div>
+                                    <!-- <p class="file-size">1.5 MB</p> -->
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <!-- <button class="my-btn primary-btn-2 me-2" ></button> -->
+                                    <button mat-stroked-button color="warn" (click)="openDialog()">
+                                        View & Verify</button>
+
+                                </div>
+                            </div>
+                        </div>
+                        <!-- verified by ulb -->
+                        @if(year.isVerifiedStatus === 2) {
+                        <div class="verified-info">
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/accept-icon.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">You have successfully verified the document already
+                                        available on City Finance and accepted it.</div>
+                                </div>
+                            </div>
+                        </div>
+                        }
+
+                        @else if (year.isVerifiedStatus === 3) {
+                        <!-- rejected by ulb -->
+                        <div class="verified-info verified-info-reject">
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/reject-icon.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">You have rejected the document already available on
+                                        City Finance, re-uploaded another file, and provided the following reason:
+                                        <strong>Files are in correct</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="uploaded-files">
+                            <div class="uploaded-files-label">Uploaded Files</div>
+                            <div class="media uploaded-block">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/pdf.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                    <p class="file-size">1.5 MB</p>
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <img src="../../../assets/images/delete.png" alt="...">
+                                </div>
+                            </div>
+                        </div>
+                        }
+
+
+                    </div>
+                    } @else {
+                    <app-file [field]="year" [group]="getFileGroup(year.key,i)"></app-file>
+                    }
+                </div>
+
+                <!-- <div class="statement-block-row">
+                    <h5>FY 2021-22</h5>
+                    <div class="uploaded-files">
+                        <div class="uploaded-block already-availabe">
+                            <div class="uploaded-files-label">Already available on City Finance</div>
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/pdf.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                    <p class="file-size">1.5 MB</p>
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <button class="my-btn primary-btn-2 me-2" (click)="openDialog()">View &
+                                        Verify</button>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="verified-info">
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/accept-icon.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">You have successfully verified the document already
+                                        available on City Finance and accepted it.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="statement-block-row">
+                    <h5>FY 2020-21</h5>
+                    <div class="uploaded-files">
+                        <div class="uploaded-block already-availabe">
+                            <div class="uploaded-files-label">Already available on City Finance</div>
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/pdf.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                    <p class="file-size">1.5 MB</p>
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <button class="my-btn primary-btn-2 me-2">View & Verify</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="verified-info verified-info-reject">
+                            <div class="media">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/reject-icon.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">You have rejected the document already available on
+                                        City Finance, re-uploaded another file, and provided the following reason:
+                                        <strong>Files are in correct</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="uploaded-files">
+                            <div class="uploaded-files-label">Uploaded Files</div>
+                            <div class="media uploaded-block">
+                                <div class="align-self-center upload-doc-icon">
+                                    <img src="../../../assets/images/pdf.png" alt="...">
+                                </div>
+                                <div class="media-body">
+                                    <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                    <p class="file-size">1.5 MB</p>
+                                </div>
+                                <div class="align-self-center delete-doc-icon">
+                                    <img src="../../../assets/images/delete.png" alt="...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+        </mat-expansion-panel>
+    </mat-accordion>
+
+</div>

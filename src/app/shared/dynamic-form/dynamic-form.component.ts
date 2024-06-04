@@ -35,7 +35,7 @@ import { MaterialModule } from "../../material.module";
     RadiobuttonComponent,
     CheckboxComponent,
     ChildFormComponent,
-    TableComponent
+    TableComponent,
   ],
   // styles: []
   styleUrl: './dynamic-form.component.scss'
@@ -54,7 +54,7 @@ export class DynamicFormComponent {
     // console.log('group---',this.group);
     // console.log('group---', this.group.value.get('formFieldType').value);
     // const formFieldType = this.group.value.get('formFieldType').value;
-    this.formFieldType = ['text', 'url', 'email', 'number','amount'].includes(this.field.formFieldType) ? 'input' : this.field.formFieldType;
+    this.formFieldType = ['text', 'url', 'email', 'number', 'amount'].includes(this.field.formFieldType) ? 'input' : this.field.formFieldType;
   }
 
 }
