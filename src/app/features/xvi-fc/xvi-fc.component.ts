@@ -35,8 +35,8 @@ import { MatDialogModule } from '@angular/material/dialog';
 
   ],
 //   providers: [provideNativeDateAdapter()],
-  templateUrl: './xvi-fc.component.html',
-//   template: ``,
+//   templateUrl: './xvi-fc.component.html',
+  template: ``,
   styleUrl: './xvi-fc.component.scss'
 })
 export class XviFCComponent {

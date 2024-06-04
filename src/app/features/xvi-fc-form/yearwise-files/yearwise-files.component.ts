@@ -15,7 +15,7 @@ import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/ve
 })
 export class YearwiseFilesComponent {
 
-  @Input() field!: FieldConfig;
+  @Input() field!: any;
   // @Input() group!: FormGroup;
   @Input() group!: FormArray;
   collapsed = false;
@@ -67,13 +67,13 @@ export class YearwiseFilesComponent {
     });
   }
 
-  openDialog(): void {
+  openDialog(year: FieldConfig): void {
     const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {
-      data: { field: this.field },
+      data: { year, fileRejectOptions: this.field.fileRejectOptions },
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed',result);
+      console.log('The dialog was closed', result);
       // this.field = result;
     });
   }
