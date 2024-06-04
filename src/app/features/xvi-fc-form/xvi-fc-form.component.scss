@@ -354,67 +354,7 @@ mat-form-field {
     margin: 0;
   }
 }
-.accept-return-block {
-  margin-top: 30px;
 
-  .info {
-    margin-bottom: 20px;
-  }
-  .radio-group {
-    display: flex;
-    gap: 20px;
-  }
-
-  .radio-inline {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    position: relative;
-    padding-left: 30px;
-    margin-right: 10px;
-    font-size: 16px;
-    user-select: none;
-  }
-
-  .radio-inline input[type="radio"] {
-    display: none;
-  }
-
-  .radio-custom {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 20px;
-    height: 20px;
-    background-color: white;
-    border: 2px solid #9e9e9e;
-    border-radius: 50%;
-    transform: translateY(-50%);
-    transition: border 0.3s, background-color 0.3s;
-  }
-
-  .radio-custom::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 10px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: translate(-50%, -50%) rotate(45deg) scale(0);
-    transition: transform 0.3s;
-  }
-
-  .radio-inline input[type="radio"]:checked + .radio-custom {
-    border-color: rgba(52, 58, 64, 1);
-    background-color: rgba(52, 58, 64, 1);
-  }
-
-  .radio-inline input[type="radio"]:checked + .radio-custom::after {
-    transform: translate(-50%, -50%) rotate(45deg) scale(1);
-  }
-}
 .common-form {
   padding: 15px;
   border-radius: 10px;
