@@ -111,101 +111,108 @@ export const financialData = {
                     "readonly": false
                 },
                 {
-                "key": "sourceOfFd",
-                "label": "Please select the source of Financial Data",
-                "position": "*",
-                "required": true,
-                "info": "",
-                "placeHolder": "",
-                "formFieldType": "select",
-                "canShow": true,
-                "options": [
-                    "Accounts Finalized & Audited",
-                    "Accounts Finalized but Not Audited",
-                    "Accounts not Finalized - Provisional data"
-                ],
-                "showInputBox": "",
-                "inputBoxValue": "",
-                "tableDataType": 'dynamicYear',
-                "tableData": [
-                    {
-                        "warning": [],
-                        "label": "FY 2022-23",
-                        "key": "2022-23",
-                        "position": 1,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    },
-                    {
-                        "warning": [],
-                        "label": "FY 2021-22",
-                        "key": "2021-22",
-                        "position": 2,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    },
-                    {
-                        "warning": [],
-                        "label": "FY 2020-21",
-                        "key": "2020-21",
-                        "position": 3,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    },
-                    {
-                        "warning": [],
-                        "label": "FY 2019-20",
-                        "key": "2019-20",
-                        "position": 4,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    },
-                    {
-                        "warning": [],
-                        "label": "FY 2018-19",
-                        "key": "2018-19",
-                        "position": 5,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    },
-                    {
-                        "warning": [],
-                        "label": "FY 2017-18",
-                        "key": "2017-18",
-                        "position": 6,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    },
-                    {
-                        "warning": [],
-                        "label": "FY 2016-17",
-                        "key": "2016-17",
-                        "position": 7,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    },
-                    {
-                        "warning": [],
-                        "label": "FY 2015-16",
-                        "key": "2015-16",
-                        "position": 8,
-                        "type": "sourceOfFd",
-                        "formFieldType": "select",
-                        "value": ""
-                    }
-                ],
-                "status": "Na",
-                "value": "",
-                "isDraft": true,
-                "readonly": false
-            }]
+                    "key": "sourceOfFd",
+                    "label": "Please select the source of Financial Data",
+                    "position": "*",
+                    "required": true,
+                    "info": "",
+                    "placeHolder": "",
+                    "formFieldType": "select",
+                    "canShow": true,
+                    "options": [
+                        "Accounts Finalized & Audited",
+                        "Accounts Finalized but Not Audited",
+                        "Accounts not Finalized - Provisional data"
+                    ],
+                    "showInputBox": "",
+                    "inputBoxValue": "",
+                    "tableDataType": 'dynamicYear',
+                    "tableData": [
+                        {
+                            "warning": [],
+                            "label": "FY 2022-23",
+                            "key": "2022-23",
+                            "position": 1,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        },
+                        {
+                            "warning": [],
+                            "label": "FY 2021-22",
+                            "key": "2021-22",
+                            "position": 2,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        },
+                        {
+                            "warning": [],
+                            "label": "FY 2020-21",
+                            "key": "2020-21",
+                            "position": 3,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        },
+                        {
+                            "warning": [],
+                            "label": "FY 2019-20",
+                            "key": "2019-20",
+                            "position": 4,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        },
+                        {
+                            "warning": [],
+                            "label": "FY 2018-19",
+                            "key": "2018-19",
+                            "position": 5,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        },
+                        {
+                            "warning": [],
+                            "label": "FY 2017-18",
+                            "key": "2017-18",
+                            "position": 6,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        },
+                        {
+                            "warning": [],
+                            "label": "FY 2016-17",
+                            "key": "2016-17",
+                            "position": 7,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        },
+                        {
+                            "warning": [],
+                            "label": "FY 2015-16",
+                            "key": "2015-16",
+                            "position": 8,
+                            "type": "sourceOfFd",
+                            "formFieldType": "select",
+                            "value": ""
+                        }
+                    ],
+                    "status": "Na",
+                    "value": "",
+                    "isDraft": true,
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        }
+                    ]
+                }]
         },
         {
             "key": 'revenue',
@@ -360,7 +367,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "feeAndUserCharges",
@@ -509,7 +538,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "interestIncome",
@@ -658,7 +709,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "otherIncome",
@@ -807,7 +880,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "totOwnRevenue",
@@ -961,7 +1056,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "centralGrants",
@@ -1110,7 +1227,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "otherGrants",
@@ -1259,7 +1398,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "totalGrants",
@@ -1411,7 +1572,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "assignedRevAndCom",
@@ -1560,7 +1743,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "otherRevenue",
@@ -1709,7 +1914,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "totalRevenue",
@@ -1863,7 +2090,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 }
             ]
         },
@@ -2020,7 +2269,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "oAndmExp",
@@ -2169,7 +2440,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "interestAndfinacialChar",
@@ -2318,7 +2611,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "otherRevenueExp",
@@ -2467,7 +2782,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "totalRevenueExp",
@@ -2621,7 +2958,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "capExp",
@@ -2770,7 +3129,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "totalExp",
@@ -2922,7 +3303,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 }
             ]
         },
@@ -3079,7 +3482,29 @@ export const financialData = {
                     "status": "Na",
                     "value": "",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: -999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "max",
+                            validator: 999999999999999,
+                            message: "Please enter a valid number with at most 15 digits."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 }
             ]
         }

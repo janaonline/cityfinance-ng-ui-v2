@@ -28,13 +28,13 @@ const basicTab = {
                 {
                     name: "required",
                     validator: 'required',
-                    message: "Name Required"
+                    message: "Please fill in this required field."
                 },
-                // {
-                //     name: "pattern",
-                //     validator:"^[a-zA-Z]+$",
-                //     message: "Accept only text"
-                // }
+                {
+                    name: "pattern",
+                    validator: "^[a-zA-Z]+$",
+                    message: "Please enter a valid text."
+                }
             ]
         },
         {
@@ -49,7 +49,19 @@ const basicTab = {
             "value": "",
             "status": "Na",
             "isDraft": true,
-            "readonly": true
+            "readonly": true,
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please fill in this required field."
+                },
+                {
+                    name: "pattern",
+                    validator: "^[a-zA-Z]+$",
+                    message: "Please enter a valid text."
+                }
+            ]
         },
         {
             "key": "pop2011",
@@ -75,7 +87,29 @@ const basicTab = {
             "value": "",
             "status": "Na",
             "isDraft": true,
-            "readonly": false
+            "readonly": false,
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please fill in this required field."
+                },
+                {
+                    name: "min",
+                    validator: 0,
+                    message: "Please enter a number between 0 and 10,00,000."
+                },
+                {
+                    name: "max",
+                    validator: 1000000,
+                    message: "Please enter a number between 0 and 10,00,000."
+                },
+                {
+                    name: "decimal",
+                    validator: 0,
+                    message: "Please enter a whole number for this field."
+                }
+            ]
         },
         {
             "key": "popApril2024",
@@ -101,7 +135,29 @@ const basicTab = {
             "value": "",
             "status": "Na",
             "isDraft": true,
-            "readonly": false
+            "readonly": false,
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please fill in this required field."
+                },
+                {
+                    name: "min",
+                    validator: 0,
+                    message: "Please enter a number between 0 and 10,00,000."
+                },
+                {
+                    name: "max",
+                    validator: 1000000,
+                    message: "Please enter a number between 0 and 10,00,000."
+                },
+                {
+                    name: "decimal",
+                    validator: 0,
+                    message: "Please enter a whole number for this field."
+                }
+            ]
         },
         {
             "key": "areaOfUlb",
@@ -127,7 +183,29 @@ const basicTab = {
             "value": "",
             "status": "Na",
             "isDraft": true,
-            "readonly": false
+            "readonly": false,
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please fill in this required field."
+                },
+                {
+                    name: "min",
+                    validator: 0.1,
+                    message: "Please enter area greater than 0."
+                },
+                {
+                    name: "max",
+                    validator: 1000,
+                    message: "Please enter area within 1000 sq.km"
+                },
+                {
+                    name: "decimal",
+                    validator: 2,
+                    message: "Please enter the area with at most two decimal places."
+                }
+            ]
         },
         {
             "key": "yearOfElection",
@@ -219,7 +297,6 @@ const basicTab = {
         }
     ]
 }
-
 const uploadDoc = {
     // "_id": "6657921b9ab1c13ac44d01f6",
     // "key": "uploadDoc",
@@ -277,6 +354,18 @@ const uploadDoc = {
                 "name": "123",
                 "url": "321"
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "",
@@ -301,6 +390,18 @@ const uploadDoc = {
                 "name": "567",
                 "url": "765"
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "file1.pdf",
@@ -332,6 +433,18 @@ const uploadDoc = {
                 "name": "",
                 "url": ""
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "",
@@ -354,6 +467,18 @@ const uploadDoc = {
                 "name": "",
                 "url": ""
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "",
@@ -376,6 +501,18 @@ const uploadDoc = {
                 "name": "",
                 "url": ""
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "",
@@ -398,6 +535,18 @@ const uploadDoc = {
                 "name": "",
                 "url": ""
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "",
@@ -420,6 +569,18 @@ const uploadDoc = {
                 "name": "",
                 "url": ""
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "",
@@ -442,6 +603,18 @@ const uploadDoc = {
                 "name": "",
                 "url": ""
             },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
             "fileAlreadyOnCf": [
                 {
                     "name": "",
@@ -482,7 +655,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "accProvision",
@@ -503,7 +688,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "accInCashBasis",
@@ -522,7 +719,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "fsTransactionRecord",
@@ -542,7 +751,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "fsPreparedBy",
@@ -563,7 +784,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "revReceiptRecord",
@@ -583,7 +816,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "expRecord",
@@ -603,7 +848,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "accSoftware",
@@ -625,7 +882,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "onlineAccSysIntegrate",
@@ -644,7 +913,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 },
                 {
                     "key": "muniAudit",
@@ -664,7 +945,19 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "required",
+                            validator: 'inputBoxValue',
+                            message: "Please fill in this required field."
+                        }
+                    ]
                 }
             ]
         },
@@ -698,7 +991,29 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: 0,
+                            message: "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            name: "max",
+                            validator: 9999,
+                            message: "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 },
                 {
                     "key": "totVacancy",
@@ -724,7 +1039,29 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: 0,
+                            message: "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            name: "max",
+                            validator: 9999,
+                            message: "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field.s"
+                        }
+                    ]
                 },
                 {
                     "key": "accPosition",
@@ -750,7 +1087,29 @@ const accountPractice = {
                     "value": "",
                     "status": "Na",
                     "isDraft": true,
-                    "readonly": false
+                    "readonly": false,
+                    validations: [
+                        {
+                            name: "required",
+                            validator: 'required',
+                            message: "Please fill in this required field."
+                        },
+                        {
+                            name: "min",
+                            validator: 0,
+                            message: "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            name: "max",
+                            validator: 9999,
+                            message: "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            name: "decimal",
+                            validator: 0,
+                            message: "Please enter a whole number for this field."
+                        }
+                    ]
                 }
             ]
         }
@@ -766,7 +1125,6 @@ const reviewSubmit = {
 export const tabsJson = {
     data: {
         "tabs": [
-           
             basicTab,
             financialData,
             uploadDoc,
