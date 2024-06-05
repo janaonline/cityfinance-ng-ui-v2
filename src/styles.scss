@@ -94,9 +94,14 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 * {
     --clr-secondary-500: hsla(220, 62%, 25%, 1);
     --clr-primary-500: hsla(30, 83%, 49%, 1);
+  
     --clr-neutral-300: hsla(30, 83%, 49%, 0.55);
+    --clr-neutral-250: hsla(0, 0%, 66%, 1);
+    --clr-neutral-200: hsla(30, 69%, 94%, 1);
     --clr-neutral-100: hsla(0, 0%, 100%, 1);
+  
     --ff-base: "Montserrat", sans-serif;
+  
     --fw-regular: 500;
     --fw-bold: 700;
   }
@@ -1448,4 +1453,13 @@ mat-form-field {
     --ff-base: "Montserrat", sans-serif;
     --fw-regular: 500;
     --fw-bold: 700;
+}
+::ng-deep .mat-mdc-radio-button.mat-mdc-radio-checked .mdc-radio__background::before{
+    background-color:#000 !important;
+}
+::ng-deep .mat-mdc-radio-button .mdc-radio .mdc-radio__native-control:enabled+.mdc-radio__background .mdc-radio__inner-circle {
+    border-color: #000 !important;
+}
+::ng-deep .mat-mdc-radio-button .mdc-radio .mdc-radio__native-control:enabled:checked+.mdc-radio__background .mdc-radio__outer-circle {
+    border-color: #000 !important;
 }

@@ -40,8 +40,8 @@ export class FileComponent {
   }
 
   ngOnInit() {
-    console.log('----field file --', this.field.key);
-    console.log('----group file --', this.group);
+    // console.log('----field file --', this.field.key);
+    // console.log('----group file --', this.group);
     // this.group?.get(this.field.key)?.patchValue({ uploading: false, name: 'fgh', url: '' });
     // console.log('----group file -pat-', this.group.get(this.field.key));
   }

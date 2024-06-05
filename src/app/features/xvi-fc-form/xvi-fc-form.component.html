@@ -15,14 +15,16 @@
                         }}
                         {{ (tab?.label).split(" ")[1] }}<br />
                         {{ (tab?.label).split(" ")[2] }}</span>
+                        <!-- <div>sdfdsfsd</div> -->
                 </ng-template>
 
-                <div class="container mt-4">
+                <div class="container mt-4 ">
                     <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
-                    <div class="text-bg-light border rounded mt-3 mb-3">
-                        <p class="text-muted small pt-3 pb-2 ps-3">Section 1/ 4</p>
-                        <h4 class="fw-bold pb-3 ps-3">{{tab.label}}</h4>
+                    <div class="text-bg-light border rounded mt-3 mb-3 section-box">
+                        <p class="text-muted">Section 1/ 4</p>
+                        <h4 class="fw-bold">{{tab.label}}</h4>
                     </div>
+                    <div class="overflow-container">
                     @if (tab.key === 'auditedAnnualFySt') {
                     <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
                     }
@@ -40,6 +42,7 @@
                         </div>
                     </ng-container>
                     }
+                </div>
                     <div class="mt-4">
                         <div class="float-start">
                             <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
