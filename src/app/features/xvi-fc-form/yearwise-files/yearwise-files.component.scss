@@ -1,4 +1,22 @@
-.headers-style {
+*{
+    font-family: "Montserrat", sans-serif;
+  }
+  .material-icons {
+    font-family: 'Material Icons';
+  }
+  .verified-info .material-icons{
+    color: green;
+  }
+  .verified-info-reject .material-icons{
+    color: red;
+  }
+  .upload-doc-icon .pdf{
+    color: hsl(30, 83%, 49%);
+  }
+  .delete-doc-icon .material-icons{
+    color: red;
+  }
+ .headers-style {
     color: var(--clr-neutral-100);
     font-weight: var(--fw-bold);
     padding: 1.125rem;
@@ -46,6 +64,7 @@
 .uploaded-files-label{
     font-size: 18px;
     font-weight: 500;
+    margin-bottom: 10px;
 }
 .upload-doc-label{
     font-size: 18px;
@@ -125,36 +144,5 @@
     margin-top: 30px;
     border: 0;
 }
-.xvifc-heading{
-    font-size: 30px;
-    color: #000;
-    margin-top: 30px;
-}
-::ng-deep
-.mat-step-icon {
-    border-radius: 25% !important;
-    width: 30px !important;
-    height: 30px !important;
-}
-::ng-deep
-.mat-step-icon-selected {
-    background-color: #000 !important;
-    color: #fff !important;
-}
-::ng-deep
-.mat-stepper-label-position-bottom .mat-stepper-horizontal-line{
-    color: #000 !important;
-}
-::ng-deep
-.mat-step-icon-state-edit {
-    background-color: #000 !important;
-}
-.st-title{
-    font-size: 16px;
-    font-weight: bold;
-}
-.progres-status{
-    color: #E67E15;
-    font-size: 12px;
-}
+
 
