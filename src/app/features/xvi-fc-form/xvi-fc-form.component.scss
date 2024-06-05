@@ -33,11 +33,13 @@
   box-shadow: 1px 0px 26px -2px var(--clr-neutral-300);
 }
 
+::ng-deep 
 .primary-btn-2 {
   padding: 0.5rem 0.75rem;
   font-weight: var(--fw-bold);
   color: var(--clr-primary-500);
-  background-color: var(--clr-primary-100);
+  // background-color: var(--clr-primary-100);
+  background-color: #fff;
   border: 1px solid var(--clr-primary-500);
   border-radius: 5px;
 }

@@ -2,15 +2,23 @@ import { Component, Inject } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FieldConfig } from '../../../../shared/dynamic-form/field.interface';
+import { FormGroup } from '@angular/forms';
+import { FileComponent } from '../../../../shared/dynamic-form/components/file/file.component';
+import { InputComponent } from '../../../../shared/dynamic-form/components/input/input.component';
+import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components/radiobutton/radiobutton.component';
 
 export interface DialogData {
-  field: FieldConfig;
+  year: FieldConfig;
+  fileRejectOptions: FieldConfig;
+  group: FormGroup;
 }
 
 @Component({
   selector: 'app-verify-documents-dialogue',
   standalone: true,
-  imports: [MaterialModule],
+  imports: [MaterialModule, FileComponent,
+    InputComponent, RadiobuttonComponent,
+  ],
   templateUrl: './verify-documents-dialogue.component.html',
   styleUrl: './verify-documents-dialogue.component.scss'
 })
@@ -35,5 +43,9 @@ export class VerifyDocumentsDialogueComponent {
 
   onNoClick(): void {
     this.dialogRef.close();
+  }
+
+  getFileGroup(fieldKey: any, i: number): FormGroup {
+    return (this.data.group.controls[i]) as FormGroup;
   }
 }

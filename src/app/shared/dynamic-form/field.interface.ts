@@ -18,6 +18,8 @@ export interface FieldConfig {
   formArrays?: any[];
   uploading?: boolean;
   position?: number;
+  readonly?: boolean;
+  fileAlreadyOnCf?: any[];
 }
 
 export interface JsonFieldConfig {

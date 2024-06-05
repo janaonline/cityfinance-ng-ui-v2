@@ -4,10 +4,10 @@
 
 @switch (field.formFieldType) {
 @case ('amount') {
-<mat-form-field floatLabel="always" [formGroup]="group">
-<!-- <mat-form-field [formGroup]="group"> -->
-  <mat-label>{{field.label}}</mat-label>
-  <input matInput  [formControlName]="field.key" type="number" class="example-right-align" placeholder="0">
+<mat-form-field appearance="outline" floatLabel="always" [formGroup]="group">
+  <!-- <mat-form-field [formGroup]="group"> -->
+  <!-- <mat-label>{{field.label}}</mat-label> -->
+  <input matInput [formControlName]="field.key" type="number" class="example-right-align" placeholder="0">
   <span matTextPrefix>&#8377;&nbsp;</span>
   <!-- <span matTextSuffix>.00</span> -->
   <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
@@ -16,9 +16,10 @@
 </mat-form-field>
 }
 @default {
-<mat-form-field class="demo-full-width margin-top" [formGroup]="group">
-  <mat-label>{{field.position}}.{{field.label}}</mat-label>
-  <input matInput [formControlName]="field.key" [type]="field.formFieldType">
+<label class="fw-bold">{{field.position}}. {{field.label}}</label>
+<mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
+  <!-- <mat-label>{{field.position}}.{{field.label}}</mat-label> -->
+  <input matInput [formControlName]="field.key" [type]="field.formFieldType" [readonly]="field.readonly">
   <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
     <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
   </ng-container>

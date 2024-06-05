@@ -8,6 +8,7 @@ const basicTab = {
     "formType": "form1",
     "label": "Demographic Data",
     "id": "s1",
+    class: 'w-75',
     "displayPriority": 1,
     "__v": 0,
     "formArrays": [
@@ -20,10 +21,10 @@ const basicTab = {
             "placeHolder": "",
             "formFieldType": "text",
             "canShow": true,
-            "value": "",
+            "value": "Barpeta Municipal Board",
             "status": "Na",
             "isDraft": true,
-            "readonly": false,
+            "readonly": true,
             validations: [
                 {
                     name: "required",
@@ -307,6 +308,7 @@ const uploadDoc = {
     "id": "s3",
     "displayPriority": 3,
     "key": "auditedAnnualFySt",
+    class: 'w-75',
     // "label": "Copy of Audited Annual Financial Statements preferably in English",
     "position": "",
     "required": true,

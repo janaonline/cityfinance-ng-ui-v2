@@ -21,7 +21,7 @@
         <h5>FY 2021-22</h5>
         <div class="uploaded-files">
             <div class="uploaded-block already-availabe">
-                <div class="media media-in-modal">
+                <!-- <div class="media media-in-modal">
                     <div class="align-self-center upload-doc-icon">
                         <mat-icon class="pdf">picture_as_pdf</mat-icon>
                     </div>
@@ -30,7 +30,7 @@
                         <p class="file-size">1.5 MB</p>
                     </div>
                     <div class="align-self-center delete-doc-icon">
-                        <button  class="primary-btn-2">
+                        <button class="primary-btn-2">
                             <mat-icon>cloud_download</mat-icon> Download</button>
                     </div>
                 </div>
@@ -43,21 +43,21 @@
                         <p class="file-size">1.5 MB</p>
                     </div>
                     <div class="align-self-center delete-doc-icon">
-                        <button  class="primary-btn-2">
+                        <button class="primary-btn-2">
                             <mat-icon>cloud_download</mat-icon> Download</button>
                     </div>
-                </div>
-                <div class="media media-in-modal">
+                </div> -->
+                <div class="media media-in-modal" *ngFor="let file of data.year.fileAlreadyOnCf">
                     <div class="align-self-center upload-doc-icon">
                         <mat-icon class="pdf">picture_as_pdf</mat-icon>
                     </div>
                     <div class="media-body">
-                        <div class="upload-doc-label">financial document 2022-23.pdf</div>
-                        <p class="file-size">1.5 MB</p>
+                        <div class="upload-doc-label">{{file.name}}</div>
+                        <p class="file-size">{{file.size}}</p>
                     </div>
                     <div class="align-self-center delete-doc-icon">
-                        <button  class="primary-btn-2">
-                            <mat-icon>cloud_download</mat-icon> Download</button>
+                        <a class="ms-2 primary-btn-2" style="text-decoration: none;" [href]="file.url"
+                            download><mat-icon>cloud_download</mat-icon> Download</a>
                     </div>
                 </div>
             </div>
@@ -69,7 +69,7 @@
             acceptance. If the existing documents require corrections or do not meet your requirements, please
             select the return option and provide a reason for the return.
         </div>
-        <div class="radio-group">
+        <!-- <div class="radio-group">
             <label class="radio-inline">
                 <input type="radio" name="options" value="option1" checked>
                 <span class="radio-custom"></span>
@@ -80,6 +80,20 @@
                 <span class="radio-custom"></span>
                 Accept Existing Document
             </label>
+        </div> -->
+        <div class="d-flex justify-content-center">
+
+            <mat-radio-group aria-label="Select an option">
+                <mat-radio-button value="Accept">Accept Existing Document</mat-radio-button>
+                <mat-radio-button value="Reject">Reject Existing Document</mat-radio-button>
+            </mat-radio-group>
+            <!-- <app-radiobutton [field]="data.year" [group]="data.group"></app-radiobutton> -->
+        </div>
+        <div>
+            <app-file [field]="data.year" [group]="data.group"></app-file>
+        </div>
+        <div class="d-flex justify-content-center">
+            <button mat-raised-button color="primary">Accept</button>
         </div>
     </div>
 </mat-dialog-content>
