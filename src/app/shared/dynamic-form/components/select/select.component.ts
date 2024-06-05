@@ -7,7 +7,7 @@ import { MaterialModule } from '../../../../material.module';
   standalone: true,
   imports: [MaterialModule],
   template: `
-   <label class="fw-bold">{{field.position ? field.position+'. ':''}}{{field.label}}</label>
+   <label class="fw-bold">{{field.position ? field.position+'. ':''}}{{field.label}} <span style="color: red;">*</span></label>
     <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
     <!-- <mat-label>{{field.position ? field.position+'. ':''}}{{field.label}}</mat-label> -->
     	<mat-select [formControlName]="field.key">
