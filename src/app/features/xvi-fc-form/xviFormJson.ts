@@ -24,19 +24,7 @@ const basicTab = {
             "value": "Barpeta Municipal Board",
             "status": "Na",
             "isDraft": true,
-            "readonly": true,
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please fill in this required field."
-                },
-                {
-                    name: "pattern",
-                    validator: "^[a-zA-Z]+$",
-                    message: "Please enter a valid text."
-                }
-            ]
+            "readonly": true
         },
         {
             "key": "nameOfState",

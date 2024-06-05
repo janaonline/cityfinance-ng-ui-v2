@@ -113,7 +113,7 @@ export const financialData = {
                 {
                     "key": "sourceOfFd",
                     "label": "Please select the source of Financial Data",
-                    "position": "*",
+                    "position": "",
                     "required": true,
                     "info": "",
                     "placeHolder": "",

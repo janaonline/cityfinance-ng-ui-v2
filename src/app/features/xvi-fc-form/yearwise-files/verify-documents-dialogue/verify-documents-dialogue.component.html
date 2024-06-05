@@ -82,14 +82,16 @@
             </label>
         </div> -->
         <div class="d-flex justify-content-center">
-
-            <mat-radio-group aria-label="Select an option">
+            <!-- <mat-radio-group aria-label="Select an option">
                 <mat-radio-button value="Accept">Accept Existing Document</mat-radio-button>
                 <mat-radio-button value="Reject">Reject Existing Document</mat-radio-button>
-            </mat-radio-group>
-            <!-- <app-radiobutton [field]="data.year" [group]="data.group"></app-radiobutton> -->
+            </mat-radio-group> -->
+            <app-radiobutton [options]="verifyOptions" [field]="data.year" [group]="data.group"></app-radiobutton>
         </div>
         <div>
+            <app-input [field]="data.year" [group]="data.group"></app-input>
+            <app-select [field]="data.year" [group]="data.group"></app-select>
+
             <app-file [field]="data.year" [group]="data.group"></app-file>
         </div>
         <div class="d-flex justify-content-center">

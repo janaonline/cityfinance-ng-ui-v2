@@ -26,6 +26,7 @@ export interface DialogData {
 })
 export class VerifyDocumentsDialogueComponent {
 
+  verifyOptions = ['Accept Existing Document', 'Reject Existing Document'];
   constructor(
     public dialogRef: MatDialogRef<VerifyDocumentsDialogueComponent>,
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
