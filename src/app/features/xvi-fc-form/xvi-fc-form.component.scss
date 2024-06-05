@@ -9,16 +9,15 @@
 * {
   --clr-secondary-500: hsla(220, 62%, 25%, 1);
   --clr-primary-500: hsla(30, 83%, 49%, 1);
-
   --clr-neutral-300: hsla(30, 83%, 49%, 0.55);
   --clr-neutral-100: hsla(0, 0%, 100%, 1);
-
   --ff-base: "Montserrat", sans-serif;
-
   --fw-regular: 500;
   --fw-bold: 700;
 }
-
+*{
+  font-family: "Montserrat", sans-serif;
+}
 .primary-btn-1 {
   padding: 0.5rem 0.75rem;
   font-weight: var(--fw-bold);
@@ -35,7 +34,6 @@
   color: var(--clr-primary-500);
   background-color: var(--clr-primary-100);
   border: 1px solid var(--clr-primary-500);
-  /* border: none; */
   border-radius: 5px;
 }
 
@@ -46,61 +44,34 @@
   border-radius: 10px;
   background: linear-gradient(90deg, #193369 0%, #ffffff 100%);
 }
-.form-check-input {
-  padding: 0;
-}
-.form-control {
-  height: auto;
-}
-.form-control-select {
-  min-height: 46px;
-}
+// .form-check-input {
+//   padding: 0;
+// }
+// .form-control {
+//   height: auto;
+// }
+// .form-control-select {
+//   min-height: 46px;
+// }
 mat-form-field {
   width: 100%;
 }
-.input-group-text {
-  padding: 10px;
-  border-radius: 8px 0px 0px 8px;
-}
-.table-responsive {
-  overflow-x: auto;
-}
-.table {
-  position: relative;
-}
-.table td,
-.table th {
-  min-width: 200px !important;
-}
+// .input-group-text {
+//   padding: 10px;
+//   border-radius: 8px 0px 0px 8px;
+// }
+// .table-responsive {
+//   overflow-x: auto;
+// }
+// .table {
+//   position: relative;
+// }
+// .table td,
+// .table th {
+//   min-width: 200px !important;
+// }
 .financial-year {
   padding: 0 24px;
-}
-.table th,
-.table td {
-  border: 0;
-}
-.table th.first-col,
-.table td.first-col {
-  min-width: 300px !important;
-  vertical-align: middle;
-  position: relative;
-  padding-right: 30px;
-}
-.info-icon {
-  width: 20px;
-  height: 20px;
-  background-color: #000;
-  border-radius: 81%;
-  padding: 5px;
-  color: #fff;
-  text-align: center;
-  margin-left: 5px;
-  font-weight: bold;
-  display: inline-block;
-  font-size: 12px;
-  line-height: 12px;
-  right: 15px;
-  position: absolute;
 }
 ::ng-deep .mat-expansion-panel:not([class*="mat-elevation-z"]) {
   box-shadow: 0px 5px 18px 1px rgba(0, 0, 0, 0.2),
@@ -109,6 +80,10 @@ mat-form-field {
 .mat-expansion-panel-header {
   padding-left: 0;
   margin-bottom: 10px;
+}
+::ng-deep .mat-expansion-panel-header.mat-expanded:focus, 
+::ng-deep .mat-expansion-panel-header.mat-expanded:hover {
+    background: linear-gradient(90deg, #193369 0%, #ffffff 100%) !important;
 }
 ::ng-deep .mat-mdc-form-field-infix {
   width: 100px !important;
@@ -191,93 +166,6 @@ mat-form-field {
   font-size: 12px;
   font-weight: 400;
   color: rgba(108, 117, 125, 1);
-}
-.uploaded-block {
-  padding: 20px;
-  border: 1px solid rgba(219, 219, 219, 1);
-  border-radius: 10px;
-}
-.already-availabe {
-  background: rgba(243, 243, 243, 1);
-}
-.upload-doc-icon {
-  margin-right: 10px;
-}
-.delete-doc-icon {
-  margin-left: 10px;
-  cursor: pointer;
-}
-.verified-info {
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid rgba(54, 160, 4, 1);
-  background: rgba(227, 249, 217, 1);
-  margin-top: 20px;
-}
-.verified-info-reject {
-  border: 1px solid rgba(255, 0, 0, 1);
-  background: rgba(255, 242, 242, 1);
-}
-// .drag-drop-area:hover {
-//     background-color: #e9f1ff;
-//     border-color: #0056b3;
-// }
-.drag-drop-area p {
-  margin: 0;
-  font-size: 16px;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 22px;
-  color: rgba(108, 117, 125, 1);
-}
-.file-upload-name {
-  display: block;
-  margin: 10px 0;
-  color: rgba(0, 0, 0, 1);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 22px;
-}
-.view-and-verify {
-  padding: 20px;
-}
-.verify-header {
-  position: relative;
-  text-align: center;
-  padding: 20px 24px 5px 24px;
-
-  .verify-title {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 10px;
-  }
-
-  p {
-    font-size: 18px;
-    font-weight: 500;
-  }
-
-  .verify-modal-close {
-    position: absolute;
-    right: 0;
-    top: 0;
-    cursor: pointer;
-  }
-}
-.intro-box-in-modal {
-  background: rgba(243, 243, 243, 1);
-  border: 1px solid rgba(108, 117, 125, 1);
-}
-.media-in-modal {
-  margin-bottom: 20px;
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-.block-row-in-modal {
-  padding: 0;
-  margin-top: 30px;
-  border: 0;
 }
 .xvifc-heading {
   font-size: 30px;

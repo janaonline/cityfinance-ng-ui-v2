@@ -8,7 +8,7 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule],
   template: `
 <div class="demo-full-width margin-top" [formGroup]="group">
-<label class="radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}}:</label>
+<div><label class="radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}}:</label></div>
 <mat-radio-group [formControlName]="field.key">
 <mat-radio-button *ngFor="let opt of field.options" [value]="opt">{{opt}}</mat-radio-button>
 </mat-radio-group>
