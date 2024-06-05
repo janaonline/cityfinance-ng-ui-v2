@@ -22,9 +22,9 @@ export class FooterComponent {
   }
 
   private fetchUserVisitCount() {
-    // this._commonService
-    //   .getWebsiteVisitCount()
-    //   .subscribe((res: any) => { return this.totalUsersVisit = res; });
+    this._commonService
+      .getWebsiteVisitCount()
+      .subscribe((res: any) => { return this.totalUsersVisit = res; });
   }
   routerNav(navlink: any) {
     console.log(navlink);
