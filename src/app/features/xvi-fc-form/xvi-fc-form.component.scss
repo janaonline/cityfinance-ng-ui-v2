@@ -9,9 +9,14 @@
 * {
   --clr-secondary-500: hsla(220, 62%, 25%, 1);
   --clr-primary-500: hsla(30, 83%, 49%, 1);
+
   --clr-neutral-300: hsla(30, 83%, 49%, 0.55);
+  --clr-neutral-250: hsla(0, 0%, 66%, 1);
+  --clr-neutral-200: hsla(30, 69%, 94%, 1);
   --clr-neutral-100: hsla(0, 0%, 100%, 1);
+
   --ff-base: "Montserrat", sans-serif;
+
   --fw-regular: 500;
   --fw-bold: 700;
 }
@@ -271,4 +276,23 @@ mat-form-field {
 }
 ::ng-deep .mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover {
   background: linear-gradient(90deg, #193369 0%, #ffffff 100%) !important;
+}
+.section-box{
+  padding: 15px;
+  p{
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  h4{
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+// .overflow-container{
+//   overflow-x: auto;
+// }
+.error-warning{
+  color: var(--clr-primary-500);
 }
