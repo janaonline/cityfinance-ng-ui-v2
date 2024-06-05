@@ -56,7 +56,8 @@
                         <p class="file-size">{{file.size}}</p>
                     </div>
                     <div class="align-self-center delete-doc-icon">
-                        <a class="ms-2 primary-btn-2" style="text-decoration: none;" [href]="file.url" download><mat-icon>cloud_download</mat-icon> Download</a>
+                        <a class="ms-2 primary-btn-2" style="text-decoration: none;" [href]="file.url"
+                            download><mat-icon>cloud_download</mat-icon> Download</a>
                     </div>
                 </div>
             </div>
@@ -80,10 +81,19 @@
                 Accept Existing Document
             </label>
         </div> -->
-        <div class="d-flex justify-content-center"> <mat-radio-group aria-label="Select an option">
-            <mat-radio-button value="Accept">Accept Existing Document</mat-radio-button>
-            <mat-radio-button value="Reject">Reject Existing Document</mat-radio-button>
-          </mat-radio-group></div>
-       
+        <div class="d-flex justify-content-center">
+
+            <mat-radio-group aria-label="Select an option">
+                <mat-radio-button value="Accept">Accept Existing Document</mat-radio-button>
+                <mat-radio-button value="Reject">Reject Existing Document</mat-radio-button>
+            </mat-radio-group>
+            <!-- <app-radiobutton [field]="data.year" [group]="data.group"></app-radiobutton> -->
+        </div>
+        <div>
+            <app-file [field]="data.year" [group]="data.group"></app-file>
+        </div>
+        <div class="d-flex justify-content-center">
+            <button mat-raised-button color="primary">Accept</button>
+        </div>
     </div>
 </mat-dialog-content>
