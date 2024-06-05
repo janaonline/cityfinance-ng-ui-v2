@@ -42,6 +42,7 @@ import { AccountingPracticeComponent } from './accounting-practice/accounting-pr
 import { ReviewSubmitComponent } from './review-submit/review-submit.component';
 import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.component';
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
+import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 
 @Component({
   selector: 'app-xvi-fc-form',
@@ -81,6 +82,7 @@ export class XviFcFormComponent {
   @ViewChild('stepper') stepper: MatStepper | undefined;
 
   yearIdArr: any = {};
+  // user!: IUserLoggedInDetails | null;
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   isLoader: boolean = false;
   loggedInUserType: any;

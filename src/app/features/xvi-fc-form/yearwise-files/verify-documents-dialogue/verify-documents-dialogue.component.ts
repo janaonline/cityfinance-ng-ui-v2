@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FieldConfig } from '../../../../shared/dynamic-form/field.interface';
 
 export interface DialogData {
-  field: FieldConfig;
+  year: FieldConfig;
 }
 
 @Component({

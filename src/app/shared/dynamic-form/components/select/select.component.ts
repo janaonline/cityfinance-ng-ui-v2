@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from "@angular/core";
-import { FormGroup } from "@angular/forms";
+import { FormControl, FormGroup } from "@angular/forms";
 import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
 @Component({
@@ -7,12 +7,16 @@ import { MaterialModule } from '../../../../material.module';
   standalone: true,
   imports: [MaterialModule],
   template: `
-    <mat-form-field class="demo-full-width margin-top" [formGroup]="group">
-    <mat-label>{{field.position ? field.position+'. ':''}}{{field.label}}</mat-label>
+   <label class="fw-bold">{{field.position ? field.position+'. ':''}}{{field.label}}</label>
+    <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
+    <!-- <mat-label>{{field.position ? field.position+'. ':''}}{{field.label}}</mat-label> -->
     	<mat-select [formControlName]="field.key">
     		<mat-option value="">Select an Option</mat-option>
     		<mat-option *ngFor="let item of options" [value]="item">{{item}}</mat-option>
     	</mat-select>
+      <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+        <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
+      </ng-container>
     </mat-form-field>
     <!-- <mat-form-field class="demo-full-width margin-top" [formGroup]="group.value">
     <mat-label class="com-style">{{ getValue('label') }}
@@ -42,4 +46,8 @@ export class SelectComponent {
   // getValue(name: string) {
   //   return this.group.value.get(name).value;
   // }
+
+  hasError(key: string, name: string) {
+    return (this.group.get(key) as FormControl).hasError(name)
+  }
 }
