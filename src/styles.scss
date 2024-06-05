@@ -91,7 +91,15 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 :root {
     --multi-dropdown-color: #059b9a;
 }
-
+* {
+    --clr-secondary-500: hsla(220, 62%, 25%, 1);
+    --clr-primary-500: hsla(30, 83%, 49%, 1);
+    --clr-neutral-300: hsla(30, 83%, 49%, 0.55);
+    --clr-neutral-100: hsla(0, 0%, 100%, 1);
+    --ff-base: "Montserrat", sans-serif;
+    --fw-regular: 500;
+    --fw-bold: 700;
+  }
 .search-text-matched {
     background: yellow;
 }
@@ -1426,4 +1434,18 @@ input[type=number] {
 
 mat-form-field {
     width: 100%;
+}
+::ng-deep .mat-expansion-panel-header.mat-expanded:focus, 
+::ng-deep .mat-expansion-panel-header.mat-expanded:hover {
+    background: linear-gradient(90deg, #193369 0%, #ffffff 100%) !important;
+}
+::ng-deep .mat-expansion-panel-content, 
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__content{
+    --clr-secondary-500: hsla(220, 62%, 25%, 1);
+    --clr-primary-500: hsla(30, 83%, 49%, 1);
+    --clr-neutral-300: hsla(30, 83%, 49%, 0.55);
+    --clr-neutral-100: hsla(0, 0%, 100%, 1);
+    --ff-base: "Montserrat", sans-serif;
+    --fw-regular: 500;
+    --fw-bold: 700;
 }
