@@ -6,6 +6,7 @@ import { FormGroup } from '@angular/forms';
 import { FileComponent } from '../../../../shared/dynamic-form/components/file/file.component';
 import { InputComponent } from '../../../../shared/dynamic-form/components/input/input.component';
 import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components/radiobutton/radiobutton.component';
+import { SelectComponent } from '../../../../shared/dynamic-form/components/select/select.component';
 
 export interface DialogData {
   year: FieldConfig;
@@ -18,6 +19,7 @@ export interface DialogData {
   standalone: true,
   imports: [MaterialModule, FileComponent,
     InputComponent, RadiobuttonComponent,
+    SelectComponent,
   ],
   templateUrl: './verify-documents-dialogue.component.html',
   styleUrl: './verify-documents-dialogue.component.scss'
