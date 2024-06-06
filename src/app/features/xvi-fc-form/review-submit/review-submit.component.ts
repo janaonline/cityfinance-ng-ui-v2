@@ -1,16 +1,17 @@
 import { Component, Input } from '@angular/core';
 import { FormGroup, FormArray } from '@angular/forms';
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
+import { MaterialModule } from '../../../material.module';
 
 @Component({
   selector: 'app-review-submit',
   standalone: true,
-  imports: [],
+  imports: [MaterialModule],
   templateUrl: './review-submit.component.html',
   styleUrl: './review-submit.component.scss'
 })
 export class ReviewSubmitComponent {
-  @Input() field!: FieldConfig;
+  @Input() fields!: any[];
   @Input() group!: FormGroup;
   collapsed = false;
   panelOpenState = true;

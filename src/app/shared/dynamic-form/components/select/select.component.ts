@@ -10,8 +10,8 @@ import { MaterialModule } from '../../../../material.module';
    <label class="fw-bold">{{field.position ? field.position+'. ':''}}{{field.label}} <span style="color: red;">*</span></label>
     <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
     <!-- <mat-label>{{field.position ? field.position+'. ':''}}{{field.label}}</mat-label> -->
-    	<mat-select [formControlName]="field.key">
-    		<mat-option value="">Select an Option</mat-option>
+    	<mat-select [formControlName]="field.key" placeholder="Select an Option">
+    		<!-- <mat-option value="">Select an Option</mat-option> -->
     		<mat-option *ngFor="let item of options" [value]="item">{{item}}</mat-option>
     	</mat-select>
       <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">

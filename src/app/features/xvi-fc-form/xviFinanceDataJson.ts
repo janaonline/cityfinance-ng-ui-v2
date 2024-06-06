@@ -135,7 +135,7 @@ export const financialData = {
                             "position": 1,
                             "type": "sourceOfFd",
                             "formFieldType": "select",
-                            "value": ""
+                            "value": "Accounts Finalized & Audited"
                         },
                         {
                             "warning": [],

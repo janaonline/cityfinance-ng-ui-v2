@@ -66,6 +66,7 @@ import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetail
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
+    
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -129,6 +130,10 @@ export class XviFcFormComponent {
   ) { }
 
   ngOnInit() {
+    // this.isLoader=true;
+    // setTimeout(()=> {
+    //   this.isLoader=false;
+    // }, 3000)
     this.form = this.formService.tabControl(tabsJson.data.tabs);
     // console.log('this.form----', this.form);
     // console.log('this.form.getRawValue()---',this.form.getRawValue());

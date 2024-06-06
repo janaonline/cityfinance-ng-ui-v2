@@ -1114,7 +1114,7 @@ const reviewSubmit = {
 
 export const tabsJson = {
     data: {
-        "tabs": [
+        "tabs": [            
             basicTab,
             financialData,
             uploadDoc,

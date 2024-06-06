@@ -8,27 +8,13 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule],
   template: `
 <div class="demo-full-width margin-top" [formGroup]="group">
-<div><label  class="fw-bold radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}} <span style="color: red;">*</span></label></div>
+<div><label  class="fw-bold radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}} <span class="text-danger">*</span></label></div>
 <mat-radio-group [formControlName]="field.key">
-<mat-radio-button *ngFor="let opt of options" [value]="opt">{{opt}}</mat-radio-button>
+<mat-radio-button *ngFor="let opt of options" [value]="opt" color="primary">{{opt}}</mat-radio-button>
 </mat-radio-group>
 </div>
 `,
-  styles: `
-  
-.mat-radio-button.mat-accent.mat-radio-checked .mat-radio-outer-circle{
-    border-color:rgb(6, 7, 10); 
-  }
-  
-  .mat-radio-button.mat-accent .mat-radio-inner-circle{
-    color:rgb(0, 0, 0);
-    background-color:rgb(0, 0, 0) ;
-  }
-  
-  .mat-radio-button.mat-accent .mat-radio-ripple .mat-ripple-element {
-      background-color:rgb(255, 37, 37,.26)
-  }
-  `
+  styles: ``
 })
 export class RadiobuttonComponent implements OnInit {
   @Input() field!: FieldConfig;
@@ -37,7 +23,7 @@ export class RadiobuttonComponent implements OnInit {
   @Input() options!: any[];
 
   constructor() { }
-  ngOnInit() { 
+  ngOnInit() {
     this.options = this.options || this.field.options;
   }
 

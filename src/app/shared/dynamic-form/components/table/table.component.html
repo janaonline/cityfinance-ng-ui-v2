@@ -54,7 +54,7 @@
                     <!-- <tr *ngFor="let row of field.tableRow;let i = index;" > -->
                     <!-- <tr *ngFor="let row of field.tableRow;let i = index;" [formArrayName]="group.controls[row.key]"> -->
                     <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
-                        <span style="color: red;" *ngIf="row.required">*</span>
+                        <span class="text-danger" *ngIf="row.required">*</span>
                         <span class="info-icon"
                         *ngIf="row.info"
                         matTooltip="{{row.info}}">

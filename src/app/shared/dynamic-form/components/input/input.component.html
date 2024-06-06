@@ -16,7 +16,7 @@
 </mat-form-field>
 }
 @default {
-<label class="fw-bold">{{field.position}}. {{field.label}} <span style="color: red;">*</span></label>
+<label class="fw-bold">{{field.position}}. {{field.label}} <span class="text-danger">*</span></label>
 <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
   <!-- <mat-label>{{field.position}}.{{field.label}}</mat-label> -->
   <input matInput [formControlName]="field.key" [type]="field.formFieldType" [readonly]="field.readonly">
