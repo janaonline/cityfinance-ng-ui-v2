@@ -296,7 +296,7 @@ const uploadDoc = {
     "id": "s3",
     "displayPriority": 3,
     "key": "auditedAnnualFySt",
-    class: 'w-75',
+    // class: 'w-75',
     // "label": "Copy of Audited Annual Financial Statements preferably in English",
     "position": "",
     "required": true,

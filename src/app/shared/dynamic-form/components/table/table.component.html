@@ -34,12 +34,12 @@
     </mat-card-content>
 </mat-card> -->
 
-<mat-expansion-panel  [expanded]="panelOpenState">
+<mat-expansion-panel [expanded]="panelOpenState">
     <mat-expansion-panel-header>
-      <mat-panel-title>
-        {{field.label}}
-      </mat-panel-title>
-      <!-- <mat-panel-description>
+        <mat-panel-title>
+            {{field.label}}
+        </mat-panel-title>
+        <!-- <mat-panel-description>
         This is a summary of the content
       </mat-panel-description> -->
     </mat-expansion-panel-header>
@@ -55,10 +55,7 @@
                     <!-- <tr *ngFor="let row of field.tableRow;let i = index;" [formArrayName]="group.controls[row.key]"> -->
                     <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
                         <span class="text-danger" *ngIf="row.required">*</span>
-                        <span class="info-icon"
-                        *ngIf="row.info"
-                        matTooltip="{{row.info}}">
-                        i</span>
+                        <span class="info-icon" *ngIf="row.info" matTooltip="{{row.info}}">i</span>
                     </td>
                     <td *ngFor="let col of row.tableData;let j = index;" [formArrayName]="row.key">
                         <!-- <td *ngFor="let col of row.tableData;let j = index;"> -->
@@ -80,4 +77,4 @@
             </tbody>
         </table>
     </div>
-  </mat-expansion-panel>
+</mat-expansion-panel>
