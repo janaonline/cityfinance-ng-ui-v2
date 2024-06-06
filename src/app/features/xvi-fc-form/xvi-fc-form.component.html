@@ -31,7 +31,7 @@
                         <app-accounting-practice [field]="tab" [group]="getFG(tab.key,i)"></app-accounting-practice>
                         }
                         @else if (tab.key === 'reviewSubmit') {
-                        <app-review-submit></app-review-submit>
+                        <app-review-submit [fields]="fields" [group]="form"></app-review-submit>
                         }
                         @else if (tab.key === 'demographicData') {
                         <mat-card>
