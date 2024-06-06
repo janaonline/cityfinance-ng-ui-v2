@@ -21,13 +21,17 @@
 	font-size: 1rem;
 }
 
-.custom-danger {
-	color: var(--clr-accent-100);
-}
+// .custom-danger {
+// 	color: var(--clr-accent-100);
+// }
 
-.primary-clr {
+::ng-deep .clr-primary {
 	color: var(--clr-primary-500);
 }
+
+// ::ng-deep i {
+// 	font-size: 1.50rem;
+// }
 
 .primary-btn-1 {
 	padding: 0.5rem 0.75rem;
@@ -146,5 +150,33 @@ mat-form-field {
 }
 
 ::ng-deep .mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover {
-	background: linear-gradient(90deg, #193369 0%, #ffffff 100%) !important;
+  background: linear-gradient(90deg, #193369 0%, #ffffff 100%) !important;
+}
+.section-box{
+  padding: 15px;
+  background: rgba(243, 243, 243, 1);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 1);
+  p{
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  h4{
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+// .overflow-container{
+//   overflow-x: auto;
+// }
+.error-warning{
+  color: var(--clr-primary-500);
+}
+.border-primary{
+  border-bottom: 1px dotted rgba(230, 126, 21, 1)
+}
+.border-secondary{
+  border-bottom: 1px dotted rgba(169, 169, 169, 1);
 }

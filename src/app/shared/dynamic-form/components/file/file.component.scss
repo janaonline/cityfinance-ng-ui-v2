@@ -1,5 +1,5 @@
 .container {
-    border: 1px dotted rgba(230, 126, 21, 1);
+    border: 1px dotted var(--clr-primary-500);
     padding: 20px;
     text-align: center;
     cursor: pointer;
@@ -18,19 +18,19 @@
         left: 0;
     }
 
-    label {
-        color: white;
-        width: 183px;
-        border-radius: 21.5px;
-        background-color: #db202f;
-        padding: 8px 16px;
-    }
+    // label {
+    //     color: white;
+    //     width: 183px;
+    //     border-radius: 21.5px;
+    //     background-color: #db202f;
+    //     padding: 8px 16px;
+    // }
 
-    h3 {
-        font-size: 20px;
-        font-weight: 600;
-        color: #38424c;
-    }
+    // h3 {
+    //     font-size: 20px;
+    //     font-weight: 600;
+    //     color: #38424c;
+    // }
 }
 
 .fileover {

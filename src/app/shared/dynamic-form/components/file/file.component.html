@@ -1,11 +1,8 @@
 <div class="container" appDnd (fileDropped)="onFileDropped($event)">
     <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowseHandler($event)" />
-    <!-- <img src="../../../assets/images/upload_file.png" /> -->
-    <mat-icon style="color: orange;">cloud_upload</mat-icon>
-
-    <h3>Drag and drop file here</h3>
-    <h3>or</h3>
-    <label for="fileDropRef">Browse for file</label>
+    <i class="bi bi-file-earmark-arrow-up-fill fs-4 clr-primary"></i>
+    <p class="fw-bold mt-2 mb-1">Choose consolidated PDF</p>
+    <label for="fileDropRef">Drag and drop the file here.</label>
 </div>
 <div class="files-list" *ngIf="currentFile">
     <div class="single-file">

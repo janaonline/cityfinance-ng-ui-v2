@@ -5,27 +5,26 @@
         {{ (tab?.label).split( " " )[0] }}
         {{ (tab?.label).split(" ")[1] }}<br />
         {{ (tab?.label).split(" ")[2] }}</span>
-    <!-- <div>sdfdsfsd</div> -->
 </ng-template>
 
 <div class="container mt-4 ">
-    <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
-    <div class="text-bg-light border rounded mt-3 mb-3 section-box">
-        <p class="text-muted">Section {{tab.displayPriority}}/ {{fields.length}}</p>
-        <h4 class="fw-bold">{{tab.label}}</h4>
+    <div class="text-bg-light border rounded mt-3 mb-3 section-box clearfix">
+        <div class="float-start">
+            <p class="text-muted">Section {{tab.displayPriority}}/ {{fields.length}}</p>
+            <h4 class="fw-bold">{{tab.label}}</h4>
+        </div>
+        <div class="float-end">
+            <button matStepperNext class="ms-2 me-2 mt-1 btn-edit"><mat-icon>edit</mat-icon> Edit</button>
+        </div>
     </div>
 
     @if (tab.key === 'demographicData') {
     <mat-card>
-        <!-- <mat-card-header>
-                <mat-card-title>Actions Buttons</mat-card-title>
-                <mat-card-subtitle>End</mat-card-subtitle>
-            </mat-card-header> -->
         <mat-card-content>
-            <table>
+            <table class="table review-table">
                 <tr *ngFor="let field of tab?.formArrays;let i = index;">
                     <td>{{field.label}}</td>
-                    <td>{{field.value}}</td>
+                    <td class="fw-bold">{{field.value}}</td>
                 </tr>
             </table>
         </mat-card-content>
@@ -40,20 +39,20 @@
                     {{field.label}}
                 </mat-panel-title>
             </mat-expansion-panel-header>
-            <table class="table">
-                <tbody>
-                    <tr *ngFor="let row of field.tableRow;let i = index;">
-                        <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
-                            <span class="text-danger" *ngIf="row.required">*</span>
-                            <span class="info-icon" *ngIf="row.info" matTooltip="{{row.info}}">
-                                i</span>
-                        </td>
-                        <td *ngFor="let col of row.tableData;let j = index;">
-                            {{col.value}}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="year-table mt-2">
+                <table class="table review-table">
+                    <tbody>
+                        <tr *ngFor="let row of field.tableRow;let i = index;">
+                            <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
+                                <span class="text-danger" *ngIf="row.required">*</span>
+                            </td>
+                            <td class="fw-bold" *ngFor="let col of row.tableData;let j = index;">
+                                {{col.value}}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
         </mat-expansion-panel>
     </ng-container>
@@ -68,7 +67,6 @@
         <div class="audited-statement-block">
             <div class="statement-block-row" *ngFor="let year of tab.formArrays; index as i">
                 <h5>{{year.label}}</h5>
-                <!-- {{year.file | json}} -->
                 @if (year.isPdfAvailable) {
                 <div class="uploaded-files">
                     <div class="uploaded-block already-availabe">
@@ -82,8 +80,7 @@
                                 <!-- <p class="file-size">1.5 MB</p> -->
                             </div>
                             <div class="align-self-center delete-doc-icon">
-                                <button class="ms-2 primary-btn-2">View &
-                                    Verify</button>
+                                <button class="ms-2 primary-btn-2">View</button>
                             </div>
                         </div>
                     </div>
