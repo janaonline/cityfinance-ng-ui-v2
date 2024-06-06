@@ -279,6 +279,9 @@ mat-form-field {
 }
 .section-box{
   padding: 15px;
+  background: rgba(243, 243, 243, 1);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 1);
   p{
     font-size: 16px;
     font-weight: 500;
@@ -295,4 +298,10 @@ mat-form-field {
 // }
 .error-warning{
   color: var(--clr-primary-500);
+}
+.border-primary{
+  border-bottom: 1px dotted rgba(230, 126, 21, 1)
+}
+.border-secondary{
+  border-bottom: 1px dotted rgba(169, 169, 169, 1);
 }
