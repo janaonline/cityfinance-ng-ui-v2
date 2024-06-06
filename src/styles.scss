@@ -1,7 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
 
 
 /* You can add global styles to this file, and also import other style files */
@@ -91,20 +98,25 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 :root {
     --multi-dropdown-color: #059b9a;
 }
+
 * {
     --clr-secondary-500: hsla(220, 62%, 25%, 1);
     --clr-primary-500: hsla(30, 83%, 49%, 1);
-  
+
     --clr-neutral-300: hsla(30, 83%, 49%, 0.55);
-    --clr-neutral-250: hsla(0, 0%, 66%, 1);
+    --clr-neutral-260: hsla(208, 7%, 46%, 1);
+    --clr-neutral-250: hsl(0, 0%, 95%);
     --clr-neutral-200: hsla(30, 69%, 94%, 1);
     --clr-neutral-100: hsla(0, 0%, 100%, 1);
-  
+
+    --clr-accent-100: red;
+
     --ff-base: "Montserrat", sans-serif;
-  
+
     --fw-regular: 500;
     --fw-bold: 700;
-  }
+}
+
 .search-text-matched {
     background: yellow;
 }
@@ -1407,6 +1419,7 @@ input[type=number] {
 .color-orange {
     color: #E67E15;
 }
+
 .color-blue {
     color: #00486F;
 }
@@ -1432,7 +1445,8 @@ input[type=number] {
 
 }
 
-.btn-check:focus + .btn-outline-primary, .btn-outline-primary:focus {
+.btn-check:focus+.btn-outline-primary,
+.btn-outline-primary:focus {
     box-shadow: none !important;
     outline: none !important;
 }
@@ -1440,12 +1454,14 @@ input[type=number] {
 mat-form-field {
     width: 100%;
 }
-::ng-deep .mat-expansion-panel-header.mat-expanded:focus, 
+
+::ng-deep .mat-expansion-panel-header.mat-expanded:focus,
 ::ng-deep .mat-expansion-panel-header.mat-expanded:hover {
     background: linear-gradient(90deg, #193369 0%, #ffffff 100%) !important;
 }
-::ng-deep .mat-expansion-panel-content, 
-::ng-deep .mat-mdc-dialog-container .mdc-dialog__content{
+
+::ng-deep .mat-expansion-panel-content,
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__content {
     --clr-secondary-500: hsla(220, 62%, 25%, 1);
     --clr-primary-500: hsla(30, 83%, 49%, 1);
     --clr-neutral-300: hsla(30, 83%, 49%, 0.55);
