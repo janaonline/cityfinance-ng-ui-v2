@@ -34,6 +34,7 @@ export class VerifyDocumentsDialogueComponent {
   };
 
   rejectOption: FieldConfig = {
+    multiple: true,
     options: this.data.fileRejectOptions,
     formFieldType: 'select', label: 'File(s) that require replacement', key: 'rejectOption',
   };
@@ -43,6 +44,7 @@ export class VerifyDocumentsDialogueComponent {
   };
 
 
+  verifyForm!: FormGroup;
 
   // formfields: any = { rejectReason: FieldConfig { formField }}
   constructor(
@@ -51,13 +53,8 @@ export class VerifyDocumentsDialogueComponent {
   ) { }
 
   ngOnInit() {
-    console.log('----field dialogue --', this.data);
-    // console.log('----field dialogue --', this.data.field);
-    // console.log('----group table --', this.group);
-    // console.log('----group table -val-', this.group.value);
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0, 'fy2022-23_sourceOfFd'));
-    // console.log('getProducts--1---', this.getProducts1());
+    // console.log('----field dialogue --', this.data);
+    this.verifyForm = Object.assign({}, this.data.group)
 
 
   }
@@ -70,13 +67,7 @@ export class VerifyDocumentsDialogueComponent {
     this.dialogRef.close();
   }
 
-  // getFileGroup(fieldKey: any, i: number): FormGroup {
-  //   return (this.data.group.controls[i]) as FormGroup;
-  // }
   getFormGroup(fieldKey: any): FormGroup {
-    // console.log('this.data.group.controls[i]',this.data.group.controls[i]);
-    console.log('this.data.group.get(fieldKey)', this.data.group.get(fieldKey));
-
     return (this.data.group.get(fieldKey)) as FormGroup;
   }
 }

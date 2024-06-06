@@ -45,8 +45,11 @@ export class YearwiseFilesComponent {
   //   return (this.group.get(key) as FormArray).controls[i]
   // }
 
-  getFileGroup(fieldKey: any, i: number): FormGroup {
+  getYearGroup(fieldKey: any, i: number): FormGroup {
     return (this.group.controls[i]) as FormGroup;
+  }
+  getFileGroup(fieldKey: any, i: number): FormGroup {
+    return ((this.group.controls[i]) as FormGroup).get(fieldKey) as FormGroup;
   }
   getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
     return ((((this.group.get(fieldKey) as FormArray)
@@ -62,7 +65,11 @@ export class YearwiseFilesComponent {
 
   openDialog(year: FieldConfig, i: number): void {
     const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {
-      data: { year, fileRejectOptions: this.field.fileRejectOptions, group: this.getFileGroup(year.key, i) },
+      data: { 
+        year, fileRejectOptions: this.field.fileRejectOptions, 
+        group: this.getYearGroup(year.key, i), 
+        verifyForm: Object.assign({},this.getYearGroup(year.key, i)), 
+      },
     });
 
     dialogRef.afterClosed().subscribe(result => {

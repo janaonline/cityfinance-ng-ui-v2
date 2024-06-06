@@ -5,20 +5,8 @@
     <span class="verify-modal-close" (click)="onNoClick()"><mat-icon>close</mat-icon></span>
 </div>
 <mat-dialog-content>
-    <div class="indro-block intro-box-in-modal">
-        <p>Instructions:</p>
-        <ol>
-            <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
-                Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
-            <li>All documents pertaining to a specific financial year should be combined into a single PDF
-                before uploading & should not exceed 20 MB.</li>
-            <li>Please use the following format for naming the documents to be uploaded:
-                nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
-                    corporation</strong></li>
-        </ol>
-    </div>
+
     <div class="statement-block-row block-row-in-modal">
-        <h5>FY 2021-22</h5>
         <div class="uploaded-files">
             <div class="uploaded-block already-availabe">
                 <!-- <div class="media media-in-modal">
@@ -89,17 +77,29 @@
             <app-radiobutton [field]="verifyStatus" [group]="getFormGroup(data.year.key)"></app-radiobutton>
         </div>
         @if(getVerifyStatus(data.year.key) === 3) {
-        <div class="row">
+        <div class="indro-block intro-box-in-modal mt-2">
+            <p>Instructions:</p>
+            <ol>
+                <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
+                    Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+                <li>All documents pertaining to a specific financial year should be combined into a single PDF
+                    before uploading & should not exceed 20 MB.</li>
+                <li>Please use the following format for naming the documents to be uploaded:
+                    nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
+                        corporation</strong></li>
+            </ol>
+        </div>
+        <div class="row mt-2">
             <app-file [field]="data.year" [group]="getFormGroup(data.year.key)"></app-file>
         </div>
-        <div class="row">
+        <div class="row mt-2">
             <app-select [field]="rejectOption" [group]="getFormGroup(data.year.key)"></app-select>
         </div>
         <div class="row">
             <app-input [field]="rejectReason" [group]="getFormGroup(data.year.key)"></app-input>
         </div>
 
-        } 
+        }
         <div class="d-flex justify-content-center">
             <button mat-raised-button color="primary"
                 [disabled]="![2,3].includes(getVerifyStatus(data.year.key))">Submit</button>
