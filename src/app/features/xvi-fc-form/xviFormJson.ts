@@ -340,6 +340,10 @@ const uploadDoc = {
             "formFieldType": "file",
             "value": "",
             "isPdfAvailable": "",
+            verifyStatus: 1,
+            rejectOption: '',
+            rejectReason: '',
+            // verifiedStatus: 1,
             "file": {
                 "name": "123",
                 "url": "321"
@@ -1114,7 +1118,7 @@ const reviewSubmit = {
 
 export const tabsJson = {
     data: {
-        "tabs": [            
+        "tabs": [
             basicTab,
             financialData,
             uploadDoc,
