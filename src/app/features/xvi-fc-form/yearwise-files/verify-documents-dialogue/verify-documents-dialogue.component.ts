@@ -2,7 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FieldConfig } from '../../../../shared/dynamic-form/field.interface';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { FileComponent } from '../../../../shared/dynamic-form/components/file/file.component';
 import { InputComponent } from '../../../../shared/dynamic-form/components/input/input.component';
 import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components/radiobutton/radiobutton.component';
@@ -10,7 +10,7 @@ import { SelectComponent } from '../../../../shared/dynamic-form/components/sele
 
 export interface DialogData {
   year: FieldConfig;
-  fileRejectOptions: FieldConfig;
+  fileRejectOptions: any[];
   group: FormGroup;
 }
 
@@ -26,7 +26,25 @@ export interface DialogData {
 })
 export class VerifyDocumentsDialogueComponent {
 
-  verifyOptions = ['Accept Existing Document', 'Reject Existing Document'];
+  verifyOptions = [{ id: 2, label: 'Accept Existing Document' }, { id: 3, label: 'Reject Existing Document' }];
+
+  verifyStatus: FieldConfig = {
+    formFieldType: 'radio', label: '', key: 'verifyStatus',
+    options: this.verifyOptions,
+  };
+
+  rejectOption: FieldConfig = {
+    options: this.data.fileRejectOptions,
+    formFieldType: 'select', label: 'File(s) that require replacement', key: 'rejectOption',
+  };
+
+  rejectReason: FieldConfig = {
+    formFieldType: 'text', label: 'Please let us know the reason for replacing existing file(s)', key: 'rejectReason',
+  };
+
+
+
+  // formfields: any = { rejectReason: FieldConfig { formField }}
   constructor(
     public dialogRef: MatDialogRef<VerifyDocumentsDialogueComponent>,
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
@@ -44,11 +62,21 @@ export class VerifyDocumentsDialogueComponent {
 
   }
 
+  getVerifyStatus(fieldKey: string) {
+    return (this.getFormGroup(fieldKey).get('verifyStatus') as FormControl).value;
+  }
+
   onNoClick(): void {
     this.dialogRef.close();
   }
 
-  getFileGroup(fieldKey: any, i: number): FormGroup {
-    return (this.data.group.controls[i]) as FormGroup;
+  // getFileGroup(fieldKey: any, i: number): FormGroup {
+  //   return (this.data.group.controls[i]) as FormGroup;
+  // }
+  getFormGroup(fieldKey: any): FormGroup {
+    // console.log('this.data.group.controls[i]',this.data.group.controls[i]);
+    console.log('this.data.group.get(fieldKey)', this.data.group.get(fieldKey));
+
+    return (this.data.group.get(fieldKey)) as FormGroup;
   }
 }

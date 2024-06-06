@@ -77,8 +77,15 @@ export class DynamicFormService {
   }
   setFilesData(childField: any) {
     return new FormGroup({
-      name: new FormControl(childField.file.name || ''),
-      url: new FormControl(childField.file.url || ''),
+      file: new FormGroup({
+        name: new FormControl(childField.file.name || ''),
+        url: new FormControl(childField.file.url || ''),
+      }),
+      verifyStatus: new FormControl(childField.verifyStatus || ''),
+      rejectReason: new FormControl(childField.rejectReason || ''),
+      rejectOption: new FormControl(childField.rejectOption || ''),
+      // name: new FormControl(childField.file.name || ''),
+      // url: new FormControl(childField.file.url || ''),
     });
     // const childFieldData: any = [];
     // childField.formArrays.forEach((row: any) => {
@@ -148,10 +155,10 @@ export class DynamicFormService {
           }
           else if (childField.formFieldType === 'questionnaire') {
             childFieldData[childField.key] = this.setQuestionnaireData(childField);
+          } 
+          else if (childField.formFieldType === 'file') {
+            childFieldData[childField.key] = this.setFilesData(childField);
           }
-          // else if (childField.formFieldType === 'file') {
-          //   childFieldData[childField.key] = this.setFilesData(childField);
-          // }
           else {
             // childFieldData[childField.key] = new FormControl(childField.value);
             childFieldData[childField.key] = this.createContorl(childField);

@@ -5,14 +5,14 @@ export interface Validator {
 }
 export interface FieldConfig {
   label: string;
-  name: string;
+  // name: string;
   key: string;
   formFieldType: string;
   tableRow?: any[];
-  inputType: string;
-  options?: string[];
+  // inputType: string;
+  options?: any[];
   collections?: any;
-  type: string;
+  // type: string;
   value?: any;
   validations?: Validator[];
   formArrays?: any[];
