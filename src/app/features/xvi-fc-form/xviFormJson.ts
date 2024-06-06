@@ -35,7 +35,7 @@ const basicTab = {
             "placeHolder": "",
             "formFieldType": "text",
             "canShow": true,
-            "value": "",
+            "value": "Assam",
             "status": "Na",
             "isDraft": true,
             "readonly": true,
