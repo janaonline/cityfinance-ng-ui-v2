@@ -76,6 +76,7 @@ export class VerifyDocumentsDialogueComponent {
   }
 
   onSubmit() {
+    this.data.field.verifyStatus = this.getVerifyStatus();
     this.data.group.patchValue(this.data.verifyForm.getRawValue());
     this.dialogRef.close();
   }

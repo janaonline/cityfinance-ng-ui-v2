@@ -21,6 +21,7 @@ export interface FieldConfig {
   readonly?: boolean;
   fileAlreadyOnCf?: any[];
   multiple?: boolean;
+  verifyStatus?: number;
 }
 
 export interface JsonFieldConfig {

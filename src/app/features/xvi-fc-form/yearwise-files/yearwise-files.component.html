@@ -23,6 +23,7 @@
                 <h5>{{year.label}}</h5>
 
                 <!-- {{getYearGroup(i,year.key).getRawValue() | json}} -->
+                <!-- {{year.verifyStatus | json}} -->
                 @if (year.isPdfAvailable) {
                 <div class="uploaded-files">
                     <div class="uploaded-block already-availabe">
@@ -40,7 +41,7 @@
                         </div>
                     </div>
                     <!-- verified by ulb -->
-                    @if(year.isVerifiedStatus === 2) {
+                    @if(year.verifyStatus === 2) {
                     <div class="verified-info">
                         <div class="d-flex align-items-center justify-content-start">
                             <span><mat-icon class="material-icons-round  me-1"> verified </mat-icon></span>
@@ -52,7 +53,7 @@
                     </div>
                     }
 
-                    @else if (year.isVerifiedStatus === 3) {
+                    @else if (year.verifyStatus === 3) {
                     <!-- rejected by ulb -->
                     <div class="verified-info verified-info-reject">
                         <div class="d-flex align-items-center justify-content-start">
