@@ -7,7 +7,7 @@
 <mat-form-field appearance="outline" floatLabel="always" [formGroup]="group">
   <!-- <mat-form-field [formGroup]="group"> -->
   <!-- <mat-label>{{field.label}}</mat-label> -->
-  <input matInput [formControlName]="field.key" type="number" class="example-right-align" placeholder="0">
+  <input matInput [formControlName]="field.key" type="number" placeholder="0">
   <span matTextPrefix>&#8377;&nbsp;</span>
   <!-- <span matTextSuffix>.00</span> -->
   <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
