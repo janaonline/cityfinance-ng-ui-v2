@@ -1,24 +1,12 @@
 <div class="verify-header">
-    <h2 class="verify-title">{{data.year.label}}</h2>
+    <h2 class="verify-title">{{data.field.label}}</h2>
     <p>Already available on City Finance</p>
     <!-- <span class="verify-modal-close" (click)="closeDialog()"><img src="../../../assets/images/modal-close.png" -->
     <span class="verify-modal-close" (click)="onNoClick()"><mat-icon>close</mat-icon></span>
 </div>
 <mat-dialog-content>
-    <div class="indro-block intro-box-in-modal">
-        <p>Instructions:</p>
-        <ol>
-            <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
-                Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
-            <li>All documents pertaining to a specific financial year should be combined into a single PDF
-                before uploading & should not exceed 20 MB.</li>
-            <li>Please use the following format for naming the documents to be uploaded:
-                nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
-                    corporation</strong></li>
-        </ol>
-    </div>
+
     <div class="statement-block-row block-row-in-modal">
-        <h5>FY 2021-22</h5>
         <div class="uploaded-files">
             <div class="uploaded-block already-availabe">
                 <!-- <div class="media media-in-modal">
@@ -47,7 +35,7 @@
                             <mat-icon>cloud_download</mat-icon> Download</button>
                     </div>
                 </div> -->
-                <div class="media media-in-modal" *ngFor="let file of data.year.fileAlreadyOnCf">
+                <div class="media media-in-modal" *ngFor="let file of data.field.fileAlreadyOnCf">
                     <div class="align-self-center upload-doc-icon">
                         <mat-icon class="pdf">picture_as_pdf</mat-icon>
                     </div>
@@ -86,25 +74,39 @@
                 <mat-radio-button value="Accept">Accept Existing Document</mat-radio-button>
                 <mat-radio-button value="Reject">Reject Existing Document</mat-radio-button>
             </mat-radio-group> -->
-            <app-radiobutton [field]="verifyStatus" [group]="getFormGroup(data.year.key)"></app-radiobutton>
+            <app-radiobutton [field]="verifyStatus" [group]="getVerifyFormGroup()"></app-radiobutton>
         </div>
-        @if(getVerifyStatus(data.year.key) === 3) {
-        <div class="row">
-            <app-file [field]="data.year" [group]="getFormGroup(data.year.key)"></app-file>
+        @if(getVerifyStatus() === 3) {
+        <div class="indro-block intro-box-in-modal mt-2">
+            <p>Instructions:</p>
+            <ol>
+                <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
+                    Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+                <li>All documents pertaining to a specific financial year should be combined into a single PDF
+                    before uploading & should not exceed 20 MB.</li>
+                <li>Please use the following format for naming the documents to be uploaded:
+                    nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
+                        corporation</strong></li>
+            </ol>
+        </div>
+        <div class="row mt-2">
+            <app-file [field]="data.field" [group]="getVerifyFormGroup()"></app-file>
+        </div>
+        <div class="row mt-2">
+            <app-select [field]="rejectOption" [group]="getVerifyFormGroup()"></app-select>
         </div>
         <div class="row">
-            <app-select [field]="rejectOption" [group]="getFormGroup(data.year.key)"></app-select>
-        </div>
-        <div class="row">
-            <app-input [field]="rejectReason" [group]="getFormGroup(data.year.key)"></app-input>
+            <app-input [field]="rejectReason" [group]="getVerifyFormGroup()"></app-input>
         </div>
 
-        } 
+        }
         <div class="d-flex justify-content-center">
-            <button mat-raised-button color="primary"
-                [disabled]="![2,3].includes(getVerifyStatus(data.year.key))">Submit</button>
+            <button mat-raised-button color="primary" [disabled]="![2,3].includes(getVerifyStatus())"
+                (click)="onSubmit()">Submit</button>
         </div>
 
     </div>
-    <pre>{{getFormGroup(data.year.key).getRawValue() | json}}</pre>
+    <!-- <pre>{{getVerifyFormGroup().getRawValue() | json}}</pre>
+    getFormGroup
+    <pre>{{getFormGroup().getRawValue() | json}}</pre> -->
 </mat-dialog-content>
