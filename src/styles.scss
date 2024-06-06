@@ -1454,12 +1454,3 @@ mat-form-field {
     --fw-regular: 500;
     --fw-bold: 700;
 }
-::ng-deep .mat-mdc-radio-button.mat-mdc-radio-checked .mdc-radio__background::before{
-    background-color:#000 !important;
-}
-::ng-deep .mat-mdc-radio-button .mdc-radio .mdc-radio__native-control:enabled+.mdc-radio__background .mdc-radio__inner-circle {
-    border-color: #000 !important;
-}
-::ng-deep .mat-mdc-radio-button .mdc-radio .mdc-radio__native-control:enabled:checked+.mdc-radio__background .mdc-radio__outer-circle {
-    border-color: #000 !important;
-}
