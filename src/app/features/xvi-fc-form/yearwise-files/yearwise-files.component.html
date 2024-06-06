@@ -21,9 +21,8 @@
         <div class="audited-statement-block">
             <div class="statement-block-row" *ngFor="let year of field.formArrays; index as i">
                 <h5>{{year.label}}</h5>
-               <!-- <pre> {{getYearGroup(year.key,i).getRawValue() | json}}</pre> -->
 
-                <!-- {{year.file | json}} -->
+                <!-- {{getYearGroup(i,year.key).getRawValue() | json}} -->
                 @if (year.isPdfAvailable) {
                 <div class="uploaded-files">
                     <div class="uploaded-block already-availabe">
@@ -95,7 +94,7 @@
 
                 </div>
                 } @else {
-                <app-file [field]="year" [group]="getFileGroup(year.key,i)"></app-file>
+                <app-file [field]="year" [group]="getYearGroup(i,year.key)"></app-file>
                 }
             </div>
         </div>

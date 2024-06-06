@@ -9,9 +9,10 @@ import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components
 import { SelectComponent } from '../../../../shared/dynamic-form/components/select/select.component';
 
 export interface DialogData {
-  year: FieldConfig;
+  field: FieldConfig;
   fileRejectOptions: any[];
   group: FormGroup;
+  verifyForm: FormGroup;
 }
 
 @Component({
@@ -44,8 +45,6 @@ export class VerifyDocumentsDialogueComponent {
   };
 
 
-  verifyForm!: FormGroup;
-
   // formfields: any = { rejectReason: FieldConfig { formField }}
   constructor(
     public dialogRef: MatDialogRef<VerifyDocumentsDialogueComponent>,
@@ -53,21 +52,31 @@ export class VerifyDocumentsDialogueComponent {
   ) { }
 
   ngOnInit() {
-    // console.log('----field dialogue --', this.data);
-    this.verifyForm = Object.assign({}, this.data.group)
+    console.log('----this.data.field --', this.data.field);
+    // console.log('----this.data.verifyForm --', this.data.verifyForm);
+    // console.log('----this.data.group --', this.data.group);
+    // this.verifyForm = Object.assign({}, this.data.group)
 
 
   }
 
-  getVerifyStatus(fieldKey: string) {
-    return (this.getFormGroup(fieldKey).get('verifyStatus') as FormControl).value;
+  getVerifyStatus() {
+    return (this.getVerifyFormGroup().get('verifyStatus') as FormControl).value;
   }
 
   onNoClick(): void {
     this.dialogRef.close();
   }
 
-  getFormGroup(fieldKey: any): FormGroup {
-    return (this.data.group.get(fieldKey)) as FormGroup;
+  getVerifyFormGroup(): FormGroup {
+    return (this.data.verifyForm) as FormGroup;
+  }
+  getFormGroup(): FormGroup {
+    return (this.data.group) as FormGroup;
+  }
+
+  onSubmit() {
+    this.data.group.patchValue(this.data.verifyForm.getRawValue());
+    this.dialogRef.close();
   }
 }

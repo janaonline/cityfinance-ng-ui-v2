@@ -5,6 +5,9 @@ import { MaterialModule } from '../../../material.module';
 import { FileComponent } from '../../../shared/dynamic-form/components/file/file.component';
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
 import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/verify-documents-dialogue.component';
+// import { deepClone } from '@angular-devkit/core';
+import * as _ from 'lodash';
+
 
 @Component({
   selector: 'app-yearwise-files',
@@ -45,12 +48,12 @@ export class YearwiseFilesComponent {
   //   return (this.group.get(key) as FormArray).controls[i]
   // }
 
-  getYearGroup(fieldKey: any, i: number): FormGroup {
-    return (this.group.controls[i]) as FormGroup;
-  }
-  getFileGroup(fieldKey: any, i: number): FormGroup {
+  getYearGroup(i: number, fieldKey: any): FormGroup {
     return ((this.group.controls[i]) as FormGroup).get(fieldKey) as FormGroup;
   }
+  // getFileGroup(fieldKey: any, i: number): FormGroup {
+  //   return ((this.group.controls[i]) as FormGroup).get(fieldKey) as FormGroup;
+  // }
   getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
     return ((((this.group.get(fieldKey) as FormArray)
       .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
@@ -64,13 +67,18 @@ export class YearwiseFilesComponent {
   // }
 
   openDialog(year: FieldConfig, i: number): void {
+    const fg = new FormGroup({});
+    let verifyForm = _.cloneDeep(this.getYearGroup(i, year.key));
+
     const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {
-      data: { 
-        year, fileRejectOptions: this.field.fileRejectOptions, 
-        group: this.getYearGroup(year.key, i), 
-        verifyForm: Object.assign({},this.getYearGroup(year.key, i)), 
+      data: {
+        field: year,
+        fileRejectOptions: this.field.fileRejectOptions,
+        group: this.getYearGroup(i, year.key),
+        verifyForm
       },
     });
+
 
     dialogRef.afterClosed().subscribe(result => {
       console.log('The dialog was closed', result);
