@@ -1,1 +1,184 @@
-<p>review-submit works!</p>
+@for (tab of fields; track $index) {
+<!-- {{tab.key}} ----------<br> -->
+<ng-template matStepLabel>
+    <span class="st-title com-style" [title]="tab?.label">
+        {{ (tab?.label).split( " " )[0] }}
+        {{ (tab?.label).split(" ")[1] }}<br />
+        {{ (tab?.label).split(" ")[2] }}</span>
+    <!-- <div>sdfdsfsd</div> -->
+</ng-template>
+
+<div class="container mt-4 ">
+    <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
+    <div class="text-bg-light border rounded mt-3 mb-3 section-box">
+        <p class="text-muted">Section {{tab.displayPriority}}/ {{fields.length}}</p>
+        <h4 class="fw-bold">{{tab.label}}</h4>
+    </div>
+
+    @if (tab.key === 'demographicData') {
+    <mat-card>
+        <!-- <mat-card-header>
+                <mat-card-title>Actions Buttons</mat-card-title>
+                <mat-card-subtitle>End</mat-card-subtitle>
+            </mat-card-header> -->
+        <mat-card-content>
+            <table>
+                <tr *ngFor="let field of tab?.formArrays;let i = index;">
+                    <td>{{field.label}}</td>
+                    <td>{{field.value}}</td>
+                </tr>
+            </table>
+        </mat-card-content>
+    </mat-card>
+
+    }
+    @else if (tab.key === 'financialData') {
+    <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
+        <mat-expansion-panel [expanded]="panelOpenState" class="mt-3">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    {{field.label}}
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <table class="table">
+                <tbody>
+                    <tr *ngFor="let row of field.tableRow;let i = index;">
+                        <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
+                            <span class="text-danger" *ngIf="row.required">*</span>
+                            <span class="info-icon" *ngIf="row.info" matTooltip="{{row.info}}">
+                                i</span>
+                        </td>
+                        <td *ngFor="let col of row.tableData;let j = index;">
+                            {{col.value}}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </mat-expansion-panel>
+    </ng-container>
+    }
+    @else if (tab.key === 'auditedAnnualFySt') {
+    <mat-expansion-panel [expanded]="panelOpenState" class="mt-3">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Copy of Audited Annual Financial Statements
+            </mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="audited-statement-block">
+            <div class="statement-block-row" *ngFor="let year of tab.formArrays; index as i">
+                <h5>{{year.label}}</h5>
+                <!-- {{year.file | json}} -->
+                @if (year.isPdfAvailable) {
+                <div class="uploaded-files">
+                    <div class="uploaded-block already-availabe">
+                        <!-- <div class="uploaded-files-label">Already available on City Finance</div>
+                             -->
+                        <div class="media">
+                            <div class="media-body">
+                                <div class="upload-doc-label"><mat-icon class="pdf"
+                                        style="color:red">picture_as_pdf</mat-icon> Already available on City
+                                    Finance</div>
+                                <!-- <p class="file-size">1.5 MB</p> -->
+                            </div>
+                            <div class="align-self-center delete-doc-icon">
+                                <button class="ms-2 primary-btn-2">View &
+                                    Verify</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- verified by ulb -->
+                    @if(year.isVerifiedStatus === 2) {
+                    <div class="verified-info">
+                        <div class="media">
+                            <div class="align-self-center upload-doc-icon">
+                                <mat-icon class="material-icons-round">
+                                    verified
+                                </mat-icon>
+                            </div>
+                            <div class="media-body">
+                                <div class="upload-doc-label">You have successfully verified the document already
+                                    available on City Finance and accepted it.</div>
+                            </div>
+                        </div>
+                    </div>
+                    }
+
+                    @else if (year.isVerifiedStatus === 3) {
+                    <!-- rejected by ulb -->
+                    <div class="verified-info verified-info-reject">
+                        <div class="media">
+                            <div class="align-self-center upload-doc-icon">
+                                <mat-icon>verified</mat-icon>
+                            </div>
+                            <div class="media-body">
+                                <div class="upload-doc-label">You have rejected the document already available on
+                                    City Finance, re-uploaded another file, and provided the following reason:
+                                    <strong>Files are in correct</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="uploaded-files">
+                        <div class="uploaded-files-label">Uploaded Files</div>
+                        <div class="media uploaded-block">
+                            <div class="align-self-center upload-doc-icon">
+                                <mat-icon class="pdf">picture_as_pdf</mat-icon>
+                            </div>
+                            <div class="media-body">
+                                <div class="upload-doc-label">financial document 2022-23.pdf</div>
+                                <p class="file-size">1.5 MB</p>
+                            </div>
+                            <div class="align-self-center delete-doc-icon">
+                                <mat-icon>delete_forever</mat-icon>
+                            </div>
+                        </div>
+                    </div>
+                    }
+
+
+                </div>
+                } @else {
+                <!-- <app-file [field]="year" [group]="getFileGroup(year.key,i)"></app-file> -->
+                }
+            </div>
+
+        </div>
+    </mat-expansion-panel>
+    }
+    @else if (tab.key === 'accountPractice') {
+    <mat-expansion-panel [expanded]="panelOpenState" class="mt-3" *ngFor="let field of tab.formArrays">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                {{field.label}}
+            </mat-panel-title>
+        </mat-expansion-panel-header>
+        <ng-container *ngFor="let question of field.questions">
+            <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
+                {{question.position}}.
+                {{question.label}}
+            </label>
+            @if (question.formFieldType === 'radio') {
+            <div class="form-check pt-1" *ngFor="let optionValue of question.options; index as i">
+                <label class="form-check-label" [attr.for]="question.key+i">
+                    <input class="form-check-input" type="radio" [attr.id]="question.key+i" [name]="question.key"
+                        value="{{optionValue}}" />
+                    {{optionValue.option ? optionValue.option: optionValue }}
+                </label>
+                @if (optionValue.showInputBox) {
+                <input class="form-control" type="text" [value]="question.inputBoxValue" />
+                }
+            </div>
+            } @else if (question.formFieldType === 'number') {
+            <input class="form-control" [type]="question.formFieldType" [value]="question.value" />
+            }
+        </ng-container>
+    </mat-expansion-panel>
+    }
+
+
+
+</div>
+
+}

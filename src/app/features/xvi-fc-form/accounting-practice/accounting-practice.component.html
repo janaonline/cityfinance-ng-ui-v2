@@ -1,57 +1,27 @@
-<div class="border rounded mb-3" *ngFor="let field of field.formArrays">
-    <div class="headers-style">
-        <p>{{field.label}}</p>
-    </div>
-    <div class="p-4">
-        <ng-container *ngFor="let question of field.questions">
-            <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
-                {{question.position}}.
-                {{question.label}}
+<mat-expansion-panel [expanded]="panelOpenState" class="mt-3" *ngFor="let field of field.formArrays">
+    <mat-expansion-panel-header>
+        <mat-panel-title>
+            {{field.label}}
+        </mat-panel-title>
+    </mat-expansion-panel-header>
+    <ng-container *ngFor="let question of field.questions">
+        <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
+            {{question.position}}.
+            {{question.label}}
+        </label>
+        @if (question.formFieldType === 'radio') {
+        <div class="form-check pt-1" *ngFor="let optionValue of question.options; index as i">
+            <label class="form-check-label" [attr.for]="question.key+i">
+                <input class="form-check-input" type="radio" [attr.id]="question.key+i" [name]="question.key"
+                    value="{{optionValue}}" />
+                {{optionValue.option ? optionValue.option: optionValue }}
             </label>
-            @if (question.formFieldType === 'radio') {
-            <div class="form-check pt-1" *ngFor="let optionValue of question.options; index as i">
-                <label class="form-check-label" [attr.for]="question.key+i">
-                    <input class="form-check-input" type="radio" [attr.id]="question.key+i" [name]="question.key"
-                        value="{{optionValue}}" />
-                    {{optionValue.option ? optionValue.option: optionValue }}
-                </label>
-                @if (optionValue.showInputBox) {
-                <input class="form-control" type="text" [value]="question.inputBoxValue" />
-                }
-            </div>
-            } @else if (question.formFieldType === 'number') {
-            <input class="form-control" [type]="question.formFieldType" [value]="question.value" />
+            @if (optionValue.showInputBox) {
+            <input class="form-control" type="text" [value]="question.inputBoxValue" />
             }
-    
-    
-        </ng-container>
-    </div> 
-    
-</div>
-<!-- 
-  <div class="form-group mb-2" *ngFor="let questionKey of selectedTabQuestion">
-      <ng-container *ngFor="let queHeader of questionHeader">
-          <p>{{selectedTabData.data[queHeader].label}}</p>
-
-          <div *ngFor="let keyer of objectKeys(selectedTabData.data[queHeader])">
-              <label> {{selectedTabData.data[queHeader][keyer].label}}</label>
-              <p *ngFor="let yearData of form1Data.data.financialYearTableHeader; index as i">
-                  <input class="form-control"
-                      *ngIf="selectedTabData.data[queHeader][keyer].formFieldType=='number'"
-                      type="{{selectedTabData.data[queHeader][keyer].formFieldType}}"
-                      id="{{selectedTabData.data[queHeader][keyer].key}}"
-                      value="{{selectedTabData.data[queHeader][keyer].year[i].value}}" />
-              </p>
-          </div>
-
-      </ng-container>
-
-      <ng-container
-          *ngIf="selectedTabData.data[questionKey].formFieldType && selectedTabData.data[questionKey].formFieldType == 'radio'">
-          <ng-container *ngFor="let option of selectedTabData.data[questionKey].options">
-              <input type="radio" id="{{selectedTabData.data[questionKey].key}}"
-                  name="{{selectedTabData.data[questionKey].key}}" value="{{option}}">
-              <label for="{{selectedTabData.data[questionKey].key}}">{{option}}</label>
-          </ng-container>
-      </ng-container>
-  </div> -->
+        </div>
+        } @else if (question.formFieldType === 'number') {
+        <input class="form-control" [type]="question.formFieldType" [value]="question.value" />
+        }
+    </ng-container>
+</mat-expansion-panel>

@@ -1,7 +1,7 @@
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
     <!-- <form class="dynamic-form" [formGroup]="form" (submit)="onSubmit($event)"> -->
     <form [formGroup]="form">
-
+        <app-loader class="p-3" *ngIf="isLoader"></app-loader>
         <!-- <div *ngFor="let field of fields" class="form-row"> -->
 
         <!-- <app-question [question]="question" [form]="form"></app-question> -->
@@ -11,38 +11,38 @@
             <mat-step state="state" *ngFor="let tab of fields; index as i">
                 <!-- {{tab.key}} ----------<br> -->
                 <ng-template matStepLabel>
-                    <span class="st-title com-style" [title]="tab?.label">{{ (tab?.label).split( " " )[0]
-                        }}
+                    <span class="st-title com-style" [title]="tab?.label">
+                        {{ (tab?.label).split( " " )[0] }}
                         {{ (tab?.label).split(" ")[1] }}<br />
                         {{ (tab?.label).split(" ")[2] }}</span>
-                        <!-- <div>sdfdsfsd</div> -->
+                    <!-- <div>sdfdsfsd</div> -->
                 </ng-template>
 
-                <div class="container mt-4 "  [ngClass]="tab.class">
+                <div class="container mt-4 " [ngClass]="tab.class" >
                     <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
-                    <div class="text-bg-light border rounded mt-3 mb-3 section-box">
+                    <div class="text-bg-light border rounded mt-3 mb-3 section-box" *ngIf="tab.key !== 'reviewSubmit'">
                         <p class="text-muted">Section {{tab.displayPriority}}/ {{fields.length}}</p>
                         <h4 class="fw-bold">{{tab.label}}</h4>
                     </div>
                     <div class="overflow-container">
-                    @if (tab.key === 'auditedAnnualFySt') {
-                    <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
-                    }
-                    @else if (tab.key === 'accountPractice') {
-                    <app-accounting-practice [field]="tab" [group]="getFG(tab.key,i)"></app-accounting-practice>
-                    }
-                    @else if (tab.key === 'reviewSubmit') {
-                    <app-review-submit></app-review-submit>
-                    }
-                    @else {
-                    <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
-                        <div class="row mt-4">
-                            <app-dynamic-form [field]="field" [group]="getFG(tab.key,i)">
-                            </app-dynamic-form>
-                        </div>
-                    </ng-container>
-                    }
-                </div>
+                        @if (tab.key === 'auditedAnnualFySt') {
+                        <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
+                        }
+                        @else if (tab.key === 'accountPractice') {
+                        <app-accounting-practice [field]="tab" [group]="getFG(tab.key,i)"></app-accounting-practice>
+                        }
+                        @else if (tab.key === 'reviewSubmit') {
+                        <app-review-submit [fields]="fields" [group]="form"></app-review-submit>
+                        }
+                        @else {
+                        <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
+                            <div class="row mt-4">
+                                <app-dynamic-form [field]="field" [group]="getFG(tab.key,i)">
+                                </app-dynamic-form>
+                            </div>
+                        </ng-container>
+                        }
+                    </div>
                     <div class="mt-4">
                         <div class="float-start">
                             <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
