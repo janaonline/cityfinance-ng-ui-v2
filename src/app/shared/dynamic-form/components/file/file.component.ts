@@ -41,7 +41,8 @@ export class FileComponent {
 
   ngOnInit() {
     // console.log('----field file --', this.field.key);
-    // console.log('----group file --', this.group);
+    console.log('----group file --', this.group);
+    console.log('----group file -val-', this.group.value);
     // this.group?.get(this.field.key)?.patchValue({ uploading: false, name: 'fgh', url: '' });
     // console.log('----group file -pat-', this.group.get(this.field.key));
   }
@@ -191,7 +192,7 @@ export class FileComponent {
           this.field.uploading = false;
           this.progress = 100;
           const fileData: any = { name: file.name, url: path };
-          this.group.get(this.field.key)?.patchValue({ file: fileData });
+          this.group.get('file')?.patchValue(fileData);
         });
       }, error: err => console.log(err)
     });

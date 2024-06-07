@@ -9,9 +9,10 @@ import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components
 import { SelectComponent } from '../../../../shared/dynamic-form/components/select/select.component';
 
 export interface DialogData {
-  year: FieldConfig;
+  field: FieldConfig;
   fileRejectOptions: any[];
   group: FormGroup;
+  verifyForm: FormGroup;
 }
 
 @Component({
@@ -34,6 +35,7 @@ export class VerifyDocumentsDialogueComponent {
   };
 
   rejectOption: FieldConfig = {
+    multiple: true,
     options: this.data.fileRejectOptions,
     formFieldType: 'select', label: 'File(s) that require replacement', key: 'rejectOption',
   };
@@ -43,7 +45,6 @@ export class VerifyDocumentsDialogueComponent {
   };
 
 
-
   // formfields: any = { rejectReason: FieldConfig { formField }}
   constructor(
     public dialogRef: MatDialogRef<VerifyDocumentsDialogueComponent>,
@@ -51,32 +52,32 @@ export class VerifyDocumentsDialogueComponent {
   ) { }
 
   ngOnInit() {
-    console.log('----field dialogue --', this.data);
-    // console.log('----field dialogue --', this.data.field);
-    // console.log('----group table --', this.group);
-    // console.log('----group table -val-', this.group.value);
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0, 'fy2022-23_sourceOfFd'));
-    // console.log('getProducts--1---', this.getProducts1());
+    console.log('----this.data.field --', this.data.field);
+    // console.log('----this.data.verifyForm --', this.data.verifyForm);
+    // console.log('----this.data.group --', this.data.group);
+    // this.verifyForm = Object.assign({}, this.data.group)
 
 
   }
 
-  getVerifyStatus(fieldKey: string) {
-    return (this.getFormGroup(fieldKey).get('verifyStatus') as FormControl).value;
+  getVerifyStatus() {
+    return (this.getVerifyFormGroup().get('verifyStatus') as FormControl).value;
   }
 
   onNoClick(): void {
     this.dialogRef.close();
   }
 
-  // getFileGroup(fieldKey: any, i: number): FormGroup {
-  //   return (this.data.group.controls[i]) as FormGroup;
-  // }
-  getFormGroup(fieldKey: any): FormGroup {
-    // console.log('this.data.group.controls[i]',this.data.group.controls[i]);
-    console.log('this.data.group.get(fieldKey)', this.data.group.get(fieldKey));
+  getVerifyFormGroup(): FormGroup {
+    return (this.data.verifyForm) as FormGroup;
+  }
+  getFormGroup(): FormGroup {
+    return (this.data.group) as FormGroup;
+  }
 
-    return (this.data.group.get(fieldKey)) as FormGroup;
+  onSubmit() {
+    this.data.field.verifyStatus = this.getVerifyStatus();
+    this.data.group.patchValue(this.data.verifyForm.getRawValue());
+    this.dialogRef.close();
   }
 }

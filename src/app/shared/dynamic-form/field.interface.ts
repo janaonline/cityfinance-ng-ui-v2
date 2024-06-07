@@ -20,6 +20,8 @@ export interface FieldConfig {
   position?: number;
   readonly?: boolean;
   fileAlreadyOnCf?: any[];
+  multiple?: boolean;
+  verifyStatus?: number;
 }
 
 export interface JsonFieldConfig {

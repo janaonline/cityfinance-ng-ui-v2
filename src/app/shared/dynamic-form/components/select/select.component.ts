@@ -10,7 +10,8 @@ import { MaterialModule } from '../../../../material.module';
    <label class="fw-bold">{{field.position ? field.position+'. ':''}}{{field.label}} <span style="color: red;">*</span></label>
     <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
     <!-- <mat-label>{{field.position ? field.position+'. ':''}}{{field.label}}</mat-label> -->
-    	<mat-select [formControlName]="field.key" placeholder="Select an Option" panelClass="example-panel-blue">
+    	<mat-select [formControlName]="field.key" [multiple]="field.multiple"
+      placeholder="Select an Option" panelClass="example-panel-blue">
     		<!-- <mat-option value="">Select an Option</mat-option> -->
         @for (item of options; track $index; let last = $last) {
           <mat-option [value]="item">{{item}}</mat-option>

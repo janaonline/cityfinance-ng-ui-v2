@@ -21,13 +21,17 @@
 	font-size: 1rem;
 }
 
-.custom-danger {
-	color: var(--clr-accent-100);
-}
+// .custom-danger {
+// 	color: var(--clr-accent-100);
+// }
 
-.primary-clr {
+::ng-deep .clr-primary {
 	color: var(--clr-primary-500);
 }
+
+// ::ng-deep i {
+// 	font-size: 1.50rem;
+// }
 
 .primary-btn-1 {
 	padding: 0.5rem 0.75rem;
