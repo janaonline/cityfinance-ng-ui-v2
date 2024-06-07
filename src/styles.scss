@@ -10,10 +10,6 @@ body {
     font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-
-/* You can add global styles to this file, and also import other style files */
-
-
 /*!
  * Bootstrap v5.3.3 (https://getbootstrap.com/)
  * Copyright 2011-2021 The Bootstrap Authors
@@ -117,6 +113,11 @@ body {
     --fw-bold: 700;
 }
 
+.fs-7 {
+    font-size: 0.80rem;
+}
+
+
 .search-text-matched {
     background: yellow;
 }
@@ -206,44 +207,38 @@ i.glyphicon-sort.glyphicon-sort.glyphicon-sort:hover {
 
 
 /* width */
-
 ::-webkit-scrollbar {
-    // width: 0px;
+    width: 10px;
+    height: 10px;
 }
 
-
 /* Track */
-
 ::-webkit-scrollbar-track {
-    box-shadow: inset 0 0 0px grey;
-    border-radius: 0px;
+    box-shadow: inset 0 0 3px #57647e;
+    border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: hsl(0, 0%, 52%);
+    border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: hsla(0, 0%, 52%, 0.94);
+}
+
+// For angular 2 multi select dropdown
+::ng-deep .noCrossSymbol .c-angle-down svg,
+::ng-deep .noCrossSymbol .c-angle-up svg {
+    fill: white !important;
 }
 
 button.btn {
     outline: none !important;
 }
 
-
-/* Handle */
-
-::-webkit-scrollbar-thumb {
-    background: #f0ad4e;
-    border-radius: 0px;
-}
-
-
-/* Handle on hover */
-
-::-webkit-scrollbar-thumb:hover {
-    background: #f0ad4e;
-}
-
-// Scroll Bar UI Ends here
-// For angular 2 multi select dropdown
-::ng-deep .noCrossSymbol .c-angle-down svg,
-::ng-deep .noCrossSymbol .c-angle-up svg {
-    fill: white !important;
-}
 
 html,
 body {
@@ -1025,71 +1020,71 @@ img.align-center {
 }
 
 // inner heading  css start
-.inner-head {
-    background: #ffc500;
-    padding: 3px 0px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    color: #fff;
-}
+// .inner-head {
+//     background: #ffc500;
+//     padding: 3px 0px;
+//     display: flex;
+//     align-items: center;
+//     flex-wrap: wrap;
+//     color: #fff;
+// }
 
 .back-icon span {
     color: #fff;
     margin-left: 10px;
 }
 
-.head-content {
-    margin: auto;
-    text-transform: uppercase;
-}
+// .head-content {
+//     margin: auto;
+//     text-transform: uppercase;
+// }
 
-.head-content h5 {
-    font-size: 16px;
-}
+// .head-content h5 {
+//     font-size: 16px;
+// }
 
-.list-area {
-    width: max-content;
+// .list-area {
+//     width: max-content;
 
-    @media screen and (max-width: 551px) {
-        width: 85%;
-    }
-}
+//     @media screen and (max-width: 551px) {
+//         width: 85%;
+//     }
+// }
 
-.modal-btn-body {
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: flex-end;
+// .modal-btn-body {
+//     margin-bottom: 0.5rem;
+//     display: flex;
+//     justify-content: flex-end;
 
-    @media screen and (max-width: 480px) {
-        justify-content: start;
-    }
-}
+//     @media screen and (max-width: 480px) {
+//         justify-content: start;
+//     }
+// }
 
-.modal-close-btn {
-    background-color: #333333;
-    min-width: min-content;
-    color: white;
-    outline: none;
-    border: none;
-}
+// .modal-close-btn {
+//     background-color: #333333;
+//     min-width: min-content;
+//     color: white;
+//     outline: none;
+//     border: none;
+// }
 
-.modal-download-btn {
-    margin-right: 0.5rem;
-    background-color: #333333;
-    color: white;
-    outline: none;
-    border: none;
-    min-width: min-content;
-}
+// .modal-download-btn {
+//     margin-right: 0.5rem;
+//     background-color: #333333;
+//     color: white;
+//     outline: none;
+//     border: none;
+//     min-width: min-content;
+// }
 
-.selected-list .countplaceholder {
-    right: 20px !important;
-}
+// .selected-list .countplaceholder {
+//     right: 20px !important;
+// }
 
-.add-resource-state-dropdown .selected-list .countplaceholder {
-    right: 40px !important;
-}
+// .add-resource-state-dropdown .selected-list .countplaceholder {
+//     right: 40px !important;
+// }
 
 // inner heading  css end
 @media screen and (max-width: 800px) and (min-width: 770px) {
@@ -1223,118 +1218,118 @@ img.align-center {
 }
 
 // max-width 280px end
-.mat-tab-header {
-    width: 95%;
-    margin: auto;
-}
+// .mat-tab-header {
+//     width: 95%;
+//     margin: auto;
+// }
 
-.custom-slider-main {
-    display: flex;
-    overflow: hidden;
-    scroll-behavior: smooth;
-}
+// .custom-slider-main {
+//     display: flex;
+//     overflow: hidden;
+//     scroll-behavior: smooth;
+// }
 
-.info-box {
-    width: 50px;
-    height: 50px;
-}
+// .info-box {
+//     width: 50px;
+//     height: 50px;
+// }
 
-.no-padding-dialog .mat-dialog-container {
-    padding: 0;
-    margin-top: 7px;
-}
+// .no-padding-dialog .mat-dialog-container {
+//     padding: 0;
+//     margin-top: 7px;
+// }
 
-.box-shadow {
-    box-shadow: 0px 0px 10px 0px #cfcfcf;
-}
+// .box-shadow {
+//     box-shadow: 0px 0px 10px 0px #cfcfcf;
+// }
 
-.pac-container {
-    z-index: 99999 !important;
-    position: fixed !important;
-}
+// .pac-container {
+//     z-index: 99999 !important;
+//     position: fixed !important;
+// }
 
-.mde-popover-direction-arrow {
-    transform: rotate(182deg);
-    margin-top: 2pc;
-}
+// .mde-popover-direction-arrow {
+//     transform: rotate(182deg);
+//     margin-top: 2pc;
+// }
 
 .tableStriped>tbody>tr:nth-of-type(odd) {
     background-color: #e7e7e7;
 }
 
-.btnSaveNext {
-    height: 32px;
-    background-color: #26A1A1;
-    color: #FFFFFF;
-    font-weight: normal;
-    font-size: 12px;
-    padding-left: 4%;
-    padding-right: 4%;
-}
+// .btnSaveNext {
+//     height: 32px;
+//     background-color: #26A1A1;
+//     color: #FFFFFF;
+//     font-weight: normal;
+//     font-size: 12px;
+//     padding-left: 4%;
+//     padding-right: 4%;
+// }
 
-.btnPre {
-    background-color: #0cc5c5;
-    color: #FFFFFF;
-    height: 32px;
-    font-size: 12px;
-    padding-left: 4%;
-    padding-right: 4%;
-}
+// .btnPre {
+//     background-color: #0cc5c5;
+//     color: #FFFFFF;
+//     height: 32px;
+//     font-size: 12px;
+//     padding-left: 4%;
+//     padding-right: 4%;
+// }
 
-.btnDownload {
-    background-color: #0cc5c5;
-    color: #FFFFFF;
-    height: 32px;
-    font-size: 12px;
-    padding-left: 4%;
-    padding-right: 4%;
-}
+// .btnDownload {
+//     background-color: #0cc5c5;
+//     color: #FFFFFF;
+//     height: 32px;
+//     font-size: 12px;
+//     padding-left: 4%;
+//     padding-right: 4%;
+// }
 
-.btnBack {
-    background-color: #CFCFCF;
-    color: #FFFFFF;
-    width: auto;
-    height: 32px;
-    font-size: 12px;
-    padding-left: 4%;
-    padding-right: 4%;
-}
+// .btnBack {
+//     background-color: #CFCFCF;
+//     color: #FFFFFF;
+//     width: auto;
+//     height: 32px;
+//     font-size: 12px;
+//     padding-left: 4%;
+//     padding-right: 4%;
+// }
 
-.container-cnt {
-    box-sizing: border-box;
-    display: flex;
-    flex-wrap: nowrap;
-    box-sizing: border-box;
-    width: 100%;
-    padding: 10px 20px;
-    overflow: auto;
-}
+// .container-cnt {
+//     box-sizing: border-box;
+//     display: flex;
+//     flex-wrap: nowrap;
+//     box-sizing: border-box;
+//     width: 100%;
+//     padding: 10px 20px;
+//     overflow: auto;
+// }
 
 
 /* The above code is changing the color of the India map tooltip. */
 
-.leaflet-popup-content-wrapper {
-    // background: #FEDA12 !important;
-}
+// .leaflet-popup-content-wrapper {
+//     // background: #FEDA12 !important;
+// }
 
-.leaflet-popup-tip {
-    // background: #FEDA12 !important;
-}
+// .leaflet-popup-tip {
+//     // background: #FEDA12 !important;
+// }
 
-.btn-c-back {
-    background-color: #CFCFCF;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    font-weight: 500;
-}
+// .btn-c-back {
+//     background-color: #CFCFCF;
+//     border-radius: 4px;
+//     border: 1px solid transparent;
+//     font-weight: 500;
+// }
 
-.btn-c-next {
-    background-color: #114551;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    font-weight: 500;
-    color: #fff;
-}
+// .btn-c-next {
+//     background-color: #114551;
+//     border-radius: 4px;
+//     border: 1px solid transparent;
+//     font-weight: 500;
+//     color: #fff;
+// }
 
 ::ng-deep .swal-button--Cancel {
     background-color: #CFCFCF;
@@ -1356,15 +1351,15 @@ img.align-center {
     cursor: pointer;
 }
 
-.mat-dialog-container {
-    border-radius: 10px !important;
-}
+// .mat-dialog-container {
+//     border-radius: 10px !important;
+// }
 
-.search-page {
-    .mat-dialog-container {
-        background-color: black;
-    }
-}
+// .search-page {
+//     .mat-dialog-container {
+//         background-color: black;
+//     }
+// }
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
@@ -1382,68 +1377,68 @@ input[type=number] {
     color: white;
 }
 
-.btn-orange {
-    $orange: #E67E15;
-    border-radius: 8px;
-    padding-right: 20px;
-    padding-left: 20px;
-    background: $orange;
-    color: #fff;
-    font-weight: bold;
-    transition: background 0.3s ease, color 0.3s ease;
-    box-shadow: 1px 11px 28px 2px #e67e1561;
+// .btn-orange {
+//     $orange: #E67E15;
+//     border-radius: 8px;
+//     padding-right: 20px;
+//     padding-left: 20px;
+//     background: $orange;
+//     color: #fff;
+//     font-weight: bold;
+//     transition: background 0.3s ease, color 0.3s ease;
+//     box-shadow: 1px 11px 28px 2px #e67e1561;
 
 
-    &.btn-outline {
-        background: #fff;
-        border: 1px solid $orange;
-        color: $orange;
-        transition: background 0.3s ease, color 0.3s ease, border 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
+//     &.btn-outline {
+//         background: #fff;
+//         border: 1px solid $orange;
+//         color: $orange;
+//         transition: background 0.3s ease, color 0.3s ease, border 0.3s ease;
+//         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+//     }
 
-    &.btn-text {
-        color: $orange;
-        background-color: inherit;
-        transition: background 0.3s ease, color 0.3s ease, border 0.3s ease;
-        box-shadow: none;
-    }
+//     &.btn-text {
+//         color: $orange;
+//         background-color: inherit;
+//         transition: background 0.3s ease, color 0.3s ease, border 0.3s ease;
+//         box-shadow: none;
+//     }
 
-    &:hover {
-        background: #cf7113;
-        border-color: #cf7113;
-        color: #fff;
-    }
-}
+//     &:hover {
+//         background: #cf7113;
+//         border-color: #cf7113;
+//         color: #fff;
+//     }
+// }
 
-.color-orange {
-    color: #E67E15;
-}
+// .color-orange {
+//     color: #E67E15;
+// }
 
-.color-blue {
-    color: #00486F;
-}
+// .color-blue {
+//     color: #00486F;
+// }
 
-.form-h-fr {
-    font-family: Montserrat;
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 34px;
-    letter-spacing: 0em;
-    text-align: center;
-    color: #000000;
+// .form-h-fr {
+//     font-family: Montserrat;
+//     font-size: 26px;
+//     font-weight: 700;
+//     line-height: 34px;
+//     letter-spacing: 0em;
+//     text-align: center;
+//     color: #000000;
 
-}
+// }
 
-.sub-def-fr {
-    font-family: Montserrat;
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 24px;
-    letter-spacing: 0em;
-    text-align: center;
+// .sub-def-fr {
+//     font-family: Montserrat;
+//     font-size: 16px;
+//     font-weight: 500;
+//     line-height: 24px;
+//     letter-spacing: 0em;
+//     text-align: center;
 
-}
+// }
 
 .btn-check:focus+.btn-outline-primary,
 .btn-outline-primary:focus {
