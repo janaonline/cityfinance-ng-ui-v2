@@ -7,16 +7,15 @@ import { MaterialModule } from '../../../../material.module';
   standalone: true,
   imports: [MaterialModule],
   template: `
-<div class="demo-full-width margin-top" [formGroup]="group">
-<div *ngIf="field.label">
-  <label  class="fw-bold radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}} 
-  <span class="text-danger">*</span></label>
-</div>
-<mat-radio-group [formControlName]="field.key">
-<mat-radio-button *ngFor="let opt of options" [value]="opt.id || opt " color="primary">{{opt.label || opt}}</mat-radio-button>
-</mat-radio-group>
-</div>
-`,
+    <div class="demo-full-width margin-top" [formGroup]="group">
+    	<div *ngIf="field.label">
+    		<label class="fw-bold radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}}<span class="text-danger">*&nbsp;</span>
+        </label>
+    	</div>
+    	<mat-radio-group [formControlName]="field.key">
+    		<mat-radio-button *ngFor="let opt of options" [value]="opt.id || opt " color="primary">{{opt.label || opt}}</mat-radio-button>
+    	</mat-radio-group>
+    </div>`,
   styles: ``
 })
 export class RadiobuttonComponent implements OnInit {
