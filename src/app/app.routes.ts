@@ -28,6 +28,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/xvi-fc-form/xvi-fc-form.component').then(m => m.XviFcFormComponent)
     },
     {
+        path: 'admin/xvi-fc-review',
+        loadComponent: () => import('./admin/xvi-fc-review/xvi-fc-review.component').then(m => m.XviFcReviewComponent)
+    },
+    {
         path: 'form',
         loadComponent: () =>
             import('./features/form/form.component').then((x) => x.FormComponent),
