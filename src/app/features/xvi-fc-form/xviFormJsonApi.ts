@@ -288,334 +288,317 @@ const basicTab = {
     ]
 }
 const uploadDoc = {
-    // "_id": "6657921b9ab1c13ac44d01f6",
-    // "key": "uploadDoc",
-    // "icon": "",
-    // "text": "",
+    "_id": "665df95e73de1812233ecc01",
+    "key": "uploadDoc",
+    "icon": "",
+    "text": "",
     "formType": "form1",
     "label": "View/ Upload Document",
     "id": "s3",
     "displayPriority": 3,
-    "key": "auditedAnnualFySt",
-    // class: 'w-75',
-    // "label": "Copy of Audited Annual Financial Statements preferably in English",
-    "position": "",
-    "required": true,
-   
-    "bottomText": "Maximum of 5MB",
-    "instruction": [
+    "__v": 0,
+    "data": [
         {
-            "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
-        },
-        {
-            "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
-        },
-        {
-            "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
+            "key": "auditedAnnualFySt",
+            "label": "Copy of Audited Annual Financial Statements preferably in English",
+            "postion": "",
+            "required": true,
+            "info": "",
+            "placeHolder": "",
+            "formFieldType": "file",
+            "canShow": true,
+            "max": 5,
+            "min": 0,
+            "bottomText": "Maximum of 5MB",
+            "instruction": [
+                {
+                    "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
+                },
+                {
+                    "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
+                },
+                {
+                    "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
+                }
+            ],
+            "year": [
+                {
+                    "warning": [],
+                    "label": "FY 2022-23",
+                    "key": "fy2022-23_auditedAnnualFySt",
+                    "postion": 1,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": false,
+                    "file": {
+                        "name": "testName2022-23",
+                        "url": "https://www.test.com/2022-23.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2021-22",
+                    "key": "fy2021-22_auditedAnnualFySt",
+                    "postion": 2,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": false,
+                    "file": {
+                        "name": "testName2020-21",
+                        "url": "https://www.test.com/2020-21.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2020-21",
+                    "key": "fy2020-21_auditedAnnualFySt",
+                    "postion": 3,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": false,
+                    "file": {
+                        "name": "testName2020-21",
+                        "url": "https://www.test.com/2020-21.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2019-20",
+                    "key": "fy2019-20_auditedAnnualFySt",
+                    "postion": 4,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": true,
+                    "file": {
+                        "name": "testName2019-20",
+                        "url": "https://www.test.com/2019-20.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "Balance Sheet 2019-20.pdf",
+                            "url": "/objects/5f7b285f-8bc6-4bdf-a216-1f53605e9ab2.pdf",
+                            "type": "bal_sheet",
+                            "label": "Balance Sheet"
+                        },
+                        {
+                            "name": "Schedule 1-20 Balance sheet 2019-20.pdf",
+                            "url": "/objects/16c32fbe-3576-4ea0-ab94-af37cfb05569.pdf",
+                            "type": "bal_sheet_schedules",
+                            "label": "Schedules To Balance Sheet"
+                        },
+                        {
+                            "name": "Income & Expenditure Statement 2019-20.pdf",
+                            "url": "/objects/4f505458-5f1a-4475-900f-bcc65f224996.pdf",
+                            "type": "inc_exp",
+                            "label": "Income And Expenditure"
+                        },
+                        {
+                            "name": "Schedule 21-40 Income Exp. 2019-20.pdf",
+                            "url": "/objects/2c580cae-5ca7-4c50-80f3-3debfe5175c1.pdf",
+                            "type": "inc_exp_schedules",
+                            "label": "Schedules To Income And Expenditure"
+                        },
+                        {
+                            "name": "BPT19.pdf",
+                            "url": "/objects/c3d0135c-1f23-4880-ae60-6dce44c7e2ef.pdf",
+                            "type": "cash_flow",
+                            "label": "Cash Flow Statement"
+                        },
+                        {
+                            "name": "Audit Report  2019-20.pdf",
+                            "url": "/objects/57ce419b-1db3-4102-9743-7bcbd0786563.pdf",
+                            "type": "auditor_report",
+                            "label": "Auditor Report"
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2018-19",
+                    "key": "fy2018-19_auditedAnnualFySt",
+                    "postion": 5,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": false,
+                    "file": {
+                        "name": "testName2018-19",
+                        "url": "https://www.test.com/2018-19.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2017-18",
+                    "key": "fy2017-18_auditedAnnualFySt",
+                    "postion": 6,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": false,
+                    "file": {
+                        "name": "testName2017-18",
+                        "url": "https://www.test.com/2017-18.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2016-17",
+                    "key": "fy2016-17_auditedAnnualFySt",
+                    "postion": 7,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": false,
+                    "file": {
+                        "name": "testName2016-17",
+                        "url": "https://www.test.com/2016-17.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2015-16",
+                    "key": "fy2015-16_auditedAnnualFySt",
+                    "postion": 8,
+                    "type": "auditedAnnualFySt",
+                    "formFieldType": "file",
+                    "value": "",
+                    "isPdfAvailable": false,
+                    "file": {
+                        "name": "testName2015-16",
+                        "url": "https://www.test.com/2015-16.pdf"
+                    },
+                    "fileAlreadyOnCf": [
+                        {
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }
+                    ],
+                    "fileRejectOptions": [
+                        "Balance Sheet",
+                        "Schedules To Balance Sheet",
+                        "Income And Expenditure",
+                        "Schedules To Income And Expenditure",
+                        "Cash Flow Statement",
+                        "Auditor Report"
+                    ]
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
         }
-    ],
-    "status": "Na",
-    "value": "",
-    "isDraft": true,
-    "readonly": false,
-    "fileRejectOptions": [
-        "Balance Sheet",
-        "Schedules To Balance Sheet",
-        "Income And Expenditure",
-        "Schedules To Income And Expenditure",
-        "Cash Flow Statement",
-        "Auditor Report"
-    ],
-    "year": [
-        {
-            "warning": [],
-            "label": "FY 2022-23",
-            // "key": "2022-23",
-            "key": "2022-23",
-            "position": 1,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": "",
-            verifyStatus: 1, // 1-pending, 2- accept, 3- reject
-            rejectOption: '',
-            rejectReason: '',
-            "file": {
-                "name": "123",
-                "url": "321"
-            },
-            allowedFileTypes: ['pdf'],
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }
-            ],
-
-        },
-        {
-            "warning": [],
-            "label": "FY 2021-22",
-            "key": "2021-22",
-            "position": 2,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": true,
-            "isVerifiedStatus": 2, // 1- pending, 2- approved, 3-rejected by ulbs
-            "file": {
-                "name": "567",
-                "url": "765"
-            },
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "file1.pdf",
-                    "url": "file1.pdf",
-                    "type": "",
-                    "label": "",
-                    "size": "12kb"
-                },
-                {
-                    "name": "file2.pdf",
-                    "url": "file1.pdf",
-                    "type": "",
-                    "label": "",
-                    "size": "12kb"
-                }
-            ],
-        },
-        {
-            "warning": [],
-            "label": "FY 2020-21",
-            "key": "2020-21",
-            "position": 3,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": true,
-            "isVerifiedStatus": 3, // 1- pending, 2- approved, 3-rejected by ulbs
-            "file": {
-                "name": "",
-                "url": ""
-            },
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }
-            ],
-        },
-        {
-            "warning": [],
-            "label": "FY 2019-20",
-            "key": "2019-20",
-            "position": 4,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": "",
-            "file": {
-                "name": "",
-                "url": ""
-            },
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }
-            ],
-        },
-        {
-            "warning": [],
-            "label": "FY 2018-19",
-            "key": "2018-19",
-            "position": 5,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": "",
-            "file": {
-                "name": "",
-                "url": ""
-            },
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }
-            ],
-        },
-        {
-            "warning": [],
-            "label": "FY 2017-18",
-            "key": "2017-18",
-            "position": 6,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": "",
-            "file": {
-                "name": "",
-                "url": ""
-            },
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }
-            ],
-        },
-        {
-            "warning": [],
-            "label": "FY 2016-17",
-            "key": "2016-17",
-            "position": 7,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": "",
-            "file": {
-                "name": "",
-                "url": ""
-            },
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }
-            ],
-        },
-        {
-            "warning": [],
-            "label": "FY 2015-16",
-            "key": "2015-16",
-            "position": 8,
-            "type": "auditedAnnualFySt",
-            "formFieldType": "file",
-            "value": "",
-            "isPdfAvailable": "",
-            "file": {
-                "name": "",
-                "url": ""
-            },
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please upload a file.",
-                },
-                {
-                    name: "max",
-                    validator: 20,
-                    message: "Please upload a file with a maximum size of 20 MB."
-                },
-            ],
-            "fileAlreadyOnCf": [
-                {
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }
-            ],
-        }
-    ],
+    ]
 }
 const accountPractice = {
     "key": "accountPractice",
@@ -1116,12 +1099,12 @@ const reviewSubmit = {
 export const tabsJson = {
     data: {
         "tabs": [
-            basicTab,
-            financialData,
+            // basicTab,
+            // financialData,
             uploadDoc,
-            accountPractice,
-            slb,
-            reviewSubmit
+            // accountPractice,
+            // slb,
+            // reviewSubmit
         ]
     }
 };

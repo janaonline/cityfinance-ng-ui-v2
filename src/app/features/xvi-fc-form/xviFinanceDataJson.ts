@@ -8,13 +8,13 @@ export const financialData = {
     "id": "s2",
     "displayPriority": 2,
     "__v": 0,
-    "formArrays": [
+    "data": [
         {
             key: "sourceOfFd",
             label: "",
             section: 'accordion',
             formFieldType: "table",
-            "tableRow": [
+            "data": [
                 {
                     "label": "",
                     key: 'sourceOfFd1',
@@ -30,8 +30,8 @@ export const financialData = {
                     ],
                     "showInputBox": "",
                     "inputBoxValue": "",
-                    "tableDataType": 'dynamicYear',
-                    tableData: [
+                    "yearType": 'dynamicYear',
+                    year: [
                         {
                             "warning": [],
                             "label": "FY 2022-23",
@@ -126,8 +126,8 @@ export const financialData = {
                     ],
                     "showInputBox": "",
                     "inputBoxValue": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [],
                             "label": "FY 2022-23",
@@ -219,7 +219,7 @@ export const financialData = {
             "label": "I. REVENUE",
             "section": 'accordion',
             "formFieldType": "table",
-            "tableRow": [
+            "data": [
                 {
                     "key": "taxRevenue",
                     "label": "Tax Revenue",
@@ -242,8 +242,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -414,8 +414,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -586,8 +586,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -758,8 +758,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -935,8 +935,8 @@ export const financialData = {
                         "1.3",
                         "1.4"
                     ],
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1106,8 +1106,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1277,8 +1277,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1451,8 +1451,8 @@ export const financialData = {
                         "2.1",
                         "2.2"
                     ],
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1622,8 +1622,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1793,8 +1793,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1969,8 +1969,8 @@ export const financialData = {
                         "3",
                         "4"
                     ],
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2126,7 +2126,7 @@ export const financialData = {
             "label": "II. EXPENDITURE",
             "section": 'accordion',
             "formFieldType": "table",
-            "tableRow": [
+            "data": [
                 {
                     "key": "establishmentExp",
                     "label": "Establishment Expenses",
@@ -2148,8 +2148,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2319,8 +2319,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2490,8 +2490,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2661,8 +2661,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2837,8 +2837,8 @@ export const financialData = {
                         "6.3",
                         "6.4"
                     ],
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3008,8 +3008,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3182,8 +3182,8 @@ export const financialData = {
                         "6",
                         "7"
                     ],
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3339,7 +3339,7 @@ export const financialData = {
             "label": "III. BORROWINGS",
             "section": 'accordion',
             "formFieldType": "table",
-            "tableRow": [
+            "data": [
                 {
                     "key": "grossBorrowing",
                     "label": "Gross Borrowings",
@@ -3361,8 +3361,8 @@ export const financialData = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableDataType": 'dynamicYear',
-                    "tableData": [
+                    "yearType": 'dynamicYear',
+                    "year": [
                         {
                             "warning": [
                                 {

@@ -19,18 +19,16 @@ export class DynamicFormService {
   ) { }
 
   getFG(tabKey: string, i: number): any {
-    // return (((this.group.get(fieldKey) as FormArray)
-    //   .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j];
-    // console.log('(this.form.get(tabKey) as FormArray).controls[i]',(this.form.get(tabKey) as FormArray).controls[i]);
-
     return (this.form.get(tabKey) as FormArray).controls[i]
   }
   setTableData(childField: any) {
     const tableRow: any = [];
-    childField.tableRow.forEach((row: any) => {
-      if (row.tableData) {
+    const childRows = childField['data'] || childField['tableRow']
+    childRows.forEach((row: any) => {
+      const tableData = row.year || row.tableData;
+      if (tableData) {
         const tableCol: any = [];
-        row.tableData.forEach((col: any) => {
+        tableData.forEach((col: any) => {
           tableCol.push(
             // set validation here
             new FormGroup({
@@ -76,10 +74,33 @@ export class DynamicFormService {
 
   }
   setFilesData(childField: any) {
+    const years: any = [];
+
+    // childRows.forEach((row: any) => {
+    const yearData = childField.year;
+    if (yearData) {
+      yearData.forEach((col: any) => {
+        years[col.key] = this.createFileForm(col);
+        // years.push(
+        //   new FormGroup({
+        //     // [row.key]: new FormControl(childField.value),
+        //     [col.key]: this.createFileForm(col),
+        //   })
+          
+        // );
+      });
+
+    }
+    // return new FormGroup(years);
+    return new FormGroup(years);
+
+  }
+
+  createFileForm(childField: any) {
     return new FormGroup({
       file: new FormGroup({
-        name: new FormControl(childField.file.name || ''),
-        url: new FormControl(childField.file.url || ''),
+        name: new FormControl(childField.file?.name || ''),
+        url: new FormControl(childField.file?.url || ''),
       }),
       verifyStatus: new FormControl(childField.verifyStatus || ''),
       rejectReason: new FormControl(childField.rejectReason || ''),
@@ -87,17 +108,6 @@ export class DynamicFormService {
       // name: new FormControl(childField.file.name || ''),
       // url: new FormControl(childField.file.url || ''),
     });
-    // const childFieldData: any = [];
-    // childField.formArrays.forEach((row: any) => {
-    //   childFieldData.push(
-    //     new FormGroup({
-    //       name: new FormControl(row.file.name || ''),
-    //       url: new FormControl(row.file.url || ''),
-    //     }));
-    // })
-
-    // return new FormArray(childFieldData);
-
   }
 
   bindValidations(validations: any) {
@@ -132,7 +142,6 @@ export class DynamicFormService {
         }
       });
 
-
       return Validators.compose(validators);
     }
     return null;
@@ -145,9 +154,10 @@ export class DynamicFormService {
     // const form = this.fb.group({});
     const group: any = {};
     fields.forEach((field: any) => {
-      if (field.formArrays && field.formArrays.length) {
+      const fieldFormArrays = field.data || field.formArrays;
+      if (fieldFormArrays && fieldFormArrays.length) {
         let formArrays: any[] = [];
-        field.formArrays.forEach((childField: any) => {
+        fieldFormArrays.forEach((childField: any) => {
           // table row
           const childFieldData: any = {};
           if (childField.formFieldType === 'table') {
@@ -155,8 +165,9 @@ export class DynamicFormService {
           }
           else if (childField.formFieldType === 'questionnaire') {
             childFieldData[childField.key] = this.setQuestionnaireData(childField);
-          } 
+          }
           else if (childField.formFieldType === 'file') {
+            // console.log('childField----', childField);
             childFieldData[childField.key] = this.setFilesData(childField);
           }
           else {

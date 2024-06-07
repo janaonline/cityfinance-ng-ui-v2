@@ -8,13 +8,13 @@ export const slb = {
     "id": "s5",
     "displayPriority": 5,
     "__v": 0,
-    "formArrays": [
+    "data": [
         {
             "key": "waterSupply",
             "section": "accordion",
             "formFieldType": "table",
             "label": "I. WATER SUPPLY",
-            "tableRow": [
+            "data": [
                 {
                     "key": "coverageOfWs",
                     "label": "Coverage of water supply connections (%)",
@@ -36,7 +36,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -184,7 +184,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -372,7 +372,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -520,7 +520,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -668,7 +668,7 @@ export const slb = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -816,7 +816,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1004,7 +1004,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1152,7 +1152,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1300,7 +1300,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1474,7 +1474,7 @@ export const slb = {
             "section": "accordion",
             "formFieldType": "table",
             "label": "II. SEWERAGE",
-            "tableRow": [
+            "data": [
                 {
                     "key": "coverageOfToiletsSew",
                     "label": "Coverage of toilets (%)",
@@ -1496,7 +1496,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1644,7 +1644,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1792,7 +1792,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -1940,7 +1940,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2088,7 +2088,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2236,7 +2236,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2384,7 +2384,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2532,7 +2532,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2680,7 +2680,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -2854,7 +2854,7 @@ export const slb = {
             "section": "accordion",
             "formFieldType": "table",
             "label": "III. SOLID WASTE MANAGEMENT",
-            "tableRow": [
+            "data": [
                 {
                     "key": "householdLevelCoverageLevelSwm",
                     "label": "Household level coverage (%)",
@@ -2876,7 +2876,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3024,7 +3024,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3172,7 +3172,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3320,7 +3320,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3508,7 +3508,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3656,7 +3656,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3804,7 +3804,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -3992,7 +3992,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -4166,7 +4166,7 @@ export const slb = {
             "section": "accordion",
             "formFieldType": "table",
             "label": "IV. STROM WATER DRAINAGE",
-            "tableRow": [
+            "data": [
                 {
                     "key": "coverageOfStormDrainage",
                     "label": "Coverage of storm water drainage network (%)",
@@ -4188,7 +4188,7 @@ export const slb = {
                     "decimal": 2,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {
@@ -4336,7 +4336,7 @@ export const slb = {
                     "decimal": 0,
                     "validation": "",
                     "logic": "",
-                    "tableData": [
+                    "year": [
                         {
                             "warning": [
                                 {

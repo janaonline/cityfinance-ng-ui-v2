@@ -15,6 +15,7 @@ export class InputComponent {
   className: string = "box1";
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
+  @Input() disaplayLabel: boolean = true;
 
   // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 

@@ -1,6 +1,6 @@
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
     <!-- <form class="dynamic-form" [formGroup]="form" (submit)="onSubmit($event)"> -->
-    <form [formGroup]="form">
+        <!-- <form [formGroup]="form"> -->
         <app-loader class="p-3" *ngIf="isLoader"></app-loader>
         <!-- <div *ngFor="let field of fields" class="form-row"> -->
 
@@ -24,7 +24,7 @@
                         <h4 class="fw-bold">{{tab.label}}</h4>
                     </div>
                     <div class="overflow-container">
-                        @if (tab.key === 'auditedAnnualFySt') {
+                        @if (tab.key === 'uploadDoc') {
                         <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
                         }
                         @else if (tab.key === 'accountPractice') {
@@ -36,7 +36,7 @@
                         @else if (tab.key === 'demographicData') {
                         <mat-card>
                             <mat-card-content class="p-4">
-                                <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
+                                <ng-container *ngFor="let field of tab?.data;let i = index;">
                                     <div class="row m-1">
                                         <app-dynamic-form [field]="field" [group]="getFG(tab.key,i)">
                                         </app-dynamic-form>
@@ -46,7 +46,7 @@
                         </mat-card>
                         }
                         @else if (tab.key === 'financialData' || tab.key === 'serviceLevelBenchmark') {
-                        <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
+                        <ng-container *ngFor="let field of tab?.data;let i = index;">
                             <div class="row mt-4">
                                 <app-dynamic-form [field]="field" [group]="getFG(tab.key,i)">
                                 </app-dynamic-form>
@@ -83,9 +83,9 @@
         <!-- <div class="form-row">
             <button type="submit" [disabled]="!form.valid">Save</button>
         </div> -->
-    </form>
+    <!-- </form> -->
 
     <div class="margin-top">
-        <!-- <pre>  {{ this.form.getRawValue() | json }} </pre> -->
+        <pre>  {{ this.form.getRawValue() | json }} </pre>
     </div>
 </div>

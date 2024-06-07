@@ -36,7 +36,7 @@ export class VerifyDocumentsDialogueComponent {
 
   rejectOption: FieldConfig = {
     multiple: true,
-    options: this.data.fileRejectOptions,
+    options: this.data.field.fileRejectOptions,
     formFieldType: 'select', label: 'File(s) that require replacement', key: 'rejectOption',
   };
 

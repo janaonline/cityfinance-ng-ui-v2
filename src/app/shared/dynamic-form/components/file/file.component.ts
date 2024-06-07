@@ -42,7 +42,8 @@ export class FileComponent {
   }
 
   ngOnInit() {
-    // console.log('----field file --', this.field.key);
+    console.log('----field file --', this.field);
+    console.log('----group file --', this.group);
     // this.allowedFileTypeStr = this.field.allowedFileTypes?.map((e: string) => this.fileTypes[e])?.join(',') || '';
   }
 
