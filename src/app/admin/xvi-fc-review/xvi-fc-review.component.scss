@@ -1,7 +1,55 @@
 .card-custom {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-mat-card {
-  padding: 16px;
-  margin: 16px;
+.mat-mdc-table .mat-mdc-header-cell{
+    background: rgba(25, 51, 105, 1) !important;
+    font-size: 18px;
+    font-weight: 600 !important;
+    text-align: center;
+    color: #fff;
+    border: 1px solid rgba(219, 219, 219, 1);
 }
+.mat-mdc-table .mdc-data-table__cell {
+    font-size: 16px ;
+    font-weight: 400;
+    border: 1px solid rgba(219, 219, 219, 1);
+}
+.form-status,.action-link{
+    border-radius: 20px;
+    font-size: 14px;
+    line-height: 18px;
+    padding: 5px 20px;
+}
+.in-progress, .under-review,.action-link  {
+    color: rgba(230, 126, 21, 1);
+    background: rgba(255, 232, 209, 1);
+    border: 1px solid rgba(230, 126, 21, 1);
+}
+.approved {
+    color: rgba(33, 166, 0, 1);
+    background: rgba(215, 253, 206, 1);
+    border: 1px solid rgba(33, 166, 0, 1)
+}
+.action-link{
+    background-color: #fff;
+    text-decoration: none;
+}
+.status-in-progress {
+    color: #ff9800;
+}
+  
+  .status-under-review {
+    color: rgba(230, 126, 21, 1);
+  }
+  
+  .status-approved {
+    color: rgba(33, 166, 0, 1);
+
+  }
+  .reset{
+    color: rgba(230, 126, 21, 1);
+    font-size: 18px;
+    border: 0;
+    background: none;
+
+  }
