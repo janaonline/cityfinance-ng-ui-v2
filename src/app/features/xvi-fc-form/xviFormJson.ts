@@ -348,6 +348,7 @@ const uploadDoc = {
                 "name": "123",
                 "url": "321"
             },
+            allowedFileTypes: ['pdf'],
             validations: [
                 {
                     name: "required",

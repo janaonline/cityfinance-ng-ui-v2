@@ -2,11 +2,13 @@ import { Component, Input } from "@angular/core";
 import { AbstractControl, FormControl, FormGroup } from "@angular/forms";
 import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
-import { DecimalLimitDirective } from "../../../../features/xvi-fc/directives/decimal-limit.directive";
+// import { DecimalLimitDirective } from "../../../../features/xvi-fc/directives/decimal-limit.directive";
 @Component({
   selector: "app-input",
   standalone: true,
-  imports: [MaterialModule, DecimalLimitDirective],
+  imports: [MaterialModule, 
+    // DecimalLimitDirective
+  ],
   templateUrl: './input.component.html',
 })
 export class InputComponent {
