@@ -348,6 +348,7 @@ const uploadDoc = {
                 "name": "123",
                 "url": "321"
             },
+            allowedFileTypes: ['pdf'],
             validations: [
                 {
                     name: "required",
@@ -1119,11 +1120,11 @@ const reviewSubmit = {
 export const tabsJson = {
     data: {
         "tabs": [
-            basicTab,
-            financialData,
+            // basicTab,
+            // financialData,
             uploadDoc,
-            accountPractice,
-            reviewSubmit
+            // accountPractice,
+            // reviewSubmit
         ]
     }
 };

@@ -22,6 +22,7 @@ export interface FieldConfig {
   fileAlreadyOnCf?: any[];
   multiple?: boolean;
   verifyStatus?: number;
+  allowedFileTypes?: string[];
 }
 
 export interface JsonFieldConfig {
