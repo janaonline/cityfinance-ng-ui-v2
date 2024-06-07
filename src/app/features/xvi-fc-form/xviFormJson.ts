@@ -1,4 +1,5 @@
 import { financialData } from "./xviFinanceDataJson";
+import { slb } from "./xviFcSlb";
 
 const basicTab = {
     "_id": "6657921b9ab1c13ac44d01f4",
@@ -107,7 +108,7 @@ const basicTab = {
             "required": true,
             "info": "",
             "placeHolder": "",
-            "formFieldType": "number",
+            "formFieldType": "",
             "canShow": true,
             "warning": [
                 {
@@ -1124,6 +1125,7 @@ export const tabsJson = {
             financialData,
             uploadDoc,
             accountPractice,
+            slb,
             reviewSubmit
         ]
     }

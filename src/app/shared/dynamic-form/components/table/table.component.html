@@ -53,9 +53,10 @@
                 <tr *ngFor="let row of field.tableRow;let i = index;" [formGroupName]="i">
                     <!-- <tr *ngFor="let row of field.tableRow;let i = index;" > -->
                     <!-- <tr *ngFor="let row of field.tableRow;let i = index;" [formArrayName]="group.controls[row.key]"> -->
-                    <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
-                        <span class="text-danger" *ngIf="row.required">*</span>
-                        <span class="info-icon" *ngIf="row.info" matTooltip="{{row.info}}">i</span>
+                    <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
+                            *ngIf="row.required">*&nbsp;</span>
+                        <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
+                        <!-- <span class=" info-icon" *ngIf="row.info" matTooltip="{{row.info}}">i</span> -->
                     </td>
                     <td *ngFor="let col of row.tableData;let j = index;" [formArrayName]="row.key">
                         <!-- <td *ngFor="let col of row.tableData;let j = index;"> -->

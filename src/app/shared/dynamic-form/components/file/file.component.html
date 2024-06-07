@@ -1,7 +1,7 @@
 <div class="container" appDnd (fileDropped)="onFileDropped($event)">
     <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowseHandler($event)" [accept]="this.allowedFileTypeStr"/>
     <i class="bi bi-file-earmark-arrow-up-fill fs-4 clr-primary"></i>
-    <p class="fw-bold mt-2 mb-1">Choose consolidated PDF</p>
+    <p class="fw-bold mt-2 mb-1">Upload consolidated PDF</p>
     <label for="fileDropRef">Drag and drop the file here.</label>
 </div>
 <div class="files-list" *ngIf="currentFile">
