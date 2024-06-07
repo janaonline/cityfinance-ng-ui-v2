@@ -20,7 +20,7 @@ import { MaterialModule } from '../../material.module';
 import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
 import { USER_TYPE } from '../../core/models/user/userType';
-import { FiscalRankingService, StatusType } from '../xvi-fc/services/fiscal-ranking.service';
+import { FiscalRankingService, StatusType } from './services/fiscal-ranking.service';
 import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
 import swal from 'sweetalert2';
@@ -30,14 +30,14 @@ import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
 import { PercentprogressPipe } from '../../core/pipes/percentprogress.pipe';
 import { ToStorageUrlPipe } from '../../core/pipes/to-storage-url.pipe';
 import { TowordPipe } from '../../core/pipes/toword.pipe';
-import { CommonActionRadioComponent } from '../../shared/components/actions/common-action-radio/common-action-radio.component';
+// import { CommonActionRadioComponent } from '../../shared/components/actions/common-action-radio/common-action-radio.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
-import { DecimalLimitDirective } from '../xvi-fc/directives/decimal-limit.directive';
+// import { DecimalLimitDirective } from '../xvi-fc/directives/decimal-limit.directive';
 import { DateAdapter } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
-import { DataEntryService } from '../xvi-fc/services/data-entry.service';
+// import { DataEntryService } from '../xvi-fc/services/data-entry.service';
 import { AccountingPracticeComponent } from './accounting-practice/accounting-practice.component';
 import { ReviewSubmitComponent } from './review-submit/review-submit.component';
 import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.component';
@@ -59,8 +59,8 @@ import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetail
     ToStorageUrlPipe,
     AlreadyUpdatedUrlPipe,
     DisplayPositionPipe,
-    DecimalLimitDirective,
-    CommonActionRadioComponent,
+    // DecimalLimitDirective,
+    // CommonActionRadioComponent,
     LoaderComponent,
 
     YearwiseFilesComponent,
