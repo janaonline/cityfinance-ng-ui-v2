@@ -169,8 +169,8 @@ export class XviFcFormComponent {
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
       // const res:any = formJson;
       // const res: any = tabsJson;
-      // this.tabs = this.fields = res?.data?.tabs;
-      this.tabs = this.fields = tabsJson.data.tabs;
+      this.tabs = this.fields = res?.data?.tabs;
+      // this.tabs = this.fields = tabsJson.data.tabs;
       this.form = this.formService.tabControl(this.tabs);
       this.hideForm = res?.data?.hideForm;
       this.notice = res?.data?.notice;

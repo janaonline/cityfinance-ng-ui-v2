@@ -105,8 +105,6 @@ export class DynamicFormService {
       verifyStatus: new FormControl(childField.verifyStatus || ''),
       rejectReason: new FormControl(childField.rejectReason || ''),
       rejectOption: new FormControl(childField.rejectOption || ''),
-      // name: new FormControl(childField.file.name || ''),
-      // url: new FormControl(childField.file.url || ''),
     });
   }
 

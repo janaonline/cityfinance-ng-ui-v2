@@ -2,7 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FieldConfig } from '../../../../shared/dynamic-form/field.interface';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { FileComponent } from '../../../../shared/dynamic-form/components/file/file.component';
 import { InputComponent } from '../../../../shared/dynamic-form/components/input/input.component';
 import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components/radiobutton/radiobutton.component';
@@ -52,16 +52,15 @@ export class VerifyDocumentsDialogueComponent {
   ) { }
 
   ngOnInit() {
-    console.log('----this.data.field --', this.data.field);
-    // console.log('----this.data.verifyForm --', this.data.verifyForm);
-    // console.log('----this.data.group --', this.data.group);
-    // this.verifyForm = Object.assign({}, this.data.group)
+    // console.log('----this.data.field --', this.data.field);
+  }
 
-
+  get rawValue() {
+    return this.getVerifyFormGroup().getRawValue();
   }
 
   getVerifyStatus() {
-    return (this.getVerifyFormGroup().get('verifyStatus') as FormControl).value;
+    return this.rawValue.verifyStatus;
   }
 
   onNoClick(): void {
@@ -75,6 +74,14 @@ export class VerifyDocumentsDialogueComponent {
     return (this.data.group) as FormGroup;
   }
 
+  disableStatus(): boolean {
+    if (![2, 3].includes(this.rawValue.verifyStatus)) return true;
+    if (this.rawValue.verifyStatus === 3 &&
+      (!this.rawValue.rejectOption || !this.rawValue.rejectReason || !this.rawValue.file.name)) {
+      return true;
+    }
+    return false;
+  }
   onSubmit() {
     this.data.field.verifyStatus = this.getVerifyStatus();
     this.data.group.patchValue(this.data.verifyForm.getRawValue());

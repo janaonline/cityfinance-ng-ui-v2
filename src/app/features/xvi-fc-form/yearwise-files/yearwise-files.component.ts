@@ -76,10 +76,11 @@ export class YearwiseFilesComponent {
   }
 
   deleteFile(key: string) {
-    this.getYearGroup(0, key).get('file')?.patchValue({ name: '', url: '' });
-    this.getYearGroup(0, key).get('verifyStatus')?.patchValue(1);
-    this.getYearGroup(0, key).get('rejectOption')?.patchValue('');
-    this.getYearGroup(0, key).get('rejectReason')?.patchValue('');
+    this.getYearGroup(0, key).reset();
+    // this.getYearGroup(0, key).get('file')?.patchValue({ name: '', url: '' });
+    // this.getYearGroup(0, key).get('verifyStatus')?.patchValue(1);
+    // this.getYearGroup(0, key).get('rejectOption')?.patchValue('');
+    // this.getYearGroup(0, key).get('rejectReason')?.patchValue('');
   }
 }
 
