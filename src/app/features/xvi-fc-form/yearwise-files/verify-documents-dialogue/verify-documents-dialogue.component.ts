@@ -7,6 +7,7 @@ import { FileComponent } from '../../../../shared/dynamic-form/components/file/f
 import { InputComponent } from '../../../../shared/dynamic-form/components/input/input.component';
 import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components/radiobutton/radiobutton.component';
 import { SelectComponent } from '../../../../shared/dynamic-form/components/select/select.component';
+import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 
 export interface DialogData {
   field: FieldConfig;
@@ -20,7 +21,7 @@ export interface DialogData {
   standalone: true,
   imports: [MaterialModule, FileComponent,
     InputComponent, RadiobuttonComponent,
-    SelectComponent,
+    SelectComponent, ToStorageUrlPipe
   ],
   templateUrl: './verify-documents-dialogue.component.html',
   styleUrl: './verify-documents-dialogue.component.scss'

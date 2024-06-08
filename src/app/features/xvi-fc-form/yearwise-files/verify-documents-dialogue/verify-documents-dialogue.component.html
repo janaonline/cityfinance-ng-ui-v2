@@ -17,8 +17,8 @@
                         <p class="file-size">{{file.size}}</p>
                     </div>
                     <div class="align-self-center delete-doc-icon">
-                        <a class="ms-2 primary-btn-2" style="text-decoration: none;" [href]="file.url"
-                            download><mat-icon>cloud_download</mat-icon> Download</a>
+                        <a class="ms-2 primary-btn-2" style="text-decoration: none;" [href]="file.url | toStorageUrl"
+                         target="_blank"><mat-icon>cloud_download</mat-icon> Download</a>
                     </div>
                 </div>
             </div>
