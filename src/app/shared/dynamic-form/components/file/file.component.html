@@ -21,7 +21,9 @@
             <p class="size">
                 {{ formatBytes(currentFile.size) }}
             </p>
-            <app-progress [progress]="progress"></app-progress>
+            <!-- <app-progress [progress]="progress"></app-progress> -->
+            <mat-progress-bar mode="determinate" [value]="progress"></mat-progress-bar>
+
         </div>
 
         <div class="delete" (click)="deleteFile()">
@@ -41,10 +43,6 @@
             <h4 class="name">
                 {{ getRawValue.file.name }}
             </h4>
-            <!-- <p class="size">
-                    {{ formatBytes(currentFile.size) }}
-                </p>
-                <app-progress [progress]="progress"></app-progress> -->
         </div>
         <div class="delete" (click)="deleteFile()">
             <mat-icon>delete_forever</mat-icon>

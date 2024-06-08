@@ -12,11 +12,11 @@ import { FiscalRankingService, StatusType } from './services/fiscal-ranking.serv
 import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
 import swal from 'sweetalert2';
-import { Tab, APPROVAL_TYPES } from '../../core/models/models';
+// import { Tab, APPROVAL_TYPES } from '../../core/models/models';
 import { AlreadyUpdatedUrlPipe } from '../../core/pipes/already-updated-url.pipe';
-import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
+// import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
 import { PercentprogressPipe } from '../../core/pipes/percentprogress.pipe';
-import { ToStorageUrlPipe } from '../../core/pipes/to-storage-url.pipe';
+// import { ToStorageUrlPipe } from '../../core/pipes/to-storage-url.pipe';
 import { TowordPipe } from '../../core/pipes/toword.pipe';
 // import { CommonActionRadioComponent } from '../../shared/components/actions/common-action-radio/common-action-radio.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
@@ -26,7 +26,7 @@ import { AccountingPracticeComponent } from './accounting-practice/accounting-pr
 import { ReviewSubmitComponent } from './review-submit/review-submit.component';
 import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.component';
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
-import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
+// import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { XviFcService } from '../../core/services/xvi-fc.service';
 
 @Component({
@@ -40,10 +40,10 @@ import { XviFcService } from '../../core/services/xvi-fc.service';
     MaterialModule,
 
     PercentprogressPipe,
-    TowordPipe,
-    ToStorageUrlPipe,
+    // TowordPipe,
+    // ToStorageUrlPipe,
     AlreadyUpdatedUrlPipe,
-    DisplayPositionPipe,
+    // DisplayPositionPipe,
     // DecimalLimitDirective,
     // CommonActionRadioComponent,
     LoaderComponent,
@@ -162,13 +162,9 @@ export class XviFcFormComponent {
   }
 
   onLoad() {
-    console.log('-----dfdf----');
-
     this.isLoader = true;
     this.ulbId = '5dcfca53df6f59198c4ac3d5';
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
-      // const res:any = formJson;
-      // const res: any = tabsJson;
       this.tabs = this.fields = res?.data?.tabs;
       // this.tabs = this.fields = tabsJson.data.tabs;
       this.form = this.formService.tabControl(this.tabs);

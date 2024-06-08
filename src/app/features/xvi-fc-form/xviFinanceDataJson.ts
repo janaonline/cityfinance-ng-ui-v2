@@ -1,3 +1,208 @@
+const sourceOfFd = {
+    key: "sourceOfFd",
+    label: "",
+    section: 'accordion',
+    formFieldType: "table",
+    "data": [
+        {
+            "label": "",
+            key: 'sourceOfFd1',
+            "position": "",
+            "required": true,
+            "info": "",
+            "placeHolder": "",
+            "canShow": true,
+            "options": [
+                "Accounts Finalized & Audited",
+                "Accounts Finalized but Not Audited",
+                "Accounts not Finalized - Provisional data"
+            ],
+            "showInputBox": "",
+            "inputBoxValue": "",
+            "yearType": 'dynamicYear',
+            year: [
+                {
+                    "warning": [],
+                    "label": "FY 2022-23",
+                    "key": "2022-23",
+                    "position": 1,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 6906
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2021-22",
+                    "key": "2021-22",
+                    "position": 2,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 1604
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2020-21",
+                    "key": "2020-21",
+                    "position": 3,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 3145
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2019-20",
+                    "key": "2019-20",
+                    "position": 4,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 7967
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2018-19",
+                    "key": "2018-19",
+                    "position": 5,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 476
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2017-18",
+                    "key": "2017-18",
+                    "position": 6,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 832
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2016-17",
+                    "key": "2016-17",
+                    "position": 7,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 2139
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2015-16",
+                    "key": "2015-16",
+                    "position": 8,
+                    "type": "sourceOfFd",
+                    "formFieldType": "heading",
+                    "value": 8888
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false
+        },
+        {
+            "key": "sourceOfFd",
+            "label": "Please select the source of Financial Data",
+            "position": "",
+            "required": true,
+            "info": "",
+            "placeHolder": "",
+            "formFieldType": "select",
+            "canShow": true,
+            "options": [
+                "Accounts Finalized & Audited",
+                "Accounts Finalized but Not Audited",
+                "Accounts not Finalized - Provisional data"
+            ],
+            "showInputBox": "",
+            "inputBoxValue": "",
+            "yearType": 'dynamicYear',
+            "year": [
+                {
+                    "warning": [],
+                    "label": "FY 2022-23",
+                    "key": "2022-23",
+                    "position": 1,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": "Accounts Finalized & Audited"
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2021-22",
+                    "key": "2021-22",
+                    "position": 2,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": ""
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2020-21",
+                    "key": "2020-21",
+                    "position": 3,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": ""
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2019-20",
+                    "key": "2019-20",
+                    "position": 4,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": ""
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2018-19",
+                    "key": "2018-19",
+                    "position": 5,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": ""
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2017-18",
+                    "key": "2017-18",
+                    "position": 6,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": ""
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2016-17",
+                    "key": "2016-17",
+                    "position": 7,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": ""
+                },
+                {
+                    "warning": [],
+                    "label": "FY 2015-16",
+                    "key": "2015-16",
+                    "position": 8,
+                    "type": "sourceOfFd",
+                    "formFieldType": "select",
+                    "value": ""
+                }
+            ],
+            "status": "Na",
+            "value": "",
+            "isDraft": true,
+            "readonly": false,
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please fill in this required field."
+                }
+            ]
+        }]
+};
 export const financialData = {
     "_id": "6657921b9ab1c13ac44d01f5",
     "key": "financialData",
@@ -9,211 +214,7 @@ export const financialData = {
     "displayPriority": 2,
     "__v": 0,
     "data": [
-        {
-            key: "sourceOfFd",
-            label: "",
-            section: 'accordion',
-            formFieldType: "table",
-            "data": [
-                {
-                    "label": "",
-                    key: 'sourceOfFd1',
-                    "position": "",
-                    "required": true,
-                    "info": "",
-                    "placeHolder": "",
-                    "canShow": true,
-                    "options": [
-                        "Accounts Finalized & Audited",
-                        "Accounts Finalized but Not Audited",
-                        "Accounts not Finalized - Provisional data"
-                    ],
-                    "showInputBox": "",
-                    "inputBoxValue": "",
-                    "yearType": 'dynamicYear',
-                    year: [
-                        {
-                            "warning": [],
-                            "label": "FY 2022-23",
-                            "key": "2022-23",
-                            "position": 1,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 6906
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2021-22",
-                            "key": "2021-22",
-                            "position": 2,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 1604
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2020-21",
-                            "key": "2020-21",
-                            "position": 3,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 3145
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2019-20",
-                            "key": "2019-20",
-                            "position": 4,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 7967
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2018-19",
-                            "key": "2018-19",
-                            "position": 5,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 476
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2017-18",
-                            "key": "2017-18",
-                            "position": 6,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 832
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2016-17",
-                            "key": "2016-17",
-                            "position": 7,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 2139
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2015-16",
-                            "key": "2015-16",
-                            "position": 8,
-                            "type": "sourceOfFd",
-                            "formFieldType": "heading",
-                            "value": 8888
-                        }
-                    ],
-                    "status": "Na",
-                    "value": "",
-                    "isDraft": true,
-                    "readonly": false
-                },
-                {
-                    "key": "sourceOfFd",
-                    "label": "Please select the source of Financial Data",
-                    "position": "",
-                    "required": true,
-                    "info": "",
-                    "placeHolder": "",
-                    "formFieldType": "select",
-                    "canShow": true,
-                    "options": [
-                        "Accounts Finalized & Audited",
-                        "Accounts Finalized but Not Audited",
-                        "Accounts not Finalized - Provisional data"
-                    ],
-                    "showInputBox": "",
-                    "inputBoxValue": "",
-                    "yearType": 'dynamicYear',
-                    "year": [
-                        {
-                            "warning": [],
-                            "label": "FY 2022-23",
-                            "key": "2022-23",
-                            "position": 1,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": "Accounts Finalized & Audited"
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2021-22",
-                            "key": "2021-22",
-                            "position": 2,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": ""
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2020-21",
-                            "key": "2020-21",
-                            "position": 3,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": ""
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2019-20",
-                            "key": "2019-20",
-                            "position": 4,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": ""
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2018-19",
-                            "key": "2018-19",
-                            "position": 5,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": ""
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2017-18",
-                            "key": "2017-18",
-                            "position": 6,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": ""
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2016-17",
-                            "key": "2016-17",
-                            "position": 7,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": ""
-                        },
-                        {
-                            "warning": [],
-                            "label": "FY 2015-16",
-                            "key": "2015-16",
-                            "position": 8,
-                            "type": "sourceOfFd",
-                            "formFieldType": "select",
-                            "value": ""
-                        }
-                    ],
-                    "status": "Na",
-                    "value": "",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        }
-                    ]
-                }]
-        },
+        sourceOfFd,
         {
             "key": 'revenue',
             "label": "I. REVENUE",
@@ -929,6 +930,7 @@ export const financialData = {
                     "min": -999999999999999,
                     "decimal": 0,
                     "validation": "sum",
+                    sum: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
                     "logic": [
                         "1.1",
                         "1.2",

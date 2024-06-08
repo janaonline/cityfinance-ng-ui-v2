@@ -4,6 +4,7 @@ import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 import { InputComponent } from '../input/input.component';
 import { SelectComponent } from '../select/select.component';
+import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-table',
@@ -18,17 +19,38 @@ export class TableComponent {
   @Input() group!: FormGroup;
   collapsed = false;
   panelOpenState = true;
+  total: number = 0;
+  subscription!: Subscription;
 
   constructor() { }
   ngOnInit() {
     console.log('----field table --', this.field);
     console.log('----group table --', this.group);
+    console.log('----group table getRawValue --', this.group.getRawValue());
     // console.log('----group table --', this.group.value);
     // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
     // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0, 'fy2022-23_sourceOfFd'));
     // console.log('getProducts--1---', this.getProducts1());
 
+    this.subscription = this.group.valueChanges
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged()
+      )
+      .subscribe(data => {
+        console.log('-----data----', data);
 
+        // this.total = data.reduce((a: any, b: any) => a + +b.fdnTotalShares, 0)
+      })
+
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+  }
+
+  get capValues() {
+    return this.group.get('cap_values') as FormArray;
   }
 
   getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {

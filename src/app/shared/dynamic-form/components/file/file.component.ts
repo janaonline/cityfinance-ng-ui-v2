@@ -8,11 +8,12 @@ import { FieldConfig } from '../../field.interface';
 import { ProgressComponent } from './progress/progress.component';
 import { DndDirective } from './dnd.directive';
 import { Subscription } from 'rxjs';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @Component({
   selector: 'app-file',
   standalone: true,
-  imports: [MaterialModule, ProgressComponent, DndDirective],
+  imports: [MaterialModule, DndDirective, MatProgressBarModule],
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss'
 })
