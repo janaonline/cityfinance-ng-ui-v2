@@ -22,7 +22,7 @@
     <mat-card>
         <mat-card-content>
             <table class="table review-table">
-                <tr *ngFor="let field of tab?.formArrays;let i = index;">
+                <tr *ngFor="let field of tab?.data;let i = index;">
                     <td>{{field.label}}</td>
                     <td class="fw-bold">{{field.value}}</td>
                 </tr>
@@ -31,8 +31,8 @@
     </mat-card>
 
     }
-    @else if (tab.key === 'financialData') {
-    <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
+    @else if (tab.key === 'financialData' || tab.key === 'serviceLevelBenchmark') {
+    <ng-container *ngFor="let field of tab?.data;let i = index;">
         <mat-expansion-panel [expanded]="panelOpenState" class="mt-3">
             <mat-expansion-panel-header>
                 <mat-panel-title>
@@ -42,11 +42,11 @@
             <div class="year-table mt-2">
                 <table class="table review-table">
                     <tbody>
-                        <tr *ngFor="let row of field.tableRow;let i = index;">
+                        <tr *ngFor="let row of field.data;let i = index;">
                             <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
                                 <span class="text-danger" *ngIf="row.required">*</span>
                             </td>
-                            <td class="fw-bold" *ngFor="let col of row.tableData;let j = index;">
+                            <td class="fw-bold" *ngFor="let col of row.year;let j = index;">
                                 {{col.value}}
                             </td>
                         </tr>
@@ -57,7 +57,7 @@
         </mat-expansion-panel>
     </ng-container>
     }
-    @else if (tab.key === 'auditedAnnualFySt') {
+    @else if (tab.key === 'uploadDoc') {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3">
         <mat-expansion-panel-header>
             <mat-panel-title>
@@ -65,7 +65,7 @@
             </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="audited-statement-block">
-            <div class="statement-block-row" *ngFor="let year of tab.formArrays; index as i">
+            <div class="statement-block-row" *ngFor="let year of tab.data; index as i">
                 <h5>{{year.label}}</h5>
                 @if (year.isPdfAvailable) {
                 <div class="uploaded-files">
@@ -145,7 +145,7 @@
     </mat-expansion-panel>
     }
     @else if (tab.key === 'accountPractice') {
-    <mat-expansion-panel [expanded]="panelOpenState" class="mt-3" *ngFor="let field of tab.formArrays">
+    <mat-expansion-panel [expanded]="panelOpenState" class="mt-3" *ngFor="let field of tab.data">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 {{field.label}}
@@ -173,9 +173,6 @@
         </ng-container>
     </mat-expansion-panel>
     }
-
-
-
 </div>
 
 }

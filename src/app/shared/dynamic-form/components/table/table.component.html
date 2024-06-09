@@ -9,7 +9,28 @@
     </mat-expansion-panel-header>
     <div class="table-responsive" [formGroup]="group">
         <!-- <pre>{{group.getRawValue() |json}}</pre> -->
-        <table class="table" [formArrayName]="field.key">
+        <table class="table">
+            <tbody>
+                <tr *ngFor="let row of field.data;let i = index;" [ngClass]="row.class">
+                    <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
+                            *ngIf="row.required">*&nbsp;</span>
+                        <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
+                    </td>
+                    <td *ngFor="let col of row.year;let j = index;">
+                        @if (['amount', 'number'].includes(col.formFieldType)) {
+                        <app-input [field]="col" [group]="getTableGroup(field.key, row.key)"
+                            [disaplayLabel]="false"></app-input>
+                        } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
+                        <app-select [field]="col" [options]="row.options" [group]="getTableGroup(field.key, row.key)"
+                            [disaplayLabel]="false"></app-select>
+                        } @else if (col.formFieldType === 'heading') {
+                        {{col.label}}
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- <table class="table" [formArrayName]="field.key">
             <tbody>
                 <tr *ngFor="let row of field.data;let i = index;" [formGroupName]="i" [ngClass]="row.class">
                     <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
@@ -29,6 +50,6 @@
                     </td>
                 </tr>
             </tbody>
-        </table>
+        </table> -->
     </div>
 </mat-expansion-panel>

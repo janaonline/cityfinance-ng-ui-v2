@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
 import { FormGroup, FormBuilder, FormArray, Validators, FormControl } from '@angular/forms';
-// import { DataEntryService } from '../../features/xvi-fc/services/data-entry.service';
-// import { FiscalRankingService } from '../../features/xvi-fc/services/fiscal-ranking.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,19 +7,36 @@ import { FormGroup, FormBuilder, FormArray, Validators, FormControl } from '@ang
 export class DynamicFormService {
 
   form!: FormGroup;
-  constructor(private fb: FormBuilder,
-    // public fiscalService: FiscalRankingService,
-    // private _router: Router,
-    // private dialog: MatDialog,
-    // private activatedRoute: ActivatedRoute,
-    // private loaderService: GlobalLoaderService,
-    // private dateAdapter: DateAdapter<Date>
-  ) { }
+  constructor(private fb: FormBuilder,) { }
 
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i]
   }
   setTableData(childField: any) {
+    const tableRow: any = [];
+    const childRows = childField['data'] || childField['tableRow']
+    childRows.forEach((row: any) => {
+      const tableData = row.year || row.tableData;
+      if (tableData) {
+        const tableCol: any = [];
+        tableData.forEach((col: any) => {
+          tableCol[col.key] = this.createContorl(col);
+        });
+        // console.log('row----',row.key);
+
+        tableRow[row.key] = new FormGroup(tableCol);
+        // tableRow.push(
+        //   new FormGroup({
+        //     [row.key]: new FormGroup(tableCol),
+        //   }));
+      }
+
+    })
+
+    return new FormGroup(tableRow);
+
+  }
+  setTableData_bkp(childField: any) {
     const tableRow: any = [];
     const childRows = childField['data'] || childField['tableRow']
     childRows.forEach((row: any) => {

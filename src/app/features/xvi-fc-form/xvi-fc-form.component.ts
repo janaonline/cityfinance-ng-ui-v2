@@ -165,20 +165,20 @@ export class XviFcFormComponent {
     this.isLoader = true;
     this.ulbId = '5dcfca53df6f59198c4ac3d5';
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
-      this.tabs = this.fields = res?.data?.tabs;
-      // this.tabs = this.fields = tabsJson.data.tabs;
+      // this.tabs = this.fields = res?.data?.tabs;
+      this.tabs = tabsJson.data.tabs;
       this.form = this.formService.tabControl(this.tabs);
-      this.hideForm = res?.data?.hideForm;
-      this.notice = res?.data?.notice;
+      // this.hideForm = res?.data?.hideForm;
+      // this.notice = res?.data?.notice;
       // this.formId = res?.data?._id;
       this.isDraft = res?.data?.isDraft;
       this.ulbName = res?.data?.ulbName;
       this.stateCode = res?.data?.stateCode;
       this.currentFormStatus = res?.data?.currentFormStatus;
 
-      this.financialYearTableHeader = res?.data?.financialYearTableHeader;
-      this.pmuSubmissionDate = res?.data?.pmuSubmissionDate;
-      this.isAutoApproved = res?.data?.isAutoApproved;
+      // this.financialYearTableHeader = res?.data?.financialYearTableHeader;
+      // this.pmuSubmissionDate = res?.data?.pmuSubmissionDate;
+      // this.isAutoApproved = res?.data?.isAutoApproved;
 
       // this.form = this.fb.array(this.tabs.map(tab => this.getTabFormGroup(tab)))
       // this.addSkipLogics();
