@@ -1,8 +1,9 @@
-<div class="p-3 d-flex flex-column align-items-center">
-    <h2 class="fw-bold fs-5 mb-2">{{data.field.label}}</h2>
+<div class="verify-header">
+    <h2 class="verify-title">{{data.field.label}}</h2>
     <p>Already available on City Finance</p>
     <span class="verify-modal-close" (click)="onNoClick()"><mat-icon>close</mat-icon></span>
 </div>
+<mat-dialog-content>
 
     <div class="statement-block-row block-row-in-modal">
         <div class="uploaded-files">
@@ -22,7 +23,6 @@
                 </div>
             </div>
         </div>
-
     </div>
     <div class="accept-return-block">
         <div class="info">
@@ -34,27 +34,25 @@
             <app-radiobutton [field]="verifyStatus" [group]="getVerifyFormGroup()"></app-radiobutton>
         </div>
         @if(getVerifyStatus() === 3) {
-        <div class="dotted-border-secondary bg-light p-3 mb-3">
+        <div class="indro-block intro-box-in-modal mt-2">
             <p>Instructions:</p>
             <ol>
                 <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
-                    Schedules to
-                    IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
-                <li>All documents pertaining to a specific financial year should be combined into a single PDF before
-                    uploading & should not exceed 20 MB.</li>
-                <li>Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB
-                    Name.
-                    <strong>Example: Annual accounts_15-16_Jaipur municipal corporation</strong>
-                </li>
+                    Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+                <li>All documents pertaining to a specific financial year should be combined into a single PDF
+                    before uploading & should not exceed 20 MB.</li>
+                <li>Please use the following format for naming the documents to be uploaded:
+                    nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
+                        corporation</strong></li>
             </ol>
         </div>
-        <div class="row mt-2 text-dark">
+        <div class="row mt-2">
             <app-file [field]="data.field" [group]="getVerifyFormGroup()"></app-file>
         </div>
-        <div class="row mt-2 text-dark">
+        <div class="row mt-2">
             <app-select [field]="rejectOption" [group]="getVerifyFormGroup()"></app-select>
         </div>
-        <div class="row text-dark">
+        <div class="row">
             <app-input [field]="rejectReason" [group]="getVerifyFormGroup()"></app-input>
         </div>
 
