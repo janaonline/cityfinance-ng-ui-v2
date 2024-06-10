@@ -1,4 +1,4 @@
-@for (tab of fields; track $index) {
+@for (tab of fields; track tab.key;  let  i = $index) {
 
 <div class="container mt-4 ">
     <div class="text-bg-light border rounded mt-3 mb-3 section-box clearfix" *ngIf="tab.key !== 'reviewSubmit'">
@@ -7,7 +7,8 @@
             <h4 class="fw-bold">{{tab.label}}</h4>
         </div>
         <div class="float-end">
-            <button matStepperNext class="ms-2 me-2 mt-1 btn-edit"><mat-icon>edit</mat-icon> Edit</button>
+            <button matStepperNext class="ms-2 me-2 mt-1 btn-edit" (click)="editStep(i)"><mat-icon>edit</mat-icon>
+                Edit</button>
         </div>
     </div>
 
