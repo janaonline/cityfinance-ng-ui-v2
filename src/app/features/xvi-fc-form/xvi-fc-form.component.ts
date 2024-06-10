@@ -196,6 +196,7 @@ export class XviFcFormComponent {
       const tab = { tabKey: key, data: '' };
       formData.tab.push();
     }
+    this.stepper?.next();
     // this.selectedStepIndex += this.selectedStepIndex;
     // this.stepper?.previous();
     // if(this.stepper) this.stepper.selectedIndex = 3;
