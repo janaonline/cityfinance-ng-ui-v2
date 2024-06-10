@@ -1,18 +1,18 @@
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
     <!-- <form [formGroup]="form"> -->
     <app-loader class="p-3" *ngIf="isLoader"></app-loader>
-    <h3 class="fw-bold pb-3 ps-3 mt-3">{{ loggedInUserDetails.name }}</h3>
+    <h3 class="fw-bold fs-4 m-1 mb-4">{{ loggedInUserDetails.name }}</h3>
     <!-- {{selectedIndex}}----- -->
     <mat-stepper *ngIf="!isLoader && tabs" linear="false" labelPosition="bottom" id="stepper"
         [(selectedIndex)]="selectedIndex" #stepper>
         <mat-step state="state" *ngFor="let tab of tabs; index as i">
             <!-- {{tab.key}} ----------<br> -->
             <ng-template matStepLabel>
-                <span class="fw-bold" [title]="tab?.label">
+                <p class="fw-bold d-inline" [title]="tab?.label">
                     {{ (tab?.label).split( " " )[0] }}
                     {{ (tab?.label).split(" ")[1] }}<br />
                     {{ (tab?.label).split(" ")[2] }}
-                </span>
+                </p>
             </ng-template>
 
             <!-- <div class="border-top border-secondary"></div> -->
