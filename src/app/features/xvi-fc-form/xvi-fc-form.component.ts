@@ -100,7 +100,7 @@ export class XviFcFormComponent {
   formSubmitted = false;
   // fields: any[] = tabsJson.data.tabs;
   fields: any[] = [];
-  selectedIndex = 0;
+  selectedStepIndex = 0;
 
   get value() {
     return this.form.value;
@@ -144,7 +144,11 @@ export class XviFcFormComponent {
 
   saveAs(type: string) {
     console.log('this.form.value', this.form.value);
-
+    // this.selectedStepIndex += this.selectedStepIndex;
+    this.stepper?.next();
+    // this.stepper?.previous();
+    // if(this.stepper) this.stepper.selectedIndex = 3;
+    
     this.service.saveUlbForm(this.form.value);
   }
 
