@@ -1,0 +1,71 @@
+// Import from functions and variables before creating custom variables.
+@import "assets/bootstrap-5.3.3/scss/functions";
+@import "assets/bootstrap-5.3.3/scss/variables";
+
+// ----- Custom variables ----- //
+// Create your own map - Add custom color to bootstrap.
+$custom-colors: (
+    "cfPrimary": hsla(30, 83%, 49%, 1),
+    "cfSecondary":hsla(220, 62%, 25%, 1)
+);
+
+// Merge the maps to bootstrap variables.
+$theme-colors: map-merge($theme-colors, $custom-colors);
+
+// Assign the colors to variables.
+$cfPrimary: map-get($theme-colors, "cfPrimary"); // Orange.
+$cfSecondary: map-get($theme-colors, "cfSecondary"); // Dark blue.
+
+// ----- Configuration ------ //
+@import "assets/bootstrap-5.3.3/scss/maps";
+@import "assets/bootstrap-5.3.3/scss/mixins";
+@import "assets/bootstrap-5.3.3/scss/utilities";
+
+// ----- Layout & components ----- //
+@import "assets/bootstrap-5.3.3/scss/root";
+@import "assets/bootstrap-5.3.3/scss/reboot";
+@import "assets/bootstrap-5.3.3/scss/type";
+@import "assets/bootstrap-5.3.3/scss/images";
+@import "assets/bootstrap-5.3.3/scss/containers";
+@import "assets/bootstrap-5.3.3/scss/grid";
+@import "assets/bootstrap-5.3.3/scss/tables";
+@import "assets/bootstrap-5.3.3/scss/forms";
+@import "assets/bootstrap-5.3.3/scss/buttons";
+@import "assets/bootstrap-5.3.3/scss/transitions";
+@import "assets/bootstrap-5.3.3/scss/dropdown";
+// @import "assets/bootstrap-5.3.3/scss/button-group";
+@import "assets/bootstrap-5.3.3/scss/nav";
+@import "assets/bootstrap-5.3.3/scss/navbar";
+// @import "assets/bootstrap-5.3.3/scss/card";
+// @import "assets/bootstrap-5.3.3/scss/accordion";
+// @import "assets/bootstrap-5.3.3/scss/breadcrumb";
+// @import "assets/bootstrap-5.3.3/scss/pagination";
+// @import "assets/bootstrap-5.3.3/scss/badge";
+// @import "assets/bootstrap-5.3.3/scss/alert";
+// @import "assets/bootstrap-5.3.3/scss/progress";
+// @import "assets/bootstrap-5.3.3/scss/list-group";
+// @import "assets/bootstrap-5.3.3/scss/close";
+// @import "assets/bootstrap-5.3.3/scss/toasts";
+// @import "assets/bootstrap-5.3.3/scss/modal";
+// @import "assets/bootstrap-5.3.3/scss/tooltip";
+// @import "assets/bootstrap-5.3.3/scss/popover";
+// @import "assets/bootstrap-5.3.3/scss/carousel";
+// @import "assets/bootstrap-5.3.3/scss/spinners";
+// @import "assets/bootstrap-5.3.3/scss/offcanvas";
+// @import "assets/bootstrap-5.3.3/scss/placeholders";
+
+// ----- Helpers ----- //
+@import "assets/bootstrap-5.3.3/scss/helpers";
+
+// ----- Utilities ----- //
+@import "assets/bootstrap-5.3.3/scss/utilities/api";
+@import "assets/logo";
+
+// ----- scss-docs-end import-stack ----- //
+// @import "~ag-grid-community/dist/styles/ag-grid.css";
+// @import "~ag-grid-community/dist/styles/ag-theme-alpine.css";
+// @import url("//fonts.googleapis.com/css?family=Exo:300,400,500");
+// @import url("//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700");
+// @import "~@angular/material/prebuilt-themes/indigo-pink.css";
+// @import url("//fonts.googleapis.com/icon?family=Material+Icons");
+// @import "~ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin";
