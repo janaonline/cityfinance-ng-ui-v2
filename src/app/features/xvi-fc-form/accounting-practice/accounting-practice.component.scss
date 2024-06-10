@@ -1,14 +1,10 @@
-// *{
-//   font-family: "Montserrat", sans-serif;
-// }
-// .headers-style {
-//     color: var(--clr-neutral-100);
-//     font-weight: var(--fw-bold);
-//     padding: 1.125rem;
-//     border-radius: 10px;
-//     background: linear-gradient(90deg, #193369 0%, #ffffff 100%);
+.example-radio-group {
+    display: flex;
+    flex-direction: column;
+    margin: 15px 0;
+    align-items: flex-start;
+  }
 
-//     p{
-//         margin: 0;
-//     }
+//   .example-radio-button {
+//     margin: 5px;
 //   }

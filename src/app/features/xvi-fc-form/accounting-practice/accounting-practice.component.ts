@@ -12,20 +12,24 @@ import { MaterialModule } from '../../../material.module';
 })
 export class AccountingPracticeComponent {
   @Input() field!: FieldConfig;
-  @Input() group!: FormGroup;
+  // @Input() group!: FormGroup;
+  @Input() group!: FormArray;
   collapsed = false;
   panelOpenState = true;
 
 
   constructor() { }
   ngOnInit() {
-    // console.log('----field table --', this.field);
-    // console.log('----group table --', this.group);    
+    console.log('----field acc --', this.field);
+    console.log('----group acc --', this.group);
   }
 
-  getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
-    return ((((this.group.get(fieldKey) as FormArray)
-      .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
+  getGroup(i: number, sectionKey: string, rowKey: string): FormGroup {
+    // console.log('sectionKey-----', sectionKey, 'rowKey-----', rowKey);
+    // console.log('this.group..get(sectionKey)----', this.group.get(sectionKey));
+    // console.log('this.group.controls[i]-----', ((this.group.at(i) as FormGroup).controls[sectionKey as FormGroup).get(rowKey));
+    // return new FormGroup({});
+    return ((this.group.controls[i] as FormGroup).get(sectionKey) as FormGroup).get(rowKey) as FormGroup;
   }
 
 }

@@ -1,13 +1,15 @@
 import { Component, Input } from "@angular/core";
-import { AbstractControl, FormControl, FormGroup } from "@angular/forms";
+import { FormControl, FormGroup } from "@angular/forms";
 import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
+import { NoUpDownDirective } from "../../../../core/directives/no-up-down.directive";
 // import { DecimalLimitDirective } from "../../../../features/xvi-fc/directives/decimal-limit.directive";
 @Component({
   selector: "app-input",
   standalone: true,
-  imports: [MaterialModule, 
+  imports: [MaterialModule,
     // DecimalLimitDirective
+    NoUpDownDirective
   ],
   templateUrl: './input.component.html',
 })
@@ -15,6 +17,7 @@ export class InputComponent {
   className: string = "box1";
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
+  @Input() disaplayLabel: boolean = true;
 
   // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 
@@ -25,9 +28,6 @@ export class InputComponent {
   }
   hasError(key: string, name: string) {
     return (this.group.get(key) as FormControl).hasError(name)
-    // console.log('name', name);
-    // return this.group.value.get(name).value;
-    // return this.group.value.get(name) ? this.group.value.get(name).value : '';
   }
   getValue(name: string) {
     // console.log('name', name);
