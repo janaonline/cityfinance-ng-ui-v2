@@ -99,12 +99,13 @@ export class DynamicFormService {
   createFileForm(childField: any) {
     return new FormGroup({
       file: new FormGroup({
-        name: new FormControl(childField.file?.name || ''),
-        url: new FormControl(childField.file?.url || ''),
+        name: new FormControl(childField.file?.name || null),
+        url: new FormControl(childField.file?.url || null),
+        size: new FormControl(childField.file?.size || null),
       }),
-      verifyStatus: new FormControl(childField.verifyStatus || ''),
-      rejectReason: new FormControl(childField.rejectReason || ''),
-      rejectOption: new FormControl(childField.rejectOption || ''),
+      verifyStatus: new FormControl(childField.verifyStatus || null),
+      rejectReason: new FormControl(childField.rejectReason || null),
+      rejectOption: new FormControl(childField.rejectOption || null),
     });
   }
 

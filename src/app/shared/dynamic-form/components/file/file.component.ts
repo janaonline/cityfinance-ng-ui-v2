@@ -179,7 +179,7 @@ export class FileComponent {
           // control.patchValue({ uploading: false, name: file.name, url: path });
           this.field.uploading = false;
           this.progress = 100;
-          const fileData: any = { name: file.name, url: path };
+          const fileData: any = { name: file.name, url: path, size: this.formatBytes(file.size) };
           this.group.get('file')?.patchValue(fileData);
         });
       }, error: err => console.log(err)
