@@ -1,20 +1,10 @@
-<nav
-  class="navbar navbar-expand-lg navbar-light bg-white py-0"
-  #stickyMenu
-  [ngClass]="{ 'stiky-tp': isSticky }"
->
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-0 shadow-sm p-3 mb-2 bg-body" #stickyMenu
+  [ngClass]="{ 'stiky-tp': isSticky }">
   <div class="container" style="max-width: 94%">
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarSupportedContent"
-      aria-controls="navbarSupportedContent"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-      (click)="isCollapsed = !isCollapsed"
-    >
-    <!-- <button
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
+      (click)="isCollapsed = !isCollapsed">
+      <!-- <button
     class="navbar-toggle collapsed" (click)="isCollapsed = !isCollapsed" aria-expanded="false"
     > -->
       <span class="navbar-toggler-icon"></span>
@@ -23,77 +13,44 @@
     <span class="city">city</span>
     <span class="fy">finance.in</span>
 </a> -->
-    <a
-      class="navbar-brand"
-      routerLinkActive="active"
-      routerLink="/home"
-      [ngClass]="sticky ? 'show' : ''"
-    >
+    <a class="navbar-brand" routerLinkActive="active" routerLink="/home" [ngClass]="sticky ? 'show' : ''">
       <!-- <img src="../../../../assets/M FIGMA/city-finance-ranking.png" alt=""> -->
       <span class="city" style="font-size: 2rem">city</span>
-      <span
-        class="fy"
-        style="font-size: 2rem; color: #1d5290; font-weight: bold"
-        >finance</span
-      >
+      <span class="fy" style="font-size: 2rem; color: #1d5290; font-weight: bold">finance</span>
     </a>
     <div class="collapse navbar-collapse me-3" [collapse]="isCollapsed">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
         @for (menu of menus; track menu.name) { @if (menu.child?.length) {
         <li class="nav-item dropdown" dropdown>
-          <a
-            class="nav-link dropdown-toggle"
-            id="navbarDropdown"
-            role="button"
-            aria-controls="dropdown-basic"
-            dropdownToggle
-          >
+          <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" aria-controls="dropdown-basic"
+            dropdownToggle>
             {{ menu.name }}
           </a>
           <ul class="dropdown-menu" id="dropdown-basic" *dropdownMenu>
             <li *ngFor="let childMenu of menu.child">
               <a class="dropdown-item" [attr.href]="childMenu.href">{{
                 childMenu.name
-              }}</a>
+                }}</a>
             </li>
           </ul>
         </li>
         } @else {
         <li class="btn-group" [ngClass]="!menu.class ? 'nav-item' : ''">
-          <a
-            class="nav-link"
-            [ngClass]="menu.class"
-            [routerLink]="menu.link"
-            [innerHTML]="menu.name" *ngIf="menu.link"
-          ></a>
-          <a
-            class="nav-link"
-            [ngClass]="menu.class"
-            [attr.href]="menu.href"
-            [innerHTML]="menu.name" *ngIf="menu.href"
-          ></a>
+          <a class="nav-link" [ngClass]="menu.class" [routerLink]="menu.link" [innerHTML]="menu.name"
+            *ngIf="menu.link"></a>
+          <a class="nav-link" [ngClass]="menu.class" [attr.href]="menu.href" [innerHTML]="menu.name"
+            *ngIf="menu.href"></a>
         </li>
         } }
       </ul>
     </div>
     <div class="ms-auto">
       <div class="dropdown" *ngIf="!isLoggedIn" dropdown>
-        <button
-          class="btn btn-login dropdown-toggle fw-bold"
-          type="button"
-          id="loginDrp"
-          role="button"
-          aria-controls="dropdown-basic"
-          dropdownToggle
-        >
+        <button class="primary-btn-1 dropdown-toggle fw-bold" type="button" id="loginDrp" role="button"
+          aria-controls="dropdown-basic" dropdownToggle>
           Login
         </button>
-        <ul
-          class="dropdown-menu"
-          *dropdownMenu
-          aria-labelledby="loginDrp"
-          style="left: -7px"
-        >
+        <ul class="dropdown-menu" *dropdownMenu aria-labelledby="loginDrp" style="left: -7px">
           <li>
             <a class="dropdown-item" (click)="loginLogout('15th_Fc')">
               <img src="/assets/images/logout.png" alt="" /> XV FC Grant
@@ -108,52 +65,34 @@
         </ul>
       </div>
       <div class="btn-group ms-2 dropdown" dropdown *ngIf="isLoggedIn">
-        <button
-          id="button-disabled-menu"
-          dropdownToggle
-          type="button"
-          class="btn btn-login-icon dropdown-toggle"
-          aria-controls="dropdown-disabled-menu"
-        >
+        <button id="button-disabled-menu" dropdownToggle type="button" class="btn btn-login-icon dropdown-toggle"
+          aria-controls="dropdown-disabled-menu">
           <span class="material-icons"> account_circle </span>
           <span class="caret"></span>
         </button>
 
-        <ul
-          id="dropdown-disabled-menu"
-          *dropdownMenu
-          class="dropdown-menu"
-          role="menu"
-          aria-labelledby="button-disabled-menu"
-          style="margin-left: -7rem"
-        >
+        <ul id="dropdown-disabled-menu" *dropdownMenu class="dropdown-menu" role="menu"
+          aria-labelledby="button-disabled-menu" style="margin-left: -7rem">
           <li role="menuitem" style="padding: 0 1rem" class="mb-3">
             <div class="user-avt text-center" style="font-size: 2.5rem">
               <i class="fa fa-user-circle"></i>
             </div>
             <div class="text-center">{{ user?.name }}</div>
-            <div
-              class="mat-card-subtitle text-center"
-              style="font-size: 0.9rem"
-            >
+            <div class="mat-card-subtitle text-center" style="font-size: 0.9rem">
               {{ user?.email }}
             </div>
           </li>
           <li class="divider dropdown-divider"></li>
           <li role="menuitem" *ngIf="user?.role !== 'PMU'">
-            <a class="dropdown-item text-center" routerLink="/user/profile/view"
-              >Profile</a
-            >
+            <a class="dropdown-item text-center" routerLink="/user/profile/view">Profile</a>
           </li>
           <li class="divider dropdown-divider"></li>
           <li role="menuitem">
-            <a class="dropdown-item text-center" (click)="loginLogout('logout')"
-              >Logout</a
-            >
+            <a class="dropdown-item text-center" (click)="loginLogout('logout')">Logout</a>
           </li>
         </ul>
       </div>
     </div>
-   
+
   </div>
 </nav>

@@ -1,6 +1,7 @@
-@import "../../../../assets/scss/functions";
-@import "../../../../assets/scss/variables";
-@import "../../../../assets/scss/mixins";
+@import "../../../../../node_modules/bootstrap/scss/functions";
+@import "../../../../../node_modules/bootstrap/scss/variables";
+@import "../../../../../node_modules/bootstrap/scss/mixins";
+
 .text-10px {
   font-size: $font-size-base * 0.625;
 }
@@ -14,32 +15,34 @@ $text-sizes: (
   "sm": $font-size-base * 0.75,
   "rg": $font-size-base,
   "lg": $font-size-base * 1.25,
-) !default;
+  ) !default;
+
 @each $size, $value in $text-sizes {
   body.#{$size} {
     font-size: $value;
   }
+
   .text-#{$size} {
     font-size: $value;
-    @include border-radius(
-      $radius: $border-radius-sm,
+    @include border-radius($radius: $border-radius-sm,
       $fallback-border-radius: false
-    );
-    border: $btn-border-width solid #444750;
-    width: 20px;
-    height: 20px;
-    display: inline-flex;
-    vertical-align: middle;
-    line-height: $value;
-    text-align: center;
-    margin-right: $spacer * 0.25;
-    align-items: center;
-    justify-content: center;
-    &.active {
-      background: $black;
-      color: $white;
-    }
+  );
+  border: $btn-border-width solid #444750;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  vertical-align: middle;
+  line-height: $value;
+  text-align: center;
+  margin-right: $spacer * 0.25;
+  align-items: center;
+  justify-content: center;
+
+  &.active {
+    background: $black;
+    color: $white;
   }
+}
 }
 
 .textIcon {

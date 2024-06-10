@@ -1,184 +1,199 @@
-* {
-    font-family: "Montserrat", sans-serif;
+// * {
+//     font-family: "Montserrat", sans-serif;
+// }
+
+// .material-icons {
+//     font-family: 'Material Icons';
+// }
+
+// .material-icons.pdf {
+//     color: hsla(30, 83%, 49%, 1);
+// }
+
+// .primary-btn-2 {
+//     .material-icons {
+//         position: relative;
+//         top: 5px;
+//     }
+// }
+
+// .media {
+//     display: -ms-flexbox;
+//     display: flex;
+//     -ms-flex-align: start;
+//     align-items: flex-start;
+// }
+
+// .media-body {
+//     -ms-flex: 1;
+//     flex: 1;
+// }
+
+// .indro-block {
+//     padding: 20px 30px 10px 30px;
+//     border-radius: 10px;
+//     border: 1px dotted rgba(108, 117, 125, 1);
+//     margin: 20px 0;
+
+//     ol li {
+//         line-height: 32px;
+//     }
+// }
+
+// .uploaded-block {
+//     padding: 20px;
+//     border: 1px solid rgba(219, 219, 219, 1);
+//     border-radius: 10px;
+// }
+
+// .already-availabe {
+//     background: rgba(243, 243, 243, 1);
+// }
+
+// .upload-doc-icon {
+//     margin-right: 10px;
+// }
+
+// .verified-info {
+//     padding: 10px;
+//     border-radius: 5px;
+//     border: 1px solid rgba(54, 160, 4, 1);
+//     background: rgba(227, 249, 217, 1);
+//     margin-top: 20px;
+// }
+
+// .verified-info-reject {
+//     border: 1px solid rgba(255, 0, 0, 1);
+//     background: rgba(255, 242, 242, 1);
+// }
+
+// .view-and-verify {
+//     padding: 20px;
+// }
+
+// .verify-header {
+// position: relative;
+// text-align: center;
+// padding: 20px 24px 5px 24px;
+
+// .verify-title {
+//     font-size: 24px;
+//     font-weight: 700;
+//     margin-bottom: 10px;
+// }
+
+// p {
+//     font-size: 18px;
+//     font-weight: 500;
+// }
+
+
+// }
+
+.verify-modal-close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+    box-shadow: 0px 1px 33px 0px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    padding: 2px;
+    border-radius: 40px;
+    height: 30px;
 }
 
-.material-icons {
-    font-family: 'Material Icons';
-}
+// .intro-box-in-modal {
+//     background: rgba(243, 243, 243, 1);
+//     border: 1px solid rgba(108, 117, 125, 1);
+// }
 
-.material-icons.pdf {
-    color: hsla(30, 83%, 49%, 1);
-}
+// .media-in-modal {
+//     margin-bottom: 20px;
 
-.primary-btn-2 {
-    .material-icons {
-        position: relative;
-        top: 5px;
-    }
-}
+//     &:last-child {
+//         margin-bottom: 0;
+//     }
+// }
 
-.media {
-    display: -ms-flexbox;
-    display: flex;
-    -ms-flex-align: start;
-    align-items: flex-start;
-}
+// .block-row-in-modal {
+//     padding: 0;
+//     margin-top: 30px;
+//     border: 0;
+// }
 
-.media-body {
-    -ms-flex: 1;
-    flex: 1;
-}
+// .accept-return-block {
+//     margin-top: 30px;
 
-.indro-block {
-    padding: 20px 30px 10px 30px;
-    border-radius: 10px;
-    border: 1px dotted rgba(108, 117, 125, 1);
-    margin: 20px 0;
+//     .info {
+//         margin-bottom: 20px;
+//     }
 
-    ol li {
-        line-height: 32px;
-    }
-}
+//     .radio-group {
+//         display: flex;
+//         gap: 20px;
+//     }
 
-.uploaded-block {
-    padding: 20px;
-    border: 1px solid rgba(219, 219, 219, 1);
-    border-radius: 10px;
-}
+//     .radio-inline {
+//         display: flex;
+//         align-items: center;
+//         cursor: pointer;
+//         position: relative;
+//         padding-left: 30px;
+//         margin-right: 10px;
+//         font-size: 16px;
+//         user-select: none;
+//     }
 
-.already-availabe {
-    background: rgba(243, 243, 243, 1);
-}
+//     .radio-inline input[type="radio"] {
+//         display: none;
+//     }
 
-.upload-doc-icon {
-    margin-right: 10px;
-}
+//     .radio-custom {
+//         position: absolute;
+//         top: 50%;
+//         left: 0;
+//         width: 20px;
+//         height: 20px;
+//         background-color: white;
+//         border: 2px solid #9e9e9e;
+//         border-radius: 50%;
+//         transform: translateY(-50%);
+//         transition: border 0.3s, background-color 0.3s;
+//     }
 
-.verified-info {
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid rgba(54, 160, 4, 1);
-    background: rgba(227, 249, 217, 1);
-    margin-top: 20px;
-}
+//     .radio-custom::after {
+//         content: "";
+//         position: absolute;
+//         top: 50%;
+//         left: 50%;
+//         width: 10px;
+//         height: 10px;
+//         border: solid white;
+//         border-width: 0 2px 2px 0;
+//         transform: translate(-50%, -50%) rotate(45deg) scale(0);
+//         transition: transform 0.3s;
+//     }
 
-.verified-info-reject {
-    border: 1px solid rgba(255, 0, 0, 1);
-    background: rgba(255, 242, 242, 1);
-}
+//     .radio-inline input[type="radio"]:checked+.radio-custom {
+//         border-color: rgba(52, 58, 64, 1);
+//         background-color: rgba(52, 58, 64, 1);
 
-.view-and-verify {
-    padding: 20px;
-}
+//     }
 
-.verify-header {
-    position: relative;
-    text-align: center;
-    padding: 20px 24px 5px 24px;
+//     .radio-inline input[type="radio"]:checked+.radio-custom::after {
+//         transform: translate(-50%, -50%) rotate(45deg) scale(1);
+//     }
+// }
 
-    .verify-title {
-        font-size: 24px;
-        font-weight: 700;
-        margin-bottom: 10px;
-    }
+// .mat-radio-button.mat-accent.mat-radio-checked .mat-radio-outer-circle{
+//     border-color:rgb(6, 7, 10); 
+//   }
 
-    p {
-        font-size: 18px;
-        font-weight: 500;
-    }
+//   .mat-radio-button.mat-accent .mat-radio-inner-circle{
+//     color:rgb(0, 0, 0);
+//     background-color:rgb(0, 0, 0) ;
+//   }
 
-    .verify-modal-close {
-        position: absolute;
-        right: 10px;
-        top: 10px;
-        cursor: pointer;
-        box-shadow: 0px 1px 33px 0px rgba(0, 0, 0, 0.2);
-        background-color: #fff;
-        padding: 2px;
-        border-radius: 40px;
-        height: 30px;
-    }
-}
-
-.intro-box-in-modal {
-    background: rgba(243, 243, 243, 1);
-    border: 1px solid rgba(108, 117, 125, 1);
-}
-
-.media-in-modal {
-    margin-bottom: 20px;
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-}
-
-.block-row-in-modal {
-    padding: 0;
-    margin-top: 30px;
-    border: 0;
-}
-
-.accept-return-block {
-    margin-top: 30px;
-
-    .info {
-        margin-bottom: 20px;
-    }
-
-    .radio-group {
-        display: flex;
-        gap: 20px;
-    }
-
-    .radio-inline {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        position: relative;
-        padding-left: 30px;
-        margin-right: 10px;
-        font-size: 16px;
-        user-select: none;
-    }
-
-    .radio-inline input[type="radio"] {
-        display: none;
-    }
-
-    .radio-custom {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 20px;
-        height: 20px;
-        background-color: white;
-        border: 2px solid #9e9e9e;
-        border-radius: 50%;
-        transform: translateY(-50%);
-        transition: border 0.3s, background-color 0.3s;
-    }
-
-    .radio-custom::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 10px;
-        height: 10px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: translate(-50%, -50%) rotate(45deg) scale(0);
-        transition: transform 0.3s;
-    }
-
-    .radio-inline input[type="radio"]:checked+.radio-custom {
-        border-color: rgba(52, 58, 64, 1);
-        background-color: rgba(52, 58, 64, 1);
-
-    }
-
-    .radio-inline input[type="radio"]:checked+.radio-custom::after {
-        transform: translate(-50%, -50%) rotate(45deg) scale(1);
-    }
-}
+//   .mat-radio-button.mat-accent .mat-radio-ripple .mat-ripple-element {
+//       background-color:rgb(255, 37, 37,.26)
+//   }
