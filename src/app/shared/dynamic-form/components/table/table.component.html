@@ -24,11 +24,14 @@
                         <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
                     </td>
                     <td *ngFor="let col of row.year;let j = index;">
+                        <!-- {{row.readonly| json}}------- -->
                         @if (['amount', 'number'].includes(col.formFieldType)) {
-                        <app-input [field]="col" [group]="getTableGroup(field.key, row.key)"
+                            <!-- {{row.validations | json}} -->
+                        <app-input [field]="col" [group]="getTableGroup(field.key, row.key)" [parentField]="row" [readonly]="row.readonly"
                             [disaplayLabel]="false"></app-input>
                         } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
-                        <app-select [field]="col" [options]="row.options" [group]="getTableGroup(field.key, row.key)"
+                           
+                        <app-select [field]="col" [options]="row.options"  [parentField]="row" [group]="getTableGroup(field.key, row.key)"
                             [disaplayLabel]="false"></app-select>
                         } @else if (col.formFieldType === 'heading') {
                         {{col.label}}

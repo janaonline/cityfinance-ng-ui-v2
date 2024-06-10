@@ -18,6 +18,9 @@ export class InputComponent {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() disaplayLabel: boolean = true;
+  @Input() readonly: boolean | undefined = false;
+  @Input() parentField: any;
+  validations: any[] = [];
 
   // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 
@@ -25,6 +28,8 @@ export class InputComponent {
   ngOnInit() {
     // console.log('----field in --',this.field);
     // console.log('----group in --',this.group);
+    this.readonly = this.field.readonly || this.readonly;
+    this.validations = this.parentField?.validations || this.field?.validations;
   }
   hasError(key: string, name: string) {
     return (this.group.get(key) as FormControl).hasError(name)

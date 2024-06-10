@@ -153,7 +153,7 @@
             @if (question.formFieldType === 'radio') {
             <div class="form-check pt-1" *ngFor="let optionValue of question.options; index as i">
                 <label class="form-check-label" [attr.for]="question.key+i">
-                    {{optionValue.label ? optionValue.label: optionValue }}
+                    {{optionValue.id ? optionValue.id: optionValue }}
                 </label>
                 @if (optionValue.showInputBox) {
                 <input class="form-control" type="text" [value]="question.inputBoxValue" />

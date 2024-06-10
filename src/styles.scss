@@ -244,3 +244,7 @@ mat-form-field {
     border: 1px dotted $secondary;
     border-radius: 0.625rem;
 }
+
+input:read-only {
+    background-color: lightgray;
+}

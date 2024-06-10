@@ -16,11 +16,11 @@ export class XviFcService {
     );
   }
 
-  saveUlbForm(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/create-form`, body);
+  saveUlbForm(ulb: string, body: any) {
+    return this.http.post(`${environment.api.url}xviFc/saveAsDraft?ulb=${ulb}`, body);
   }
 
-  submitUlbForm(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/create-form`, body);
+  submitUlbForm(ulb: string, body: any) {
+    return this.http.post(`${environment.api.url}xviFc/submit_form?ulb=${ulb}`, body);
   }
 }

@@ -43,7 +43,8 @@ export class TableComponent {
   }
   sumLogic() {
     const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf) : [];
-    // console.log('----sumFields --', sumFields.year);
+    // const totalSumFields = this.field.data ? this.field.data.filter(e => e.totalSumOf) : [];
+    // console.log('----sumFields --', sumFields);
 
     this.subscription = this.group.valueChanges
       .pipe(
@@ -53,27 +54,23 @@ export class TableComponent {
       .subscribe(data => {
         // console.log('-----data----', data);
         const currentTable = data[this.field.key];
+        if(!sumFields.length) return;
         sumFields.forEach((sumField) => {
           // console.log('sumField', sumField['sum']);
           // console.log('key', sumField['key']);
           // console.log('sumField year', sumField['year']);
           // let sumYears:any = { '2022-23': 0, '2021-22': 0, '2020-21': 0, '2019-20': 0, '2018-19': 0 };
           let sumYears: any = {};
-          // for (let yearField of this.yearFields) {
-
-          // }
           this.yearFields.forEach((yearField: string) => {
             let sumYear = 0;
             sumYears[yearField] = 0;
 
             sumField['sumOf'].forEach((subField: number) => {
-              // console.log('isNaN(currentTable[subField][yearField])', isNaN(currentTable[subField][yearField]));
-
-              if (!isNaN(parseInt(currentTable[subField][yearField]))) {
+              if (currentTable[subField] && currentTable[subField][yearField] && !isNaN(parseInt(currentTable[subField][yearField]))) {
                 sumYears[yearField] += parseInt(currentTable[subField][yearField]);
               }
-              // console.log('sumYear---', sumYear, 'subField-----', subField, 'yearField-----', yearField, 'currentTable[subField][yearField]---', currentTable[subField][yearField]);
             });
+            
             // console.log('sumYear total----', sumYears);
 
             // this.group.get(this.field.key)?.get(sumField['key'])?.get(yearField)?.patchValue(sumField, { emitEvent: false, onlySelf: true });

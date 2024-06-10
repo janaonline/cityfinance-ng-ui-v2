@@ -20,8 +20,8 @@ export class AccountingPracticeComponent {
 
   constructor() { }
   ngOnInit() {
-    console.log('----field acc --', this.field);
-    console.log('----group acc --', this.group);
+    // console.log('----field acc --', this.field);
+    // console.log('----group acc --', this.group);
   }
 
   getGroup(i: number, sectionKey: string, rowKey: string): FormGroup {
@@ -32,4 +32,7 @@ export class AccountingPracticeComponent {
     return ((this.group.controls[i] as FormGroup).get(sectionKey) as FormGroup).get(rowKey) as FormGroup;
   }
 
+  hasError(i: number, sectionKey: string, rowKey: string, name: string) {
+    return (this.getGroup(i, sectionKey, rowKey) as FormGroup).get('value')?.hasError(name)
+  }
 }
