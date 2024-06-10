@@ -15,6 +15,9 @@
                 </span>
             </ng-template>
 
+            <!-- <div class="border-top border-secondary"></div> -->
+            <mat-divider></mat-divider>
+            
             <div class="container mt-4" [ngClass]="tab.class">
                 <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
                 <div class="text-bg-light border rounded mt-3 mb-3 p-3" *ngIf="tab.key !== 'reviewSubmit'">
@@ -64,8 +67,10 @@
                         <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
                     </div>
                     <div class="float-end">
-                        <button matStepperNext class="ms-2 primary-btn-2" (click)="saveAs('draft')">Save as Draft</button>
-                        <button matStepperNext class="ms-2 primary-btn-1" (click)="saveAs('draft')">Continue to Next Section</button>
+                        <button matStepperNext class="ms-2 primary-btn-2" (click)="saveAs('draft')">Save as
+                            Draft</button>
+                        <button matStepperNext class="ms-2 primary-btn-1" (click)="saveAs('draft')">Continue to Next
+                            Section</button>
                     </div>
                 </div>
             </div>
