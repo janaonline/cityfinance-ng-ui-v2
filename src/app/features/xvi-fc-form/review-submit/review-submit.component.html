@@ -1,14 +1,7 @@
 @for (tab of fields; track $index) {
-<!-- {{tab.key}} ----------<br> -->
-<ng-template matStepLabel>
-    <span class="st-title com-style" [title]="tab?.label">
-        {{ (tab?.label).split( " " )[0] }}
-        {{ (tab?.label).split(" ")[1] }}<br />
-        {{ (tab?.label).split(" ")[2] }}</span>
-</ng-template>
 
 <div class="container mt-4 ">
-    <div class="text-bg-light border rounded mt-3 mb-3 section-box clearfix">
+    <div class="text-bg-light border rounded mt-3 mb-3 section-box clearfix" *ngIf="tab.key !== 'reviewSubmit'">
         <div class="float-start">
             <p class="text-muted">Section {{tab.displayPriority}}/ {{fields.length}}</p>
             <h4 class="fw-bold">{{tab.label}}</h4>
@@ -65,7 +58,7 @@
             </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="audited-statement-block">
-            <div class="statement-block-row" *ngFor="let year of tab.data; index as i">
+            <div class="statement-block-row" *ngFor="let year of tab.data[0].year; index as i">
                 <h5>{{year.label}}</h5>
                 @if (year.isPdfAvailable) {
                 <div class="uploaded-files">
@@ -151,7 +144,7 @@
                 {{field.label}}
             </mat-panel-title>
         </mat-expansion-panel-header>
-        <ng-container *ngFor="let question of field.questions">
+        <ng-container *ngFor="let question of field.data">
             <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
                 {{question.position}}.
                 {{question.label}}
@@ -159,9 +152,7 @@
             @if (question.formFieldType === 'radio') {
             <div class="form-check pt-1" *ngFor="let optionValue of question.options; index as i">
                 <label class="form-check-label" [attr.for]="question.key+i">
-                    <input class="form-check-input" type="radio" [attr.id]="question.key+i" [name]="question.key"
-                        value="{{optionValue}}" />
-                    {{optionValue.option ? optionValue.option: optionValue }}
+                    {{optionValue.label ? optionValue.label: optionValue }}
                 </label>
                 @if (optionValue.showInputBox) {
                 <input class="form-control" type="text" [value]="question.inputBoxValue" />

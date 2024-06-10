@@ -301,7 +301,7 @@ const uploadDoc = {
     // "label": "Copy of Audited Annual Financial Statements preferably in English",
     "position": "",
     "required": true,
-   
+
     "bottomText": "Maximum of 5MB",
     "instruction": [
         {
@@ -627,16 +627,16 @@ const accountPractice = {
             "label": "I. Accounting Systems and Processes",
             "section": 'accordion',
             "formFieldType": "questionnaire",
-            "questions": [
+            "data": [
                 {
                     "key": "accSystem",
                     "label": "What is the accounting system being followed by the ULB?",
                     "position": "1",
                     "required": true,
                     options: [
-                        { option: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
-                        { option: "Accrual Basis of Accounting", info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
-                        { option: "Modified Cash/ Accrual Accounting", info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." }
+                        { label: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
+                        { label: "Accrual Basis of Accounting", info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
+                        { label: "Modified Cash/ Accrual Accounting", info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." }
                     ],
                     "placeHolder": "",
                     "formFieldType": "radio",
@@ -670,9 +670,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     options: [
-                        { option: "National Municipal Accounting Manual", },
-                        { option: "State-specific Municipal Accounting Manual", },
-                        { option: "Other (Please specify)", 'showInputBox': true }
+                        { label: "National Municipal Accounting Manual", },
+                        { label: "State-specific Municipal Accounting Manual", },
+                        { label: "Other (Please specify)", 'showInputBox': true , inputBoxValue:''}
                     ],
                     // "showInputBox": "Other (Please specify)",
                     "inputBoxValue": "",
@@ -703,8 +703,8 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        { option: "Yes (Please specify)", 'showInputBox': true },
-                        { option: "No", }
+                        { label: "Yes (Please specify)", 'showInputBox': true },
+                        { label: "No", }
                     ],
                     "inputBoxValue": "",
                     "value": "",
@@ -766,7 +766,7 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        "Internally (by Accounts Department)",
+                        {label:"Internally (by Accounts Department)"},
                         "External Chartered Accountants",
                         "Both"
                     ],

@@ -45,7 +45,7 @@ export class FileComponent {
   ngOnInit() {
     // console.log('----field file --', this.field);
     // console.log('----group file --', this.group);
-    // this.allowedFileTypeStr = this.field.allowedFileTypes?.map((e: string) => this.fileTypes[e])?.join(',') || '';
+    this.allowedFileTypeStr = this.field.allowedFileTypes?.map((e: string) => this.fileTypes[e])?.join(',') || '';
   }
 
   get getControl() {
@@ -74,7 +74,7 @@ export class FileComponent {
    */
   // fileBrowseHandler(files: any[]) {
   fileBrowseHandler(event: Event) {
-    console.log('event-----', event);
+    // console.log('event-----', event);
 
     const files: FileList | null = (<HTMLInputElement>event.target).files;
     this.prepareFilesList(files);

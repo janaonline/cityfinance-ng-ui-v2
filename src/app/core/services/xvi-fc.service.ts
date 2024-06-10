@@ -15,4 +15,12 @@ export class XviFcService {
       `${environment.api.url}xviFc/fetch_form`, { params }
     );
   }
+
+  saveUlbForm(body: any) {
+    return this.http.post(`${environment.api.url}fiscal-ranking/create-form`, body);
+  }
+
+  submitUlbForm(body: any) {
+    return this.http.post(`${environment.api.url}fiscal-ranking/create-form`, body);
+  }
 }

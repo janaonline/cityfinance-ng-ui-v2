@@ -350,7 +350,11 @@ const uploadDoc = {
                         "Schedules To Income And Expenditure",
                         "Cash Flow Statement",
                         "Auditor Report"
-                    ]
+                    ],
+                    verifyStatus: 1, // 1-pending, 2- accept, 3- reject
+                    rejectOption: '',
+                    rejectReason: '',
+                    allowedFileTypes: ['pdf'],
                 },
                 {
                     "warning": [],
@@ -606,20 +610,20 @@ const accountPractice = {
     "displayPriority": 4,
     "data": [
         {
-            "key": 'accSysAndProcess',
+            "key": 'accSysAndProcess1',
             "label": "I. Accounting Systems and Processes",
             "section": 'accordion',
             "formFieldType": "questionnaire",
-            "questions": [
+            "data": [
                 {
                     "key": "accSystem",
                     "label": "What is the accounting system being followed by the ULB?",
                     "position": "1",
                     "required": true,
                     options: [
-                        { option: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
-                        { option: "Accrual Basis of Accounting", info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
-                        { option: "Modified Cash/ Accrual Accounting", info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." }
+                        { label: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
+                        { label: "Accrual Basis of Accounting", info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
+                        { label: "Modified Cash/ Accrual Accounting", info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." }
                     ],
                     "placeHolder": "",
                     "formFieldType": "radio",
@@ -653,9 +657,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     options: [
-                        { option: "National Municipal Accounting Manual", },
-                        { option: "State-specific Municipal Accounting Manual", },
-                        { option: "Other (Please specify)", 'showInputBox': true }
+                        { label: "National Municipal Accounting Manual", },
+                        { label: "State-specific Municipal Accounting Manual", },
+                        { label: "Other (Please specify)", 'showInputBox': true }
                     ],
                     // "showInputBox": "Other (Please specify)",
                     "inputBoxValue": "",
@@ -686,11 +690,12 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        { option: "Yes (Please specify)", 'showInputBox': true },
-                        { option: "No", }
+                        { label: "Yes (Please specify)", 'showInputBox': true },
+                        { label: "No", }
                     ],
+                    reason: 'resafsf dfas12',
                     "inputBoxValue": "",
-                    "value": "",
+                    "value": "Yes (Please specify)",
                     "status": "Na",
                     "isDraft": true,
                     "readonly": false,
@@ -782,9 +787,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        { option: "Recorded when cash is received" },
-                        { option: "Recorded when they are accrued" },
-                        { option: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true }
+                        { label: "Recorded when cash is received" },
+                        { label: "Recorded when they are accrued" },
+                        { label: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true }
                     ],
                     "inputBoxValue": "",
                     "value": "",
@@ -814,9 +819,9 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        { option: "Recorded when cash is paid" },
-                        { option: "Recorded when they are accrued" },
-                        { option: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true },
+                        { label: "Recorded when cash is paid" },
+                        { label: "Recorded when they are accrued" },
+                        { label: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true },
                     ],
                     "inputBoxValue": "",
                     "value": "",
@@ -846,11 +851,11 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        { option: "Centralized system provided by the State" },
-                        { option: "Standalone software" },
-                        { option: "Tally" },
-                        { option: "Other (Please specify)", showInputBox: true },
-                        { option: "None" }
+                        { label: "Centralized system provided by the State" },
+                        { label: "Standalone software" },
+                        { label: "Tally" },
+                        { label: "Other (Please specify)", showInputBox: true },
+                        { label: "None" }
                     ],
                     "inputBoxValue": "",
                     "value": "",
@@ -880,8 +885,8 @@ const accountPractice = {
                     "formFieldType": "radio",
                     "canShow": true,
                     "options": [
-                        { option: "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)", showInputBox: true },
-                        { option: "No" }
+                        { label: "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)", showInputBox: true },
+                        { label: "No" }
                     ],
                     "inputBoxValue": "",
                     "value": "",
@@ -936,11 +941,11 @@ const accountPractice = {
             ]
         },
         {
-            "key": 'accSysAndProcess',
+            "key": 'accSysAndProcess2',
             "label": "II.Staffing - Finance & Accounts Department",
             "section": 'accordion',
-            "formFieldType": "section",
-            "questions": [
+            "formFieldType": "questionnaire",
+            "data": [
                 {
                     "key": "totSanction",
                     "label": "What is the total sanctioned posts for finance & accounts related positions?",
@@ -1103,7 +1108,7 @@ export const tabsJson = {
             financialData,
             uploadDoc,
             accountPractice,
-            slb,
+            // slb,
             reviewSubmit
         ]
     }

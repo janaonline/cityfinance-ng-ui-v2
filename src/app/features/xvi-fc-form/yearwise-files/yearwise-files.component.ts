@@ -31,7 +31,7 @@ export class YearwiseFilesComponent {
 
   constructor(public dialog: MatDialog) { }
   ngOnInit() {
-    console.log('----field table --', this.field);
+    // console.log('----field table --', this.field);
     // console.log('----group table --', this.group.controls[0].get(this.field.data[0].key).get());
     // console.log('----group table -val-', this.group.value);
 

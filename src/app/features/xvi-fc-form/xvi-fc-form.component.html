@@ -6,9 +6,11 @@
         <mat-step state="state" *ngFor="let tab of tabs; index as i">
             <!-- {{tab.key}} ----------<br> -->
             <ng-template matStepLabel>
-                <span class="fw-bold" [title]="tab?.label">{{ (tab?.label).split( " " )[0] }}
+                <span class="fw-bold" [title]="tab?.label">
+                    {{ (tab?.label).split( " " )[0] }}
                     {{ (tab?.label).split(" ")[1] }}<br />
-                    {{ (tab?.label).split(" ")[2] }}</span>
+                    {{ (tab?.label).split(" ")[2] }}
+                </span>
             </ng-template>
 
             <div class="container mt-4" [ngClass]="tab.class">
@@ -29,7 +31,7 @@
                     <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
                     }
                     @else if (tab.key === 'accountPractice') {
-                    <app-accounting-practice [field]="tab" [group]="getFG(tab.key,i)"></app-accounting-practice>
+                    <app-accounting-practice [field]="tab" [group]="getTabGroup(tab.key)"></app-accounting-practice>
                     }
                     @else if (tab.key === 'reviewSubmit') {
                     <app-review-submit [fields]="tabs" [group]="form"></app-review-submit>
@@ -62,7 +64,6 @@
                     <div class="float-end">
                         <button matStepperNext class="ms-2 primary-btn-2">Save as Draft</button>
                         <button matStepperNext class="ms-2 primary-btn-1">Continue to Next Section</button>
-
                     </div>
                 </div>
             </div>

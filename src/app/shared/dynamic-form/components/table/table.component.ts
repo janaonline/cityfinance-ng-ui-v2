@@ -39,7 +39,7 @@ export class TableComponent {
   getYears() {
     const firstField = this.field.data ? this.field.data[0].year : [];
     this.yearFields = firstField.map((value: any) => { return value.key; });
-    console.log('this.years-----', this.yearFields);
+    // console.log('this.years-----', this.yearFields);
   }
   sumLogic() {
     const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf) : [];

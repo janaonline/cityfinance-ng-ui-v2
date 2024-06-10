@@ -66,27 +66,11 @@ export class DynamicFormService {
   }
   setQuestionnaireData(childField: any) {
     const tableRow: any = [];
-    childField.questions.forEach((row: any) => {
-      if (row.tableData) {
-        const tableCol: any = [];
-        row.tableData.forEach((col: any) => {
-          tableCol.push(
-            // set validation here
-            new FormGroup({
-              // [col.key]: new FormControl(col.value),
-              [col.key]: this.createContorl(col),
-            }));
-        });
-        tableRow.push(
-          new FormGroup({
-            // [row.key]: new FormControl(childField.value),
-            [row.key]: new FormArray(tableCol),
-          }));
-      }
-
+    childField.data.forEach((row: any) => {
+      tableRow[row.key] = new FormGroup({ value: this.createContorl(row), reason: new FormControl(row.reason) });
     })
 
-    return new FormArray(tableRow);
+    return new FormGroup(tableRow);
 
   }
   setFilesData(childField: any) {
@@ -161,7 +145,7 @@ export class DynamicFormService {
     return null;
   }
   createContorl(field: any) {
-    return new FormControl(field.value || '', this.bindValidations(field.validations));
+    return new FormControl(field.value || null, this.bindValidations(field.validations));
     // return new FormControl(field.value || '');
   }
   tabControl(fields: any[]) {
@@ -172,12 +156,14 @@ export class DynamicFormService {
       if (fieldFormArrays && fieldFormArrays.length) {
         let formArrays: any[] = [];
         fieldFormArrays.forEach((childField: any) => {
+          // console.log('childField', childField);
           // table row
           const childFieldData: any = {};
           if (childField.formFieldType === 'table') {
             childFieldData[childField.key] = this.setTableData(childField);
           }
           else if (childField.formFieldType === 'questionnaire') {
+
             childFieldData[childField.key] = this.setQuestionnaireData(childField);
           }
           else if (childField.formFieldType === 'file') {
