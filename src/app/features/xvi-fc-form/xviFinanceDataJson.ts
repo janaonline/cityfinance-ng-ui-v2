@@ -823,7 +823,7 @@ const revenue = {
             "min": -999999999999999,
             "decimal": 0,
             "validation": "sum",
-            sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
+            totalSumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
             "logic": [
                 "1.1",
                 "1.2",

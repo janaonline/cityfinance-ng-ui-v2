@@ -20,6 +20,7 @@ export interface FieldConfig {
   uploading?: boolean;
   position?: number;
   readonly?: boolean;
+  readOnly?: boolean;
   fileAlreadyOnCf?: any[];
   multiple?: boolean;
   verifyStatus?: number;
