@@ -2,6 +2,10 @@
 @import "../../../../../node_modules/bootstrap/scss/variables";
 @import "../../../../../node_modules/bootstrap/scss/mixins";
 
+* {
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
 .btn-login {
   background: $secondary;
   color: $white;
@@ -50,13 +54,14 @@
     padding-top: $spacer * 1.5;
     padding-bottom: $spacer * 1.5;
     border-bottom: 2px solid transparent;
+    // color: var(--clr-secondary);
     color: #1d5290;
     font-weight: bold;
     font-size: $font-size-base * 1;
 
     &:hover,
     &.active {
-      color: #e87a1c;
+      color: var(--clr-primary);
       border-bottom: 2px solid;
     }
   }
@@ -117,4 +122,9 @@ a.disabled {
 
 .dropdown-item {
   padding: 0.5rem 1rem;
+}
+
+.dropdown-item:active {
+  color: $white;
+  background-color: var(--clr-secondary);
 }

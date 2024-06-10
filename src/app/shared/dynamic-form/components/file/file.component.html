@@ -1,28 +1,25 @@
 <div class="container" appDnd (fileDropped)="onFileDropped($event)">
-    <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowseHandler($event)" [accept]="this.allowedFileTypeStr"/>
-    <i class="bi bi-file-earmark-arrow-up-fill fs-4 clr-primary"></i>
+    <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowseHandler($event)"
+        [accept]="this.allowedFileTypeStr" />
+    <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
     <p class="fw-bold mt-2 mb-1">Upload consolidated PDF</p>
-    <label for="fileDropRef">Drag and drop the file here.</label>
+    <label for="fileDropRef"><small class="text-secondary">Drag and drop the file here.</small></label>
 </div>
 <div class="files-list" *ngIf="currentFile">
-    <div class="single-file">
+    <div class="single-file dotted-border-secondary">
         <div class="file-icon" style="width: 50px">
-            <div class="align-self-center upload-doc-icon">
-                <img src="./assets/images/pdf.png" alt="...">
+            <div class="align-self-center">
+                <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
             </div>
         </div>
         <div class="info">
-            <h4 class="name">
-                {{ currentFile.name }}
-            </h4>
-            <p class="size">
-                {{ formatBytes(currentFile.size) }}
-            </p>
+            <h4 class="name"> {{ currentFile.name }} </h4>
+            <p class="size"> {{ formatBytes(currentFile.size) }} </p>
             <app-progress [progress]="progress"></app-progress>
         </div>
 
-        <div class="delete" (click)="deleteFile()">
-            <mat-icon>delete_forever</mat-icon>
+        <div class="delete align-self-center" (click)="deleteFile()">
+            <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
         </div>
     </div>
     <!-- <div class="single-file" *ngFor="let file of files; let i = index">

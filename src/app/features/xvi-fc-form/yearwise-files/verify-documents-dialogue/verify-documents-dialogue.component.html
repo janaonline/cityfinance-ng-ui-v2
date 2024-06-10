@@ -1,62 +1,36 @@
-<div class="verify-header">
-    <h2 class="verify-title">{{data.field.label}}</h2>
+<div class="p-3 d-flex flex-column align-items-center">
+    <h2 class="fw-bold fs-5 mb-2">{{data.field.label}}</h2>
     <p>Already available on City Finance</p>
     <!-- <span class="verify-modal-close" (click)="closeDialog()"><img src="../../../assets/images/modal-close.png" -->
     <span class="verify-modal-close" (click)="onNoClick()"><mat-icon>close</mat-icon></span>
 </div>
-<mat-dialog-content>
 
-    <div class="statement-block-row block-row-in-modal">
-        <div class="uploaded-files">
-            <div class="uploaded-block already-availabe">
-                <!-- <div class="media media-in-modal">
-                    <div class="align-self-center upload-doc-icon">
-                        <mat-icon class="pdf">picture_as_pdf</mat-icon>
-                    </div>
-                    <div class="media-body">
-                        <div class="upload-doc-label">financial document 2022-23.pdf</div>
-                        <p class="file-size">1.5 MB</p>
-                    </div>
-                    <div class="align-self-center delete-doc-icon">
-                        <button class="primary-btn-2">
-                            <mat-icon>cloud_download</mat-icon> Download</button>
-                    </div>
-                </div>
-                <div class="media media-in-modal">
-                    <div class="align-self-center upload-doc-icon">
-                        <mat-icon class="pdf">picture_as_pdf</mat-icon>
-                    </div>
-                    <div class="media-body">
-                        <div class="upload-doc-label">financial document 2022-23.pdf</div>
-                        <p class="file-size">1.5 MB</p>
-                    </div>
-                    <div class="align-self-center delete-doc-icon">
-                        <button class="primary-btn-2">
-                            <mat-icon>cloud_download</mat-icon> Download</button>
-                    </div>
-                </div> -->
-                <div class="media media-in-modal" *ngFor="let file of data.field.fileAlreadyOnCf">
-                    <div class="align-self-center upload-doc-icon">
-                        <mat-icon class="pdf">picture_as_pdf</mat-icon>
-                    </div>
-                    <div class="media-body">
-                        <div class="upload-doc-label">{{file.name}}</div>
-                        <p class="file-size">{{file.size}}</p>
-                    </div>
-                    <div class="align-self-center delete-doc-icon">
-                        <a class="ms-2 primary-btn-2" style="text-decoration: none;" [href]="file.url"
-                            download><mat-icon>cloud_download</mat-icon> Download</a>
-                    </div>
-                </div>
+<mat-dialog-content>
+    <div class="border border-secondary-subtle rounded px-4 bg-light">
+        <div class="d-flex align-items-center py-3 border-bottom border-light-subtle"
+            *ngFor="let file of data.field.fileAlreadyOnCf">
+            <div class="flex-shrink-0">
+                <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger "></i>
+            </div>
+            <div class="flex-grow-1 ms-3">
+                <p class="text-dark">{{file.name}}</p>
+                <p><small class="text-secondary">{{file.size}}</small></p>
+            </div>
+            <div>
+                <a class="ms-2 primary-btn-2" [href]="file.url" style="text-decoration: none;">
+                    <i class="bi bi-download text-cfPrimary fs-5"></i>
+                    Download
+                </a>
             </div>
         </div>
+
     </div>
-    <div class="accept-return-block">
-        <div class="info">
-            If you feel the documents are correct, select the "Accept Existing Document" option and proceed with
-            acceptance. If the existing documents require corrections or do not meet your requirements, please
-            select the return option and provide a reason for the return.
-        </div>
+    <div class="py-4">
+        <ul class="text-dark">
+            <li>If the existing document(s) are correct, select the Accept Existing Document option. </li>
+            <li>If the existing document(s) are incorrect, select the Reject Existing Document option and provide a
+                reason for the upload.</li>
+        </ul>
         <!-- <div class="radio-group">
             <label class="radio-inline">
                 <input type="radio" name="options" value="option1" checked>
@@ -69,7 +43,8 @@
                 Accept Existing Document
             </label>
         </div> -->
-        <div class="d-flex justify-content-center">
+        <div
+            class="d-flex justify-content-center p-2 bg-cfPrimary bg-opacity-10 border border-cfPrimary border-start-0 border-end-0 mb-3">
             <!-- <mat-radio-group aria-label="Select an option">
                 <mat-radio-button value="Accept">Accept Existing Document</mat-radio-button>
                 <mat-radio-button value="Reject">Reject Existing Document</mat-radio-button>
@@ -77,31 +52,33 @@
             <app-radiobutton [field]="verifyStatus" [group]="getVerifyFormGroup()"></app-radiobutton>
         </div>
         @if(getVerifyStatus() === 3) {
-        <div class="indro-block intro-box-in-modal mt-2">
+        <div class="dotted-border-secondary bg-light p-3 mb-3">
             <p>Instructions:</p>
             <ol>
                 <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
-                    Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
-                <li>All documents pertaining to a specific financial year should be combined into a single PDF
-                    before uploading & should not exceed 20 MB.</li>
-                <li>Please use the following format for naming the documents to be uploaded:
-                    nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
-                        corporation</strong></li>
+                    Schedules to
+                    IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
+                <li>All documents pertaining to a specific financial year should be combined into a single PDF before
+                    uploading & should not exceed 20 MB.</li>
+                <li>Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB
+                    Name.
+                    <strong>Example: Annual accounts_15-16_Jaipur municipal corporation</strong>
+                </li>
             </ol>
         </div>
-        <div class="row mt-2">
+        <div class="row mt-2 text-dark">
             <app-file [field]="data.field" [group]="getVerifyFormGroup()"></app-file>
         </div>
-        <div class="row mt-2">
+        <div class="row mt-2 text-dark">
             <app-select [field]="rejectOption" [group]="getVerifyFormGroup()"></app-select>
         </div>
-        <div class="row">
+        <div class="row text-dark">
             <app-input [field]="rejectReason" [group]="getVerifyFormGroup()"></app-input>
         </div>
 
         }
         <div class="d-flex justify-content-center">
-            <button mat-raised-button color="primary" [disabled]="![2,3].includes(getVerifyStatus())"
+            <button class="primary-btn-1" [disabled]="![2,3].includes(getVerifyStatus())"
                 (click)="onSubmit()">Submit</button>
         </div>
 

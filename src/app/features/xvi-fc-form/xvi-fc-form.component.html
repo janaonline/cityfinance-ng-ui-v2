@@ -6,7 +6,8 @@
 
         <!-- <app-question [question]="question" [form]="form"></app-question> -->
         <!-- </div> -->
-        <h3 class="fw-bold pb-3 ps-3 mt-3">{{ loggedInUserDetails.name }}</h3>
+        <h3 class="fw-bold fs-4 m-1 mb-4">{{ loggedInUserDetails.name }}</h3>
+
         <mat-stepper *ngIf="!isLoader && fields" linear="false" labelPosition="bottom" id="stepper" #stepper>
             <mat-step state="state" *ngFor="let tab of fields; index as i">
                 <!-- {{tab.key}} ----------<br> -->
@@ -17,11 +18,15 @@
                     <!-- <div>sdfdsfsd</div> -->
                 </ng-template>
 
+                <div class="border border-top-0 border-secondary"></div>
+
                 <div class="container mt-4" [ngClass]="tab.class">
                     <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
+
+
                     <div class="text-bg-light border rounded mt-3 mb-3 p-3" *ngIf="tab.key !== 'reviewSubmit'">
                         <p class="text-muted pb-2">Section {{tab.displayPriority}}/ {{fields.length}}</p>
-                        <h4 class="fw-bold">{{tab.label}}</h4>
+                        <h4 class="fw-bold fs-5">{{tab.label}}</h4>
                     </div>
                     <div class="overflow-container">
                         @if (tab.key === 'auditedAnnualFySt') {
