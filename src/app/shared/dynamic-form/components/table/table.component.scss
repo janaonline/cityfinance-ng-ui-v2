@@ -62,3 +62,17 @@
     border-bottom: 2px dotted rgba(169, 169, 169, 1) !important;
 
   }
+
+  // th {
+  //   background: white;
+  //   position: sticky;
+  //   top: 0; /* Don't forget this, required for the stickiness */
+  //   box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+  // }
+
+  .table-sticky th {
+    background: #fff;
+    position: sticky !important;
+    top: -1px;
+    z-index: 990;
+  }

@@ -5,7 +5,6 @@ import { FormGroup } from '@angular/forms';
 import swal from 'sweetalert';
 import { FileService } from './file.service';
 import { FieldConfig } from '../../field.interface';
-import { ProgressComponent } from './progress/progress.component';
 import { DndDirective } from './dnd.directive';
 import { Subscription } from 'rxjs';
 import { MatProgressBarModule } from '@angular/material/progress-bar';

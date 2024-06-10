@@ -6,7 +6,7 @@
 @case ('amount') {
 <mat-form-field appearance="outline" floatLabel="always" [formGroup]="group">
   <!-- <mat-form-field [formGroup]="group"> -->
-  <!-- <mat-label>{{field.label}}</mat-label> -->
+  <mat-label>{{field.label}}</mat-label>
   <input onwheel="this.blur()" matInput [formControlName]="field.key" type="number" placeholder="0" appNoUpDown>
   <span matTextPrefix>&#8377;&nbsp;</span>
   <!-- <span matTextSuffix>.00</span> -->

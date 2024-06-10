@@ -100,6 +100,7 @@ export class XviFcFormComponent {
   formSubmitted = false;
   // fields: any[] = tabsJson.data.tabs;
   fields: any[] = [];
+  selectedIndex = 0;
 
   get value() {
     return this.form.value;
@@ -141,7 +142,11 @@ export class XviFcFormComponent {
 
   // submit(value: any) { }
 
+  saveAs(type: string) {
+    console.log('this.form.value', this.form.value);
 
+    this.service.saveUlbForm(this.form.value);
+  }
 
   onSubmit(event: Event) {
     event.preventDefault();
@@ -193,145 +198,7 @@ export class XviFcFormComponent {
     });
   }
 
-  // getTabFormGroup(tab: Tab): any {
-  //   const { data, feedback, ...rest } = tab;
-  //   // console.log('data', data);
 
-  //   return this.fb.group({
-  //     ...rest,
-  //     // feedback: this.fb.group({
-  //     //   comment: [feedback.comment,],
-  //     //   status: feedback.status,
-  //     //   _id: feedback._id,
-  //     // }),
-  //     data: this.fb.group(Object.entries(data).reduce((obj: any, [key1, item]: any) => {
-  //       // console.log('obj, key, item----', key, item);
-  //       let key = item.key;
-  //       if (this.linearTabs.includes(tab.id)) {
-  //         obj[key] = this.getInnerFormGroup({ ...item, key })
-  //       }
-  //       else if (tab.id == this.selfDeclarationTabId) {
-  //         obj[key] = this.fb.group({
-  //           uploading: [{ value: false, disabled: true }],
-  //           name: [item.name, this.userData?.role == USER_TYPE.ULB && item.required ? Validators.required : null],
-  //           readonly: [{ value: item.readonly, disabled: true }],
-  //           status: [item?.status, this.getStatusValidators(item, tab.id)],
-  //           rejectReason: item?.rejectReason,
-  //           url: [item.url, this.userData?.role == USER_TYPE.ULB && item.required ? Validators.required : null],
-  //         });
-  //         this.attactRequiredReasonToggler(obj[key]);
-  //       }
-  //       else {
-  //         obj[key] = this.fb.group({
-  //           key: item.key,
-  //           position: [{ value: +item.displayPriority || 1, disabled: true }],
-  //           isHeading: [{ value: this.isHeading(item.displayPriority), disabled: true }],
-  //           required: [{ value: item.required, disabled: true }],
-  //           modelName: [{ value: item.modelName, disabled: true }],
-  //           calculatedFrom: [{ value: item.calculatedFrom, disabled: true }],
-  //           logic: [{ value: item.logic, disabled: true }],
-  //           canShow: [{ value: true, disabled: true }],
-  //           label: [{ value: item.label, disabled: true }],
-  //           info: [{ value: item.info, disabled: true }],
-  //           yearData: this.fb.array(item.yearData.slice().reverse().map((yearItem: any) => this.getInnerFormGroup(yearItem, item, tab?.id)))
-  //         })
-  //       }
-  //       return obj;
-  //     }, {}))
-  //   })
-  // }
-
-
-
-  // getInnerFormGroup(item: any, parent?: any, tabId?: any) {
-  //   const innerFormGroup = this.fb.group({
-  //     key: item.key,
-  //     value: [item.value, this.getValidators(item, !['date', 'file'].includes(item.formFieldType), parent)],
-  //     originalValue: item.value,
-  //     year: item.year,
-  //     type: item.type,
-  //     _id: item._id,
-  //     modelName: [{ value: item.modelName, disabled: true }],
-  //     suggestedValue: [item?.suggestedValue],
-  //     pmuSuggestedValue2: [item?.pmuSuggestedValue2],
-  //     ulbValue: [item?.ulbValue],
-  //     ulbComment: [item?.ulbComment],
-  //     focused: [{ value: false, disabled: true }],
-  //     required: [{ value: item.required, disabled: true }],
-  //     options: [{ value: item.options, disabled: true }],
-  //     isRupee: [{ value: item.isRupee, disabled: true }],
-  //     code: [{ value: item.code, disabled: true }],
-  //     previousYearCodes: [{ value: item.previousYearCodes, disabled: true }],
-  //     min: [{ value: new Date(item?.min), disabled: true }],
-  //     max: [{ value: new Date(item?.max), disabled: true }],
-  //     date: [item.date, this.userData?.role == USER_TYPE.ULB && item.formFieldType == 'date' && item.required ? [Validators.required] : []],
-  //     formFieldType: [{ value: item.formFieldType || 'text', disabled: true }],
-  //     status: [item?.status, this.getStatusValidators(item, tabId)],
-  //     rejectReason: [item?.rejectReason],
-  //     rejectReason2: [item?.rejectReason2],
-  //     bottomText: [{ value: item.bottomText, disabled: true }],
-  //     label: [{ value: item.label, disabled: true }],
-  //     info: [{ value: item.info, disabled: true }],
-  //     placeholder: [{ value: item.placeholder, disabled: true }],
-  //     desc: [{ value: item.desc, disabled: true }],
-  //     position: [{ value: item.postion, disabled: true }],
-  //     pos: [{ value: item.pos, disabled: true }],
-  //     readonly: [{ value: item.readonly, disabled: true }],
-  //     ...(item.file && {
-  //       file: this.fb.group({
-  //         uploading: [{ value: false, disabled: true }],
-  //         name: [item.file.name, this.userData?.role == USER_TYPE.ULB && item.required ? [Validators.required] : []],
-  //         url: [item.file.url, this.userData?.role == USER_TYPE.ULB && item.required ? [Validators.required] : []]
-  //       })
-  //     })
-  //   });
-  //   this.attactRequiredReasonToggler(innerFormGroup, tabId);
-  //   return innerFormGroup;
-  // }
-
-  // getStatusValidators(item: { status: any; }, tabId: string) {
-  //   if (this.loggedInUserType == this.userTypes.PMU) {
-  //     if (item?.status) {
-  //       if (tabId != 's3' && this?.pmuSubmissionDate) {
-  //         return Validators.pattern(/^(APPROVED)$/)
-  //       }
-  //       return Validators.pattern(/^(REJECTED|APPROVED)$/)
-  //     }
-  //     return null;
-  //   }
-  //   return null;
-  // }
-
-  // attactRequiredReasonToggler(innerFormGroup: FormGroup, tabId?: any) {
-  //   const statusControl = innerFormGroup.get('status');
-  //   statusControl?.valueChanges.subscribe(status => {
-  //     const rejectReasonControl = innerFormGroup.get('rejectReason');
-  //     const suggestedValueControl = innerFormGroup.get('suggestedValue');
-  //     rejectReasonControl?.setValidators(status == 'REJECTED' ? [
-  //       Validators.required,
-  //       Validators.minLength(10),
-  //       Validators.maxLength(500)
-  //     ] : []);
-  //     suggestedValueControl?.setValidators(status == 'REJECTED' && tabId == 's3' ? [
-  //       Validators.required
-  //     ] : []);
-  //     rejectReasonControl?.updateValueAndValidity({ emitEvent: true });
-  //     suggestedValueControl?.updateValueAndValidity({ emitEvent: true });
-  //   });
-  //   statusControl?.updateValueAndValidity({ emitEvent: true });
-  // }
-
-  // getValidators(item: any, canApplyRequired = false, parent?: any) {
-  //   if (this.userData?.role != USER_TYPE.ULB) return [];
-  //   return [
-  //     ...(parent?.logic == 'sum' && item.modelName ? [Validators.pattern(new RegExp(item.value))] : []),
-  //     ...(item.required && canApplyRequired ? [Validators.required] : []),
-  //     ...(item.formFieldType == 'url' ? [Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?')] : []),
-  //     ...(item.formFieldType == 'email' ? [Validators.email] : []),
-  //     ...(item.min !== '' ? [Validators[item.formFieldType == 'number' ? 'min' : 'minLength'](+item.min)] : []),
-  //     ...(item.max !== '' ? [Validators[item.formFieldType == 'number' ? 'max' : 'maxLength'](+item.max)] : []),
-  //   ];
-  // }
 
 }
 
