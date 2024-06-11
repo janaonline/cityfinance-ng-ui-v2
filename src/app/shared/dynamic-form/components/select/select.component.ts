@@ -7,7 +7,7 @@ import { MaterialModule } from '../../../../material.module';
   standalone: true,
   imports: [MaterialModule],
   template: `
-    <label class="fw-bold" *ngIf="disaplayLabel">{{field.position ? field.position+'. ':''}}{{field.label}}<span class="text-danger">*&nbsp;</span>
+    <label class="fw-bold" *ngIf="displayLabel">{{field.position ? field.position+'. ':''}}{{field.label}}<span class="text-danger">*&nbsp;</span>
     </label>
     <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
     <!-- <mat-label>{{field.position ? field.position+'. ':''}}{{field.label}}</mat-label> -->
@@ -32,7 +32,7 @@ export class SelectComponent {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() options!: any[];
-  @Input() disaplayLabel: boolean = true;
+  @Input() displayLabel: boolean = true;
   @Input() parentField: any;
   validations: any[] = [];
 

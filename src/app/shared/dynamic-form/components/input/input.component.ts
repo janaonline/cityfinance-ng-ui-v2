@@ -17,7 +17,8 @@ export class InputComponent {
   className: string = "box1";
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
-  @Input() disaplayLabel: boolean = true;
+  @Input() displayLabel: boolean = true;
+  @Input() displayInlineLabel: boolean = false;
   @Input() readonly: boolean | undefined = false;
   @Input() parentField: any;
   validations: any[] = [];
@@ -28,7 +29,8 @@ export class InputComponent {
   ngOnInit() {
     // console.log('----field in --',this.field);
     // console.log('----group in --',this.group);
-    this.readonly = this.field.readonly || this.readonly;
+    // this.readonly = this.field.readonly || this.readonly;
+    this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
   }
   hasError(key: string, name: string) {

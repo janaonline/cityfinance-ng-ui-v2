@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 // import { tabsJson } from './formJson';
 // import { tabsJson } from './xviFormJson';
 import { tabsJson } from './xviFormJsonApi';
+// import { tabsJson } from './xviJsonApiFull';
 import { MaterialModule } from '../../material.module';
 import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
@@ -11,7 +12,9 @@ import { USER_TYPE } from '../../core/models/user/userType';
 import { FiscalRankingService, StatusType } from './services/fiscal-ranking.service';
 import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
-import swal from 'sweetalert2';
+import Swal from 'sweetalert2';
+
+
 // import { Tab, APPROVAL_TYPES } from '../../core/models/models';
 import { AlreadyUpdatedUrlPipe } from '../../core/pipes/already-updated-url.pipe';
 // import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
@@ -28,6 +31,15 @@ import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.componen
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 // import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { XviFcService } from '../../core/services/xvi-fc.service';
+
+import {
+  MatSnackBar,
+  MatSnackBarAction,
+  MatSnackBarActions,
+  MatSnackBarLabel,
+  MatSnackBarRef,
+} from '@angular/material/snack-bar';
+// import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
   selector: 'app-xvi-fc-form',
@@ -51,7 +63,7 @@ import { XviFcService } from '../../core/services/xvi-fc.service';
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
-
+    // SweetAlert2Module,
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -71,6 +83,7 @@ export class XviFcFormComponent {
   // user!: IUserLoggedInDetails | null;
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   isLoader: boolean = false;
+  formSaveLoader: boolean = false;
   loggedInUserType: any;
   hideForm: boolean = false;
   notice!: string;
@@ -108,7 +121,8 @@ export class XviFcFormComponent {
   constructor(private fb: FormBuilder,
     // public fiscalService: FiscalRankingService,
     public service: XviFcService,
-    public formService: DynamicFormService
+    public formService: DynamicFormService,
+    private _snackBar: MatSnackBar,
     // private dataEntryService: DataEntryService,
     // private _router: Router,
     // private dialog: MatDialog,
@@ -141,34 +155,46 @@ export class XviFcFormComponent {
   // }
 
   // submit(value: any) { }
+  submit() {
 
-  saveAs(type: string) {
-    console.log('this.form.value', this.form.value);
+  }
+  saveAs(actionType: string) {
+    this.formSaveLoader = true;
+    if (['previous', 'next'].includes(actionType)) {
+      Swal.fire({
+        title: "Unsaved changes!",
+        text: "Save as draft and continue",
+        icon: "info"
+      });
+    }
+
+    // console.log('this.form.value', this.form.value);
     // Object.entries(this.form.value)
     const formJson: any = this.form.value;
 
-    const formData = {
-      "ulb": "5dcfca53df6f59198c4ac3d5",
-      "state": "5dcf9d7516a06aed41c748fa",
-      "xvifc": "5dcf9d7516a06aed41c748fb",
-      "tab": [
-        {
-          "tabKey": "demographicData",
-          data: [
-            {
-              "key": "nameOfUlb",
-              "value": "",
-              "saveAsDraftValue": "2nd Try",
-              file: { name: '', url: '' },
-              reason: ''
-            }
-          ]
-        }
-      ]
-    };
+    // const formData: any = {
+    //   "ulb": "5dcfca53df6f59198c4ac3d5",
+    //   "state": "5dcf9d7516a06aed41c748fa",
+    //   "xvifc": "5dcf9d7516a06aed41c748fb",
+    //   tab: [],
+    //   "tab1": [
+    //     {
+    //       "tabKey": "demographicData",
+    //       data: [
+    //         {
+    //           "key": "nameOfUlb",
+    //           "value": "",
+    //           "saveAsDraftValue": "2nd Try",
+    //           file: { name: '', url: '' },
+    //           reason: ''
+    //         }
+    //       ]
+    //     }
+    //   ]
+    // };
+    const formData: any = { tab: [] }
     for (const tab of this.tabs) {
-      // const tab = { tabKey: tab.key, data:  []};
-      formData.tab.push();
+      const tabData: any = { tabKey: tab.key, data: [] };
       if (tab.key === 'demographicData') {
 
       } else if (tab.key === 'financialData') {
@@ -178,32 +204,48 @@ export class XviFcFormComponent {
       } else if (tab.key === 'accountPractice') {
 
       }
+      console.log('formJson[tab.key]', formJson[tab.key]);
+      if (tab.key !== 'reviewSubmit') {
+        tab['data'].forEach((field: any, i: number) => {
+          // console.log('field---', field);
+          const fieldData = {
+            key: field.key,
+            value: formJson[tab.key][i][field.key],
+            saveAsDraftValue: formJson[tab.key][i][field.key]
+          };
+          // const fieldData: {
+          //   key: string, value: any,
+          //   saveAsDraftValue: any
+          // } = field;
+          tabData.data.push(fieldData)
+        });
+
+      }
+
+      formData.tab.push(tabData);
+      console.log('formData -------', formData);
+
       // else if(tab.key=== 'demographicData') {
 
       // }
 
     }
-    for (const [key, fields] of Object.entries(formJson)) {
-      console.log(`key: fields-----`, fields);
-      const data = [];
-      for (const field of formJson[key]) {
-        console.log(`field----`, field);
-        const filedData = {}
+
+    this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
+      if (actionType === 'next') {
+        this.stepper?.next();
+      } else if (actionType === 'previous') {
+        this.stepper?.previous();
       }
-      // fields.forEach(() => {
-
-      // });
-      const tab = { tabKey: key, data: '' };
-      formData.tab.push();
-    }
-    this.stepper?.next();
-    // this.selectedStepIndex += this.selectedStepIndex;
-    // this.stepper?.previous();
-    // if(this.stepper) this.stepper.selectedIndex = 3;
-
-    // this.service.saveUlbForm(this.ulbId, this.form.value).subscribe((res) => {
-    //   // this.stepper?.next();
-    // });
+      this._snackBar.open('Save successfully!!', 'Close', {
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+        // duration: 2000,
+        panelClass: ['snackbar-success']
+      });
+      this.formSaveLoader = false;
+      Swal.close();
+    });
   }
 
   onSubmit(event: Event) {
@@ -227,15 +269,17 @@ export class XviFcFormComponent {
   onLoad() {
     this.isLoader = true;
     // this.ulbId = '5dcfca53df6f59198c4ac3d5';
-    this.ulbId = '5dd24e98cc3ddc04b552b7d4';
+    this.ulbId = this.loggedInUserDetails.ulb;
+    // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
-      this.tabs = this.fields = res?.data?.tabs;
+      this.tabs = res?.data?.tabs;
+
+      // this.tabs = tabsJson.data.tabs;
       this.tabs.push({
         key: 'reviewSubmit',
         label: "Review & Submit",
         "displayPriority": this.tabs.length + 1,
       });
-      // this.tabs = tabsJson.data.tabs;
       this.form = this.formService.tabControl(this.tabs);
       // this.hideForm = res?.data?.hideForm;
       // this.notice = res?.data?.notice;
@@ -259,6 +303,8 @@ export class XviFcFormComponent {
       this.isLoader = false;
       // this.msgForLedgerUpdate = res?.data?.messages;
       // if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
+    },()=>{
+      this.isLoader = false;
     });
   }
 
