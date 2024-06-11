@@ -2,66 +2,90 @@ import { financialData } from "./xviFinanceDataJson";
 import { slb } from "./xviFcSlb";
 
 const basicTab = {
-    "_id": "6657921b9ab1c13ac44d01f4",
+    "_id": "666764fa1d285021388bedba",
     "key": "demographicData",
     "icon": "",
-    "text": "",
     "formType": "form1",
     "label": "Demographic Data",
     "id": "s1",
-    class: 'w-75',
     "displayPriority": 1,
     "__v": 0,
     "data": [
         {
             "key": "nameOfUlb",
+            "readOnly": true,
+            "class": "",
             "label": "Name of ULB",
             "position": "1",
+            "quesPos": 1,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "text",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "required",
+                    "validator": "required",
+                    "message": "Please fill in this required field."
+                }
+            ],
             "value": "Barpeta Municipal Board",
             "status": "Na",
-            "isDraft": true,
-            "readonly": true
+            "isDraft": true
         },
         {
             "key": "nameOfState",
+            "readOnly": true,
+            "class": "",
             "label": "Name of State/Union Territory ",
             "position": "2",
+            "quesPos": 2,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "text",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "required",
+                    "validator": "required",
+                    "message": "Please fill in this required field."
+                }
+            ],
             "value": "Assam",
             "status": "Na",
-            "isDraft": true,
-            "readonly": true,
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please fill in this required field."
-                },
-                {
-                    name: "pattern",
-                    validator: "^[a-zA-Z]+$",
-                    message: "Please enter a valid text."
-                }
-            ]
+            "isDraft": true
         },
         {
             "key": "pop2011",
+            "readOnly": true,
+            "class": "",
             "label": "Population as per Census 2011",
             "position": "3",
+            "quesPos": 3,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "number",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "min",
+                    "validator": 0,
+                    "message": "Please enter a number between 0 and 100000000."
+                },
+                {
+                    "name": "max",
+                    "validator": 100000000,
+                    "message": "Please enter a number between 0 and 100000000."
+                },
+                {
+                    "name": "decimal",
+                    "validator": 0,
+                    "message": "Please enter a whole number for this field."
+                }
+            ],
             "warning": [
                 {
                     "value": 0,
@@ -69,47 +93,43 @@ const basicTab = {
                     "message": "Are you sure you want to continue with 0"
                 }
             ],
-            "max": 1000000,
+            "max": 100000000,
             "min": 0,
             "decimal": 0,
-            "validation": "",
-            "logic": "",
+            "autoSumValidation": "",
             "value": "",
             "status": "Na",
-            "isDraft": true,
-            "readonly": false,
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please fill in this required field."
-                },
-                {
-                    name: "min",
-                    validator: 0,
-                    message: "Please enter a number between 0 and 10,00,000."
-                },
-                {
-                    name: "max",
-                    validator: 1000000,
-                    message: "Please enter a number between 0 and 10,00,000."
-                },
-                {
-                    name: "decimal",
-                    validator: 0,
-                    message: "Please enter a whole number for this field."
-                }
-            ]
+            "isDraft": true
         },
         {
             "key": "popApril2024",
+            "readOnly": true,
+            "class": "",
             "label": "Population as per 01 April 2024",
             "position": "4",
+            "quesPos": 4,
             "required": true,
             "info": "",
             "placeHolder": "",
-            "formFieldType": "",
+            "formFieldType": "number",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "min",
+                    "validator": 0,
+                    "message": "Please enter a number between 0 and 100000000."
+                },
+                {
+                    "name": "max",
+                    "validator": 100000000,
+                    "message": "Please enter a number between 0 and 100000000."
+                },
+                {
+                    "name": "decimal",
+                    "validator": 0,
+                    "message": "Please enter a whole number for this field."
+                }
+            ],
             "warning": [
                 {
                     "value": 0,
@@ -117,47 +137,43 @@ const basicTab = {
                     "message": "Are you sure you want to continue with 0"
                 }
             ],
-            "max": 1000000,
+            "max": 100000000,
             "min": 0,
             "decimal": 0,
-            "validation": "",
-            "logic": "",
+            "autoSumValidation": "",
             "value": "",
             "status": "Na",
-            "isDraft": true,
-            "readonly": false,
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please fill in this required field."
-                },
-                {
-                    name: "min",
-                    validator: 0,
-                    message: "Please enter a number between 0 and 10,00,000."
-                },
-                {
-                    name: "max",
-                    validator: 1000000,
-                    message: "Please enter a number between 0 and 10,00,000."
-                },
-                {
-                    name: "decimal",
-                    validator: 0,
-                    message: "Please enter a whole number for this field."
-                }
-            ]
+            "isDraft": true
         },
         {
             "key": "areaOfUlb",
+            "readOnly": true,
+            "class": "",
             "label": "Area of the ULB (in Sq. Km.)",
             "position": "5",
+            "quesPos": 5,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "number",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "min",
+                    "validator": 0.1,
+                    "message": "Please enter a number between 0.1 and 1000."
+                },
+                {
+                    "name": "max",
+                    "validator": 1000,
+                    "message": "Please enter a number between 0.1 and 1000."
+                },
+                {
+                    "name": "decimal",
+                    "validator": 2,
+                    "message": "Please enter number with at most 2 places."
+                }
+            ],
             "warning": [
                 {
                     "value": 0,
@@ -168,87 +184,67 @@ const basicTab = {
             "max": 1000,
             "min": 0.1,
             "decimal": 2,
-            "validation": "",
-            "logic": "",
+            "autoSumValidation": "",
             "value": "",
             "status": "Na",
-            "isDraft": true,
-            "readonly": false,
-            validations: [
-                {
-                    name: "required",
-                    validator: 'required',
-                    message: "Please fill in this required field."
-                },
-                {
-                    name: "min",
-                    validator: 0.1,
-                    message: "Please enter area greater than 0."
-                },
-                {
-                    name: "max",
-                    validator: 1000,
-                    message: "Please enter area within 1000 sq.km"
-                },
-                {
-                    name: "decimal",
-                    validator: 2,
-                    message: "Please enter the area with at most two decimal places."
-                }
-            ]
+            "isDraft": true
         },
         {
             "key": "yearOfElection",
+            "readOnly": true,
+            "class": "",
             "label": "Which is the latest year when ULB's election was held?",
             "position": "6",
+            "quesPos": 6,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "select",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "required",
+                    "validator": "required",
+                    "message": "Please fill in this required field."
+                }
+            ],
             "options": [
-                "2000",
-                "2001",
-                "2002",
-                "2003",
-                "2004",
-                "2005",
-                "2006",
-                "2007",
-                "2008",
-                "2009",
-                "2010",
-                "2011",
-                "2012",
-                "2013",
-                "2014",
-                "2015",
-                "2016",
-                "2017",
-                "2018",
-                "2019",
-                "2020",
-                "2021",
-                "2022",
-                "2023",
-                "2024"
+                "2023-24",
+                "2022-23",
+                "2021-22",
+                "2020-21",
+                "2019-20",
+                "2018-19",
+                "2017-18",
+                "2016-17",
+                "2015-16",
+                "Before 2015-16"
             ],
             "showInputBox": "",
             "inputBoxValue": "",
             "value": "",
             "status": "Na",
-            "isDraft": true,
-            "readonly": false
+            "isDraft": true
         },
         {
             "key": "isElected",
+            "readOnly": true,
+            "class": "",
             "label": "Is the elected body in place as on 01 April 2024?",
             "position": "7",
+            "quesPos": 7,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "radio",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "required",
+                    "validator": "required",
+                    "message": "Please fill in this required field."
+                }
+            ],
             "options": [
                 "Yes",
                 "No"
@@ -256,42 +252,51 @@ const basicTab = {
             "inputBoxValue": "",
             "value": "",
             "status": "Na",
-            "isDraft": true,
-            "readonly": false
+            "isDraft": true
         },
         {
             "key": "yearOfConstitution",
+            "readOnly": true,
+            "class": "",
             "label": "In which year was the ULB constituted?",
             "position": "8",
+            "quesPos": 8,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "select",
             "canShow": true,
+            "validations": [
+                {
+                    "name": "required",
+                    "validator": "required",
+                    "message": "Please fill in this required field."
+                }
+            ],
             "options": [
-                "2015-16",
-                "2016-17",
-                "2017-18",
-                "2018-19",
-                "2019-20",
-                "2020-21",
+                "2023-34",
+                "2022-23",
                 "2021-22",
-                "2022-23"
+                "2020-21",
+                "2019-20",
+                "2018-19",
+                "2017-18",
+                "2016-17",
+                "In 2015-16",
+                "Before 2015-16"
             ],
             "showInputBox": "",
             "inputBoxValue": "",
-            "value": "",
+            "value": "Before 2015-16",
             "status": "Na",
-            "isDraft": true,
-            "readonly": false
+            "isDraft": true
         }
     ]
-}
+};
 const uploadDoc = {
-    "_id": "665df95e73de1812233ecc01",
+    "_id": "666764fa1d285021388bedbc",
     "key": "uploadDoc",
     "icon": "",
-    "text": "",
     "formType": "form1",
     "label": "View/ Upload Document",
     "id": "s3",
@@ -300,14 +305,24 @@ const uploadDoc = {
     "data": [
         {
             "key": "auditedAnnualFySt",
+            "readOnly": true,
+            "class": "",
             "label": "Copy of Audited Annual Financial Statements preferably in English",
-            "postion": "",
+            "position": "",
+            "quesPos": 52,
             "required": true,
             "info": "",
             "placeHolder": "",
             "formFieldType": "file",
             "canShow": true,
-            "max": 5,
+            "validations": [
+                {
+                    "name": "required",
+                    "validator": "required",
+                    "message": "Please fill in this required field."
+                }
+            ],
+            "max": 20,
             "min": 0,
             "bottomText": "Maximum of 5MB",
             "instruction": [
@@ -321,640 +336,426 @@ const uploadDoc = {
                     "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
                 }
             ],
-            "year": [
-                {
-                    "warning": [],
-                    "label": "FY 2022-23",
-                    "key": "fy2022-23_auditedAnnualFySt",
-                    "postion": 1,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": false,
-                    "file": {
-                        "name": "testName2022-23",
-                        "url": "https://www.test.com/2022-23.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ],
-                    verifyStatus: 1, // 1-pending, 2- accept, 3- reject
-                    rejectOption: '',
-                    rejectReason: '',
-                    allowedFileTypes: ['pdf'],
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2021-22",
-                    "key": "fy2021-22_auditedAnnualFySt",
-                    "postion": 2,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": false,
-                    "file": {
-                        "name": "testName2020-21",
-                        "url": "https://www.test.com/2020-21.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2020-21",
-                    "key": "fy2020-21_auditedAnnualFySt",
-                    "postion": 3,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": false,
-                    "file": {
-                        "name": "testName2020-21",
-                        "url": "https://www.test.com/2020-21.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2019-20",
-                    "key": "fy2019-20_auditedAnnualFySt",
-                    "postion": 4,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": true,
-                    "file": {
-                        "name": "testName2019-20",
-                        "url": "https://www.test.com/2019-20.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "Balance Sheet 2019-20.pdf",
-                            "url": "/objects/5f7b285f-8bc6-4bdf-a216-1f53605e9ab2.pdf",
-                            "type": "bal_sheet",
-                            "label": "Balance Sheet"
-                        },
-                        {
-                            "name": "Schedule 1-20 Balance sheet 2019-20.pdf",
-                            "url": "/objects/16c32fbe-3576-4ea0-ab94-af37cfb05569.pdf",
-                            "type": "bal_sheet_schedules",
-                            "label": "Schedules To Balance Sheet"
-                        },
-                        {
-                            "name": "Income & Expenditure Statement 2019-20.pdf",
-                            "url": "/objects/4f505458-5f1a-4475-900f-bcc65f224996.pdf",
-                            "type": "inc_exp",
-                            "label": "Income And Expenditure"
-                        },
-                        {
-                            "name": "Schedule 21-40 Income Exp. 2019-20.pdf",
-                            "url": "/objects/2c580cae-5ca7-4c50-80f3-3debfe5175c1.pdf",
-                            "type": "inc_exp_schedules",
-                            "label": "Schedules To Income And Expenditure"
-                        },
-                        {
-                            "name": "BPT19.pdf",
-                            "url": "/objects/c3d0135c-1f23-4880-ae60-6dce44c7e2ef.pdf",
-                            "type": "cash_flow",
-                            "label": "Cash Flow Statement"
-                        },
-                        {
-                            "name": "Audit Report  2019-20.pdf",
-                            "url": "/objects/57ce419b-1db3-4102-9743-7bcbd0786563.pdf",
-                            "type": "auditor_report",
-                            "label": "Auditor Report"
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2018-19",
-                    "key": "fy2018-19_auditedAnnualFySt",
-                    "postion": 5,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": false,
-                    "file": {
-                        "name": "testName2018-19",
-                        "url": "https://www.test.com/2018-19.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2017-18",
-                    "key": "fy2017-18_auditedAnnualFySt",
-                    "postion": 6,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": false,
-                    "file": {
-                        "name": "testName2017-18",
-                        "url": "https://www.test.com/2017-18.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2016-17",
-                    "key": "fy2016-17_auditedAnnualFySt",
-                    "postion": 7,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": false,
-                    "file": {
-                        "name": "testName2016-17",
-                        "url": "https://www.test.com/2016-17.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                },
-                {
-                    "warning": [],
-                    "label": "FY 2015-16",
-                    "key": "fy2015-16_auditedAnnualFySt",
-                    "postion": 8,
-                    "type": "auditedAnnualFySt",
-                    "formFieldType": "file",
-                    "value": "",
-                    "isPdfAvailable": false,
-                    "file": {
-                        "name": "testName2015-16",
-                        "url": "https://www.test.com/2015-16.pdf"
-                    },
-                    "fileAlreadyOnCf": [
-                        {
-                            "name": "",
-                            "url": "",
-                            "type": "",
-                            "label": ""
-                        }
-                    ],
-                    "fileRejectOptions": [
-                        "Balance Sheet",
-                        "Schedules To Balance Sheet",
-                        "Income And Expenditure",
-                        "Schedules To Income And Expenditure",
-                        "Cash Flow Statement",
-                        "Auditor Report"
-                    ]
-                }
-            ],
+            "year": [],
             "status": "Na",
             "value": "",
-            "isDraft": true,
-            "readonly": false
+            "isDraft": true
         }
     ]
-}
+};
 const accountPractice = {
+    "_id": "666764fa1d285021388bedbd",
     "key": "accountPractice",
+    "icon": "",
+    "formType": "form1",
     "label": "Accounting Practice",
+    "id": "s4",
     "displayPriority": 4,
+    "__v": 0,
     "data": [
         {
-            "key": 'accSysAndProcess1',
-            "label": "I. Accounting Systems and Processes",
-            "section": 'accordion',
+            "key": "accSysAndProcess",
+            "section": "accordion",
             "formFieldType": "questionnaire",
+            "label": "I. Accounting Systems and Processes",
             "data": [
                 {
                     "key": "accSystem",
+                    "readOnly": true,
+                    "class": "",
                     "label": "What is the accounting system being followed by the ULB?",
                     "position": "1",
+                    "quesPos": 53,
                     "required": true,
-                    options: [
-                        { label: "Cash Basis of Accounting", info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
-                        { label: "Accrual Basis of Accounting", info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
-                        { label: "Modified Cash/ Accrual Accounting", info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." }
-                    ],
+                    "info": {
+                        "Cash basis of accounting": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.",
+                        "Accrual basis of accounting": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.",
+                        "Modified": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
+                    },
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "showInputBox": "",
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
+                    ],
+                    "options": [
+                        {
+                            "id": "Cash Basis of Accounting"
+                        },
+                        {
+                            "id": "Accrual Basis of Accounting"
+                        },
+                        {
+                            "id": "Modified Cash/ Accrual Accounting"
+                        }
+                    ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "accProvision",
+                    "readOnly": true,
+                    "class": "",
                     "label": "What accounting provisions or framework does the ULB follow?",
                     "position": "2",
+                    "quesPos": 54,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    options: [
-                        { label: "National Municipal Accounting Manual", },
-                        { label: "State-specific Municipal Accounting Manual", },
-                        { label: "Other (Please specify)", 'showInputBox': true }
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
                     ],
-                    // "showInputBox": "Other (Please specify)",
+                    "options": [
+                        {
+                            "id": "National Municipal Accounting Manual"
+                        },
+                        {
+                            "id": "State-specific Municipal Accounting Manual"
+                        },
+                        {
+                            "id": "Other (Please specify)",
+                            "showInputBox": true,
+                            "inputBoxValue": ""
+                        }
+                    ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "accInCashBasis",
+                    "readOnly": true,
+                    "class": "",
                     "label": "Are there any accounts/books/registers maintained in cash basis?",
                     "position": "3",
+                    "quesPos": 55,
                     "required": true,
                     "info": "Types of registers maintained: cash book, receipt register, register of bills for payment, collection register, deposit register, register of fixed assets etc.",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        { label: "Yes (Please specify)", 'showInputBox': true },
-                        { label: "No", }
-                    ],
-                    reason: 'resafsf dfas12',
-                    "inputBoxValue": "",
-                    "value": "Yes (Please specify)",
-                    "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
+                    "validations": [
                         {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
+                    ],
+                    "options": [
+                        {
+                            "id": "Yes (Please specify)",
+                            "showInputBox": true,
+                            "inputBoxValue": ""
                         },
                         {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
+                            "id": "No"
                         }
-                    ]
+                    ],
+                    "inputBoxValue": "",
+                    "value": "",
+                    "status": "Na",
+                    "isDraft": true
                 },
                 {
                     "key": "fsTransactionRecord",
+                    "readOnly": true,
+                    "class": "",
                     "label": "Does the ULB initially record transactions on a cash basis and subsequently prepare accrual accounts for consolidation of financial statements?",
                     "position": "4",
+                    "quesPos": 56,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        "Yes",
-                        "No"
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
                     ],
-                    "showInputBox": "",
+                    "options": [
+                        {
+                            "id": "Yes"
+                        },
+                        {
+                            "id": "No"
+                        }
+                    ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "fsPreparedBy",
+                    "readOnly": true,
+                    "class": "",
                     "label": "Are the Financial Statements prepared internally by the ULB's accounting department, or are they compiled by an external Chartered Accountant?",
                     "position": "5",
+                    "quesPos": 57,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        "Internally (by Accounts Department)",
-                        "External Chartered Accountants",
-                        "Both"
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
                     ],
-                    "showInputBox": "",
+                    "options": [
+                        {
+                            "id": "Internally (by Accounts Department)"
+                        },
+                        {
+                            "id": "External Chartered Accountants"
+                        },
+                        {
+                            "id": "Both"
+                        }
+                    ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "revReceiptRecord",
+                    "readOnly": true,
+                    "class": "",
                     "label": "Is the revenue receipt recorded when the cash is received or when it is accrued/event occurs?",
                     "position": "6",
+                    "quesPos": 58,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
+                    ],
                     "options": [
-                        { label: "Recorded when cash is received" },
-                        { label: "Recorded when they are accrued" },
-                        { label: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true }
+                        {
+                            "id": "Recorded when cash is received"
+                        },
+                        {
+                            "id": "Recorded when they are accrued"
+                        },
+                        {
+                            "id": "Both (Please specify which transactions are recognised in accrual basis)",
+                            "showInputBox": true,
+                            "inputBoxValue": ""
+                        }
                     ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "expRecord",
+                    "readOnly": true,
+                    "class": "",
                     "label": "Is the expense recorded when it is paid or when it is incurred/event occurs?",
                     "position": "7",
+                    "quesPos": 59,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
+                    ],
                     "options": [
-                        { label: "Recorded when cash is paid" },
-                        { label: "Recorded when they are accrued" },
-                        { label: "Both (Please specify which transactions are recognised in accrual basis)", showInputBox: true },
+                        {
+                            "id": "Recorded when cash is paid"
+                        },
+                        {
+                            "id": "Recorded when they are accrued"
+                        },
+                        {
+                            "id": "Both (Please specify which transactions are recognised in accrual basis)",
+                            "showInputBox": true,
+                            "inputBoxValue": ""
+                        }
                     ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "accSoftware",
+                    "readOnly": true,
+                    "class": "",
                     "label": "What accounting software is currently in use by the ULB?",
                     "position": "8",
+                    "quesPos": 60,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
+                    ],
                     "options": [
-                        { label: "Centralized system provided by the State" },
-                        { label: "Standalone software" },
-                        { label: "Tally" },
-                        { label: "Other (Please specify)", showInputBox: true },
-                        { label: "None" }
+                        {
+                            "id": "Centralized system provided by the State"
+                        },
+                        {
+                            "id": "Standalone software"
+                        },
+                        {
+                            "id": "Tally"
+                        },
+                        {
+                            "id": "Other (Please specify)",
+                            "showInputBox": true,
+                            "inputBoxValue": ""
+                        },
+                        {
+                            "id": "None"
+                        }
                     ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "onlineAccSysIntegrate",
+                    "readOnly": true,
+                    "class": "",
                     "label": "Does the online accounting system integrate seamlessly with other municipal systems?",
                     "position": "9",
+                    "quesPos": 61,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
+                    ],
                     "options": [
-                        { label: "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)", showInputBox: true },
-                        { label: "No" }
+                        {
+                            "id": "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)",
+                            "showInputBox": true,
+                            "inputBoxValue": ""
+                        },
+                        {
+                            "id": "No"
+                        }
                     ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "muniAudit",
+                    "readOnly": true,
+                    "class": "",
                     "label": "Who does the municipal audit of financial statements ?",
                     "position": "10",
+                    "quesPos": 62,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "radio",
                     "canShow": true,
-                    "options": [
-                        "External Chartered Accountant (CA)",
-                        "State Audit Department"
+                    "validations": [
+                        {
+                            "name": "required",
+                            "validator": "required",
+                            "message": "Please fill in this required field."
+                        }
                     ],
-                    "showInputBox": "",
+                    "options": [
+                        {
+                            "id": "External Chartered Accountant (CA)"
+                        },
+                        {
+                            "id": "State Audit Department"
+                        }
+                    ],
                     "inputBoxValue": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "required",
-                            validator: 'inputBoxValue',
-                            message: "Please fill in this required field."
-                        }
-                    ]
+                    "isDraft": true
                 }
             ]
         },
         {
-            "key": 'accSysAndProcess2',
-            "label": "II.Staffing - Finance & Accounts Department",
-            "section": 'accordion',
+            "key": "staffing",
+            "section": "accordion",
             "formFieldType": "questionnaire",
+            "label": "II.Staffing - Finance & Accounts Department",
             "data": [
                 {
                     "key": "totSanction",
+                    "readOnly": true,
+                    "class": "",
                     "label": "What is the total sanctioned posts for finance & accounts related positions?",
                     "position": "11",
+                    "quesPos": 63,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "number",
                     "canShow": true,
+                    "validations": [
+                        {
+                            "name": "min",
+                            "validator": 0,
+                            "message": "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            "name": "max",
+                            "validator": 9999,
+                            "message": "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            "name": "decimal",
+                            "validator": 0,
+                            "message": "Please enter a whole number for this field."
+                        }
+                    ],
                     "warning": [
                         {
                             "value": 0,
@@ -965,44 +766,40 @@ const accountPractice = {
                     "max": 9999,
                     "min": 0,
                     "decimal": 0,
-                    "validation": "",
-                    "logic": "",
+                    "autoSumValidation": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "min",
-                            validator: 0,
-                            message: "Please enter a number between 0 and 9999."
-                        },
-                        {
-                            name: "max",
-                            validator: 9999,
-                            message: "Please enter a number between 0 and 9999."
-                        },
-                        {
-                            name: "decimal",
-                            validator: 0,
-                            message: "Please enter a whole number for this field."
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "totVacancy",
+                    "readOnly": true,
+                    "class": "",
                     "label": "What is the total vacancy across finance & accounts related positions?",
                     "position": "12",
+                    "quesPos": 64,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "number",
                     "canShow": true,
+                    "validations": [
+                        {
+                            "name": "min",
+                            "validator": 0,
+                            "message": "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            "name": "max",
+                            "validator": 9999,
+                            "message": "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            "name": "decimal",
+                            "validator": 0,
+                            "message": "Please enter a whole number for this field."
+                        }
+                    ],
                     "warning": [
                         {
                             "value": 0,
@@ -1013,44 +810,40 @@ const accountPractice = {
                     "max": 9999,
                     "min": 0,
                     "decimal": 0,
-                    "validation": "lessThan",
-                    "logic": "11",
+                    "autoSumValidation": "lessThan",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "min",
-                            validator: 0,
-                            message: "Please enter a number between 0 and 9999."
-                        },
-                        {
-                            name: "max",
-                            validator: 9999,
-                            message: "Please enter a number between 0 and 9999."
-                        },
-                        {
-                            name: "decimal",
-                            validator: 0,
-                            message: "Please enter a whole number for this field.s"
-                        }
-                    ]
+                    "isDraft": true
                 },
                 {
                     "key": "accPosition",
+                    "readOnly": true,
+                    "class": "",
                     "label": "How many finance & accounts related positions currently are filled on contractual basis or outsourced?",
                     "position": "13",
+                    "quesPos": 65,
                     "required": true,
                     "info": "",
                     "placeHolder": "",
                     "formFieldType": "number",
                     "canShow": true,
+                    "validations": [
+                        {
+                            "name": "min",
+                            "validator": 0,
+                            "message": "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            "name": "max",
+                            "validator": 9999,
+                            "message": "Please enter a number between 0 and 9999."
+                        },
+                        {
+                            "name": "decimal",
+                            "validator": 0,
+                            "message": "Please enter a whole number for this field."
+                        }
+                    ],
                     "warning": [
                         {
                             "value": 0,
@@ -1061,39 +854,15 @@ const accountPractice = {
                     "max": 9999,
                     "min": 0,
                     "decimal": 0,
-                    "validation": "",
-                    "logic": "",
+                    "autoSumValidation": "",
                     "value": "",
                     "status": "Na",
-                    "isDraft": true,
-                    "readonly": false,
-                    validations: [
-                        {
-                            name: "required",
-                            validator: 'required',
-                            message: "Please fill in this required field."
-                        },
-                        {
-                            name: "min",
-                            validator: 0,
-                            message: "Please enter a number between 0 and 9999."
-                        },
-                        {
-                            name: "max",
-                            validator: 9999,
-                            message: "Please enter a number between 0 and 9999."
-                        },
-                        {
-                            name: "decimal",
-                            validator: 0,
-                            message: "Please enter a whole number for this field."
-                        }
-                    ]
+                    "isDraft": true
                 }
             ]
         }
     ]
-}
+};
 
 const reviewSubmit = {
     key: 'reviewSubmit',
