@@ -19,7 +19,7 @@ import { MaterialModule } from '../../../../material.module';
           <mat-divider *ngIf="!last"></mat-divider>
         }
     	</mat-select>
-    	<ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+    	<ng-container *ngFor="let validation of this.validations;" ngProjectAs="mat-error">
     		<mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
     	</ng-container>
     </mat-form-field>
@@ -33,13 +33,15 @@ export class SelectComponent {
   @Input() group!: FormGroup;
   @Input() options!: any[];
   @Input() disaplayLabel: boolean = true;
+  @Input() parentField: any;
+  validations: any[] = [];
 
   constructor() { }
   ngOnInit() {
     // console.log('----group sel --',this.group);
     this.options = this.options || this.field.options;
     // console.log('this.options---',this.options);
-
+    this.validations = this.parentField?.validations || this.field.validations;
   }
   // getValue(name: string) {
   //   return this.group.value.get(name).value;

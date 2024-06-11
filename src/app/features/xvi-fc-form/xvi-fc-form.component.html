@@ -17,7 +17,7 @@
 
             <!-- <div class="border-top border-secondary"></div> -->
             <mat-divider></mat-divider>
-            
+
             <div class="container mt-4" [ngClass]="tab.class">
                 <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
                 <div class="text-bg-light border rounded mt-3 mb-3 p-3" *ngIf="tab.key !== 'reviewSubmit'">
@@ -36,7 +36,7 @@
                     <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
                     }
                     @else if (tab.key === 'accountPractice') {
-                    <!-- <app-accounting-practice [field]="tab" [group]="getTabGroup(tab.key)"></app-accounting-practice> -->
+                    <app-accounting-practice [field]="tab" [group]="getTabGroup(tab.key)"></app-accounting-practice>
                     }
                     @else if (tab.key === 'reviewSubmit') {
                     <app-review-submit [fields]="tabs" [group]="form" [stepper]="stepper"></app-review-submit>
@@ -66,10 +66,17 @@
                     <div class="float-start" *ngIf="selectedStepIndex !==0">
                         <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
                     </div>
+                    @if (tab.key === 'reviewSubmit') {
+                    <div class="float-end">
+                        <button class="ms-2 primary-btn-1" (click)="saveAs('draft')">Submit</button>
+                    </div>
+                    } @else {
                     <div class="float-end">
                         <button class="ms-2 primary-btn-2" (click)="saveAs('draft')">Save as Draft</button>
                         <button class="ms-2 primary-btn-1" (click)="saveAs('draft')">Continue to Next Section</button>
                     </div>
+                    }
+
                 </div>
             </div>
             <!-- <button mat-button matStepperPrevious>Back</button>

@@ -20,7 +20,7 @@ export class DynamicFormService {
       if (tableData) {
         const tableCol: any = [];
         tableData.forEach((col: any) => {
-          tableCol[col.key] = this.createContorl(col);
+          tableCol[col.key] = this.createContorl(col, row.validations);
         });
         // console.log('row----',row.key);
 
@@ -145,8 +145,9 @@ export class DynamicFormService {
     }
     return null;
   }
-  createContorl(field: any) {
-    return new FormControl(field.value || null, this.bindValidations(field.validations));
+  createContorl(field: any, validations = false) {
+    const validationsData = validations || field.validations;
+    return new FormControl(field.value || '', this.bindValidations(validationsData));
     // return new FormControl(field.value || '');
   }
   tabControl(fields: any[]) {

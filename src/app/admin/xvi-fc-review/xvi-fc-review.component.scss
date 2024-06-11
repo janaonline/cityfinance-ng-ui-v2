@@ -1,5 +1,16 @@
+.dashboard-filter{
+  padding: 25px 20px 0;
+}
 .card-custom {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(219, 219, 219, 1);
+  padding: 30px 20px;
+  h3{
+    font-size: 24px;
+    font-weight: 700;
+  }
+  p{
+    margin: 0;
+  }
 }
 .mat-mdc-table .mat-mdc-header-cell{
     background: rgba(25, 51, 105, 1) !important;
@@ -19,6 +30,10 @@
     font-size: 14px;
     line-height: 18px;
     padding: 5px 20px;
+    display: inline-block;
+}
+.form-status{
+  min-width: 185px;
 }
 .in-progress, .under-review,.action-link  {
     color: rgba(230, 126, 21, 1);
@@ -33,6 +48,7 @@
 .action-link{
     background-color: #fff;
     text-decoration: none;
+    width: 100px;
 }
 .status-in-progress {
     color: #ff9800;

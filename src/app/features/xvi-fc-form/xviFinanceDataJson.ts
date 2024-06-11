@@ -3558,7 +3558,15 @@ const revenue = {
             "max": 999999999999999,
             "min": -999999999999999,
             "decimal": 0,
-            "autoSumValidation": "sum",
+            "validation": "sum",
+            totalSumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
+            "logic": [
+                "1.1",
+                "1.2",
+                "1.3",
+                "1.4"
+            ],
+            "yearType": 'dynamicYear',
             "year": [
                 {
                     "warning": [
