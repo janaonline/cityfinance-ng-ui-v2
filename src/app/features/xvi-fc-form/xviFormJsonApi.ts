@@ -1,4 +1,5 @@
-import { financialData } from "./xviFinanceDataJson";
+// import { financialData } from "./xviFinanceDataJson";
+import { financialData } from "./xviFinanceDataJsonApi";
 import { slb } from "./xviFcSlb";
 
 const basicTab = {
@@ -1104,12 +1105,12 @@ const reviewSubmit = {
 export const tabsJson = {
     data: {
         "tabs": [
-            basicTab,
+            // basicTab,
             financialData,
             uploadDoc,
             accountPractice,
             // slb,
-            reviewSubmit
+            // reviewSubmit
         ]
     }
 };
