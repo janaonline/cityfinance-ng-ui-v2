@@ -1,6 +1,6 @@
 <div>
     <!-- Tab header. -->
-    <div class="indro-block">
+    <div class="dotted-border-secondary bg-light p-3 mb-3">
         <p>Instructions:</p>
         <ol>
             <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to
@@ -18,75 +18,80 @@
                 Copy of Audited Annual Financial Statements
             </mat-panel-title>
         </mat-expansion-panel-header>
-        <div class="audited-statement-block">
-            <div class="statement-block-row" *ngFor="let year of field.formArrays; index as i">
-                <h5>{{year.label}}</h5>
+        <div class="p-4 dotted-border-bottom-primary" *ngFor=" let year of field.data[0].year; index as i">
+            <h5 class="fw-bold mb-3">{{year.label}}</h5>
 
-                <!-- {{getYearGroup(i,year.key).getRawValue() | json}} -->
-                <!-- {{year.verifyStatus | json}} -->
-                @if (year.isPdfAvailable) {
-                <div class="uploaded-files">
-                    <div class="uploaded-block already-availabe">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex justify-content-start align-items-center">
-                                <div class="upload-doc-label">
-                                    <!-- <mat-icon class="pdf" style="color:red">picture_as_pdf</mat-icon> -->
-                                    <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger "></i>
-                                    <p class="d-inline">Already available on CityFinance</p>
-                                </div>
-                            </div>
-                            <div class="align-self-center delete-doc-icon">
-                                <button class="ms-2 primary-btn-2" (click)="openDialog(year,i)">View & Verify</button>
+            <!-- {{getYearGroup(i,year.key).getRawValue() | json}} -->
+            <!-- {{year.verifyStatus | json}} -->
+            @if (year.isPdfAvailable) {
+            <div>
+                <div class="border rounded border-secondary-subtle bg-light p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-start align-items-center">
+                            <div class="">
+                                <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger "></i>
+                                <p class="d-inline">Already available on CityFinance</p>
                             </div>
                         </div>
-                    </div>
-                    <!-- verified by ulb -->
-                    @if(year.verifyStatus === 2) {
-                    <div class="verified-info">
-                        <div class="d-flex align-items-center justify-content-start">
-                            <span><mat-icon class="material-icons-round  me-1"> verified </mat-icon></span>
-                            <p>
-                                You have successfully verified the document already available on City Finance and
-                                accepted it.
-                            </p>
+                        <div class="align-self-center delete-doc-icon">
+                            <button class="ms-2 primary-btn-2" (click)="openDialog(year,i)">View & Verify</button>
                         </div>
                     </div>
-                    }
-
-                    @else if (year.verifyStatus === 3) {
-                    <!-- rejected by ulb -->
-                    <div class="verified-info verified-info-reject">
-                        <div class="d-flex align-items-center justify-content-start">
-                            <span><mat-icon class="material-icons-round me-1"> verified </mat-icon></span>
-                            <p>
-                                You have rejected the document already available on City Finance, re-uploaded another
-                                file, and provided the following reason: <strong>Files are in correct</strong>
-                            </p>
-                        </div>
-                    </div>
-
-                    <p class="mt-3 mb-1">Uploaded Files</p>
-
-                    <div class="d-flex border rounded align-items-center p-3">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger "></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <p>Financial document 2022-23.pdf</p>
-                            <p class="file-size">1.5 MB</p>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-trash3-fill fs-4 me-1 text-danger"></i>
-                        </div>
-                    </div>
-                    }
-
-
                 </div>
-                } @else {
-                <app-file [field]="year" [group]="getYearGroup(i,year.key)"></app-file>
+                <!-- verified by ulb -->
+                @if(getYearGroup(i,year.key).getRawValue().verifyStatus === 2) {
+                <div class="verified-info">
+                    <div class="d-flex align-items-center justify-content-start">
+                        <span><mat-icon class="material-icons-round  me-2 text-success"> verified </mat-icon></span>
+                        <p>
+                            You have successfully verified the document already available on City Finance and
+                            accepted it.
+                        </p>
+                    </div>
+                </div>
                 }
+
+                @else if (getYearGroup(i,year.key).getRawValue().verifyStatus === 3) {
+                <!-- rejected by ulb -->
+                <div class="verified-info verified-info-reject">
+                    <div class="d-flex align-items-center justify-content-start">
+                        <span><mat-icon class="material-icons-round me-2 text-danger"> verified </mat-icon></span>
+                        <div>
+                            <p>
+                                You have rejected the document already available on City Finance, re-uploaded
+                                another file, and provided the following
+                            </p>
+                            <p> <strong>Reason:</strong> {{getYearGroup(i,year.key).getRawValue().rejectReason}} </p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="mt-3 mb-1">Uploaded Files</p>
+
+                <div class="d-flex border rounded align-items-center p-3"
+                    *ngIf="getYearGroup(i,year.key).get('file')?.getRawValue().name">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger "></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <p>{{getYearGroup(i,year.key).get('file')?.getRawValue().name}}</p>
+                        <p class="file-size">{{getYearGroup(i,year.key).get('file')?.getRawValue().size}}</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-trash3-fill fs-4 me-1 text-danger" (click)="deleteFile(year.key)"></i>
+                    </div>
+                    <!-- TODO: Function to delete the file. -->
+                    <!-- <div class="delete align-self-center flex-shrink-0" (click)="deleteFile()">
+                            <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
+                        </div> -->
+                </div>
+                }
+
+
             </div>
+            } @else {
+            <app-file [field]="year" [group]="getYearGroup(i,year.key)"></app-file>
+            }
         </div>
     </mat-expansion-panel>
 

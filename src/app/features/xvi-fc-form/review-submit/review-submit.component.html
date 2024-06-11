@@ -1,20 +1,14 @@
-@for (tab of fields; track $index) {
-<!-- {{tab.key}} ----------<br> -->
-<ng-template matStepLabel>
-    <span class="st-title com-style" [title]="tab?.label">
-        {{ (tab?.label).split( " " )[0] }}
-        {{ (tab?.label).split(" ")[1] }}<br />
-        {{ (tab?.label).split(" ")[2] }}</span>
-</ng-template>
+@for (tab of fields; track tab.key;  let  i = $index) {
 
 <div class="container mt-4 ">
-    <div class="text-bg-light border rounded mt-3 mb-3 section-box clearfix">
+    <div class="text-bg-light border rounded mt-3 mb-3 section-box clearfix" *ngIf="tab.key !== 'reviewSubmit'">
         <div class="float-start">
             <p class="text-muted">Section {{tab.displayPriority}}/ {{fields.length}}</p>
             <h4 class="fw-bold">{{tab.label}}</h4>
         </div>
         <div class="float-end">
-            <button matStepperNext class="ms-2 me-2 mt-1 btn-edit"><mat-icon>edit</mat-icon> Edit</button>
+            <button matStepperNext class="ms-2 me-2 mt-1 btn-edit" (click)="editStep(i)"><mat-icon>edit</mat-icon>
+                Edit</button>
         </div>
     </div>
 
@@ -22,7 +16,7 @@
     <mat-card>
         <mat-card-content>
             <table class="table review-table">
-                <tr *ngFor="let field of tab?.formArrays;let i = index;">
+                <tr *ngFor="let field of tab?.data;let i = index;">
                     <td>{{field.label}}</td>
                     <td class="fw-bold">{{field.value}}</td>
                 </tr>
@@ -31,8 +25,8 @@
     </mat-card>
 
     }
-    @else if (tab.key === 'financialData') {
-    <ng-container *ngFor="let field of tab?.formArrays;let i = index;">
+    @else if (tab.key === 'financialData' || tab.key === 'serviceLevelBenchmark') {
+    <ng-container *ngFor="let field of tab?.data;let i = index;">
         <mat-expansion-panel [expanded]="panelOpenState" class="mt-3">
             <mat-expansion-panel-header>
                 <mat-panel-title>
@@ -42,11 +36,11 @@
             <div class="year-table mt-2">
                 <table class="table review-table">
                     <tbody>
-                        <tr *ngFor="let row of field.tableRow;let i = index;">
+                        <tr *ngFor="let row of field.data;let i = index;">
                             <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
                                 <span class="text-danger" *ngIf="row.required">*</span>
                             </td>
-                            <td class="fw-bold" *ngFor="let col of row.tableData;let j = index;">
+                            <td class="fw-bold" *ngFor="let col of row.year;let j = index;">
                                 {{col.value}}
                             </td>
                         </tr>
@@ -57,7 +51,7 @@
         </mat-expansion-panel>
     </ng-container>
     }
-    @else if (tab.key === 'auditedAnnualFySt') {
+    @else if (tab.key === 'uploadDoc') {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3">
         <mat-expansion-panel-header>
             <mat-panel-title>
@@ -65,7 +59,7 @@
             </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="audited-statement-block">
-            <div class="statement-block-row" *ngFor="let year of tab.formArrays; index as i">
+            <div class="statement-block-row" *ngFor="let year of tab.data[0].year; index as i">
                 <h5>{{year.label}}</h5>
                 @if (year.isPdfAvailable) {
                 <div class="uploaded-files">
@@ -145,13 +139,13 @@
     </mat-expansion-panel>
     }
     @else if (tab.key === 'accountPractice') {
-    <mat-expansion-panel [expanded]="panelOpenState" class="mt-3" *ngFor="let field of tab.formArrays">
+    <mat-expansion-panel [expanded]="panelOpenState" class="mt-3" *ngFor="let field of tab.data">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 {{field.label}}
             </mat-panel-title>
         </mat-expansion-panel-header>
-        <ng-container *ngFor="let question of field.questions">
+        <ng-container *ngFor="let question of field.data">
             <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
                 {{question.position}}.
                 {{question.label}}
@@ -159,9 +153,7 @@
             @if (question.formFieldType === 'radio') {
             <div class="form-check pt-1" *ngFor="let optionValue of question.options; index as i">
                 <label class="form-check-label" [attr.for]="question.key+i">
-                    <input class="form-check-input" type="radio" [attr.id]="question.key+i" [name]="question.key"
-                        value="{{optionValue}}" />
-                    {{optionValue.option ? optionValue.option: optionValue }}
+                    {{optionValue.id ? optionValue.id: optionValue }}
                 </label>
                 @if (optionValue.showInputBox) {
                 <input class="form-control" type="text" [value]="question.inputBoxValue" />
@@ -173,9 +165,6 @@
         </ng-container>
     </mat-expansion-panel>
     }
-
-
-
 </div>
 
 }

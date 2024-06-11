@@ -9,6 +9,7 @@ export interface FieldConfig {
   key: string;
   formFieldType: string;
   tableRow?: any[];
+  data?: any[];
   // inputType: string;
   options?: any[];
   collections?: any;
@@ -19,10 +20,12 @@ export interface FieldConfig {
   uploading?: boolean;
   position?: number;
   readonly?: boolean;
+  readOnly?: boolean;
   fileAlreadyOnCf?: any[];
   multiple?: boolean;
   verifyStatus?: number;
   allowedFileTypes?: string[];
+  fileRejectOptions?: string[];
 }
 
 export interface JsonFieldConfig {

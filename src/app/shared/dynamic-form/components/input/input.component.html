@@ -4,23 +4,27 @@
 
 @switch (field.formFieldType) {
 @case ('amount') {
+  <!-- {{field | json}}------- -->
 <mat-form-field appearance="outline" floatLabel="always" [formGroup]="group">
   <!-- <mat-form-field [formGroup]="group"> -->
-  <!-- <mat-label>{{field.label}}</mat-label> -->
-  <input matInput [formControlName]="field.key" type="number" placeholder="0">
+  <mat-label>{{field.label}}</mat-label>
+  
+  <input onwheel="this.blur()" matInput [formControlName]="field.key" type="number" 
+  [readonly]="readonly" placeholder="0" appNoUpDown>
   <span matTextPrefix>&#8377;&nbsp;</span>
   <!-- <span matTextSuffix>.00</span> -->
-  <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+  <ng-container *ngFor="let validation of validations;" ngProjectAs="mat-error">
     <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
   </ng-container>
 </mat-form-field>
 }
 @default {
-<label class="fw-bold">{{field.position ? field.position+'. ': ''}}{{field.label}} <span class="text-danger">*</span></label>
+<label class="fw-bold" *ngIf="disaplayLabel">{{field.position ? field.position+'. ': ''}}{{field.label}}<span
+    class="text-danger">*</span></label>
 <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
   <!-- <mat-label>{{field.position}}.{{field.label}}</mat-label> -->
-  <input matInput [formControlName]="field.key" [type]="field.formFieldType" [readonly]="field.readonly">
-  <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+  <input onwheel="this.blur()" matInput [formControlName]="field.key" [type]="field.formFieldType" [readonly]="field.readonly" appNoUpDown>
+  <ng-container *ngFor="let validation of validations;" ngProjectAs="mat-error">
     <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
   </ng-container>
 </mat-form-field>
