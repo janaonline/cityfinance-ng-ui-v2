@@ -14,6 +14,7 @@ import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
 import Swal from 'sweetalert2';
 
+
 // import { Tab, APPROVAL_TYPES } from '../../core/models/models';
 import { AlreadyUpdatedUrlPipe } from '../../core/pipes/already-updated-url.pipe';
 // import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
@@ -38,6 +39,7 @@ import {
   MatSnackBarLabel,
   MatSnackBarRef,
 } from '@angular/material/snack-bar';
+// import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
   selector: 'app-xvi-fc-form',
@@ -61,7 +63,7 @@ import {
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
-
+    // SweetAlert2Module,
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -162,11 +164,11 @@ export class XviFcFormComponent {
       Swal.fire({
         title: "Unsaved changes!",
         text: "Save as draft and continue",
-        icon: "question"
+        icon: "info"
       });
     }
 
-    console.log('this.form.value', this.form.value);
+    // console.log('this.form.value', this.form.value);
     // Object.entries(this.form.value)
     const formJson: any = this.form.value;
 
@@ -205,7 +207,7 @@ export class XviFcFormComponent {
       console.log('formJson[tab.key]', formJson[tab.key]);
       if (tab.key !== 'reviewSubmit') {
         tab['data'].forEach((field: any, i: number) => {
-          console.log('field---', field);
+          // console.log('field---', field);
           const fieldData = {
             key: field.key,
             value: formJson[tab.key][i][field.key],
@@ -242,6 +244,7 @@ export class XviFcFormComponent {
         panelClass: ['snackbar-success']
       });
       this.formSaveLoader = false;
+      Swal.close();
     });
   }
 
