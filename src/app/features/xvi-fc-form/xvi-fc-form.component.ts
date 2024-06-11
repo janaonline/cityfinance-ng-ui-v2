@@ -269,7 +269,8 @@ export class XviFcFormComponent {
   onLoad() {
     this.isLoader = true;
     // this.ulbId = '5dcfca53df6f59198c4ac3d5';
-    this.ulbId = '5dd24e98cc3ddc04b552b7d4';
+    this.ulbId = this.loggedInUserDetails.ulb;
+    // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
       this.tabs = res?.data?.tabs;
 
@@ -302,6 +303,8 @@ export class XviFcFormComponent {
       this.isLoader = false;
       // this.msgForLedgerUpdate = res?.data?.messages;
       // if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
+    },()=>{
+      this.isLoader = false;
     });
   }
 
