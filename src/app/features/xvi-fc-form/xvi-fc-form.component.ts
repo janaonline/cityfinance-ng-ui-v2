@@ -3,7 +3,8 @@ import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFo
 import { CommonModule } from '@angular/common';
 // import { tabsJson } from './formJson';
 // import { tabsJson } from './xviFormJson';
-import { tabsJson } from './xviFormJsonApi';
+// import { tabsJson } from './xviFormJsonApi';
+import { tabsJson } from './xviJsonApiFull';
 import { MaterialModule } from '../../material.module';
 import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
@@ -229,9 +230,9 @@ export class XviFcFormComponent {
     // this.ulbId = '5dcfca53df6f59198c4ac3d5';
     this.ulbId = '5dd24e98cc3ddc04b552b7d4';
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
-      this.tabs = this.fields = res?.data?.tabs;
+      // this.tabs = this.fields = res?.data?.tabs;
 
-      // this.tabs = tabsJson.data.tabs;
+      this.tabs = tabsJson.data.tabs;
       this.tabs.push({
         key: 'reviewSubmit',
         label: "Review & Submit",

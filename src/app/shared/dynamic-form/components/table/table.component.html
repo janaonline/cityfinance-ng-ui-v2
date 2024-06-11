@@ -19,7 +19,7 @@
                     </th>
                 </tr> -->
                 <tr *ngFor="let row of field.data;let i = index;" [ngClass]="row.class">
-                    <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
+                    <td class="first-col" [ngClass]="row.class">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
                             *ngIf="row.required">*&nbsp;</span>
                         <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
                     </td>
