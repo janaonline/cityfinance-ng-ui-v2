@@ -28,7 +28,8 @@ export class InputComponent {
   ngOnInit() {
     // console.log('----field in --',this.field);
     // console.log('----group in --',this.group);
-    this.readonly = this.field.readonly || this.readonly;
+    // this.readonly = this.field.readonly || this.readonly;
+    this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
   }
   hasError(key: string, name: string) {

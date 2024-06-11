@@ -230,12 +230,13 @@ export class XviFcFormComponent {
     this.ulbId = '5dd24e98cc3ddc04b552b7d4';
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
       this.tabs = this.fields = res?.data?.tabs;
+
+      // this.tabs = tabsJson.data.tabs;
       this.tabs.push({
         key: 'reviewSubmit',
         label: "Review & Submit",
         "displayPriority": this.tabs.length + 1,
       });
-      // this.tabs = tabsJson.data.tabs;
       this.form = this.formService.tabControl(this.tabs);
       // this.hideForm = res?.data?.hideForm;
       // this.notice = res?.data?.notice;

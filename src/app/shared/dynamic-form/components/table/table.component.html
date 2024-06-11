@@ -27,11 +27,11 @@
                         <!-- {{row.readonly| json}}------- -->
                         @if (['amount', 'number'].includes(col.formFieldType)) {
                             <!-- {{row.validations | json}} -->
-                        <app-input [field]="col" [group]="getTableGroup(field.key, row.key)" [parentField]="row" [readonly]="row.readonly"
+                        <app-input [field]="col" [group]="getTableGroup(field.key, row.key)" [parentField]="row"
                             [disaplayLabel]="false"></app-input>
                         } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
                            
-                        <app-select [field]="col" [options]="row.options"  [parentField]="row" [group]="getTableGroup(field.key, row.key)"
+                        <app-select [field]="col" [options]="row.options" [parentField]="row" [group]="getTableGroup(field.key, row.key)"
                             [disaplayLabel]="false"></app-select>
                         } @else if (col.formFieldType === 'heading') {
                         {{col.label}}

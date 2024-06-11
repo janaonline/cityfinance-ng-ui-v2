@@ -176,7 +176,7 @@ const revenue = {
                     "position": 1,
                     "type": "totOwnRevenue",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -317,7 +317,7 @@ const revenue = {
                     "position": 1,
                     "type": "taxRevenue",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -453,7 +453,7 @@ const revenue = {
                     "position": 1,
                     "type": "pTax",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -589,7 +589,7 @@ const revenue = {
                     "position": 1,
                     "type": "noOfRegiProperty",
                     "formFieldType": "number",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -725,7 +725,7 @@ const revenue = {
                     "position": 1,
                     "type": "otherTax",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -861,7 +861,7 @@ const revenue = {
                     "position": 1,
                     "type": "feeAndUserCharges",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -997,7 +997,7 @@ const revenue = {
                     "position": 1,
                     "type": "interestIncome",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -1133,7 +1133,7 @@ const revenue = {
                     "position": 1,
                     "type": "otherIncome",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -1269,7 +1269,7 @@ const revenue = {
                     "position": 1,
                     "type": "rentalIncome",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -1410,7 +1410,7 @@ const revenue = {
                     "position": 1,
                     "type": "totalGrants",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -1551,7 +1551,7 @@ const revenue = {
                     "position": 1,
                     "type": "centralGrants",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -1687,7 +1687,7 @@ const revenue = {
                     "position": 1,
                     "type": "centralSponsoredScheme",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -1823,7 +1823,7 @@ const revenue = {
                     "position": 1,
                     "type": "unionFinanceGrants",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -1965,7 +1965,7 @@ const revenue = {
                     "position": 1,
                     "type": "otherGrants",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -2101,7 +2101,7 @@ const revenue = {
                     "position": 1,
                     "type": "sfcGrants",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -2237,7 +2237,7 @@ const revenue = {
                     "position": 1,
                     "type": "grantsOtherThanSfc",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -2373,7 +2373,7 @@ const revenue = {
                     "position": 1,
                     "type": "assignedRevAndCom",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -2509,7 +2509,7 @@ const revenue = {
                     "position": 1,
                     "type": "otherRevenue",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
@@ -2652,7 +2652,7 @@ const revenue = {
                     "position": 1,
                     "type": "totalRevenue",
                     "formFieldType": "amount",
-                    "value": 5782
+                    "value": 0
                 },
                 {
                     "warning": [
