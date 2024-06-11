@@ -17,7 +17,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
-// import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+
 
 const materialModules: (any[] | Type<any> | ModuleWithProviders<{}>) = [
   MatButtonModule,
@@ -34,7 +35,7 @@ const materialModules: (any[] | Type<any> | ModuleWithProviders<{}>) = [
   MatTooltipModule,
   MatExpansionModule,
   MatDialogModule,
-  // MatProgressSpinnerModule,
+  MatProgressSpinnerModule,
 
   CommonModule,
   FormsModule,

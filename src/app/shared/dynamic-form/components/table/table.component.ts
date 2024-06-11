@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { FormArray, FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
@@ -10,6 +10,7 @@ import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 @Component({
   selector: 'app-table',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MaterialModule, InputComponent, SelectComponent,],
   templateUrl: './table.component.html',
   styleUrl: './table.component.scss'
@@ -42,7 +43,7 @@ export class TableComponent {
     // console.log('this.years-----', this.yearFields);
   }
   sumLogic() {
-    const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf) : [];
+    const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf).sort((a, b) => a.sumOrder - b.sumOrder) : [];
     // const totalSumFields = this.field.data ? this.field.data.filter(e => e.totalSumOf) : [];
     // console.log('----sumFields --', sumFields);
 
@@ -53,9 +54,13 @@ export class TableComponent {
       )
       .subscribe(data => {
         // console.log('-----data----', data);
-        const currentTable = data[this.field.key];
-        if(!sumFields.length) return;
+        // const currentTable = data[this.field.key];
+        if (!sumFields.length) return;
         sumFields.forEach((sumField) => {
+
+          const currentTable = this.group.get(this.field.key)?.getRawValue();
+
+          // console.log('-----currentTable----', currentTable);
           // console.log('sumField', sumField['sum']);
           // console.log('key', sumField['key']);
           // console.log('sumField year', sumField['year']);
@@ -66,17 +71,21 @@ export class TableComponent {
             sumYears[yearField] = 0;
 
             sumField['sumOf'].forEach((subField: number) => {
+              // console.log('currentTable[subField]---', currentTable, '----', subField, '------', currentTable[subField]);
+
               if (currentTable[subField] && currentTable[subField][yearField] && !isNaN(parseInt(currentTable[subField][yearField]))) {
                 sumYears[yearField] += parseInt(currentTable[subField][yearField]);
               }
             });
-            
+
             // console.log('sumYear total----', sumYears);
 
             // this.group.get(this.field.key)?.get(sumField['key'])?.get(yearField)?.patchValue(sumField, { emitEvent: false, onlySelf: true });
             // console.log('---', this.group.get(this.field.key)?.get(sumField['key'])?.get(yearField)?.getRawValue());
 
           });
+          // console.log('sumYears', sumYears);
+
           this.group.get(this.field.key)?.get(sumField['key'])?.patchValue(sumYears, { emitEvent: false, onlySelf: true });
         })
         // this.total = data.reduce((a: any, b: any) => a + +b.fdnTotalShares, 0)

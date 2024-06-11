@@ -135,20 +135,21 @@ export class NavbarComponent {
     });
   }
   loginLogout(type: string) {
-    if (type == '15th_Fc') {
-      this._router.navigateByUrl("/fc_grant");
-    } else if (type == 'ranking') {
-      this._router.navigateByUrl("/rankings/login");
-    } else if (type == 'logout') {
-      this.authService.loginLogoutCheck.next(false);
-      // this.newCommonService.setFormStatus2223.next(false);
-      localStorage.clear();
-      this.removeSessionItem();
-      this.isLoggedIn = false;
-      this._router.navigateByUrl("rankings/home");
-    } else {
+    // if (type == '15th_Fc') {
+    //   this._router.navigateByUrl("/fc_grant");
+    // } else if (type == 'ranking') {
+    //   this._router.navigateByUrl("/rankings/login");
+    // } else if (type == 'logout') {
+    this.authService.loginLogoutCheck.next(false);
+    // this.newCommonService.setFormStatus2223.next(false);
+    localStorage.clear();
+    this.removeSessionItem();
+    this.isLoggedIn = false;
+    // this._router.navigateByUrl("rankings/home");
+    window.location.href = '/';
+    // } else {
 
-    }
+    // }
     // if (this.btnName == "Login for 15th FC Grants") {
     //   this._router.navigateByUrl("/fc_grant");
     // }
