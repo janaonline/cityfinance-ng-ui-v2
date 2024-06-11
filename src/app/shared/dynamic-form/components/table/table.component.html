@@ -11,13 +11,13 @@
         <!-- <pre>{{group.getRawValue() |json}}</pre> -->
         <table class="table table-sticky">
             <tbody>
-                <!-- <tr>
+                <tr>
                     <th class="first-col">
                     </th>
                     <th *ngFor="let year of yearFields;let j = index;">
-                        {{year}}
+                        FY {{year}}
                     </th>
-                </tr> -->
+                </tr>
                 <tr *ngFor="let row of field.data;let i = index;" [ngClass]="row.class">
                     <td class="first-col" [ngClass]="row.class">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
                             *ngIf="row.required">*&nbsp;</span>
@@ -28,11 +28,11 @@
                         @if (['amount', 'number'].includes(col.formFieldType)) {
                             <!-- {{row.validations | json}} -->
                         <app-input [field]="col" [group]="getTableGroup(field.key, row.key)" [parentField]="row"
-                            [disaplayLabel]="false"></app-input>
+                            [displayInlineLabel]="true"></app-input>
                         } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
                            
                         <app-select [field]="col" [options]="row.options" [parentField]="row" [group]="getTableGroup(field.key, row.key)"
-                            [disaplayLabel]="false"></app-select>
+                            [displayLabel]="false"></app-select>
                         } @else if (col.formFieldType === 'heading') {
                         {{col.label}}
                         }
@@ -50,10 +50,10 @@
                     <td *ngFor="let col of row.year;let j = index;" [formArrayName]="row.key">
                         @if (['amount', 'number'].includes(col.formFieldType)) {
                         <app-input [field]="col" [group]="getTableGroup(field.key, i, row.key, j)"
-                            [disaplayLabel]="false"></app-input>
+                            [displayLabel]="false"></app-input>
                         } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
                         <app-select [field]="col" [options]="row.options"
-                            [group]="getTableGroup(field.key, i, row.key, j)" [disaplayLabel]="false"></app-select>
+                            [group]="getTableGroup(field.key, i, row.key, j)" [displayLabel]="false"></app-select>
                         } @else if (col.formFieldType === 'heading') {
                         {{col.label}}
                         }

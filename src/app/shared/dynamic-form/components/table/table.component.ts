@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { FormArray, FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
@@ -10,6 +10,7 @@ import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 @Component({
   selector: 'app-table',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MaterialModule, InputComponent, SelectComponent,],
   templateUrl: './table.component.html',
   styleUrl: './table.component.scss'

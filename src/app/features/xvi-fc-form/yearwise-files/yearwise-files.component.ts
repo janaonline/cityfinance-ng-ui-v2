@@ -6,7 +6,8 @@ import { FileComponent } from '../../../shared/dynamic-form/components/file/file
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
 import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/verify-documents-dialogue.component';
 // import { deepClone } from '@angular-devkit/core';
-import * as _ from 'lodash';
+// import * as _ from 'lodash';
+import { cloneDeep } from 'lodash-es';
 
 
 @Component({
@@ -56,7 +57,9 @@ export class YearwiseFilesComponent {
 
   openDialog(year: FieldConfig, i: number): void {
     const fg = new FormGroup({});
-    let verifyForm = _.cloneDeep(this.getYearGroup(i, year.key));
+    // let verifyForm = _.cloneDeep(this.getYearGroup(i, year.key));
+    let verifyForm = cloneDeep(this.getYearGroup(i, year.key));
+    // let verifyForm = structuredClone(this.getYearGroup(i, year.key));
 
     const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {
       // width: '1200px',

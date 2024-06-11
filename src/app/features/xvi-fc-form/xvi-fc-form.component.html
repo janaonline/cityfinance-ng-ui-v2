@@ -1,4 +1,5 @@
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
+
     <!-- <form [formGroup]="form"> -->
     <app-loader class="p-3" *ngIf="isLoader"></app-loader>
     <h3 class="fw-bold fs-4 m-1 mb-4">{{ loggedInUserDetails.name }}</h3>
@@ -19,12 +20,16 @@
             <mat-divider></mat-divider>
 
             <div class="container mt-4" [ngClass]="tab.class">
+
                 <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
                 <div class="text-bg-light border rounded mt-3 mb-3 p-3" *ngIf="tab.key !== 'reviewSubmit'">
                     <p class="text-muted pb-2">Section {{tab.displayPriority}}/ {{tabs.length}}</p>
                     <h4 class="fw-bold">{{tab.label}}</h4>
                 </div>
                 <div class="overflow-container">
+                    <!-- <div id="overlay">
+                        <div id="text">Saving...</div>
+                    </div> -->
                     <!-- <p class="card-text placeholder-glow">
                             <span class="placeholder col-7"></span>
                             <span class="placeholder col-4"></span>
@@ -63,19 +68,35 @@
                     }
                 </div>
                 <div class="mt-4">
+                    @if (formSaveLoader) {
+                    <div class="float-end">
+                        <button class="ms-2 primary-btn-1" disabled>Saving...</button>
+                    </div>
+                    } @else {
                     <div class="float-start" *ngIf="selectedStepIndex !==0">
-                        <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
+                        <button class="ms-2 primary-btn-2" (click)="saveAs('previous')">Back</button>
                     </div>
                     @if (tab.key === 'reviewSubmit') {
                     <div class="float-end">
-                        <button class="ms-2 primary-btn-1" (click)="saveAs('draft')">Submit</button>
+                        <button class="ms-2 primary-btn-1" (click)="submit()">Submit</button>
                     </div>
                     } @else {
                     <div class="float-end">
-                        <button class="ms-2 primary-btn-2" (click)="saveAs('draft')">Save as Draft</button>
-                        <button class="ms-2 primary-btn-1" (click)="saveAs('draft')">Continue to Next Section</button>
+                        <!-- <button type="button" class="btn btn-primary" [disabled]="true">Button</button>
+                        <mat-spinner></mat-spinner> -->
+                        <!-- <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                          </div> -->
+                        <button class="ms-2 primary-btn-2" (click)="saveAs('stay')">
+                            <!-- <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                              </div> -->
+                            Save as Draft</button>
+                        <button class="ms-2 primary-btn-1" (click)="saveAs('next')">Continue to Next Section</button>
                     </div>
                     }
+                    }
+
 
                 </div>
             </div>

@@ -17,7 +17,8 @@ export class InputComponent {
   className: string = "box1";
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
-  @Input() disaplayLabel: boolean = true;
+  @Input() displayLabel: boolean = true;
+  @Input() displayInlineLabel: boolean = false;
   @Input() readonly: boolean | undefined = false;
   @Input() parentField: any;
   validations: any[] = [];
