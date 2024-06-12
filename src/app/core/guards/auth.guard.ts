@@ -12,7 +12,7 @@ export const authGuard: CanActivateFn = (route, state) => {
   } else {
     // router.navigate(['/login']);
     // redirect to old site
-    window.location.href = '/';
+    // window.location.href = '/';
     return false;
   }
 };
