@@ -161,8 +161,8 @@ export class XviFcFormComponent {
         // push review tab
         this.tabs.push({
           key: 'reviewSubmit',
-          label: "Review & Submit",
-          "displayPriority": this.totalTabs + 1,
+          label: 'Review & Submit',
+          'displayPriority': this.totalTabs + 1,
         });
 
         this.form = this.formService.tabControl(this.tabs);
@@ -202,6 +202,7 @@ export class XviFcFormComponent {
         this.formSaveLoader = true;
         // const formData = this.getFormData('SUBMITTED');
         const formData = this.getFormData('IN_PROGRESS');
+        // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
         this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
           Swal.fire(
             'Done!',
@@ -247,9 +248,9 @@ export class XviFcFormComponent {
     this.actionType = actionType;
     // if (['previous', 'next'].includes(actionType)) {
     //   Swal.fire({
-    //     title: "Unsaved changes!",
-    //     text: "Save as draft and continue",
-    //     icon: "info"
+    //     title: 'Unsaved changes!',
+    //     text: 'Save as draft and continue',
+    //     icon: 'info'
     //   });
     // }
     console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
@@ -304,7 +305,7 @@ export class XviFcFormComponent {
           for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
             if (this.isPlainObject(value)) {
               for (const [year, val] of Object.entries(value)) {
-                tabData.data.push({ key, year, value: val });
+                tabData.data.push({ key, year, value: val, 'refKey': 'sourceOfFd',saveAsDraftValue: val });
               }
             }
 
