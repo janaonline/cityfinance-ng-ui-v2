@@ -39,11 +39,11 @@ export class TableComponent {
 
   getYears() {
     const firstField = this.field.data ? this.field.data[0].year : [];
-    this.yearFields = firstField.map((value: any) => { return value.key; });
+    this.yearFields = firstField.map((value: any) => { return value.year; });
     // console.log('this.years-----', this.yearFields);
   }
   sumLogic() {
-    const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf).sort((a, b) => a.sumOrder - b.sumOrder) : [];
+    const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf && e.sumOf.length).sort((a, b) => a.sumOrder - b.sumOrder) : [];
     // const totalSumFields = this.field.data ? this.field.data.filter(e => e.totalSumOf) : [];
     // console.log('----sumFields --', sumFields);
 
@@ -57,31 +57,29 @@ export class TableComponent {
         // const currentTable = data[this.field.key];
         if (!sumFields.length) return;
         sumFields.forEach((sumField) => {
-
           const currentTable = this.group.get(this.field.key)?.getRawValue();
 
-          // console.log('-----currentTable----', currentTable);
-          // console.log('sumField', sumField['sum']);
-          // console.log('key', sumField['key']);
-          // console.log('sumField year', sumField['year']);
-          // let sumYears:any = { '2022-23': 0, '2021-22': 0, '2020-21': 0, '2019-20': 0, '2018-19': 0 };
           let sumYears: any = {};
           this.yearFields.forEach((yearField: string) => {
             let sumYear = 0;
-            sumYears[yearField] = 0;
+            const sumFieldYearKey = `fy${yearField}_${sumField.key}`;
+            // console.log('yearKey', sumFieldYearKey);
+            // sumYears[yearField] = 0;
+            sumYears[sumFieldYearKey] = 0;
 
             sumField['sumOf'].forEach((subField: number) => {
               // console.log('currentTable[subField]---', currentTable, '----', subField, '------', currentTable[subField]);
+              // const key = `fy2021-22_sourceOfFd`;
+              const yearKey = `fy${yearField}_${subField}`;
+              // console.log('yearKey', yearKey);
 
-              if (currentTable[subField] && currentTable[subField][yearField] && !isNaN(parseInt(currentTable[subField][yearField]))) {
-                sumYears[yearField] += parseInt(currentTable[subField][yearField]);
+              if (currentTable[subField] && currentTable[subField][yearKey] && !isNaN(parseInt(currentTable[subField][yearKey]))) {
+                sumYears[sumFieldYearKey] += parseInt(currentTable[subField][yearKey]);
               }
+              // if (currentTable[subField] && currentTable[subField][yearField] && !isNaN(parseInt(currentTable[subField][yearField]))) {
+              //   sumYears[yearField] += parseInt(currentTable[subField][yearField]);
+              // }
             });
-
-            // console.log('sumYear total----', sumYears);
-
-            // this.group.get(this.field.key)?.get(sumField['key'])?.get(yearField)?.patchValue(sumField, { emitEvent: false, onlySelf: true });
-            // console.log('---', this.group.get(this.field.key)?.get(sumField['key'])?.get(yearField)?.getRawValue());
 
           });
           // console.log('sumYears', sumYears);
