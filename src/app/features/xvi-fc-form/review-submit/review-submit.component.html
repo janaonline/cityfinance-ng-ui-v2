@@ -1,13 +1,16 @@
-@for (tab of fields; track tab.key;  let  i = $index) {
+@for (tab of fields; track tab.key; let i = $index) {
 
-<div class="container mt-4 ">
-    <div class="text-bg-light border rounded mt-3 mb-3 section-box clearfix" *ngIf="tab.key !== 'reviewSubmit'">
-        <div class="float-start">
-            <p class="text-muted">Section {{tab.displayPriority}}/ {{fields.length}}</p>
+<div class="container mt-4">
+    <div class="text-bg-light border rounded mt-3 mb-3 p-3 d-flex justify-content-between align-items-center"
+        *ngIf="tab.key !== 'reviewSubmit'">
+        <div>
+            <p class="text-muted pb-2">Section {{tab.displayPriority}}/ {{fields.length}}</p>
             <h4 class="fw-bold">{{tab.label}}</h4>
         </div>
-        <div class="float-end">
-            <button matStepperNext class="ms-2 me-2 mt-1 btn-edit" (click)="editStep(i)"><mat-icon>edit</mat-icon>
+
+        <div>
+            <button matStepperNext class="btn btn-outline-dark fw-bold" (click)="editStep(i)">
+                <i class="bi bi-pencil-square me-2 fs-5"></i>
                 Edit</button>
         </div>
     </div>
@@ -15,12 +18,24 @@
     @if (tab.key === 'demographicData') {
     <mat-card>
         <mat-card-content>
-            <table class="table review-table">
-                <tr *ngFor="let field of tab?.data;let i = index;">
-                    <td>{{field.label}}</td>
-                    <td class="fw-bold">{{field.value}}</td>
-                </tr>
+            <!-- <div class="border border-secondary-subtle rounded p-3"> -->
+            <table class="table table-borderless table-hover">
+                <tbody>
+                    <tr *ngFor="let field of tab?.data;let i = index;">
+                        <!-- <td>{{field.position}}.</td> -->
+                        <td class="first-col"><span align="right">{{field.position ?
+                                field.position+'.':''}}&nbsp;</span>{{field.label}}<sup
+                                class="text-danger fw-bold">*</sup>
+                        </td>
+                        <td class="fw-bold"> {{field.value}} </td>
+                        <!-- <td class="fw-bold"
+                        [align]="field.formFieldType==='number' || field.formFieldType==='amount' ? 'right' :'left'">
+                        {{field.value}}
+                    </td> -->
+                    </tr>
+                </tbody>
             </table>
+            <!-- </div> -->
         </mat-card-content>
     </mat-card>
 
@@ -28,25 +43,41 @@
     @else if (tab.key === 'financialData' || tab.key === 'serviceLevelBenchmark') {
     <ng-container *ngFor="let field of tab?.data;let i = index;">
         <mat-expansion-panel [expanded]="panelOpenState" class="mt-3">
-            <mat-expansion-panel-header>
+            <mat-expansion-panel-header *ngIf="field.key !== 'commonPrimaryKey'">
                 <mat-panel-title>
                     {{field.label}}
                 </mat-panel-title>
             </mat-expansion-panel-header>
-            <div class="year-table mt-2">
-                <table class="table review-table">
+
+            <div class="table-container">
+                <table class="table table-borderless table-hover table-responsive">
+                    <thead>
+                        <tr class="border-bottom">
+                            <th class="first-col"></th>
+                            <th *ngFor="let year of field.data[0].year; let i = index;" class="fw-bold">{{ year.key }}
+                            </th>
+                        </tr>
+                    </thead>
                     <tbody>
-                        <tr *ngFor="let row of field.data;let i = index;">
-                            <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}
-                                <span class="text-danger" *ngIf="row.required">*</span>
+                        <tr *ngFor="let row of field.data; let i = index;" class="{{ row.class }}">
+                            <td class="first-col {{ row.class }}">
+                                <span align="right">{{ row.position ? row.position + '. ' : '' }}&nbsp;</span>{{
+                                row.label }}
+                                <sup class="text-danger fw-bold" *ngIf="row.required">*</sup>
                             </td>
-                            <td class="fw-bold" *ngFor="let col of row.year;let j = index;">
-                                {{col.value}}
+                            <td class="fw-bold" *ngFor="let col of row.year; let j = index;">
+                                <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
+                                    <span matTextPrefix>&nbsp;</span>{{ col.value | currency:'INR':'symbol':'1.0-0' }}
+                                </ng-container>
+                                <ng-template #otherField>
+                                    {{ col.value }}
+                                </ng-template>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
 
         </mat-expansion-panel>
     </ng-container>
@@ -145,7 +176,17 @@
                 {{field.label}}
             </mat-panel-title>
         </mat-expansion-panel-header>
-        <ng-container *ngFor="let question of field.data">
+        <div *ngFor="let question of field.data" class="d-flex justify-content-between">
+            <p class="pt-3 pb-1">
+                {{question.position}}.
+                {{question.label}}<sup class="text-danger fw-bold" *ngIf="question.required">*</sup>
+            </p>
+            <p>
+                {{question.saveAsDraft}}
+            </p>
+
+        </div>
+        <!-- <ng-container *ngFor="let question of field.data">
             <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
                 {{question.position}}.
                 {{question.label}}
@@ -162,7 +203,7 @@
             } @else if (question.formFieldType === 'number') {
             <input class="form-control" [type]="question.formFieldType" [value]="question.value" />
             }
-        </ng-container>
+        </ng-container> -->
     </mat-expansion-panel>
     }
 </div>

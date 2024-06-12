@@ -6,7 +6,7 @@
     </mat-expansion-panel-header>
     <div class="table-responsive" [formGroup]="group">
         <!-- <pre>{{group.getRawValue() |json}}</pre> -->
-        <table class="table table-sticky">
+        <table class="table table-sticky table-hover">
             <tbody>
                 <!-- <tr>
                     <th class="first-col">
@@ -16,8 +16,12 @@
                     </th>
                 </tr> -->
                 <tr *ngFor="let row of field.data;let i = index;" [ngClass]="row.class">
+                    <!-- <td align="right">
+                        {{row.position ? row.position+'.':''}}
+                    </td> -->
                     <td class="first-col" [ngClass]="row.class">
-                        {{row.position ? row.position+'.':''}}{{row.label}}
+                        <span align="right">{{row.position ? row.position+'.':''}}&nbsp;</span>
+                        {{row.label}}
                         <span class="text-danger" *ngIf="row.required">*&nbsp;</span>
                         <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
                     </td>

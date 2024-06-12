@@ -231,20 +231,15 @@ mat-form-field {
 // }
 
 // ----- Utilities ----- //
-.dotted-border-primary {
-    border: 2px dotted var(--clr-primary);
-    border-radius: 0.625rem;
-}
-
 .dotted-border-bottom-primary {
     border-bottom: 2px dotted var(--clr-primary);
+}
+
+.dotted-border-top-primary {
+    border-top: 2px dotted var(--clr-primary);
 }
 
 .dotted-border-secondary {
     border: 1px dotted $secondary;
     border-radius: 0.625rem;
 }
-
-// input:read-only {
-//     background-color: lightgray;
-// }
