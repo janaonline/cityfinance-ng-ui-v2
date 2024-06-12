@@ -151,23 +151,4 @@ mat-form-field {
 // 	transform: translate(-50%,-50%);
 // 	-ms-transform: translate(-50%,-50%);
 //   }
-
-  ::ng-deep .custom-style{
-	background-color:brown;
-	color:white;
-  }
-
-  .custom-snackbar-success {
-	background-color: #4caf50; /* Green */
-	color: white;
-  }
   
-  .custom-snackbar-error {
-	background-color: #f44336; /* Red */
-	color: white;
-  }
-  
-  .custom-snackbar-info {
-	background-color: #2196f3; /* Blue */
-	color: white;
-  }

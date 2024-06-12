@@ -133,6 +133,14 @@ export class XviFcFormComponent {
     //   // this.childFG.emit(this.form);
     // });
     this.onLoad();
+
+    // this._snackBar.open('Save successfully!!', 'Close', {
+    //   horizontalPosition: 'end',
+    //   verticalPosition: 'top',
+    //   // duration: 2000,
+    //   // panelClass: ['snackbar-success']
+    //   panelClass: ['custom-snackbar-success']
+    // });
   }
 
   onLoad(reload = false) {
