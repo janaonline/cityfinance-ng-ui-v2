@@ -1,38 +1,35 @@
 <mat-expansion-panel [expanded]="panelOpenState">
-    <mat-expansion-panel-header>
+    <mat-expansion-panel-header *ngIf="field.key !== 'commonPrimaryKey'">
         <mat-panel-title>
             {{field.label}}
         </mat-panel-title>
-        <!-- <mat-panel-description>
-        This is a summary of the content
-      </mat-panel-description> -->
     </mat-expansion-panel-header>
     <div class="table-responsive" [formGroup]="group">
         <!-- <pre>{{group.getRawValue() |json}}</pre> -->
         <table class="table table-sticky">
             <tbody>
-                <tr>
+                <!-- <tr>
                     <th class="first-col">
                     </th>
                     <th *ngFor="let year of yearFields;let j = index;">
                         FY {{year}}
                     </th>
-                </tr>
+                </tr> -->
                 <tr *ngFor="let row of field.data;let i = index;" [ngClass]="row.class">
-                    <td class="first-col" [ngClass]="row.class">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
-                            *ngIf="row.required">*&nbsp;</span>
+                    <td class="first-col" [ngClass]="row.class">
+                        {{row.position ? row.position+'.':''}}{{row.label}}
+                        <span class="text-danger" *ngIf="row.required">*&nbsp;</span>
                         <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
                     </td>
                     <td *ngFor="let col of row.year;let j = index;">
                         <!-- {{row.readonly| json}}------- -->
                         @if (['amount', 'number'].includes(col.formFieldType)) {
-                            <!-- {{row.validations | json}} -->
+                        <!-- {{row.validations | json}} -->
                         <app-input [field]="col" [group]="getTableGroup(field.key, row.key)" [parentField]="row"
                             [displayInlineLabel]="true"></app-input>
                         } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
-                           
-                        <app-select [field]="col" [options]="row.options" [parentField]="row" [group]="getTableGroup(field.key, row.key)"
-                            [displayLabel]="false"></app-select>
+                        <app-select [field]="col" [options]="row.options" [parentField]="row"
+                            [group]="getTableGroup(field.key, row.key)" [displayInlineLabel]="true"></app-select>
                         } @else if (col.formFieldType === 'heading') {
                         {{col.label}}
                         }
