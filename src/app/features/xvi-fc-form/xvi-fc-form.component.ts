@@ -114,6 +114,7 @@ export class XviFcFormComponent {
   // fields: any[] = tabsJson.data.tabs;
   fields: any[] = [];
   selectedStepIndex = 0;
+  actionType!: string;
 
   get value() {
     return this.form.value;
@@ -160,6 +161,7 @@ export class XviFcFormComponent {
   }
   saveAs(actionType: string) {
     this.formSaveLoader = true;
+    this.actionType = actionType;
     if (['previous', 'next'].includes(actionType)) {
       Swal.fire({
         title: "Unsaved changes!",
@@ -169,83 +171,79 @@ export class XviFcFormComponent {
     }
 
     // console.log('this.form.value', this.form.value);
-    // Object.entries(this.form.value)
     const formJson: any = this.form.value;
 
-    // const formData: any = {
-    //   "ulb": "5dcfca53df6f59198c4ac3d5",
-    //   "state": "5dcf9d7516a06aed41c748fa",
-    //   "xvifc": "5dcf9d7516a06aed41c748fb",
-    //   tab: [],
-    //   "tab1": [
-    //     {
-    //       "tabKey": "demographicData",
-    //       data: [
-    //         {
-    //           "key": "nameOfUlb",
-    //           "value": "",
-    //           "saveAsDraftValue": "2nd Try",
-    //           file: { name: '', url: '' },
-    //           reason: ''
-    //         }
-    //       ]
-    //     }
-    //   ]
-    // };
-    const formData: any = { tab: [] }
-    for (const tab of this.tabs) {
-      const tabData: any = { tabKey: tab.key, data: [] };
-      if (tab.key === 'demographicData') {
+    const formData: any = { tab: [], formStatus: "IN_PROGRESS", formId: 16 }
+    // console.log('this.tabs[this.selectedStepIndex]', this.tabs[this.selectedStepIndex]);
+    const tabKey = this.tabs[this.selectedStepIndex].key;
+    const tabData: any = { tabKey, data: [] };
+    if (tabKey === 'demographicData') {
+      this.tabs[this.selectedStepIndex]['data'].forEach((field: any, i: number) => {
 
-      } else if (tab.key === 'financialData') {
+        const fieldData = {
+          key: field.key,
+          value: formJson[tabKey][i][field.key],
+          saveAsDraftValue: formJson[tabKey][i][field.key]
+        };
+        tabData.data.push(fieldData);
+      });
+    } else if (tabKey === 'financialData') {
+      console.log('this.tabs[this.selectedStepIndex][', this.tabs[this.selectedStepIndex]['data']);
 
-      } else if (tab.key === 'uploadDoc') {
+      this.tabs[this.selectedStepIndex]['data'].forEach((field: any, i: number) => {
+        // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
+        // const data = [];
+        for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
+          if (this.isPlainObject(value)) {
+            for (const [year, val] of Object.entries(value)) {
+              tabData.data.push({ key, year, value: val });
+            }
+          }
 
-      } else if (tab.key === 'accountPractice') {
+        }
+        // const fieldData = {
+        //   key: field.key,
+        //   value: formJson[tabKey][i][field.key],
+        //   saveAsDraftValue: formJson[tabKey][i][field.key]
+        // };
+        // tabData.data.push(fieldData);
+      });
+    } else if (tabKey === 'uploadDoc') {
 
-      }
-      console.log('formJson[tab.key]', formJson[tab.key]);
-      if (tab.key !== 'reviewSubmit') {
-        tab['data'].forEach((field: any, i: number) => {
-          // console.log('field---', field);
-          const fieldData = {
-            key: field.key,
-            value: formJson[tab.key][i][field.key],
-            saveAsDraftValue: formJson[tab.key][i][field.key]
-          };
-          // const fieldData: {
-          //   key: string, value: any,
-          //   saveAsDraftValue: any
-          // } = field;
-          tabData.data.push(fieldData)
-        });
-
-      }
-
-      formData.tab.push(tabData);
-      console.log('formData -------', formData);
-
-      // else if(tab.key=== 'demographicData') {
-
-      // }
+    } else if (tabKey === 'accountPractice') {
 
     }
 
+    formData.tab.push(tabData);
+    console.log('formData----', formData);
+
     this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
-      if (actionType === 'next') {
-        this.stepper?.next();
-      } else if (actionType === 'previous') {
-        this.stepper?.previous();
+      if (this.selectedStepIndex === 0) {
+        this.onLoad(true);
+      } else {
+        this.afterSave();
       }
-      this._snackBar.open('Save successfully!!', 'Close', {
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-        // duration: 2000,
-        panelClass: ['snackbar-success']
-      });
-      this.formSaveLoader = false;
-      Swal.close();
     });
+  }
+
+  isPlainObject(data: unknown): data is { [s: string]: unknown; } {
+    return typeof data === 'object' && data !== null && !Array.isArray(data);
+  }
+  afterSave() {
+    if (this.actionType === 'next') {
+      this.stepper?.next();
+    } else if (this.actionType === 'previous') {
+      this.stepper?.previous();
+    }
+    this._snackBar.open('Save successfully!!', 'Close', {
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      // duration: 2000,
+      // panelClass: ['snackbar-success']
+      panelClass: ['custom-snackbar-success']
+    });
+    this.formSaveLoader = false;
+    Swal.close();
   }
 
   onSubmit(event: Event) {
@@ -266,45 +264,35 @@ export class XviFcFormComponent {
     return (this.form.get(tabKey) as FormArray).controls[i]
   }
 
-  onLoad() {
+  onLoad(reload = false) {
     this.isLoader = true;
     // this.ulbId = '5dcfca53df6f59198c4ac3d5';
     this.ulbId = this.loggedInUserDetails.ulb;
     // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
-    this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
-      this.tabs = res?.data?.tabs;
+    this.service.getUlbForm(this.ulbId).subscribe({
+      next: (res: any) => {
+        this.tabs = res?.data?.tabs;
 
-      // this.tabs = tabsJson.data.tabs;
-      this.tabs.push({
-        key: 'reviewSubmit',
-        label: "Review & Submit",
-        "displayPriority": this.tabs.length + 1,
-      });
-      this.form = this.formService.tabControl(this.tabs);
-      // this.hideForm = res?.data?.hideForm;
-      // this.notice = res?.data?.notice;
-      // this.formId = res?.data?._id;
-      // this.isDraft = res?.data?.isDraft;
-      // this.ulbName = res?.data?.ulbName;
-      // this.stateCode = res?.data?.stateCode;
-      // this.currentFormStatus = res?.data?.currentFormStatus;
+        // this.tabs = tabsJson.data.tabs;
+        this.tabs.push({
+          key: 'reviewSubmit',
+          label: "Review & Submit",
+          "displayPriority": this.tabs.length + 1,
+        });
+        this.form = this.formService.tabControl(this.tabs);
 
-      // this.financialYearTableHeader = res?.data?.financialYearTableHeader;
-      // this.pmuSubmissionDate = res?.data?.pmuSubmissionDate;
-      // this.isAutoApproved = res?.data?.isAutoApproved;
-
-      // this.form = this.fb.array(this.tabs.map(tab => this.getTabFormGroup(tab)))
-      // this.addSkipLogics();
-      // if (this.userData.role == this.userTypes.ULB) {
-      // this.addSumLogics();
-      // }
-      // this.addSubtractLogics();
-      // this.form.markAsPristine();
-      this.isLoader = false;
-      // this.msgForLedgerUpdate = res?.data?.messages;
-      // if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
-    },()=>{
-      this.isLoader = false;
+        // this.form.markAsPristine();
+        this.isLoader = false;
+        if (reload) {
+          setTimeout(() => {
+            this.afterSave();
+          }, 500);
+        }
+        // this.msgForLedgerUpdate = res?.data?.messages;
+        // if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
+      }, error: () => {
+        this.isLoader = false;
+      }
     });
   }
 
