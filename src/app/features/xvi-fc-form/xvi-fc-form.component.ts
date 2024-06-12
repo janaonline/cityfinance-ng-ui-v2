@@ -113,11 +113,14 @@ export class XviFcFormComponent {
   status: '' | 'PENDING' | 'REJECTED' | 'APPROVED' = '';
   formSubmitted = false;
   // fields: any[] = tabsJson.data.tabs;
+
   fields: any[] = [];
   selectedStepIndex = 0;
   actionType!: string;
   step1Complete = false;
-  
+  tabChangeLoader = false;
+  totalTabs = 6;
+
   get value() {
     return this.form.value;
   }
@@ -144,12 +147,7 @@ export class XviFcFormComponent {
     //   panelClass: ['custom-snackbar-success']
     // });
   }
-  selectionChange(event: StepperSelectionEvent) {
 
-    console.log('event', event);
-
-
-  }
   onLoad(reload = false) {
     this.isLoader = true;
     // this.ulbId = '5dcfca53df6f59198c4ac3d5';
@@ -158,23 +156,26 @@ export class XviFcFormComponent {
     this.service.getUlbForm(this.ulbId).subscribe({
       next: (res: any) => {
         this.tabs = res?.data?.tabs;
-
+        this.totalTabs = this.tabs.length;
         // this.tabs = tabsJson.data.tabs;
         // push review tab
         this.tabs.push({
           key: 'reviewSubmit',
           label: "Review & Submit",
-          "displayPriority": this.tabs.length + 1,
+          "displayPriority": this.totalTabs + 1,
         });
+
         this.form = this.formService.tabControl(this.tabs);
         // this.form.markAsPristine();        
-        this.isLoader = false;
-        this.formSaveLoader = false;
+
         if (reload) {
           setTimeout(() => {
             this.afterSave();
           }, 500);
         }
+        this.isLoader = false;
+        this.formSaveLoader = false;
+        this.tabChangeLoader = false;
       }, error: () => {
         this.isLoader = false;
       }
@@ -220,8 +221,29 @@ export class XviFcFormComponent {
       }
     });
   }
+  selectionChange(event: StepperSelectionEvent) {
+
+    // if last tab load only data
+    if (event.previouslySelectedIndex !== this.totalTabs && !this.actionType) {
+      this.tabChangeLoader = true;
+      console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
+      const formData = this.getFormData('IN_PROGRESS');
+      this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
+        if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
+          this.onLoad();
+        } else {
+          this.tabChangeLoader = false;
+        }
+        this.triggerSnackbar();
+      });
+    }
+
+    // setTimeout(() => {
+    //   this.tabChangeLoader = false;
+    // }, 2000);
+
+  }
   saveAs(actionType: string) {
-    this.formSaveLoader = true;
     this.actionType = actionType;
     // if (['previous', 'next'].includes(actionType)) {
     //   Swal.fire({
@@ -230,11 +252,20 @@ export class XviFcFormComponent {
     //     icon: "info"
     //   });
     // }
+    console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
 
-
+    // if back from review tab no action
+    if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
+      this.stepper?.previous();
+      this.actionType = '';
+      return;
+    }
+    this.formSaveLoader = true;
     const formData = this.getFormData('IN_PROGRESS');
     this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
-      if (this.selectedStepIndex === 0) {
+      if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
+        this.onLoad(true);
+      } else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
         this.onLoad(true);
       } else {
         this.afterSave();
@@ -243,7 +274,7 @@ export class XviFcFormComponent {
   }
 
   getFormData(formStatus: string) {
-    console.log('this.form.value', this.form.value);
+    // console.log('this.form.value', this.form.value);
     const formJson: any = this.form.value;
 
     const formData: any = { tab: [], formStatus, formId: 16 }
@@ -256,7 +287,7 @@ export class XviFcFormComponent {
       const tabData: any = { tabKey, data: [] };
       if (tabKey === 'demographicData') {
         tab['data'].forEach((field: any, i: number) => {
-          console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
+          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
           const fieldData = {
             key: field.key,
             value: formJson[tabKey][i][field.key],
@@ -280,7 +311,6 @@ export class XviFcFormComponent {
           }
         });
       } else if (tabKey === 'uploadDoc') {
-
         tab['data'].forEach((field: any, i: number) => {
           // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
           for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
@@ -307,7 +337,7 @@ export class XviFcFormComponent {
     }
 
 
-    console.log('formData----', formData);
+    // console.log('formData----', formData);
     return formData;
 
   }
@@ -321,6 +351,12 @@ export class XviFcFormComponent {
     } else if (this.actionType === 'previous') {
       this.stepper?.previous();
     }
+    this.triggerSnackbar();
+    this.formSaveLoader = false;
+    this.actionType = '';
+    // Swal.close();
+  }
+  triggerSnackbar() {
     this._snackBar.open('Save successfully!!', 'Close', {
       horizontalPosition: 'end',
       verticalPosition: 'top',
@@ -328,10 +364,7 @@ export class XviFcFormComponent {
       // panelClass: ['snackbar-success']
       panelClass: ['custom-snackbar-success']
     });
-    this.formSaveLoader = false;
-    // Swal.close();
   }
-
   onSubmit(event: Event) {
     event.preventDefault();
     event.stopPropagation();
