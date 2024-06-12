@@ -39,6 +39,7 @@ import {
   MatSnackBarLabel,
   MatSnackBarRef,
 } from '@angular/material/snack-bar';
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
@@ -115,7 +116,8 @@ export class XviFcFormComponent {
   fields: any[] = [];
   selectedStepIndex = 0;
   actionType!: string;
-
+  step1Complete = false;
+  
   get value() {
     return this.form.value;
   }
@@ -142,7 +144,12 @@ export class XviFcFormComponent {
     //   panelClass: ['custom-snackbar-success']
     // });
   }
+  selectionChange(event: StepperSelectionEvent) {
 
+    console.log('event', event);
+
+
+  }
   onLoad(reload = false) {
     this.isLoader = true;
     // this.ulbId = '5dcfca53df6f59198c4ac3d5';

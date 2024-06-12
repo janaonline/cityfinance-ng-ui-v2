@@ -4,13 +4,13 @@
     <app-loader class="p-3" *ngIf="isLoader"></app-loader>
     <h3 class="fw-bold fs-4 m-1 mb-4">{{ loggedInUserDetails.name }}</h3>
     <!-- {{selectedIndex}}----- -->
-        <div class="bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
-            <strong>No Data Found</strong>
-        </div>
-    <mat-stepper *ngIf="!isLoader && tabs" linear="false" labelPosition="bottom" id="stepper"
-        [(selectedIndex)]="selectedStepIndex" #stepper>
-        
-        <mat-step state="state" *ngFor="let tab of tabs; index as i">
+    <div class="bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
+        <strong>No Data Found</strong>
+    </div>
+    <mat-stepper *ngIf="!isLoader && tabs" linear="true" labelPosition="bottom" id="stepper"
+        [(selectedIndex)]="selectedStepIndex" #stepper (selectionChange)="selectionChange($event)">
+
+        <mat-step state="state" *ngFor="let tab of tabs; index as i" [completed]="true">
             <!-- {{tab.key}} ----------<br> -->
             <ng-template matStepLabel>
                 <p class="fw-bold d-inline" [title]="tab?.label">
@@ -34,13 +34,16 @@
                     <!-- <div id="overlay">
                         <div id="text">Saving...</div>
                     </div> -->
-                    <!-- <p class="card-text placeholder-glow">
-                            <span class="placeholder col-7"></span>
-                            <span class="placeholder col-4"></span>
-                            <span class="placeholder col-4"></span>
-                            <span class="placeholder col-6"></span>
-                            <span class="placeholder col-8"></span>
-                        </p> -->
+                    <p class="card-text placeholder-glow">
+                        <span class="placeholder col-7"></span>
+                        <span class="placeholder col-4"></span>
+                        <span class="placeholder col-4"></span>
+                        <span class="placeholder col-6"></span>
+                        <span class="placeholder col-8"></span>
+                        <span class="placeholder col-8"></span>
+                        <span class="placeholder col-8"></span>
+                        <span class="placeholder col-8"></span>
+                    </p>
                     @if (tab.key === 'uploadDoc') {
                     <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
                     }
