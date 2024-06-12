@@ -27,7 +27,7 @@
                                 field.position+'.':''}}&nbsp;</span>{{field.label}}<sup
                                 class="text-danger fw-bold">*</sup>
                         </td>
-                        <td class="fw-bold"> {{field.value}} </td>
+                        <td class="fw-bold"> {{field.value ? field.value : 'N/A'}} </td>
                         <!-- <td class="fw-bold"
                         [align]="field.formFieldType==='number' || field.formFieldType==='amount' ? 'right' :'left'">
                         {{field.value}}
@@ -67,10 +67,12 @@
                             </td>
                             <td class="fw-bold" *ngFor="let col of row.year; let j = index;">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
-                                    <span matTextPrefix>&nbsp;</span>{{ col.value | currency:'INR':'symbol':'1.0-0' }}
+                                    <span matTextPrefix>&nbsp;</span>{{ col.value ? (col.value |
+                                    currency:'INR':'symbol':'1.0-0') :'N/A' }}
                                 </ng-container>
                                 <ng-template #otherField>
-                                    {{ col.value }}
+                                    <!-- {{ col.value }} -->
+                                    {{ col.value ? col.value : 'N/A' }}
                                 </ng-template>
                             </td>
                         </tr>
@@ -213,12 +215,14 @@
 
         <table class="table table-borderless table-hover table-responsive">
             <tbody>
-                <tr *ngFor="let question of field.data">
+                <tr *ngFor="let question of field.data" class="row">
                     <!-- <td>{{question.position}}.</td> -->
-                    <td class="w-75">{{question.position}}.&nbsp;{{question.label}}<sup class="text-danger fw-bold"
+                    <td class="col-7">{{question.position}}.&nbsp;{{question.label}}<sup class="text-danger fw-bold"
                             *ngIf="question.required">*</sup></td>
-                    <td>
-                        <p class="fw-bold">{{question.value}}</p>
+                    <td class="col-5">
+                        <p class="fw-bold">
+                            {{ question.value ? question.value : 'N/A' }}
+                        </p>
                         <p *ngIf="question.reason" class="text-secondary mt-1">{{question.reason}}</p>
                     </td>
                 </tr>
