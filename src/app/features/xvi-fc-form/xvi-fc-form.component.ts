@@ -272,9 +272,9 @@ export class XviFcFormComponent {
     this.ulbId = this.loggedInUserDetails.ulb;
     // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
     this.service.getUlbForm(this.ulbId).subscribe((res: any) => {
-      this.tabs = res?.data?.tabs;
+      // this.tabs = res?.data?.tabs;
 
-      // this.tabs = tabsJson.data.tabs;
+      this.tabs = tabsJson.data.tabs;
       this.tabs.push({
         key: 'reviewSubmit',
         label: "Review & Submit",
