@@ -39,6 +39,7 @@ import {
   MatSnackBarLabel,
   MatSnackBarRef,
 } from '@angular/material/snack-bar';
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
@@ -112,9 +113,13 @@ export class XviFcFormComponent {
   status: '' | 'PENDING' | 'REJECTED' | 'APPROVED' = '';
   formSubmitted = false;
   // fields: any[] = tabsJson.data.tabs;
+
   fields: any[] = [];
   selectedStepIndex = 0;
   actionType!: string;
+  step1Complete = false;
+  tabChangeLoader = false;
+  totalTabs = 6;
 
   get value() {
     return this.form.value;
@@ -151,23 +156,26 @@ export class XviFcFormComponent {
     this.service.getUlbForm(this.ulbId).subscribe({
       next: (res: any) => {
         this.tabs = res?.data?.tabs;
-
+        this.totalTabs = this.tabs.length;
         // this.tabs = tabsJson.data.tabs;
         // push review tab
         this.tabs.push({
           key: 'reviewSubmit',
           label: "Review & Submit",
-          "displayPriority": this.tabs.length + 1,
+          "displayPriority": this.totalTabs + 1,
         });
-        this.form = this.formService.tabControl(this.tabs);
 
-        // this.form.markAsPristine();
-        this.isLoader = false;
+        this.form = this.formService.tabControl(this.tabs);
+        // this.form.markAsPristine();        
+
         if (reload) {
           setTimeout(() => {
             this.afterSave();
           }, 500);
         }
+        this.isLoader = false;
+        this.formSaveLoader = false;
+        this.tabChangeLoader = false;
       }, error: () => {
         this.isLoader = false;
       }
@@ -182,73 +190,156 @@ export class XviFcFormComponent {
   // }
 
   submit() {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you really want to perform this action?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Submit',
+      cancelButtonText: 'No, cancel!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.formSaveLoader = true;
+        // const formData = this.getFormData('SUBMITTED');
+        const formData = this.getFormData('IN_PROGRESS');
+        this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
+          Swal.fire(
+            'Done!',
+            'Your action has been confirmed.',
+            'success'
+          );
+          this.onLoad();
+        });
+
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        // Cancel the action
+        Swal.fire(
+          'Cancelled',
+          'Your action has been cancelled.',
+          'error'
+        );
+      }
+    });
+  }
+  selectionChange(event: StepperSelectionEvent) {
+
+    // if last tab load only data
+    if (event.previouslySelectedIndex !== this.totalTabs && !this.actionType) {
+      this.tabChangeLoader = true;
+      console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
+      const formData = this.getFormData('IN_PROGRESS');
+      this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
+        if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
+          this.onLoad();
+        } else {
+          this.tabChangeLoader = false;
+        }
+        this.triggerSnackbar();
+      });
+    }
+
+    // setTimeout(() => {
+    //   this.tabChangeLoader = false;
+    // }, 2000);
 
   }
   saveAs(actionType: string) {
-    this.formSaveLoader = true;
     this.actionType = actionType;
-    if (['previous', 'next'].includes(actionType)) {
-      Swal.fire({
-        title: "Unsaved changes!",
-        text: "Save as draft and continue",
-        icon: "info"
-      });
+    // if (['previous', 'next'].includes(actionType)) {
+    //   Swal.fire({
+    //     title: "Unsaved changes!",
+    //     text: "Save as draft and continue",
+    //     icon: "info"
+    //   });
+    // }
+    console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
+
+    // if back from review tab no action
+    if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
+      this.stepper?.previous();
+      this.actionType = '';
+      return;
     }
-
-    // console.log('this.form.value', this.form.value);
-    const formJson: any = this.form.value;
-
-    const formData: any = { tab: [], formStatus: "IN_PROGRESS", formId: 16 }
-    // console.log('this.tabs[this.selectedStepIndex]', this.tabs[this.selectedStepIndex]);
-    const tabKey = this.tabs[this.selectedStepIndex].key;
-    const tabData: any = { tabKey, data: [] };
-    if (tabKey === 'demographicData') {
-      this.tabs[this.selectedStepIndex]['data'].forEach((field: any, i: number) => {
-
-        const fieldData = {
-          key: field.key,
-          value: formJson[tabKey][i][field.key],
-          saveAsDraftValue: formJson[tabKey][i][field.key]
-        };
-        tabData.data.push(fieldData);
-      });
-    } else if (tabKey === 'financialData') {
-      console.log('this.tabs[this.selectedStepIndex][', this.tabs[this.selectedStepIndex]['data']);
-
-      this.tabs[this.selectedStepIndex]['data'].forEach((field: any, i: number) => {
-        // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
-        // const data = [];
-        for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
-          if (this.isPlainObject(value)) {
-            for (const [year, val] of Object.entries(value)) {
-              tabData.data.push({ key, year, value: val });
-            }
-          }
-
-        }
-        // const fieldData = {
-        //   key: field.key,
-        //   value: formJson[tabKey][i][field.key],
-        //   saveAsDraftValue: formJson[tabKey][i][field.key]
-        // };
-        // tabData.data.push(fieldData);
-      });
-    } else if (tabKey === 'uploadDoc') {
-
-    } else if (tabKey === 'accountPractice') {
-
-    }
-
-    formData.tab.push(tabData);
-    console.log('formData----', formData);
-
+    this.formSaveLoader = true;
+    const formData = this.getFormData('IN_PROGRESS');
     this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
-      if (this.selectedStepIndex === 0) {
+      if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
+        this.onLoad(true);
+      } else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
         this.onLoad(true);
       } else {
         this.afterSave();
       }
     });
+  }
+
+  getFormData(formStatus: string) {
+    // console.log('this.form.value', this.form.value);
+    const formJson: any = this.form.value;
+
+    const formData: any = { tab: [], formStatus, formId: 16 }
+    // console.log('this.tabs[this.selectedStepIndex]', this.tabs[this.selectedStepIndex]);
+    // const tab = this.tabs[this.selectedStepIndex];
+
+
+    for (let tab of this.tabs) {
+      const tabKey = tab.key;
+      const tabData: any = { tabKey, data: [] };
+      if (tabKey === 'demographicData') {
+        tab['data'].forEach((field: any, i: number) => {
+          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
+          const fieldData = {
+            key: field.key,
+            value: formJson[tabKey][i][field.key],
+            saveAsDraftValue: formJson[tabKey][i][field.key]
+          };
+          tabData.data.push(fieldData);
+        });
+      } else if (tabKey === 'financialData') {
+        // console.log('tab[', tab['data']);
+
+        tab['data'].forEach((field: any, i: number) => {
+          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
+          // const data = [];
+          for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
+            if (this.isPlainObject(value)) {
+              for (const [year, val] of Object.entries(value)) {
+                tabData.data.push({ key, year, value: val });
+              }
+            }
+
+          }
+        });
+      } else if (tabKey === 'uploadDoc') {
+        tab['data'].forEach((field: any, i: number) => {
+          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
+          for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
+            tabData.data.push(
+              { key: field.key, year: key, ...(typeof value === 'object' && value !== null ? value : {}) }
+            );
+
+          }
+        });
+      } else if (tabKey === 'accountPractice') {
+        tab['data'].forEach((field: any, i: number) => {
+          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
+          for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
+            tabData.data.push(
+              { key, ...(typeof value === 'object' && value !== null ? value : {}) }
+            );
+
+          }
+        });
+      }
+      if (tabKey !== 'reviewSubmit') {
+        formData.tab.push(tabData);
+      }
+    }
+
+
+    // console.log('formData----', formData);
+    return formData;
+
   }
 
   isPlainObject(data: unknown): data is { [s: string]: unknown; } {
@@ -260,17 +351,20 @@ export class XviFcFormComponent {
     } else if (this.actionType === 'previous') {
       this.stepper?.previous();
     }
+    this.triggerSnackbar();
+    this.formSaveLoader = false;
+    this.actionType = '';
+    // Swal.close();
+  }
+  triggerSnackbar() {
     this._snackBar.open('Save successfully!!', 'Close', {
       horizontalPosition: 'end',
       verticalPosition: 'top',
-      // duration: 2000,
+      duration: 10000,
       // panelClass: ['snackbar-success']
       panelClass: ['custom-snackbar-success']
     });
-    this.formSaveLoader = false;
-    Swal.close();
   }
-
   onSubmit(event: Event) {
     event.preventDefault();
     event.stopPropagation();
