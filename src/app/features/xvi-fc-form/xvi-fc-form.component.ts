@@ -124,28 +124,46 @@ export class XviFcFormComponent {
     public service: XviFcService,
     public formService: DynamicFormService,
     private _snackBar: MatSnackBar,
-    // private dataEntryService: DataEntryService,
-    // private _router: Router,
-    // private dialog: MatDialog,
-    // private activatedRoute: ActivatedRoute,
-    // private loaderService: GlobalLoaderService,
-    // private dateAdapter: DateAdapter<Date>
   ) { }
 
   ngOnInit() {
-    // this.isLoader=true;
-    // setTimeout(()=> {
-    //   this.isLoader=false;
-    // }, 3000)
     // this.form = this.formService.tabControl(tabsJson.data.tabs);
-    // console.log('this.form----', this.form);
-    // console.log('this.form.getRawValue()---',this.form.getRawValue());
-
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);
     // });
     this.onLoad();
+  }
+
+  onLoad(reload = false) {
+    this.isLoader = true;
+    // this.ulbId = '5dcfca53df6f59198c4ac3d5';
+    this.ulbId = this.loggedInUserDetails.ulb;
+    // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
+    this.service.getUlbForm(this.ulbId).subscribe({
+      next: (res: any) => {
+        this.tabs = res?.data?.tabs;
+
+        // this.tabs = tabsJson.data.tabs;
+        // push review tab
+        this.tabs.push({
+          key: 'reviewSubmit',
+          label: "Review & Submit",
+          "displayPriority": this.tabs.length + 1,
+        });
+        this.form = this.formService.tabControl(this.tabs);
+
+        // this.form.markAsPristine();
+        this.isLoader = false;
+        if (reload) {
+          setTimeout(() => {
+            this.afterSave();
+          }, 500);
+        }
+      }, error: () => {
+        this.isLoader = false;
+      }
+    });
   }
 
   // validateAllFormFields(formGroup: FormGroup) {
@@ -155,7 +173,6 @@ export class XviFcFormComponent {
   //   });
   // }
 
-  // submit(value: any) { }
   submit() {
 
   }
@@ -263,40 +280,6 @@ export class XviFcFormComponent {
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i]
   }
-
-  onLoad(reload = false) {
-    this.isLoader = true;
-    // this.ulbId = '5dcfca53df6f59198c4ac3d5';
-    this.ulbId = this.loggedInUserDetails.ulb;
-    // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
-    this.service.getUlbForm(this.ulbId).subscribe({
-      next: (res: any) => {
-        this.tabs = res?.data?.tabs;
-
-        // this.tabs = tabsJson.data.tabs;
-        this.tabs.push({
-          key: 'reviewSubmit',
-          label: "Review & Submit",
-          "displayPriority": this.tabs.length + 1,
-        });
-        this.form = this.formService.tabControl(this.tabs);
-
-        // this.form.markAsPristine();
-        this.isLoader = false;
-        if (reload) {
-          setTimeout(() => {
-            this.afterSave();
-          }, 500);
-        }
-        // this.msgForLedgerUpdate = res?.data?.messages;
-        // if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
-      }, error: () => {
-        this.isLoader = false;
-      }
-    });
-  }
-
-
 
 }
 
