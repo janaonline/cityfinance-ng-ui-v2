@@ -1,0 +1,22 @@
+.custom-snackbar-success {
+  --mdc-snackbar-container-color: green;
+  --mat-mdc-snack-bar-button-color: white;
+}
+.mdc-button .mdc-button__label{
+    --mat-mdc-snack-bar-button-color: white;
+}
+
+// .custom-snackbar-success {
+// 	background-color: #4caf50; /* Green */
+// 	color: white;
+//   }
+  
+//   .custom-snackbar-error {
+// 	background-color: #f44336; /* Red */
+// 	color: white;
+//   }
+  
+//   .custom-snackbar-info {
+// 	background-color: #2196f3; /* Blue */
+// 	color: white;
+//   }
