@@ -4,9 +4,9 @@
     <app-loader class="p-3" *ngIf="isLoader"></app-loader>
     <h3 class="fw-bold fs-4 m-1 mb-4">{{ loggedInUserDetails.name }}</h3>
     <!-- {{selectedIndex}}----- -->
-    <div class="row" *ngIf="!isLoader && tabs.length === 0">
-        No Data Found
-    </div>
+        <div class="bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
+            <strong>No Data Found</strong>
+        </div>
     <mat-stepper *ngIf="!isLoader && tabs" linear="false" labelPosition="bottom" id="stepper"
         [(selectedIndex)]="selectedStepIndex" #stepper>
         
