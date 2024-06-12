@@ -287,336 +287,336 @@ import { slb } from "./xviFcSlb";
 //         }
 //     ]
 // }
-// const uploadDoc = {
-//     // "_id": "6657921b9ab1c13ac44d01f6",
-//     // "key": "uploadDoc",
-//     // "icon": "",
-//     // "text": "",
-//     "formType": "form1",
-//     "label": "View/ Upload Document",
-//     "id": "s3",
-//     "displayPriority": 3,
-//     "key": "auditedAnnualFySt",
-//     // class: 'w-75',
-//     // "label": "Copy of Audited Annual Financial Statements preferably in English",
-//     "position": "",
-//     "required": true,
+const uploadDoc = {
+    // "_id": "6657921b9ab1c13ac44d01f6",
+    // "key": "uploadDoc",
+    // "icon": "",
+    // "text": "",
+    "formType": "form1",
+    "label": "View/ Upload Document",
+    "id": "s3",
+    "displayPriority": 3,
+    "key": "auditedAnnualFySt",
+    // class: 'w-75',
+    // "label": "Copy of Audited Annual Financial Statements preferably in English",
+    "position": "",
+    "required": true,
 
-//     "bottomText": "Maximum of 5MB",
-//     "instruction": [
-//         {
-//             "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
-//         },
-//         {
-//             "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
-//         },
-//         {
-//             "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
-//         }
-//     ],
-//     "status": "Na",
-//     "value": "",
-//     "isDraft": true,
-//     "readonly": false,
-//     "fileRejectOptions": [
-//         "Balance Sheet",
-//         "Schedules To Balance Sheet",
-//         "Income And Expenditure",
-//         "Schedules To Income And Expenditure",
-//         "Cash Flow Statement",
-//         "Auditor Report"
-//     ],
-//     "year": [
-//         {
-//             "warning": [],
-//             "label": "FY 2022-23",
-//             // "key": "2022-23",
-//             "key": "2022-23",
-//             "position": 1,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": "",
-//             verifyStatus: 1, // 1-pending, 2- accept, 3- reject
-//             rejectOption: '',
-//             rejectReason: '',
-//             "file": {
-//                 "name": "123",
-//                 "url": "321"
-//             },
-//             allowedFileTypes: ['pdf'],
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "",
-//                     "url": "",
-//                     "type": "",
-//                     "label": ""
-//                 }
-//             ],
+    "bottomText": "Maximum of 5MB",
+    "instruction": [
+        {
+            "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
+        },
+        {
+            "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
+        },
+        {
+            "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
+        }
+    ],
+    "status": "Na",
+    "value": "",
+    "isDraft": true,
+    "readonly": false,
+    "fileRejectOptions": [
+        "Balance Sheet",
+        "Schedules To Balance Sheet",
+        "Income And Expenditure",
+        "Schedules To Income And Expenditure",
+        "Cash Flow Statement",
+        "Auditor Report"
+    ],
+    "year": [
+        {
+            "warning": [],
+            "label": "FY 2022-23",
+            // "key": "2022-23",
+            "key": "2022-23",
+            "position": 1,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            verifyStatus: 1, // 1-pending, 2- accept, 3- reject
+            rejectOption: '',
+            rejectReason: '',
+            "file": {
+                "name": "123",
+                "url": "321"
+            },
+            allowedFileTypes: ['pdf'],
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
 
-//         },
-//         {
-//             "warning": [],
-//             "label": "FY 2021-22",
-//             "key": "2021-22",
-//             "position": 2,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": true,
-//             "isVerifiedStatus": 2, // 1- pending, 2- approved, 3-rejected by ulbs
-//             "file": {
-//                 "name": "567",
-//                 "url": "765"
-//             },
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "file1.pdf",
-//                     "url": "file1.pdf",
-//                     "type": "",
-//                     "label": "",
-//                     "size": "12kb"
-//                 },
-//                 {
-//                     "name": "file2.pdf",
-//                     "url": "file1.pdf",
-//                     "type": "",
-//                     "label": "",
-//                     "size": "12kb"
-//                 }
-//             ],
-//         },
-//         {
-//             "warning": [],
-//             "label": "FY 2020-21",
-//             "key": "2020-21",
-//             "position": 3,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": true,
-//             "isVerifiedStatus": 3, // 1- pending, 2- approved, 3-rejected by ulbs
-//             "file": {
-//                 "name": "",
-//                 "url": ""
-//             },
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "",
-//                     "url": "",
-//                     "type": "",
-//                     "label": ""
-//                 }
-//             ],
-//         },
-//         {
-//             "warning": [],
-//             "label": "FY 2019-20",
-//             "key": "2019-20",
-//             "position": 4,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": "",
-//             "file": {
-//                 "name": "",
-//                 "url": ""
-//             },
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "",
-//                     "url": "",
-//                     "type": "",
-//                     "label": ""
-//                 }
-//             ],
-//         },
-//         {
-//             "warning": [],
-//             "label": "FY 2018-19",
-//             "key": "2018-19",
-//             "position": 5,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": "",
-//             "file": {
-//                 "name": "",
-//                 "url": ""
-//             },
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "",
-//                     "url": "",
-//                     "type": "",
-//                     "label": ""
-//                 }
-//             ],
-//         },
-//         {
-//             "warning": [],
-//             "label": "FY 2017-18",
-//             "key": "2017-18",
-//             "position": 6,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": "",
-//             "file": {
-//                 "name": "",
-//                 "url": ""
-//             },
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "",
-//                     "url": "",
-//                     "type": "",
-//                     "label": ""
-//                 }
-//             ],
-//         },
-//         {
-//             "warning": [],
-//             "label": "FY 2016-17",
-//             "key": "2016-17",
-//             "position": 7,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": "",
-//             "file": {
-//                 "name": "",
-//                 "url": ""
-//             },
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "",
-//                     "url": "",
-//                     "type": "",
-//                     "label": ""
-//                 }
-//             ],
-//         },
-//         {
-//             "warning": [],
-//             "label": "FY 2015-16",
-//             "key": "2015-16",
-//             "position": 8,
-//             "type": "auditedAnnualFySt",
-//             "formFieldType": "file",
-//             "value": "",
-//             "isPdfAvailable": "",
-//             "file": {
-//                 "name": "",
-//                 "url": ""
-//             },
-//             validations: [
-//                 {
-//                     name: "required",
-//                     validator: 'required',
-//                     message: "Please upload a file.",
-//                 },
-//                 {
-//                     name: "max",
-//                     validator: 20,
-//                     message: "Please upload a file with a maximum size of 20 MB."
-//                 },
-//             ],
-//             "fileAlreadyOnCf": [
-//                 {
-//                     "name": "",
-//                     "url": "",
-//                     "type": "",
-//                     "label": ""
-//                 }
-//             ],
-//         }
-//     ],
-// }
+        },
+        {
+            "warning": [],
+            "label": "FY 2021-22",
+            "key": "2021-22",
+            "position": 2,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": true,
+            "isVerifiedStatus": 2, // 1- pending, 2- approved, 3-rejected by ulbs
+            "file": {
+                "name": "567",
+                "url": "765"
+            },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "file1.pdf",
+                    "url": "file1.pdf",
+                    "type": "",
+                    "label": "",
+                    "size": "12kb"
+                },
+                {
+                    "name": "file2.pdf",
+                    "url": "file1.pdf",
+                    "type": "",
+                    "label": "",
+                    "size": "12kb"
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2020-21",
+            "key": "2020-21",
+            "position": 3,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": true,
+            "isVerifiedStatus": 3, // 1- pending, 2- approved, 3-rejected by ulbs
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2019-20",
+            "key": "2019-20",
+            "position": 4,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2018-19",
+            "key": "2018-19",
+            "position": 5,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2017-18",
+            "key": "2017-18",
+            "position": 6,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2016-17",
+            "key": "2016-17",
+            "position": 7,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        },
+        {
+            "warning": [],
+            "label": "FY 2015-16",
+            "key": "2015-16",
+            "position": 8,
+            "type": "auditedAnnualFySt",
+            "formFieldType": "file",
+            "value": "",
+            "isPdfAvailable": "",
+            "file": {
+                "name": "",
+                "url": ""
+            },
+            validations: [
+                {
+                    name: "required",
+                    validator: 'required',
+                    message: "Please upload a file.",
+                },
+                {
+                    name: "max",
+                    validator: 20,
+                    message: "Please upload a file with a maximum size of 20 MB."
+                },
+            ],
+            "fileAlreadyOnCf": [
+                {
+                    "name": "",
+                    "url": "",
+                    "type": "",
+                    "label": ""
+                }
+            ],
+        }
+    ],
+}
 // const accountPractice = {
 //     "key": "accountPractice",
 //     "label": "Accounting Practice",
@@ -1399,56 +1399,56 @@ const basicTab = {
         }
     ]
 };
-const uploadDoc = {
-    "_id": "666764fa1d285021388bedbc",
-    "key": "uploadDoc",
-    "icon": "",
-    "formType": "form1",
-    "label": "View/ Upload Document",
-    "id": "s3",
-    "displayPriority": 3,
-    "__v": 0,
-    "data": [
-        {
-            "key": "auditedAnnualFySt",
-            "readOnly": true,
-            "class": "",
-            "label": "Copy of Audited Annual Financial Statements preferably in English",
-            "position": "",
-            "quesPos": 52,
-            "required": true,
-            "info": "",
-            "placeHolder": "",
-            "formFieldType": "file",
-            "canShow": true,
-            "validations": [
-                {
-                    "name": "required",
-                    "validator": "required",
-                    "message": "Please fill in this required field."
-                }
-            ],
-            "max": 20,
-            "min": 0,
-            "bottomText": "Maximum of 5MB",
-            "instruction": [
-                {
-                    "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
-                },
-                {
-                    "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
-                },
-                {
-                    "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
-                }
-            ],
-            "year": [],
-            "status": "Na",
-            "value": "",
-            "isDraft": true
-        }
-    ]
-};
+// const uploadDoc = {
+//     "_id": "666764fa1d285021388bedbc",
+//     "key": "uploadDoc",
+//     "icon": "",
+//     "formType": "form1",
+//     "label": "View/ Upload Document",
+//     "id": "s3",
+//     "displayPriority": 3,
+//     "__v": 0,
+//     "data": [
+//         {
+//             "key": "auditedAnnualFySt",
+//             "readOnly": true,
+//             "class": "",
+//             "label": "Copy of Audited Annual Financial Statements preferably in English",
+//             "position": "",
+//             "quesPos": 52,
+//             "required": true,
+//             "info": "",
+//             "placeHolder": "",
+//             "formFieldType": "file",
+//             "canShow": true,
+//             "validations": [
+//                 {
+//                     "name": "required",
+//                     "validator": "required",
+//                     "message": "Please fill in this required field."
+//                 }
+//             ],
+//             "max": 20,
+//             "min": 0,
+//             "bottomText": "Maximum of 5MB",
+//             "instruction": [
+//                 {
+//                     "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
+//                 },
+//                 {
+//                     "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
+//                 },
+//                 {
+//                     "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation"
+//                 }
+//             ],
+//             "year": [],
+//             "status": "Na",
+//             "value": "",
+//             "isDraft": true
+//         }
+//     ]
+// };
 const accountPractice = {
     "_id": "666764fa1d285021388bedbd",
     "key": "accountPractice",
