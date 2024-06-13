@@ -247,11 +247,23 @@ export class XviFcFormComponent {
         'Validation Error!',
         'Some fields not filled or invalid.',
         'error'
-      );
+      ).then(() => {
+        //scroll to fisrt error tab
+        setTimeout(() => {
+          for (const tab of this.tabs) {
+            console.log('tab.key',tab.key, 'invalid', this.form.get(tab.key)?.invalid);
+            
+            if (this.form.get(tab.key)?.invalid) {
+              document.getElementById(tab.key)?.scrollIntoView({ behavior: "smooth" });
+              return;
+            }
+          }
+        }, 500)
+      });
     }
   }
   getAllTabData() {
-    const formData: any = { tab: [], formStatus: 'SUBMITTED'};
+    const formData: any = { tab: [], formStatus: 'SUBMITTED' };
     for (let tab of this.tabs) {
       formData.tab.push(this.getFormTabData(tab));
     }
