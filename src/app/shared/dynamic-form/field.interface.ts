@@ -26,6 +26,7 @@ export interface FieldConfig {
   verifyStatus?: number;
   allowedFileTypes?: string[];
   fileRejectOptions?: string[];
+  decimal?: 0;
 }
 
 export interface JsonFieldConfig {
