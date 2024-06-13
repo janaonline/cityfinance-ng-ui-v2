@@ -54,7 +54,7 @@
                     <thead>
                         <tr class="border-bottom">
                             <th class="first-col"></th>
-                            <th *ngFor="let year of field.data[0].year; let i = index;" class="fw-bold">{{ year.key }}
+                            <th *ngFor="let year of field.data[0].year; let i = index;" class="fw-bold" class="text-center">{{ year.label }}
                             </th>
                         </tr>
                     </thead>
@@ -65,7 +65,7 @@
                                 row.label }}
                                 <sup class="text-danger fw-bold" *ngIf="row.required">*</sup>
                             </td>
-                            <td class="fw-bold" *ngFor="let col of row.year; let j = index;">
+                            <td align="right" class="fw-bold" *ngFor="let col of row.year; let j = index;">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
                                     <span matTextPrefix>&nbsp;</span>{{ col.value ? (col.value |
                                     currency:'INR':'symbol':'1.0-0') :'N/A' }}
