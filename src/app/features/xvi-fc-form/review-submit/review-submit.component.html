@@ -54,7 +54,9 @@
                     <thead>
                         <tr class="border-bottom">
                             <th class="first-col"></th>
-                            <th *ngFor="let year of field.data[0].year; let i = index;" class="fw-bold" class="text-center">{{ year.label }}
+                            <th *ngFor="let year of field.data[0].year; let i = index;" class="fw-bold"
+                                class="text-end">
+                                {{year.label }}
                             </th>
                         </tr>
                     </thead>
@@ -220,6 +222,7 @@
                     <td class="col-7">{{question.position}}.&nbsp;{{question.label}}<sup class="text-danger fw-bold"
                             *ngIf="question.required">*</sup></td>
                     <td class="col-5">
+                        <!-- <p class="fw-bold" [ngClass]="{'text-end': question.formFieldType =='number'}"> -->
                         <p class="fw-bold">
                             {{ question.value ? question.value : 'N/A' }}
                         </p>
