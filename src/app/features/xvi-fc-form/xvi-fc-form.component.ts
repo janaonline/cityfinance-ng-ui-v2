@@ -251,7 +251,7 @@ export class XviFcFormComponent {
     }
   }
   getAllTabData() {
-    const formData: any = { tab: [], formStatus: 'SUBMITTED', formId: 16 };
+    const formData: any = { tab: [], formStatus: 'SUBMITTED'};
     for (let tab of this.tabs) {
       formData.tab.push(this.getFormTabData(tab));
     }
@@ -315,7 +315,7 @@ export class XviFcFormComponent {
     });
   }
   getFormData() {
-    const formData: any = { tab: [], formStatus: 'IN_PROGRESS', formId: 16 }
+    const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
     formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
     return formData;
   }
