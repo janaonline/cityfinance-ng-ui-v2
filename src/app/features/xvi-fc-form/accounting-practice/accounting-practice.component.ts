@@ -2,11 +2,14 @@ import { Component, Input } from '@angular/core';
 import { FormGroup, FormArray } from '@angular/forms';
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
 import { MaterialModule } from '../../../material.module';
+import { DecimalLimitDirective } from '../../../core/directives/decimal-limit.directive';
+import { NoUpDownDirective } from '../../../core/directives/no-up-down.directive';
 
 @Component({
   selector: 'app-accounting-practice',
   standalone: true,
-  imports: [MaterialModule],
+  imports: [MaterialModule, DecimalLimitDirective,
+    NoUpDownDirective],
   templateUrl: './accounting-practice.component.html',
   styleUrl: './accounting-practice.component.scss'
 })

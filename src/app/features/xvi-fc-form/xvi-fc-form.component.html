@@ -10,7 +10,7 @@
     <mat-stepper *ngIf="!isLoader && tabs" linear="true" labelPosition="bottom" id="stepper"
         [(selectedIndex)]="selectedStepIndex" #stepper (selectionChange)="selectionChange($event)">
 
-        <mat-step state="state" *ngFor="let tab of tabs; index as i" [completed]="true">
+        <mat-step state="state" *ngFor="let tab of tabs; index as i" [completed]="isDemographicValid">
             <!-- {{tab.key}} ----------<br> -->
             <ng-template matStepLabel>
                 <p class="fw-bold d-inline" [title]="tab?.label">
