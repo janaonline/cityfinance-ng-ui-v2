@@ -159,8 +159,8 @@ export class XviFcFormComponent {
     this.service.getUlbForm(this.ulbId).subscribe({
       next: (res: any) => {
         this.tabs = res?.data?.tabs;
-        this.totalTabs = this.tabs.length;
         // this.tabs = tabsJson.data.tabs;
+        this.totalTabs = this.tabs.length;
         // push review tab
         this.tabs.push({
           key: 'reviewSubmit',
@@ -222,14 +222,7 @@ export class XviFcFormComponent {
               );
               this.onLoad();
             }, error: (error: any) => {
-              console.log('error', error);
-
-              Swal.fire(
-                'Error',
-                error.message || 'Something went wrong! Please try again later',
-                'error'
-              );
-              this.formSaveLoader = false;
+              this.handleHttpError(error);
             }
           });
 
@@ -251,8 +244,8 @@ export class XviFcFormComponent {
         //scroll to fisrt error tab
         setTimeout(() => {
           for (const tab of this.tabs) {
-            console.log('tab.key',tab.key, 'invalid', this.form.get(tab.key)?.invalid);
-            
+            // console.log('tab.key', tab.key, 'invalid', this.form.get(tab.key)?.invalid);
+
             if (this.form.get(tab.key)?.invalid) {
               document.getElementById(tab.key)?.scrollIntoView({ behavior: "smooth" });
               return;
@@ -261,6 +254,15 @@ export class XviFcFormComponent {
         }, 500)
       });
     }
+  }
+  handleHttpError(error: any) {
+    Swal.fire(
+      'Error',
+      error.message || 'Something went wrong! Please try again',
+      'error'
+    );
+    this.formSaveLoader = false;
+    this.tabChangeLoader = false;
   }
   getAllTabData() {
     const formData: any = { tab: [], formStatus: 'SUBMITTED' };
@@ -277,13 +279,17 @@ export class XviFcFormComponent {
       console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
       // const formData = this.getAllTabData();
       const formData = this.getFormData();
-      this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
-        if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
-          this.onLoad();
-        } else {
-          this.tabChangeLoader = false;
+      this.service.saveUlbForm(this.ulbId, formData).subscribe({
+        next: (res) => {
+          if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
+            this.onLoad();
+          } else {
+            this.tabChangeLoader = false;
+          }
+          this.triggerSnackbar();
+        }, error: (error: any) => {
+          this.handleHttpError(error);
         }
-        this.triggerSnackbar();
       });
     }
 
@@ -313,16 +319,20 @@ export class XviFcFormComponent {
     // return;
     this.formSaveLoader = true;
 
-    this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
-      // for last tab load json again
-      if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
-        this.onLoad(true);
-      }
-      // after first tab load json again
-      else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
-        this.onLoad(true);
-      } else {
-        this.afterSave();
+    this.service.saveUlbForm(this.ulbId, formData).subscribe({
+      next: (res) => {
+        // for last tab load json again
+        if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
+          this.onLoad(true);
+        }
+        // after first tab load json again
+        else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
+          this.onLoad(true);
+        } else {
+          this.afterSave();
+        }
+      }, error: (error: any) => {
+        this.handleHttpError(error);
       }
     });
   }

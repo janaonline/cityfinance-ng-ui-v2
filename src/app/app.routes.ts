@@ -29,10 +29,10 @@ export const routes: Routes = [
     //     component: HomeComponent,
     //     canActivate: [MaintenanceGuard],
     // },
-    // {
-    //     path: 'maintenance',
-    //     component: MaintenanceComponent,
-    // },
+    {
+        path: 'maintenance',
+        component: MaintenanceComponent,
+    },
     {
         path: 'error',
         component: ErrorComponent,
