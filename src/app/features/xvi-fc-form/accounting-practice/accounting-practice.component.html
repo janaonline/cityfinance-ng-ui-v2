@@ -9,7 +9,9 @@
     <ng-container *ngFor="let question of field.data">
 
         <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
-            {{question.position}}. {{question.label}}
+            {{question.position}}. {{question.label}}<sup class="text-danger">*</sup><i
+                class="bi bi-info-circle fs-7 me-1" *ngIf="question.info" matTooltip="{{question.info}}"></i>
+
         </label>
         @if (question.formFieldType === 'radio') {
         <div class="demo-full-width margin-top" [formGroup]="getGroup(i, field.key,question.key)">
@@ -17,12 +19,14 @@
             <mat-radio-group formControlName="value" class="example-radio-group">
                 @for (opt of question.options; track $index) {
                 <mat-radio-button class="example-radio-button" [value]="opt.id || opt " color="primary">{{opt.id ||
-                    opt}}</mat-radio-button>
+                    opt}} <i class="bi bi-info-circle fs-7 me-1" *ngIf="opt.info"
+                        matTooltip="{{opt.info}}"></i></mat-radio-button>
+
                 @if (opt.showInputBox && getGroup(i, field.key,question.key).value.value=== opt.id) {
                 <mat-form-field appearance="outline" class="ms-5 col-6">
                     <input matInput formControlName="reason">
                     <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
-                        <mat-error >{{validation.message}}</mat-error>
+                        <mat-error>{{validation.message}}</mat-error>
                     </ng-container>
                 </mat-form-field>
                 }
@@ -36,9 +40,10 @@
             <mat-form-field class="ms-4 col-6" appearance="outline" floatLabel="always"
                 [formGroup]="getGroup(i, field.key,question.key)">
                 <input matInput formControlName="value" type="number">
-                
+
                 <ng-container *ngFor="let validation of question.validations;" ngProjectAs="mat-error">
-                    <mat-error *ngIf="hasError(i, field.key, question.key,validation.name)">{{validation.message}}</mat-error>
+                    <mat-error
+                        *ngIf="hasError(i, field.key, question.key,validation.name)">{{validation.message}}</mat-error>
                     <!-- <mat-error>{{validation.message}}</mat-error> -->
                 </ng-container>
             </mat-form-field>
