@@ -61,6 +61,8 @@ export class CustomHttpInterceptor implements HttpInterceptor {
   }
 
   private handleError = (err: HttpErrorResponse) => {
+    // console.log('err', err);
+
     /**
      * @description 401 means usre need to be logged in to access this api. Therefore, redirect the user
      * to login page
@@ -92,11 +94,11 @@ export class CustomHttpInterceptor implements HttpInterceptor {
         });
         break;
       case 0:
-        return throwError({
-          error: { message: "Failed to connect with Server" },
-        });
+        return throwError(() => { error: { message: "Failed to connect with Server" }})
+      // return throwError();
     }
-    return throwError(err);
+    return throwError(() => err.error);
+    // return throwError(err);
   };
 
   private clearLocalStorage() {

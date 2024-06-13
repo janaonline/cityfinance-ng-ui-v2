@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from "@angular/core";
-import { FormGroup } from "@angular/forms";
+import { FormControl, FormGroup } from "@angular/forms";
 import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
 @Component({
@@ -14,7 +14,10 @@ import { MaterialModule } from '../../../../material.module';
     	</div>
     	<mat-radio-group [formControlName]="field.key">
     		<mat-radio-button *ngFor="let opt of options" [value]="opt.id || opt " color="primary">{{opt.label || opt}}</mat-radio-button>
-    	</mat-radio-group>
+        <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+    <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
+  </ng-container>
+      </mat-radio-group>
     </div>`,
   styles: ``
 })
@@ -30,7 +33,8 @@ export class RadiobuttonComponent implements OnInit {
     this.options = this.options || this.field.options;
   }
 
-  // getValue(name: string) {
-  //   return this.group.value.get(name) ? this.group.value.get(name).value : '';
-  // }
+  hasError(key: string, name: string) {
+    return (this.group.get(key) as FormControl).hasError(name)
+  }
+
 }

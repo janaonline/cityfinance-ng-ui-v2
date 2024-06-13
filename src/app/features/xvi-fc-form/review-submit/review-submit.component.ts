@@ -3,11 +3,12 @@ import { FormGroup, FormArray } from '@angular/forms';
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
 import { MaterialModule } from '../../../material.module';
 import { MatStepper } from '@angular/material/stepper';
+import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 
 @Component({
   selector: 'app-review-submit',
   standalone: true,
-  imports: [MaterialModule],
+  imports: [MaterialModule, ToStorageUrlPipe],
   templateUrl: './review-submit.component.html',
   styleUrl: './review-submit.component.scss'
 })
@@ -30,6 +31,11 @@ export class ReviewSubmitComponent {
 
   editStep(index: number) {
     if (this.stepper) this.stepper.selectedIndex = index;
+  }
+
+  isFormValid(tabKey: string): Boolean {
+    // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
+    return this.group.get(tabKey)?.valid as boolean;
   }
 
 }

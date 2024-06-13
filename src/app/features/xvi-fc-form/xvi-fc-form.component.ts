@@ -120,6 +120,7 @@ export class XviFcFormComponent {
   step1Complete = false;
   tabChangeLoader = false;
   totalTabs = 6;
+  isDemographicCompleted: boolean | undefined = false;
 
   get value() {
     return this.form.value;
@@ -138,7 +139,6 @@ export class XviFcFormComponent {
     //   // this.childFG.emit(this.form);
     // });
     this.onLoad();
-
     // this._snackBar.open('Save successfully!!', 'Close', {
     //   horizontalPosition: 'end',
     //   verticalPosition: 'top',
@@ -147,7 +147,10 @@ export class XviFcFormComponent {
     //   panelClass: ['custom-snackbar-success']
     // });
   }
-
+  get isDemographicValid() {
+    // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
+    return this.form.get('demographicData')?.valid;
+  }
   onLoad(reload = false) {
     this.isLoader = true;
     // this.ulbId = '5dcfca53df6f59198c4ac3d5';
@@ -166,6 +169,12 @@ export class XviFcFormComponent {
         });
 
         this.form = this.formService.tabControl(this.tabs);
+        // console.log('this.form.controls[0]--',this.form.controls[0]);
+
+        // this.isDemographicCompleted = this.form.get('demographicData')?.valid;
+        // console.log(`this.form.get('demographicData')?.valid;`, this.form.get('demographicData')?.valid);
+        // console.log(`this.form.valid;`, this.form.valid);
+
         // this.form.markAsPristine();        
 
         if (reload) {
@@ -190,37 +199,56 @@ export class XviFcFormComponent {
   // }
 
   submit() {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'Do you really want to perform this action?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Submit',
-      cancelButtonText: 'No, cancel!',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.formSaveLoader = true;
-        // const formData = this.getFormData('SUBMITTED');
-        const formData = this.getAllTabData();
-        // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
-        this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
-          Swal.fire(
-            'Done!',
-            'Your action has been confirmed.',
-            'success'
-          );
-          this.onLoad();
-        });
+    if (this.form.valid) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'Do you really want to submit the data?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Submit',
+        cancelButtonText: 'No, cancel!',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.formSaveLoader = true;
+          // const formData = this.getFormData('SUBMITTED');
+          const formData = this.getAllTabData();
+          // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
+          this.service.submitUlbForm(this.ulbId, formData).subscribe({
+            next: (res) => {
+              Swal.fire(
+                'Done!',
+                'Your action has been confirmed.',
+                'success'
+              );
+              this.onLoad();
+            }, error: (error: any) => {
+              console.log('error', error);
 
-      } else if (result.dismiss === Swal.DismissReason.cancel) {
-        // Cancel the action
-        Swal.fire(
-          'Cancelled',
-          'Your action has been cancelled.',
-          'error'
-        );
-      }
-    });
+              Swal.fire(
+                'Error',
+                error.message || 'Something went wrong! Please try again later',
+                'error'
+              );
+              this.formSaveLoader = false;
+            }
+          });
+
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          // Cancel the action
+          Swal.fire(
+            'Cancelled',
+            'Your action has been cancelled.',
+            'error'
+          );
+        }
+      });
+    } else {
+      Swal.fire(
+        'Validation Error!',
+        'Some fields not filled or invalid.',
+        'error'
+      );
+    }
   }
   getAllTabData() {
     const formData: any = { tab: [], formStatus: 'SUBMITTED', formId: 16 };
@@ -230,7 +258,7 @@ export class XviFcFormComponent {
     return formData;
   }
   selectionChange(event: StepperSelectionEvent) {
-    return;
+    // return;
     // if last tab load only data
     if (event.previouslySelectedIndex !== this.totalTabs && !this.actionType) {
       this.tabChangeLoader = true;
@@ -253,14 +281,14 @@ export class XviFcFormComponent {
 
   }
   saveAs(actionType: string) {
+    const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
+    // console.log(`currentForm?.valid;`, currentForm?.valid);
+    // console.log(`this.form.valid;`, this.form.valid);
+
+    currentForm?.markAllAsTouched()
+
     this.actionType = actionType;
-    // if (['previous', 'next'].includes(actionType)) {
-    //   Swal.fire({
-    //     title: 'Unsaved changes!',
-    //     text: 'Save as draft and continue',
-    //     icon: 'info'
-    //   });
-    // }
+
     console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
 
     // if back from review tab no action
@@ -292,7 +320,7 @@ export class XviFcFormComponent {
     return formData;
   }
   getFormTabData(tab: any) {
-    console.log('this.form.value', this.form.value);
+    // console.log('this.form.value', this.form.value);
     const formJson: any = this.form.getRawValue();
 
     // const formData: any = { tab: [], formStatus, formId: 16 }
@@ -334,7 +362,7 @@ export class XviFcFormComponent {
         // console.log('formJsonTab[i][field.key]', formJsonTab[i][row.key]);
 
         row.year.forEach((col: any) => {
-          console.log('col', col);
+          // console.log('col', col);
           const { key, year, refKey } = col;
           const value = formJsonTab[i][row.key][col.key];
           tabData.data.push({ key, year, refKey, ...value, saveAsDraftValue: '' });
@@ -387,7 +415,7 @@ export class XviFcFormComponent {
     // Swal.close();
   }
   triggerSnackbar() {
-    this._snackBar.open('Save successfully!!', 'Close', {
+    this._snackBar.open('Data saved successfully!', 'Close', {
       horizontalPosition: 'end',
       verticalPosition: 'top',
       duration: 10000,
