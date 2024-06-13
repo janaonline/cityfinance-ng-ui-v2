@@ -161,8 +161,8 @@ export class XviFcFormComponent {
         // push review tab
         this.tabs.push({
           key: 'reviewSubmit',
-          label: "Review & Submit",
-          "displayPriority": this.totalTabs + 1,
+          label: 'Review & Submit',
+          'displayPriority': this.totalTabs + 1,
         });
 
         this.form = this.formService.tabControl(this.tabs);
@@ -201,8 +201,9 @@ export class XviFcFormComponent {
       if (result.isConfirmed) {
         this.formSaveLoader = true;
         // const formData = this.getFormData('SUBMITTED');
-        const formData = this.getFormData('IN_PROGRESS');
-        this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
+        const formData = this.getAllTabData();
+        // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
+        this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
           Swal.fire(
             'Done!',
             'Your action has been confirmed.',
@@ -221,13 +222,21 @@ export class XviFcFormComponent {
       }
     });
   }
+  getAllTabData() {
+    const formData: any = { tab: [], formStatus: 'SUBMITTED', formId: 16 };
+    for (let tab of this.tabs) {
+      formData.tab.push(this.getFormTabData(tab));
+    }
+    return formData;
+  }
   selectionChange(event: StepperSelectionEvent) {
-
+    return;
     // if last tab load only data
     if (event.previouslySelectedIndex !== this.totalTabs && !this.actionType) {
       this.tabChangeLoader = true;
       console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
-      const formData = this.getFormData('IN_PROGRESS');
+      // const formData = this.getAllTabData();
+      const formData = this.getFormData();
       this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
         if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
           this.onLoad();
@@ -247,9 +256,9 @@ export class XviFcFormComponent {
     this.actionType = actionType;
     // if (['previous', 'next'].includes(actionType)) {
     //   Swal.fire({
-    //     title: "Unsaved changes!",
-    //     text: "Save as draft and continue",
-    //     icon: "info"
+    //     title: 'Unsaved changes!',
+    //     text: 'Save as draft and continue',
+    //     icon: 'info'
     //   });
     // }
     console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
@@ -260,85 +269,106 @@ export class XviFcFormComponent {
       this.actionType = '';
       return;
     }
+    const formData = this.getFormData();
+    // return;
     this.formSaveLoader = true;
-    const formData = this.getFormData('IN_PROGRESS');
+
     this.service.saveUlbForm(this.ulbId, formData).subscribe((res) => {
+      // for last tab load json again
       if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
         this.onLoad(true);
-      } else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
+      }
+      // after first tab load json again
+      else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
         this.onLoad(true);
       } else {
         this.afterSave();
       }
     });
   }
+  getFormData() {
+    const formData: any = { tab: [], formStatus: 'IN_PROGRESS', formId: 16 }
+    formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
+    return formData;
+  }
+  getFormTabData(tab: any) {
+    console.log('this.form.value', this.form.value);
+    const formJson: any = this.form.getRawValue();
 
-  getFormData(formStatus: string) {
-    // console.log('this.form.value', this.form.value);
-    const formJson: any = this.form.value;
-
-    const formData: any = { tab: [], formStatus, formId: 16 }
+    // const formData: any = { tab: [], formStatus, formId: 16 }
     // console.log('this.tabs[this.selectedStepIndex]', this.tabs[this.selectedStepIndex]);
-    // const tab = this.tabs[this.selectedStepIndex];
+    // const tab = this.tabs[index];
 
 
-    for (let tab of this.tabs) {
-      const tabKey = tab.key;
-      const tabData: any = { tabKey, data: [] };
-      if (tabKey === 'demographicData') {
-        tab['data'].forEach((field: any, i: number) => {
-          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
-          const fieldData = {
-            key: field.key,
-            value: formJson[tabKey][i][field.key],
-            saveAsDraftValue: formJson[tabKey][i][field.key]
-          };
-          tabData.data.push(fieldData);
+    // for (let tab of this.tabs) {
+    const tabKey = tab.key;
+    const formJsonTab = formJson[tabKey];
+    const tabData: any = { tabKey, data: [] };
+    if (tabKey === 'demographicData') {
+      tab['data'].forEach((field: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
+        const fieldData = {
+          key: field.key,
+          value: formJsonTab[i][field.key],
+          saveAsDraftValue: formJsonTab[i][field.key]
+        };
+        tabData.data.push(fieldData);
+      });
+    } else if (tabKey === 'financialData' || tabKey === 'serviceLevelBenchmark') {
+      // console.log('tab[', tab['data']);
+
+      tab['data'].forEach((table: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][table.key]);
+
+        table.data.forEach((row: any) => {
+          row.year.forEach((col: any) => {
+            // console.log('col', col);
+            const { key, year, refKey } = col;
+            const value = formJsonTab[i][table.key][row.key][col.key];
+            tabData.data.push({ key, year, refKey, value, saveAsDraftValue: value });
+          });
         });
-      } else if (tabKey === 'financialData') {
-        // console.log('tab[', tab['data']);
+      });
+    } else if (tabKey === 'uploadDoc') {
+      tab['data'].forEach((row: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][row.key]);
 
-        tab['data'].forEach((field: any, i: number) => {
-          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
-          // const data = [];
-          for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
-            if (this.isPlainObject(value)) {
-              for (const [year, val] of Object.entries(value)) {
-                tabData.data.push({ key, year, value: val });
-              }
-            }
-
-          }
+        row.year.forEach((col: any) => {
+          console.log('col', col);
+          const { key, year, refKey } = col;
+          const value = formJsonTab[i][row.key][col.key];
+          tabData.data.push({ key, year, refKey, ...value, saveAsDraftValue: '' });
         });
-      } else if (tabKey === 'uploadDoc') {
-        tab['data'].forEach((field: any, i: number) => {
-          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
-          for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
+      });
+      // tab['data'].forEach((field: any, i: number) => {
+      //   // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
+      //   for (const [key, value] of Object.entries(formJsonTab[i][field.key])) {
+      //     tabData.data.push(
+      //       { refKey: field.key, key: field.key, year: key, ...(typeof value === 'object' && value !== null ? value : {}) }
+      //     );
+
+      //   }
+      // });
+    } else if (tabKey === 'accountPractice') {
+      tab['data'].forEach((field: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
+        for (const [key, value] of Object.entries(formJsonTab[i][field.key])) {
+          if (this.isPlainObject(value)) {
             tabData.data.push(
-              { key: field.key, year: key, ...(typeof value === 'object' && value !== null ? value : {}) }
+              { key, saveAsDraftValue: value['value'], ...value }
             );
-
           }
-        });
-      } else if (tabKey === 'accountPractice') {
-        tab['data'].forEach((field: any, i: number) => {
-          // console.log('formJson[tabKey][i][field.key]', formJson[tabKey][i][field.key]);
-          for (const [key, value] of Object.entries(formJson[tabKey][i][field.key])) {
-            tabData.data.push(
-              { key, ...(typeof value === 'object' && value !== null ? value : {}) }
-            );
-
-          }
-        });
-      }
-      if (tabKey !== 'reviewSubmit') {
-        formData.tab.push(tabData);
-      }
+        }
+      });
+      // }
+      // if (tabKey !== 'reviewSubmit') {
+      //   formData.tab.push(tabData);
+      // }
     }
 
 
     // console.log('formData----', formData);
-    return formData;
+    return tabData;
 
   }
 
