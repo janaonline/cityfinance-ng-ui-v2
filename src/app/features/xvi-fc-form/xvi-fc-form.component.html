@@ -105,7 +105,7 @@
                                 <span class="visually-hidden">Loading...</span>
                               </div> -->
                             Save as Draft</button>
-                        <button class="ms-2 primary-btn-1" (click)="saveAs('next')">Continue to Next Section</button>
+                        <button class="ms-2 primary-btn-1" (click)="saveAs('next')" [disabled]="!isDemographicValid">Continue to Next Section</button>
                     </div>
                     }
                     }
