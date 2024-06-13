@@ -40,11 +40,13 @@
     // text-align: right;
     border: none;
     padding-top: 1rem;
+    min-height: 3rem !important;
 }
 
 .table th.first-col,
 .table td.first-col {
     min-width: 15rem !important;
+    min-height: 3rem !important;
     vertical-align: middle;
     text-align: left;
     position: sticky;
