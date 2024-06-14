@@ -265,9 +265,11 @@ export class XviFcFormComponent {
     this.tabChangeLoader = false;
   }
   getAllTabData() {
-    const formData: any = { tab: [], formStatus: 'SUBMITTED' };
+    const formData: any = { tab: [] };
     for (let tab of this.tabs) {
-      formData.tab.push(this.getFormTabData(tab));
+      if(tab.key !== 'reviewSubmit') {
+        formData.tab.push(this.getFormTabData(tab));
+      }
     }
     return formData;
   }
