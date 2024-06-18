@@ -28,7 +28,7 @@ export class DecimalLimitDirective {
 
     const decimal = inputValue.split('.')?.[1];
 
-    console.log(decimal?.length, this.appDecimalLimit);
+    // console.log(decimal?.length, this.appDecimalLimit);
     if (decimal?.length >= this.appDecimalLimit) {
       // swal.fire('Warning', `Upto ${this.appDecimalLimit} are allowed`, 'warning');
       this.triggerSnackbar(`Decimals are allowed up to ${this.appDecimalLimit} places only`);

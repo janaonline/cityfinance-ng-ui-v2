@@ -109,7 +109,7 @@ export class XviFcFormComponent {
   step1Complete = false;
   tabChangeLoader = false;
   totalTabs = 6;
-  isDemographicCompleted: boolean | undefined = false;
+  // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
     return this.form.value;
@@ -193,10 +193,23 @@ export class XviFcFormComponent {
 
     this.form = this.formService.tabControl(this.tabs);
 
+    // console.log('----', this.getFG('demographicData', 7).get('yearOfConstitution'));
+    // setTimeout(() => {
+
+    // }, 500)
+
+
     this.isLoader = false;
     this.formSaveLoader = false;
     this.tabChangeLoader = false;
 
+  }
+
+  ngAfterViewInit() {
+    // this.form.get('demographicData')?.valueChanges((data: any) => {
+    //   console.log('data-----', data);
+
+    // });
   }
 
   // validateAllFormFields(formGroup: FormGroup) {
@@ -210,7 +223,9 @@ export class XviFcFormComponent {
     if (this.form.valid) {
       Swal.fire({
         title: 'Are you sure?',
-        text: 'Do you really want to submit the data?',
+        text: `Are you sure you want to submit this form? Once submitted, 
+        it will not be editable and will be sent to State/UT for Review. Alternatively, 
+        you can ‘Save as Draft’ for now and submit it later.`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Submit',
@@ -470,7 +485,8 @@ export class XviFcFormComponent {
   }
 
   getFG(tabKey: string, i: number): any {
-    return (this.form.get(tabKey) as FormArray).controls[i]
+    // console.log('tabKey',tabKey, 'i',i, '---',(this.form.get(tabKey) as FormArray).controls[i]);    
+    return (this.form.get(tabKey) as FormArray).controls[i];
   }
 
 }
