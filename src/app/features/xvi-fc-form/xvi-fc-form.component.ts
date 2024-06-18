@@ -1,47 +1,42 @@
-// import { Component } from '@angular/core';
-
-// @Component({
-//   selector: 'app-xvi-fc-form',
-//   standalone: true,
-//   imports: [],
-//   templateUrl: './xvi-fc-form.component.html',
-//   styleUrl: './xvi-fc-form.component.scss'
-// })
-// export class XviFcFormComponent {
-
-// }
-
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 // import { tabsJson } from './formJson';
-import { tabsJson } from './xviFormJson';
+// import { tabsJson } from './xviFormJson';
+import { tabsJson } from './xviFormJsonApi';
+// import { tabsJson } from './xviJsonApiFull';
 import { MaterialModule } from '../../material.module';
 import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
 import { USER_TYPE } from '../../core/models/user/userType';
-import { FiscalRankingService, StatusType } from '../xvi-fc/services/fiscal-ranking.service';
+import { FiscalRankingService, StatusType } from './services/fiscal-ranking.service';
 import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
-import swal from 'sweetalert2';
-import { Tab, APPROVAL_TYPES } from '../../core/models/models';
+import Swal from 'sweetalert2';
+
+
+// import { Tab, APPROVAL_TYPES } from '../../core/models/models';
 import { AlreadyUpdatedUrlPipe } from '../../core/pipes/already-updated-url.pipe';
-import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
+// import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
 import { PercentprogressPipe } from '../../core/pipes/percentprogress.pipe';
-import { ToStorageUrlPipe } from '../../core/pipes/to-storage-url.pipe';
+// import { ToStorageUrlPipe } from '../../core/pipes/to-storage-url.pipe';
 import { TowordPipe } from '../../core/pipes/toword.pipe';
-import { CommonActionRadioComponent } from '../../shared/components/actions/common-action-radio/common-action-radio.component';
+// import { CommonActionRadioComponent } from '../../shared/components/actions/common-action-radio/common-action-radio.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
-import { DecimalLimitDirective } from '../xvi-fc/directives/decimal-limit.directive';
-import { DateAdapter } from '@angular/material/core';
-import { MatDialog } from '@angular/material/dialog';
-import { Router, ActivatedRoute } from '@angular/router';
-import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
-import { DataEntryService } from '../xvi-fc/services/data-entry.service';
+
+// import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
 import { AccountingPracticeComponent } from './accounting-practice/accounting-practice.component';
 import { ReviewSubmitComponent } from './review-submit/review-submit.component';
 import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.component';
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
+// import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
+import { XviFcService } from '../../core/services/xvi-fc.service';
+
+import {
+  MatSnackBar,
+} from '@angular/material/snack-bar';
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
+// import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
   selector: 'app-xvi-fc-form',
@@ -54,17 +49,18 @@ import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.servi
     MaterialModule,
 
     PercentprogressPipe,
-    TowordPipe,
-    ToStorageUrlPipe,
+    // TowordPipe,
+    // ToStorageUrlPipe,
     AlreadyUpdatedUrlPipe,
-    DisplayPositionPipe,
-    DecimalLimitDirective,
-    CommonActionRadioComponent,
+    // DisplayPositionPipe,
+    // DecimalLimitDirective,
+    // CommonActionRadioComponent,
     LoaderComponent,
 
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
+    // SweetAlert2Module,
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -81,22 +77,19 @@ export class XviFcFormComponent {
   @ViewChild('stepper') stepper: MatStepper | undefined;
 
   yearIdArr: any = {};
+  // user!: IUserLoggedInDetails | null;
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   isLoader: boolean = false;
+  formSaveLoader: boolean = false;
   loggedInUserType: any;
   hideForm: boolean = false;
   notice!: string;
   pmuSubmissionDate!: string;
   isAutoApproved: boolean = false;
   selfDeclarationTabId: string = 's5';
-  guidanceNotesKey: string = 'guidanceNotes';
-  incomeSectionBelowKey: number = 1;
-  expenditureSectionBelowKey: number = 8;
   financialYearTableHeader: { [key: number]: string[] } = {};
-  linearTabs: string[] = ['s1', 's2'];
-  twoDTabs: string[] = ['s4', 's5', 's6'];
-  textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
-  tabs: Tab[] = [];
+  // tabs: Tab[] = [];
+  tabs: any[] = [];
   currentFormStatus!: number;
   formId!: string;
   ulbId!: string;
@@ -109,33 +102,101 @@ export class XviFcFormComponent {
   statusTypes = StatusType;
   status: '' | 'PENDING' | 'REJECTED' | 'APPROVED' = '';
   formSubmitted = false;
-  msgForLedgerUpdate: string[] = [];
-  fields: any[] = tabsJson.data.tabs;
+
+  fields: any[] = [];
+  selectedStepIndex = 0;
+  actionType!: string;
+  step1Complete = false;
+  tabChangeLoader = false;
+  totalTabs = 6;
+  isDemographicCompleted: boolean | undefined = false;
 
   get value() {
     return this.form.value;
   }
   constructor(private fb: FormBuilder,
-    public fiscalService: FiscalRankingService,
-    public formService: DynamicFormService
-    // private dataEntryService: DataEntryService,
-    // private _router: Router,
-    // private dialog: MatDialog,
-    // private activatedRoute: ActivatedRoute,
-    // private loaderService: GlobalLoaderService,
-    // private dateAdapter: DateAdapter<Date>
+    // public fiscalService: FiscalRankingService,
+    public service: XviFcService,
+    public formService: DynamicFormService,
+    private _snackBar: MatSnackBar,
   ) { }
 
   ngOnInit() {
-    this.form = this.formService.tabControl(tabsJson.data.tabs);
-    // console.log('this.form----', this.form);
-    // console.log('this.form.getRawValue()---',this.form.getRawValue());
-
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);
     // });
-    // this.onLoad();
+    this.onLoad();
+
+  }
+  get isDemographicValid() {
+    // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
+    return this.form.get('demographicData')?.valid;
+    // return true;
+  }
+  onLoad(reload = false) {
+
+    // this.onLoad_local();
+    // return;
+
+    this.isLoader = true;
+    this.ulbId = this.loggedInUserDetails.ulb;
+    // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
+    this.service.getUlbForm(this.ulbId).subscribe({
+      next: (res: any) => {
+        this.tabs = res?.data?.tabs;
+        // this.tabs = tabsJson.data.tabs;
+        this.totalTabs = this.tabs.length;
+        // push review tab
+        this.tabs.push({
+          key: 'reviewSubmit',
+          label: 'Review & Submit',
+          'displayPriority': this.totalTabs + 1,
+        });
+
+        this.form = this.formService.tabControl(this.tabs);
+        // console.log('this.form.controls[0]--',this.form.controls[0]);
+
+        // this.isDemographicCompleted = this.form.get('demographicData')?.valid;
+        // console.log(`this.form.get('demographicData')?.valid;`, this.form.get('demographicData')?.valid);
+        // console.log(`this.form.valid;`, this.form.valid);
+
+        // this.form.markAsPristine();        
+
+        if (reload) {
+          setTimeout(() => {
+            this.afterSave();
+          }, 500);
+        }
+        this.isLoader = false;
+        this.formSaveLoader = false;
+        this.tabChangeLoader = false;
+      }, error: () => {
+        this.isLoader = false;
+      }
+    });
+  }
+
+  /**
+   * Test for static Json
+   */
+  onLoad_local() {
+    this.isLoader = true;
+    this.ulbId = this.loggedInUserDetails.ulb;
+    this.tabs = tabsJson.data.tabs;
+    this.totalTabs = this.tabs.length;
+    this.tabs.push({
+      key: 'reviewSubmit',
+      label: 'Review & Submit',
+      'displayPriority': this.totalTabs + 1,
+    });
+
+    this.form = this.formService.tabControl(this.tabs);
+
+    this.isLoader = false;
+    this.formSaveLoader = false;
+    this.tabChangeLoader = false;
+
   }
 
   // validateAllFormFields(formGroup: FormGroup) {
@@ -145,10 +206,255 @@ export class XviFcFormComponent {
   //   });
   // }
 
-  // submit(value: any) { }
+  submit() {
+    if (this.form.valid) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'Do you really want to submit the data?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Submit',
+        cancelButtonText: 'No, cancel!',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.formSaveLoader = true;
+          // const formData = this.getFormData('SUBMITTED');
+          const formData = this.getAllTabData();
+          // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
+          this.service.submitUlbForm(this.ulbId, formData).subscribe({
+            next: (res) => {
+              Swal.fire(
+                'Done!',
+                'Your action has been confirmed.',
+                'success'
+              );
+              this.onLoad();
+            }, error: (error: any) => {
+              this.handleHttpError(error);
+            }
+          });
+
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          // Cancel the action
+          Swal.fire(
+            'Cancelled',
+            'Your action has been cancelled.',
+            'error'
+          );
+        }
+      });
+    } else {
+      Swal.fire(
+        'Incomplete or incorrect data entered!',
+        'The form can not be submitted without filling in all the mandatory fields correctly.',
+        'error'
+      ).then(() => {
+        //scroll to fisrt error tab
+        setTimeout(() => {
+          for (const tab of this.tabs) {
+            // console.log('tab.key', tab.key, 'invalid', this.form.get(tab.key)?.invalid);
+
+            if (this.form.get(tab.key)?.invalid) {
+              document.getElementById(tab.key)?.scrollIntoView({ behavior: "smooth" });
+              return;
+            }
+          }
+        }, 500)
+      });
+    }
+  }
+  handleHttpError(error: any) {
+    Swal.fire(
+      'Error',
+      error.message || 'Something went wrong! Please try again',
+      'error'
+    );
+    this.formSaveLoader = false;
+    this.tabChangeLoader = false;
+  }
+  getAllTabData() {
+    const formData: any = { tab: [] };
+    for (let tab of this.tabs) {
+      if (tab.key !== 'reviewSubmit') {
+        formData.tab.push(this.getFormTabData(tab));
+      }
+    }
+    return formData;
+  }
+  selectionChange(event: StepperSelectionEvent) {
+    // return;
+    // if last tab load only data
+    if (event.previouslySelectedIndex !== this.totalTabs && !this.actionType) {
+      this.tabChangeLoader = true;
+      console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
+      // const formData = this.getAllTabData();
+      const formData = this.getFormData();
+      this.service.saveUlbForm(this.ulbId, formData).subscribe({
+        next: (res) => {
+          if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
+            this.onLoad();
+          } else {
+            this.tabChangeLoader = false;
+          }
+          this.triggerSnackbar();
+        }, error: (error: any) => {
+          this.handleHttpError(error);
+        }
+      });
+    }
+
+    // setTimeout(() => {
+    //   this.tabChangeLoader = false;
+    // }, 2000);
+
+  }
+  saveAs(actionType: string) {
+    const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
+    // console.log(`currentForm?.valid;`, currentForm?.valid);
+    // console.log(`this.form.valid;`, this.form.valid);
+
+    currentForm?.markAllAsTouched()
+
+    this.actionType = actionType;
+
+    console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
+
+    // if back from review tab no action
+    if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
+      this.stepper?.previous();
+      this.actionType = '';
+      return;
+    }
+    const formData = this.getFormData();
+    // return;
+    this.formSaveLoader = true;
+
+    this.service.saveUlbForm(this.ulbId, formData).subscribe({
+      next: (res) => {
+        // for last tab load json again
+        if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
+          this.onLoad(true);
+        }
+        // after first tab load json again
+        else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
+          this.onLoad(true);
+        } else {
+          this.afterSave();
+        }
+      }, error: (error: any) => {
+        this.handleHttpError(error);
+      }
+    });
+  }
+  getFormData() {
+    const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
+    formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
+    return formData;
+  }
+  getFormTabData(tab: any) {
+    // console.log('this.form.value', this.form.value);
+    const formJson: any = this.form.getRawValue();
+
+    // const formData: any = { tab: [], formStatus, formId: 16 }
+    // console.log('this.tabs[this.selectedStepIndex]', this.tabs[this.selectedStepIndex]);
+    // const tab = this.tabs[index];
 
 
+    // for (let tab of this.tabs) {
+    const tabKey = tab.key;
+    const formJsonTab = formJson[tabKey];
+    const tabData: any = { tabKey, data: [] };
+    if (tabKey === 'demographicData') {
+      tab['data'].forEach((field: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
+        const fieldData = {
+          key: field.key,
+          value: formJsonTab[i][field.key],
+          saveAsDraftValue: formJsonTab[i][field.key]
+        };
+        tabData.data.push(fieldData);
+      });
+    } else if (tabKey === 'financialData' || tabKey === 'serviceLevelBenchmark') {
+      // console.log('tab[', tab['data']);
 
+      tab['data'].forEach((table: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][table.key]);
+
+        table.data.forEach((row: any) => {
+          row.year.forEach((col: any) => {
+            // console.log('col', col);
+            const { key, year, refKey } = col;
+            const value = formJsonTab[i][table.key][row.key][col.key];
+            tabData.data.push({ key, year, refKey, value, saveAsDraftValue: value });
+          });
+        });
+      });
+    } else if (tabKey === 'uploadDoc') {
+      tab['data'].forEach((row: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][row.key]);
+
+        row.year.forEach((col: any) => {
+          // console.log('col', col);
+          const { key, year, refKey } = col;
+          const value = formJsonTab[i][row.key][col.key];
+          tabData.data.push({ key, year, refKey, ...value, saveAsDraftValue: '' });
+        });
+      });
+      // tab['data'].forEach((field: any, i: number) => {
+      //   // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
+      //   for (const [key, value] of Object.entries(formJsonTab[i][field.key])) {
+      //     tabData.data.push(
+      //       { refKey: field.key, key: field.key, year: key, ...(typeof value === 'object' && value !== null ? value : {}) }
+      //     );
+
+      //   }
+      // });
+    } else if (tabKey === 'accountPractice') {
+      tab['data'].forEach((field: any, i: number) => {
+        // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
+        for (const [key, value] of Object.entries(formJsonTab[i][field.key])) {
+          if (this.isPlainObject(value)) {
+            tabData.data.push(
+              { key, saveAsDraftValue: value['value'], ...value }
+            );
+          }
+        }
+      });
+      // }
+      // if (tabKey !== 'reviewSubmit') {
+      //   formData.tab.push(tabData);
+      // }
+    }
+
+
+    // console.log('formData----', formData);
+    return tabData;
+
+  }
+
+  isPlainObject(data: unknown): data is { [s: string]: unknown; } {
+    return typeof data === 'object' && data !== null && !Array.isArray(data);
+  }
+  afterSave() {
+    if (this.actionType === 'next') {
+      this.stepper?.next();
+    } else if (this.actionType === 'previous') {
+      this.stepper?.previous();
+    }
+    this.triggerSnackbar();
+    this.formSaveLoader = false;
+    this.actionType = '';
+    // Swal.close();
+  }
+  triggerSnackbar() {
+    this._snackBar.open('Data saved successfully!', 'Close', {
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      duration: 10000,
+      // panelClass: ['snackbar-success']
+      panelClass: ['custom-snackbar-success']
+    });
+  }
   onSubmit(event: Event) {
     event.preventDefault();
     event.stopPropagation();
@@ -165,202 +471,6 @@ export class XviFcFormComponent {
 
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i]
-  }
-
-  onLoad() {
-    console.log('-----dfdf----');
-
-    this.isLoader = true;
-    // this.fiscalService.getfiscalUlbForm(this.design_year, this.ulbId).subscribe((res: any) => {
-    // const res:any = formJson;
-    const res: any = tabsJson;
-    this.hideForm = res?.data?.hideForm;
-    this.notice = res?.data?.notice;
-    this.formId = res?.data?._id;
-    this.isDraft = res?.data?.isDraft;
-    this.ulbName = res?.data?.ulbName;
-    this.stateCode = res?.data?.stateCode;
-    this.currentFormStatus = res?.data?.currentFormStatus;
-    this.tabs = res?.data?.tabs;
-    this.financialYearTableHeader = res?.data?.financialYearTableHeader;
-    this.pmuSubmissionDate = res?.data?.pmuSubmissionDate;
-    this.isAutoApproved = res?.data?.isAutoApproved;
-
-    // this.form = this.fb.array(this.tabs.map(tab => this.getTabFormGroup(tab)))
-    // this.addSkipLogics();
-    // if (this.userData.role == this.userTypes.ULB) {
-    // this.addSumLogics();
-    // }
-    // this.addSubtractLogics();
-    this.form.markAsPristine();
-    this.isLoader = false;
-    this.msgForLedgerUpdate = res?.data?.messages;
-    if (this.msgForLedgerUpdate?.length) swal.fire("Confirmation !", `${this.msgForLedgerUpdate?.join(', ')}`, "warning")
-    // });
-  }
-
-  getTabFormGroup(tab: Tab): any {
-    const { data, feedback, ...rest } = tab;
-    // console.log('data', data);
-
-    return this.fb.group({
-      ...rest,
-      // feedback: this.fb.group({
-      //   comment: [feedback.comment,],
-      //   status: feedback.status,
-      //   _id: feedback._id,
-      // }),
-      data: this.fb.group(Object.entries(data).reduce((obj: any, [key1, item]: any) => {
-        // console.log('obj, key, item----', key, item);
-        let key = item.key;
-        if (this.linearTabs.includes(tab.id)) {
-          obj[key] = this.getInnerFormGroup({ ...item, key })
-        }
-        else if (tab.id == this.selfDeclarationTabId) {
-          obj[key] = this.fb.group({
-            uploading: [{ value: false, disabled: true }],
-            name: [item.name, this.userData?.role == USER_TYPE.ULB && item.required ? Validators.required : null],
-            readonly: [{ value: item.readonly, disabled: true }],
-            status: [item?.status, this.getStatusValidators(item, tab.id)],
-            rejectReason: item?.rejectReason,
-            url: [item.url, this.userData?.role == USER_TYPE.ULB && item.required ? Validators.required : null],
-          });
-          this.attactRequiredReasonToggler(obj[key]);
-        }
-        else {
-          obj[key] = this.fb.group({
-            key: item.key,
-            position: [{ value: +item.displayPriority || 1, disabled: true }],
-            isHeading: [{ value: this.isHeading(item.displayPriority), disabled: true }],
-            required: [{ value: item.required, disabled: true }],
-            modelName: [{ value: item.modelName, disabled: true }],
-            calculatedFrom: [{ value: item.calculatedFrom, disabled: true }],
-            logic: [{ value: item.logic, disabled: true }],
-            canShow: [{ value: true, disabled: true }],
-            label: [{ value: item.label, disabled: true }],
-            info: [{ value: item.info, disabled: true }],
-            yearData: this.fb.array(item.yearData.slice().reverse().map((yearItem: any) => this.getInnerFormGroup(yearItem, item, tab?.id)))
-          })
-        }
-        return obj;
-      }, {}))
-    })
-  }
-
-  isHeading(displayPriority: string): boolean {
-    if (['5.1', '5.2', '7.1', '7.2'].includes(displayPriority)) return true;
-    if (['24', '25', '26', '27', '28', '29', '30', '31', '32', '33'].includes(displayPriority)) return false;
-    return Number.isInteger(+displayPriority);
-  }
-
-  getApprovalTypeValidators(item: { status: string; suggestedValue: any; }) {
-    if (this.userData?.role == USER_TYPE.ULB && item?.status == 'REJECTED' && item?.suggestedValue) {
-      return [
-        Validators.required,
-        (control: { value: APPROVAL_TYPES; }) => [
-          APPROVAL_TYPES.enteredPmuAcceptUlb,
-          APPROVAL_TYPES.enteredPmuRejectUlb
-        ].includes(control.value) ? null : { invalidApprovalType: true }
-      ];
-    } else if (this.userData?.role == USER_TYPE.PMU && item?.status == 'REJECTED' && item?.suggestedValue) {
-      return [
-        Validators.required,
-        (control: { value: APPROVAL_TYPES; }) => control.value !== APPROVAL_TYPES.enteredPmuRejectUlb ? null : { invalidApprovalType: true }
-      ];
-    } else {
-      return [];
-    }
-  }
-
-  getInnerFormGroup(item: any, parent?: any, tabId?: any) {
-    const innerFormGroup = this.fb.group({
-      key: item.key,
-      value: [item.value, this.getValidators(item, !['date', 'file'].includes(item.formFieldType), parent)],
-      originalValue: item.value,
-      year: item.year,
-      type: item.type,
-      _id: item._id,
-      modelName: [{ value: item.modelName, disabled: true }],
-      suggestedValue: [item?.suggestedValue],
-      pmuSuggestedValue2: [item?.pmuSuggestedValue2],
-      approvalType: [item?.approvalType, this.getApprovalTypeValidators(item)],
-      ulbValue: [item?.ulbValue],
-      ulbComment: [item?.ulbComment],
-      focused: [{ value: false, disabled: true }],
-      required: [{ value: item.required, disabled: true }],
-      options: [{ value: item.options, disabled: true }],
-      isRupee: [{ value: item.isRupee, disabled: true }],
-      code: [{ value: item.code, disabled: true }],
-      previousYearCodes: [{ value: item.previousYearCodes, disabled: true }],
-      min: [{ value: new Date(item?.min), disabled: true }],
-      max: [{ value: new Date(item?.max), disabled: true }],
-      date: [item.date, this.userData?.role == USER_TYPE.ULB && item.formFieldType == 'date' && item.required ? [Validators.required] : []],
-      formFieldType: [{ value: item.formFieldType || 'text', disabled: true }],
-      status: [item?.status, this.getStatusValidators(item, tabId)],
-      rejectReason: [item?.rejectReason],
-      rejectReason2: [item?.rejectReason2],
-      bottomText: [{ value: item.bottomText, disabled: true }],
-      label: [{ value: item.label, disabled: true }],
-      info: [{ value: item.info, disabled: true }],
-      placeholder: [{ value: item.placeholder, disabled: true }],
-      desc: [{ value: item.desc, disabled: true }],
-      position: [{ value: item.postion, disabled: true }],
-      pos: [{ value: item.pos, disabled: true }],
-      readonly: [{ value: item.readonly, disabled: true }],
-      ...(item.file && {
-        file: this.fb.group({
-          uploading: [{ value: false, disabled: true }],
-          name: [item.file.name, this.userData?.role == USER_TYPE.ULB && item.required ? [Validators.required] : []],
-          url: [item.file.url, this.userData?.role == USER_TYPE.ULB && item.required ? [Validators.required] : []]
-        })
-      })
-    });
-    this.attactRequiredReasonToggler(innerFormGroup, tabId);
-    return innerFormGroup;
-  }
-
-  getStatusValidators(item: { status: any; }, tabId: string) {
-    if (this.loggedInUserType == this.userTypes.PMU) {
-      if (item?.status) {
-        if (tabId != 's3' && this?.pmuSubmissionDate) {
-          return Validators.pattern(/^(APPROVED)$/)
-        }
-        return Validators.pattern(/^(REJECTED|APPROVED)$/)
-      }
-      return null;
-    }
-    return null;
-  }
-
-  attactRequiredReasonToggler(innerFormGroup: FormGroup, tabId?: any) {
-    const statusControl = innerFormGroup.get('status');
-    statusControl?.valueChanges.subscribe(status => {
-      const rejectReasonControl = innerFormGroup.get('rejectReason');
-      const suggestedValueControl = innerFormGroup.get('suggestedValue');
-      rejectReasonControl?.setValidators(status == 'REJECTED' ? [
-        Validators.required,
-        Validators.minLength(10),
-        Validators.maxLength(500)
-      ] : []);
-      suggestedValueControl?.setValidators(status == 'REJECTED' && tabId == 's3' ? [
-        Validators.required
-      ] : []);
-      rejectReasonControl?.updateValueAndValidity({ emitEvent: true });
-      suggestedValueControl?.updateValueAndValidity({ emitEvent: true });
-    });
-    statusControl?.updateValueAndValidity({ emitEvent: true });
-  }
-
-  getValidators(item: any, canApplyRequired = false, parent?: any) {
-    if (this.userData?.role != USER_TYPE.ULB) return [];
-    return [
-      ...(parent?.logic == 'sum' && item.modelName ? [Validators.pattern(new RegExp(item.value))] : []),
-      ...(item.required && canApplyRequired ? [Validators.required] : []),
-      ...(item.formFieldType == 'url' ? [Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?')] : []),
-      ...(item.formFieldType == 'email' ? [Validators.email] : []),
-      ...(item.min !== '' ? [Validators[item.formFieldType == 'number' ? 'min' : 'minLength'](+item.min)] : []),
-      ...(item.max !== '' ? [Validators[item.formFieldType == 'number' ? 'max' : 'maxLength'](+item.max)] : []),
-    ];
   }
 
 }

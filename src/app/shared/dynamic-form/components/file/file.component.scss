@@ -1,5 +1,8 @@
+@import "../../../../../../node_modules/bootstrap/scss/functions";
+@import "../../../../../../node_modules/bootstrap/scss/variables";
+
 .container {
-    border: 1px dotted rgba(230, 126, 21, 1);
+    border: 1px dotted var(--clr-primary);
     padding: 20px;
     text-align: center;
     cursor: pointer;
@@ -18,19 +21,19 @@
         left: 0;
     }
 
-    label {
-        color: white;
-        width: 183px;
-        border-radius: 21.5px;
-        background-color: #db202f;
-        padding: 8px 16px;
-    }
+    // label {
+    //     color: white;
+    //     width: 183px;
+    //     border-radius: 21.5px;
+    //     background-color: #db202f;
+    //     padding: 8px 16px;
+    // }
 
-    h3 {
-        font-size: 20px;
-        font-weight: 600;
-        color: #38424c;
-    }
+    // h3 {
+    //     font-size: 20px;
+    //     font-weight: 600;
+    //     color: #38424c;
+    // }
 }
 
 .fileover {
@@ -43,10 +46,10 @@
 
     .single-file {
         display: flex;
-        padding: 0.5rem;
+        padding: 0.625rem;
         justify-content: space-between;
         align-items: center;
-        border: dashed 1px #979797;
+        border: 1px dotted $secondary;
         margin-bottom: 1rem;
 
         .delete {
@@ -61,16 +64,12 @@
         flex-grow: 1;
 
         .name {
-            font-size: 14px;
-            font-weight: 500;
-            color: #353f4a;
             margin: 0;
         }
 
         .size {
-            font-size: 12px;
-            font-weight: 500;
-            color: #a4a4a4;
+            font-size: 0.75rem;
+            color: $secondary;
             margin: 0;
             margin-bottom: 0.25rem;
         }

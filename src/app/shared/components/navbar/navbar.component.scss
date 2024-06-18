@@ -1,6 +1,10 @@
-@import "../../../../assets/scss/functions";
-@import "../../../../assets/scss/variables";
-@import "../../../../assets/scss/mixins";
+@import "../../../../../node_modules/bootstrap/scss/functions";
+@import "../../../../../node_modules/bootstrap/scss/variables";
+@import "../../../../../node_modules/bootstrap/scss/mixins";
+
+* {
+  font-family: "Segoe UI", Arial, sans-serif;
+}
 
 .btn-login {
   background: $secondary;
@@ -13,11 +17,13 @@
   padding-left: $spacer * 1;
   padding-right: $spacer * 1;
   letter-spacing: 1px;
+
   &:hover {
-    background: shade-color($secondary, 10);
+    background: lighten($secondary, 10%);
     color: $white;
-    border-color: shade-color($secondary, 10);
+    border-color: lighten($secondary, 10%);
   }
+
   @include media-breakpoint-down(sm) {
     font-size: $font-size-base * 0.625;
     padding-top: $spacer * 0.4375;
@@ -26,6 +32,7 @@
     padding-right: $spacer * 0.5;
   }
 }
+
 .btn-l-fc {
   background: #ddd5d5 !important;
   color: #000 !important;
@@ -34,24 +41,27 @@
 }
 
 .btn-login-icon {
-  background: $secondary;
+  background: var(--clr-primary);
   color: $white;
-  border-color: $secondary;
+  border-color: var(--clr-primary);
   box-shadow: 0px 2px 6px #f7c199;
 }
 
 .nav-item {
   padding-top: $spacer * 0.125;
+
   .nav-link {
     padding-top: $spacer * 1.5;
     padding-bottom: $spacer * 1.5;
     border-bottom: 2px solid transparent;
+    // color: var(--clr-secondary);
     color: #1d5290;
     font-weight: bold;
     font-size: $font-size-base * 1;
+
     &:hover,
     &.active {
-      color: #e87a1c;
+      color: var(--clr-primary);
       border-bottom: 2px solid;
     }
   }
@@ -70,10 +80,6 @@ a.disabled {
   visibility: hidden;
 }
 
-// .dropdown-divider {
-//   margin: 0.2rem 0;
-// }
-
 .dropdown-toggle::after {
   display: inline-block;
   margin-left: 0.6em;
@@ -89,8 +95,8 @@ a.disabled {
   visibility: visible;
   opacity: 1;
   display: inline-block;
-  ::ng-deep
-  img {
+
+  ::ng-deep img {
     height: 28px !important;
   }
 }
@@ -105,13 +111,25 @@ a.disabled {
 .cityLogo {
   margin-top: 10%;
 }
+
 .navbar-nav {
   align-items: baseline;
 }
+
 .navbar-expand-lg .navbar-nav .dropdown-menu {
   border-top: none !important;
 }
+
 .dropdown-item {
   padding: 0.5rem 1rem;
 }
 
+.dropdown-item:active {
+  color: $white;
+  background-color: var(--clr-secondary);
+}
+.dropdown-menu-login.show{
+  left: auto !important;
+  right: 0 !important;
+  min-width: 14rem;
+}

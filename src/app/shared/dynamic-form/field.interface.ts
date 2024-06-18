@@ -5,19 +5,28 @@ export interface Validator {
 }
 export interface FieldConfig {
   label: string;
-  name: string;
+  // name: string;
   key: string;
   formFieldType: string;
   tableRow?: any[];
-  inputType: string;
-  options?: string[];
+  data?: any[];
+  // inputType: string;
+  options?: any[];
   collections?: any;
-  type: string;
+  // type: string;
   value?: any;
   validations?: Validator[];
   formArrays?: any[];
   uploading?: boolean;
   position?: number;
+  readonly?: boolean;
+  readOnly?: boolean;
+  fileAlreadyOnCf?: any[];
+  multiple?: boolean;
+  verifyStatus?: number;
+  allowedFileTypes?: string[];
+  fileRejectOptions?: string[];
+  decimal?: 0;
 }
 
 export interface JsonFieldConfig {

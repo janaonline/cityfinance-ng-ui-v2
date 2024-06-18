@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
-import { FormGroup, FormBuilder, FormArray, Validators, FormControl } from '@angular/forms';
-import { DataEntryService } from '../../features/xvi-fc/services/data-entry.service';
-import { FiscalRankingService } from '../../features/xvi-fc/services/fiscal-ranking.service';
+import { FormGroup, FormBuilder, FormArray, Validators, FormControl, AbstractControl } from '@angular/forms';
 
 @Injectable({
   providedIn: 'root'
@@ -9,39 +7,55 @@ import { FiscalRankingService } from '../../features/xvi-fc/services/fiscal-rank
 export class DynamicFormService {
 
   form!: FormGroup;
-  constructor(private fb: FormBuilder,
-    // public fiscalService: FiscalRankingService,
-    // private _router: Router,
-    // private dialog: MatDialog,
-    // private activatedRoute: ActivatedRoute,
-    // private loaderService: GlobalLoaderService,
-    // private dateAdapter: DateAdapter<Date>
-  ) { }
+  constructor(private fb: FormBuilder,) { }
 
   getFG(tabKey: string, i: number): any {
-    // return (((this.group.get(fieldKey) as FormArray)
-    //   .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j];
-    // console.log('(this.form.get(tabKey) as FormArray).controls[i]',(this.form.get(tabKey) as FormArray).controls[i]);
-
     return (this.form.get(tabKey) as FormArray).controls[i]
   }
   setTableData(childField: any) {
     const tableRow: any = [];
-    childField.tableRow.forEach((row: any) => {
-      if (row.tableData) {
+    const childRows = childField['data'] || childField['tableRow']
+    childRows.forEach((row: any) => {
+      const tableData = row.year || row.tableData;
+      if (tableData) {
         const tableCol: any = [];
-        row.tableData.forEach((col: any) => {
+        tableData.forEach((col: any) => {
+          tableCol[col.key] = this.createContorl(col, row.validations);
+        });
+        // console.log('row----',row.key);
+
+        tableRow[row.key] = new FormGroup(tableCol);
+        // tableRow.push(
+        //   new FormGroup({
+        //     [row.key]: new FormGroup(tableCol),
+        //   }));
+      }
+
+    })
+
+    return new FormGroup(tableRow);
+
+  }
+  setTableData_bkp(childField: any) {
+    const tableRow: any = [];
+    const childRows = childField['data'] || childField['tableRow']
+    childRows.forEach((row: any) => {
+      const tableData = row.year || row.tableData;
+      if (tableData) {
+        const tableCol: any = [];
+        tableData.forEach((col: any) => {
           tableCol.push(
             // set validation here
             new FormGroup({
               // [col.key]: new FormControl(col.value),
               [col.key]: this.createContorl(col),
+              // 'sum': new FormControl(col.sum),
             }));
         });
         tableRow.push(
           new FormGroup({
-            // [row.key]: new FormControl(childField.value),
             [row.key]: new FormArray(tableCol),
+            ...(row.sum && { 'sum': new FormControl(row.sum) })
           }));
       }
 
@@ -49,48 +63,113 @@ export class DynamicFormService {
 
     return new FormArray(tableRow);
 
+  }
+  // custom validator to check that two fields match
+  MustMatch(controlName: string, matchingControlName: string) {
+    return (group: AbstractControl) => {
+
+      const control = group.get(controlName)?.get('value');
+
+      const matchingControl = group.get(matchingControlName)?.get('value');
+
+      if (!control || !matchingControl) {
+        return null;
+      }
+      console.log('control va', control.value, 'matchingControl va', matchingControl.value);
+
+
+      // return if another validator has already found an error on the matchingControl
+      if (matchingControl.errors && !matchingControl.errors['lt']) {
+        return null;
+      }
+
+      // set error on matchingControl if validation fails
+      if (control.value !== matchingControl.value) {
+        matchingControl.setErrors({ lt: true });
+      } else {
+        matchingControl.setErrors(null);
+      }
+      return null;
+    }
+  }
+  // custom validator to check that if the cuurent field less than compare fields
+  lessThanValidator(controlName: string, matchingControlName: string) {
+    return (group: AbstractControl) => {
+
+      const control = group.get(controlName)?.get('value');
+
+      const matchingControl = group.get(matchingControlName)?.get('value');
+
+      if (!control || !matchingControl) {
+        return null;
+      }
+      
+      // return if another validator has already found an error on the matchingControl
+      if (matchingControl.errors && !matchingControl.errors['lt']) {
+        return null;
+      }
+
+      // set error on matchingControl if validation fails
+      if (control.value < matchingControl.value) {
+        matchingControl.setErrors({ lt: true });
+      } else {
+        matchingControl.setErrors(null);
+      }
+      return null;
+    }
   }
   setQuestionnaireData(childField: any) {
     const tableRow: any = [];
-    childField.questions.forEach((row: any) => {
-      if (row.tableData) {
-        const tableCol: any = [];
-        row.tableData.forEach((col: any) => {
-          tableCol.push(
-            // set validation here
-            new FormGroup({
-              // [col.key]: new FormControl(col.value),
-              [col.key]: this.createContorl(col),
-            }));
-        });
-        tableRow.push(
-          new FormGroup({
-            // [row.key]: new FormControl(childField.value),
-            [row.key]: new FormArray(tableCol),
-          }));
-      }
-
+    childField.data.forEach((row: any) => {
+      tableRow[row.key] = new FormGroup({ value: this.createContorl(row), reason: new FormControl(row.reason) });
     })
-
-    return new FormArray(tableRow);
+    return new FormGroup(tableRow, {
+      // validators: this.MustMatch('password', 'confirmPassword')
+      validators: this.lessThanValidator('totSanction', 'totVacancy')
+    });
 
   }
   setFilesData(childField: any) {
+    const years: any = [];
+
+    // childRows.forEach((row: any) => {
+    const yearData = childField.year;
+    if (yearData) {
+      yearData.forEach((col: any) => {
+        years[col.key] = this.createFileForm(col);
+        // years.push(
+        //   new FormGroup({
+        //     // [row.key]: new FormControl(childField.value),
+        //     [col.key]: this.createFileForm(col),
+        //   })
+
+        // );
+      });
+
+    }
+    // return new FormGroup(years);
+    return new FormGroup(years);
+
+  }
+
+  createFileForm(childField: any) {
+    const fileValidator = [];
+    const optionValidator: any = [];
+    if (childField.verifyStatus === 2) {
+      optionValidator.push(Validators.required);
+    } else {
+      fileValidator.push(Validators.required);
+    }
     return new FormGroup({
-      name: new FormControl(childField.file.name || ''),
-      url: new FormControl(childField.file.url || ''),
+      file: new FormGroup({
+        name: new FormControl(childField.file?.name || null, fileValidator),
+        url: new FormControl(childField.file?.url || null),
+        size: new FormControl(childField.file?.size || null),
+      }),
+      verifyStatus: new FormControl(childField.verifyStatus || null),
+      rejectReason: new FormControl(childField.rejectReason || null),
+      rejectOption: new FormControl(childField.rejectOption || null, optionValidator),
     });
-    // const childFieldData: any = [];
-    // childField.formArrays.forEach((row: any) => {
-    //   childFieldData.push(
-    //     new FormGroup({
-    //       name: new FormControl(row.file.name || ''),
-    //       url: new FormControl(row.file.url || ''),
-    //     }));
-    // })
-
-    // return new FormArray(childFieldData);
-
   }
 
   bindValidations(validations: any) {
@@ -125,33 +204,38 @@ export class DynamicFormService {
         }
       });
 
-
       return Validators.compose(validators);
     }
     return null;
   }
-  createContorl(field: any) {
-    return new FormControl(field.value || '', this.bindValidations(field.validations));
+  createContorl(field: any, validations = false) {
+    const validationsData = validations || field.validations;
+    const val = field.value ? { value: field.value, disabled: field.readonly } : '';
+    return new FormControl(val, this.bindValidations(validationsData));
     // return new FormControl(field.value || '');
   }
   tabControl(fields: any[]) {
     // const form = this.fb.group({});
     const group: any = {};
     fields.forEach((field: any) => {
-      if (field.formArrays && field.formArrays.length) {
+      const fieldFormArrays = field.data || field.formArrays;
+      if (fieldFormArrays && fieldFormArrays.length) {
         let formArrays: any[] = [];
-        field.formArrays.forEach((childField: any) => {
+        fieldFormArrays.forEach((childField: any) => {
+          // console.log('childField', childField);
           // table row
           const childFieldData: any = {};
           if (childField.formFieldType === 'table') {
             childFieldData[childField.key] = this.setTableData(childField);
           }
           else if (childField.formFieldType === 'questionnaire') {
+
             childFieldData[childField.key] = this.setQuestionnaireData(childField);
           }
-          // else if (childField.formFieldType === 'file') {
-          //   childFieldData[childField.key] = this.setFilesData(childField);
-          // }
+          else if (childField.formFieldType === 'file') {
+            // console.log('childField----', childField);
+            childFieldData[childField.key] = this.setFilesData(childField);
+          }
           else {
             // childFieldData[childField.key] = new FormControl(childField.value);
             childFieldData[childField.key] = this.createContorl(childField);
@@ -169,4 +253,40 @@ export class DynamicFormService {
     });
     return new FormGroup(group);
   }
+
+  // addSumLogics() {
+  //   const s3DataControl = Object.values((this.form.controls.find(control => control.value?.id == 's3') as any).controls?.data?.controls);
+  //   const sumAbleContrls = s3DataControl?.filter((value: FormGroup) => value?.controls?.logic?.value == 'sum') as FormGroup[];
+  //   sumAbleContrls?.forEach(parentControl => {
+  //     const childControls = s3DataControl
+  //       .filter((value: FormGroup) => parentControl?.controls?.calculatedFrom?.value?.includes('' + value.controls.position.value)) as FormGroup[];
+
+  //     childControls.forEach((child) => {
+  //       child.valueChanges.subscribe(updated => {
+  //         const yearWiseAmount = childControls.map((innerChild) => innerChild.value.yearData.map(year => year.value));
+  //         const columnWiseSum = this.getColumnWiseSum(yearWiseAmount);
+  //         parentControl.patchValue({ yearData: columnWiseSum.map(col => ({ value: col })) });
+  //         (parentControl.get('yearData') as any)?.controls.forEach(parentYearItemControl => {
+  //           parentYearItemControl.markAllAsTouched();
+  //           parentYearItemControl.markAsDirty();
+  //         })
+  //       })
+  //       // child.updateValueAndValidity({ emitEvent: true });
+  //     });
+  //   });
+  // }
+
+  // getColumnWiseSum(arr: number[][]): number[] {
+  //   // console.log('aaaarrr', arr);
+  //   return arr[0]?.map((_, colIndex) => {
+  //     let retNull: boolean = true;
+  //     let sum = arr.reduce((acc, curr) => {
+  //       if (!isNaN(Number(curr[colIndex])) && (curr[colIndex]?.toString()?.trim() != "")) {
+  //         retNull = false;
+  //       }
+  //       return acc + (curr[colIndex] * 1 || 0);
+  //     }, 0);
+  //     return retNull ? null : sum;
+  //   });
+  // }
 }

@@ -5,6 +5,10 @@ import { MaterialModule } from '../../../material.module';
 import { FileComponent } from '../../../shared/dynamic-form/components/file/file.component';
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
 import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/verify-documents-dialogue.component';
+// import { deepClone } from '@angular-devkit/core';
+// import * as _ from 'lodash';
+import { cloneDeep } from 'lodash-es';
+
 
 @Component({
   selector: 'app-yearwise-files',
@@ -29,11 +33,8 @@ export class YearwiseFilesComponent {
   constructor(public dialog: MatDialog) { }
   ngOnInit() {
     // console.log('----field table --', this.field);
-    // console.log('----group table --', this.group);
+    // console.log('----group table --', this.group.controls[0].get(this.field.data[0].key).get());
     // console.log('----group table -val-', this.group.value);
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0, 'fy2022-23_sourceOfFd'));
-    // console.log('getProducts--1---', this.getProducts1());
 
 
   }
@@ -45,37 +46,44 @@ export class YearwiseFilesComponent {
   //   return (this.group.get(key) as FormArray).controls[i]
   // }
 
-  getFileGroup(fieldKey: any, i: number): FormGroup {
-    // console.log('fieldKey----', fieldKey);
+  getYearGroup(i: number, fieldKey: any): FormGroup {
+    // console.log('this.group.controls[0]',this.group.controls[0]);
+    // console.log('fieldKey-------',fieldKey);
+    // console.log('this.group.controls[0]-------',((this.group.controls[0]) as FormGroup).get(fieldKey));
 
-    // // return this.group.get(fieldKey) as FormGroup; 
-    // console.log('this.group--------', this.group);
-    // console.log('this.group.get(fieldKey)', this.group.controls[i]);
-
-    // return (this.group.get(fieldKey) as FormArray).controls[i] as FormGroup;
-    return (this.group.controls[i]) as FormGroup;
-  }
-  getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
-    return ((((this.group.get(fieldKey) as FormArray)
-      .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
-    // return this.group.get('sourceOfFdTable')?.controls[0];
+    return (((this.group.controls[0]) as FormGroup).get(this.field.data[0].key) as FormGroup).get(fieldKey) as FormGroup;
   }
 
-  openDialog1(): void {
-    this.dialogRef = this.dialog.open(this.viewAndVerifyDialog, {
-      width: '1200px'
-    });
-  }
 
-  openDialog(year: FieldConfig): void {
+  openDialog(year: FieldConfig, i: number): void {
+    const fg = new FormGroup({});
+    // let verifyForm = _.cloneDeep(this.getYearGroup(i, year.key));
+    let verifyForm = cloneDeep(this.getYearGroup(i, year.key));
+    // let verifyForm = structuredClone(this.getYearGroup(i, year.key));
+
     const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {
-      data: { year, fileRejectOptions: this.field.fileRejectOptions },
+      // width: '1200px',
+      data: {
+        field: year,
+        // fileRejectOptions: this.field.fileRejectOptions,
+        group: this.getYearGroup(i, year.key),
+        verifyForm
+      },
     });
+
 
     dialogRef.afterClosed().subscribe(result => {
       console.log('The dialog was closed', result);
       // this.field = result;
     });
+  }
+
+  deleteFile(key: string) {
+    this.getYearGroup(0, key).reset();
+    // this.getYearGroup(0, key).get('file')?.patchValue({ name: '', url: '' });
+    // this.getYearGroup(0, key).get('verifyStatus')?.patchValue(1);
+    // this.getYearGroup(0, key).get('rejectOption')?.patchValue('');
+    // this.getYearGroup(0, key).get('rejectReason')?.patchValue('');
   }
 }
 

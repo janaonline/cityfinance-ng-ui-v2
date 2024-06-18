@@ -1,13 +1,16 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { FormArray, FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 import { InputComponent } from '../input/input.component';
 import { SelectComponent } from '../select/select.component';
+import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
+// import { filter } from 'lodash';
 
 @Component({
   selector: 'app-table',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MaterialModule, InputComponent, SelectComponent,],
   templateUrl: './table.component.html',
   styleUrl: './table.component.scss'
@@ -18,33 +21,82 @@ export class TableComponent {
   @Input() group!: FormGroup;
   collapsed = false;
   panelOpenState = true;
+  total: number = 0;
+  subscription!: Subscription;
+  sumFields: any[] = [];
+  yearFields: string[] = [];
 
   constructor() { }
   ngOnInit() {
     // console.log('----field table --', this.field);
     // console.log('----group table --', this.group);
-    // console.log('----group table --', this.group.value);
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0));
-    // console.log('getTableGroup-----', this.getTableGroup('sourceOfFdTable',0,'sourceOfFd',0, 'fy2022-23_sourceOfFd'));
-    // console.log('getProducts--1---', this.getProducts1());
-
+    // console.log('----field table --', this.field.data);
+    // console.log('----group table getRawValue --', this.group.getRawValue());
+    this.getYears();
+    this.sumLogic();
 
   }
 
-  getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
-    // return this.group.controls.products.controls;
-    // console.log('rowKey', fieldKey, '--i--', i, '----', rowKey, '----', j);
-    // console.log('this.group.get(rowKey)', this.group.get(fieldKey));
-    // console.log('this.group.get(rowKey)',(((this.group.get(fieldKey) as FormArray)
-    // .controls[i] as FormArray).get(rowKey) as FormArray).controls[j]);
-    // this.group.controls[fieldKey].controls[i];
-    return ((((this.group.get(fieldKey) as FormArray)
-      .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
-    // return this.group.get('sourceOfFdTable')?.controls[0];
+  getYears() {
+    const firstField = this.field.data ? this.field.data[0].year : [];
+    this.yearFields = firstField.map((value: any) => { return value.year; });
+    // console.log('this.years-----', this.yearFields);
   }
-  getProducts1() {
-    // return this.group.controls.products.controls;
-    // return (((this.group.get('sourceOfFdTable') as FormArray).controls[0]) as FormArray).controls;
+  sumLogic() {
+    const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf && e.sumOf.length).sort((a, b) => a.sumOrder - b.sumOrder) : [];
+    // const totalSumFields = this.field.data ? this.field.data.filter(e => e.totalSumOf) : [];
+    // console.log('----sumFields --', sumFields);
+
+    this.subscription = this.group.valueChanges
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged()
+      )
+      .subscribe(data => {
+        // console.log('-----data----', data);
+        // const currentTable = data[this.field.key];
+        if (!sumFields.length) return;
+        sumFields.forEach((sumField) => {
+          const currentTable = this.group.get(this.field.key)?.getRawValue();
+
+          let sumYears: any = {};
+          this.yearFields.forEach((yearField: string) => {
+            let sumYear = 0;
+            const sumFieldYearKey = `fy${yearField}_${sumField.key}`;
+            // console.log('yearKey', sumFieldYearKey);
+            // sumYears[yearField] = 0;
+            sumYears[sumFieldYearKey] = 0;
+
+            sumField['sumOf'].forEach((subField: number) => {
+              // console.log('currentTable[subField]---', currentTable, '----', subField, '------', currentTable[subField]);
+              // const key = `fy2021-22_sourceOfFd`;
+              const yearKey = `fy${yearField}_${subField}`;
+              // console.log('yearKey', yearKey);
+
+              if (currentTable[subField] && currentTable[subField][yearKey] && !isNaN(parseInt(currentTable[subField][yearKey]))) {
+                sumYears[sumFieldYearKey] += parseInt(currentTable[subField][yearKey]);
+              }
+              // if (currentTable[subField] && currentTable[subField][yearField] && !isNaN(parseInt(currentTable[subField][yearField]))) {
+              //   sumYears[yearField] += parseInt(currentTable[subField][yearField]);
+              // }
+            });
+
+          });
+          // console.log('sumYears', sumYears);
+
+          this.group.get(this.field.key)?.get(sumField['key'])?.patchValue(sumYears, { emitEvent: false, onlySelf: true });
+        })
+        // this.total = data.reduce((a: any, b: any) => a + +b.fdnTotalShares, 0)
+      })
   }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+  }
+
+  getTableGroup(fieldKey: any, rowKey: string): FormGroup {
+    return (this.group.get(fieldKey) as FormGroup).get(rowKey) as FormGroup;
+  }
+
 
 }

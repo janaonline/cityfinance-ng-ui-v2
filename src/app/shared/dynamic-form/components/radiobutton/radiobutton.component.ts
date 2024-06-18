@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from "@angular/core";
-import { FormGroup } from "@angular/forms";
+import { FormControl, FormGroup } from "@angular/forms";
 import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
 @Component({
@@ -7,23 +7,34 @@ import { MaterialModule } from '../../../../material.module';
   standalone: true,
   imports: [MaterialModule],
   template: `
-<div class="demo-full-width margin-top" [formGroup]="group">
-<div><label class="radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}}:</label></div>
-<mat-radio-group [formControlName]="field.key">
-<mat-radio-button *ngFor="let opt of field.options" [value]="opt">{{opt}}</mat-radio-button>
-</mat-radio-group>
-</div>
-`,
-  styles: []
+    <div class="demo-full-width margin-top" [formGroup]="group">
+    	<div *ngIf="field.label">
+    		<label class="fw-bold radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}}<span class="text-danger">*&nbsp;</span>
+        </label>
+    	</div>
+    	<mat-radio-group [formControlName]="field.key">
+    		<mat-radio-button *ngFor="let opt of options" [value]="opt.id || opt " color="primary">{{opt.label || opt}}</mat-radio-button>
+        <ng-container *ngFor="let validation of field.validations;" ngProjectAs="mat-error">
+    <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
+  </ng-container>
+      </mat-radio-group>
+    </div>`,
+  styles: ``
 })
 export class RadiobuttonComponent implements OnInit {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() item!: FormGroup;
-  constructor() { }
-  ngOnInit() { }
+  @Input() options!: any[];
+  // @Input() label: any = true;
 
-  // getValue(name: string) {
-  //   return this.group.value.get(name) ? this.group.value.get(name).value : '';
-  // }
+  constructor() { }
+  ngOnInit() {
+    this.options = this.options || this.field.options;
+  }
+
+  hasError(key: string, name: string) {
+    return (this.group.get(key) as FormControl).hasError(name)
+  }
+
 }

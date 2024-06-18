@@ -1,0 +1,65 @@
+* {
+    font-family: var(--ff-base);
+}
+
+.material-icons {
+    font-family: 'Material Icons';
+}
+
+// ----- Verify and reject block ----- //
+.verified-info {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid rgba(54, 160, 4, 1);
+    background: rgba(227, 249, 217, 1);
+    margin-top: 20px;
+}
+
+.verified-info-reject {
+    border: 1px solid rgba(255, 0, 0, 1);
+    background: rgba(255, 242, 242, 1);
+}
+
+// ----- Responsive Table -----//
+.table-container {
+    position: relative;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.table th,
+.table td {
+    min-width: 8rem !important;
+    vertical-align: middle;
+    // text-align: right;
+    border: none;
+    padding-top: 1rem;
+    min-height: 3rem !important;
+}
+
+.table th.first-col,
+.table td.first-col {
+    min-width: 15rem !important;
+    min-height: 3rem !important;
+    vertical-align: middle;
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: rgba(255, 255, 255, 0.723);
+    backdrop-filter: blur(5px);
+    z-index: 2;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0px;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 3;
+    border-bottom: 2px solid #dee2e6;
+}

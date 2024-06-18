@@ -16,7 +16,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatSelectModule } from '@angular/material/select';
-import {MatAccordion, MatExpansionModule} from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+
 
 const materialModules: (any[] | Type<any> | ModuleWithProviders<{}>) = [
   MatButtonModule,
@@ -33,7 +35,8 @@ const materialModules: (any[] | Type<any> | ModuleWithProviders<{}>) = [
   MatTooltipModule,
   MatExpansionModule,
   MatDialogModule,
-  
+  MatProgressSpinnerModule,
+
   CommonModule,
   FormsModule,
   ReactiveFormsModule,
