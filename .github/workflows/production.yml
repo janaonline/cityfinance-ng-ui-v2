@@ -44,7 +44,7 @@ jobs:
     - name: Copy dist files to server
       uses: appleboy/scp-action@master
       with:
-        host: ${{ secrets.SERVER_IP }}  # Add your server IP address as a secret in your repository
+        host: ${{ secrets.SERVER_IP_PROD }}  # Add your server IP address as a secret in your repository
         username: ${{ secrets.SERVER_USERNAME }}  # Add your server username as a secret
         key: ${{ secrets.SSH_PRIVATE_KEY }}  # Add your server SSH private key as a secret
         port: 22
@@ -52,7 +52,7 @@ jobs:
         target: "/var/www/html/production-cicd/cityfinance-ng-ui-v2/"  # Specify the destination path on your server
     - name: Rename existing dist folder on server to dist_live
       run: |
-            ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "
+            ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP_PROD }} "
             if [ -d /var/www/html/production-cicd/cityfinance-ng-ui-v2/dist ]; then
               mv /var/www/html/production-cicd/cityfinance-ng-ui-v2/dist /var/www/html/production-cicd/cityfinance-ng-ui-v2/dist_live;
             fi"
