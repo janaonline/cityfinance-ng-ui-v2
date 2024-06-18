@@ -6,7 +6,7 @@
     "local": "ng serve --configuration=local --port 4300",
     "staging": "ng serve --configuration=staging --port 4300",
     "start": "ng serve",
-    "build": "ng build --base-href /xvi-fc/",
+    "build": "ng build --base-href /fc/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
