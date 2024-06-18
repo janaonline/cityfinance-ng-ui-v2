@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { FormGroup, FormBuilder, FormArray, Validators, FormControl } from '@angular/forms';
+import { FormGroup, FormBuilder, FormArray, Validators, FormControl, AbstractControl } from '@angular/forms';
 
 @Injectable({
   providedIn: 'root'
@@ -64,13 +64,69 @@ export class DynamicFormService {
     return new FormArray(tableRow);
 
   }
+  // custom validator to check that two fields match
+  MustMatch(controlName: string, matchingControlName: string) {
+    return (group: AbstractControl) => {
+
+      const control = group.get(controlName)?.get('value');
+
+      const matchingControl = group.get(matchingControlName)?.get('value');
+
+      if (!control || !matchingControl) {
+        return null;
+      }
+      console.log('control va', control.value, 'matchingControl va', matchingControl.value);
+
+
+      // return if another validator has already found an error on the matchingControl
+      if (matchingControl.errors && !matchingControl.errors['lt']) {
+        return null;
+      }
+
+      // set error on matchingControl if validation fails
+      if (control.value !== matchingControl.value) {
+        matchingControl.setErrors({ lt: true });
+      } else {
+        matchingControl.setErrors(null);
+      }
+      return null;
+    }
+  }
+  // custom validator to check that if the cuurent field less than compare fields
+  lessThanValidator(controlName: string, matchingControlName: string) {
+    return (group: AbstractControl) => {
+
+      const control = group.get(controlName)?.get('value');
+
+      const matchingControl = group.get(matchingControlName)?.get('value');
+
+      if (!control || !matchingControl) {
+        return null;
+      }
+      
+      // return if another validator has already found an error on the matchingControl
+      if (matchingControl.errors && !matchingControl.errors['lt']) {
+        return null;
+      }
+
+      // set error on matchingControl if validation fails
+      if (control.value < matchingControl.value) {
+        matchingControl.setErrors({ lt: true });
+      } else {
+        matchingControl.setErrors(null);
+      }
+      return null;
+    }
+  }
   setQuestionnaireData(childField: any) {
     const tableRow: any = [];
     childField.data.forEach((row: any) => {
       tableRow[row.key] = new FormGroup({ value: this.createContorl(row), reason: new FormControl(row.reason) });
     })
-
-    return new FormGroup(tableRow);
+    return new FormGroup(tableRow, {
+      // validators: this.MustMatch('password', 'confirmPassword')
+      validators: this.lessThanValidator('totSanction', 'totVacancy')
+    });
 
   }
   setFilesData(childField: any) {
@@ -97,15 +153,22 @@ export class DynamicFormService {
   }
 
   createFileForm(childField: any) {
+    const fileValidator = [];
+    const optionValidator: any = [];
+    if (childField.verifyStatus === 2) {
+      optionValidator.push(Validators.required);
+    } else {
+      fileValidator.push(Validators.required);
+    }
     return new FormGroup({
       file: new FormGroup({
-        name: new FormControl(childField.file?.name || null),
+        name: new FormControl(childField.file?.name || null, fileValidator),
         url: new FormControl(childField.file?.url || null),
         size: new FormControl(childField.file?.size || null),
       }),
       verifyStatus: new FormControl(childField.verifyStatus || null),
       rejectReason: new FormControl(childField.rejectReason || null),
-      rejectOption: new FormControl(childField.rejectOption || null),
+      rejectOption: new FormControl(childField.rejectOption || null, optionValidator),
     });
   }
 
@@ -147,7 +210,8 @@ export class DynamicFormService {
   }
   createContorl(field: any, validations = false) {
     const validationsData = validations || field.validations;
-    return new FormControl(field.value || '', this.bindValidations(validationsData));
+    const val = field.value ? { value: field.value, disabled: field.readonly } : '';
+    return new FormControl(val, this.bindValidations(validationsData));
     // return new FormControl(field.value || '');
   }
   tabControl(fields: any[]) {

@@ -13,7 +13,7 @@ export class MaintenanceComponent {
     constructor(private route: ActivatedRoute) { }
 
     ngOnInit(): void {
-        this.getQueryParams();
+        // this.getQueryParams();
     }
 
     getQueryParams(): void {
@@ -23,7 +23,7 @@ export class MaintenanceComponent {
                 localStorage.setItem("id_token", JSON.stringify(params['token']));
             }
             if (params['ulb']) {
-                const userData: any = `{ulb:${params['ulb']}}`;
+                const userData: any = { ulb: params['ulb'] };
                 localStorage.setItem("userData", userData);
             }
         });
