@@ -13,6 +13,13 @@ import { DecimalLimitDirective } from "../../../../core/directives/decimal-limit
     NoUpDownDirective
   ],
   templateUrl: './input.component.html',
+  styles: [`   
+.warning-hint {
+  display: block;
+  color: orange;
+}
+
+    `]
 })
 export class InputComponent {
   className: string = "box1";
@@ -23,7 +30,8 @@ export class InputComponent {
   @Input() readonly: boolean | undefined = false;
   @Input() parentField: any;
   validations: any[] = [];
-
+  warnings: any[] = [];
+  decimal: number = 0;
   // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 
   constructor() { }
@@ -33,10 +41,35 @@ export class InputComponent {
     // this.readonly = this.field.readonly || this.readonly;
     this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
+    this.decimal = (this.parentField?.decimal || this.parentField?.decimal === 0) ? this.parentField?.decimal : this.field?.decimal;
+    this.warnings = this.parentField?.warning;
   }
   hasError(key: string, name: string) {
     return (this.group.get(key) as FormControl).hasError(name)
   }
+
+  hasWarning(key: string, warning: any) {
+
+    const errors: any = this.group.get(key)?.errors
+
+    if (errors && errors.length) {
+      return true;
+    }
+    const val = parseInt(this.group.get(key)?.value);
+
+    let res = false;
+    switch (warning.condition) {
+      case 'eq':
+        res = val === warning.value;
+        break;
+      case 'gt':
+        res = val > warning.value;
+        break;
+    }
+    // console.log('res', warning, '---key----', key, '---val---', val, '---res-', res);
+    return res;
+  }
+
   getValue(name: string) {
     // console.log('name', name);
     // return this.group.value.get(name).value;
