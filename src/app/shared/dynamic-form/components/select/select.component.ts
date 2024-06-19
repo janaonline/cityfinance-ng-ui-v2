@@ -37,6 +37,7 @@ export class SelectComponent {
 
   @Input() parentField: any;
   validations: any[] = [];
+  readonly: any = false;
 
   constructor() { }
   ngOnInit() {
@@ -44,6 +45,7 @@ export class SelectComponent {
     this.options = this.options || this.field.options;
     // console.log('this.options---',this.options);
     this.validations = this.parentField?.validations || this.field.validations;
+    this.readonly = this.parentField?.readonly || this.field?.readonly;
   }
   // getValue(name: string) {
   //   return this.group.value.get(name).value;

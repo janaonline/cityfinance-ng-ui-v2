@@ -13,11 +13,11 @@ export class DecimalLimitDirective {
   ) { }
 
   @HostListener('keydown', ['$event']) onKeyDown(event: KeyboardEvent) {
-    console.log(event.key);
+    // console.log(event.key);
     if (this.appDecimalLimit == null) return;
     if (this.appDecimalLimit == 0 && event.key == '.') {
       // swal.fire('Warning', 'Deciamls are not allow', 'warning');
-      this.triggerSnackbar('Decimals are not allowed');
+      this.triggerSnackbar('Please enter a whole number');
       return event.preventDefault();
     }
     const inputValue = this.el.nativeElement.value;
@@ -28,10 +28,10 @@ export class DecimalLimitDirective {
 
     const decimal = inputValue.split('.')?.[1];
 
-    console.log(decimal?.length, this.appDecimalLimit);
+    // console.log(decimal?.length, this.appDecimalLimit);
     if (decimal?.length >= this.appDecimalLimit) {
       // swal.fire('Warning', `Upto ${this.appDecimalLimit} are allowed`, 'warning');
-      this.triggerSnackbar(`Upto ${this.appDecimalLimit} are allowed`);
+      this.triggerSnackbar(`Decimals are allowed up to ${this.appDecimalLimit} places only`);
       event.preventDefault();
     }
   }

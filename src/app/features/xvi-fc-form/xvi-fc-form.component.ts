@@ -34,10 +34,6 @@ import { XviFcService } from '../../core/services/xvi-fc.service';
 
 import {
   MatSnackBar,
-  MatSnackBarAction,
-  MatSnackBarActions,
-  MatSnackBarLabel,
-  MatSnackBarRef,
 } from '@angular/material/snack-bar';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
@@ -91,13 +87,7 @@ export class XviFcFormComponent {
   pmuSubmissionDate!: string;
   isAutoApproved: boolean = false;
   selfDeclarationTabId: string = 's5';
-  // guidanceNotesKey: string = 'guidanceNotes';
-  // incomeSectionBelowKey: number = 1;
-  // expenditureSectionBelowKey: number = 8;
   financialYearTableHeader: { [key: number]: string[] } = {};
-  // linearTabs: string[] = ['s1', 's2'];
-  // twoDTabs: string[] = ['s4', 's5', 's6'];
-  // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
   // tabs: Tab[] = [];
   tabs: any[] = [];
   currentFormStatus!: number;
@@ -112,7 +102,6 @@ export class XviFcFormComponent {
   statusTypes = StatusType;
   status: '' | 'PENDING' | 'REJECTED' | 'APPROVED' = '';
   formSubmitted = false;
-  // fields: any[] = tabsJson.data.tabs;
 
   fields: any[] = [];
   selectedStepIndex = 0;
@@ -120,7 +109,7 @@ export class XviFcFormComponent {
   step1Complete = false;
   tabChangeLoader = false;
   totalTabs = 6;
-  isDemographicCompleted: boolean | undefined = false;
+  // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
     return this.form.value;
@@ -133,27 +122,24 @@ export class XviFcFormComponent {
   ) { }
 
   ngOnInit() {
-    // this.form = this.formService.tabControl(tabsJson.data.tabs);
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);
     // });
     this.onLoad();
-    // this._snackBar.open('Save successfully!!', 'Close', {
-    //   horizontalPosition: 'end',
-    //   verticalPosition: 'top',
-    //   // duration: 2000,
-    //   // panelClass: ['snackbar-success']
-    //   panelClass: ['custom-snackbar-success']
-    // });
+
   }
   get isDemographicValid() {
     // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
     return this.form.get('demographicData')?.valid;
+    // return true;
   }
   onLoad(reload = false) {
+
+    // this.onLoad_local();
+    // return;
+
     this.isLoader = true;
-    // this.ulbId = '5dcfca53df6f59198c4ac3d5';
     this.ulbId = this.loggedInUserDetails.ulb;
     // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
     this.service.getUlbForm(this.ulbId).subscribe({
@@ -191,6 +177,41 @@ export class XviFcFormComponent {
     });
   }
 
+  /**
+   * Test for static Json
+   */
+  onLoad_local() {
+    this.isLoader = true;
+    this.ulbId = this.loggedInUserDetails.ulb;
+    this.tabs = tabsJson.data.tabs;
+    this.totalTabs = this.tabs.length;
+    this.tabs.push({
+      key: 'reviewSubmit',
+      label: 'Review & Submit',
+      'displayPriority': this.totalTabs + 1,
+    });
+
+    this.form = this.formService.tabControl(this.tabs);
+
+    // console.log('----', this.getFG('demographicData', 7).get('yearOfConstitution'));
+    // setTimeout(() => {
+
+    // }, 500)
+
+
+    this.isLoader = false;
+    this.formSaveLoader = false;
+    this.tabChangeLoader = false;
+
+  }
+
+  ngAfterViewInit() {
+    // this.form.get('demographicData')?.valueChanges((data: any) => {
+    //   console.log('data-----', data);
+
+    // });
+  }
+
   // validateAllFormFields(formGroup: FormGroup) {
   //   Object.keys(formGroup.controls).forEach(field => {
   //     const control = formGroup.get(field);
@@ -202,7 +223,9 @@ export class XviFcFormComponent {
     if (this.form.valid) {
       Swal.fire({
         title: 'Are you sure?',
-        text: 'Do you really want to submit the data?',
+        text: `Are you sure you want to submit this form? Once submitted, 
+        it will not be editable and will be sent to State/UT for Review. Alternatively, 
+        you can ‘Save as Draft’ for now and submit it later.`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Submit',
@@ -237,8 +260,8 @@ export class XviFcFormComponent {
       });
     } else {
       Swal.fire(
-        'Validation Error!',
-        'Some fields not filled or invalid.',
+        'Incomplete or incorrect data entered!',
+        'The form can not be submitted without filling in all the mandatory fields correctly.',
         'error'
       ).then(() => {
         //scroll to fisrt error tab
@@ -267,7 +290,7 @@ export class XviFcFormComponent {
   getAllTabData() {
     const formData: any = { tab: [] };
     for (let tab of this.tabs) {
-      if(tab.key !== 'reviewSubmit') {
+      if (tab.key !== 'reviewSubmit') {
         formData.tab.push(this.getFormTabData(tab));
       }
     }
@@ -462,7 +485,8 @@ export class XviFcFormComponent {
   }
 
   getFG(tabKey: string, i: number): any {
-    return (this.form.get(tabKey) as FormArray).controls[i]
+    // console.log('tabKey',tabKey, 'i',i, '---',(this.form.get(tabKey) as FormArray).controls[i]);    
+    return (this.form.get(tabKey) as FormArray).controls[i];
   }
 
 }
