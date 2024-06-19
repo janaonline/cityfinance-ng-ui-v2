@@ -12,6 +12,7 @@
             <button matStepperNext class="btn btn-outline-dark fw-bold" (click)="editStep(i)">
                 <i class="bi bi-pencil-square me-2 fs-5"></i>
                 Edit</button>
+                <!-- <button (click)="printPage()">Print</button> -->
         </div>
     </div>
 
@@ -259,3 +260,29 @@
 </div>
 
 }
+<style type="text/css" media="print">
+    @page 
+    {
+        size:  auto;   /* auto is the initial value */
+        margin: 0mm;  /* this affects the margin in the printer settings */
+    }
+
+    html
+    {
+        background-color: #FFFFFF; 
+        margin: 0px;  /* this affects the margin on the html before sending to printer */
+    }
+
+    body
+    {
+        border: solid 0px blue ;
+        margin: 10mm 15mm 10mm 15mm; /* margin you want for the content */
+    }
+    .no-print,bg-white,.footer-wrappper {
+      display: none;
+    }
+  
+    body {
+      background: white;
+    }
+    </style>
