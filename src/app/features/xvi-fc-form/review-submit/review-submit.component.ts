@@ -24,6 +24,10 @@ export class ReviewSubmitComponent {
 
   }
 
+  printPage() {
+    window.print();
+  }
+  
   getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
     return ((((this.group.get(fieldKey) as FormArray)
       .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
