@@ -41,8 +41,8 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
   dataSource = new MatTableDataSource<Data>([]);
   totalForms: any;
-  page: number = 0;
-  limit: number = 0;
+  // page: number = 0;
+  limit: number = 10;
   skip: number = 0;
 
   constructor(
@@ -57,15 +57,20 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   }
 
   onLoad() {
-    this.page = 50;
-    this.limit = 10;
-    this.skip = 0;
+    // this.page = 50;
+    // this.limit = 10;
+    // this.skip = 0;
     // this.isLoader = true;
     this.stateId = this.loggedInUserDetails.state;
     // this.stateId = '5dcf9d7416a06aed41c748f0';
-    this.reviewTableService.getFormList(this.stateId).subscribe({
+    // 0 1 2
+    const paginationParams = {
+      skip: this.skip,
+      limit: this.limit
+    }
+    this.reviewTableService.getFormList(paginationParams).subscribe({
       next: (res: any) => {
-        console.log(res);
+        // console.log(res);
         this.totalForms = res.totalForms;
         // this.dataSource.paginator =  1000;
         this.dataSource = res.data
@@ -78,6 +83,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   }
 
   pageChanged(event: any) {
+    // console.log('event',event);
+    this.skip = event.pageIndex;
+    this.limit = event.pageSize;
     this.onLoad();
   }
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -87,8 +95,10 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   }
   getStatusClass(status: string): string {
     switch (status) {
-      case 'In progress':
+      case 'IN_PROGRESS':
         return 'status-in-progress';
+      case 'NOT_STARTED':
+        return 'status-not-started';
       case 'Under review by state':
         return 'status-under-review';
       case 'Approved by XVIFC':
