@@ -1,15 +1,14 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { Component, ViewChild } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+// import { CommonModule } from '@angular/common';
 // import { tabsJson } from './formJson';
 // import { tabsJson } from './xviFormJson';
 import { tabsJson } from './xviFormJsonApi';
 // import { tabsJson } from './xviJsonApiFull';
 import { MaterialModule } from '../../material.module';
 import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
-import { FieldConfig } from '../../shared/dynamic-form/field.interface';
 import { USER_TYPE } from '../../core/models/user/userType';
-import { FiscalRankingService, StatusType } from './services/fiscal-ranking.service';
+import { StatusType } from './services/fiscal-ranking.service';
 import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
 import Swal from 'sweetalert2';
@@ -20,7 +19,6 @@ import { AlreadyUpdatedUrlPipe } from '../../core/pipes/already-updated-url.pipe
 // import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
 import { PercentprogressPipe } from '../../core/pipes/percentprogress.pipe';
 // import { ToStorageUrlPipe } from '../../core/pipes/to-storage-url.pipe';
-import { TowordPipe } from '../../core/pipes/toword.pipe';
 // import { CommonActionRadioComponent } from '../../shared/components/actions/common-action-radio/common-action-radio.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
@@ -42,66 +40,47 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
   selector: 'app-xvi-fc-form',
   standalone: true,
   imports: [
-    // CommonModule,
-    // FormsModule,
-    // ReactiveFormsModule, 
     DynamicFormComponent,
     MaterialModule,
 
     PercentprogressPipe,
-    // TowordPipe,
-    // ToStorageUrlPipe,
     AlreadyUpdatedUrlPipe,
-    // DisplayPositionPipe,
-    // DecimalLimitDirective,
-    // CommonActionRadioComponent,
     LoaderComponent,
 
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
-    // SweetAlert2Module,
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
 })
 export class XviFcFormComponent {
 
-  // fields: FieldConfig[] = formJson;
-
   form!: FormGroup;
   dynamicForm!: FormGroup;
-  // form!: FormArray;
-
 
   @ViewChild('stepper') stepper: MatStepper | undefined;
 
-  yearIdArr: any = {};
-  // user!: IUserLoggedInDetails | null;
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   isLoader: boolean = false;
   formSaveLoader: boolean = false;
   loggedInUserType: any;
   hideForm: boolean = false;
   notice!: string;
-  pmuSubmissionDate!: string;
-  isAutoApproved: boolean = false;
-  selfDeclarationTabId: string = 's5';
-  financialYearTableHeader: { [key: number]: string[] } = {};
   // tabs: Tab[] = [];
   tabs: any[] = [];
-  currentFormStatus!: number;
+  // currentFormStatus!: number;
   formId!: string;
   ulbId!: string;
-  stateCode!: string;
-  isDraft: boolean = false;
-  userData: any;
-  ulbName!: string;
-  validators: any = {};
-  userTypes = USER_TYPE;
-  statusTypes = StatusType;
-  status: '' | 'PENDING' | 'REJECTED' | 'APPROVED' = '';
-  formSubmitted = false;
+  // stateCode!: string;
+  // isDraft: boolean = false;
+  // userData: any;
+  // ulbName!: string;
+  // validators: any = {};
+  // userTypes = USER_TYPE;
+  // statusTypes = StatusType;
+  // status: '' | 'PENDING' | 'REJECTED' | 'APPROVED' = '';
+  // formSubmitted = false;
 
   fields: any[] = [];
   selectedStepIndex = 0;
@@ -109,6 +88,9 @@ export class XviFcFormComponent {
   step1Complete = false;
   tabChangeLoader = false;
   totalTabs = 6;
+  formStatus!: string;
+  submittedFormStatuses = ['SUBMITTED'];
+  oldOptions: any[] = [];
   // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
@@ -130,9 +112,11 @@ export class XviFcFormComponent {
 
   }
   get isDemographicValid() {
-    // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
-    return this.form.get('demographicData')?.valid;
-    // return true;
+    // console.log('valu', this.form.get('demographicData')?.value);
+    // console.log('valid', this.form.get('demographicData')?.valid);
+
+    return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
+    // return this.form.get('demographicData')?.valid;
   }
   onLoad(reload = false) {
 
@@ -144,6 +128,7 @@ export class XviFcFormComponent {
     // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
     this.service.getUlbForm(this.ulbId).subscribe({
       next: (res: any) => {
+        this.formStatus = res.data.formStatus;
         this.tabs = res?.data?.tabs;
         // this.tabs = tabsJson.data.tabs;
         this.totalTabs = this.tabs.length;
@@ -155,6 +140,11 @@ export class XviFcFormComponent {
         });
 
         this.form = this.formService.tabControl(this.tabs);
+        if (this.tabs[0].formType === 'form2') {
+          this.oldOptions = this.tabs[0].data[8].options;
+          this.setOption();
+          this.setOnValueChange();
+        }
         // console.log('this.form.controls[0]--',this.form.controls[0]);
 
         // this.isDemographicCompleted = this.form.get('demographicData')?.valid;
@@ -192,12 +182,12 @@ export class XviFcFormComponent {
     });
 
     this.form = this.formService.tabControl(this.tabs);
-
-    // console.log('----', this.getFG('demographicData', 7).get('yearOfConstitution'));
-    // setTimeout(() => {
-
-    // }, 500)
-
+    // this.tabs[0].data[8].options = ['2021-22']
+    if (this.tabs[0].formType === 'form2') {
+      this.oldOptions = this.tabs[0].data[8].options;
+      this.setOption();
+      this.setOnValueChange();
+    }
 
     this.isLoader = false;
     this.formSaveLoader = false;
@@ -205,11 +195,38 @@ export class XviFcFormComponent {
 
   }
 
-  ngAfterViewInit() {
-    // this.form.get('demographicData')?.valueChanges((data: any) => {
-    //   console.log('data-----', data);
+  setOnValueChange() {
+    this.getFG('demographicData', 7).valueChanges.pipe(
+      // debounceTime(400),
+      // distinctUntilChanged()
+    )
+      .subscribe((data: any) => {
+        if (data['yearOfConstitution']) {
+          this.setOption();
+        }
+      });
+  }
 
-    // });
+  setOption() {
+    const yearOfConstitutionValue = this.getFG('demographicData', 7).get('yearOfConstitution').value;
+    const yearOfConstitutionOptions = this.tabs[0].data[7].options;
+
+    const index = yearOfConstitutionOptions.indexOf(yearOfConstitutionValue);
+
+    this.tabs[0].data[8].options = this.oldOptions.slice(0, index);
+    const yearOfSlbControl = this.getFG('demographicData', 8).get('yearOfSlb');
+    if (index === 0) {
+      this.tabs[0].data[8].required = false;
+      yearOfSlbControl.patchValue(null);
+      yearOfSlbControl.disable();
+      yearOfSlbControl.clearValidators();
+      yearOfSlbControl.updateValueAndValidity();
+    } else {
+      this.tabs[0].data[8].required = true;
+      yearOfSlbControl.enable();
+      yearOfSlbControl.setValidators([Validators.required]);
+      yearOfSlbControl.updateValueAndValidity();
+    }
   }
 
   // validateAllFormFields(formGroup: FormGroup) {

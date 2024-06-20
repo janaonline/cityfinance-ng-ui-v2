@@ -32,8 +32,8 @@
                         <app-input [field]="col" [group]="getTableGroup(field.key, row.key)" [parentField]="row"
                             [displayInlineLabel]="true"></app-input>
                         } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
-                        <app-select [field]="col" [options]="row.options" [parentField]="row"
-                            [group]="getTableGroup(field.key, row.key)" [displayInlineLabel]="true"></app-select>
+                        <app-select [field]="col" [parentField]="row" [group]="getTableGroup(field.key, row.key)"
+                            [displayInlineLabel]="true"></app-select>
                         } @else if (col.formFieldType === 'heading') {
                         {{col.label}}
                         }
