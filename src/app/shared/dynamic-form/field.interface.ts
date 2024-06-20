@@ -4,6 +4,7 @@ export interface Validator {
   message: string;
 }
 export interface FieldConfig {
+  required?: any;
   label: string;
   // name: string;
   key: string;

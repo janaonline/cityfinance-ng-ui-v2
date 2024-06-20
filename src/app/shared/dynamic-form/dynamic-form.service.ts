@@ -79,13 +79,13 @@ export class DynamicFormService {
 
 
       // return if another validator has already found an error on the matchingControl
-      if (matchingControl.errors && !matchingControl.errors['lt']) {
+      if (matchingControl.errors && !matchingControl.errors['lessThan']) {
         return null;
       }
 
       // set error on matchingControl if validation fails
       if (control.value !== matchingControl.value) {
-        matchingControl.setErrors({ lt: true });
+        matchingControl.setErrors({ lessThan: true });
       } else {
         matchingControl.setErrors(null);
       }
@@ -103,15 +103,15 @@ export class DynamicFormService {
       if (!control || !matchingControl) {
         return null;
       }
-      
+
       // return if another validator has already found an error on the matchingControl
-      if (matchingControl.errors && !matchingControl.errors['lt']) {
+      if (matchingControl.errors && !matchingControl.errors['lessThan']) {
         return null;
       }
 
       // set error on matchingControl if validation fails
       if (control.value < matchingControl.value) {
-        matchingControl.setErrors({ lt: true });
+        matchingControl.setErrors({ lessThan: true });
       } else {
         matchingControl.setErrors(null);
       }
@@ -255,39 +255,4 @@ export class DynamicFormService {
     return new FormGroup(group);
   }
 
-  // addSumLogics() {
-  //   const s3DataControl = Object.values((this.form.controls.find(control => control.value?.id == 's3') as any).controls?.data?.controls);
-  //   const sumAbleContrls = s3DataControl?.filter((value: FormGroup) => value?.controls?.logic?.value == 'sum') as FormGroup[];
-  //   sumAbleContrls?.forEach(parentControl => {
-  //     const childControls = s3DataControl
-  //       .filter((value: FormGroup) => parentControl?.controls?.calculatedFrom?.value?.includes('' + value.controls.position.value)) as FormGroup[];
-
-  //     childControls.forEach((child) => {
-  //       child.valueChanges.subscribe(updated => {
-  //         const yearWiseAmount = childControls.map((innerChild) => innerChild.value.yearData.map(year => year.value));
-  //         const columnWiseSum = this.getColumnWiseSum(yearWiseAmount);
-  //         parentControl.patchValue({ yearData: columnWiseSum.map(col => ({ value: col })) });
-  //         (parentControl.get('yearData') as any)?.controls.forEach(parentYearItemControl => {
-  //           parentYearItemControl.markAllAsTouched();
-  //           parentYearItemControl.markAsDirty();
-  //         })
-  //       })
-  //       // child.updateValueAndValidity({ emitEvent: true });
-  //     });
-  //   });
-  // }
-
-  // getColumnWiseSum(arr: number[][]): number[] {
-  //   // console.log('aaaarrr', arr);
-  //   return arr[0]?.map((_, colIndex) => {
-  //     let retNull: boolean = true;
-  //     let sum = arr.reduce((acc, curr) => {
-  //       if (!isNaN(Number(curr[colIndex])) && (curr[colIndex]?.toString()?.trim() != "")) {
-  //         retNull = false;
-  //       }
-  //       return acc + (curr[colIndex] * 1 || 0);
-  //     }, 0);
-  //     return retNull ? null : sum;
-  //   });
-  // }
 }

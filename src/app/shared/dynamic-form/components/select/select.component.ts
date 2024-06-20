@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from "@angular/core";
+import { Component, Input } from "@angular/core";
 import { FormControl, FormGroup } from "@angular/forms";
 import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
@@ -7,17 +7,26 @@ import { MaterialModule } from '../../../../material.module';
   standalone: true,
   imports: [MaterialModule],
   template: `
-    <label class="fw-bold" *ngIf="displayLabel && !displayInlineLabel">{{field.position ? field.position+'. ':''}}{{field.label}}<span class="text-danger">*&nbsp;</span>
+    <label class="fw-bold" *ngIf="displayLabel && !displayInlineLabel">{{field.position ? field.position+'. ':''}}{{field.label}}
+      <span class="text-danger" *ngIf="field.required">*&nbsp;</span>
     </label>
     <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
     <mat-label *ngIf="displayInlineLabel">{{field.label}}</mat-label>
     	<mat-select [formControlName]="field.key" [multiple]="field.multiple"
       placeholder="Select an Option" panelClass="example-panel-blue">
     		<!-- <mat-option value="">Select an Option</mat-option> -->
-        @for (item of options; track $index; let last = $last) {
-          <mat-option [value]="item">{{item}}</mat-option>
-          <mat-divider *ngIf="!last"></mat-divider>
-        }
+         @if(parentField?.options) {
+          @for (item of parentField?.options; track $index; let last = $last) {
+            <mat-option [value]="item">{{item}}</mat-option>
+            <mat-divider *ngIf="!last"></mat-divider>
+          }
+         } @else {
+          @for (item of field.options; track $index; let last = $last) {
+            <mat-option [value]="item">{{item}}</mat-option>
+            <mat-divider *ngIf="!last"></mat-divider>
+          }
+         }
+        
     	</mat-select>
     	<ng-container *ngFor="let validation of this.validations;" ngProjectAs="mat-error">
     		<mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
