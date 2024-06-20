@@ -84,8 +84,8 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
   pageChanged(event: any) {
     // console.log('event',event);
+    this.skip = event.pageIndex;
     this.limit = event.pageSize;
-    this.skip = event.pageIndex * this.limit;
     this.onLoad();
   }
   @ViewChild(MatPaginator) paginator!: MatPaginator;
