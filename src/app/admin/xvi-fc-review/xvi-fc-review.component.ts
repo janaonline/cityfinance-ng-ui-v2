@@ -1,6 +1,6 @@
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MaterialModule } from '../../material.module';
 import { HttpClient } from '@angular/common/http';
 import { USER_TYPE } from '../../core/models/user/userType';
@@ -21,17 +21,17 @@ interface Data {
   standalone: true,
   imports: [
     MaterialModule,
-    MatTableModule, 
+    MatTableModule,
     MatPaginatorModule
   ],
   templateUrl: './xvi-fc-review.component.html',
   styleUrl: './xvi-fc-review.component.scss'
 })
-export class XviFcReviewComponent implements AfterViewInit, OnInit   {
+export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
-  
+
   stateId!: string;
-  data!:any;
+  data!: any;
 
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   isLoader: boolean = false;
@@ -39,7 +39,11 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit   {
 
   displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
 
-    dataSource = new MatTableDataSource<Data>([]);
+  dataSource = new MatTableDataSource<Data>([]);
+  totalForms: any;
+  // page: number = 0;
+  limit: number = 10;
+  skip: number = 0;
 
   constructor(
     private http: HttpClient,
@@ -53,15 +57,24 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit   {
   }
 
   onLoad() {
-
+    // this.page = 50;
+    // this.limit = 10;
+    // this.skip = 0;
     // this.isLoader = true;
-    // this.stateId = this.loggedInUserDetails.state;
-    this.stateId = '5dcf9d7416a06aed41c748f0';
-    this.reviewTableService.getFormList(this.stateId).subscribe({
+    this.stateId = this.loggedInUserDetails.state;
+    // this.stateId = '5dcf9d7416a06aed41c748f0';
+    // 0 1 2
+    const paginationParams = {
+      skip: this.skip,
+      limit: this.limit
+    }
+    this.reviewTableService.getFormList(paginationParams).subscribe({
       next: (res: any) => {
-        console.log(res);
+        // console.log(res);
+        this.totalForms = res.totalForms;
+        // this.dataSource.paginator =  1000;
         this.dataSource = res.data
-        
+
         // this.isLoader = false;
       }, error: () => {
         // this.isLoader = false;
@@ -69,6 +82,12 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit   {
     });
   }
 
+  pageChanged(event: any) {
+    // console.log('event',event);
+    this.skip = event.pageIndex;
+    this.limit = event.pageSize;
+    this.onLoad();
+  }
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   ngAfterViewInit() {
@@ -76,8 +95,10 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit   {
   }
   getStatusClass(status: string): string {
     switch (status) {
-      case 'In progress':
+      case 'IN_PROGRESS':
         return 'status-in-progress';
+      case 'NOT_STARTED':
+        return 'status-not-started';
       case 'Under review by state':
         return 'status-under-review';
       case 'Approved by XVIFC':
