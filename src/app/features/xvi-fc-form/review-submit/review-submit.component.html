@@ -1,3 +1,4 @@
+<div class="clearfix"><button class="float-end primary-btn-2" (click)="printPage()">Print</button></div>
 @for (tab of fields; track tab.key; let i = $index) {
 
 <div class="container mt-4" [id]="tab.key">
@@ -11,8 +12,7 @@
         <div>
             <button matStepperNext class="btn btn-outline-dark fw-bold" (click)="editStep(i)">
                 <i class="bi bi-pencil-square me-2 fs-5"></i>
-                Edit</button>
-                <!-- <button (click)="printPage()">Print</button> -->
+                Edit</button>                
         </div>
     </div>
 
