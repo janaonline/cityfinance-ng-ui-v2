@@ -6,9 +6,10 @@ import { HttpClient } from '@angular/common/http';
 import { USER_TYPE } from '../../core/models/user/userType';
 import { UserUtility } from '../../core/util/user/user';
 import { ReviewTableService } from '../../core/services/review-table.service';
+import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
+import { Router } from '@angular/router';
 
 interface Data {
-  // position: number;
   ulbName: string;
   censusCode: number;
   formStatus: string;
@@ -22,14 +23,16 @@ interface Data {
   imports: [
     MaterialModule,
     MatTableModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    ReplaceUnderscorePipe
   ],
+
   templateUrl: './xvi-fc-review.component.html',
   styleUrl: './xvi-fc-review.component.scss'
 })
 export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
-
+  ulbName: string = '';
   stateId!: string;
   data!: any;
 
@@ -47,8 +50,11 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
   constructor(
     private http: HttpClient,
-    public reviewTableService: ReviewTableService
+    public reviewTableService: ReviewTableService,
+    private router: Router
   ) { }
+
+
 
   ngOnInit() {
 
@@ -88,37 +94,26 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     this.limit = event.pageSize;
     this.onLoad();
   }
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
   }
   getStatusClass(status: string): string {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return 'status-in-progress';
-      case 'NOT_STARTED':
-        return 'status-not-started';
-      case 'Under review by state':
-        return 'status-under-review';
-      case 'Approved by XVIFC':
-        return 'status-approved';
-      case 'SUBMITTED':
-        return 'status-submitted';
-      default:
-        return 'status-not-started';
+    const statusClases: any = {
+      IN_PROGRESS: 'alert-warning',
+      NOT_STARTED: 'alert-secondary',
+      UNDER_REVIEW_BY_STATE: 'alert-info',
+      SUBMITTED: 'alert-primary',
+      RETURNED_BY_STATE: 'alert-danger',
+      UNDER_REVIEW_BY_XVIFC: 'alert-info',
+      SUO_MOTO_STATE: 'alert-success',
+      RETURNED_BY_XVIFC: 'alert-danger',
+      APPROVED_BY_XVIFC: 'alert-success',
+      SUO_MOTO_XVIFC: 'alert-success',
     }
+    return statusClases[status];
   }
 }
-
-
-
-// const ELEMENT_DATA: DashboardElement[] = [
-//   {position: 1, ulbName: 'Kannur', censusCode: 1079, formStatus: 'In progress', actions:'View'},
-//   {position: 2, ulbName: 'Bangalore', censusCode: 79, formStatus: 'Under review by state',actions:'Review'},
-//   {position: 3, ulbName: 'Kannur', censusCode: 1079, formStatus: 'In progress',actions:'View'},
-//   {position: 4, ulbName: 'Hydrabad', censusCode: 179, formStatus: 'Approved by XVIFC',actions:'View'},
-//   {position: 5, ulbName: 'Bangalore', censusCode: 79, formStatus: 'Under review by state',actions:'Review'},
-//   {position: 6, ulbName: 'Hydrabad', censusCode: 179, formStatus: 'Approved by XVIFC', actions:'View'},
-// ];
 
