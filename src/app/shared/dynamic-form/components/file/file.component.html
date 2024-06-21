@@ -1,4 +1,4 @@
-<div class="container" appDnd (fileDropped)="onFileDropped($event)">
+<div class="container" appDnd (fileDropped)="onFileDropped($event)" *ngIf="!readonly">
     <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowseHandler($event)"
         [accept]="this.allowedFileTypeStr" />
     <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>

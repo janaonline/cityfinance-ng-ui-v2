@@ -8,12 +8,13 @@ import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/ve
 // import { deepClone } from '@angular-devkit/core';
 // import * as _ from 'lodash';
 import { cloneDeep } from 'lodash-es';
+import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 
 
 @Component({
   selector: 'app-yearwise-files',
   standalone: true,
-  imports: [MaterialModule, FileComponent],
+  imports: [MaterialModule, FileComponent, ToStorageUrlPipe],
   templateUrl: './yearwise-files.component.html',
   styleUrl: './yearwise-files.component.scss'
 })

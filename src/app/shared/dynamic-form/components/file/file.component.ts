@@ -26,7 +26,8 @@ export class FileComponent {
   fileTypes: any = { 'pdf': 'application/pdf', 'xlsx': 'application/vnd.ms-excel' };
   allowedFileTypeStr: string = '';
   maxFileSize: number = 20;
-
+  readonly: boolean | undefined = false;
+  @Input() parentField: any;
 
   // uploadFolderName!: string;
 
@@ -43,8 +44,10 @@ export class FileComponent {
 
   ngOnInit() {
     // console.log('----field file --', this.field);
+    // console.log('----parentField file --', this.parentField);
     // console.log('----group file --', this.group);
     this.allowedFileTypeStr = this.field.allowedFileTypes?.map((e: string) => this.fileTypes[e])?.join(',') || '';
+    this.readonly = this.parentField?.readonly || this.field?.readonly;
   }
 
   get getControl() {

@@ -15,6 +15,7 @@ import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 export class ReviewSubmitComponent {
   @Input() fields!: any[];
   @Input() group!: FormGroup;
+  @Input() isFormEditable = false;
   collapsed = false;
   panelOpenState = true;
   @Input('stepper') stepper: MatStepper | undefined;
@@ -39,7 +40,7 @@ export class ReviewSubmitComponent {
 
   isFormValid(tabKey: string): Boolean {
     // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
-    return this.group.get(tabKey)?.valid as boolean;
+    return !this.isFormEditable || this.group.get(tabKey)?.valid as boolean;
   }
 
 }

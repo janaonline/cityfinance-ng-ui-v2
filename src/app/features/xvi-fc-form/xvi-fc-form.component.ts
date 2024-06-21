@@ -118,6 +118,10 @@ export class XviFcFormComponent {
     return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
     // return this.form.get('demographicData')?.valid;
   }
+
+  get isFormEditable() {
+    return !this.submittedFormStatuses.includes(this.formStatus);
+  }
   onLoad(reload = false) {
 
     // this.onLoad_local();
@@ -140,24 +144,17 @@ export class XviFcFormComponent {
         });
 
         this.form = this.formService.tabControl(this.tabs);
-        if (this.tabs[0].formType === 'form2') {
+        if (this.tabs[0].formType === 'form2' && this.isFormEditable) {
           this.oldOptions = this.tabs[0].data[8].options;
           this.setOption();
           this.setOnValueChange();
         }
-        // console.log('this.form.controls[0]--',this.form.controls[0]);
 
-        // this.isDemographicCompleted = this.form.get('demographicData')?.valid;
-        // console.log(`this.form.get('demographicData')?.valid;`, this.form.get('demographicData')?.valid);
-        // console.log(`this.form.valid;`, this.form.valid);
-
-        // this.form.markAsPristine();        
-
-        if (reload) {
-          setTimeout(() => {
-            this.afterSave();
-          }, 500);
-        }
+        // if (reload) {
+        //   setTimeout(() => {
+        //     this.afterSave();
+        //   }, 500);
+        // }
         this.isLoader = false;
         this.formSaveLoader = false;
         this.tabChangeLoader = false;
@@ -313,16 +310,22 @@ export class XviFcFormComponent {
     }
     return formData;
   }
-  selectionChange(event: StepperSelectionEvent) {
+  onTabChange(event: StepperSelectionEvent) {
+    if (!this.isFormEditable) {
+      return;
+    }
+    // console.log('onTabChange',event);
+
     // return;
     // if last tab load only data
     if (event.previouslySelectedIndex !== this.totalTabs && !this.actionType) {
       this.tabChangeLoader = true;
-      console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
+      // console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
       // const formData = this.getAllTabData();
       const formData = this.getFormData();
       this.service.saveUlbForm(this.ulbId, formData).subscribe({
         next: (res) => {
+          // move from 1st or navigate to last tab reload form
           if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
             this.onLoad();
           } else {
@@ -334,50 +337,77 @@ export class XviFcFormComponent {
         }
       });
     }
-
-    // setTimeout(() => {
-    //   this.tabChangeLoader = false;
-    // }, 2000);
-
   }
   saveAs(actionType: string) {
     const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
-    // console.log(`currentForm?.valid;`, currentForm?.valid);
-    // console.log(`this.form.valid;`, this.form.valid);
 
     currentForm?.markAllAsTouched()
 
     this.actionType = actionType;
 
-    console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
-
-    // if back from review tab no action
-    if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
-      this.stepper?.previous();
-      this.actionType = '';
-      return;
-    }
     const formData = this.getFormData();
     // return;
     this.formSaveLoader = true;
 
     this.service.saveUlbForm(this.ulbId, formData).subscribe({
       next: (res) => {
-        // for last tab load json again
-        if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
-          this.onLoad(true);
-        }
-        // after first tab load json again
-        else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
-          this.onLoad(true);
-        } else {
-          this.afterSave();
-        }
+        this.triggerSnackbar();
+        this.formSaveLoader = false;
+        this.actionType = '';
       }, error: (error: any) => {
         this.handleHttpError(error);
       }
     });
   }
+  // afterSave() {
+  //   // if (this.actionType === 'next') {
+  //   //   this.stepper?.next();
+  //   // } else if (this.actionType === 'previous') {
+  //   //   this.stepper?.previous();
+  //   // }
+  //   this.triggerSnackbar();
+  //   this.formSaveLoader = false;
+  //   this.actionType = '';
+  //   // Swal.close();
+  // }
+  // saveAs_bkp(actionType: string) {
+  //   const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
+  //   // console.log(`currentForm?.valid;`, currentForm?.valid);
+  //   // console.log(`this.form.valid;`, this.form.valid);
+
+  //   currentForm?.markAllAsTouched()
+
+  //   this.actionType = actionType;
+
+  //   // console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
+
+  //   // if back from review tab no action
+  //   if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
+  //     this.stepper?.previous();
+  //     this.actionType = '';
+  //     return;
+  //   }
+  //   const formData = this.getFormData();
+  //   // return;
+  //   this.formSaveLoader = true;
+
+  //   this.service.saveUlbForm(this.ulbId, formData).subscribe({
+  //     next: (res) => {
+  //       // for last tab load json again
+  //       if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
+  //         this.onLoad(true);
+  //       }
+  //       // after first tab load json again
+  //       else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
+  //         this.onLoad(true);
+  //       } else {
+  //         this.afterSave();
+  //       }
+  //     }, error: (error: any) => {
+  //       this.handleHttpError(error);
+  //     }
+  //   });
+  // }
   getFormData() {
     const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
     formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
@@ -432,15 +462,6 @@ export class XviFcFormComponent {
           tabData.data.push({ key, year, refKey, ...value, saveAsDraftValue: '' });
         });
       });
-      // tab['data'].forEach((field: any, i: number) => {
-      //   // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
-      //   for (const [key, value] of Object.entries(formJsonTab[i][field.key])) {
-      //     tabData.data.push(
-      //       { refKey: field.key, key: field.key, year: key, ...(typeof value === 'object' && value !== null ? value : {}) }
-      //     );
-
-      //   }
-      // });
     } else if (tabKey === 'accountPractice') {
       tab['data'].forEach((field: any, i: number) => {
         // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
@@ -452,12 +473,7 @@ export class XviFcFormComponent {
           }
         }
       });
-      // }
-      // if (tabKey !== 'reviewSubmit') {
-      //   formData.tab.push(tabData);
-      // }
     }
-
 
     // console.log('formData----', formData);
     return tabData;
@@ -467,35 +483,24 @@ export class XviFcFormComponent {
   isPlainObject(data: unknown): data is { [s: string]: unknown; } {
     return typeof data === 'object' && data !== null && !Array.isArray(data);
   }
-  afterSave() {
-    if (this.actionType === 'next') {
-      this.stepper?.next();
-    } else if (this.actionType === 'previous') {
-      this.stepper?.previous();
-    }
-    this.triggerSnackbar();
-    this.formSaveLoader = false;
-    this.actionType = '';
-    // Swal.close();
-  }
+
   triggerSnackbar() {
     this._snackBar.open('Data saved successfully!', 'Close', {
       horizontalPosition: 'end',
       verticalPosition: 'top',
       duration: 10000,
-      // panelClass: ['snackbar-success']
       panelClass: ['custom-snackbar-success']
     });
   }
-  onSubmit(event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (this.form.valid) {
-      // this.submit.emit(this.form.value);
-    } else {
-      // this.validateAllFormFields(this.form);
-    }
-  }
+  // onSubmit(event: Event) {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+  //   if (this.form.valid) {
+  //     // this.submit.emit(this.form.value);
+  //   } else {
+  //     // this.validateAllFormFields(this.form);
+  //   }
+  // }
 
   getTabGroup(tabKey: string): FormArray {
     return (this.form.get(tabKey) as FormArray)
