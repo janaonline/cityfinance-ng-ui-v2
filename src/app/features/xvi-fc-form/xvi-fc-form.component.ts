@@ -118,6 +118,10 @@ export class XviFcFormComponent {
     return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
     // return this.form.get('demographicData')?.valid;
   }
+
+  get isFormEditable() {
+    return !this.submittedFormStatuses.includes(this.formStatus);
+  }
   onLoad(reload = false) {
 
     // this.onLoad_local();
@@ -140,7 +144,7 @@ export class XviFcFormComponent {
         });
 
         this.form = this.formService.tabControl(this.tabs);
-        if (this.tabs[0].formType === 'form2') {
+        if (this.tabs[0].formType === 'form2' && this.isFormEditable) {
           this.oldOptions = this.tabs[0].data[8].options;
           this.setOption();
           this.setOnValueChange();
@@ -313,12 +317,17 @@ export class XviFcFormComponent {
     }
     return formData;
   }
-  selectionChange(event: StepperSelectionEvent) {
+  onTabChange(event: StepperSelectionEvent) {
+    if(!this.isFormEditable) {
+        return;
+    }
+    // console.log('onTabChange',event);
+    
     // return;
     // if last tab load only data
     if (event.previouslySelectedIndex !== this.totalTabs && !this.actionType) {
       this.tabChangeLoader = true;
-      console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
+      // console.log('event', event.selectedIndex, 'this.totalTabs', this.totalTabs);
       // const formData = this.getAllTabData();
       const formData = this.getFormData();
       this.service.saveUlbForm(this.ulbId, formData).subscribe({
@@ -349,7 +358,7 @@ export class XviFcFormComponent {
 
     this.actionType = actionType;
 
-    console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
+    // console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
 
     // if back from review tab no action
     if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {

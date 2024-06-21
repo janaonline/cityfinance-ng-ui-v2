@@ -3,15 +3,13 @@
     <!-- <form [formGroup]="form"> -->
     <app-loader class="p-3" *ngIf="isLoader"></app-loader>
     <h3 class="fw-bold fs-4 m-1 mb-4">{{ loggedInUserDetails.name }}</h3>
-    <!-- {{selectedIndex}}----- -->
     <div class="bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
         <strong>No Data Found</strong>
     </div>
     <mat-stepper *ngIf="!isLoader && tabs" linear="true" labelPosition="bottom" id="stepper"
-        [(selectedIndex)]="selectedStepIndex" #stepper (selectionChange)="selectionChange($event)">
+        [(selectedIndex)]="selectedStepIndex" #stepper (selectionChange)="onTabChange($event)">
 
         <mat-step state="state" *ngFor="let tab of tabs; index as i" [completed]="isDemographicValid">
-            <!-- {{tab.key}} ----------<br> -->
             <ng-template matStepLabel>
                 <p class="fw-bold d-inline" [title]="tab?.label">
                     {{ (tab?.label).split( " " )[0] }}
@@ -49,9 +47,6 @@
                         <span class="placeholder col-8"></span>
                     </p>
                     } @else {
-
-
-
                     @if (tab.key === 'uploadDoc') {
                     <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
                     }
@@ -83,6 +78,7 @@
                     }
                     }
                 </div>
+                @if(isFormEditable) {
                 <div class="mt-4">
                     @if (formSaveLoader) {
                     <div class="float-end">
@@ -90,7 +86,8 @@
                     </div>
                     } @else {
                     <div class="float-start" *ngIf="selectedStepIndex !==0">
-                        <button class="ms-2 primary-btn-2" (click)="saveAs('previous')">Back</button>
+                        <!-- <button class="ms-2 primary-btn-2" (click)="saveAs('previous')">Back</button> -->
+                        <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
                     </div>
                     @if (tab.key === 'reviewSubmit') {
                     <div class="float-end">
@@ -98,46 +95,31 @@
                     </div>
                     } @else {
                     <div class="float-end">
-                        <!-- <button type="button" class="btn btn-primary" [disabled]="true">Button</button>
-                        <mat-spinner></mat-spinner> -->
-                        <!-- <div class="spinner-border text-success" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div> -->
                         <button class="ms-2 primary-btn-2" (click)="saveAs('stay')">
-                            <!-- <div class="spinner-border text-success" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                              </div> -->
                             Save as Draft</button>
-                        <button class="ms-2 primary-btn-1" (click)="saveAs('next')"
-                            [disabled]="!isDemographicValid">Continue to Next Section</button>
+                        <!-- <button class="ms-2 primary-btn-1" (click)="saveAs('next')"
+                            [disabled]="!isDemographicValid">Continue to Next Section</button> -->
+                        <button class="ms-2 primary-btn-1" [disabled]="!isDemographicValid" matStepperNext>
+                            Continue to Next Section</button>
                     </div>
                     }
                     }
-
-
                 </div>
+                } @else {
+                <div class="mt-4">
+                    <div class="float-start" *ngIf="selectedStepIndex !==0">
+                        <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
+                    </div>
+                    <div class="float-end" *ngIf="tab.key !== 'reviewSubmit'">
+                        <button class="ms-2 primary-btn-1" matStepperNext>Continue to Next Section</button>
+                    </div>
+                </div>
+                }
             </div>
-            <!-- <button mat-button matStepperPrevious>Back</button>
-                <button mat-button matStepperNext>Next</button> -->
-            <!-- <div class="mt-4 float-end">
-                    <button class="my-btn primary-btn-2 me-2">Save as Draft</button>
-                    <button matStepperNext class="my-btn primary-btn-1">Continue to Next Section</button>
-                    <button matStepperBack class="my-btn primary-btn-1">Back</button>
-                </div> -->
         </mat-step>
 
         <!-- <ng-template matStepperIcon="state"><span class="material-icons n-circle">circle</span></ng-template>
             <ng-template matStepperIcon="edit"><span class="material-icons n-circle">circle</span></ng-template>
             <ng-template matStepperIcon="done"><span class="material-icons">check_circle</span></ng-template> -->
     </mat-stepper>
-
-    <!-- </form> -->
-    <!-- <div class="form-row">
-            <button type="submit" [disabled]="!form.valid">Save</button>
-        </div> -->
-    <!-- </form> -->
-
-    <div class="margin-top">
-        <!-- <pre>  {{ this.form.getRawValue() | json }} </pre> -->
-    </div>
 </div>
