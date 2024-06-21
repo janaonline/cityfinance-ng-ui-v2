@@ -54,7 +54,7 @@
                     <app-accounting-practice [field]="tab" [group]="getTabGroup(tab.key)"></app-accounting-practice>
                     }
                     @else if (tab.key === 'reviewSubmit') {
-                    <app-review-submit [fields]="tabs" [group]="form" [stepper]="stepper"></app-review-submit>
+                    <app-review-submit [fields]="tabs" [group]="form" [stepper]="stepper" [isFormEditable]="isFormEditable"></app-review-submit>
                     }
                     @else if (tab.key === 'demographicData') {
                     <mat-card>
