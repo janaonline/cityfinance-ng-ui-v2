@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { USER_TYPE } from '../../core/models/user/userType';
 import { UserUtility } from '../../core/util/user/user';
 import { ReviewTableService } from '../../core/services/review-table.service';
+import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
 
 interface Data {
   // position: number;
@@ -22,8 +23,10 @@ interface Data {
   imports: [
     MaterialModule,
     MatTableModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    ReplaceUnderscorePipe
   ],
+  
   templateUrl: './xvi-fc-review.component.html',
   styleUrl: './xvi-fc-review.component.scss'
 })
@@ -99,12 +102,20 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         return 'status-in-progress';
       case 'NOT_STARTED':
         return 'status-not-started';
-      case 'Under review by state':
-        return 'status-under-review';
-      case 'Approved by XVIFC':
-        return 'status-approved';
-      case 'SUBMITTED':
-        return 'status-submitted';
+      case 'UNDER_REVIEW_BY_STATE':
+        return 'status-under-review-by-state';
+      case 'RETURNED_BY_STATE':
+        return 'status-returned-by-state';
+      case 'UNDER_REVIEW_BY_XVIFC':
+        return 'status-under-review-by-xvifc';
+      case 'SUO_MOTO_STATE':
+        return 'status-suo-moto-state';
+      case 'RETURNED_BY_XVIFC':
+        return 'status-returned-by-xvifc';
+      case 'APPROVED_BY_XVIFC':
+        return 'status-approved-by-xvifc';
+      case 'SUO_MOTO_XVIFC':
+        return 'status-suo-moto-xvifc';
       default:
         return 'status-not-started';
     }

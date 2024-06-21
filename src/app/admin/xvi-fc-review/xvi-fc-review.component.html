@@ -107,7 +107,7 @@
                     <th mat-header-cell *matHeaderCellDef> Form Status </th>
                     <td mat-cell *matCellDef="let element" class="text-center"> <span
                             [ngClass]="getStatusClass(element?.formStatus)"
-                            class="form-status">{{element?.formStatus}}</span> </td>
+                            class="form-status">{{element?.formStatus | replaceUnderscore}}</span> </td>
                     <!-- <td mat-cell *matCellDef="let element" class="text-center"> <span
                             
                             class="form-status in-progress">{{element?.formStatus}}</span> </td> -->
@@ -124,7 +124,7 @@
                     <th mat-header-cell *matHeaderCellDef> Actions </th>
                     <td mat-cell *matCellDef="let element" class="text-center">
                         <!-- <a href="#" class="action-link btn btn-disabled" [disabled]="">{{element?.action}}</a> -->
-                        <button class="ms-2 primary-btn-1"
+                        <button class="primary-btn-1"
                             [disabled]="element?.formStatus === 'NOT_STARTED'">View</button>
                     </td>
                 </ng-container>
