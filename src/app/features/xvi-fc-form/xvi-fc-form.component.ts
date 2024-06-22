@@ -89,7 +89,7 @@ export class XviFcFormComponent {
   tabChangeLoader = false;
   totalTabs = 6;
   formStatus!: string;
-  submittedFormStatuses = ['SUBMITTED'];
+  submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
   oldOptions: any[] = [];
   // isDemographicCompleted: boolean | undefined = false;
 
@@ -123,9 +123,6 @@ export class XviFcFormComponent {
     return !this.submittedFormStatuses.includes(this.formStatus);
   }
   onLoad(reload = false) {
-
-    // this.onLoad_local();
-    // return;
 
     this.isLoader = true;
     this.ulbId = this.loggedInUserDetails.ulb;
@@ -164,34 +161,7 @@ export class XviFcFormComponent {
     });
   }
 
-  /**
-   * Test for static Json
-   */
-  onLoad_local() {
-    this.isLoader = true;
-    this.ulbId = this.loggedInUserDetails.ulb;
-    this.tabs = tabsJson.data.tabs;
-    this.totalTabs = this.tabs.length;
-    this.tabs.push({
-      key: 'reviewSubmit',
-      label: 'Review & Submit',
-      'displayPriority': this.totalTabs + 1,
-    });
-
-    this.form = this.formService.tabControl(this.tabs);
-    // this.tabs[0].data[8].options = ['2021-22']
-    if (this.tabs[0].formType === 'form2') {
-      this.oldOptions = this.tabs[0].data[8].options;
-      this.setOption();
-      this.setOnValueChange();
-    }
-
-    this.isLoader = false;
-    this.formSaveLoader = false;
-    this.tabChangeLoader = false;
-
-  }
-
+  
   setOnValueChange() {
     this.getFG('demographicData', 7).valueChanges.pipe(
       // debounceTime(400),
