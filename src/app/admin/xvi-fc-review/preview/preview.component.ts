@@ -6,6 +6,7 @@ import { XviFcService } from '../../../core/services/xvi-fc.service';
 // import { tabsJson } from '../../../features/xvi-fc-form/xviFormJsonApi';
 import { UserUtility } from '../../../core/util/user/user';
 import { ActivatedRoute } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-preview',
@@ -20,12 +21,13 @@ import { ActivatedRoute } from '@angular/router';
 export class PreviewComponent {
   formStatus!: string;
   isLoader: boolean = false;
-  submittedFormStatuses = ['SUBMITTED'];
+  submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
   form: any;
   ulbId!: string;
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   tabs: any[] = [];
   totalTabs: any;
+  formSaveLoader: boolean = false;
 
   constructor(private fb: FormBuilder,
     public service: XviFcService,
@@ -63,5 +65,51 @@ export class PreviewComponent {
     });
   }
 
+  onSubmit(status: string) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Are you sure you want to approve this form? Once approved, 
+      it will be sent to XVI FC for Review.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Approve',
+      cancelButtonText: 'No, cancel!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.formSaveLoader = true;
+        const formData = '';
+        // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
+        this.service.submitFormStatus(this.ulbId, formData).subscribe({
+          next: (res) => {
+            Swal.fire(
+              'Done!',
+              'Your action has been confirmed.',
+              'success'
+            );
+            // this.onLoad();
+          }, error: (error: any) => {
+            this.handleHttpError(error);
+          }
+        });
+
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        // Cancel the action
+        Swal.fire(
+          'Cancelled',
+          'Your action has been cancelled.',
+          'error'
+        );
+      }
+    });
+  }
+
+  handleHttpError(error: any) {
+    Swal.fire(
+      'Error',
+      error.message || 'Something went wrong! Please try again',
+      'error'
+    );
+    this.formSaveLoader = false;
+  }
 
 }

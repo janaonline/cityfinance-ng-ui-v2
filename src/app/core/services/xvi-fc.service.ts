@@ -23,4 +23,8 @@ export class XviFcService {
   submitUlbForm(ulb: string, body: any) {
     return this.http.post(`${environment.api.url}xviFc/submit_form?ulb=${ulb}`, body);
   }
+
+  submitFormStatus(ulb: string, body: any) {
+    return this.http.post(`${environment.api.url}xviFc/submit_form?ulb=${ulb}`, body);
+  }
 }

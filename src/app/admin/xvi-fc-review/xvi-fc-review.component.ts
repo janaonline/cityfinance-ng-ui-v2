@@ -105,7 +105,6 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
       IN_PROGRESS: 'alert-warning',
       NOT_STARTED: 'alert-secondary',
       UNDER_REVIEW_BY_STATE: 'alert-info',
-      SUBMITTED: 'alert-primary',
       RETURNED_BY_STATE: 'alert-danger',
       UNDER_REVIEW_BY_XVIFC: 'alert-info',
       SUO_MOTO_STATE: 'alert-success',

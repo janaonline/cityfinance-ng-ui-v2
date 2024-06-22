@@ -1,1 +1,11 @@
-<app-review-submit [fields]="tabs" [group]="form" [isFormEditable]="isFormEditable"></app-review-submit>
+<!-- <app-review-submit [fields]="tabs" [group]="form" [isFormEditable]="isFormEditable"></app-review-submit> -->
+
+<div class="d-flex justify-content-center my-3">
+    <!-- <button class="primary-btn-1" [disabled]="disableStatus()" (click)="onSubmit()">Submit</button> -->
+    
+    <button type="button" class="primary-btn-1 ms-2" 
+        (click)="onSubmit('reject')">RETURN TO ULB</button>
+        <button type="button" class="primary-btn-1" 
+        (click)="onSubmit('approve')">APPROVE & Submit to XVI FC</button>
+</div>
+
