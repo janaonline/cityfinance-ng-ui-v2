@@ -3,11 +3,15 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MaterialModule } from '../../material.module';
 import { HttpClient } from '@angular/common/http';
-import { USER_TYPE } from '../../core/models/user/userType';
+// import { USER_TYPE } from '../../core/models/user/userType';
 import { UserUtility } from '../../core/util/user/user';
-import { ReviewTableService } from '../../core/services/review-table.service';
 import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { XviFcService } from '../../core/services/xvi-fc.service';
+import { FORM_STATUSES } from '../../core/constants/statuses';
+import { Sort, MatSortModule } from '@angular/material/sort';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 
 interface Data {
   ulbName: string;
@@ -23,6 +27,10 @@ interface Data {
   imports: [
     MaterialModule,
     MatTableModule,
+    MatSortModule,
+    RouterModule,
+    MatProgressSpinnerModule,
+
     MatPaginatorModule,
     ReplaceUnderscorePipe
   ],
@@ -37,7 +45,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   data!: any;
 
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
-  isLoader: boolean = false;
+  isLoader: boolean = true;
   loggedInUserType: any;
 
   displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
@@ -47,47 +55,81 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   // page: number = 0;
   limit: number = 10;
   skip: number = 0;
+  statuses: any;
+  formStatus!: string;
+  sort: Sort = { active: 'ulbName', direction: 'asc' };
 
   constructor(
     private http: HttpClient,
-    public reviewTableService: ReviewTableService,
+    public service: XviFcService,
     private router: Router
   ) { }
 
 
 
   ngOnInit() {
-
+    this.statuses = FORM_STATUSES;
     this.onLoad();
+  }
 
+  get formStatuses() {
+    return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
   }
 
   onLoad() {
     // this.page = 50;
     // this.limit = 10;
     // this.skip = 0;
-    // this.isLoader = true;
+    this.isLoader = true;
     this.stateId = this.loggedInUserDetails.state;
     // this.stateId = '5dcf9d7416a06aed41c748f0';
     // 0 1 2
-    const paginationParams = {
+    const queryParams = {
+      state: '5dcf9d7216a06aed41c748dd',
       skip: this.skip,
-      limit: this.limit
+      limit: this.limit,
     }
-    this.reviewTableService.getFormList(paginationParams).subscribe({
+    const payload = {
+      sort: {
+        [this.sort?.active]: this.sort?.direction === 'desc' ? -1 : 1,
+        // ulbName: 1
+        // stateName: 1,
+        // censusCode: 1,
+      },
+      filter: {
+        // formStatus: 'IN_PROGRESS'
+        formStatus: this.formStatus
+      },
+      searchText: this.ulbName
+    };
+    this.service.getFormList(queryParams, payload).subscribe({
       next: (res: any) => {
         // console.log(res);
+
         this.totalForms = res.totalForms;
         // this.dataSource.paginator =  1000;
         this.dataSource = res.data
 
-        // this.isLoader = false;
+        this.isLoader = false;
       }, error: () => {
-        // this.isLoader = false;
+        this.isLoader = false;
       }
     });
   }
 
+  filter(reset = false) {
+    if (reset) {
+      this.formStatus = '';
+      this.ulbName = '';
+      this.skip = 0;
+    }
+    this.onLoad();
+  }
+  sortData(sort: Sort) {
+    console.log('sort', sort);
+    this.sort = sort;
+    this.onLoad();
+  }
   pageChanged(event: any) {
     // console.log('event',event);
     this.skip = event.pageIndex;
@@ -101,18 +143,18 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     this.dataSource.paginator = this.paginator;
   }
   getStatusClass(status: string): string {
-    const statusClases: any = {
-      IN_PROGRESS: 'alert-warning',
-      NOT_STARTED: 'alert-secondary',
-      UNDER_REVIEW_BY_STATE: 'alert-info',
-      RETURNED_BY_STATE: 'alert-danger',
-      UNDER_REVIEW_BY_XVIFC: 'alert-info',
-      SUO_MOTO_STATE: 'alert-success',
-      RETURNED_BY_XVIFC: 'alert-danger',
-      APPROVED_BY_XVIFC: 'alert-success',
-      SUO_MOTO_XVIFC: 'alert-success',
-    }
-    return statusClases[status];
+    // const statusClases: any = {
+    //   IN_PROGRESS: 'alert-warning',
+    //   NOT_STARTED: 'alert-secondary',
+    //   UNDER_REVIEW_BY_STATE: 'alert-info',
+    //   RETURNED_BY_STATE: 'alert-danger',
+    //   UNDER_REVIEW_BY_XVIFC: 'alert-info',
+    //   SUO_MOTO_STATE: 'alert-success',
+    //   RETURNED_BY_XVIFC: 'alert-danger',
+    //   APPROVED_BY_XVIFC: 'alert-success',
+    //   SUO_MOTO_XVIFC: 'alert-success',
+    // }
+    return FORM_STATUSES[status].class;
   }
 }
 

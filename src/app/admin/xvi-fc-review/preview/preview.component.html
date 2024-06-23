@@ -1,11 +1,21 @@
-<!-- <app-review-submit [fields]="tabs" [group]="form" [isFormEditable]="isFormEditable"></app-review-submit> -->
-
-<div class="d-flex justify-content-center my-3">
-    <!-- <button class="primary-btn-1" [disabled]="disableStatus()" (click)="onSubmit()">Submit</button> -->
-    
-    <button type="button" class="primary-btn-1 ms-2" 
-        (click)="onSubmit('reject')">RETURN TO ULB</button>
-        <button type="button" class="primary-btn-1" 
-        (click)="onSubmit('approve')">APPROVE & Submit to XVI FC</button>
+<div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
+    @if (isLoader ) {
+    <p class="card-text placeholder-glow">
+        <span class="placeholder col-7"></span>
+        <span class="placeholder col-4"></span>
+        <span class="placeholder col-4"></span>
+        <span class="placeholder col-6"></span>
+        <span class="placeholder col-8"></span>
+        <span class="placeholder col-8"></span>
+        <span class="placeholder col-8"></span>
+        <span class="placeholder col-8"></span>
+    </p>
+    } @else {
+    <app-review-submit [fields]="tabs" [group]="form" [isFormEditable]="isFormEditable"></app-review-submit>
+    }
+    <div class="my-3"></div>
+    <div class="d-flex justify-content-center my-3" *ngIf="enableButton">
+        <button type="button" class="primary-btn-1 ms-2" (click)="onSubmit('reject')">RETURN TO ULB</button>
+        <button type="button" class="primary-btn-1" (click)="onSubmit('approve')">APPROVE & Submit to XVI FC</button>
+    </div>
 </div>
-
