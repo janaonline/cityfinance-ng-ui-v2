@@ -5,10 +5,10 @@
             <div class="row">
                 <div class="col-12">
                     <div class="float-end mx-2 mt-1">
-                        <button class="primary-btn-2">Reset</button>
+                        <button class="primary-btn-2" (click)="filter(true)">Reset</button>
                     </div>
                     <div class="float-end mx-2 mt-1">
-                        <button class="primary-btn-1">Search</button>
+                        <button class="primary-btn-1" (click)="filter()">Search</button>
                     </div>
                     <div class="float-end mx-2">
                         <mat-form-field appearance="outline">
@@ -25,9 +25,10 @@
                     <div class="float-end mx-2">
                         <mat-form-field appearance="outline">
                             <mat-label>Form Status</mat-label>
-                            <mat-select>
-                                <mat-option value="option">All</mat-option>
-                                <mat-option value="option">Approved</mat-option>
+                            <mat-select [(ngModel)]="formStatus">
+                                <mat-option value="">All</mat-option>
+                                <mat-option *ngFor="let option of formStatuses"
+                                    [value]="option.key">{{option.label}}</mat-option>
                             </mat-select>
                         </mat-form-field>
                     </div>
@@ -38,59 +39,75 @@
             </div>
         </div>
         <div class="mat-elevation-z8 mb-4 pb-2">
+            @if (isLoader ) {
+            <div class="example-loading-shade">
+                @if (isLoader) {
+                <mat-spinner></mat-spinner>
+                }
+                <!-- @if (isRateLimitReached) {
+                <div class="example-rate-limit-reached">
+                    GitHub's API rate limit has been reached. It will be reset in one minute.
+                </div>
+                } -->
+            </div>
+            }
+            <div class="example-table-container">
+                <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
+                    [matSortActive]="sort.active" [matSortDirection]="sort.direction">
 
-            <table mat-table [dataSource]="dataSource">
+                    <!-- Position Column -->
+                    <ng-container matColumnDef="position">
+                        <th mat-header-cell *matHeaderCellDef> S. No. </th>
+                        <td mat-cell *matCellDef="let element; let i=index;" class="text-center"> {{i + (skip *limit) +
+                            1}}
+                        </td>
+                    </ng-container>
 
-                <!-- Position Column -->
-                <ng-container matColumnDef="position">
-                    <th mat-header-cell *matHeaderCellDef> S. No. </th>
-                    <td mat-cell *matCellDef="let element; let i=index;" class="text-center"> {{i + (skip *limit) + 1}}
-                    </td>
-                </ng-container>
+                    <!-- ULB Name -->
+                    <ng-container matColumnDef="ulbName">
+                        <th mat-header-cell *matHeaderCellDef class="text-start" mat-sort-header="ulbName"> ULB Name
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element?.ulbName}} </td>
+                    </ng-container>
 
-                <!-- ULB Name -->
-                <ng-container matColumnDef="ulbName">
-                    <th mat-header-cell *matHeaderCellDef class="text-start"> ULB Name </th>
-                    <td mat-cell *matCellDef="let element"> {{element?.ulbName}} </td>
-                </ng-container>
+                    <!-- Census Code -->
+                    <ng-container matColumnDef="censusCode">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header="censusCode"> Census Code </th>
+                        <td mat-cell *matCellDef="let element" class="text-end"> {{element?.censusCode}} </td>
+                    </ng-container>
 
-                <!-- Census Code -->
-                <ng-container matColumnDef="censusCode">
-                    <th mat-header-cell *matHeaderCellDef> Census Code </th>
-                    <td mat-cell *matCellDef="let element" class="text-end"> {{element?.censusCode}} </td>
-                </ng-container>
+                    <!-- Form Status -->
+                    <ng-container matColumnDef="formStatus">
+                        <th mat-header-cell *matHeaderCellDef> Form Status </th>
+                        <td mat-cell *matCellDef="let element" class="text-center"> <span
+                                [ngClass]="getStatusClass(element?.formStatus)"
+                                class="form-status alert rounded-pill py-2 px-3 fw-bold">{{element?.formStatus |
+                                replaceUnderscore}}</span> </td>
+                    </ng-container>
 
-                <!-- Form Status -->
-                <ng-container matColumnDef="formStatus">
-                    <th mat-header-cell *matHeaderCellDef> Form Status </th>
-                    <td mat-cell *matCellDef="let element" class="text-center"> <span
-                            [ngClass]="getStatusClass(element?.formStatus)"
-                            class="form-status alert rounded-pill py-2 px-3 fw-bold">{{element?.formStatus |
-                            replaceUnderscore}}</span> </td>
-                </ng-container>
+                    <!-- Data Submitted -->
+                    <ng-container matColumnDef="dataSubmitted">
+                        <th mat-header-cell *matHeaderCellDef> Data Submitted (%) </th>
+                        <td mat-cell *matCellDef="let element" class="text-end"> {{element?.dataSubmitted}} </td>
+                    </ng-container>
 
-                <!-- Data Submitted -->
-                <ng-container matColumnDef="dataSubmitted">
-                    <th mat-header-cell *matHeaderCellDef> Data Submitted (%) </th>
-                    <td mat-cell *matCellDef="let element" class="text-end"> {{element?.dataSubmitted}} </td>
-                </ng-container>
+                    <!-- Actions -->
+                    <ng-container matColumnDef="action">
+                        <th mat-header-cell *matHeaderCellDef> Actions </th>
+                        <td mat-cell *matCellDef="let element" class="text-center">
+                            <button class="primary-btn-1" [routerLink]="'/admin/xvi-fc-review/ulb/'+element.ulbId"
+                                [disabled]="element?.formStatus === 'NOT_STARTED'">{{element?.formStatus === 'UNDER_REVIEW_BY_STATE' ? 'Review' : 'View'}}</button>
+                        </td>
+                    </ng-container>
 
-                <!-- Actions -->
-                <ng-container matColumnDef="action">
-                    <th mat-header-cell *matHeaderCellDef> Actions </th>
-                    <td mat-cell *matCellDef="let element" class="text-center">
-                        <button class="primary-btn-1"
-                            [disabled]="element?.formStatus === 'NOT_STARTED'">View</button>
-                    </td>
-                </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row;let i=index; columns: displayedColumns;"></tr>
+                </table>
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row;let i=index; columns: displayedColumns;"></tr>
-            </table>
-
-            <mat-paginator (page)="pageChanged($event)" [pageSize]="limit" [pageSizeOptions]="[5, 10, 20, 50]"
-                [length]="totalForms" showFirstLastButtons aria-label="Select page of dashboard elements">
-            </mat-paginator>
+                <mat-paginator (page)="pageChanged($event)" [pageSize]="limit" [pageSizeOptions]="[5, 10, 20, 50]"
+                    [length]="totalForms" showFirstLastButtons aria-label="Select page of dashboard elements">
+                </mat-paginator>
+            </div>
         </div>
 
 

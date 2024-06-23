@@ -48,6 +48,10 @@ export class PreviewComponent {
     // return !this.submittedFormStatuses.includes(this.formStatus);
     return false;
   }
+
+  get enableButton() {
+    return ['UNDER_REVIEW_BY_STATE'].includes(this.formStatus);
+  }
   onLoad() {
 
     this.isLoader = true;
@@ -55,7 +59,6 @@ export class PreviewComponent {
       next: (res: any) => {
         this.formStatus = res.data.formStatus;
         this.tabs = res?.data?.tabs;
-        // this.tabs = tabsJson.data.tabs;
         this.totalTabs = this.tabs.length;
 
         this.isLoader = false;
