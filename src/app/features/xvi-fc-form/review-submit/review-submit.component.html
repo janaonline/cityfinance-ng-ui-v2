@@ -93,7 +93,8 @@
             </mat-panel-title>
         </mat-expansion-panel-header>
         <!-- <div class="audited-statement-block"> -->
-        <div class="py-4 dotted-border-bottom-primary" *ngFor="let year of tab.data[0].year; index as i">
+        <div class="py-4 dotted-border-bottom-primary" [ngClass]="{'dotted-border-bottom-primary':!last}"
+            *ngFor="let year of tab.data[0].year; index as i; last as last">
             <h5 class="fw-bold mb-3">{{year.label}}</h5>
             @if (year.isPdfAvailable) {
 

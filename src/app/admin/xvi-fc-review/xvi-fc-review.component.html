@@ -1,6 +1,86 @@
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
+    <h4 class="fw-bold my-4">{{loggedInUserDetails.stateName}}</h4>
+    <!-- <div class="d-flex align-items-center justify-content-center mb-4">
+        <div class="w-75 d-flex gap-3 mb-3 flex-column flex-md-row align-items-center justify-content-center">
+            <div class="block shadow p-2 rounded w-50 d-flex flex-column align-items-center justify-content-center">
+                <p class="fs-5 fw-bold mb-0">4800</p>
+                <p class="mb-0 text-center"><small>Total </small></p>
+            </div>
+            <div
+                class="block shadow p-2 rounded w-100 w-md-50 d-flex flex-row align-items-center justify-content-center">
+                <div class="w-50 d-flex flex-column align-items-center justify-content-center border-end">
+                    <p class="fs-5 fw-bold mb-0">3360</p>
+                    <p class="mb-0 text-center"><small>Forms Received</small></p>
+                </div>
+                <div class="w-50 d-flex flex-column align-items-center justify-content-center">block 2</div>
+            </div>
+            <div
+                class="block shadow p-2 rounded w-100 w-md-50 d-flex flex-row align-items-center justify-content-center">
+                <div class="w-50 d-flex flex-column align-items-center justify-content-center border-end">
+                    <p class="fs-5 fw-bold mb-0">1440</p>
+                    <p class="mb-0 text-center"><small>Forms Returned to ULBs</small></p>
+                </div>
+                <div class="w-50 d-flex flex-column align-items-center justify-content-center">block 2</div>
+            </div>
+        </div>
+    </div> -->
+
+    <mat-divider></mat-divider>
+
     <div class="dashboard-table">
-        <h3 class="fw-bold pb-3 ps-3 mt-3">Review XVI FC Data Collection Forms</h3>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold my-3">Review XVI FC Data Collection Forms</h5>
+            <a class="text-cfPrimary">
+                <i class="bi bi-download text-cfPrimary me-2"></i>
+                <span class="d-none d-md-inline">Download</span>
+            </a>
+        </div>
+        <!-- Filter -->
+        <fieldset class="border rounded-3 px-3">
+            <legend class="float-none w-auto px-3">Filter By:</legend>
+            <div class="d-flex gap-3 justify-content-end">
+                <div>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Form Status</mat-label>
+                        <mat-select [(ngModel)]="formStatus" panelWidth="300">
+                            <mat-option value="">All</mat-option>
+                            @for (option of formStatuses; track $index; let last = $last) {
+                            <mat-divider></mat-divider>
+                            <mat-option [value]="option.key">{{option.label}}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <mat-form-field appearance="outline">
+                        <mat-label>ULB</mat-label>
+                        <mat-icon matPrefix>search</mat-icon>
+                        <input matInput placeholder="Search" [(ngModel)]="ulbName">
+                        @if (ulbName) {
+                        <button matSuffix mat-icon-button aria-label="Clear" (click)="ulbName=''">
+                            <mat-icon>close</mat-icon>
+                        </button>
+                        }
+                    </mat-form-field>
+                </div>
+
+                <div class="mx-2 mt-1">
+                    <button class="primary-btn-1" (click)="filter()">Search</button>
+                </div>
+
+                <div class="wmx-2 mt-1">
+                    <button class="primary-btn-2" (click)="filter(true)">Reset</button>
+                </div>
+
+            </div>
+            <!-- <div class="d-flex justify-content-center my-3">
+                <button class="primary-btn-1 me-3">Search</button>
+                <button class="primary-btn-2">Reset</button>
+            </div> -->
+        </fieldset>
+
+        <!-- <h3 class="fw-bold pb-3 ps-3 mt-3">Review XVI FC Data Collection Forms</h3>
         <div class="rounded border mb-3 pt-4 px-3 pt-0">
             <div class="row">
                 <div class="col-12">
@@ -37,8 +117,8 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="mat-elevation-z8 mb-4 pb-2">
+        </div> -->
+        <div class="mat-elevation-z8 my-4 pb-2">
             @if (isLoader ) {
             <div class="example-loading-shade">
                 @if (isLoader) {
@@ -78,11 +158,15 @@
 
                     <!-- Form Status -->
                     <ng-container matColumnDef="formStatus">
-                        <th mat-header-cell *matHeaderCellDef> Form Status </th>
-                        <td mat-cell *matCellDef="let element" class="text-center"> <span
-                                [ngClass]="getStatusClass(element?.formStatus)"
+                        <th mat-header-cell *matHeaderCellDef style="width: 220px;"> Form Status </th>
+                        <td mat-cell *matCellDef="let element" class="text-center">
+                            <span [ngClass]="getStatusClass(element?.formStatus)"
                                 class="form-status alert rounded-pill py-2 px-3 fw-bold">{{element?.formStatus |
-                                replaceUnderscore}}</span> </td>
+                                replaceUnderscore}}</span>
+                            <!-- <p [ngClass]="getStatusClass(element?.formStatus)"
+                            class="form-status alert rounded-pill py-2 px-3 fw-bold text-nowrap">{{element?.formStatus |
+                            replaceUnderscore}}</p>     -->
+                        </td>
                     </ng-container>
 
                     <!-- Data Submitted -->
@@ -95,8 +179,9 @@
                     <ng-container matColumnDef="action">
                         <th mat-header-cell *matHeaderCellDef> Actions </th>
                         <td mat-cell *matCellDef="let element" class="text-center">
-                            <button class="primary-btn-1" [routerLink]="'/admin/xvi-fc-review/ulb/'+element.ulbId"
-                                [disabled]="element?.formStatus === 'NOT_STARTED'">{{element?.formStatus === 'UNDER_REVIEW_BY_STATE' ? 'Review' : 'View'}}</button>
+                            <button class="primary-btn-2" [routerLink]="'/admin/xvi-fc-review/ulb/'+element.ulbId"
+                                [disabled]="element?.formStatus === 'NOT_STARTED'">
+                                {{element?.formStatus === 'UNDER_REVIEW_BY_STATE' ? 'Review' : 'View'}}</button>
                         </td>
                     </ng-container>
 
