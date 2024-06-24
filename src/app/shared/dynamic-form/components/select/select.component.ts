@@ -13,7 +13,7 @@ import { MaterialModule } from '../../../../material.module';
     <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
     <mat-label *ngIf="displayInlineLabel">{{field.label}}</mat-label>
     	<mat-select [formControlName]="field.key" [multiple]="field.multiple"
-      placeholder="Select an Option" panelClass="example-panel-blue">
+      placeholder="Select an Option" panelClass="example-panel-blue" [panelWidth]="parentField ? 400: 'auto'">
     		<!-- <mat-option value="">Select an Option</mat-option> -->
          @if(parentField?.options) {
           @for (item of parentField?.options; track $index; let last = $last) {

@@ -5,7 +5,7 @@ import { FormBuilder } from '@angular/forms';
 import { XviFcService } from '../../../core/services/xvi-fc.service';
 // import { tabsJson } from '../../../features/xvi-fc-form/xviFormJsonApi';
 import { UserUtility } from '../../../core/util/user/user';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -14,6 +14,8 @@ import Swal from 'sweetalert2';
   imports: [
     MaterialModule,
     ReviewSubmitComponent,
+
+    RouterModule,
   ],
   templateUrl: './preview.component.html',
   styleUrl: './preview.component.scss'

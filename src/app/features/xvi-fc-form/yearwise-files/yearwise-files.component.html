@@ -18,7 +18,8 @@
                 Copy of Audited Annual Financial Statements
             </mat-panel-title>
         </mat-expansion-panel-header>
-        <div class="py-4 dotted-border-bottom-primary" *ngFor=" let year of field.data[0].year; index as i">
+        <div class="py-4" [ngClass]="{'dotted-border-bottom-primary':!last}"
+            *ngFor=" let year of field.data[0].year; index as i; last as last">
             <h5 class="fw-bold mb-3">{{year.label}}</h5>
 
             <!-- {{getYearGroup(i,year.key).getRawValue() | json}} -->

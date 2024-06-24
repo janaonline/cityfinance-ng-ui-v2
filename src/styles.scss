@@ -158,19 +158,19 @@ button[disabled] {
     }
 }
 
-.cdk-overlay-connected-position-bounding-box,
-.cdk-overlay-pane,
-.cdk-global-overlay-wrapper,
-.cdk-overlay-container {
-    z-index: 99999 !important;
-}
+// .cdk-overlay-connected-position-bounding-box,
+// .cdk-overlay-pane,
+// .cdk-global-overlay-wrapper,
+// .cdk-overlay-container {
+//     z-index: 99999 !important;
+// }
 
 
 // For angular 2 multi select dropdown
-::ng-deep .noCrossSymbol .c-angle-down svg,
-::ng-deep .noCrossSymbol .c-angle-up svg {
-    fill: white !important;
-}
+// ::ng-deep .noCrossSymbol .c-angle-down svg,
+// ::ng-deep .noCrossSymbol .c-angle-up svg {
+//     fill: white !important;
+// }
 
 .form-control {
     height: 30px;
