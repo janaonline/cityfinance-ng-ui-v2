@@ -32,7 +32,7 @@ export class XviFcService {
     const queryStr = new URLSearchParams(queryParams).toString();
 
     return this.http.post(
-      `${environment.api.url}xviFc/form_list?${queryStr}`, { payload }
+      `${environment.api.url}xviFc/form_list?${queryStr}`, payload
     );
   }
 }

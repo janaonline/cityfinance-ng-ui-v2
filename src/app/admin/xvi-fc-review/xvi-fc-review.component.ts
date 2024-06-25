@@ -81,11 +81,11 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     // this.limit = 10;
     // this.skip = 0;
     this.isLoader = true;
-    this.stateId = this.loggedInUserDetails.state;
+    // this.stateId = this.loggedInUserDetails.state;
     // this.stateId = '5dcf9d7416a06aed41c748f0';
     // 0 1 2
     const queryParams = {
-      state: '5dcf9d7216a06aed41c748dd',
+      // state: '5dcf9d7216a06aed41c748dd',
       skip: this.skip,
       limit: this.limit,
     }
@@ -118,10 +118,10 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   }
 
   filter(reset = false) {
+    this.skip = 0;
     if (reset) {
       this.formStatus = '';
-      this.ulbName = '';
-      this.skip = 0;
+      this.ulbName = '';      
     }
     this.onLoad();
   }
