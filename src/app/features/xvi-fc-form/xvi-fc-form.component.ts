@@ -184,7 +184,7 @@ export class XviFcFormComponent {
     const index = yearOfConstitutionOptions.indexOf(yearOfConstitutionValue);
     const yearOfElection = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfElection');
 
-    this.tabs[0].data[yearOfElection].options = this.oldyearOfElectionOptions.slice(0, index + 1);
+    this.tabs[0].data[yearOfElection].options = this.oldyearOfElectionOptions.slice(0, index + 2);
 
 
     if (this.tabs[0].formType === 'form2') {
