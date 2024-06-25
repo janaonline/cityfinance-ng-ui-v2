@@ -90,7 +90,8 @@ export class XviFcFormComponent {
   totalTabs = 6;
   formStatus!: string;
   submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
-  oldOptions: any[] = [];
+  oldYearOfSlbOptions: any[] = [];
+  oldyearOfElectionOptions: any[] = [];
   // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
@@ -141,17 +142,18 @@ export class XviFcFormComponent {
         });
 
         this.form = this.formService.tabControl(this.tabs);
-        if (this.tabs[0].formType === 'form2' && this.isFormEditable) {
-          this.oldOptions = this.tabs[0].data[8].options;
-          this.setOption();
-          this.setOnValueChange();
+        if (this.isFormEditable) {
+          this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
+          if (this.tabs[0].formType === 'form2') {
+            this.oldYearOfSlbOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfSlb').options;
+          }
+
+          const yearOfConstitutionIndex = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfConstitution');
+
+          this.setOption(yearOfConstitutionIndex);
+          this.setOnValueChange(yearOfConstitutionIndex);
         }
 
-        // if (reload) {
-        //   setTimeout(() => {
-        //     this.afterSave();
-        //   }, 500);
-        // }
         this.isLoader = false;
         this.formSaveLoader = false;
         this.tabChangeLoader = false;
@@ -161,38 +163,46 @@ export class XviFcFormComponent {
     });
   }
 
-  
-  setOnValueChange() {
-    this.getFG('demographicData', 7).valueChanges.pipe(
+
+  setOnValueChange(yearOfConstitutionIndex: number) {
+
+    this.getFG('demographicData', yearOfConstitutionIndex).valueChanges.pipe(
       // debounceTime(400),
       // distinctUntilChanged()
     )
       .subscribe((data: any) => {
         if (data['yearOfConstitution']) {
-          this.setOption();
+          this.setOption(yearOfConstitutionIndex);
         }
       });
   }
 
-  setOption() {
-    const yearOfConstitutionValue = this.getFG('demographicData', 7).get('yearOfConstitution').value;
-    const yearOfConstitutionOptions = this.tabs[0].data[7].options;
+  setOption(yearOfConstitutionIndex: number) {
+    const yearOfConstitutionValue = this.getFG('demographicData', yearOfConstitutionIndex).get('yearOfConstitution').value;
+    const yearOfConstitutionOptions = this.tabs[0].data[yearOfConstitutionIndex].options;
 
     const index = yearOfConstitutionOptions.indexOf(yearOfConstitutionValue);
+    const yearOfElection = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfElection');
 
-    this.tabs[0].data[8].options = this.oldOptions.slice(0, index);
-    const yearOfSlbControl = this.getFG('demographicData', 8).get('yearOfSlb');
-    if (index === 0) {
-      this.tabs[0].data[8].required = false;
-      yearOfSlbControl.patchValue(null);
-      yearOfSlbControl.disable();
-      yearOfSlbControl.clearValidators();
-      yearOfSlbControl.updateValueAndValidity();
-    } else {
-      this.tabs[0].data[8].required = true;
-      yearOfSlbControl.enable();
-      yearOfSlbControl.setValidators([Validators.required]);
-      yearOfSlbControl.updateValueAndValidity();
+    this.tabs[0].data[yearOfElection].options = this.oldyearOfElectionOptions.slice(0, index + 1);
+
+
+    if (this.tabs[0].formType === 'form2') {
+      const yearOfSlbIndex = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfSlb');
+      this.tabs[0].data[yearOfSlbIndex].options = this.oldYearOfSlbOptions.slice(0, index);
+      const yearOfSlbControl = this.getFG('demographicData', yearOfSlbIndex).get('yearOfSlb');
+      if (index === 0) {
+        this.tabs[0].data[yearOfSlbIndex].required = false;
+        yearOfSlbControl.patchValue(null);
+        yearOfSlbControl.disable();
+        yearOfSlbControl.clearValidators();
+        yearOfSlbControl.updateValueAndValidity();
+      } else {
+        this.tabs[0].data[yearOfSlbIndex].required = true;
+        yearOfSlbControl.enable();
+        yearOfSlbControl.setValidators([Validators.required]);
+        yearOfSlbControl.updateValueAndValidity();
+      }
     }
   }
 
