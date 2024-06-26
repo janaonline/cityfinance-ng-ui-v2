@@ -43,8 +43,8 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
     DynamicFormComponent,
     MaterialModule,
 
-    PercentprogressPipe,
-    AlreadyUpdatedUrlPipe,
+    // PercentprogressPipe,
+    // AlreadyUpdatedUrlPipe,
     LoaderComponent,
 
     YearwiseFilesComponent,
@@ -142,6 +142,8 @@ export class XviFcFormComponent {
         });
 
         this.form = this.formService.tabControl(this.tabs);
+        // console.log('this.form',this.form);
+        
         if (this.isFormEditable) {
           this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
           if (this.tabs[0].formType === 'form2') {

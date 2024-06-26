@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { FormGroup, FormBuilder, FormArray, Validators, FormControl, AbstractControl } from '@angular/forms';
+import { compareArrFieldsValidator, compareFieldsValidator } from '../../core/validators/comparison.validator';
 
 @Injectable({
   providedIn: 'root'
@@ -125,7 +126,8 @@ export class DynamicFormService {
     })
     return new FormGroup(tableRow, {
       // validators: this.MustMatch('password', 'confirmPassword')
-      validators: this.lessThanValidator('totSanction', 'totVacancy')
+      // validators: [this.lessThanValidator('totSanction', 'totVacancy')]
+      validators: [compareFieldsValidator('totVacancy', 'totSanction', 'lessThan')]
     });
 
   }
@@ -222,8 +224,13 @@ export class DynamicFormService {
       const fieldFormArrays = field.data || field.formArrays;
       if (fieldFormArrays && fieldFormArrays.length) {
         let formArrays: any[] = [];
+        const validators: any = [];
         fieldFormArrays.forEach((childField: any) => {
-          // console.log('childField', childField);
+          const compareValid = childField.validations?.find((e: { name: string; }) => e.name === 'greaterThanEqualTo');
+
+          if (compareValid) {
+            validators.push(compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name));
+          }
           // table row
           const childFieldData: any = {};
           if (childField.formFieldType === 'table') {
@@ -241,16 +248,16 @@ export class DynamicFormService {
             // childFieldData[childField.key] = new FormControl(childField.value);
             childFieldData[childField.key] = this.createContorl(childField);
           }
+          // console.log('validators', validators);
           formArrays.push(new FormGroup(childFieldData));
 
-          // group = new FormGroup({ [field.key]: new FormArray(formArrays) })
         });
-        group[field.key] = new FormArray(formArrays);
+        group[field.key] = new FormArray(formArrays,
+          // { validators: [compareArrFieldsValidator('popApril2024', 'pop2011', 'greaterThanEqualTo')] },
+          { validators }
+        );
 
       }
-      // group[field.key] = new FormControl(field.value || '');
-
-      //  new FormGroup(group);
     });
     return new FormGroup(group);
   }
