@@ -14,13 +14,13 @@
     font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://fonts.googleapis.com;; 
     style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;"> -->
 
-  <!-- <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; 
-      style-src   'self' https://fonts.googleapis.com;
-      font-src    'self' data: https://fonts.gstatic.com;
+  <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' https://staging.cityfinance.in data: gap: https://ssl.gstatic.com 'unsafe-eval'; 
+      style-src   'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.googleapis.com;
+      font-src    'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net;
       img-src     'self' data: content:;
       media-src   *;
-            " /> -->
+            " />
 
   <!-- add_header Content-Security-Policy "script-src 'self' 'unsafe-inline'; default-src 'self'; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;"; -->
 </head>
