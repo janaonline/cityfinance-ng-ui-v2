@@ -1,11 +1,79 @@
+@import "../../../../../node_modules/bootstrap/scss/functions";
+@import "../../../../../node_modules/bootstrap/scss/variables";
+// ----- Default setting ----- //
 * {
-    font-family: var(--ff-base);
+	font-family: "Montserrat", sans-serif;
+	--ff-base: "Montserrat", sans-serif;
 }
 
+::ng-deep p,
+::ng-deep h1,
+::ng-deep h2,
+::ng-deep h3,
+::ng-deep h4,
+::ng-deep h5,
+::ng-deep td,
+::ng-deep li,
+::ng-deep label,
+::ng-deep input,
+::ng-deep mat-select {
+	margin: 0;
+	padding: 0;
+	font-family: var(--ff-base) !important;
+	font-size: 1rem !important;
+	font-weight: var(--fw-medium) !important;
+}
 .material-icons {
     font-family: 'Material Icons';
 }
+// ----- Stepper ----- //
+::ng-deep .mat-step-icon {
+	border-radius: 25% !important;
+	width: 2rem !important;
+	height: 2rem !important;
+	font-family: var(--ff-base) !important;
+}
 
+
+// ----- Expansion pannel ----- //
+// When collapsed
+::ng-deep mat-expansion-panel-header {
+	font-family: var(--ff-base) !important;
+	font-weight: var(--fw-bold) !important;
+	font-size: 1rem !important;
+	color: $white !important;
+	height: 3.5rem !important;
+	background: linear-gradient(90deg, #193369 0%, #FFFFFF 100%) !important;
+	transition: background 0.3s ease, box-shadow 0.3s ease;
+
+	::ng-deep .mat-expansion-panel-header-title {
+		color: $white !important;
+	}
+}
+
+// On hover and click
+::ng-deep .mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover {
+	background: linear-gradient(90deg, #162b56 0%, #e0e0e0 100%) !important; // Slightly darker background
+	height: 3.6rem !important;
+}
+
+::ng-deep .mat-mdc-form-field-infix {
+	width: 100px !important;
+}
+.bd-callout {
+    --bs-link-color-rgb: var(--bd-callout-link);
+    --bs-code-color: var(--bd-callout-code-color);
+    padding: 1.25rem;
+    margin-top: 1rem;
+    color: var(--bd-callout-color, inherit);
+    background-color: var(--bd-callout-bg, var(--bs-gray-100));
+    border-left: 0.25rem solid var(--bd-callout-border, var(--bs-gray-300));
+}
+.bd-callout-info {
+    --bd-callout-color: var(--bs-info-text-emphasis);
+    --bd-callout-bg: var(--bs-info-bg-subtle);
+    --bd-callout-border: var(--bs-info-border-subtle);
+}
 // ----- Verify and reject block ----- //
 .verified-info {
     padding: 10px;
