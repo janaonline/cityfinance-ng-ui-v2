@@ -43,7 +43,7 @@
                 <div>
                     <mat-form-field appearance="outline">
                         <mat-label>Form Status</mat-label>
-                        <mat-select [(ngModel)]="formStatus" panelWidth="300">
+                        <mat-select [(ngModel)]="formStatus" panelWidth="300" (selectionChange)="filter()">
                             <mat-option value="">All</mat-option>
                             @for (option of formStatuses; track $index; let last = $last) {
                             <mat-divider></mat-divider>
@@ -55,19 +55,19 @@
                 <div>
                     <mat-form-field appearance="outline">
                         <mat-label>ULB</mat-label>
-                        <mat-icon matPrefix>search</mat-icon>
-                        <input matInput placeholder="Search" [(ngModel)]="ulbName">
+                        <mat-icon matPrefix (click)="filter()">search</mat-icon>
+                        <input matInput placeholder="Search" [(ngModel)]="ulbName" (keydown.enter)="filter()">
                         @if (ulbName) {
-                        <button matSuffix mat-icon-button aria-label="Clear" (click)="ulbName=''">
+                        <button matSuffix mat-icon-button aria-label="Clear" (click)="ulbName='';filter()">
                             <mat-icon>close</mat-icon>
                         </button>
                         }
                     </mat-form-field>
                 </div>
 
-                <div class="mx-2 mt-1">
-                    <button class="primary-btn-1" (click)="filter()">Search</button>
-                </div>
+                <!-- <div class="mx-2 mt-1">
+                    <button class="primary-btn-1" >Search</button>
+                </div> -->
 
                 <div class="wmx-2 mt-1">
                     <button class="primary-btn-2" (click)="filter(true)">Reset</button>
@@ -187,6 +187,11 @@
 
                     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                     <tr mat-row *matRowDef="let row;let i=index; columns: displayedColumns;"></tr>
+                    <tr class="mat-row" *matNoDataRow>
+                        <td class="mat-cell fw-bold p-4" align="center" [attr.colspan]="displayedColumns.length">
+                            No data matching the filter.
+                        </td>
+                    </tr>
                 </table>
 
                 <mat-paginator (page)="pageChanged($event)" [pageSize]="limit" [pageSizeOptions]="[5, 10, 20, 50]"
