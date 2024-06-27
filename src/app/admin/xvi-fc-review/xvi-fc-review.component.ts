@@ -113,6 +113,8 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         this.isLoader = false;
       }, error: () => {
         this.isLoader = false;
+        this.dataSource =  new MatTableDataSource<Data>([]);
+        this.totalForms = 0;
       }
     });
   }
