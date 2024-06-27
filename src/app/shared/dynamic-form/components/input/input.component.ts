@@ -4,7 +4,6 @@ import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
 import { NoUpDownDirective } from "../../../../core/directives/no-up-down.directive";
 import { DecimalLimitDirective } from "../../../../core/directives/decimal-limit.directive";
-// import { DecimalLimitDirective } from "../../../../features/xvi-fc/directives/decimal-limit.directive";
 @Component({
   selector: "app-input",
   standalone: true,
@@ -36,9 +35,6 @@ export class InputComponent {
 
   constructor() { }
   ngOnInit() {
-    // console.log('----field in --',this.field);
-    // console.log('----group in --',this.group);
-    // this.readonly = this.field.readonly || this.readonly;
     this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
     this.decimal = (this.parentField?.decimal || this.parentField?.decimal === 0) ? this.parentField?.decimal : this.field?.decimal;
@@ -59,21 +55,14 @@ export class InputComponent {
 
     let res = false;
     switch (warning.condition) {
-      case 'eq':
+      case 'equalTo':
         res = val === warning.value;
         break;
-      case 'gt':
+      case 'greaterThan':
         res = val > warning.value;
         break;
     }
-    // console.log('res', warning, '---key----', key, '---val---', val, '---res-', res);
     return res;
-  }
-
-  getValue(name: string) {
-    // console.log('name', name);
-    // return this.group.value.get(name).value;
-    // return this.group.value.get(name) ? this.group.value.get(name).value : '';
   }
 
   onKeypressNumber() {

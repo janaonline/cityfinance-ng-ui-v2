@@ -1,22 +1,143 @@
-import {AfterViewInit, Component, ViewChild} from '@angular/core';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MaterialModule } from '../../material.module';
+import { HttpClient } from '@angular/common/http';
+// import { USER_TYPE } from '../../core/models/user/userType';
+import { UserUtility } from '../../core/util/user/user';
+import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
+import { Router, RouterModule } from '@angular/router';
+import { XviFcService } from '../../core/services/xvi-fc.service';
+import { FORM_STATUSES } from '../../core/constants/statuses';
+import { Sort, MatSortModule } from '@angular/material/sort';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+
+interface Data {
+  ulbName: string;
+  censusCode: number;
+  formStatus: string;
+  dataSubmitted: number;
+  action: string;
+}
 
 @Component({
   selector: 'app-xvi-fc-review',
   standalone: true,
   imports: [
     MaterialModule,
-    MatTableModule, 
-    MatPaginatorModule
+    MatTableModule,
+    MatSortModule,
+    RouterModule,
+    MatProgressSpinnerModule,
+
+    MatPaginatorModule,
+    ReplaceUnderscorePipe
   ],
+
   templateUrl: './xvi-fc-review.component.html',
   styleUrl: './xvi-fc-review.component.scss'
 })
-export class XviFcReviewComponent implements AfterViewInit  {
-  displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'actions'];
-  dataSource = new MatTableDataSource<DashboardElement>(ELEMENT_DATA);
+export class XviFcReviewComponent implements AfterViewInit, OnInit {
+
+  ulbName: string = '';
+  stateId!: string;
+  data!: any;
+
+  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
+  isLoader: boolean = true;
+  loggedInUserType: any;
+
+  displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+
+  dataSource = new MatTableDataSource<Data>([]);
+  totalForms: any;
+  // page: number = 0;
+  limit: number = 10;
+  skip: number = 0;
+  statuses: any;
+  formStatus!: string;
+  sort: Sort = { active: 'ulbName', direction: 'asc' };
+
+  constructor(
+    private http: HttpClient,
+    public service: XviFcService,
+    private router: Router
+  ) { }
+
+
+
+  ngOnInit() {
+    this.statuses = FORM_STATUSES;
+    this.onLoad();
+  }
+
+  get formStatuses() {
+    return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
+  }
+
+  onLoad() {
+    // this.page = 50;
+    // this.limit = 10;
+    // this.skip = 0;
+    this.isLoader = true;
+    // this.stateId = this.loggedInUserDetails.state;
+    // this.stateId = '5dcf9d7416a06aed41c748f0';
+    // 0 1 2
+    const queryParams = {
+      // state: '5dcf9d7216a06aed41c748dd',
+      skip: this.skip,
+      limit: this.limit,
+    }
+    const payload = {
+      sort: {
+        [this.sort?.active]: this.sort?.direction === 'desc' ? -1 : 1,
+        // ulbName: 1
+        // stateName: 1,
+        // censusCode: 1,
+      },
+      filter: {
+        // formStatus: 'IN_PROGRESS'
+        formStatus: this.formStatus
+      },
+      searchText: this.ulbName
+    };
+    this.service.getFormList(queryParams, payload).subscribe({
+      next: (res: any) => {
+        // console.log(res);
+
+        this.totalForms = res.totalForms;
+        // this.dataSource.paginator =  1000;
+        this.dataSource = res.data
+
+        this.isLoader = false;
+      }, error: () => {
+        this.isLoader = false;
+        this.dataSource =  new MatTableDataSource<Data>([]);
+        this.totalForms = 0;
+      }
+    });
+  }
+
+  filter(reset = false) {
+    this.skip = 0;
+    if (reset) {
+      this.formStatus = '';
+      this.ulbName = '';      
+    }
+    this.onLoad();
+  }
+  sortData(sort: Sort) {
+    console.log('sort', sort);
+    this.sort = sort;
+    this.onLoad();
+  }
+  pageChanged(event: any) {
+    // console.log('event',event);
+    this.skip = event.pageIndex;
+    this.limit = event.pageSize;
+    this.onLoad();
+  }
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -24,34 +145,18 @@ export class XviFcReviewComponent implements AfterViewInit  {
     this.dataSource.paginator = this.paginator;
   }
   getStatusClass(status: string): string {
-    switch (status) {
-      case 'In progress':
-        return 'status-in-progress';
-      case 'Under review by state':
-        return 'status-under-review';
-      case 'Approved by XVIFC':
-        return 'status-approved';
-      default:
-        return 'status-unknown';
-    }
+    // const statusClases: any = {
+    //   IN_PROGRESS: 'alert-warning',
+    //   NOT_STARTED: 'alert-secondary',
+    //   UNDER_REVIEW_BY_STATE: 'alert-info',
+    //   RETURNED_BY_STATE: 'alert-danger',
+    //   UNDER_REVIEW_BY_XVIFC: 'alert-info',
+    //   SUO_MOTO_STATE: 'alert-success',
+    //   RETURNED_BY_XVIFC: 'alert-danger',
+    //   APPROVED_BY_XVIFC: 'alert-success',
+    //   SUO_MOTO_XVIFC: 'alert-success',
+    // }
+    return FORM_STATUSES[status].class;
   }
 }
-
-export interface DashboardElement {
-  position: number;
-  ulbName: string;
-  censusCode: number;
-  formStatus: string;
-  // dataSubmitted: string;
-  actions: string;
-}
-
-const ELEMENT_DATA: DashboardElement[] = [
-  {position: 1, ulbName: 'Kannur', censusCode: 1079, formStatus: 'In progress', actions:'View'},
-  {position: 2, ulbName: 'Bangalore', censusCode: 79, formStatus: 'Under review by state',actions:'Review'},
-  {position: 3, ulbName: 'Kannur', censusCode: 1079, formStatus: 'In progress',actions:'View'},
-  {position: 4, ulbName: 'Hydrabad', censusCode: 179, formStatus: 'Approved by XVIFC',actions:'View'},
-  {position: 5, ulbName: 'Bangalore', censusCode: 79, formStatus: 'Under review by state',actions:'Review'},
-  {position: 6, ulbName: 'Hydrabad', censusCode: 179, formStatus: 'Approved by XVIFC', actions:'View'},
-];
 

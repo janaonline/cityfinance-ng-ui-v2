@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { FormGroup, FormBuilder, FormArray, Validators, FormControl, AbstractControl } from '@angular/forms';
+import { compareArrFieldsValidator, compareFieldsValidator } from '../../core/validators/comparison.validator';
 
 @Injectable({
   providedIn: 'root'
@@ -79,13 +80,13 @@ export class DynamicFormService {
 
 
       // return if another validator has already found an error on the matchingControl
-      if (matchingControl.errors && !matchingControl.errors['lt']) {
+      if (matchingControl.errors && !matchingControl.errors['lessThan']) {
         return null;
       }
 
       // set error on matchingControl if validation fails
       if (control.value !== matchingControl.value) {
-        matchingControl.setErrors({ lt: true });
+        matchingControl.setErrors({ lessThan: true });
       } else {
         matchingControl.setErrors(null);
       }
@@ -103,15 +104,15 @@ export class DynamicFormService {
       if (!control || !matchingControl) {
         return null;
       }
-      
+
       // return if another validator has already found an error on the matchingControl
-      if (matchingControl.errors && !matchingControl.errors['lt']) {
+      if (matchingControl.errors && !matchingControl.errors['lessThan']) {
         return null;
       }
 
       // set error on matchingControl if validation fails
       if (control.value < matchingControl.value) {
-        matchingControl.setErrors({ lt: true });
+        matchingControl.setErrors({ lessThan: true });
       } else {
         matchingControl.setErrors(null);
       }
@@ -125,7 +126,8 @@ export class DynamicFormService {
     })
     return new FormGroup(tableRow, {
       // validators: this.MustMatch('password', 'confirmPassword')
-      validators: this.lessThanValidator('totSanction', 'totVacancy')
+      // validators: [this.lessThanValidator('totSanction', 'totVacancy')]
+      validators: [compareFieldsValidator('totVacancy', 'totSanction', 'lessThan')]
     });
 
   }
@@ -222,8 +224,13 @@ export class DynamicFormService {
       const fieldFormArrays = field.data || field.formArrays;
       if (fieldFormArrays && fieldFormArrays.length) {
         let formArrays: any[] = [];
+        const validators: any = [];
         fieldFormArrays.forEach((childField: any) => {
-          // console.log('childField', childField);
+          const compareValid = childField.validations?.find((e: { name: string; }) => e.name === 'greaterThanEqualTo');
+
+          if (compareValid) {
+            validators.push(compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name));
+          }
           // table row
           const childFieldData: any = {};
           if (childField.formFieldType === 'table') {
@@ -241,53 +248,18 @@ export class DynamicFormService {
             // childFieldData[childField.key] = new FormControl(childField.value);
             childFieldData[childField.key] = this.createContorl(childField);
           }
+          // console.log('validators', validators);
           formArrays.push(new FormGroup(childFieldData));
 
-          // group = new FormGroup({ [field.key]: new FormArray(formArrays) })
         });
-        group[field.key] = new FormArray(formArrays);
+        group[field.key] = new FormArray(formArrays,
+          // { validators: [compareArrFieldsValidator('popApril2024', 'pop2011', 'greaterThanEqualTo')] },
+          { validators }
+        );
 
       }
-      // group[field.key] = new FormControl(field.value || '');
-
-      //  new FormGroup(group);
     });
     return new FormGroup(group);
   }
 
-  // addSumLogics() {
-  //   const s3DataControl = Object.values((this.form.controls.find(control => control.value?.id == 's3') as any).controls?.data?.controls);
-  //   const sumAbleContrls = s3DataControl?.filter((value: FormGroup) => value?.controls?.logic?.value == 'sum') as FormGroup[];
-  //   sumAbleContrls?.forEach(parentControl => {
-  //     const childControls = s3DataControl
-  //       .filter((value: FormGroup) => parentControl?.controls?.calculatedFrom?.value?.includes('' + value.controls.position.value)) as FormGroup[];
-
-  //     childControls.forEach((child) => {
-  //       child.valueChanges.subscribe(updated => {
-  //         const yearWiseAmount = childControls.map((innerChild) => innerChild.value.yearData.map(year => year.value));
-  //         const columnWiseSum = this.getColumnWiseSum(yearWiseAmount);
-  //         parentControl.patchValue({ yearData: columnWiseSum.map(col => ({ value: col })) });
-  //         (parentControl.get('yearData') as any)?.controls.forEach(parentYearItemControl => {
-  //           parentYearItemControl.markAllAsTouched();
-  //           parentYearItemControl.markAsDirty();
-  //         })
-  //       })
-  //       // child.updateValueAndValidity({ emitEvent: true });
-  //     });
-  //   });
-  // }
-
-  // getColumnWiseSum(arr: number[][]): number[] {
-  //   // console.log('aaaarrr', arr);
-  //   return arr[0]?.map((_, colIndex) => {
-  //     let retNull: boolean = true;
-  //     let sum = arr.reduce((acc, curr) => {
-  //       if (!isNaN(Number(curr[colIndex])) && (curr[colIndex]?.toString()?.trim() != "")) {
-  //         retNull = false;
-  //       }
-  //       return acc + (curr[colIndex] * 1 || 0);
-  //     }, 0);
-  //     return retNull ? null : sum;
-  //   });
-  // }
 }

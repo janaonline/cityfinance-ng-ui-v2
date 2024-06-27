@@ -88,12 +88,19 @@ export class NavbarComponent {
     this.menus = [
       ...this.menus,
       (role === USER_TYPE.PMU && { name: 'State resources', href: '/mohua-form/state-resource-manager' }),
-      (role !== USER_TYPE.PMU && { name: '15<sup>th</sup> FC Grants', href: '/fc-home-page' }),
+      (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: '15<sup>th</sup> FC Grants', href: '/fc-home-page' }),
       (role === USER_TYPE.ULB && { name: `XVI FC Data Collection`, link: '/xvifc-form' }),
-      (role !== USER_TYPE.ULB && { name: `Rankings'22 Dashboard`, href: '/rankings/review-rankings-ulbform' }),
-      (role !== USER_TYPE.PMU && { name: 'Users', href: '/user/list/ULB' }),
+      (role === USER_TYPE.XVIFC_STATE && { name: `Review XVI FC`, link: '/admin/xvi-fc-review' }),
+      (this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && { name: `Rankings'22 Dashboard`, href: '/rankings/review-rankings-ulbform' }),
+      // (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: 'Users', href: '/user/list/ULB' }),
     ];
   }
+
+  notInRole(roles: string[]) {
+    const role = this.user ? this.user.role : '';
+    return !roles.includes(role);
+  }
+
   ngOnInit(): void {
     this.isProd = environment?.isProduction;
     this.checkUserLoggedIn();

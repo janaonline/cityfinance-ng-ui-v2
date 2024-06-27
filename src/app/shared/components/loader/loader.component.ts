@@ -17,7 +17,7 @@ export class LoaderComponent {
   @Input() show: boolean = false;
   @Input() dots: number = 3;
   ngOnInit(): void {
-    console.log('show', this.show);
+    // console.log('show', this.show);
     
   }
 

@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core';
 import { FormGroup, FormArray } from '@angular/forms';
-import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
 import { MaterialModule } from '../../../material.module';
 import { MatStepper } from '@angular/material/stepper';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
@@ -15,6 +14,7 @@ import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 export class ReviewSubmitComponent {
   @Input() fields!: any[];
   @Input() group!: FormGroup;
+  @Input() isFormEditable = false;
   collapsed = false;
   panelOpenState = true;
   @Input('stepper') stepper: MatStepper | undefined;
@@ -22,6 +22,10 @@ export class ReviewSubmitComponent {
   constructor() { }
   ngOnInit() {
 
+  }
+
+  printPage() {
+    window.print();
   }
 
   getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
@@ -35,7 +39,7 @@ export class ReviewSubmitComponent {
 
   isFormValid(tabKey: string): Boolean {
     // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
-    return this.group.get(tabKey)?.valid as boolean;
+    return !this.isFormEditable || this.group.get(tabKey)?.valid as boolean;
   }
 
 }

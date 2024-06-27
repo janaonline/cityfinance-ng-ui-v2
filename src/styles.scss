@@ -46,13 +46,13 @@ body {
 }
 
 // img,
-picture,
-video,
-canvas,
-svg {
-    display: block;
-    max-width: 100%;
-}
+// picture,
+// video,
+// canvas,
+// svg {
+//     display: block;
+//     max-width: 100%;
+// }
 
 input,
 button,
@@ -158,19 +158,19 @@ button[disabled] {
     }
 }
 
-.cdk-overlay-connected-position-bounding-box,
-.cdk-overlay-pane,
-.cdk-global-overlay-wrapper,
-.cdk-overlay-container {
-    z-index: 99999 !important;
-}
+// .cdk-overlay-connected-position-bounding-box,
+// .cdk-overlay-pane,
+// .cdk-global-overlay-wrapper,
+// .cdk-overlay-container {
+//     z-index: 99999 !important;
+// }
 
 
 // For angular 2 multi select dropdown
-::ng-deep .noCrossSymbol .c-angle-down svg,
-::ng-deep .noCrossSymbol .c-angle-up svg {
-    fill: white !important;
-}
+// ::ng-deep .noCrossSymbol .c-angle-down svg,
+// ::ng-deep .noCrossSymbol .c-angle-up svg {
+//     fill: white !important;
+// }
 
 .form-control {
     height: 30px;
@@ -243,4 +243,12 @@ mat-form-field {
 .dotted-border-secondary {
     border: 1px dotted $secondary;
     border-radius: 0.625rem;
+}
+.primary-btn-3{
+    background: rgba(54, 160, 4, 1);
+}
+.bttn-return{
+    color: rgba(255, 0, 0, 1);
+    background: none;
+    border: 1px solid rgba(255, 0, 0, 1);
 }

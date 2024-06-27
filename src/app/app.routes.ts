@@ -16,14 +16,19 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/xvi-fc-form/xvi-fc-form.component').then(m => m.XviFcFormComponent),
                 // canActivate: [authGuard],
             },
-            {
-                path: 'admin/xvi-fc-review',
-                loadComponent: () => import('./admin/xvi-fc-review/xvi-fc-review.component').then(m => m.XviFcReviewComponent)
-            },
+            { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(mod => mod.ADMIN_ROUTES) },
+            // {
+            //     path: 'admin/xvi-fc-review',
+            //     loadComponent: () => import('./admin/xvi-fc-review/xvi-fc-review.component').then(m => m.XviFcReviewComponent)
+            // },
             // Add other protected routes here
         ]
     },
     // { path: 'login', component: LoginComponent },
+    {
+        path: 'login',
+        loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent),
+    },
     // {
     //     path: '',
     //     component: HomeComponent,
@@ -38,7 +43,7 @@ export const routes: Routes = [
         component: ErrorComponent,
         canActivate: [MaintenanceGuard],
     },
-    
+
     {
         path: '**',
         redirectTo: 'error',

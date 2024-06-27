@@ -22,7 +22,8 @@
   <mat-label *ngIf="displayInlineLabel">{{field.label}}</mat-label>
   <input onwheel="this.blur()" matInput [formControlName]="field.key" [type]="field.formFieldType"
     [appDecimalLimit]="field.formFieldType != 'number' ? null : decimal" [readonly]="readonly" appNoUpDown>
-  <ng-container *ngFor="let validation of validations;" ngProjectAs="mat-error">
+    <!-- <mat-icon matSuffix>warning</mat-icon> -->
+    <ng-container *ngFor="let validation of validations;" ngProjectAs="mat-error">
     <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
   </ng-container>
   @for (warning of warnings; track $index) {
