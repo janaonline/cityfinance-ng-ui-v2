@@ -32,15 +32,36 @@
 
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="fw-bold my-3">Review XVI FC Data Collection Forms</h5>
-            <a class="text-cfPrimary">
+            <button class="text-cfPrimary" (download)="download($event)">
                 <i class="bi bi-download text-cfPrimary me-2"></i>
                 <span class="d-none d-md-inline">Download</span>
-            </a>
+            </button>
         </div>
         <!-- Filter -->
         <fieldset class="border rounded-3 px-3">
             <legend class="float-none w-auto px-3">Filter By:</legend>
             <div class="d-flex gap-3 justify-content-end">
+                <!-- <div>
+                    <mat-form-field appearance="outline">
+                        <mat-label>State</mat-label>
+                        <mat-select [(ngModel)]="states" panelWidth="300" >
+                            <mat-option value="">All</mat-option>
+                            <mat-option *ngFor="let state of states" [value]="state.id">{{ state.name }}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <mat-form-field appearance="outline">
+                        <mat-label>ULB Category</mat-label>
+                        <mat-select  panelWidth="300" >
+                            <mat-option value="">All</mat-option>
+                            <mat-divider></mat-divider>
+                            <mat-option [value]="category1">Category 1</mat-option>
+                            <mat-divider></mat-divider>
+                            <mat-option [value]="category2">Category 2</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div> -->
                 <div>
                     <mat-form-field appearance="outline">
                         <mat-label>Form Status</mat-label>
@@ -143,6 +164,13 @@
                             1}}
                         </td>
                     </ng-container>
+
+                    <!-- State Name -->
+                    <!-- <ng-container matColumnDef="stateName" *ngIf="loggedInUserDetails.role == 'XVIFC'">
+                        <th mat-header-cell *matHeaderCellDef class="text-start" mat-sort-header="stateName"> State Name
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element?.stateName}} </td>
+                    </ng-container> -->
 
                     <!-- ULB Name -->
                     <ng-container matColumnDef="ulbName">

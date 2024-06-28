@@ -35,4 +35,15 @@ export class XviFcService {
       `${environment.api.url}xviFc/form_list?${queryStr}`, payload
     );
   }
+  getStates() {
+    return this.http.get(
+      `${environment.api.url}/state`);
+  }
+
+  getStandardizedExcel() {
+    return this.http.post(
+      `${environment.api.url}xviFc/progressReport`, { responseType: "blob" }
+    )
+  }
+
 }

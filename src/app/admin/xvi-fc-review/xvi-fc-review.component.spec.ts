@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { XviFcReviewComponent } from './xvi-fc-review.component';
+
+import { XviFcReviewComponent } from "./xvi-fc-review.component";
 
 describe('XviFcReviewComponent', () => {
   let component: XviFcReviewComponent;

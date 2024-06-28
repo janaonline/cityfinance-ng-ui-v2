@@ -3,7 +3,6 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MaterialModule } from '../../material.module';
 import { HttpClient } from '@angular/common/http';
-// import { USER_TYPE } from '../../core/models/user/userType';
 import { UserUtility } from '../../core/util/user/user';
 import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
 import { Router, RouterModule } from '@angular/router';
@@ -11,7 +10,7 @@ import { XviFcService } from '../../core/services/xvi-fc.service';
 import { FORM_STATUSES } from '../../core/constants/statuses';
 import { Sort, MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
+import * as FileSaver from "file-saver";
 
 interface Data {
   ulbName: string;
@@ -20,143 +19,184 @@ interface Data {
   dataSubmitted: number;
   action: string;
 }
-
 @Component({
-  selector: 'app-xvi-fc-review',
-  standalone: true,
-  imports: [
-    MaterialModule,
-    MatTableModule,
-    MatSortModule,
-    RouterModule,
-    MatProgressSpinnerModule,
+    selector: 'app-xvi-fc-review',
+    standalone: true,
+    imports: [
+        MaterialModule,
+        MatTableModule,
+        MatSortModule,
+        RouterModule,
+        MatProgressSpinnerModule,
 
-    MatPaginatorModule,
-    ReplaceUnderscorePipe
-  ],
+        MatPaginatorModule,
+        ReplaceUnderscorePipe
+    ],
 
-  templateUrl: './xvi-fc-review.component.html',
-  styleUrl: './xvi-fc-review.component.scss'
+    templateUrl: './xvi-fc-review.component.html',
+    styleUrl: './xvi-fc-review.component.scss'
 })
 export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
-  ulbName: string = '';
-  stateId!: string;
-  data!: any;
+    stateName: string = '';
+    ulbName: string = '';
+    stateId!: string;
+    data!: any;
 
-  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
-  isLoader: boolean = true;
-  loggedInUserType: any;
+    loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
+    isLoader: boolean = true;
+    loggedInUserType: any;
 
-  displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+    displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
 
-  dataSource = new MatTableDataSource<Data>([]);
-  totalForms: any;
-  // page: number = 0;
-  limit: number = 10;
-  skip: number = 0;
-  statuses: any;
-  formStatus!: string;
-  sort: Sort = { active: 'ulbName', direction: 'asc' };
+    dataSource = new MatTableDataSource<Data>([]);
+    totalForms: any;
+    // page: number = 0;
+    limit: number = 10;
+    skip: number = 0;
+    statuses: any;
+    formStatus!: string;
+    sort: Sort = { active: 'ulbName', direction: 'asc' };
+    // sort: Sort = { active: 'stateName', direction: 'asc' };
+    states: any[] = [];
+    category1: any;
+    category2: any;
 
-  constructor(
-    private http: HttpClient,
-    public service: XviFcService,
-    private router: Router
-  ) { }
+    constructor(
+        private http: HttpClient,
+        public service: XviFcService,
+        private router: Router
+    ) { }
 
 
 
-  ngOnInit() {
-    this.statuses = FORM_STATUSES;
-    this.onLoad();
-  }
+    ngOnInit() {
+        this.statuses = FORM_STATUSES;
+        this.onLoad();
 
-  get formStatuses() {
-    return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
-  }
-
-  onLoad() {
-    // this.page = 50;
-    // this.limit = 10;
-    // this.skip = 0;
-    this.isLoader = true;
-    // this.stateId = this.loggedInUserDetails.state;
-    // this.stateId = '5dcf9d7416a06aed41c748f0';
-    // 0 1 2
-    const queryParams = {
-      // state: '5dcf9d7216a06aed41c748dd',
-      skip: this.skip,
-      limit: this.limit,
     }
-    const payload = {
-      sort: {
-        [this.sort?.active]: this.sort?.direction === 'desc' ? -1 : 1,
-        // ulbName: 1
-        // stateName: 1,
-        // censusCode: 1,
-      },
-      filter: {
-        // formStatus: 'IN_PROGRESS'
-        formStatus: this.formStatus
-      },
-      searchText: this.ulbName
-    };
-    this.service.getFormList(queryParams, payload).subscribe({
-      next: (res: any) => {
-        // console.log(res);
 
-        this.totalForms = res.totalForms;
-        // this.dataSource.paginator =  1000;
-        this.dataSource = res.data
-
-        this.isLoader = false;
-      }, error: () => {
-        this.isLoader = false;
-        this.dataSource =  new MatTableDataSource<Data>([]);
-        this.totalForms = 0;
-      }
-    });
-  }
-
-  filter(reset = false) {
-    this.skip = 0;
-    if (reset) {
-      this.formStatus = '';
-      this.ulbName = '';      
+    get formStatuses() {
+        return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
     }
-    this.onLoad();
-  }
-  sortData(sort: Sort) {
-    console.log('sort', sort);
-    this.sort = sort;
-    this.onLoad();
-  }
-  pageChanged(event: any) {
-    // console.log('event',event);
-    this.skip = event.pageIndex;
-    this.limit = event.pageSize;
-    this.onLoad();
-  }
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+    onLoad() {
+        // this.page = 50;
+        // this.limit = 10;
+        // this.skip = 0;
+        this.isLoader = true;
+        // this.stateId = this.loggedInUserDetails.state;
+        // this.stateId = '5dcf9d7416a06aed41c748f0';
+        // 0 1 2
+        const queryParams = {
+            // state: '5dcf9d7216a06aed41c748dd',
+            skip: this.skip,
+            limit: this.limit,
+        };
+        const payload = {
+            sort: {
+                [this.sort?.active]: this.sort?.direction === 'desc' ? -1 : 1,
+                // ulbName: 1
+                // stateName: 1,
+                // censusCode: 1,
+            },
+            filter: {
+                // formStatus: 'IN_PROGRESS'
+                formStatus: this.formStatus
+            },
+            searchText: this.ulbName
+        };
+        this.service.getFormList(queryParams, payload).subscribe({
+            next: (res: any) => {
+                // console.log(res);
+                this.totalForms = res.totalForms;
+                // this.dataSource.paginator =  1000;
+                this.dataSource = res.data;
 
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-  }
-  getStatusClass(status: string): string {
-    // const statusClases: any = {
-    //   IN_PROGRESS: 'alert-warning',
-    //   NOT_STARTED: 'alert-secondary',
-    //   UNDER_REVIEW_BY_STATE: 'alert-info',
-    //   RETURNED_BY_STATE: 'alert-danger',
-    //   UNDER_REVIEW_BY_XVIFC: 'alert-info',
-    //   SUO_MOTO_STATE: 'alert-success',
-    //   RETURNED_BY_XVIFC: 'alert-danger',
-    //   APPROVED_BY_XVIFC: 'alert-success',
-    //   SUO_MOTO_XVIFC: 'alert-success',
-    // }
-    return FORM_STATUSES[status].class;
-  }
+                this.isLoader = false;
+            }, error: () => {
+                this.isLoader = false;
+                this.dataSource = new MatTableDataSource<Data>([]);
+                this.totalForms = 0;
+            }
+        });
+        this.service.getStates().subscribe({
+            next: (res: any) => {
+                this.states = res.data;
+            }, error: () => {
+            }
+        });
+    }
+
+    filter(reset = false) {
+        this.skip = 0;
+        if (reset) {
+            this.formStatus = '';
+            this.ulbName = '';
+            this.stateName = '';
+        }
+        this.onLoad();
+    }
+    sortData(sort: Sort) {
+        console.log('sort', sort);
+        this.sort = sort;
+        this.onLoad();
+    }
+    pageChanged(event: any) {
+        // console.log('event',event);
+        this.skip = event.pageIndex;
+        this.limit = event.pageSize;
+        this.onLoad();
+    }
+
+    @ViewChild(MatPaginator) paginator!: MatPaginator;
+
+    ngAfterViewInit() {
+        this.dataSource.paginator = this.paginator;
+    }
+    getStatusClass(status: string): string {
+        // const statusClases: any = {
+        //   IN_PROGRESS: 'alert-warning',
+        //   NOT_STARTED: 'alert-secondary',
+        //   UNDER_REVIEW_BY_STATE: 'alert-info',
+        //   RETURNED_BY_STATE: 'alert-danger',
+        //   UNDER_REVIEW_BY_XVIFC: 'alert-info',
+        //   SUO_MOTO_STATE: 'alert-success',
+        //   RETURNED_BY_XVIFC: 'alert-danger',
+        //   APPROVED_BY_XVIFC: 'alert-success',
+        //   SUO_MOTO_XVIFC: 'alert-success',
+        // }
+        return FORM_STATUSES[status].class;
+    }
+
+    download(event: any) {
+
+        if (event) {
+            this.service.getStandardizedExcel().subscribe((res) => {
+                const blob = new Blob([res], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+                FileSaver.saveAs(blob, data.fileName);
+                console.log('File Download Done');
+                return;
+            }, (err) => {
+                console.log(err);
+            });
+        }
+
+        //   this.service.getStandardizedExcel([data]).subscribe({
+        //     next: (res: any) => {
+        //         const blob = new Blob([res], {
+        //             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        //           });
+        //           FileSaver.saveAs(blob, data.fileName);
+        //           console.log('File Download Done');
+        //           return;
+        //     }, error: () => {
+        //     }
+        //   });
+    }
 }
+
+
 
