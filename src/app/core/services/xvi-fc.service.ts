@@ -41,7 +41,7 @@ export class XviFcService {
   }
 
   getStandardizedExcel() {
-    return this.http.post(
+    return this.http.get(
       `${environment.api.url}xviFc/progressReport`, { responseType: "blob" }
     )
   }

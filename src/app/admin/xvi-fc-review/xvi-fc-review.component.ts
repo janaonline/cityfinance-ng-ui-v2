@@ -13,11 +13,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as FileSaver from "file-saver";
 
 interface Data {
-  ulbName: string;
-  censusCode: number;
-  formStatus: string;
-  dataSubmitted: number;
-  action: string;
+    ulbName: string;
+    censusCode: number;
+    formStatus: string;
+    dataSubmitted: number;
+    action: string;
 }
 @Component({
     selector: 'app-xvi-fc-review',
@@ -170,13 +170,20 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     }
 
     download(event: any) {
-
         if (event) {
-            this.service.getStandardizedExcel().subscribe((res) => {
+            this.service.getStandardizedExcel().subscribe((res: any) => {
                 const blob = new Blob([res], {
                     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 });
-                FileSaver.saveAs(blob, data.fileName);
+
+                // Set file name.
+                const userData: any = JSON.parse(localStorage.getItem('userData') || '{}');
+                const now = new Date();
+                const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+                const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+                const filename = `${userData.role}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
+
+                FileSaver.saveAs(blob, filename);
                 console.log('File Download Done');
                 return;
             }, (err) => {
