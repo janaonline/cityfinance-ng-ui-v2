@@ -137,11 +137,13 @@
                         <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger "></i>
                     </div>
                     <div class="flex-grow-1">
-                        <p>Add file name in .ts file</p>
-                        <p>Add size here</p>
+                        <p>{{year.file.name}}</p>
+                        <!-- <p>Add size here</p> -->
                     </div>
                     <div class="flex-shrink-0">
-                        <a href="#"><i class="bi bi-eye-fill fs-5 me-1 text-dark"></i></a>
+                        <a [href]="year.file.url | toStorageUrl" target="_blank">
+                            <i class="bi bi-eye-fill fs-5 me-1 text-dark"></i>
+                        </a>
                     </div>
                 </div>
 
