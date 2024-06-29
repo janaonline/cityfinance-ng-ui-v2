@@ -28,14 +28,26 @@
 
     <mat-divider></mat-divider>
 
-    <div class="dashboard-table">
+    <div class="dashboard-table mt-4">
 
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="fw-bold my-3">Review XVI FC Data Collection Forms</h5>
-            <button class="text-cfPrimary" (click)="download($event)">
-                <i class="bi bi-download text-cfPrimary me-2"></i>
+            <button class="primary-btn-2 border-0" (click)="download($event)">
+                <i class="bi bi-download  me-2"></i>
                 <span class="d-none d-md-inline">Download</span>
             </button>
+            @if (isLoader1 ) {
+                <div class="example-loading-shade">
+                    @if (isLoader1) {
+                    <mat-spinner></mat-spinner>
+                    }
+                    <!-- @if (isRateLimitReached) {
+                    <div class="example-rate-limit-reached">
+                        GitHub's API rate limit has been reached. It will be reset in one minute.
+                    </div>
+                    } -->
+                </div>
+                }
         </div>
         <!-- Filter -->
         <fieldset class="border rounded-3 px-3">

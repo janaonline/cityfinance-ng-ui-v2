@@ -45,6 +45,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
     loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
     isLoader: boolean = true;
+    isLoader1: boolean = false;
     loggedInUserType: any;
 
     displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
@@ -170,8 +171,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     }
 
     download(event: any) {
+        this.isLoader1 = true;
         if (event) {
-            this.service.getStandardizedExcel().subscribe((res: any) => {
+            this.service.getStandardizedExcel().subscribe((res: any) => {                
                 const blob = new Blob([res], {
                     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 });
@@ -182,15 +184,17 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
                 const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
                 const filename = `${userData.role}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
-
+                
                 FileSaver.saveAs(blob, filename);
+                this.isLoader1 = false;
                 console.log('File Download Done');
                 return;
+                
             }, (err) => {
                 console.log(err);
             });
         }
-
+        
         //   this.service.getStandardizedExcel([data]).subscribe({
         //     next: (res: any) => {
         //         const blob = new Blob([res], {
