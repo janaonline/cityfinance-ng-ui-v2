@@ -34,7 +34,7 @@
                             </div>
                         </div>
                         <div class="align-self-center delete-doc-icon">
-                            <button class="ms-2 primary-btn-2" (click)="openDialog(year,i)">View & Verify</button>
+                            <button class="ms-2 primary-btn-2" (click)="openDialog(year,i)" [disabled]="field.data[0].readonly">View & Verify</button>
                         </div>
                     </div>
                 </div>

@@ -11,8 +11,11 @@ import { FORM_STATUSES } from '../../core/constants/statuses';
 import { Sort, MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as FileSaver from "file-saver";
+import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 
 interface Data {
+    position: string;
+    // stateName: string;
     ulbName: string;
     censusCode: number;
     formStatus: string;
@@ -47,8 +50,11 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     isLoader: boolean = true;
     isLoader1: boolean = false;
     loggedInUserType: any;
+    user!: IUserLoggedInDetails | null;
+    // const role = this.user ? this.user.role : '';
 
-    displayedColumns: string[] = ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+    // displayedColumns: string[] = ['position', 'stateName', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+    displayedColumns: string[] = ['position',  'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
 
     dataSource = new MatTableDataSource<Data>([]);
     totalForms: any;
@@ -58,7 +64,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     statuses: any;
     formStatus!: string;
     sort: Sort = { active: 'ulbName', direction: 'asc' };
-    // sort: Sort = { active: 'stateName', direction: 'asc' };
+    sort1: Sort = { active: 'stateName', direction: 'asc' };
     states: any[] = [];
     category1: any;
     category2: any;
@@ -194,18 +200,6 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 console.log(err);
             });
         }
-        
-        //   this.service.getStandardizedExcel([data]).subscribe({
-        //     next: (res: any) => {
-        //         const blob = new Blob([res], {
-        //             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        //           });
-        //           FileSaver.saveAs(blob, data.fileName);
-        //           console.log('File Download Done');
-        //           return;
-        //     }, error: () => {
-        //     }
-        //   });
     }
 }
 
