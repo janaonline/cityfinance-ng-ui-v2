@@ -9,7 +9,8 @@ import { MaterialModule } from '../../../../material.module';
   template: `
     <div class="demo-full-width margin-top" [formGroup]="group">
     	<div *ngIf="field.label">
-    		<label class="fw-bold radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}}<span class="text-danger">*&nbsp;</span>
+    		<label class="fw-bold radio-label-padding">{{field.position ? field.position+'. ':''}}{{field.label}}
+          <!-- <span class="text-danger">*&nbsp;</span> -->
         </label>
     	</div>
     	<mat-radio-group [formControlName]="field.key">

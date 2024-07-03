@@ -5,7 +5,9 @@
 .mdc-button .mdc-button__label{
     color: #fff;
 }
-
+.mat-mdc-form-field-hint-wrapper, .mat-mdc-form-field-error-wrapper{
+  padding: 0 5px !important;
+}
 // .custom-snackbar-success {
 // 	background-color: #4caf50; /* Green */
 // 	color: white;

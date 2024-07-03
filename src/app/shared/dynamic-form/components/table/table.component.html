@@ -22,7 +22,7 @@
                     <td class="first-col" [ngClass]="row.class">
                         <span align="right">{{row.position ? row.position+'.':''}}&nbsp;</span>
                         {{row.label}}
-                        <span class="text-danger" *ngIf="row.required">*&nbsp;</span>
+                        <!-- <span class="text-danger" *ngIf="row.required">*&nbsp;</span> -->
                         <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
                     </td>
                     <td *ngFor="let col of row.year;let j = index;">

@@ -6,7 +6,7 @@
   <!-- <mat-form-field [formGroup]="group"> -->
   <mat-label>{{field.label}}</mat-label>
   <input onwheel="this.blur()" matInput [formControlName]="field.key" type="number" [readonly]="readonly"
-    [appDecimalLimit]="decimal" placeholder="" appNoUpDown>
+    [appDecimalLimit]="decimal" placeholder="" appNoUpDown appRestrictEInput>
   <!-- onKeyPress="if(this.value.length==5) return false;"  -->
   <span matTextPrefix>&#8377;&nbsp;</span>
   <!-- <span matTextSuffix>.00</span> -->
@@ -21,7 +21,7 @@
 <mat-form-field [appearance]="readonly? 'fill': 'outline'" class="demo-full-width mt-2" [formGroup]="group">
   <mat-label *ngIf="displayInlineLabel">{{field.label}}</mat-label>
   <input onwheel="this.blur()" matInput [formControlName]="field.key" [type]="field.formFieldType"
-    [appDecimalLimit]="field.formFieldType != 'number' ? null : decimal" [readonly]="readonly" appNoUpDown>
+    [appDecimalLimit]="field.formFieldType != 'number' ? null : decimal" [readonly]="readonly" appNoUpDown appRestrictEInput>
     <!-- <mat-icon matSuffix>warning</mat-icon> -->
     <ng-container *ngFor="let validation of validations;" ngProjectAs="mat-error">
     <mat-error *ngIf="hasError(field.key, validation.name)">{{validation.message}}</mat-error>
