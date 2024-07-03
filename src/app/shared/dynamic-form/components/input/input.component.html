@@ -6,7 +6,7 @@
   <!-- <mat-form-field [formGroup]="group"> -->
   <mat-label>{{field.label}}</mat-label>
   <input onwheel="this.blur()" matInput [formControlName]="field.key" type="number" [readonly]="readonly"
-    [appDecimalLimit]="decimal" placeholder="0" appNoUpDown>
+    [appDecimalLimit]="decimal" placeholder="" appNoUpDown>
   <!-- onKeyPress="if(this.value.length==5) return false;"  -->
   <span matTextPrefix>&#8377;&nbsp;</span>
   <!-- <span matTextSuffix>.00</span> -->

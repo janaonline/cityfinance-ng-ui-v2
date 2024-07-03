@@ -12,10 +12,12 @@ import { Sort, MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as FileSaver from "file-saver";
 import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
+import { USER_TYPE } from '../../core/models/user/userType';
+import { AuthService } from '../../core/services/auth.service';
 
 interface Data {
     position: string;
-    // stateName: string;
+    stateName: string;
     ulbName: string;
     censusCode: number;
     formStatus: string;
@@ -51,10 +53,16 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     isLoader1: boolean = false;
     loggedInUserType: any;
     user!: IUserLoggedInDetails | null;
+    isLoggedIn: boolean = false;
+    USER_TYPE = USER_TYPE;
     // const role = this.user ? this.user.role : '';
+    userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
-    // displayedColumns: string[] = ['position', 'stateName', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
-    displayedColumns: string[] = ['position',  'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+    displayedColumns: string[] = [];
+    //displayedColumns: string[] = ['position', 'stateName', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+    // displayedColumns: string[] = ['position',  'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+
+
 
     dataSource = new MatTableDataSource<Data>([]);
     totalForms: any;
@@ -63,24 +71,40 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     skip: number = 0;
     statuses: any;
     formStatus!: string;
+    state!: string;
+    // sort: Sort = { active: 'formStatus', direction: 'desc' };
     sort: Sort = { active: 'ulbName', direction: 'asc' };
     sort1: Sort = { active: 'stateName', direction: 'asc' };
-    states: any[] = [];
-    category1: any;
-    category2: any;
+    stateList: any[] = [];
+    ulbCategories: any[] = [{ "id": 16, "label": 'Category 1' }, { "id": 17, "label": 'Category 2' }];
+    formId!: number;
 
     constructor(
         private http: HttpClient,
         public service: XviFcService,
-        private router: Router
+        private router: Router,
+        private authService: AuthService
     ) { }
+    checkUserLoggedIn() {
+        this.isLoggedIn = this.authService.loggedIn();
+        this.user = this.isLoggedIn ? this.user : null;
 
-
+        if (this.isLoggedIn) {
+            UserUtility.getUserLoggedInData().subscribe((value: any) => {
+                this.user = value;
+            });
+        }
+    }
 
     ngOnInit() {
         this.statuses = FORM_STATUSES;
         this.onLoad();
+        this.checkUserLoggedIn();
 
+        this.displayedColumns =
+            this.user?.role == 'XVIFC' ?
+                ['position', 'stateName', 'ulbName', 'censusCode', 'ulbCategory', 'formStatus', 'dataSubmitted', 'action'] :
+                ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
     }
 
     get formStatuses() {
@@ -88,6 +112,11 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     }
 
     onLoad() {
+
+console.log("this.formStatus", this.formStatus)
+console.log("this.state", this.state)
+console.log("this.formId", this.formId)
+
         // this.page = 50;
         // this.limit = 10;
         // this.skip = 0;
@@ -108,14 +137,15 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 // censusCode: 1,
             },
             filter: {
-                // formStatus: 'IN_PROGRESS'
-                formStatus: this.formStatus
+                formStatus: this.formStatus,
+                stateName: this.state,
+                formId: this.formId,
             },
             searchText: this.ulbName
         };
         this.service.getFormList(queryParams, payload).subscribe({
             next: (res: any) => {
-                // console.log(res);
+                // console.log(payload);
                 this.totalForms = res.totalForms;
                 // this.dataSource.paginator =  1000;
                 this.dataSource = res.data;
@@ -129,7 +159,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         });
         this.service.getStates().subscribe({
             next: (res: any) => {
-                this.states = res.data;
+                this.stateList = res.data;
             }, error: () => {
             }
         });
@@ -138,14 +168,15 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     filter(reset = false) {
         this.skip = 0;
         if (reset) {
-            this.formStatus = '';
-            this.ulbName = '';
-            this.stateName = '';
+            this.formStatus = "";
+            this.ulbName = "";
+            this.state = "";
+            this.formId;
         }
         this.onLoad();
     }
     sortData(sort: Sort) {
-        console.log('sort', sort);
+        // console.log('sort', sort);
         this.sort = sort;
         this.onLoad();
     }
@@ -179,7 +210,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     download(event: any) {
         this.isLoader1 = true;
         if (event) {
-            this.service.getStandardizedExcel().subscribe((res: any) => {                
+            this.service.getStandardizedExcel().subscribe((res: any) => {
                 const blob = new Blob([res], {
                     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 });
@@ -189,13 +220,14 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 const now = new Date();
                 const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
                 const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-                const filename = `${userData.role}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
-                
+                let file = userData.role == 'XVIFC' ? 'XVIFC' : userData.name.split(' ').map((word: string) => word.charAt(0)).join('') + '_XVIFC';
+                const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
+
                 FileSaver.saveAs(blob, filename);
                 this.isLoader1 = false;
                 console.log('File Download Done');
                 return;
-                
+
             }, (err) => {
                 console.log(err);
             });
