@@ -20,14 +20,15 @@
             </li>
         </ol>
     </div>
-    <mat-expansion-panel class="audited-statement-panel" [expanded]="panelOpenState">
+    @for (fileSection of field.data; track fileSection.key; let sectionIndex = $index;) {
+    <mat-expansion-panel class="audited-statement-panel  mt-4" [expanded]="panelOpenState">
         <mat-expansion-panel-header>
             <mat-panel-title>
-                Copy of Audited Annual Financial Statements
+                {{fileSection.label}}
             </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="py-4" [ngClass]="{'dotted-border-bottom-primary':!last}"
-            *ngFor=" let year of field.data[0].year; index as i; last as last">
+            *ngFor=" let year of fileSection.year; index as i; last as last">
             <h5 class="fw-bold mb-3">{{year.label}}</h5>
 
             <!-- {{getYearGroup(i,year.key).getRawValue() | json}} -->
@@ -42,12 +43,13 @@
                             </div>
                         </div>
                         <div class="align-self-center delete-doc-icon">
-                            <button class="ms-2 primary-btn-2" (click)="openDialog(year,i)" [disabled]="field.data[0].readonly">View & Verify</button>
+                            <button class="ms-2 primary-btn-2" (click)="openDialog(sectionIndex, year,i)"
+                                [disabled]="fileSection.readonly">View & Verify</button>
                         </div>
                     </div>
                 </div>
                 <!-- verified by ulb -->
-                @if(getYearGroup(i,year.key).getRawValue().verifyStatus === 2) {
+                @if(getYearGroup(sectionIndex,i,year.key).getRawValue().verifyStatus === 2) {
                 <div class="verified-info">
                     <div class="d-flex align-items-center justify-content-start">
                         <span><mat-icon class="material-icons-round  me-2 text-success"> verified </mat-icon></span>
@@ -59,7 +61,7 @@
                 </div>
                 }
 
-                @else if (getYearGroup(i,year.key).getRawValue().verifyStatus === 3) {
+                @else if (getYearGroup(sectionIndex,i,year.key).getRawValue().verifyStatus === 3) {
                 <!-- rejected by ulb -->
                 <div class="verified-info verified-info-reject">
                     <div class="d-flex align-items-center justify-content-start">
@@ -70,7 +72,7 @@
                                 another file, and provided the following
                             </p>
                             <p class="text-truncate" style="width:500px"> <strong>Reason:</strong>
-                                {{getYearGroup(i,year.key).getRawValue().rejectReason}}
+                                {{getYearGroup(sectionIndex, i,year.key).getRawValue().rejectReason}}
                             </p>
                         </div>
                     </div>
@@ -79,27 +81,29 @@
                 <p class="mt-3 mb-1">Uploaded File</p>
 
                 <div class="d-flex border rounded align-items-center p-3"
-                    *ngIf="getYearGroup(i,year.key).get('file')?.getRawValue().name">
+                    *ngIf="getYearGroup(sectionIndex, i,year.key).get('file')?.getRawValue().name">
                     <div class="flex-shrink-0">
                         <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger "></i>
                     </div>
                     <div class="flex-grow-1">
-                        <p>{{getYearGroup(i,year.key).get('file')?.getRawValue().name}}</p>
-                        <p class="file-size">{{getYearGroup(i,year.key).get('file')?.getRawValue().size}}</p>
+                        <p>{{getYearGroup(sectionIndex,i,year.key).get('file')?.getRawValue().name}}</p>
+                        <p class="file-size">{{getYearGroup(sectionIndex,i,year.key).get('file')?.getRawValue().size}}
+                        </p>
                     </div>
                     <div class="flex-shrink-0">
-                        @if(field.data[0].readonly) {
+                        @if(fileSection.readonly) {
                         <a [href]="year.file.url | toStorageUrl" target="_blank"><i
                                 class="bi bi-eye-fill fs-5 me-1 text-dark"></i></a>
                         } @else {
-                        <i class="bi bi-trash3-fill fs-4 me-1 text-danger" (click)="deleteFile(year.key)"></i>
+                        <i class="bi bi-trash3-fill fs-4 me-1 text-danger"
+                            (click)="deleteFile(sectionIndex, year.key)"></i>
                         }
                     </div>
                 </div>
                 }
             </div>
             } @else {
-            @if(field.data[0].readonly) {
+            @if(fileSection.readonly) {
             <div class="files-list">
                 <p class="mb-1">Uploaded file: <span class="fw-bold" *ngIf="!year.file.name">N/A</span></p>
                 <div class="d-flex dotted-border-secondary p-3" *ngIf="year.file.name">
@@ -116,31 +120,10 @@
                 </div>
             </div>
             } @else {
-            <app-file [field]="year" [group]="getYearGroup(i,year.key)"></app-file>
+            <app-file [field]="year" [group]="getYearGroup(sectionIndex,i,year.key)"></app-file>
             }
             }
         </div>
     </mat-expansion-panel>
-
-    <!-- <mat-expansion-panel class="audited-statement-panel mt-4" [expanded]="panelOpenState">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                Upload the supporting documents for the following
-            </mat-panel-title>
-        </mat-expansion-panel-header>
-
-        <div class="py-4" [ngClass]="{'dotted-border-bottom-primary':!last}"
-            *ngFor=" let year of field.data[0].year; index as i; last as last">
-            <h5 class="fw-bold mb-3">{{year.label}}</h5>
-            <app-file [field]="year" [group]="getYearGroup(i,year.key)"></app-file>
-        </div>
-
-        <div class="py-4">
-            <h5 class="fw-bold mb-3">{{field.data[1].label}}</h5>
-            <app-file [field]="field.data[1].key" [group]="getYearGroup1(1,field.data[1].key)"></app-file>
-        </div>
-
-    </mat-expansion-panel> -->
-
-
+    }
 </div>
