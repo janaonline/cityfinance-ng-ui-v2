@@ -27,7 +27,7 @@
                 <div class="text-bg-light border rounded mt-3 mb-3 p-3" *ngIf="tab.key !== 'reviewSubmit'">
                     <p class="text-muted pb-2">Section {{tab.displayPriority}}/ {{tabs.length}}</p>
                     <h4 class="fw-bold">{{tab.label}}</h4>
-                    <p class="text-danger mt-1 fw-bold">All fields are required to be filled.</p>
+                    <p class="text-danger mt-1 text-end fst-italic">* All fields are required to be filled</p>
                 </div>
                 <div class="bd-callout bd-callout-info" *ngIf="tab.message">
                     <strong>{{tab.message}}</strong>
