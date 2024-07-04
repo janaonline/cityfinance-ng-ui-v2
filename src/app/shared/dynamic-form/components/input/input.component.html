@@ -17,7 +17,7 @@
 }
 @default {
 <label class="fw-bold" *ngIf="displayLabel && !displayInlineLabel">{{field.position ? field.position+'. ':
-  ''}}{{field.label}}<span class="text-danger">*</span></label>
+  ''}}{{field.label}}</label>
 <mat-form-field [appearance]="readonly? 'fill': 'outline'" class="demo-full-width mt-2" [formGroup]="group">
   <mat-label *ngIf="displayInlineLabel">{{field.label}}</mat-label>
   <input onwheel="this.blur()" matInput [formControlName]="field.key" [type]="field.formFieldType"

@@ -25,8 +25,7 @@
                     <tr *ngFor="let field of tab?.data;let i = index;">
                         <!-- <td>{{field.position}}.</td> -->
                         <td class="first-col"><span align="right">{{field.position ?
-                                field.position+'.':''}}&nbsp;</span>{{field.label}}<sup
-                                class="text-danger fw-bold">*</sup>
+                                field.position+'.':''}}&nbsp;</span>{{field.label}}
                         </td>
                         <td class="fw-bold"> {{field.value ? field.value : 'N/A'}} </td>
                     </tr>
@@ -63,7 +62,6 @@
                             <td class="first-col {{ row.class }}">
                                 <span align="right">{{ row.position ? row.position + '. ' : '' }}&nbsp;</span>{{
                                 row.label }}
-                                <sup class="text-danger fw-bold" *ngIf="row.required">*</sup>
                             </td>
                             <td align="right" class="fw-bold" *ngFor="let col of row.year; let j = index;">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
@@ -221,8 +219,7 @@
             <tbody>
                 <tr *ngFor="let question of field.data" class="row">
                     <!-- <td>{{question.position}}.</td> -->
-                    <td class="col-7">{{question.position}}.&nbsp;{{question.label}}<sup class="text-danger fw-bold"
-                            *ngIf="question.required">*</sup></td>
+                    <td class="col-7" [ngClass]="{'text-end':  question.value === 'N/A' && question.value === ''}">{{question.position}}.&nbsp;{{question.label}}</td>
                     <td class="col-5">
                         <!-- <p class="fw-bold" [ngClass]="{'text-end': question.formFieldType =='number'}"> -->
                         <p class="fw-bold">
