@@ -9,8 +9,8 @@
     <ng-container *ngFor="let question of field.data">
 
         <label class="pt-3 pb-1 fw-bold" for="{{question.key}}">
-            {{question.position}}. {{question.label}}<sup class="text-danger">*</sup><i
-                class="bi bi-info-circle fs-7 me-1" *ngIf="question.info" matTooltip="{{question.info}}"></i>
+            {{question.position}}. {{question.label}}
+            <i class="bi bi-info-circle fs-7 me-1" *ngIf="question.info" matTooltip="{{question.info}}"></i>
 
         </label>
         @if (question.formFieldType === 'radio') {
@@ -39,7 +39,7 @@
             <!-- {{question.validations |json}} -->
             <mat-form-field class="ms-4 col-6" appearance="outline" floatLabel="always"
                 [formGroup]="getGroup(i, field.key,question.key)">
-                <input onwheel="this.blur()" matInput formControlName="value" type="number" [appDecimalLimit]="field.decimal || 0" appNoUpDown>
+                <input onwheel="this.blur()" matInput formControlName="value" type="number" [appDecimalLimit]="field.decimal || 0" appNoUpDown appRestrictEInput>
 
                 <ng-container *ngFor="let validation of question.validations;" ngProjectAs="mat-error">
                     <mat-error

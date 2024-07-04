@@ -1,6 +1,6 @@
 <div>
     <!-- Tab header. -->
-    <div class="dotted-border-secondary bg-light p-3 mb-3">
+    <div class="dotted-border-secondary bg-light p-3 my-3">
         <p>Instructions:</p>
         <ol>
             <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to
@@ -9,6 +9,14 @@
                 uploading & should not exceed 20 MB.</li>
             <li>Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name.
                 <strong>Example: Annual accounts_15-16_Jaipur municipal corporation</strong>
+            </li>
+            <li>
+                <strong>Date of Constitution:</strong> (If value: other than prior to 2015-16). Please upload the
+                Gazette notification regarding the constitution of the ULB.
+            </li>
+            <li>
+                <strong>Population: </strong>Please upload the supporting document for the population estimate as on 01
+                April 2024.
             </li>
         </ol>
     </div>
@@ -113,5 +121,26 @@
             }
         </div>
     </mat-expansion-panel>
+
+    <!-- <mat-expansion-panel class="audited-statement-panel mt-4" [expanded]="panelOpenState">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Upload the supporting documents for the following
+            </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="py-4" [ngClass]="{'dotted-border-bottom-primary':!last}"
+            *ngFor=" let year of field.data[0].year; index as i; last as last">
+            <h5 class="fw-bold mb-3">{{year.label}}</h5>
+            <app-file [field]="year" [group]="getYearGroup(i,year.key)"></app-file>
+        </div>
+
+        <div class="py-4">
+            <h5 class="fw-bold mb-3">{{field.data[1].label}}</h5>
+            <app-file [field]="field.data[1].key" [group]="getYearGroup1(1,field.data[1].key)"></app-file>
+        </div>
+
+    </mat-expansion-panel> -->
+
 
 </div>

@@ -8,7 +8,7 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule],
   template: `
     <label class="fw-bold" *ngIf="displayLabel && !displayInlineLabel">{{field.position ? field.position+'. ':''}}{{field.label}}
-      <span class="text-danger" *ngIf="field.required">*&nbsp;</span>
+      <!-- <span class="text-danger" *ngIf="field.required">*&nbsp;</span> -->
     </label>
     <mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
     <mat-label *ngIf="displayInlineLabel">{{field.label}}</mat-label>

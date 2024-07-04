@@ -8,11 +8,12 @@ import { FieldConfig } from '../../field.interface';
 import { DndDirective } from './dnd.directive';
 import { Subscription } from 'rxjs';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 
 @Component({
   selector: 'app-file',
   standalone: true,
-  imports: [MaterialModule, DndDirective, MatProgressBarModule],
+  imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe],
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss'
 })

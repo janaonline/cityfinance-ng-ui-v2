@@ -4,12 +4,13 @@ import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
 import { MaterialModule } from '../../../material.module';
 import { DecimalLimitDirective } from '../../../core/directives/decimal-limit.directive';
 import { NoUpDownDirective } from '../../../core/directives/no-up-down.directive';
+import { RestrictEInputDirective } from '../../../core/directives/restrict-e-input.directive';
 
 @Component({
   selector: 'app-accounting-practice',
   standalone: true,
   imports: [MaterialModule, DecimalLimitDirective,
-    NoUpDownDirective],
+    NoUpDownDirective,RestrictEInputDirective],
   templateUrl: './accounting-practice.component.html',
   styleUrl: './accounting-practice.component.scss'
 })
