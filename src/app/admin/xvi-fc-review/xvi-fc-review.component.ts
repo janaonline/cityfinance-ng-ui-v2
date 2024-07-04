@@ -112,11 +112,6 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     }
 
     onLoad() {
-
-console.log("this.formStatus", this.formStatus)
-console.log("this.state", this.state)
-console.log("this.formId", this.formId)
-
         // this.page = 50;
         // this.limit = 10;
         // this.skip = 0;
@@ -137,9 +132,9 @@ console.log("this.formId", this.formId)
                 // censusCode: 1,
             },
             filter: {
-                formStatus: this.formStatus,
-                stateName: this.state,
-                formId: this.formId,
+                formStatus: this.formStatus != '' ? this.formStatus : undefined,
+                stateName: this.state != '' ? this.state : undefined,
+                formId: this.formId == 0 ? undefined : this.formId,
             },
             searchText: this.ulbName
         };
@@ -171,7 +166,7 @@ console.log("this.formId", this.formId)
             this.formStatus = "";
             this.ulbName = "";
             this.state = "";
-            this.formId;
+            this.formId = 0;
         }
         this.onLoad();
     }
@@ -220,7 +215,7 @@ console.log("this.formId", this.formId)
                 const now = new Date();
                 const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
                 const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-                let file = userData.role == 'XVIFC' ? 'XVIFC' : userData.name.split(' ').map((word: string) => word.charAt(0)).join('') + '_XVIFC';
+                let file = userData.role == 'XVIFC' ? 'XVIFC' : userData.name + '_XVIFC';
                 const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
 
                 FileSaver.saveAs(blob, filename);
