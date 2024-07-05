@@ -63,7 +63,7 @@
                                 <span align="right">{{ row.position ? row.position + '. ' : '' }}&nbsp;</span>{{
                                 row.label }}
                             </td>
-                            <td align="right" class="fw-bold" *ngFor="let col of row.year; let j = index;">
+                            <td align="right" class="fw-bold" *ngFor="let col of row.year; let j = index;" [ngClass]="{'text-danger': col?.value === ''}">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
                                     <span matTextPrefix>&nbsp;</span>{{ col.value ? (col.value |
                                     currency:'INR':'symbol':'1.0-0') :'N/A' }}
@@ -182,7 +182,7 @@
             </div>
             } @else {
             <div class="files-list">
-                <p class="mb-1">Uploaded file: <span class="fw-bold" *ngIf="!year.file.name">N/A</span></p>
+                <p class="mb-1">Uploaded file: <span class="fw-bold" *ngIf="!year.file.name" [ngClass]="{'text-danger': year.file.name === ''}">N/A</span></p>
 
 
                 <div class="d-flex dotted-border-secondary p-3" *ngIf="year.file.name">
@@ -221,8 +221,8 @@
             <tbody>
                 <tr *ngFor="let question of field.data" class="row">
                     <!-- <td>{{question.position}}.</td> -->
-                    <td class="col-7" [ngClass]="{'text-end':  question.value === 'N/A' && question.value === ''}">{{question.position}}.&nbsp;{{question.label}}</td>
-                    <td class="col-5">
+                    <td class="col-7">{{question.position}}.&nbsp;{{question.label}}</td>
+                    <td class="col-5" [ngClass]="{'text-danger': question?.value === ''}">
                         <!-- <p class="fw-bold" [ngClass]="{'text-end': question.formFieldType =='number'}"> -->
                         <p class="fw-bold">
                             {{ question.value ? question.value : 'N/A' }}
