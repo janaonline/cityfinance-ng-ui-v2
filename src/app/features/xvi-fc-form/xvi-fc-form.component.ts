@@ -124,7 +124,7 @@ export class XviFcFormComponent {
   get isFormEditable() {
     return !this.submittedFormStatuses.includes(this.formStatus);
   }
-  onLoad(reload = false) {
+  onLoad() {
 
     this.isLoader = true;
     this.ulbId = this.loggedInUserDetails.ulb;
@@ -144,7 +144,7 @@ export class XviFcFormComponent {
 
         this.form = this.formService.tabControl(this.tabs);
         // console.log('this.form',this.form);
-        
+
         if (this.isFormEditable) {
           this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
           if (this.tabs[0].formType === 'form2') {

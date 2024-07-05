@@ -83,16 +83,17 @@
     </ng-container>
     }
     @else if (tab.key === 'uploadDoc') {
+    @for (field of tab?.data; track $index) {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3"
         [ngClass]="!isFormValid(tab.key) ? 'border border-danger': ''">
         <mat-expansion-panel-header>
             <mat-panel-title>
-                Copy of Audited Annual Financial Statements
+                {{field.label}}
             </mat-panel-title>
         </mat-expansion-panel-header>
         <!-- <div class="audited-statement-block"> -->
         <div class="py-4 dotted-border-bottom-primary" [ngClass]="{'dotted-border-bottom-primary':!last}"
-            *ngFor="let year of tab.data[0].year; index as i; last as last">
+            *ngFor="let year of field.year; index as i; last as last">
             <h5 class="fw-bold mb-3">{{year.label}}</h5>
             @if (year.isPdfAvailable) {
 
@@ -205,6 +206,7 @@
 
         <!-- </div> -->
     </mat-expansion-panel>
+    }
     }
     @else if (tab.key === 'accountPractice') {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3"

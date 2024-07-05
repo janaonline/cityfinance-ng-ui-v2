@@ -47,19 +47,19 @@ export class YearwiseFilesComponent {
   //   return (this.group.get(key) as FormArray).controls[i]
   // }
 
-  getYearGroup(i: number, fieldKey: any): FormGroup {
+  getYearGroup(sectionIndex: number, i: number, fieldKey: any): FormGroup {
     // console.log('this.group.controls[0]',this.group.controls[0]);
     // console.log('fieldKey-------',fieldKey);
     // console.log('this.group.controls[0]-------',((this.group.controls[0]) as FormGroup).get(fieldKey));
 
-    return (((this.group.controls[0]) as FormGroup).get(this.field.data[0].key) as FormGroup).get(fieldKey) as FormGroup;
+    return (((this.group.controls[sectionIndex]) as FormGroup).get(this.field.data[sectionIndex].key) as FormGroup).get(fieldKey) as FormGroup;
   }
 
 
-  openDialog(year: FieldConfig, i: number): void {
+  openDialog(sectionIndex: number, year: FieldConfig, i: number): void {
     const fg = new FormGroup({});
     // let verifyForm = _.cloneDeep(this.getYearGroup(i, year.key));
-    let verifyForm = cloneDeep(this.getYearGroup(i, year.key));
+    let verifyForm = cloneDeep(this.getYearGroup(sectionIndex, i, year.key));
     // let verifyForm = structuredClone(this.getYearGroup(i, year.key));
 
     const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {
@@ -67,7 +67,7 @@ export class YearwiseFilesComponent {
       data: {
         field: year,
         // fileRejectOptions: this.field.fileRejectOptions,
-        group: this.getYearGroup(i, year.key),
+        group: this.getYearGroup(sectionIndex, i, year.key),
         verifyForm
       },
     });
@@ -79,8 +79,8 @@ export class YearwiseFilesComponent {
     });
   }
 
-  deleteFile(key: string) {
-    this.getYearGroup(0, key).reset();
+  deleteFile(sectionIndex: number, key: string) {
+    this.getYearGroup(sectionIndex, 0, key).reset();
     // this.getYearGroup(0, key).get('file')?.patchValue({ name: '', url: '' });
     // this.getYearGroup(0, key).get('verifyStatus')?.patchValue(1);
     // this.getYearGroup(0, key).get('rejectOption')?.patchValue('');
