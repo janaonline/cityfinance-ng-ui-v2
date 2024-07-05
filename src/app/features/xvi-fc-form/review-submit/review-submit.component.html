@@ -63,7 +63,7 @@
                                 <span align="right">{{ row.position ? row.position + '. ' : '' }}&nbsp;</span>{{
                                 row.label }}
                             </td>
-                            <td align="right" class="fw-bold" *ngFor="let col of row.year; let j = index;" [ngClass]="{'text-danger': col?.value === ''}">
+                            <td align="right" class="fw-bold" *ngFor="let col of row.year; let j = index;" [ngClass]="{'text-danger': col?.value == '' || col?.value > row?.max || col?.value < row?.min  }">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
                                     <span matTextPrefix>&nbsp;</span>{{ col.value ? (col.value |
                                     currency:'INR':'symbol':'1.0-0') :'N/A' }}
@@ -181,8 +181,8 @@
             </div>
             } @else {
             <div class="files-list">
-                <p class="mb-1">Uploaded file: <span class="fw-bold" *ngIf="!year.file.name" [ngClass]="{'text-danger': year.file.name === ''}">N/A</span></p>
-
+                <p class="mb-1">Uploaded file: <span class="fw-bold" *ngIf="!year.file.name"
+                    [ngClass]="{'text-danger': !year.file.name }">N/A</span></p>
 
                 <div class="d-flex dotted-border-secondary p-3" *ngIf="year.file.name">
                     <div class="flex-shrink-0">
