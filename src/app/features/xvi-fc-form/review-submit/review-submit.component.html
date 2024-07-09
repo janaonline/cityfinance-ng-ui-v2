@@ -66,8 +66,7 @@
                             <td class="fw-bold text-end" *ngFor="let col of row.year; let j = index;"
                                 [ngClass]="{'text-danger': col?.value == '' || col?.value > row?.max || col?.value < row?.min  }">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
-                                    <span matTextPrefix>&nbsp;</span>{{ col.value ? (col.value |
-                                    currency:'INR':'symbol':'1.0-0') :'N/A' }}
+                                    <span matTextPrefix>&nbsp;</span>{{ col.value === 0 ? 0 : col.value? (col.value | currency:'INR':'symbol':'1.0-0') :'N/A' }}
                                 </ng-container>
                                 <ng-template #otherField>
                                     <!-- {{ col.value }} -->
