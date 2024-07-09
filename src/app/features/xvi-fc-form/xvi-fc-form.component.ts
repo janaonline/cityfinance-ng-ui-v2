@@ -29,7 +29,7 @@ import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.componen
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 // import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { XviFcService } from '../../core/services/xvi-fc.service';
-
+import { RestrictEInputDirective } from '../../core/directives/restrict-e-input.directive';
 import {
   MatSnackBar,
 } from '@angular/material/snack-bar';
@@ -50,6 +50,7 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
+    RestrictEInputDirective
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -123,7 +124,7 @@ export class XviFcFormComponent {
   get isFormEditable() {
     return !this.submittedFormStatuses.includes(this.formStatus);
   }
-  onLoad(reload = false) {
+  onLoad() {
 
     this.isLoader = true;
     this.ulbId = this.loggedInUserDetails.ulb;
@@ -143,7 +144,7 @@ export class XviFcFormComponent {
 
         this.form = this.formService.tabControl(this.tabs);
         // console.log('this.form',this.form);
-        
+
         if (this.isFormEditable) {
           this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
           if (this.tabs[0].formType === 'form2') {

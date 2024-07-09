@@ -138,7 +138,7 @@ export class DynamicFormService {
     const yearData = childField.year;
     if (yearData) {
       yearData.forEach((col: any) => {
-        years[col.key] = this.createFileForm(col);
+        years[col.key] = this.createFileForm(col, childField.required);
         // years.push(
         //   new FormGroup({
         //     // [row.key]: new FormControl(childField.value),
@@ -154,23 +154,31 @@ export class DynamicFormService {
 
   }
 
-  createFileForm(childField: any) {
+  createFileForm(yearField: any, required: boolean) {
     const fileValidator = [];
-    const optionValidator: any = [];
-    if (childField.verifyStatus === 2) {
-      optionValidator.push(Validators.required);
-    } else {
+    const rejectValidator: any = [];
+    const verifyStatusValidator: any = [];
+    // console.log('required', yearField, required);
+    // if pdf available check verify validator
+    if (yearField.isPdfAvailable) {
+      verifyStatusValidator.push(Validators.required);
+      if (yearField.verifyStatus === 3) {
+        rejectValidator.push(Validators.required);
+        fileValidator.push(Validators.required);
+      }
+    } else if (required) {
       fileValidator.push(Validators.required);
     }
+
     return new FormGroup({
       file: new FormGroup({
-        name: new FormControl(childField.file?.name || null, fileValidator),
-        url: new FormControl(childField.file?.url || null),
-        size: new FormControl(childField.file?.size || null),
+        name: new FormControl(yearField.file?.name || null, fileValidator),
+        url: new FormControl(yearField.file?.url || null),
+        size: new FormControl(yearField.file?.size || null),
       }),
-      verifyStatus: new FormControl(childField.verifyStatus || null),
-      rejectReason: new FormControl(childField.rejectReason || null),
-      rejectOption: new FormControl(childField.rejectOption || null, optionValidator),
+      verifyStatus: new FormControl(yearField.verifyStatus || null, verifyStatusValidator),
+      rejectReason: new FormControl(yearField.rejectReason || null, rejectValidator),
+      rejectOption: new FormControl(yearField.rejectOption || null, rejectValidator),
     });
   }
 

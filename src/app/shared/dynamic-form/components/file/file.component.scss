@@ -126,3 +126,11 @@
         transform: translate(1px, -2px) rotate(-1deg);
     }
 }
+
+.verified-info {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid rgba(54, 160, 4, 1);
+    background: rgba(227, 249, 217, 1);
+    margin-top: 20px;
+}

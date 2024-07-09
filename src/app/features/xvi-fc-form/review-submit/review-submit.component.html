@@ -25,8 +25,7 @@
                     <tr *ngFor="let field of tab?.data;let i = index;">
                         <!-- <td>{{field.position}}.</td> -->
                         <td class="first-col"><span align="right">{{field.position ?
-                                field.position+'.':''}}&nbsp;</span>{{field.label}}<sup
-                                class="text-danger fw-bold">*</sup>
+                                field.position+'.':''}}&nbsp;</span>{{field.label}}
                         </td>
                         <td class="fw-bold"> {{field.value ? field.value : 'N/A'}} </td>
                     </tr>
@@ -63,9 +62,9 @@
                             <td class="first-col {{ row.class }}">
                                 <span align="right">{{ row.position ? row.position + '. ' : '' }}&nbsp;</span>{{
                                 row.label }}
-                                <sup class="text-danger fw-bold" *ngIf="row.required">*</sup>
                             </td>
-                            <td align="right" class="fw-bold" *ngFor="let col of row.year; let j = index;">
+                            <td class="fw-bold text-end" *ngFor="let col of row.year; let j = index;"
+                                [ngClass]="{'text-danger': col?.value == '' || col?.value > row?.max || col?.value < row?.min  }">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
                                     <span matTextPrefix>&nbsp;</span>{{ col.value ? (col.value |
                                     currency:'INR':'symbol':'1.0-0') :'N/A' }}
@@ -85,16 +84,17 @@
     </ng-container>
     }
     @else if (tab.key === 'uploadDoc') {
+    @for (field of tab?.data; track $index) {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3"
         [ngClass]="!isFormValid(tab.key) ? 'border border-danger': ''">
         <mat-expansion-panel-header>
             <mat-panel-title>
-                Copy of Audited Annual Financial Statements
+                {{field.label}}
             </mat-panel-title>
         </mat-expansion-panel-header>
         <!-- <div class="audited-statement-block"> -->
         <div class="py-4 dotted-border-bottom-primary" [ngClass]="{'dotted-border-bottom-primary':!last}"
-            *ngFor="let year of tab.data[0].year; index as i; last as last">
+            *ngFor="let year of field.year; index as i; last as last">
             <h5 class="fw-bold mb-3">{{year.label}}</h5>
             @if (year.isPdfAvailable) {
 
@@ -137,11 +137,13 @@
                         <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger "></i>
                     </div>
                     <div class="flex-grow-1">
-                        <p>Add file name in .ts file</p>
-                        <p>Add size here</p>
+                        <p>{{year.file.name}}</p>
+                        <!-- <p>Add size here</p> -->
                     </div>
                     <div class="flex-shrink-0">
-                        <a href="#"><i class="bi bi-eye-fill fs-5 me-1 text-dark"></i></a>
+                        <a [href]="year.file.url | toStorageUrl" target="_blank">
+                            <i class="bi bi-eye-fill fs-5 me-1 text-dark"></i>
+                        </a>
                     </div>
                 </div>
 
@@ -181,8 +183,8 @@
             </div>
             } @else {
             <div class="files-list">
-                <p class="mb-1">Uploaded file: <span class="fw-bold" *ngIf="!year.file.name">N/A</span></p>
-
+                <p class="mb-1">Uploaded file: <span class="fw-bold" *ngIf="!year.file.name"
+                        [ngClass]="{'text-danger': !year.file.name }">N/A</span></p>
 
                 <div class="d-flex dotted-border-secondary p-3" *ngIf="year.file.name">
                     <div class="flex-shrink-0">
@@ -206,6 +208,7 @@
         <!-- </div> -->
     </mat-expansion-panel>
     }
+    }
     @else if (tab.key === 'accountPractice') {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3"
         [ngClass]="!isFormValid(tab.key) ? 'border border-danger': ''" *ngFor="let field of tab.data">
@@ -219,11 +222,10 @@
             <tbody>
                 <tr *ngFor="let question of field.data" class="row">
                     <!-- <td>{{question.position}}.</td> -->
-                    <td class="col-7">{{question.position}}.&nbsp;{{question.label}}<sup class="text-danger fw-bold"
-                            *ngIf="question.required">*</sup></td>
+                    <td class="col-7">{{question.position}}.&nbsp;{{question.label}}</td>
                     <td class="col-5">
                         <!-- <p class="fw-bold" [ngClass]="{'text-end': question.formFieldType =='number'}"> -->
-                        <p class="fw-bold">
+                        <p class="fw-bold" [ngClass]="{'text-danger': !question?.value}">
                             {{ question.value ? question.value : 'N/A' }}
                         </p>
                         <p *ngIf="question.reason" class="text-secondary mt-1">{{question.reason}}</p>

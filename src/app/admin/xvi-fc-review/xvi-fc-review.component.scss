@@ -1,6 +1,15 @@
+* {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-regular);
+}
+
+mat-icon {
+  font-family: 'material icons';
+}
+
 .mat-mdc-table .mat-mdc-header-cell {
   background: rgba(25, 51, 105, 1) !important;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600 !important;
   text-align: center;
   color: #fff;
@@ -8,12 +17,12 @@
 }
 
 .mat-mdc-table .mdc-data-table__cell {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 400;
   border: 1px solid rgba(219, 219, 219, 1);
 }
-.form-status{
-  font-size: 12px;
+.form-status {
+  font-size: 0.75rem;
 }
 
 .reset {
@@ -21,7 +30,6 @@
   font-size: 18px;
   border: 0;
   background: none;
-
 }
 
 /* Structure */
@@ -38,7 +46,7 @@
 
 table {
   width: 100%;
-} 
+}
 
 .example-loading-shade {
   position: absolute;

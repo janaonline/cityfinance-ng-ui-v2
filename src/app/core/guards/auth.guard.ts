@@ -1,6 +1,7 @@
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { inject } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 export const authGuard: CanActivateFn = (route, state) => {
 
@@ -10,9 +11,13 @@ export const authGuard: CanActivateFn = (route, state) => {
   if (authService.loggedIn()) {
     return true;
   } else {
-    // router.navigate(['/login']);
-    // redirect to old site
-    // window.location.href = '/';
+    if (['staging', 'prod'].includes(environment.environment)) {
+      // redirect to old site
+      window.location.href = '/';
+    } else {
+      router.navigate(['/login']);
+    }
+
     return false;
   }
 };

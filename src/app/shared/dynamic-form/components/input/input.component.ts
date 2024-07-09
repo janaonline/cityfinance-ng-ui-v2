@@ -4,12 +4,14 @@ import { FieldConfig } from "../../field.interface";
 import { MaterialModule } from '../../../../material.module';
 import { NoUpDownDirective } from "../../../../core/directives/no-up-down.directive";
 import { DecimalLimitDirective } from "../../../../core/directives/decimal-limit.directive";
+import { RestrictEInputDirective } from "../../../../core/directives/restrict-e-input.directive";
 @Component({
   selector: "app-input",
   standalone: true,
   imports: [MaterialModule,
     DecimalLimitDirective,
-    NoUpDownDirective
+    NoUpDownDirective,
+    RestrictEInputDirective
   ],
   templateUrl: './input.component.html',
   styles: [`   

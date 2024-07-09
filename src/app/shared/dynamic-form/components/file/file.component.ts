@@ -8,11 +8,12 @@ import { FieldConfig } from '../../field.interface';
 import { DndDirective } from './dnd.directive';
 import { Subscription } from 'rxjs';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 
 @Component({
   selector: 'app-file',
   standalone: true,
-  imports: [MaterialModule, DndDirective, MatProgressBarModule],
+  imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe],
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss'
 })
@@ -28,10 +29,11 @@ export class FileComponent {
   maxFileSize: number = 20;
   readonly: boolean | undefined = false;
   @Input() parentField: any;
+  @Input() uploadFolderName: string = 'files';
 
   // uploadFolderName!: string;
 
-  get uploadFolderName() {
+  get uploadFolderNameBkp() {
     // const years = JSON.parse(localStorage.getItem("Years"));
     // const year = this.getKeyByValue(years, this.design_year);
     // return `${this.userData?.role}/${year}/sfc/${this.userData?.stateCode}`
