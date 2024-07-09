@@ -59,7 +59,7 @@
             </ol>
         </div>
         <div class="row mt-2 text-dark">
-            <app-file [field]="data.field" [group]="getVerifyFormGroup()"></app-file>
+            <app-file [field]="data.field" [group]="getVerifyFormGroup()" [uploadFolderName]="uploadFolderName(data.field.key)"></app-file>
         </div>
         <div class="row mt-2 text-dark">
             <app-select [field]="rejectOption" [group]="getVerifyFormGroup()"></app-select>
