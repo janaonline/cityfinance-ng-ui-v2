@@ -1,7 +1,7 @@
 
 let baseUrl = window.location.origin;
 //let baseUrl = 'http://localhost:8080';
-let GoogleTagID: string = 'G-MDPDTZFW0N';
+let GoogleTagID: string = 'G-5Z5B41B3G4';
 let isProduction: boolean = false;
 let versionCheckURL = baseUrl + '/version.json';
 let STORAGE_BASEURL = 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com';
@@ -12,7 +12,7 @@ if (window.location.hostname.includes('staging')) {
 } else if (window.location.origin === 'https://cityfinance.in') {
     env = 'prod';
     isProduction = true;
-    GoogleTagID = 'G-MDPDTZFW0N';
+    GoogleTagID = 'G-5Z5B41B3G4';
     STORAGE_BASEURL = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
 }
 
