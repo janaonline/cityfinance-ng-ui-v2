@@ -129,7 +129,7 @@ export class XviFcFormComponent {
   get isFormEditable() {
     return !this.submittedFormStatuses.includes(this.formStatus);
   }
-  onLoad() {
+  onLoad(reload = false) {
 
     this.isLoader = true;
     this.ulbId = this.loggedInUserDetails.ulb;
@@ -151,6 +151,9 @@ export class XviFcFormComponent {
         this.form = this.formService.tabControl(this.tabs);
         // console.log('this.form',this.form);
 
+        if (reload) {
+          this.form?.markAllAsTouched();
+        }
         if (this.isFormEditable) {
           this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
           if (this.tabs[0].formType === 'form2') {
@@ -311,7 +314,7 @@ export class XviFcFormComponent {
         next: (res) => {
           // move from 1st or navigate to last tab reload form
           if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
-            this.onLoad();
+            this.onLoad(true);
           } else {
             this.tabChangeLoader = false;
           }
@@ -325,7 +328,7 @@ export class XviFcFormComponent {
   saveAs(actionType: string) {
     const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
 
-    currentForm?.markAllAsTouched()
+    currentForm?.markAllAsTouched();
 
     this.actionType = actionType;
 
@@ -343,7 +346,7 @@ export class XviFcFormComponent {
       }
     });
   }
-
+  
   getFormData() {
     const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
     formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
