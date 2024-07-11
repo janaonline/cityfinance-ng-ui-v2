@@ -14,6 +14,7 @@ import * as FileSaver from "file-saver";
 import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../core/models/user/userType';
 import { AuthService } from '../../core/services/auth.service';
+import { SelectionModel } from '@angular/cdk/collections';
 
 interface Data {
     position: string;
@@ -64,7 +65,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
 
 
+
     dataSource = new MatTableDataSource<Data>([]);
+    selection = new SelectionModel<Data>(true, []);
     totalForms: any;
     // page: number = 0;
     limit: number = 10;
@@ -78,6 +81,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     stateList: any[] = [];
     ulbCategories: any[] = [{ "id": 16, "label": 'Category 1' }, { "id": 17, "label": 'Category 2' }];
     formId!: number;
+
 
     constructor(
         private http: HttpClient,
@@ -103,8 +107,8 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
         this.displayedColumns =
             this.user?.role == 'XVIFC' ?
-                ['position', 'stateName', 'ulbName', 'censusCode', 'ulbCategory', 'formStatus', 'dataSubmitted', 'action'] :
-                ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+                ['position', 'stateName', 'ulbName', 'censusCode', 'ulbCategory', 'formStatus', 'dataSubmitted', 'action', 'select'] :
+                ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action', 'select'];
     }
 
     get formStatuses() {
@@ -143,7 +147,8 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 // console.log(payload);
                 this.totalForms = res.totalForms;
                 // this.dataSource.paginator =  1000;
-                this.dataSource = res.data;
+                // this.dataSource = res.data;
+                this.dataSource = new MatTableDataSource(res.data);
 
                 this.isLoader = false;
             }, error: () => {
@@ -228,6 +233,19 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
             });
         }
     }
+
+    isAllSelected() {
+        const numSelected = this.selection?.selected?.length;
+        const numRows = this.dataSource?.data?.length;
+        return numSelected === numRows;
+    }
+
+    masterToggle() {
+        this.isAllSelected() ?
+            this.selection.clear() :
+            this.dataSource?.data.forEach(row => this.selection.select(row));
+    }
+
 }
 
 

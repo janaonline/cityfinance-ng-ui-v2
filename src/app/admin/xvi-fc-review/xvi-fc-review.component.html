@@ -32,10 +32,18 @@
 
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="fw-bold my-3">Review XVI FC Data Collection Forms</h5>
-            <button class="primary-btn-2 border-0" (click)="download($event)">
-                <i class="bi bi-download me-2"></i>
-                <span class="d-none d-md-inline fw-bold">Download</span>
-            </button>
+            <div class="float-end">
+                <button class="primary-btn-1 me-2">
+                    <span class="d-none d-md-inline fw-bold">Approve All</span>
+                </button>
+                <button class="primary-btn-1 bttn-return me-2">
+                    <span class="d-none d-md-inline fw-bold">Reject All</span>
+                </button>
+                <button class="primary-btn-2 border-0" (click)="download($event)">
+                    <i class="bi bi-download me-2"></i>
+                    <span class="d-none d-md-inline fw-bold">Download</span>
+                </button>
+            </div>
             @if (isLoader1 ) {
             <div class="example-loading-shade">
                 @if (isLoader1) {
@@ -180,6 +188,21 @@
                             <button class="primary-btn-2" [routerLink]="'/admin/xvi-fc-review/ulb/'+element.ulbId"
                                 [disabled]="element?.formStatus === 'NOT_STARTED'">
                                 {{element?.formStatus === 'UNDER_REVIEW_BY_STATE' ? 'Review' : 'View'}}</button>
+                        </td>
+                    </ng-container>
+
+                    <!-- Approve & Reject -->
+                    <ng-container matColumnDef="select">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <mat-checkbox (change)="$event ? masterToggle() : null"
+                                [checked]="selection.hasValue() && isAllSelected()"
+                                [indeterminate]="selection.hasValue() && !isAllSelected()">
+                            </mat-checkbox>
+                        </th>
+                        <td mat-cell *matCellDef="let row">
+                            <mat-checkbox (click)="$event.stopPropagation()"
+                                (change)="$event ? selection.toggle(row) : null" [checked]="selection.isSelected(row)">
+                            </mat-checkbox>
                         </td>
                     </ng-container>
 
