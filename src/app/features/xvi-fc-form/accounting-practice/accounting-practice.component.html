@@ -31,6 +31,11 @@
                 </mat-form-field>
                 }
                 }
+                <ng-container *ngFor="let validation of question.validations;" ngProjectAs="mat-error">
+                    <mat-error
+                        *ngIf="hasError(i, field.key, question.key,validation.name)">{{validation.message}}</mat-error>
+                    <!-- <mat-error>{{validation.message}}</mat-error> -->
+                </ng-container>
             </mat-radio-group>
         </div>
 
@@ -39,7 +44,8 @@
             <!-- {{question.validations |json}} -->
             <mat-form-field class="ms-4 col-6" appearance="outline" floatLabel="always"
                 [formGroup]="getGroup(i, field.key,question.key)">
-                <input onwheel="this.blur()" matInput formControlName="value" type="number" [appDecimalLimit]="field.decimal || 0" appNoUpDown appRestrictEInput>
+                <input onwheel="this.blur()" matInput formControlName="value" type="number"
+                    [appDecimalLimit]="field.decimal || 0" appNoUpDown>
 
                 <ng-container *ngFor="let validation of question.validations;" ngProjectAs="mat-error">
                     <mat-error

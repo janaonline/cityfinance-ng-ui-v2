@@ -3,7 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { USER_TYPE } from '../../models/user/userType';
 import { IUserLoggedInDetails } from '../../models/login/userLoggedInDetails';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class UserUtility implements OnDestroy {
   private static readonly loggedInDetails = new BehaviorSubject<
     IUserLoggedInDetails | unknown
@@ -49,7 +49,7 @@ export class UserUtility implements OnDestroy {
   }
 
   getUserType(): USER_TYPE | null {
-    let userData = localStorage.getItem("userData")  as any;
+    let userData = localStorage.getItem("userData") as any;
     if (!userData) {
       return null;
     }

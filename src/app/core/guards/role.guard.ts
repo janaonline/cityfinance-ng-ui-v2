@@ -1,14 +1,15 @@
-import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
 import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { UserUtility } from '../util/user/user';
 
-export const authGuard: CanActivateFn = (route, state) => {
-
-  const authService = inject(AuthService);
+export const roleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
+  const user = inject(UserUtility);
 
-  if (authService.loggedIn()) {
+  const userRole = user.getUserType();
+
+  if (route.data['allowedRoles'] && route.data['allowedRoles'].includes(userRole)) {
     return true;
   } else {
     if (['staging', 'prod'].includes(environment.environment)) {
@@ -17,7 +18,6 @@ export const authGuard: CanActivateFn = (route, state) => {
     } else {
       router.navigate(['/login']);
     }
-
     return false;
   }
 };

@@ -13,6 +13,11 @@ export class NoUpDownDirective {
       // Prevent the default behavior of the up/down arrow keys
       event.preventDefault();
     }
+
+    // Prevent typing 'e' or 'E'
+    if (event.key === 'e' || event.key === 'E') {
+      event.preventDefault();
+    }
   }
 
   @HostListener('wheel', ['$event'])

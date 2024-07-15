@@ -120,7 +120,7 @@
                 </div>
             </div>
             } @else {
-            <app-file [field]="year" [group]="getYearGroup(sectionIndex,i,year.key)"></app-file>
+            <app-file [field]="year" [group]="getYearGroup(sectionIndex,i,year.key)" [uploadFolderName]="uploadFolderName(year.key)"></app-file>
             }
             }
         </div>
