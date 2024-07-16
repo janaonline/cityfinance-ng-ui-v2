@@ -24,8 +24,8 @@ export class XviFcService {
     return this.http.post(`${environment.api.url}xviFc/submit_form?ulb=${ulb}`, body);
   }
 
-  submitFormStatus(ulb: string, body: any) {
-    return this.http.post(`${environment.api.url}xviFc/submit_form?ulb=${ulb}`, body);
+  submitFormStatus(statusType: string, body: any) {
+    return this.http.post(`${environment.api.url}xviFc/${statusType}`, body);
   }
 
   getFormList(queryParams: any, payload: any) {
