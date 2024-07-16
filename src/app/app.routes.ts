@@ -4,6 +4,7 @@ import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
 import { ErrorComponent } from './features/error/error.component';
 import { authGuard } from './core/guards/auth.guard';
+import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
     {
@@ -37,6 +38,10 @@ export const routes: Routes = [
     {
         path: 'maintenance',
         component: MaintenanceComponent,
+    },
+    {
+        path: 'pdf',
+        component: PdfContentComponent,
     },
     {
         path: 'error',
