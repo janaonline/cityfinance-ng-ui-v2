@@ -40,9 +40,15 @@ export class XviFcService {
       `${environment.api.url}/state`);
   }
 
-  getStandardizedExcel() {
+  progressReport() {
     return this.http.get(
       `${environment.api.url}xviFc/progressReport`, { responseType: "blob" }
+    )
+  }
+
+  dataDump() {
+    return this.http.get(
+      `${environment.api.url}xviFc/dataDump`, { responseType: "blob" }
     )
   }
 

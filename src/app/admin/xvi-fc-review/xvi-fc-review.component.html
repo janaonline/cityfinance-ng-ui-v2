@@ -32,10 +32,24 @@
 
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="fw-bold my-3">Review XVI FC Data Collection Forms</h5>
-            <button class="primary-btn-2 border-0" (click)="download($event)">
-                <i class="bi bi-download me-2"></i>
-                <span class="d-none d-md-inline fw-bold">Download</span>
+            @if (userData.role == 'XVIFC_STATE') {
+            <button class="primary-btn-2" (click)="download($event)">
+                <i class="bi bi-download me-2"></i><span class="d-none d-md-inline fw-bold">Progress Report</span>
             </button>
+            }
+            @if (userData.role == 'XVIFC') {
+            <div class="btn-group dropdown" dropdown>
+                <button dropdownToggle type="button" class="primary-btn-2 fw-bold"
+                    aria-controls="dropdown-disabled-menu"><i class="bi bi-download me-2"></i><span
+                        class="d-none d-md-inline fw-bold">Download</span></button>
+
+                <ul *dropdownMenu class="dropdown-menu" aria-labelledby="button-disabled-menu">
+                    <li class="ms-2" (click)="download($event)"><a>Progress Report</a></li>
+                    <hr>
+                    <li class="ms-2" (click)="downloadDump($event)"><a>Data Dump</a></li>
+                </ul>
+            </div>
+            }
             @if (isLoader1 ) {
             <div class="example-loading-shade">
                 @if (isLoader1) {
@@ -47,8 +61,7 @@
         <!-- Filter -->
         <fieldset class="border rounded-3 px-3">
             <legend class="float-none w-auto px-3">Filter By:</legend>
-            <div class="d-flex gap-3 justify-content-end">
-                <!-- <div *ngIf=" userData.role === 'XVIFC'"> -->
+            <div class="d-flex gap-3 justify-content-end" id="flex-container">
                 @if (userData.role === 'XVIFC') {
                 <mat-form-field appearance="outline">
                     <mat-label>State</mat-label>
@@ -61,8 +74,6 @@
                     </mat-select>
                 </mat-form-field>
 
-                <!-- </div> -->
-                <!-- <div *ngIf=" userData.role === 'XVIFC'"> -->
                 <mat-form-field appearance="outline">
                     <mat-label>ULB Category</mat-label>
                     <mat-select [(ngModel)]="formId" panelWidth="300" (selectionChange)="filter()">
@@ -73,9 +84,8 @@
                         }
                     </mat-select>
                 </mat-form-field>
-                <!-- </div> -->
                 }
-                <!-- <div> -->
+
                 <mat-form-field appearance="outline">
                     <mat-label>Form Status</mat-label>
                     <mat-select [(ngModel)]="formStatus" panelWidth="300" (selectionChange)="filter()">
@@ -86,8 +96,7 @@
                         }
                     </mat-select>
                 </mat-form-field>
-                <!-- </div> -->
-                <!-- <div> -->
+
                 <mat-form-field appearance="outline">
                     <mat-label>ULB</mat-label>
                     <mat-icon matPrefix (click)="filter()">search</mat-icon>
@@ -98,7 +107,6 @@
                     </button>
                     }
                 </mat-form-field>
-                <!-- </div> -->
 
                 <div class="wmx-2 mt-1">
                     <button class="primary-btn-2" (click)="filter(true)">Reset</button>
