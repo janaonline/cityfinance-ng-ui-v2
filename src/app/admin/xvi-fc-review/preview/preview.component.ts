@@ -7,6 +7,7 @@ import { XviFcService } from '../../../core/services/xvi-fc.service';
 import { UserUtility } from '../../../core/util/user/user';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApproveRejectFormService } from '../approve-reject-form.service';
+import { FORM_STATUSES } from '../../../core/constants/statuses';
 
 @Component({
   selector: 'app-preview',
@@ -53,8 +54,17 @@ export class PreviewComponent {
   }
 
   get enableButton() {
-    return ['UNDER_REVIEW_BY_STATE'].includes(this.formStatus);
+    return this.isReviewable(this.formStatus);
   }
+
+  isReviewable(formStatus: string): Boolean {
+    const status = FORM_STATUSES[formStatus] || '';
+    if (status && status.role && status.role === this.loggedInUserDetails.role) {
+      return true;
+    }
+    return false;
+  }
+  
   onLoad() {
 
     this.isLoader = true;
@@ -74,5 +84,5 @@ export class PreviewComponent {
   onSubmit(statusType: string) {
     this.approveRejectService.openDialogue(statusType, [this.ulbId]);
   }
-  
+
 }
