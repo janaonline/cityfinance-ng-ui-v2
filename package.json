@@ -38,8 +38,7 @@
     "to-words": "^4.0.1",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3",
-    "pdfmake": "^0.1.68",
-    "vfs_fonts": "^0.1.72"
+    "pdfmake": "^0.1.68"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^17.3.7",
