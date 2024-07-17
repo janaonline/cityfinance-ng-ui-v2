@@ -45,7 +45,7 @@
                 </button>
                 }
                 @if (currentUserRole == 'XVIFC') {
-                <div class="btn-group dropdown" dropdown>
+                <span class="btn-group dropdown" dropdown>
                     <button dropdownToggle type="button" class="primary-btn-2 fw-bold"
                         aria-controls="dropdown-disabled-menu"><i class="bi bi-download me-2"></i><span
                             class="d-none d-md-inline fw-bold">Download</span></button>
@@ -55,7 +55,7 @@
                         <hr>
                         <li class="ms-2" (click)="downloadDump($event)"><a>Data Dump</a></li>
                     </ul>
-                </div>
+                </span>
                 }
             </div>
 
