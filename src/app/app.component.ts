@@ -6,9 +6,6 @@ import { FooterComponent } from './shared/components/footer/footer.component';
 // import { MenuComponent } from './shared/components/menu/menu.component';
 import { environment } from '../environments/environment';
 import { HeaderComponent } from './shared/components/header/header.component';
-import { PdfContentComponent } from './pdf-content/pdf-content.component';
-import { PdfGeneratorService } from './core/services/pdf-generator.service';
-// import { HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-root',
@@ -19,9 +16,6 @@ import { PdfGeneratorService } from './core/services/pdf-generator.service';
     HttpClientModule,
     FooterComponent,
     HeaderComponent,
-    PdfContentComponent
-    
-    // PdfGeneratorComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
@@ -36,9 +30,9 @@ export class AppComponent {
     // const userData: any = '{"_id":"5fcb9ce06e7a0139dc6b514e","name":"Barpeta Municipal Board","email":"hpathakbarpeta@gmail.com","isActive":true,"role":"ULB","state":"5dcf9d7216a06aed41c748df","stateName":"Assam","designation":"","ulb":"5dcfca53df6f59198c4ac3d5","ulbCode":"AS001","stateCode":"AS","isUA":"No","isMillionPlus":"No","isUserVerified2223":true}';
     const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiQW5kaHJhIFByYWRlc2giLCJlbWFpbCI6ImFwXzE2ZmNAY2l0eWZpbmFuY2UuaW4iLCJyb2xlIjoiWFZJRkNfU1RBVEUiLCJzdGF0ZSI6IjVkY2Y5ZDcyMTZhMDZhZWQ0MWM3NDhkZCIsImlzQWN0aXZlIjp0cnVlLCJpc1JlZ2lzdGVyZWQiOmZhbHNlLCJfaWQiOiI2Njc3MmJkYmNkODVmMzI0ODQzN2JhYTkiLCJwdXJwb3NlIjoiV0VCIiwibGhfaWQiOiI2Njk2NDE1MDkxOTg0YjBkZjEzYzRhNGEiLCJzZXNzaW9uSWQiOiI2Njk2MGQ2NDZiYTQxNjBkZmUxMDNhOTAiLCJwYXNzd29yZEhpc3RvcnkiOltdLCJpYXQiOjE3MjExMjMxNTIsImV4cCI6MTcyMTE1OTE1Mn0.CzlVoEwryaY9f0i75O9PRIs2EkcxiOQCEvREOA4aTtM";
     const years = '{"2020-21":"606aadac4dff55e6c075c507","2021-22":"606aaf854dff55e6c075d219","2022-23":"606aafb14dff55e6c075d3ae","2023-24":"606aafc14dff55e6c075d3ec","2024-25":"606aafcf4dff55e6c075d424","2025-26":"606aafda4dff55e6c075d48f","2019-20":"607697074dff55e6c0be33ba","2017-18":"63735a4bd44534713673bfbf","2018-19":"63735a5bd44534713673c1ca"}';
-    localStorage.setItem("Years", years);
-    localStorage.setItem("id_token", JSON.stringify(token));
-    localStorage.setItem("userData", userData);
+    // localStorage.setItem("Years", years);
+    // localStorage.setItem("id_token", JSON.stringify(token));
+    // localStorage.setItem("userData", userData);
   }
 
   ngOnInit(): void {
