@@ -15,6 +15,9 @@ import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetail
 import { USER_TYPE } from '../../core/models/user/userType';
 import { AuthService } from '../../core/services/auth.service';
 import { SelectionModel } from '@angular/cdk/collections';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { ApproveRejectFormService } from './approve-reject-form.service';
+import Swal from 'sweetalert2';
 
 interface Data {
     position: string;
@@ -24,6 +27,8 @@ interface Data {
     formStatus: string;
     dataSubmitted: number;
     action: string;
+    ulbId: string;
+    isReviewable: boolean;
 }
 @Component({
     selector: 'app-xvi-fc-review',
@@ -36,7 +41,8 @@ interface Data {
         MatProgressSpinnerModule,
 
         MatPaginatorModule,
-        ReplaceUnderscorePipe
+        ReplaceUnderscorePipe,
+        BsDropdownModule
     ],
 
     templateUrl: './xvi-fc-review.component.html',
@@ -56,8 +62,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     user!: IUserLoggedInDetails | null;
     isLoggedIn: boolean = false;
     USER_TYPE = USER_TYPE;
+    currentUserRole = this.loggedInUserDetails.role;
     // const role = this.user ? this.user.role : '';
-    userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    userData = this.loggedInUserDetails;
 
     displayedColumns: string[] = [];
     //displayedColumns: string[] = ['position', 'stateName', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
@@ -84,10 +91,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
 
     constructor(
-        private http: HttpClient,
         public service: XviFcService,
-        private router: Router,
-        private authService: AuthService
+        private authService: AuthService,
+        public approveRejectService: ApproveRejectFormService,
     ) { }
     checkUserLoggedIn() {
         this.isLoggedIn = this.authService.loggedIn();
@@ -148,7 +154,13 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 this.totalForms = res.totalForms;
                 // this.dataSource.paginator =  1000;
                 // this.dataSource = res.data;
-                this.dataSource = new MatTableDataSource(res.data);
+                const tableData = res.data.map((e: any) => {
+                    e.isReviewable = this.isReviewable(e.formStatus);
+                    return e;
+                });
+                // console.log('tableData', tableData);
+
+                this.dataSource = new MatTableDataSource(tableData);
 
                 this.isLoader = false;
             }, error: () => {
@@ -172,6 +184,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
             this.ulbName = "";
             this.state = "";
             this.formId = 0;
+            this.selection.clear();
         }
         this.onLoad();
     }
@@ -207,20 +220,21 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         return FORM_STATUSES[status].class;
     }
 
+    // Progress report.
     download(event: any) {
         this.isLoader1 = true;
         if (event) {
-            this.service.getStandardizedExcel().subscribe((res: any) => {
+            this.service.progressReport().subscribe((res: any) => {
                 const blob = new Blob([res], {
                     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 });
 
                 // Set file name.
-                const userData: any = JSON.parse(localStorage.getItem('userData') || '{}');
+                // const userData: any = JSON.parse(localStorage.getItem('userData') || '{}');
                 const now = new Date();
                 const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
                 const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-                let file = userData.role == 'XVIFC' ? 'XVIFC' : userData.name + '_XVIFC';
+                let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
                 const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
 
                 FileSaver.saveAs(blob, filename);
@@ -243,9 +257,69 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     masterToggle() {
         this.isAllSelected() ?
             this.selection.clear() :
-            this.dataSource?.data.forEach(row => this.selection.select(row));
+            this.dataSource?.data.forEach(row => {
+                if (row.isReviewable) {
+                    this.selection.select(row);
+                }
+            });
     }
 
+    /**
+     * Approve or reject ulbs forms
+     * @param statusType 
+     */
+    onReview(statusType: string) {
+        // let ulbs: string[] = [];
+        let ulbs: string[] = this.selection.selected.map(s => s.ulbId);
+        // console.log('ulbs', ulbs);
+        // check if ulb selected
+        if (ulbs.length) {
+            this.approveRejectService.openDialogue(statusType, ulbs);
+        } else {
+            Swal.fire(
+                'Alert!',
+                'Please select forms.',
+                'info'
+            );
+        }
+
+    }
+
+    isReviewable(formStatus: string): Boolean {
+        const status = FORM_STATUSES[formStatus] || '';
+        if (status && status.role && status.role === this.currentUserRole) {
+            return true;
+        }
+        return false;
+    }
+
+    // Data dump.
+    downloadDump(event: any) {
+        this.isLoader1 = true;
+        if (event) {
+            this.service.dataDump().subscribe((res: any) => {
+                const blob = new Blob([res], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+
+                // Set file name.
+                // const userData: any = JSON.parse(localStorage.getItem('userData') || '{}');
+                const now = new Date();
+                const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+                const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+                let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
+                const filename = `${file}_DATA_DUMP_${dateString}_${timeString}.xlsx`;
+
+                FileSaver.saveAs(blob, filename);
+                this.isLoader1 = false;
+                console.log('File Download Done');
+                return;
+
+            }, (err) => {
+                console.log(err);
+            });
+        }
+    }
 }
 
 

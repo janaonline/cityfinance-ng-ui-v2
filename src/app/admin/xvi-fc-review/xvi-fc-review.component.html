@@ -33,17 +33,32 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="fw-bold my-3">Review XVI FC Data Collection Forms</h5>
             <div class="float-end">
-                <button class="primary-btn-1 me-2">
+                <button class="primary-btn-1 me-2" (click)="onReview('approve')">
                     <span class="d-none d-md-inline fw-bold">Approve All</span>
                 </button>
-                <button class="primary-btn-1 bttn-return me-2">
+                <button class="primary-btn-1 bttn-return me-2" (click)="onReview('reject')">
                     <span class="d-none d-md-inline fw-bold">Reject All</span>
                 </button>
-                <button class="primary-btn-2 border-0" (click)="download($event)">
-                    <i class="bi bi-download me-2"></i>
-                    <span class="d-none d-md-inline fw-bold">Download</span>
+                @if (currentUserRole == 'XVIFC_STATE') {
+                <button class="primary-btn-2" (click)="download($event)">
+                    <i class="bi bi-download me-2"></i><span class="d-none d-md-inline fw-bold">Progress Report</span>
                 </button>
+                }
+                @if (currentUserRole == 'XVIFC') {
+                <div class="btn-group dropdown" dropdown>
+                    <button dropdownToggle type="button" class="primary-btn-2 fw-bold"
+                        aria-controls="dropdown-disabled-menu"><i class="bi bi-download me-2"></i><span
+                            class="d-none d-md-inline fw-bold">Download</span></button>
+
+                    <ul *dropdownMenu class="dropdown-menu" aria-labelledby="button-disabled-menu">
+                        <li class="ms-2" (click)="download($event)"><a>Progress Report</a></li>
+                        <hr>
+                        <li class="ms-2" (click)="downloadDump($event)"><a>Data Dump</a></li>
+                    </ul>
+                </div>
+                }
             </div>
+
             @if (isLoader1 ) {
             <div class="example-loading-shade">
                 @if (isLoader1) {
@@ -55,9 +70,8 @@
         <!-- Filter -->
         <fieldset class="border rounded-3 px-3">
             <legend class="float-none w-auto px-3">Filter By:</legend>
-            <div class="d-flex gap-3 justify-content-end">
-                <!-- <div *ngIf=" userData.role === 'XVIFC'"> -->
-                @if (userData.role === 'XVIFC') {
+            <div class="d-flex gap-3 justify-content-end" id="flex-container">
+                @if (currentUserRole === 'XVIFC') {
                 <mat-form-field appearance="outline">
                     <mat-label>State</mat-label>
                     <mat-select [(ngModel)]="state" panelWidth="300" (selectionChange)="filter()">
@@ -69,8 +83,6 @@
                     </mat-select>
                 </mat-form-field>
 
-                <!-- </div> -->
-                <!-- <div *ngIf=" userData.role === 'XVIFC'"> -->
                 <mat-form-field appearance="outline">
                     <mat-label>ULB Category</mat-label>
                     <mat-select [(ngModel)]="formId" panelWidth="300" (selectionChange)="filter()">
@@ -81,9 +93,8 @@
                         }
                     </mat-select>
                 </mat-form-field>
-                <!-- </div> -->
                 }
-                <!-- <div> -->
+
                 <mat-form-field appearance="outline">
                     <mat-label>Form Status</mat-label>
                     <mat-select [(ngModel)]="formStatus" panelWidth="300" (selectionChange)="filter()">
@@ -94,8 +105,7 @@
                         }
                     </mat-select>
                 </mat-form-field>
-                <!-- </div> -->
-                <!-- <div> -->
+
                 <mat-form-field appearance="outline">
                     <mat-label>ULB</mat-label>
                     <mat-icon matPrefix (click)="filter()">search</mat-icon>
@@ -106,7 +116,6 @@
                     </button>
                     }
                 </mat-form-field>
-                <!-- </div> -->
 
                 <div class="wmx-2 mt-1">
                     <button class="primary-btn-2" (click)="filter(true)">Reset</button>
@@ -134,7 +143,7 @@
                     </ng-container>
 
                     <!-- State Name -->
-                    <ng-container matColumnDef="stateName" *ngIf=" userData.role === 'XVIFC'">
+                    <ng-container matColumnDef="stateName" *ngIf="currentUserRole === 'XVIFC'">
                         <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="stateName">State Name
                         </th>
                         <td mat-cell *matCellDef="let element">{{element?.stateName}}</td>
@@ -155,7 +164,7 @@
                     </ng-container>
 
                     <!-- Category -->
-                    <ng-container matColumnDef="ulbCategory" *ngIf=" userData.role === 'XVIFC'">
+                    <ng-container matColumnDef="ulbCategory" *ngIf="currentUserRole === 'XVIFC'">
                         <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="ulbCategory">Category
                         </th>
                         <td mat-cell *matCellDef="let element">{{element?.ulbCategory}}</td>
@@ -187,7 +196,8 @@
                         <td mat-cell *matCellDef="let element" class="text-center">
                             <button class="primary-btn-2" [routerLink]="'/admin/xvi-fc-review/ulb/'+element.ulbId"
                                 [disabled]="element?.formStatus === 'NOT_STARTED'">
-                                {{element?.formStatus === 'UNDER_REVIEW_BY_STATE' ? 'Review' : 'View'}}</button>
+                                {{element?.isReviewable ? 'Review' : 'View'}}
+                            </button>
                         </td>
                     </ng-container>
 
@@ -200,7 +210,7 @@
                             </mat-checkbox>
                         </th>
                         <td mat-cell *matCellDef="let row">
-                            <mat-checkbox (click)="$event.stopPropagation()"
+                            <mat-checkbox (click)="$event.stopPropagation()" [disabled]="!row.isReviewable"
                                 (change)="$event ? selection.toggle(row) : null" [checked]="selection.isSelected(row)">
                             </mat-checkbox>
                         </td>
