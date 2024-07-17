@@ -18,6 +18,7 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { ApproveRejectFormService } from './approve-reject-form.service';
 import Swal from 'sweetalert2';
+import { first } from 'rxjs';
 
 interface Data {
     position: string;
@@ -125,6 +126,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         // this.page = 50;
         // this.limit = 10;
         // this.skip = 0;
+        this.selection.clear();
         this.isLoader = true;
         // this.stateId = this.loggedInUserDetails.state;
         // this.stateId = '5dcf9d7416a06aed41c748f0';
@@ -154,11 +156,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 this.totalForms = res.totalForms;
                 // this.dataSource.paginator =  1000;
                 // this.dataSource = res.data;
-                const tableData = res.data.map((e: any) => {
-                    e.isReviewable = this.isReviewable(e.formStatus);
-                    return e;
-                });
-                // console.log('tableData', tableData);
+                const tableData = res.data;
 
                 this.dataSource = new MatTableDataSource(tableData);
 
@@ -184,7 +182,6 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
             this.ulbName = "";
             this.state = "";
             this.formId = 0;
-            this.selection.clear();
         }
         this.onLoad();
     }
@@ -258,7 +255,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         this.isAllSelected() ?
             this.selection.clear() :
             this.dataSource?.data.forEach(row => {
-                if (row.isReviewable) {
+                if (row.action === "Review") {
                     this.selection.select(row);
                 }
             });
@@ -275,6 +272,12 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         // check if ulb selected
         if (ulbs.length) {
             this.approveRejectService.openDialogue(statusType, ulbs);
+            this.approveRejectService.isDataSaved.pipe(first()).subscribe((success) => {
+                if (success) {
+                    this.onLoad();
+                }
+                // console.log('success: ', success);
+            });
         } else {
             Swal.fire(
                 'Alert!',
@@ -283,14 +286,6 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
             );
         }
 
-    }
-
-    isReviewable(formStatus: string): Boolean {
-        const status = FORM_STATUSES[formStatus] || '';
-        if (status && status.role && status.role === this.currentUserRole) {
-            return true;
-        }
-        return false;
     }
 
     // Data dump.
