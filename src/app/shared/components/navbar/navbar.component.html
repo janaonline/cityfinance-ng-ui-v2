@@ -14,14 +14,13 @@
     <span class="fy">finance.in</span>
 </a> -->
     <!-- <a class="navbar-brand" href="/" [ngClass]="sticky ? 'show' : ''"> -->
-    <!-- <img src="../../../../assets/M FIGMA/city-finance-ranking.png" alt=""> -->
-    <span class="city" style="font-size: 2rem">city</span>
-    <span class="fy" style="font-size: 2rem; color: #1d5290; font-weight: bold">finance</span>
+      <!-- <img src="../../../../assets/M FIGMA/city-finance-ranking.png" alt=""> -->
+      <span class="city" style="font-size: 2rem">city</span>
+      <span class="fy" style="font-size: 2rem; color: #1d5290; font-weight: bold">finance</span>
     <!-- </a> -->
     <div class="collapse navbar-collapse me-3" [collapse]="isCollapsed">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        @for (menu of menus; track menu.name) {
-        @if (menu.child?.length) {
+        @for (menu of menus; track menu.name) { @if (menu.child?.length) {
         <li class="nav-item dropdown" dropdown>
           <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" aria-controls="dropdown-basic"
             dropdownToggle>
@@ -39,10 +38,11 @@
         <li class="btn-group" [ngClass]="!menu.class ? 'nav-item' : ''">
           <a class="nav-link" [ngClass]="menu.class" [routerLink]="menu.link" [innerHTML]="menu.name"
             *ngIf="menu.link"></a>
-          <a class="nav-link" [ngClass]="menu.class" [attr.href]="menu.href" [innerHTML]="menu.name" *ngIf="menu.href"
-            [target]="menu.target"></a>
+          <a class="nav-link" [ngClass]="menu.class" [attr.href]="menu.href" [innerHTML]="menu.name"
+            *ngIf="menu.href"></a>
         </li>
         } }
+        <li class="nav-item"><a class="nav-link" target="_blank" href="assets/USER-MANUAL-XVI-FC-Data-Collection.pdf">User Manual</a></li>
       </ul>
     </div>
     <div class="ms-auto">

@@ -10,12 +10,13 @@ import { RestrictEInputDirective } from '../../../core/directives/restrict-e-inp
   selector: 'app-accounting-practice',
   standalone: true,
   imports: [MaterialModule, DecimalLimitDirective,
-    NoUpDownDirective, RestrictEInputDirective],
+    NoUpDownDirective,RestrictEInputDirective],
   templateUrl: './accounting-practice.component.html',
   styleUrl: './accounting-practice.component.scss'
 })
 export class AccountingPracticeComponent {
   @Input() field!: FieldConfig;
+  // @Input() group!: FormGroup;
   @Input() group!: FormArray;
   collapsed = false;
   panelOpenState = true;
@@ -28,6 +29,10 @@ export class AccountingPracticeComponent {
   }
 
   getGroup(i: number, sectionKey: string, rowKey: string): FormGroup {
+    // console.log('sectionKey-----', sectionKey, 'rowKey-----', rowKey);
+    // console.log('this.group..get(sectionKey)----', this.group.get(sectionKey));
+    // console.log('this.group.controls[i]-----', ((this.group.at(i) as FormGroup).controls[sectionKey as FormGroup).get(rowKey));
+    // return new FormGroup({});
     return ((this.group.controls[i] as FormGroup).get(sectionKey) as FormGroup).get(rowKey) as FormGroup;
   }
 

@@ -4,8 +4,7 @@ import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
 import { ErrorComponent } from './features/error/error.component';
 import { authGuard } from './core/guards/auth.guard';
-import { USER_TYPE } from './core/models/user/userType';
-import { roleGuard } from './core/guards/role.guard';
+import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
     {
@@ -16,12 +15,14 @@ export const routes: Routes = [
             {
                 path: 'xvifc-form',
                 loadComponent: () => import('./features/xvi-fc-form/xvi-fc-form.component').then(m => m.XviFcFormComponent),
-                canActivate: [roleGuard],
-                data: {
-                    allowedRoles: [USER_TYPE.ULB]
-                }
+                // canActivate: [authGuard],
             },
             { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(mod => mod.ADMIN_ROUTES) },
+            // {
+            //     path: 'admin/xvi-fc-review',
+            //     loadComponent: () => import('./admin/xvi-fc-review/xvi-fc-review.component').then(m => m.XviFcReviewComponent)
+            // },
+            // Add other protected routes here
         ]
     },
     // { path: 'login', component: LoginComponent },
@@ -39,9 +40,13 @@ export const routes: Routes = [
         component: MaintenanceComponent,
     },
     {
+        path: 'pdf',
+        component: PdfContentComponent,
+    },
+    {
         path: 'error',
         component: ErrorComponent,
-        canActivate: [MaintenanceGuard, roleGuard],
+        canActivate: [MaintenanceGuard],
     },
 
     {

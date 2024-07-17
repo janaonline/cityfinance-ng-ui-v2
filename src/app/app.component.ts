@@ -15,7 +15,7 @@ import { HeaderComponent } from './shared/components/header/header.component';
     RouterOutlet,
     HttpClientModule,
     FooterComponent,
-    HeaderComponent
+    HeaderComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
@@ -26,9 +26,9 @@ export class AppComponent {
 
   constructor(private route: ActivatedRoute) {
     // const  userData:any = '{"_id":"66772cd175ff6f339c3efb45","name":"User 1","email":"user1_16fc@cityfinance.in","isActive":true,"role":"XVIFC","designation":"XVIFC_USER","ulbCode":"","stateCode":"","isUA":null,"isMillionPlus":null,"isUserVerified2223":false}';
-    const userData: any = '{"_id":"5fcb9f836e7a0139dc6b64b6","name":"Mummidivaram Municipality","email":"anjumrm@gmail.com","isActive":true,"role":"ULB","state":"5dd006d4ffbcc50cfd92c87c","stateName":"Jharkhand","designation":"","ulb":"5e33ffd0d6f5614a4bba6217","ulbCode":"JH002","stateCode":"JH","isUA":"No","isMillionPlus":"No","isUserVerified2223":true}'; // ulb data
-    // const userData: any = '{"_id":"66772bdbcd85f3248437baa9","name":"Andhra Pradesh","email":"ap_16fc@cityfinance.in","isActive":true,"role":"XVIFC_STATE","state":"5dcf9d7216a06aed41c748dd","stateName":"Andhra Pradesh","designation":"XVIFC_STATE","ulbCode":"","stateCode":"","isUA":null,"isMillionPlus":null,"isUserVerified2223":false}'; // state user data
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVXNlciAxIiwiZW1haWwiOiJ1c2VyMV8xNmZjQGNpdHlmaW5hbmNlLmluIiwicm9sZSI6IlhWSUZDIiwiaXNBY3RpdmUiOnRydWUsImlzUmVnaXN0ZXJlZCI6ZmFsc2UsIl9pZCI6IjY2NzcyY2QxNzVmZjZmMzM5YzNlZmI0NSIsInB1cnBvc2UiOiJXRUIiLCJsaF9pZCI6IjY2N2U1Mzk0N2M5YzBiNmQxNjI5YmEwOSIsInNlc3Npb25JZCI6IjY2N2U1MzhhN2M5YzBiNmQxNjI5YmEwNCIsInBhc3N3b3JkSGlzdG9yeSI6W10sImlhdCI6MTcxOTU1NDk2NCwiZXhwIjoxNzE5NTkwOTY0fQ.Zhh_r_h5e9Ij8m8BAKFRlPL_hwPgMtTFd5Zn02caLq0";
+    const userData: any = '{"_id":"5fcb9f836e7a0139dc6b64b6","name":"Mummidivaram Municipality","email":"anjumrm@gmail.com","isActive":true,"role":"ULB","state":"5dd006d4ffbcc50cfd92c87c","stateName":"Jharkhand","designation":"","ulb":"5e33ffd0d6f5614a4bba6217","ulbCode":"JH002","stateCode":"JH","isUA":"No","isMillionPlus":"No","isUserVerified2223":true}';
+    // const userData: any = '{"_id":"5fcb9ce06e7a0139dc6b514e","name":"Barpeta Municipal Board","email":"hpathakbarpeta@gmail.com","isActive":true,"role":"ULB","state":"5dcf9d7216a06aed41c748df","stateName":"Assam","designation":"","ulb":"5dcfca53df6f59198c4ac3d5","ulbCode":"AS001","stateCode":"AS","isUA":"No","isMillionPlus":"No","isUserVerified2223":true}';
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiQW5kaHJhIFByYWRlc2giLCJlbWFpbCI6ImFwXzE2ZmNAY2l0eWZpbmFuY2UuaW4iLCJyb2xlIjoiWFZJRkNfU1RBVEUiLCJzdGF0ZSI6IjVkY2Y5ZDcyMTZhMDZhZWQ0MWM3NDhkZCIsImlzQWN0aXZlIjp0cnVlLCJpc1JlZ2lzdGVyZWQiOmZhbHNlLCJfaWQiOiI2Njc3MmJkYmNkODVmMzI0ODQzN2JhYTkiLCJwdXJwb3NlIjoiV0VCIiwibGhfaWQiOiI2Njk2NDE1MDkxOTg0YjBkZjEzYzRhNGEiLCJzZXNzaW9uSWQiOiI2Njk2MGQ2NDZiYTQxNjBkZmUxMDNhOTAiLCJwYXNzd29yZEhpc3RvcnkiOltdLCJpYXQiOjE3MjExMjMxNTIsImV4cCI6MTcyMTE1OTE1Mn0.CzlVoEwryaY9f0i75O9PRIs2EkcxiOQCEvREOA4aTtM";
     const years = '{"2020-21":"606aadac4dff55e6c075c507","2021-22":"606aaf854dff55e6c075d219","2022-23":"606aafb14dff55e6c075d3ae","2023-24":"606aafc14dff55e6c075d3ec","2024-25":"606aafcf4dff55e6c075d424","2025-26":"606aafda4dff55e6c075d48f","2019-20":"607697074dff55e6c0be33ba","2017-18":"63735a4bd44534713673bfbf","2018-19":"63735a5bd44534713673c1ca"}';
     // localStorage.setItem("Years", years);
     // localStorage.setItem("id_token", JSON.stringify(token));

@@ -21,8 +21,7 @@ export class ApproveRejectFormService {
     let html = '';
 
     if (statusType === 'reject') {
-      html += `<p>Are you sure you want to approve this form? Once approved, 
-        it will be sent to XVI FC for Review.</p>`;
+      html += `<p>Are you sure you want to return this form? Once returned, it will be sent to the ULB for resubmission.</p>`;
       html += `<textarea type="text" id="reason" class="swal2-input" placeholder="Reason"></textarea>`;
     } else {
       html = `<p>Are you sure you want to approve this form? Once approved, 

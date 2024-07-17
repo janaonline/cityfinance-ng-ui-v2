@@ -124,7 +124,7 @@ export class XviFcFormComponent {
   get isFormEditable() {
     return !this.submittedFormStatuses.includes(this.formStatus);
   }
-  onLoad(reload = false) {
+  onLoad() {
 
     this.isLoader = true;
     this.ulbId = this.loggedInUserDetails.ulb;
@@ -145,9 +145,6 @@ export class XviFcFormComponent {
         this.form = this.formService.tabControl(this.tabs);
         // console.log('this.form',this.form);
 
-        if (reload) {
-          this.form?.markAllAsTouched();
-        }
         if (this.isFormEditable) {
           this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
           if (this.tabs[0].formType === 'form2') {
@@ -313,7 +310,7 @@ export class XviFcFormComponent {
         next: (res) => {
           // move from 1st or navigate to last tab reload form
           if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
-            this.onLoad(true);
+            this.onLoad();
           } else {
             this.tabChangeLoader = false;
           }
@@ -327,7 +324,7 @@ export class XviFcFormComponent {
   saveAs(actionType: string) {
     const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
 
-    currentForm?.markAllAsTouched();
+    currentForm?.markAllAsTouched()
 
     this.actionType = actionType;
 
@@ -345,7 +342,55 @@ export class XviFcFormComponent {
       }
     });
   }
-  
+  // afterSave() {
+  //   // if (this.actionType === 'next') {
+  //   //   this.stepper?.next();
+  //   // } else if (this.actionType === 'previous') {
+  //   //   this.stepper?.previous();
+  //   // }
+  //   this.triggerSnackbar();
+  //   this.formSaveLoader = false;
+  //   this.actionType = '';
+  //   // Swal.close();
+  // }
+  // saveAs_bkp(actionType: string) {
+  //   const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
+  //   // console.log(`currentForm?.valid;`, currentForm?.valid);
+  //   // console.log(`this.form.valid;`, this.form.valid);
+
+  //   currentForm?.markAllAsTouched()
+
+  //   this.actionType = actionType;
+
+  //   // console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
+
+  //   // if back from review tab no action
+  //   if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
+  //     this.stepper?.previous();
+  //     this.actionType = '';
+  //     return;
+  //   }
+  //   const formData = this.getFormData();
+  //   // return;
+  //   this.formSaveLoader = true;
+
+  //   this.service.saveUlbForm(this.ulbId, formData).subscribe({
+  //     next: (res) => {
+  //       // for last tab load json again
+  //       if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
+  //         this.onLoad(true);
+  //       }
+  //       // after first tab load json again
+  //       else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
+  //         this.onLoad(true);
+  //       } else {
+  //         this.afterSave();
+  //       }
+  //     }, error: (error: any) => {
+  //       this.handleHttpError(error);
+  //     }
+  //   });
+  // }
   getFormData() {
     const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
     formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
