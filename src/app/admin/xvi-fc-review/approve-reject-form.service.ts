@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import Swal from 'sweetalert2';
+import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
+import { USER_TYPE } from '../../core/models/user/userType';
 import { XviFcService } from '../../core/services/xvi-fc.service';
 import { Subject } from 'rxjs';
+import { UserUtility } from '../../core/util/user/user';
 
 @Injectable({
   providedIn: 'root'
@@ -9,6 +12,15 @@ import { Subject } from 'rxjs';
 export class ApproveRejectFormService {
 
   isDataSaved: Subject<boolean> = new Subject();
+  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
+    isLoader: boolean = true;
+    isLoader1: boolean = false;
+    loggedInUserType: any;
+    user!: IUserLoggedInDetails | null;
+    isLoggedIn: boolean = false;
+    USER_TYPE = USER_TYPE;
+    currentUserRole = this.loggedInUserDetails.role;
+    userData = this.loggedInUserDetails;
 
   constructor(
     public service: XviFcService,
@@ -23,13 +35,34 @@ export class ApproveRejectFormService {
     // let passwordInput: HTMLInputElement
     let html = '';
 
+    // if (statusType === 'reject') {
+    //   if(this.userData.role === 'XVIFC'){
+    //     alert('Role model');
+    //   }
+    //   html += `<p>Are you sure you want to return this form? Once returned, it will be sent to the ULB for resubmission.</p>`;
+    //   html += `<textarea type="text" id="reason" class="swal2-input" placeholder="Reason"></textarea>`;
+    // } else {
+    //   html = `<p>Are you sure you want to approve this form? Once approved, 
+    //     it will be sent to XVI FC for Review.</p>`;
+    // }
+
     if (statusType === 'reject') {
-      html += `<p>Are you sure you want to return this form? Once returned, it will be sent to the ULB for resubmission.</p>`;
-      html += `<textarea type="text" id="reason" class="swal2-input" placeholder="Reason"></textarea>`;
+      if (this.userData?.role === 'XVIFC') {
+        html += `<p>Are you sure you want to return this form?</p>`;
+      } else {
+        html += `<p>Are you sure you want to return this form? Once returned, it will be sent to the ULB for resubmission.</p>`;
+      }
+      html += `<textarea type="text" id="reason" class="swal2-input mt-4" placeholder="Reason"></textarea>`;
     } else {
-      html = `<p>Are you sure you want to approve this form? Once approved, 
-        it will be sent to XVI FC for Review.</p>`;
+      if (this.userData?.role === 'XVIFC') {
+        html += `<p>Are you sure you want to approve this form?</p>`;
+      } else {
+        html += `<p>Are you sure you want to approve this form? Once approved, it will be sent to XVI FC for Review.</p>`;
+      }
     }
+    
+
+    
 
     Swal.fire<LoginFormResult>({
       title: 'Confirmation?',
