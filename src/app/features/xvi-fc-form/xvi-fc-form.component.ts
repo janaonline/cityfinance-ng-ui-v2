@@ -11,6 +11,7 @@ import { USER_TYPE } from '../../core/models/user/userType';
 import { StatusType } from './services/fiscal-ranking.service';
 import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
+import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
 import Swal from 'sweetalert2';
 
 
@@ -34,6 +35,7 @@ import {
   MatSnackBar,
 } from '@angular/material/snack-bar';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import { FORM_STATUSES } from '../../core/constants/statuses';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
@@ -50,7 +52,8 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
-    RestrictEInputDirective
+    RestrictEInputDirective,
+    ReplaceUnderscorePipe
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -94,6 +97,7 @@ export class XviFcFormComponent {
   submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
   oldYearOfSlbOptions: any[] = [];
   oldyearOfElectionOptions: any[] = [];
+  statuses: any;
   // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
@@ -106,8 +110,17 @@ export class XviFcFormComponent {
   ) { }
 
   ngOnInit() {
+    // this.form.valueChanges.subscribe(x => {
+    //   this.submit.emit(x);
+    //   // this.childFG.emit(this.form);
+    // });    
+    this.statuses = FORM_STATUSES;
     this.onLoad();
   }
+
+  get formStatuses() {
+    return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
+}
   get isDemographicValid() {
     return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
     // return this.form.get('demographicData')?.valid;
@@ -418,6 +431,10 @@ export class XviFcFormComponent {
     // console.log('tabKey',tabKey, 'i',i, '---',(this.form.get(tabKey) as FormArray).controls[i]);    
     return (this.form.get(tabKey) as FormArray).controls[i];
   }
+
+  getStatusClass(status: string): string {
+    return FORM_STATUSES[status].class;
+}
 
 }
 
