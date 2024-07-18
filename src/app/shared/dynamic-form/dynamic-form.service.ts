@@ -169,14 +169,15 @@ export class DynamicFormService {
     } else if (required) {
       fileValidator.push(Validators.required);
     }
-
+    // except accept/reject others null
+    const verifyStatus = [2, 3].includes(Number(yearField.verifyStatus)) ? yearField.verifyStatus : null;
     return new FormGroup({
       file: new FormGroup({
         name: new FormControl(yearField.file?.name || null, fileValidator),
         url: new FormControl(yearField.file?.url || null),
         size: new FormControl(yearField.file?.size || null),
       }),
-      verifyStatus: new FormControl(yearField.verifyStatus || null, verifyStatusValidator),
+      verifyStatus: new FormControl(verifyStatus, verifyStatusValidator),
       rejectReason: new FormControl(yearField.rejectReason || null, rejectValidator),
       rejectOption: new FormControl(yearField.rejectOption || null, rejectValidator),
     });
