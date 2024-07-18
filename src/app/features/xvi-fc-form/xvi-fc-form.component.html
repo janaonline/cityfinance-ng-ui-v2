@@ -2,7 +2,19 @@
 
     <!-- <form [formGroup]="form"> -->
     <app-loader class="p-3" *ngIf="isLoader"></app-loader>
-    <h3 class="fw-bold fs-4 m-1 mb-4">{{ loggedInUserDetails.name }}</h3>
+    <div class="border rounded p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="fw-bold fs-4 me-auto my-3">{{ loggedInUserDetails.name }}</h3>
+            <!-- <fieldset class="border rounded-3 px-3">
+                <legend class="float-none fs-6 w-auto px-2">Form Status:</legend>
+                <div class="d-flex justify-content-end" id="flex-container">
+                    <span class="form-status alert rounded-pill fw-bold p-1 me-1 alert-warning">NOT STARTED</span>
+                    <i *ngIf="rejectReason && rejectReason.trim()" class="bi bi-info-circle fs-5 text-danger me-1"
+                        matTooltip="{{rejectReason}}"></i>
+                </div>
+            </fieldset> -->
+        </div>
+    </div>
     <div class="bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
         <strong>No Data Found</strong>
     </div>
@@ -58,7 +70,8 @@
                     <app-accounting-practice [field]="tab" [group]="getTabGroup(tab.key)"></app-accounting-practice>
                     }
                     @else if (tab.key === 'reviewSubmit') {
-                    <app-review-submit [fields]="tabs" [group]="form" [stepper]="stepper" [isFormEditable]="isFormEditable"></app-review-submit>
+                    <app-review-submit [fields]="tabs" [group]="form" [stepper]="stepper"
+                        [isFormEditable]="isFormEditable"></app-review-submit>
                     }
                     @else if (tab.key === 'demographicData') {
                     <mat-card>
