@@ -39,6 +39,10 @@ export const routes: Routes = [
         component: MaintenanceComponent,
     },
     {
+        path: 'pdf',
+        loadComponent: () => import('./pdf-content/pdf-content.component').then(m => m.PdfContentComponent),
+    },
+    {
         path: 'error',
         component: ErrorComponent,
         canActivate: [MaintenanceGuard],

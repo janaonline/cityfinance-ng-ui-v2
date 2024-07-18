@@ -8,6 +8,7 @@ import { UserUtility } from '../../../core/util/user/user';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApproveRejectFormService } from '../approve-reject-form.service';
 import { FORM_STATUSES } from '../../../core/constants/statuses';
+import { first } from 'rxjs';
 
 @Component({
   selector: 'app-preview',
@@ -59,14 +60,13 @@ export class PreviewComponent {
 
   isReviewable(formStatus: string): Boolean {
     const status = FORM_STATUSES[formStatus] || '';
-    if (status && status.role && status.role === this.loggedInUserDetails.role) {
+    if (status && status.roles && status.roles.includes(this.loggedInUserDetails.role)) {
       return true;
     }
     return false;
   }
-  
-  onLoad() {
 
+  onLoad() {
     this.isLoader = true;
     this.service.getUlbForm(this.ulbId).subscribe({
       next: (res: any) => {
@@ -83,6 +83,13 @@ export class PreviewComponent {
 
   onSubmit(statusType: string) {
     this.approveRejectService.openDialogue(statusType, [this.ulbId]);
+
+    this.approveRejectService.isDataSaved.pipe(first()).subscribe((success) => {
+      if (success) {
+        this.onLoad();
+      }
+      // console.log('success: ', success);
+    });
   }
 
 }

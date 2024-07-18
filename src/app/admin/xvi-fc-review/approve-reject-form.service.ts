@@ -1,11 +1,14 @@
 import { Injectable } from '@angular/core';
 import Swal from 'sweetalert2';
 import { XviFcService } from '../../core/services/xvi-fc.service';
+import { Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApproveRejectFormService {
+
+  isDataSaved: Subject<boolean> = new Subject();
 
   constructor(
     public service: XviFcService,
@@ -57,7 +60,7 @@ export class ApproveRejectFormService {
           }
         }
         // return { reason }
-        if(validData) {
+        if (validData) {
           this.submitStatus(ulbs, statusType, reason);
         }
       },
@@ -73,10 +76,10 @@ export class ApproveRejectFormService {
         rejectMessage: reason
       })
     };
+    // this.isDataSaved.next(true);
     // console.log('formData', formData);
     // return;
 
-    // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
     this.service.submitFormStatus(statusType, formData).subscribe({
       next: (res) => {
         Swal.fire(
@@ -84,7 +87,7 @@ export class ApproveRejectFormService {
           'Your action has been confirmed.',
           'success'
         );
-        // this.onLoad();
+        this.isDataSaved.next(true);
       }, error: (error: any) => {
         this.handleHttpError(error);
       }
@@ -98,6 +101,5 @@ export class ApproveRejectFormService {
       error.message || 'Something went wrong! Please try again',
       'error'
     );
-    // this.formSaveLoader = false;
   }
 }
