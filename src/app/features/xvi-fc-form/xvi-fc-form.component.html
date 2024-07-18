@@ -5,14 +5,14 @@
     <div class="border rounded p-3">
         <div class="d-flex justify-content-between align-items-center">
             <h3 class="fw-bold fs-4 me-auto my-3">{{ loggedInUserDetails.name }}</h3>
-            <!-- <fieldset class="border rounded-3 px-3">
+            <fieldset class="border rounded-3 px-3">
                 <legend class="float-none fs-6 w-auto px-2">Form Status:</legend>
                 <div class="d-flex justify-content-end" id="flex-container">
-                    <span class="form-status alert rounded-pill fw-bold p-1 me-1 alert-warning">NOT STARTED</span>
+                    <span [ngClass]="getStatusClass(formStatus)" class="form-status alert rounded-pill fw-bold p-1 me-1">{{formStatus | replaceUnderscore}}</span>
                     <i *ngIf="rejectReason && rejectReason.trim()" class="bi bi-info-circle fs-5 text-danger me-1"
                         matTooltip="{{rejectReason}}"></i>
                 </div>
-            </fieldset> -->
+            </fieldset>
         </div>
     </div>
     <div class="bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
