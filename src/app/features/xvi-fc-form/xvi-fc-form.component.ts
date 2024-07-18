@@ -90,6 +90,7 @@ export class XviFcFormComponent {
   tabChangeLoader = false;
   totalTabs = 6;
   formStatus!: string;
+  rejectReason!: string;
   submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
   oldYearOfSlbOptions: any[] = [];
   oldyearOfElectionOptions: any[] = [];

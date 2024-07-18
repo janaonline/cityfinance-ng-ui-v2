@@ -35,26 +35,26 @@
             <!-- <div> -->
             <button type="button" class="btn btn-outline-success me-2 py-2" matTooltip="Approve All"
                 (click)="onReview('approve')">
-                <i class="bi bi-check2 me-2"></i><span class="d-none d-md-inline fw-bold">Approve All</span>
+                <i class="bi bi-check2"></i><span class="ms-2 d-none d-md-inline fw-bold">Approve All</span>
             </button>
             <button type="button" class="btn btn-outline-danger me-2 py-2" matTooltip="Reject All"
                 (click)="onReview('reject')">
-                <i class="bi bi-x-lg me-2"></i><span class="d-none d-md-inline fw-bold">Reject All</span>
+                <i class="bi bi-x-lg"></i><span class="ms-2 d-none d-md-inline fw-bold">Reject All</span>
             </button>
 
             <div class="btn-group" dropdown>
-
+                @if (currentUserRole == 'XVIFC_STATE') {
                 <button type="button" class="primary-btn-2 fw-bold" matTooltip="Progress Report"
-                    (click)="download($event)"><i class="bi bi-download me-2"></i><span
-                        class="d-none d-md-inline fw-bold">Download</span></button>
+                    (click)="download($event)"><i class="bi bi-download"></i></button>
+                }
                 @if (currentUserRole == 'XVIFC') {
                 <button id="button-split" type="button" dropdownToggle class="primary-btn-2"
                     aria-controls="dropdown-split">
-                    <i class="bi bi-caret-down-fill"></i>
-                    <span class="sr-only visually-hidden">Split button!</span>
+                    <i class="bi bi-download"></i>
                 </button>
                 <ul id="dropdown-split" *dropdownMenu class="dropdown-menu mt-1" role="menu"
                     aria-labelledby="button-split">
+                    <li role="menuitem"><a class="dropdown-item" (click)="download($event)">Progress Report</a></li>
                     <li role="menuitem"><a class="dropdown-item" (click)="downloadDump($event)">Data Dump</a></li>
                 </ul>
                 }
