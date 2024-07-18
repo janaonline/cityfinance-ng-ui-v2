@@ -104,7 +104,6 @@ export class XviFcFormComponent {
     return this.form.value;
   }
   constructor(private fb: FormBuilder,
-    // public fiscalService: FiscalRankingService,
     public service: XviFcService,
     public formService: DynamicFormService,
     private _snackBar: MatSnackBar,
@@ -117,16 +116,12 @@ export class XviFcFormComponent {
     // });    
     this.statuses = FORM_STATUSES;
     this.onLoad();
-
   }
 
   get formStatuses() {
     return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
 }
   get isDemographicValid() {
-    // console.log('valu', this.form.get('demographicData')?.value);
-    // console.log('valid', this.form.get('demographicData')?.valid);
-
     return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
     // return this.form.get('demographicData')?.valid;
   }
@@ -219,12 +214,7 @@ export class XviFcFormComponent {
     }
   }
 
-  // validateAllFormFields(formGroup: FormGroup) {
-  //   Object.keys(formGroup.controls).forEach(field => {
-  //     const control = formGroup.get(field);
-  //     control?.markAsTouched({ onlySelf: true });
-  //   });
-  // }
+  
 
   submit() {
     if (this.form.valid) {
@@ -352,55 +342,7 @@ export class XviFcFormComponent {
       }
     });
   }
-  // afterSave() {
-  //   // if (this.actionType === 'next') {
-  //   //   this.stepper?.next();
-  //   // } else if (this.actionType === 'previous') {
-  //   //   this.stepper?.previous();
-  //   // }
-  //   this.triggerSnackbar();
-  //   this.formSaveLoader = false;
-  //   this.actionType = '';
-  //   // Swal.close();
-  // }
-  // saveAs_bkp(actionType: string) {
-  //   const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
-  //   // console.log(`currentForm?.valid;`, currentForm?.valid);
-  //   // console.log(`this.form.valid;`, this.form.valid);
 
-  //   currentForm?.markAllAsTouched()
-
-  //   this.actionType = actionType;
-
-  //   // console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
-
-  //   // if back from review tab no action
-  //   if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
-  //     this.stepper?.previous();
-  //     this.actionType = '';
-  //     return;
-  //   }
-  //   const formData = this.getFormData();
-  //   // return;
-  //   this.formSaveLoader = true;
-
-  //   this.service.saveUlbForm(this.ulbId, formData).subscribe({
-  //     next: (res) => {
-  //       // for last tab load json again
-  //       if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
-  //         this.onLoad(true);
-  //       }
-  //       // after first tab load json again
-  //       else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
-  //         this.onLoad(true);
-  //       } else {
-  //         this.afterSave();
-  //       }
-  //     }, error: (error: any) => {
-  //       this.handleHttpError(error);
-  //     }
-  //   });
-  // }
   getFormData() {
     const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
     formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
@@ -409,11 +351,6 @@ export class XviFcFormComponent {
   getFormTabData(tab: any) {
     // console.log('this.form.value', this.form.value);
     const formJson: any = this.form.getRawValue();
-
-    // const formData: any = { tab: [], formStatus, formId: 16 }
-    // console.log('this.tabs[this.selectedStepIndex]', this.tabs[this.selectedStepIndex]);
-    // const tab = this.tabs[index];
-
 
     // for (let tab of this.tabs) {
     const tabKey = tab.key;
@@ -485,15 +422,6 @@ export class XviFcFormComponent {
       panelClass: ['custom-snackbar-success']
     });
   }
-  // onSubmit(event: Event) {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   if (this.form.valid) {
-  //     // this.submit.emit(this.form.value);
-  //   } else {
-  //     // this.validateAllFormFields(this.form);
-  //   }
-  // }
 
   getTabGroup(tabKey: string): FormArray {
     return (this.form.get(tabKey) as FormArray)
