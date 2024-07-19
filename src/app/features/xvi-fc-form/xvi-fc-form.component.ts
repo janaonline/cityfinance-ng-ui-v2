@@ -114,13 +114,13 @@ export class XviFcFormComponent {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);
     // });    
-    this.statuses = FORM_STATUSES;
+    // this.statuses = FORM_STATUSES;
     this.onLoad();
   }
 
-  get formStatuses() {
-    return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
-}
+  // get formStatuses() {
+  //   return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
+  // }
   get isDemographicValid() {
     return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
     // return this.form.get('demographicData')?.valid;
@@ -137,6 +137,7 @@ export class XviFcFormComponent {
     this.service.getUlbForm(this.ulbId).subscribe({
       next: (res: any) => {
         this.formStatus = res.data.formStatus;
+        this.rejectReason = res.data.rejectReason;
         this.tabs = res?.data?.tabs;
         // this.tabs = tabsJson.data.tabs;
         this.totalTabs = this.tabs.length;
@@ -214,7 +215,7 @@ export class XviFcFormComponent {
     }
   }
 
-  
+
 
   submit() {
     if (this.form.valid) {
@@ -433,8 +434,8 @@ export class XviFcFormComponent {
   }
 
   getStatusClass(status: string): string {
-    return FORM_STATUSES[status].class;
-}
+    return status ? FORM_STATUSES[status].class : "";
+  }
 
 }
 
