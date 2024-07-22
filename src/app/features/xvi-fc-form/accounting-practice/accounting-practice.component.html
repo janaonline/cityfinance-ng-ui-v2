@@ -31,6 +31,11 @@
                 </mat-form-field>
                 }
                 }
+                <ng-container *ngFor="let validation of question.validations;" ngProjectAs="mat-error">
+                    <mat-error
+                        *ngIf="hasError(i, field.key, question.key,validation.name)">{{validation.message}}</mat-error>
+                    <!-- <mat-error>{{validation.message}}</mat-error> -->
+                </ng-container>
             </mat-radio-group>
         </div>
 
