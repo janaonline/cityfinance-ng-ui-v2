@@ -131,12 +131,38 @@
     z-index: 3;
     border-bottom: 2px solid #dee2e6;
 }
-// @media print {
-//     .no-print,bg-white,.footer-wrappper {
-//       display: none;
-//     }
+
+@page {
+    size: landscape;
+  }
   
-//     body {
-//       background: white;
-//     }
-//   }
+  @media print {
+    /* General print styles */
+    body {
+      font-size: 14px !important;
+    }
+    
+    /* Ensure the content fits well in landscape mode */
+    .container {
+      width: 100% !important;
+    }
+    .table th,
+.table td {
+    min-width: 4rem !important;
+    font-size: 14px !important;
+}
+
+.table th.first-col,
+.table td.first-col {
+    min-width: 5rem !important;
+    font-size: 14px !important;
+}
+ .footer-wrappper{
+    display: none !important;
+ }
+  }
+  @media print {
+    .no-print,.footer-wrappper {
+      display: none;
+    }
+  }
