@@ -1,4 +1,4 @@
-<div class="clearfix"><button class="float-end primary-btn-2" (click)="printPage()">Print</button></div>
+<div class="clearfix"><button class="float-end primary-btn-2" (click)="printPage()" matTooltip="Please print the PDF in landscape layout to ensure correct alignment.">Print</button></div>
 @for (tab of fields; track tab.key; let i = $index) {
 
 <div class="container mt-4" [id]="tab.key">

@@ -139,7 +139,7 @@
   @media print {
     /* General print styles */
     body {
-      font-size: 14px !important;
+      font-size: 13px !important;
     }
     
     /* Ensure the content fits well in landscape mode */
@@ -149,17 +149,14 @@
     .table th,
 .table td {
     min-width: 4rem !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
 }
 
 .table th.first-col,
 .table td.first-col {
     min-width: 5rem !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
 }
- .footer-wrappper{
-    display: none !important;
- }
   }
   @media print {
     .no-print,.footer-wrappper {
