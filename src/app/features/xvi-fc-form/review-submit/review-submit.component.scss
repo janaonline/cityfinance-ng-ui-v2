@@ -139,23 +139,23 @@
   @media print {
     /* General print styles */
     body {
-      font-size: 13px !important;
+      font-size: 8pt !important;
     }
     
     /* Ensure the content fits well in landscape mode */
     .container {
-      width: 100% !important;
+      width: 150% !important;
     }
     .table th,
 .table td {
-    min-width: 4rem !important;
-    font-size: 13px !important;
+    min-width: 3rem !important;
+    font-size: 8pt !important;
 }
 
 .table th.first-col,
 .table td.first-col {
-    min-width: 5rem !important;
-    font-size: 13px !important;
+    min-width: 4rem !important;
+    font-size: 8pt !important;
 }
   }
   @media print {
