@@ -43,11 +43,11 @@
             </button>
 
             <div class="btn-group" dropdown>
-                @if (currentUserRole == 'XVIFC_STATE') {
+                <!-- @if (currentUserRole == 'XVIFC_STATE') {
                 <button type="button" class="primary-btn-2 fw-bold" matTooltip="Progress Report"
                     (click)="download($event)"><i class="bi bi-download"></i></button>
-                }
-                @if (currentUserRole == 'XVIFC') {
+                } -->
+                <!-- @if (currentUserRole == 'XVIFC') { -->
                 <button id="button-split" type="button" dropdownToggle class="primary-btn-2"
                     aria-controls="dropdown-split">
                     <i class="bi bi-download"></i>
@@ -57,7 +57,7 @@
                     <li role="menuitem"><a class="dropdown-item" (click)="download($event)">Progress Report</a></li>
                     <li role="menuitem"><a class="dropdown-item" (click)="downloadDump($event)">Data Dump</a></li>
                 </ul>
-                }
+                <!-- } -->
             </div>
 
             @if (isLoader1 ) {
