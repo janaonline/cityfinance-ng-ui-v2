@@ -302,7 +302,11 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 const now = new Date();
                 const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
                 const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-                let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
+                // let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
+                let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' :
+                    this.currentUserRole == 'XVIFC_STATE' ? 'XVIFC_STATE' :
+                        this.userData.name + '_XVIFC';
+                
                 const filename = `${file}_DATA_DUMP_${dateString}_${timeString}.xlsx`;
 
                 FileSaver.saveAs(blob, filename);
