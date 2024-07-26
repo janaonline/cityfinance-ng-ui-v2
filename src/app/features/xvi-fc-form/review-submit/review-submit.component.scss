@@ -2,8 +2,8 @@
 @import "../../../../../node_modules/bootstrap/scss/variables";
 // ----- Default setting ----- //
 * {
-	font-family: "Montserrat", sans-serif;
-	--ff-base: "Montserrat", sans-serif;
+  font-family: "Montserrat", sans-serif;
+  --ff-base: "Montserrat", sans-serif;
 }
 
 ::ng-deep p,
@@ -17,149 +17,180 @@
 ::ng-deep label,
 ::ng-deep input,
 ::ng-deep mat-select {
-	margin: 0;
-	padding: 0;
-	font-family: var(--ff-base) !important;
-	font-size: 1rem !important;
-	font-weight: var(--fw-medium) !important;
+  margin: 0;
+  padding: 0;
+  font-family: var(--ff-base) !important;
+  font-size: 1rem !important;
+  font-weight: var(--fw-medium) !important;
 }
 .material-icons {
-    font-family: 'Material Icons';
+  font-family: "Material Icons";
 }
 // ----- Stepper ----- //
 ::ng-deep .mat-step-icon {
-	border-radius: 25% !important;
-	width: 2rem !important;
-	height: 2rem !important;
-	font-family: var(--ff-base) !important;
+  border-radius: 25% !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  font-family: var(--ff-base) !important;
 }
-
 
 // ----- Expansion pannel ----- //
 // When collapsed
 ::ng-deep mat-expansion-panel-header {
-	font-family: var(--ff-base) !important;
-	font-weight: var(--fw-bold) !important;
-	font-size: 1rem !important;
-	color: $white !important;
-	height: 3.5rem !important;
-	background: linear-gradient(90deg, #193369 0%, #FFFFFF 100%) !important;
-	transition: background 0.3s ease, box-shadow 0.3s ease;
+  font-family: var(--ff-base) !important;
+  font-weight: var(--fw-bold) !important;
+  font-size: 1rem !important;
+  color: $white !important;
+  height: 3.5rem !important;
+  background: linear-gradient(90deg, #193369 0%, #ffffff 100%) !important;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 
-	::ng-deep .mat-expansion-panel-header-title {
-		color: $white !important;
-	}
+  ::ng-deep .mat-expansion-panel-header-title {
+    color: $white !important;
+  }
 }
 
 // On hover and click
-::ng-deep .mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover {
-	background: linear-gradient(90deg, #162b56 0%, #e0e0e0 100%) !important; // Slightly darker background
-	height: 3.6rem !important;
+::ng-deep
+  .mat-expansion-panel:not(.mat-expanded)
+  .mat-expansion-panel-header:not([aria-disabled="true"]):hover {
+  background: linear-gradient(
+    90deg,
+    #162b56 0%,
+    #e0e0e0 100%
+  ) !important; // Slightly darker background
+  height: 3.6rem !important;
 }
 
 ::ng-deep .mat-mdc-form-field-infix {
-	width: 100px !important;
+  width: 100px !important;
 }
 .bd-callout {
-    --bs-link-color-rgb: var(--bd-callout-link);
-    --bs-code-color: var(--bd-callout-code-color);
-    padding: 1.25rem;
-    margin-top: 1rem;
-    color: var(--bd-callout-color, inherit);
-    background-color: var(--bd-callout-bg, var(--bs-gray-100));
-    border-left: 0.25rem solid var(--bd-callout-border, var(--bs-gray-300));
+  --bs-link-color-rgb: var(--bd-callout-link);
+  --bs-code-color: var(--bd-callout-code-color);
+  padding: 1.25rem;
+  margin-top: 1rem;
+  color: var(--bd-callout-color, inherit);
+  background-color: var(--bd-callout-bg, var(--bs-gray-100));
+  border-left: 0.25rem solid var(--bd-callout-border, var(--bs-gray-300));
 }
 .bd-callout-info {
-    --bd-callout-color: var(--bs-info-text-emphasis);
-    --bd-callout-bg: var(--bs-info-bg-subtle);
-    --bd-callout-border: var(--bs-info-border-subtle);
+  --bd-callout-color: var(--bs-info-text-emphasis);
+  --bd-callout-bg: var(--bs-info-bg-subtle);
+  --bd-callout-border: var(--bs-info-border-subtle);
 }
 // ----- Verify and reject block ----- //
 .verified-info {
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid rgba(54, 160, 4, 1);
-    background: rgba(227, 249, 217, 1);
-    margin-top: 20px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(54, 160, 4, 1);
+  background: rgba(227, 249, 217, 1);
+  margin-top: 20px;
 }
 
 .verified-info-reject {
-    border: 1px solid rgba(255, 0, 0, 1);
-    background: rgba(255, 242, 242, 1);
+  border: 1px solid rgba(255, 0, 0, 1);
+  background: rgba(255, 242, 242, 1);
 }
 
 // ----- Responsive Table -----//
 .table-container {
-    position: relative;
-    overflow-x: auto;
-    max-width: 100%;
+  position: relative;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
 }
 
 .table th,
 .table td {
-    min-width: 8rem !important;
-    vertical-align: middle;
-    // text-align: right;
-    border: none;
-    padding-top: 1rem;
-    min-height: 3rem !important;
+  min-width: 8rem !important;
+  vertical-align: middle;
+  // text-align: right;
+  border: none;
+  padding-top: 0.7rem;
+  min-height: 3rem !important;
 }
 
 .table th.first-col,
 .table td.first-col {
-    min-width: 15rem !important;
-    min-height: 3rem !important;
-    vertical-align: middle;
-    text-align: left;
-    position: sticky;
-    left: 0;
-    background: rgba(255, 255, 255, 0.723);
-    backdrop-filter: blur(5px);
-    z-index: 2;
+  min-width: 15rem !important;
+  min-height: 3rem !important;
+  vertical-align: middle;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: rgba(255, 255, 255, 0.723);
+  backdrop-filter: blur(5px);
+  z-index: 2;
 }
 
 .table thead th {
-    position: sticky;
-    top: 0px;
-    background: rgba(255, 255, 255, 0.9);
-    z-index: 3;
-    border-bottom: 2px solid #dee2e6;
+  position: sticky;
+  top: 0px;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 3;
+  border-bottom: 2px solid #dee2e6;
 }
 
 @page {
-    size: landscape;
-  }
-  
-  @media print {
-    /* General print styles */
-    body {
-      font-size: 8pt !important;
-    }
-    
-    /* Ensure the content fits well in landscape mode */
-    .container {
-      width: 150% !important;
-    }
-    .table th,
-.table td {
-    min-width: 3rem !important;
-    font-size: 8pt !important;
+  size: landscape;
+  margin: 0;
 }
 
-.table th.first-col,
-.table td.first-col {
-    min-width: 4rem !important;
+@media print {
+  @page {
+    size: landscape;
+    margin: 0;
+  }
+  ::ng-deep body,
+  ::ng-deep html {
+    font-size: 7pt !important;
+    margin: 0 !important;
+  }
+  ::ng-deep .navbar,
+  ::ng-deep .d-lg-block,
+  ::ng-deep .footer-wrappper,
+  ::ng-deep .mat-horizontal-stepper-header-container,
+  ::ng-deep .mat-mdc-simple-snack-bar,
+  ::ng-deep .primary-btn-1,
+  ::ng-deep .primary-btn-2,
+  ::ng-deep .btn-outline-dark,
+  ::ng-deep .mat-mdc-tooltip-panel {
+    display: none !important;
+  }
+  ::ng-deep .container,
+  ::ng-deep .container-fluid {
+    width: 100% !important;
+    max-width: 2500px !important;
+  }
+  ::ng-deep .table th,
+  ::ng-deep .table td {
+    min-width: 150px !important;
+    font-size: 7pt !important;
+    word-wrap: break-word !important;
+    padding: 5px 2px !important;
+  }
+  ::ng-deep .table th.first-col,
+  ::ng-deep .table td.first-col {
+    min-width: 100px !important;
+    max-width: 100px !important;
     font-size: 8pt !important;
+    word-wrap: break-word !important;
+    padding: 5px 3px !important;
+  }
+  ::ng-deep .mat-horizontal-content-container,
+  ::ng-deep .mat-mdc-card-content {
+    padding: 0 !important;
+  }
+  ::ng-deep .at-expansion-panel-header-title {
+    color: #000 !important;
+  }
+  ::ng-deep .mat-expansion-panel-body {
+    padding: 5px !important;
+  }
 }
-  }
-  @media print {
-    .no-print,.footer-wrappper {
-      display: none;
-    }
-  }
