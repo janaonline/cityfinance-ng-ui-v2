@@ -109,11 +109,14 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
     ngOnInit() {
         this.statuses = FORM_STATUSES;
-        this.onLoad();
         this.checkUserLoggedIn();
+        if (this.user?.role === USER_TYPE.XVIFC) {
+            this.getStateList();
+        }
+        this.onLoad();
 
         this.displayedColumns =
-            this.user?.role == 'XVIFC' ?
+            this.user?.role === USER_TYPE.XVIFC ?
                 ['position', 'stateName', 'ulbName', 'censusCode', 'ulbCategory', 'formStatus', 'dataSubmitted', 'action', 'select'] :
                 ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action', 'select'];
     }
@@ -167,6 +170,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 this.totalForms = 0;
             }
         });
+    }
+
+    getStateList() {
         this.service.getStates().subscribe({
             next: (res: any) => {
                 this.stateList = res.data;
@@ -306,7 +312,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' :
                     this.currentUserRole == 'XVIFC_STATE' ? 'XVIFC_STATE' :
                         this.userData.name + '_XVIFC';
-                
+
                 const filename = `${file}_DATA_DUMP_${dateString}_${timeString}.xlsx`;
 
                 FileSaver.saveAs(blob, filename);
