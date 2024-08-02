@@ -9,8 +9,12 @@ import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/ve
 // import * as _ from 'lodash';
 import { cloneDeep } from 'lodash-es';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
-import { UserUtility } from '../../../core/util/user/user';
 
+export enum FileVerifyStatus {
+  pending = 1, 
+  accept = 2,
+  reject = 3,
+}
 
 @Component({
   selector: 'app-yearwise-files',
@@ -22,7 +26,6 @@ import { UserUtility } from '../../../core/util/user/user';
 export class YearwiseFilesComponent {
 
   @Input() field!: any;
-  // @Input() group!: FormGroup;
   @Input() group!: FormArray;
   collapsed = false;
   panelOpenState = true;
@@ -31,18 +34,11 @@ export class YearwiseFilesComponent {
   viewAndVerifyDialog!: TemplateRef<any>;
 
   dialogRef!: MatDialogRef<any>;
-  userData = new UserUtility().getLoggedInUserDetails();
 
   constructor(public dialog: MatDialog) { }
   ngOnInit() {
     // console.log('----field table --', this.field);
     // console.log('----group table -val-', this.group.value);
-
-
-  }
-
-  uploadFolderName(key: string) {
-    return `xvi-fc/${this.userData?.role}/${this.userData?.ulbCode}/${key}`
   }
 
   getYearGroup(sectionIndex: number, i: number, fieldKey: any): FormGroup {
@@ -68,7 +64,7 @@ export class YearwiseFilesComponent {
 
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed', result);
+      // console.log('The dialog was closed', result);
       // this.field = result;
     });
   }

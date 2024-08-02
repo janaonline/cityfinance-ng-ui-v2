@@ -8,7 +8,7 @@ mat-icon {
 }
 
 .mat-mdc-table .mat-mdc-header-cell {
-  background: rgba(25, 51, 105, 1) !important;
+  background: var(--clr-secondary) !important;
   font-size: 1.125rem;
   font-weight: 600 !important;
   text-align: center;
@@ -21,21 +21,22 @@ mat-icon {
   font-weight: 400;
   border: 1px solid rgba(219, 219, 219, 1);
 }
+
 .form-status {
   font-size: 0.75rem;
 }
 
-.reset {
-  color: rgba(230, 126, 21, 1);
-  font-size: 18px;
-  border: 0;
-  background: none;
-}
+// .reset {
+//   color: rgba(230, 126, 21, 1);
+//   font-size: 18px;
+//   border: 0;
+//   background: none;
+// }
 
 /* Structure */
-.example-container {
-  position: relative;
-}
+// .example-container {
+//   position: relative;
+// }
 
 .example-table-container {
   position: relative;
@@ -74,4 +75,20 @@ table {
 
 .mat-column-created {
   max-width: 124px;
+}
+
+.dropdown-menu {
+  inset: auto !important;
+  right: 3rem !important;
+  left: auto !important;
+  transform: translateX(0px) !important;
+}
+
+.dropdown-item:hover {
+  background-color: var(--clr-secondary);
+  color: white;
+}
+
+i {
+  font-size: 1.2rem;
 }

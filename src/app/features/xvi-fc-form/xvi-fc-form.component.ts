@@ -11,6 +11,7 @@ import { USER_TYPE } from '../../core/models/user/userType';
 import { StatusType } from './services/fiscal-ranking.service';
 import { MatStepper } from '@angular/material/stepper';
 import { UserUtility } from '../../core/util/user/user';
+import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
 import Swal from 'sweetalert2';
 
 
@@ -34,6 +35,7 @@ import {
   MatSnackBar,
 } from '@angular/material/snack-bar';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import { FORM_STATUSES } from '../../core/constants/statuses';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
@@ -50,7 +52,8 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
     YearwiseFilesComponent,
     AccountingPracticeComponent,
     ReviewSubmitComponent,
-    RestrictEInputDirective
+    RestrictEInputDirective,
+    ReplaceUnderscorePipe
   ],
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss'
@@ -90,16 +93,17 @@ export class XviFcFormComponent {
   tabChangeLoader = false;
   totalTabs = 6;
   formStatus!: string;
-  submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
+  rejectReason!: string;
+  // submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
   oldYearOfSlbOptions: any[] = [];
   oldyearOfElectionOptions: any[] = [];
+  statuses: any;
   // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
     return this.form.value;
   }
   constructor(private fb: FormBuilder,
-    // public fiscalService: FiscalRankingService,
     public service: XviFcService,
     public formService: DynamicFormService,
     private _snackBar: MatSnackBar,
@@ -109,22 +113,24 @@ export class XviFcFormComponent {
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);
-    // });
+    // });    
+    // this.statuses = FORM_STATUSES;
     this.onLoad();
-
   }
-  get isDemographicValid() {
-    // console.log('valu', this.form.get('demographicData')?.value);
-    // console.log('valid', this.form.get('demographicData')?.valid);
 
-    return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
-    // return this.form.get('demographicData')?.valid;
+  // get formStatuses() {
+  //   return Object.entries(FORM_STATUSES).map(([key, value]: any): any => value);
+  // }
+  get isDemographicValid() {
+    // return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
+    return this.formStatus !== FORM_STATUSES.IN_PROGRESS.key || this.form.get('demographicData')?.valid;
   }
 
   get isFormEditable() {
-    return !this.submittedFormStatuses.includes(this.formStatus);
+    // return !this.submittedFormStatuses.includes(this.formStatus);
+    return this.formStatus === FORM_STATUSES.IN_PROGRESS.key;
   }
-  onLoad() {
+  onLoad(reload = false) {
 
     this.isLoader = true;
     this.ulbId = this.loggedInUserDetails.ulb;
@@ -132,6 +138,7 @@ export class XviFcFormComponent {
     this.service.getUlbForm(this.ulbId).subscribe({
       next: (res: any) => {
         this.formStatus = res.data.formStatus;
+        this.rejectReason = res.data.rejectReason;
         this.tabs = res?.data?.tabs;
         // this.tabs = tabsJson.data.tabs;
         this.totalTabs = this.tabs.length;
@@ -145,6 +152,9 @@ export class XviFcFormComponent {
         this.form = this.formService.tabControl(this.tabs);
         // console.log('this.form',this.form);
 
+        if (reload) {
+          this.form?.markAllAsTouched();
+        }
         if (this.isFormEditable) {
           this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
           if (this.tabs[0].formType === 'form2') {
@@ -209,12 +219,7 @@ export class XviFcFormComponent {
     }
   }
 
-  // validateAllFormFields(formGroup: FormGroup) {
-  //   Object.keys(formGroup.controls).forEach(field => {
-  //     const control = formGroup.get(field);
-  //     control?.markAsTouched({ onlySelf: true });
-  //   });
-  // }
+
 
   submit() {
     if (this.form.valid) {
@@ -310,7 +315,7 @@ export class XviFcFormComponent {
         next: (res) => {
           // move from 1st or navigate to last tab reload form
           if (event.previouslySelectedIndex === 0 || event.selectedIndex === this.totalTabs) {
-            this.onLoad();
+            this.onLoad(true);
           } else {
             this.tabChangeLoader = false;
           }
@@ -324,7 +329,7 @@ export class XviFcFormComponent {
   saveAs(actionType: string) {
     const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
 
-    currentForm?.markAllAsTouched()
+    currentForm?.markAllAsTouched();
 
     this.actionType = actionType;
 
@@ -342,55 +347,7 @@ export class XviFcFormComponent {
       }
     });
   }
-  // afterSave() {
-  //   // if (this.actionType === 'next') {
-  //   //   this.stepper?.next();
-  //   // } else if (this.actionType === 'previous') {
-  //   //   this.stepper?.previous();
-  //   // }
-  //   this.triggerSnackbar();
-  //   this.formSaveLoader = false;
-  //   this.actionType = '';
-  //   // Swal.close();
-  // }
-  // saveAs_bkp(actionType: string) {
-  //   const currentForm = this.form.get(this.tabs[this.selectedStepIndex].key);
-  //   // console.log(`currentForm?.valid;`, currentForm?.valid);
-  //   // console.log(`this.form.valid;`, this.form.valid);
 
-  //   currentForm?.markAllAsTouched()
-
-  //   this.actionType = actionType;
-
-  //   // console.log('this.actionType', this.actionType, 'this.selectedStepIndex', this.selectedStepIndex, 'this.totalTabs', this.totalTabs);
-
-  //   // if back from review tab no action
-  //   if (this.actionType === 'previous' && this.selectedStepIndex === this.totalTabs) {
-  //     this.stepper?.previous();
-  //     this.actionType = '';
-  //     return;
-  //   }
-  //   const formData = this.getFormData();
-  //   // return;
-  //   this.formSaveLoader = true;
-
-  //   this.service.saveUlbForm(this.ulbId, formData).subscribe({
-  //     next: (res) => {
-  //       // for last tab load json again
-  //       if (this.actionType === 'next' && (this.selectedStepIndex + 1) === this.totalTabs) {
-  //         this.onLoad(true);
-  //       }
-  //       // after first tab load json again
-  //       else if (this.actionType !== 'stay' && this.selectedStepIndex === 0) {
-  //         this.onLoad(true);
-  //       } else {
-  //         this.afterSave();
-  //       }
-  //     }, error: (error: any) => {
-  //       this.handleHttpError(error);
-  //     }
-  //   });
-  // }
   getFormData() {
     const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
     formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
@@ -399,11 +356,6 @@ export class XviFcFormComponent {
   getFormTabData(tab: any) {
     // console.log('this.form.value', this.form.value);
     const formJson: any = this.form.getRawValue();
-
-    // const formData: any = { tab: [], formStatus, formId: 16 }
-    // console.log('this.tabs[this.selectedStepIndex]', this.tabs[this.selectedStepIndex]);
-    // const tab = this.tabs[index];
-
 
     // for (let tab of this.tabs) {
     const tabKey = tab.key;
@@ -475,15 +427,6 @@ export class XviFcFormComponent {
       panelClass: ['custom-snackbar-success']
     });
   }
-  // onSubmit(event: Event) {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   if (this.form.valid) {
-  //     // this.submit.emit(this.form.value);
-  //   } else {
-  //     // this.validateAllFormFields(this.form);
-  //   }
-  // }
 
   getTabGroup(tabKey: string): FormArray {
     return (this.form.get(tabKey) as FormArray)
@@ -492,6 +435,10 @@ export class XviFcFormComponent {
   getFG(tabKey: string, i: number): any {
     // console.log('tabKey',tabKey, 'i',i, '---',(this.form.get(tabKey) as FormArray).controls[i]);    
     return (this.form.get(tabKey) as FormArray).controls[i];
+  }
+
+  getStatusClass(status: string): string {
+    return status ? FORM_STATUSES[status].class : "";
   }
 
 }

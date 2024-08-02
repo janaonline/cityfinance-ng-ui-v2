@@ -14,6 +14,11 @@ import * as FileSaver from "file-saver";
 import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../core/models/user/userType';
 import { AuthService } from '../../core/services/auth.service';
+import { SelectionModel } from '@angular/cdk/collections';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { ApproveRejectFormService } from './approve-reject-form.service';
+import Swal from 'sweetalert2';
+import { first } from 'rxjs';
 
 interface Data {
     position: string;
@@ -23,6 +28,8 @@ interface Data {
     formStatus: string;
     dataSubmitted: number;
     action: string;
+    ulbId: string;
+    isReviewable: boolean;
 }
 @Component({
     selector: 'app-xvi-fc-review',
@@ -35,7 +42,8 @@ interface Data {
         MatProgressSpinnerModule,
 
         MatPaginatorModule,
-        ReplaceUnderscorePipe
+        ReplaceUnderscorePipe,
+        BsDropdownModule
     ],
 
     templateUrl: './xvi-fc-review.component.html',
@@ -55,8 +63,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     user!: IUserLoggedInDetails | null;
     isLoggedIn: boolean = false;
     USER_TYPE = USER_TYPE;
+    currentUserRole = this.loggedInUserDetails.role;
     // const role = this.user ? this.user.role : '';
-    userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    userData = this.loggedInUserDetails;
 
     displayedColumns: string[] = [];
     //displayedColumns: string[] = ['position', 'stateName', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
@@ -64,7 +73,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
 
 
+
     dataSource = new MatTableDataSource<Data>([]);
+    selection = new SelectionModel<Data>(true, []);
     totalForms: any;
     // page: number = 0;
     limit: number = 10;
@@ -79,11 +90,11 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     ulbCategories: any[] = [{ "id": 16, "label": 'Category 1' }, { "id": 17, "label": 'Category 2' }];
     formId!: number;
 
+
     constructor(
-        private http: HttpClient,
         public service: XviFcService,
-        private router: Router,
-        private authService: AuthService
+        private authService: AuthService,
+        public approveRejectService: ApproveRejectFormService,
     ) { }
     checkUserLoggedIn() {
         this.isLoggedIn = this.authService.loggedIn();
@@ -98,13 +109,16 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
 
     ngOnInit() {
         this.statuses = FORM_STATUSES;
-        this.onLoad();
         this.checkUserLoggedIn();
+        if (this.user?.role === USER_TYPE.XVIFC) {
+            this.getStateList();
+        }
+        this.onLoad();
 
         this.displayedColumns =
-            this.user?.role == 'XVIFC' ?
-                ['position', 'stateName', 'ulbName', 'censusCode', 'ulbCategory', 'formStatus', 'dataSubmitted', 'action'] :
-                ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action'];
+            this.user?.role === USER_TYPE.XVIFC ?
+                ['position', 'stateName', 'ulbName', 'censusCode', 'ulbCategory', 'formStatus', 'dataSubmitted', 'action', 'select'] :
+                ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action', 'select'];
     }
 
     get formStatuses() {
@@ -115,6 +129,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         // this.page = 50;
         // this.limit = 10;
         // this.skip = 0;
+        this.selection.clear();
         this.isLoader = true;
         // this.stateId = this.loggedInUserDetails.state;
         // this.stateId = '5dcf9d7416a06aed41c748f0';
@@ -143,7 +158,10 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 // console.log(payload);
                 this.totalForms = res.totalForms;
                 // this.dataSource.paginator =  1000;
-                this.dataSource = res.data;
+                // this.dataSource = res.data;
+                const tableData = res.data;
+
+                this.dataSource = new MatTableDataSource(tableData);
 
                 this.isLoader = false;
             }, error: () => {
@@ -152,6 +170,9 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
                 this.totalForms = 0;
             }
         });
+    }
+
+    getStateList() {
         this.service.getStates().subscribe({
             next: (res: any) => {
                 this.stateList = res.data;
@@ -202,21 +223,97 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
         return FORM_STATUSES[status].class;
     }
 
+    // Progress report.
     download(event: any) {
         this.isLoader1 = true;
         if (event) {
-            this.service.getStandardizedExcel().subscribe((res: any) => {
+            this.service.progressReport().subscribe((res: any) => {
                 const blob = new Blob([res], {
                     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 });
 
                 // Set file name.
-                const userData: any = JSON.parse(localStorage.getItem('userData') || '{}');
+                // const userData: any = JSON.parse(localStorage.getItem('userData') || '{}');
                 const now = new Date();
                 const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
                 const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-                let file = userData.role == 'XVIFC' ? 'XVIFC' : userData.name + '_XVIFC';
+                let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
                 const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
+
+                FileSaver.saveAs(blob, filename);
+                this.isLoader1 = false;
+                console.log('File Download Done');
+                return;
+
+            }, (err) => {
+                console.log(err);
+            });
+        }
+    }
+
+    isAllSelected() {
+        const numSelected = this.selection?.selected?.length;
+        const numRows = this.dataSource?.data?.length;
+        return numSelected === numRows;
+    }
+
+    masterToggle() {
+        this.isAllSelected() ?
+            this.selection.clear() :
+            this.dataSource?.data.forEach(row => {
+                if (row.action === "Review") {
+                    this.selection.select(row);
+                }
+            });
+    }
+
+    /**
+     * Approve or reject ulbs forms
+     * @param statusType 
+     */
+    onReview(statusType: string) {
+        // let ulbs: string[] = [];
+        let ulbs: string[] = this.selection.selected.map(s => s.ulbId);
+        // console.log('ulbs', ulbs);
+        // check if ulb selected
+        if (ulbs.length) {
+            this.approveRejectService.openDialogue(statusType, ulbs);
+            this.approveRejectService.isDataSaved.pipe(first()).subscribe((success) => {
+                if (success) {
+                    this.onLoad();
+                }
+                // console.log('success: ', success);
+            });
+        } else {
+            Swal.fire(
+                'Alert!',
+                'Please select forms.',
+                'info'
+            );
+        }
+
+    }
+
+    // Data dump.
+    downloadDump(event: any) {
+        this.isLoader1 = true;
+        if (event) {
+            this.service.dataDump().subscribe((res: any) => {
+                const blob = new Blob([res], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+
+                // Set file name.
+                // const userData: any = JSON.parse(localStorage.getItem('userData') || '{}');
+                const now = new Date();
+                const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+                const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+                // let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
+                let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' :
+                    this.currentUserRole == 'XVIFC_STATE' ? 'XVIFC_STATE' :
+                        this.userData.name + '_XVIFC';
+
+                const filename = `${file}_DATA_DUMP_${dateString}_${timeString}.xlsx`;
 
                 FileSaver.saveAs(blob, filename);
                 this.isLoader1 = false;

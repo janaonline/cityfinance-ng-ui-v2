@@ -8,7 +8,6 @@ import { InputComponent } from '../../../../shared/dynamic-form/components/input
 import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components/radiobutton/radiobutton.component';
 import { SelectComponent } from '../../../../shared/dynamic-form/components/select/select.component';
 import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
-import { UserUtility } from '../../../../core/util/user/user';
 
 export interface DialogData {
   field: FieldConfig;
@@ -46,7 +45,6 @@ export class VerifyDocumentsDialogueComponent {
     formFieldType: 'text', label: 'Please let us know the reason for replacing existing file(s)', key: 'rejectReason',
   };
 
-  userData = new UserUtility().getLoggedInUserDetails();
 
   // formfields: any = { rejectReason: FieldConfig { formField }}
   constructor(
@@ -60,10 +58,6 @@ export class VerifyDocumentsDialogueComponent {
 
   get rawValue() {
     return this.getVerifyFormGroup().getRawValue();
-  }
-
-  uploadFolderName(key: string) {
-    return `xvi-fc/${this.userData?.role}/${this.userData?.ulbCode}/${key}`
   }
 
   getVerifyStatus() {

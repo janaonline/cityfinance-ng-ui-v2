@@ -22,11 +22,14 @@
         <div class="float-start">
             <button class="ms-2 primary-btn-2" [routerLink]="'/admin/xvi-fc-review'">Back</button>
         </div>
-        <div class="float-end" *ngIf="enableButton">
-            <button type="button" class="primary-btn-1 bttn-return mx-3" (click)="onSubmit('reject')">RETURN TO ULB</button>
-            <button type="button" class="primary-btn-1 primary-btn-3  mx-3" (click)="onSubmit('approve')">APPROVE & SUBMIT TO XVI FC</button>
-
+        <div class="float-end">
+            <button type="button" class="primary-btn-1 bttn-return mx-3" [disabled]="!enableButton"
+                (click)="onSubmit('reject')">RETURN TO
+                ULB</button>
+            <button type="button" class="primary-btn-1 primary-btn-3  mx-3" [disabled]="!enableButton"
+                (click)="onSubmit('approve')">APPROVE &
+                SUBMIT</button>
         </div>
-       
+
     </div>
 </div>

@@ -29,11 +29,10 @@ export class FileComponent {
   maxFileSize: number = 20;
   readonly: boolean | undefined = false;
   @Input() parentField: any;
-  @Input() uploadFolderName: string = 'files';
 
   // uploadFolderName!: string;
 
-  get uploadFolderNameBkp() {
+  get uploadFolderName() {
     // const years = JSON.parse(localStorage.getItem("Years"));
     // const year = this.getKeyByValue(years, this.design_year);
     // return `${this.userData?.role}/${year}/sfc/${this.userData?.stateCode}`

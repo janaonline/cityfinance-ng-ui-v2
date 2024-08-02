@@ -1,4 +1,4 @@
-<div class="clearfix"><button class="float-end primary-btn-2" (click)="printPage()">Print</button></div>
+<div class="clearfix"><button class="float-end primary-btn-2" (click)="printPage()" matTooltip="Please print the PDF in landscape layout to ensure correct alignment.">Print</button></div>
 @for (tab of fields; track tab.key; let i = $index) {
 
 <div class="container mt-4" [id]="tab.key">
@@ -66,8 +66,7 @@
                             <td class="fw-bold text-end" *ngFor="let col of row.year; let j = index;"
                                 [ngClass]="{'text-danger': col?.value == '' || col?.value > row?.max || col?.value < row?.min  }">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
-                                    <span matTextPrefix>&nbsp;</span>{{ col.value ? (col.value |
-                                    currency:'INR':'symbol':'1.0-0') :'N/A' }}
+                                    <span matTextPrefix>&nbsp;</span>{{ col.value === 0 ? 0 : col.value? (col.value | currency:'INR':'symbol':'1.0-0') :'N/A' }}
                                 </ng-container>
                                 <ng-template #otherField>
                                     <!-- {{ col.value }} -->

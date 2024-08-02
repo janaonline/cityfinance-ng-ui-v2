@@ -31,7 +31,9 @@
             *ngFor=" let year of fileSection.year; index as i; last as last">
             <h5 class="fw-bold mb-3">{{year.label}}</h5>
 
-            <!-- {{getYearGroup(i,year.key).getRawValue() | json}} -->
+            <!-- {{getYearGroup(sectionIndex,i,year.key).getRawValue() | json}} -->
+            <br>
+            <!-- {{getYearGroup(sectionIndex,i,year.key).valid}} -->
             @if (year.isPdfAvailable) {
             <div>
                 <div class="border rounded border-secondary-subtle bg-light p-3">
@@ -48,7 +50,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- verified by ulb -->
+                <!-- accept by ulb -->
                 @if(getYearGroup(sectionIndex,i,year.key).getRawValue().verifyStatus === 2) {
                 <div class="verified-info">
                     <div class="d-flex align-items-center justify-content-start">
@@ -120,7 +122,7 @@
                 </div>
             </div>
             } @else {
-            <app-file [field]="year" [group]="getYearGroup(sectionIndex,i,year.key)" [uploadFolderName]="uploadFolderName(year.key)"></app-file>
+            <app-file [field]="year" [group]="getYearGroup(sectionIndex,i,year.key)"></app-file>
             }
             }
         </div>
