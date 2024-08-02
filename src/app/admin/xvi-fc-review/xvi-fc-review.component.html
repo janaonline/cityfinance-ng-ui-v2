@@ -79,7 +79,7 @@
                         <mat-option value="">All</mat-option>
                         @for (state of stateList; track $index) {
                         <mat-divider></mat-divider>
-                        <mat-option  [value]="state.name">{{ state.name }}</mat-option>
+                        <mat-option [value]="state.name">{{ state.name }}</mat-option>
                         }
                     </mat-select>
                 </mat-form-field>
@@ -230,7 +230,8 @@
                 </table>
 
                 <mat-paginator (page)="pageChanged($event)" [pageSize]="limit" [pageSizeOptions]="[5, 10, 20, 50]"
-                    [length]="totalForms" showFirstLastButtons aria-label="Select page of dashboard elements">
+                    [pageIndex]="skip" [length]="totalForms" showFirstLastButtons
+                    aria-label="Select page of dashboard elements">
                 </mat-paginator>
             </div>
         </div>
