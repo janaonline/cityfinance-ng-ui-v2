@@ -123,12 +123,12 @@ export class XviFcFormComponent {
   // }
   get isDemographicValid() {
     // return this.submittedFormStatuses.includes(this.formStatus) || this.form.get('demographicData')?.valid;
-    return this.formStatus !== FORM_STATUSES.IN_PROGRESS.key || this.form.get('demographicData')?.valid;
+    return !this.isFormEditable || this.form.get('demographicData')?.valid;
   }
 
   get isFormEditable() {
     // return !this.submittedFormStatuses.includes(this.formStatus);
-    return this.formStatus === FORM_STATUSES.IN_PROGRESS.key;
+    return [FORM_STATUSES.IN_PROGRESS.key, FORM_STATUSES.NOT_STARTED.key].includes(this.formStatus);
   }
   onLoad(reload = false) {
 
