@@ -24,10 +24,15 @@
                 <tbody>
                     <tr *ngFor="let field of tab?.data;let i = index;">
                         <!-- <td>{{field.position}}.</td> -->
-                        <td class="first-col"><span align="right">{{field.position ?
-                                field.position+'.':''}}&nbsp;</span>{{field.label}}
+                        <td class="first-col">
+                            <span align="right">
+                                {{field.position ? field.position+'.':''}}&nbsp;
+                            </span>
+                            {{field.label}}
                         </td>
-                        <td class="fw-bold"> {{field.value ? field.value : 'N/A'}} </td>
+                        <td class="fw-bold" [ngClass]="field?.value === 0 || !field?.value ? 'text-danger': ''">
+                            {{field?.value === 0 ? 0 : !field?.value ? 'N/A' : field.value}}
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -64,13 +69,14 @@
                                 row.label }}
                             </td>
                             <td class="fw-bold text-end" *ngFor="let col of row.year; let j = index;"
-                                [ngClass]="{'text-danger': col?.value == '' || col?.value > row?.max || col?.value < row?.min  }">
+                                [ngClass]="{'text-danger': !col?.value || col?.value > row?.max || col?.value < row?.min  }">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
-                                    <span matTextPrefix>&nbsp;</span>{{ col.value === 0 ? 0 : col.value? (col.value | currency:'INR':'symbol':'1.0-0') :'N/A' }}
+                                    <span matTextPrefix>&nbsp;</span>
+                                    {{col.value === 0 ? 0 : col.value? (col.value | currency:'INR':'symbol':'1.0-0')
+                                    :'N/A' }}
                                 </ng-container>
                                 <ng-template #otherField>
-                                    <!-- {{ col.value }} -->
-                                    {{ col.value ? col.value : 'N/A' }}
+                                    {{ col?.value === 0 ? 0 : !col?.value ? 'N/A' : col.value }}
                                 </ng-template>
                             </td>
                         </tr>
@@ -225,7 +231,7 @@
                     <td class="col-5">
                         <!-- <p class="fw-bold" [ngClass]="{'text-end': question.formFieldType =='number'}"> -->
                         <p class="fw-bold" [ngClass]="{'text-danger': !question?.value}">
-                            {{ question.value ? question.value : 'N/A' }}
+                            {{ question?.value === 0 ? 0 : !question?.value ? 'N/A' : question?.value }}
                         </p>
                         <p *ngIf="question.reason" class="text-secondary mt-1">{{question.reason}}</p>
                     </td>
