@@ -263,7 +263,7 @@ export class XviFcFormComponent {
     } else {
       Swal.fire(
         'Incomplete or incorrect data entered!',
-        'The form can not be submitted without filling in all the mandatory fields correctly.',
+        'Please fill in all required fields marked as N/A to submit the form.',
         'error'
       ).then(() => {
         //scroll to fisrt error tab
