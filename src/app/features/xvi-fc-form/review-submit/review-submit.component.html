@@ -30,8 +30,8 @@
                             </span>
                             {{field.label}}
                         </td>
-                        <td class="fw-bold" [ngClass]="field?.value === 0 || !field?.value ? 'text-danger': ''">
-                            {{field?.value === 0 ? 0 : !field?.value ? 'N/A' : field.value}}
+                        <td class="fw-bold" [ngClass]="!field?.value ? 'text-danger': ''">
+                            {{field?.value === '' || field?.value === null ? 'N/A': field?.value}}
                         </td>
                     </tr>
                 </tbody>
@@ -72,11 +72,11 @@
                                 [ngClass]="{'text-danger': !col?.value || col?.value > row?.max || col?.value < row?.min  }">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
                                     <span matTextPrefix>&nbsp;</span>
-                                    {{col.value === 0 ? 0 : col.value? (col.value | currency:'INR':'symbol':'1.0-0')
-                                    :'N/A' }}
+                                    {{col.value === '' || col.value === null ? 'N/A' : (col.value |
+                                    currency:'INR':'symbol':'1.0-0')}}
                                 </ng-container>
                                 <ng-template #otherField>
-                                    {{ col?.value === 0 ? 0 : !col?.value ? 'N/A' : col.value }}
+                                    {{ col?.value === '' || col?.value === null ? 'N/A' : col?.value }}
                                 </ng-template>
                             </td>
                         </tr>
@@ -185,7 +185,7 @@
                 }
 
                 @else {
-                    <p class="text-danger fw-bold mt-2"> N/A </p>
+                <p class="text-danger fw-bold mt-2"> N/A </p>
                 }
 
             </div>
@@ -234,7 +234,7 @@
                     <td class="col-5">
                         <!-- <p class="fw-bold" [ngClass]="{'text-end': question.formFieldType =='number'}"> -->
                         <p class="fw-bold" [ngClass]="{'text-danger': !question?.value}">
-                            {{ question?.value === 0 ? 0 : !question?.value ? 'N/A' : question?.value }}
+                            {{ question?.value === '' || question?.value === null ? 'N/A' : question?.value }}
                         </p>
                         <p *ngIf="question.reason" class="text-secondary mt-1">{{question.reason}}</p>
                     </td>
