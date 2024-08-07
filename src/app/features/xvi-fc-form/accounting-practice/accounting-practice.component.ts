@@ -29,6 +29,7 @@ export class AccountingPracticeComponent {
     this.checkOtherOpt();
   }
 
+  // Validate reason: for option which has Please specify.
   validateData(changedData: any = false) {
     const fieldData: any = this.field.data;
     let i = 0;
@@ -57,6 +58,7 @@ export class AccountingPracticeComponent {
     }
 
   }
+  // Validate reason (On value change): for option which has Please specify.
   checkOtherOpt() {
     for (let control of this.group.controls) {
       control.valueChanges
