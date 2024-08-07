@@ -98,6 +98,7 @@ export class XviFcFormComponent {
   oldYearOfSlbOptions: any[] = [];
   oldyearOfElectionOptions: any[] = [];
   statuses: any;
+  formEditableStatuses: string[] = [FORM_STATUSES.IN_PROGRESS.key, FORM_STATUSES.NOT_STARTED.key, FORM_STATUSES.RETURNED_BY_STATE.key, FORM_STATUSES.RETURNED_BY_XVIFC.key];
   // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
@@ -128,7 +129,7 @@ export class XviFcFormComponent {
 
   get isFormEditable() {
     // return !this.submittedFormStatuses.includes(this.formStatus);
-    return [FORM_STATUSES.IN_PROGRESS.key, FORM_STATUSES.NOT_STARTED.key].includes(this.formStatus);
+    return this.formEditableStatuses.includes(this.formStatus);
   }
   onLoad(reload = false) {
 

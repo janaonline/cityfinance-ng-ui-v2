@@ -42,4 +42,8 @@ export class ReviewSubmitComponent {
     return !this.isFormEditable || this.group.get(tabKey)?.valid as boolean;
   }
 
+  checkReason(question: any): string {
+    let option = question?.options.find((x: { id: string; }) => x?.id === question.value);
+    return option.showInputBox && question.reason === '' ? 'N/A' : question.reason;
+  }
 }
