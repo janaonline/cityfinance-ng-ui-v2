@@ -43,7 +43,6 @@ export class AccountingPracticeComponent {
         }
         const option = question.options?.find((e: any) => e.id === checkValue);
         const reasonField = this.group.controls[i].get(section.key)?.get(question.key)?.get('reason');
-        console.log('reasonField', reasonField);
 
         if (option.showInputBox) {
           reasonField?.setValidators([Validators.required]);
@@ -66,7 +65,6 @@ export class AccountingPracticeComponent {
           distinctUntilChanged()
         )
         .subscribe(data => {
-          console.log('-----data----', data);
           this.validateData(data);
         })
     }
