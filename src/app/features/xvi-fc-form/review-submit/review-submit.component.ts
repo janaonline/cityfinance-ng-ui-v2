@@ -44,6 +44,6 @@ export class ReviewSubmitComponent {
 
   checkReason(question: any): string {
     let option = question?.options.find((x: { id: string; }) => x?.id === question.value);
-    return option.showInputBox && question.reason === '' ? 'N/A' : question.reason;
+    return option && option.showInputBox && question.reason === '' ? 'N/A' : question.reason;
   }
 }
