@@ -45,14 +45,14 @@ export class AccountingPracticeComponent {
         const option = question.options?.find((e: any) => e.id === checkValue);
         const reasonField = this.group.controls[i].get(section.key)?.get(question.key)?.get('reason');
 
-        if (option.showInputBox) {
+        if (option && option.showInputBox) {
           reasonField?.setValidators([Validators.required]);
-          reasonField?.updateValueAndValidity({ emitEvent: false, onlySelf: true });
         } else {
           reasonField?.patchValue(null, { emitEvent: false, onlySelf: true });
           reasonField?.clearValidators();
-          reasonField?.updateValueAndValidity({ emitEvent: false, onlySelf: true });
         }
+        reasonField?.updateValueAndValidity({ emitEvent: false, onlySelf: true });
+
       }
       i++;
     }
