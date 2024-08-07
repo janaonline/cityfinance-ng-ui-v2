@@ -1,4 +1,5 @@
-<div class="clearfix"><button class="float-end primary-btn-2" (click)="printPage()" matTooltip="Please print the PDF in landscape layout to ensure correct alignment.">Print</button></div>
+<div class="clearfix"><button class="float-end primary-btn-2" (click)="printPage()"
+        matTooltip="Please print the PDF in landscape layout to ensure correct alignment.">Print</button></div>
 @for (tab of fields; track tab.key; let i = $index) {
 
 <div class="container mt-4" [id]="tab.key">
@@ -17,17 +18,22 @@
     </div>
 
     @if (tab.key === 'demographicData') {
-    <mat-card [ngClass]="!isFormValid(tab.key) ? 'border border-danger': ''">
+    <mat-card [ngClass]="!isFormValid(tab.key) ? 'border border-danger border-3': ''">
         <mat-card-content>
             <!-- <div class="border border-secondary-subtle rounded p-3"> -->
             <table class="table table-borderless table-hover">
                 <tbody>
                     <tr *ngFor="let field of tab?.data;let i = index;">
                         <!-- <td>{{field.position}}.</td> -->
-                        <td class="first-col"><span align="right">{{field.position ?
-                                field.position+'.':''}}&nbsp;</span>{{field.label}}
+                        <td class="first-col">
+                            <span align="right">
+                                {{field.position ? field.position+'.':''}}&nbsp;
+                            </span>
+                            {{field.label}}
                         </td>
-                        <td class="fw-bold"> {{field.value ? field.value : 'N/A'}} </td>
+                        <td class="fw-bold" [ngClass]="!field?.value ? 'text-danger': ''">
+                            {{field?.value === '' || field?.value === null ? 'N/A': field?.value}}
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -39,7 +45,7 @@
     @else if (tab.key === 'financialData' || tab.key === 'serviceLevelBenchmark') {
     <ng-container *ngFor="let field of tab?.data;let i = index;">
         <mat-expansion-panel [expanded]="panelOpenState" class="mt-3"
-            [ngClass]="!isFormValid(tab.key) ? 'border border-danger': ''">
+            [ngClass]="!isFormValid(tab.key) ? 'border border-danger border-3': ''">
             <mat-expansion-panel-header *ngIf="field.key !== 'commonPrimaryKey'">
                 <mat-panel-title>
                     {{field.label}}
@@ -64,13 +70,14 @@
                                 row.label }}
                             </td>
                             <td class="fw-bold text-end" *ngFor="let col of row.year; let j = index;"
-                                [ngClass]="{'text-danger': col?.value == '' || col?.value > row?.max || col?.value < row?.min  }">
+                                [ngClass]="{'text-danger': !col?.value || col?.value > row?.max || col?.value < row?.min  }">
                                 <ng-container *ngIf="col.formFieldType == 'amount'; else otherField">
-                                    <span matTextPrefix>&nbsp;</span>{{ col.value === 0 ? 0 : col.value? (col.value | currency:'INR':'symbol':'1.0-0') :'N/A' }}
+                                    <span matTextPrefix>&nbsp;</span>
+                                    {{col.value === '' || col.value === null ? 'N/A' : (col.value |
+                                    currency:'INR':'symbol':'1.0-0')}}
                                 </ng-container>
                                 <ng-template #otherField>
-                                    <!-- {{ col.value }} -->
-                                    {{ col.value ? col.value : 'N/A' }}
+                                    {{ col?.value === '' || col?.value === null ? 'N/A' : col?.value }}
                                 </ng-template>
                             </td>
                         </tr>
@@ -85,7 +92,7 @@
     @else if (tab.key === 'uploadDoc') {
     @for (field of tab?.data; track $index) {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3"
-        [ngClass]="!isFormValid(tab.key) ? 'border border-danger': ''">
+        [ngClass]="!isFormValid(tab.key) ? 'border border-danger border-3': ''">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 {{field.label}}
@@ -178,6 +185,9 @@
                 </div> -->
                 }
 
+                @else {
+                <p class="text-danger fw-bold mt-2"> N/A </p>
+                }
 
             </div>
             } @else {
@@ -210,7 +220,7 @@
     }
     @else if (tab.key === 'accountPractice') {
     <mat-expansion-panel [expanded]="panelOpenState" class="mt-3"
-        [ngClass]="!isFormValid(tab.key) ? 'border border-danger': ''" *ngFor="let field of tab.data">
+        [ngClass]="!isFormValid(tab.key) ? 'border border-danger border-3': ''" *ngFor="let field of tab.data">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 {{field.label}}
@@ -225,9 +235,13 @@
                     <td class="col-5">
                         <!-- <p class="fw-bold" [ngClass]="{'text-end': question.formFieldType =='number'}"> -->
                         <p class="fw-bold" [ngClass]="{'text-danger': !question?.value}">
-                            {{ question.value ? question.value : 'N/A' }}
+                            {{ question?.value === '' || question?.value === null ? 'N/A' : question?.value }}
                         </p>
-                        <p *ngIf="question.reason" class="text-secondary mt-1">{{question.reason}}</p>
+                        @if (question?.options) {
+                        <p class="text-secondary mt-1">
+                            {{ checkReason(question) }}
+                        </p>
+                        }
                     </td>
                 </tr>
             </tbody>
