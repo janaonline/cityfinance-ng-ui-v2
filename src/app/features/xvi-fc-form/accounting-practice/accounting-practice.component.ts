@@ -10,10 +10,9 @@ import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 @Component({
   selector: 'app-accounting-practice',
   standalone: true,
-  imports: [MaterialModule, DecimalLimitDirective,
-    NoUpDownDirective, RestrictEInputDirective],
+  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, RestrictEInputDirective],
   templateUrl: './accounting-practice.component.html',
-  styleUrl: './accounting-practice.component.scss'
+  styleUrl: './accounting-practice.component.scss',
 })
 export class AccountingPracticeComponent {
   @Input() field!: FieldConfig;
@@ -22,8 +21,7 @@ export class AccountingPracticeComponent {
   panelOpenState = true;
   subscription!: Subscription;
 
-
-  constructor() { }
+  constructor() {}
   ngOnInit() {
     this.validateData();
     this.checkOtherOpt();
@@ -43,7 +41,10 @@ export class AccountingPracticeComponent {
           checkValue = changedData[section.key][question.key].value;
         }
         const option = question.options?.find((e: any) => e.id === checkValue);
-        const reasonField = this.group.controls[i].get(section.key)?.get(question.key)?.get('reason');
+        const reasonField = this.group.controls[i]
+          .get(section.key)
+          ?.get(question.key)
+          ?.get('reason');
 
         if (option && option.showInputBox) {
           reasonField?.setValidators([Validators.required]);
@@ -52,32 +53,26 @@ export class AccountingPracticeComponent {
           reasonField?.clearValidators();
         }
         reasonField?.updateValueAndValidity({ emitEvent: false, onlySelf: true });
-
       }
       i++;
     }
-
   }
   // Validate reason (On value change): for option which has Please specify.
   checkOtherOpt() {
     for (let control of this.group.controls) {
-      control.valueChanges
-        .pipe(
-          debounceTime(400),
-          distinctUntilChanged()
-        )
-        .subscribe(data => {
-          this.validateData(data);
-        })
+      control.valueChanges.pipe(debounceTime(400), distinctUntilChanged()).subscribe((data) => {
+        this.validateData(data);
+      });
     }
-
   }
 
   getGroup(i: number, sectionKey: string, rowKey: string): FormGroup {
-    return ((this.group.controls[i] as FormGroup).get(sectionKey) as FormGroup).get(rowKey) as FormGroup;
+    return ((this.group.controls[i] as FormGroup).get(sectionKey) as FormGroup).get(
+      rowKey,
+    ) as FormGroup;
   }
 
   hasError(i: number, sectionKey: string, rowKey: string, name: string, field = 'value') {
-    return (this.getGroup(i, sectionKey, rowKey) as FormGroup).get(field)?.hasError(name)
+    return (this.getGroup(i, sectionKey, rowKey) as FormGroup).get(field)?.hasError(name);
   }
 }

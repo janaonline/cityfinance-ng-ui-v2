@@ -8,10 +8,9 @@ describe('VerifyDocumentsDialogueComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VerifyDocumentsDialogueComponent]
-    })
-    .compileComponents();
-    
+      imports: [VerifyDocumentsDialogueComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(VerifyDocumentsDialogueComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

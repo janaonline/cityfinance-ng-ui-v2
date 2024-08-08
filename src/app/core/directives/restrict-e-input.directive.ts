@@ -2,11 +2,10 @@ import { Directive, HostListener } from '@angular/core';
 
 @Directive({
   selector: '[appRestrictEInput]',
-  standalone: true
+  standalone: true,
 })
 export class RestrictEInputDirective {
-
-  constructor() { }
+  constructor() {}
 
   @HostListener('keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
@@ -15,5 +14,4 @@ export class RestrictEInputDirective {
       event.preventDefault();
     }
   }
-
 }

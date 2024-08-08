@@ -8,9 +8,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class DecimalLimitDirective {
   @Input() appDecimalLimit!: number | null;
 
-  constructor(private el: ElementRef,
+  constructor(
+    private el: ElementRef,
     private _snackBar: MatSnackBar,
-  ) { }
+  ) {}
 
   @HostListener('keydown', ['$event']) onKeyDown(event: KeyboardEvent) {
     // console.log(event.key);
@@ -41,7 +42,7 @@ export class DecimalLimitDirective {
       verticalPosition: 'top',
       duration: 2000,
       // panelClass: ['snackbar-success']
-      panelClass: ['custom-snackbar-success']
+      panelClass: ['custom-snackbar-success'],
     });
   }
 }

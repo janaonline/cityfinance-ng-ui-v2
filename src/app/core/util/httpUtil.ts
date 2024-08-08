@@ -8,7 +8,7 @@ export class HttpUtility {
       if (params[key]) {
         queryParams = queryParams.set(
           key,
-          typeof params[key] === "string" ? params[key].trim() : params[key]
+          typeof params[key] === 'string' ? params[key].trim() : params[key],
         );
       }
     }

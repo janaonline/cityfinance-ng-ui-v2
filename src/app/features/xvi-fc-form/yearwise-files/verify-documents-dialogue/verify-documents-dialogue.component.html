@@ -1,83 +1,96 @@
 <div class="p-3 d-flex flex-column align-items-center">
-    <h2 class="fw-bold fs-5 mb-2">{{data.field.label}}</h2>
-    <p>Already available on City Finance</p>
-    <span class="verify-modal-close" (click)="onNoClick()"><mat-icon>close</mat-icon></span>
+  <h2 class="fw-bold fs-5 mb-2">{{ data.field.label }}</h2>
+  <p>Already available on City Finance</p>
+  <span class="verify-modal-close" (click)="onNoClick()"><mat-icon>close</mat-icon></span>
 </div>
 <mat-dialog-content>
-
-    <div class="border border-secondary-subtle rounded px-4 bg-light">
-        <div class="d-flex align-items-center py-3 border-bottom border-light-subtle"
-            *ngFor="let file of data.field.fileAlreadyOnCf">
-
-            <div class="flex-shrink-0">
-                <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger "></i>
-            </div>
-            <div class="flex-grow-1 ms-3">
-                <p class="text-dark">{{file.name}}</p>
-                <p><small class="text-secondary">{{file.size}}</small></p>
-            </div>
-            <div>
-                <a class="ms-2 primary-btn-2" style="text-decoration: none;" [href]="file.url | toStorageUrl"
-                    target="_blank">
-                    <i class="bi bi-download text-cfPrimary fs-5"></i>
-                    Download
-                </a>
-            </div>
-
-        </div>
+  <div class="border border-secondary-subtle rounded px-4 bg-light">
+    <div
+      class="d-flex align-items-center py-3 border-bottom border-light-subtle"
+      *ngFor="let file of data.field.fileAlreadyOnCf"
+    >
+      <div class="flex-shrink-0">
+        <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i>
+      </div>
+      <div class="flex-grow-1 ms-3">
+        <p class="text-dark">{{ file.name }}</p>
+        <p>
+          <small class="text-secondary">{{ file.size }}</small>
+        </p>
+      </div>
+      <div>
+        <a
+          class="ms-2 primary-btn-2"
+          style="text-decoration: none"
+          [href]="file.url | toStorageUrl"
+          target="_blank"
+        >
+          <i class="bi bi-download text-cfPrimary fs-5"></i>
+          Download
+        </a>
+      </div>
     </div>
-    <div class="py-4">
-        <ul class="text-dark">
-            <li>If the existing document(s) are correct, select the Accept Existing Document option. </li>
-            <li>If the existing document(s) are incorrect, select the Reject Existing Document option and provide a
-                reason for the upload.</li>
-        </ul>
-        <div
-            class="d-flex justify-content-center p-2 bg-cfPrimary bg-opacity-10 border border-cfPrimary border-start-0 border-end-0 mb-3">
-            <app-radiobutton [field]="verifyStatus" [group]="getVerifyFormGroup()"></app-radiobutton>
-        </div>
-        @if(getVerifyStatus() === 3) {
-        <div class="dotted-border-secondary bg-light p-3 mb-3">
-            <p class="fw-bold">Instructions:</p>
-            <ol>
-                <li>Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet,
-                    Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.</li>
-                <li>All documents pertaining to a specific financial year should be combined into a single PDF
-                    before uploading & should not exceed 20 MB.</li>
-                <li>Please use the following format for naming the documents to be uploaded:
-                    nameofthedocument_FY_ULB Name. <strong>Example: Annual accounts_15-16_Jaipur municipal
-                        corporation</strong>
-                </li>
-                <li>
-                    <strong>Date of Constitution:</strong> (If value: other than prior to 2015-16). Please upload the
-                    Gazette notification regarding the constitution of the ULB.
-                </li>
-                <li>
-                    <strong>Population: </strong>Please upload the supporting document for the population estimate as on 01
-                    April 2024.
-                </li>
-            </ol>
-        </div>
-        <div class="row mt-2 text-dark">
-            <app-file [field]="data.field" [group]="getVerifyFormGroup()"></app-file>
-        </div>
-        <div class="row mt-2 text-dark">
-            <app-select [field]="rejectOption" [group]="getVerifyFormGroup()"></app-select>
-        </div>
-        <div class="row text-dark">
-            <app-input [field]="rejectReason" [group]="getVerifyFormGroup()"></app-input>
-        </div>
-
-        }
-        <!-- {{rawValue | json}}-------- -->
-        <div class="d-flex justify-content-center">
-            <!-- <button class="primary-btn-1" [disabled]="disableStatus()" (click)="onSubmit()">Submit</button> -->
-            <button type="button" class="primary-btn-1" [disabled]="disableStatus()"
-                (click)="onSubmit()">Submit</button>
-        </div>
-
+  </div>
+  <div class="py-4">
+    <ul class="text-dark">
+      <li>If the existing document(s) are correct, select the Accept Existing Document option.</li>
+      <li>
+        If the existing document(s) are incorrect, select the Reject Existing Document option and
+        provide a reason for the upload.
+      </li>
+    </ul>
+    <div
+      class="d-flex justify-content-center p-2 bg-cfPrimary bg-opacity-10 border border-cfPrimary border-start-0 border-end-0 mb-3"
+    >
+      <app-radiobutton [field]="verifyStatus" [group]="getVerifyFormGroup()"></app-radiobutton>
     </div>
-    <!-- <pre>{{getVerifyFormGroup().getRawValue() | json}}</pre>
+    @if (getVerifyStatus() === 3) {
+      <div class="dotted-border-secondary bg-light p-3 mb-3">
+        <p class="fw-bold">Instructions:</p>
+        <ol>
+          <li>
+            Annual Financial Statement should include: Income and Expenditure Statement, Balance
+            Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments
+            Statement.
+          </li>
+          <li>
+            All documents pertaining to a specific financial year should be combined into a single
+            PDF before uploading & should not exceed 20 MB.
+          </li>
+          <li>
+            Please use the following format for naming the documents to be uploaded:
+            nameofthedocument_FY_ULB Name.
+            <strong>Example: Annual accounts_15-16_Jaipur municipal corporation</strong>
+          </li>
+          <li>
+            <strong>Date of Constitution:</strong> (If value: other than prior to 2015-16). Please
+            upload the Gazette notification regarding the constitution of the ULB.
+          </li>
+          <li>
+            <strong>Population: </strong>Please upload the supporting document for the population
+            estimate as on 01 April 2024.
+          </li>
+        </ol>
+      </div>
+      <div class="row mt-2 text-dark">
+        <app-file [field]="data.field" [group]="getVerifyFormGroup()"></app-file>
+      </div>
+      <div class="row mt-2 text-dark">
+        <app-select [field]="rejectOption" [group]="getVerifyFormGroup()"></app-select>
+      </div>
+      <div class="row text-dark">
+        <app-input [field]="rejectReason" [group]="getVerifyFormGroup()"></app-input>
+      </div>
+    }
+    <!-- {{rawValue | json}}-------- -->
+    <div class="d-flex justify-content-center">
+      <!-- <button class="primary-btn-1" [disabled]="disableStatus()" (click)="onSubmit()">Submit</button> -->
+      <button type="button" class="primary-btn-1" [disabled]="disableStatus()" (click)="onSubmit()">
+        Submit
+      </button>
+    </div>
+  </div>
+  <!-- <pre>{{getVerifyFormGroup().getRawValue() | json}}</pre>
     getFormGroup
     <pre>{{getFormGroup().getRawValue() | json}}</pre> -->
 </mat-dialog-content>

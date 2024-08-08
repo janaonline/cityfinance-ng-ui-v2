@@ -1,5 +1,5 @@
-import { Component } from '@angular/core'
-import { CommonModule } from '@angular/common'
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
 import { CommonService } from '../../../core/services/common.service';
 @Component({
@@ -12,8 +12,10 @@ import { CommonService } from '../../../core/services/common.service';
 export class FooterComponent {
   totalUsersVisit: number | undefined;
 
-  constructor(private _commonService: CommonService,
-    private router: Router) {
+  constructor(
+    private _commonService: CommonService,
+    private router: Router,
+  ) {
     this.getPageDetails();
   }
 
@@ -22,9 +24,9 @@ export class FooterComponent {
   }
 
   private fetchUserVisitCount() {
-    this._commonService
-      .getWebsiteVisitCount()
-      .subscribe((res: any) => { return this.totalUsersVisit = res; });
+    this._commonService.getWebsiteVisitCount().subscribe((res: any) => {
+      return (this.totalUsersVisit = res);
+    });
   }
   routerNav(navlink: any) {
     console.log(navlink);
@@ -39,13 +41,12 @@ export class FooterComponent {
     this.router.events.subscribe((event) => {
       let urlArray;
       if (event instanceof NavigationEnd) {
-        urlArray = event.url.split("/");
-        if (urlArray.includes("rankings")) {
+        urlArray = event.url.split('/');
+        if (urlArray.includes('rankings')) {
           this.address = `Nirman Bhawan, <br /> New Delhi 110001`;
           this.mailId = 'mailto:rankings@cityfinance.in';
           this.mailLabel = 'rankings@cityfinance.in';
-        }
-        else {
+        } else {
           this.address = ` Director, AMRUT <br />
             Ministry of Housing and Urban Affairs <br />
             210 C, Nirman Bhawan, Maulana Azad Road <br />
@@ -54,7 +55,6 @@ export class FooterComponent {
           this.mailLabel = 'contact@cityfinance.in';
         }
       }
-    }
-    );
+    });
   }
 }

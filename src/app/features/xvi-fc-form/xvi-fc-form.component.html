@@ -1,147 +1,158 @@
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
-
-    <!-- <form [formGroup]="form"> -->
-    <app-loader class="p-3" *ngIf="isLoader"></app-loader>
-    <div class="border rounded p-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <h3 class="fw-bold fs-4 me-auto my-3">{{ loggedInUserDetails.name }}</h3>
-            <fieldset class="border rounded-3 px-3">
-                <legend class="float-none fs-6 w-auto px-2">Form Status:</legend>
-                <div class="d-flex align-items-center mb-3" id="flex-container">
-                    <p [ngClass]="getStatusClass(formStatus)"
-                        class="form-status alert rounded-pill p-1 fw-bold m-0 flex-grow-1 text-center">{{formStatus |
-                        replaceUnderscore}}</p>
-                    @if (['RETURNED_BY_STATE','RETURNED_BY_XVIFC'].includes(formStatus)) {
-                    <i class="bi bi-info-circle fs-5 text-danger ms-2" matTooltip="{{rejectReason}}"></i>
-                    }
-
-                </div>
-            </fieldset>
+  <!-- <form [formGroup]="form"> -->
+  <app-loader class="p-3" *ngIf="isLoader"></app-loader>
+  <div class="border rounded p-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h3 class="fw-bold fs-4 me-auto my-3">{{ loggedInUserDetails.name }}</h3>
+      <fieldset class="border rounded-3 px-3">
+        <legend class="float-none fs-6 w-auto px-2">Form Status:</legend>
+        <div class="d-flex align-items-center mb-3" id="flex-container">
+          <p
+            [ngClass]="getStatusClass(formStatus)"
+            class="form-status alert rounded-pill p-1 fw-bold m-0 flex-grow-1 text-center"
+          >
+            {{ formStatus | replaceUnderscore }}
+          </p>
+          @if (['RETURNED_BY_STATE', 'RETURNED_BY_XVIFC'].includes(formStatus)) {
+            <i class="bi bi-info-circle fs-5 text-danger ms-2" matTooltip="{{ rejectReason }}"></i>
+          }
         </div>
+      </fieldset>
     </div>
-    <div class=" bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
-        <strong>No Data Found</strong>
-    </div>
-    <mat-stepper *ngIf="!isLoader && tabs" linear="true" labelPosition="bottom" id="stepper"
-        [(selectedIndex)]="selectedStepIndex" #stepper (selectionChange)="onTabChange($event)">
+  </div>
+  <div class="bd-callout bd-callout-info" *ngIf="!isLoader && tabs.length === 0">
+    <strong>No Data Found</strong>
+  </div>
+  <mat-stepper
+    *ngIf="!isLoader && tabs"
+    linear="true"
+    labelPosition="bottom"
+    id="stepper"
+    [(selectedIndex)]="selectedStepIndex"
+    #stepper
+    (selectionChange)="onTabChange($event)"
+  >
+    <mat-step state="state" *ngFor="let tab of tabs; index as i" [completed]="isDemographicValid">
+      <ng-template matStepLabel>
+        <p class="fw-bold d-inline" [title]="tab?.label">
+          {{ (tab?.label).split(' ')[0] }}
+          {{ (tab?.label).split(' ')[1] }}<br />
+          {{ (tab?.label).split(' ')[2] }}
+        </p>
+      </ng-template>
 
-        <mat-step state="state" *ngFor="let tab of tabs; index as i" [completed]="isDemographicValid">
-            <ng-template matStepLabel>
-                <p class="fw-bold d-inline" [title]="tab?.label">
-                    {{ (tab?.label).split( " " )[0] }}
-                    {{ (tab?.label).split(" ")[1] }}<br />
-                    {{ (tab?.label).split(" ")[2] }}
-                </p>
-            </ng-template>
+      <!-- <div class="border-top border-secondary"></div> -->
+      <mat-divider></mat-divider>
 
-            <!-- <div class="border-top border-secondary"></div> -->
-            <mat-divider></mat-divider>
-
-            <div class="container mt-4" [ngClass]="tab.class">
-
-                <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
-                <div class="text-bg-light border rounded mt-3 mb-3 p-3" *ngIf="tab.key !== 'reviewSubmit'">
-                    <p class="text-muted pb-2">Section {{tab.displayPriority}}/ {{tabs.length}}</p>
-                    <h4 class="fw-bold">{{tab.label}}</h4>
-                    <p class="text-danger mt-1 text-end fst-italic">* All fields are required to be filled
-                    </p>
-                </div>
-                <div class="bd-callout bd-callout-info" *ngIf="tab.message">
-                    <strong>{{tab.message}}</strong>
-                </div>
-                <div class="bd-callout bd-callout-info" *ngIf="tab.instruction">
-                    <strong>{{tab.instruction}}</strong>
-                </div>
-                <div class="overflow-container">
-                    <!-- <div id="overlay">
+      <div class="container mt-4" [ngClass]="tab.class">
+        <!-- <div class="container mt-4" [formArrayName]="tab.key"> -->
+        <div class="text-bg-light border rounded mt-3 mb-3 p-3" *ngIf="tab.key !== 'reviewSubmit'">
+          <p class="text-muted pb-2">Section {{ tab.displayPriority }}/ {{ tabs.length }}</p>
+          <h4 class="fw-bold">{{ tab.label }}</h4>
+          <p class="text-danger mt-1 text-end fst-italic">* All fields are required to be filled</p>
+        </div>
+        <div class="bd-callout bd-callout-info" *ngIf="tab.message">
+          <strong>{{ tab.message }}</strong>
+        </div>
+        <div class="bd-callout bd-callout-info" *ngIf="tab.instruction">
+          <strong>{{ tab.instruction }}</strong>
+        </div>
+        <div class="overflow-container">
+          <!-- <div id="overlay">
                         <div id="text">Saving...</div>
                     </div> -->
-                    @if(tabChangeLoader) {
-                    <p class="card-text placeholder-glow" *ngIf="tabChangeLoader">
-                        <span class="placeholder col-7"></span>
-                        <span class="placeholder col-4"></span>
-                        <span class="placeholder col-4"></span>
-                        <span class="placeholder col-6"></span>
-                        <span class="placeholder col-8"></span>
-                        <span class="placeholder col-8"></span>
-                        <span class="placeholder col-8"></span>
-                        <span class="placeholder col-8"></span>
-                    </p>
-                    } @else {
-                    @if (tab.key === 'uploadDoc') {
-                    <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
-                    }
-                    @else if (tab.key === 'accountPractice') {
-                    <app-accounting-practice [field]="tab" [group]="getTabGroup(tab.key)"></app-accounting-practice>
-                    }
-                    @else if (tab.key === 'reviewSubmit') {
-                    <app-review-submit [fields]="tabs" [group]="form" [stepper]="stepper"
-                        [isFormEditable]="isFormEditable"></app-review-submit>
-                    }
-                    @else if (tab.key === 'demographicData') {
-                    <mat-card>
-                        <mat-card-content class="p-4">
-                            <ng-container *ngFor="let field of tab?.data;let i = index;">
-                                <div class="row m-1">
-                                    <app-dynamic-form [field]="field" [group]="getFG(tab.key,i)">
-                                    </app-dynamic-form>
-                                </div>
-                            </ng-container>
-                        </mat-card-content>
-                    </mat-card>
-                    }
-                    @else if (tab.key === 'financialData' || tab.key === 'serviceLevelBenchmark') {
-                    <ng-container *ngFor="let field of tab?.data;let i = index;">
-                        <div class="row mt-4">
-                            <app-dynamic-form [field]="field" [group]="getFG(tab.key,i)">
-                            </app-dynamic-form>
-                        </div>
-                    </ng-container>
-                    }
-                    }
+          @if (tabChangeLoader) {
+            <p class="card-text placeholder-glow" *ngIf="tabChangeLoader">
+              <span class="placeholder col-7"></span>
+              <span class="placeholder col-4"></span>
+              <span class="placeholder col-4"></span>
+              <span class="placeholder col-6"></span>
+              <span class="placeholder col-8"></span>
+              <span class="placeholder col-8"></span>
+              <span class="placeholder col-8"></span>
+              <span class="placeholder col-8"></span>
+            </p>
+          } @else {
+            @if (tab.key === 'uploadDoc') {
+              <app-yearwise-files [field]="tab" [group]="getTabGroup(tab.key)"></app-yearwise-files>
+            } @else if (tab.key === 'accountPractice') {
+              <app-accounting-practice
+                [field]="tab"
+                [group]="getTabGroup(tab.key)"
+              ></app-accounting-practice>
+            } @else if (tab.key === 'reviewSubmit') {
+              <app-review-submit
+                [fields]="tabs"
+                [group]="form"
+                [stepper]="stepper"
+                [isFormEditable]="isFormEditable"
+              ></app-review-submit>
+            } @else if (tab.key === 'demographicData') {
+              <mat-card>
+                <mat-card-content class="p-4">
+                  <ng-container *ngFor="let field of tab?.data; let i = index">
+                    <div class="row m-1">
+                      <app-dynamic-form [field]="field" [group]="getFG(tab.key, i)">
+                      </app-dynamic-form>
+                    </div>
+                  </ng-container>
+                </mat-card-content>
+              </mat-card>
+            } @else if (tab.key === 'financialData' || tab.key === 'serviceLevelBenchmark') {
+              <ng-container *ngFor="let field of tab?.data; let i = index">
+                <div class="row mt-4">
+                  <app-dynamic-form [field]="field" [group]="getFG(tab.key, i)"> </app-dynamic-form>
                 </div>
-                @if(isFormEditable) {
-                <div class="mt-4">
-                    @if (formSaveLoader) {
-                    <div class="float-end">
-                        <button class="ms-2 primary-btn-1" disabled>Saving...</button>
-                    </div>
-                    } @else {
-                    <div class="float-start" *ngIf="selectedStepIndex !==0">
-                        <!-- <button class="ms-2 primary-btn-2" (click)="saveAs('previous')">Back</button> -->
-                        <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
-                    </div>
-                    @if (tab.key === 'reviewSubmit') {
-                    <div class="float-end">
-                        <button class="ms-2 primary-btn-1" (click)="submit()">FINAL SUBMISSION</button>
-                    </div>
-                    } @else {
-                    <div class="float-end">
-                        <button class="ms-2 primary-btn-2" (click)="saveAs('stay')">
-                            Save as Draft</button>
-                        <!-- <button class="ms-2 primary-btn-1" (click)="saveAs('next')"
+              </ng-container>
+            }
+          }
+        </div>
+        @if (isFormEditable) {
+          <div class="mt-4">
+            @if (formSaveLoader) {
+              <div class="float-end">
+                <button class="ms-2 primary-btn-1" disabled>Saving...</button>
+              </div>
+            } @else {
+              <div class="float-start" *ngIf="selectedStepIndex !== 0">
+                <!-- <button class="ms-2 primary-btn-2" (click)="saveAs('previous')">Back</button> -->
+                <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
+              </div>
+              @if (tab.key === 'reviewSubmit') {
+                <div class="float-end">
+                  <button class="ms-2 primary-btn-1" (click)="submit()">FINAL SUBMISSION</button>
+                </div>
+              } @else {
+                <div class="float-end">
+                  <button class="ms-2 primary-btn-2" (click)="saveAs('stay')">Save as Draft</button>
+                  <!-- <button class="ms-2 primary-btn-1" (click)="saveAs('next')"
                             [disabled]="!isDemographicValid">Continue to Next Section</button> -->
-                        <button class="ms-2 primary-btn-1" [disabled]="!isDemographicValid" matStepperNext>
-                            Continue to Next Section</button>
-                    </div>
-                    }
-                    }
+                  <button
+                    class="ms-2 primary-btn-1"
+                    [disabled]="!isDemographicValid"
+                    matStepperNext
+                  >
+                    Continue to Next Section
+                  </button>
                 </div>
-                } @else {
-                <div class="mt-4">
-                    <div class="float-start" *ngIf="selectedStepIndex !==0">
-                        <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
-                    </div>
-                    <div class="float-end" *ngIf="tab.key !== 'reviewSubmit'">
-                        <button class="ms-2 primary-btn-1" matStepperNext>Continue to Next Section</button>
-                    </div>
-                </div>
-                }
+              }
+            }
+          </div>
+        } @else {
+          <div class="mt-4">
+            <div class="float-start" *ngIf="selectedStepIndex !== 0">
+              <button class="ms-2 primary-btn-2" matStepperPrevious>Back</button>
             </div>
-        </mat-step>
+            <div class="float-end" *ngIf="tab.key !== 'reviewSubmit'">
+              <button class="ms-2 primary-btn-1" matStepperNext>Continue to Next Section</button>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-step>
 
-        <!-- <ng-template matStepperIcon="state"><span class="material-icons n-circle">circle</span></ng-template>
+    <!-- <ng-template matStepperIcon="state"><span class="material-icons n-circle">circle</span></ng-template>
             <ng-template matStepperIcon="edit"><span class="material-icons n-circle">circle</span></ng-template>
             <ng-template matStepperIcon="done"><span class="material-icons">check_circle</span></ng-template> -->
-    </mat-stepper>
+  </mat-stepper>
 </div>

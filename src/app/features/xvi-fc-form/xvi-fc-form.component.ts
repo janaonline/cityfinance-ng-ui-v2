@@ -14,7 +14,6 @@ import { UserUtility } from '../../core/util/user/user';
 import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
 import Swal from 'sweetalert2';
 
-
 // import { Tab, APPROVAL_TYPES } from '../../core/models/models';
 import { AlreadyUpdatedUrlPipe } from '../../core/pipes/already-updated-url.pipe';
 // import { DisplayPositionPipe } from '../../core/pipes/display-position.pipe';
@@ -31,9 +30,7 @@ import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.servi
 // import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { XviFcService } from '../../core/services/xvi-fc.service';
 import { RestrictEInputDirective } from '../../core/directives/restrict-e-input.directive';
-import {
-  MatSnackBar,
-} from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { FORM_STATUSES } from '../../core/constants/statuses';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
@@ -53,13 +50,12 @@ import { FORM_STATUSES } from '../../core/constants/statuses';
     AccountingPracticeComponent,
     ReviewSubmitComponent,
     RestrictEInputDirective,
-    ReplaceUnderscorePipe
+    ReplaceUnderscorePipe,
   ],
   templateUrl: './xvi-fc-form.component.html',
-  styleUrl: './xvi-fc-form.component.scss'
+  styleUrl: './xvi-fc-form.component.scss',
 })
 export class XviFcFormComponent {
-
   form!: FormGroup;
   dynamicForm!: FormGroup;
 
@@ -98,23 +94,29 @@ export class XviFcFormComponent {
   oldYearOfSlbOptions: any[] = [];
   oldyearOfElectionOptions: any[] = [];
   statuses: any;
-  formEditableStatuses: string[] = [FORM_STATUSES.IN_PROGRESS.key, FORM_STATUSES.NOT_STARTED.key, FORM_STATUSES.RETURNED_BY_STATE.key, FORM_STATUSES.RETURNED_BY_XVIFC.key];
+  formEditableStatuses: string[] = [
+    FORM_STATUSES.IN_PROGRESS.key,
+    FORM_STATUSES.NOT_STARTED.key,
+    FORM_STATUSES.RETURNED_BY_STATE.key,
+    FORM_STATUSES.RETURNED_BY_XVIFC.key,
+  ];
   // isDemographicCompleted: boolean | undefined = false;
 
   get value() {
     return this.form.value;
   }
-  constructor(private fb: FormBuilder,
+  constructor(
+    private fb: FormBuilder,
     public service: XviFcService,
     public formService: DynamicFormService,
     private _snackBar: MatSnackBar,
-  ) { }
+  ) {}
 
   ngOnInit() {
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);
-    // });    
+    // });
     // this.statuses = FORM_STATUSES;
     this.onLoad();
   }
@@ -132,7 +134,6 @@ export class XviFcFormComponent {
     return this.formEditableStatuses.includes(this.formStatus);
   }
   onLoad(reload = false) {
-
     this.isLoader = true;
     this.ulbId = this.loggedInUserDetails.ulb;
     // this.ulbId = '5dd24e98cc3ddc04b552b7d4';
@@ -147,7 +148,7 @@ export class XviFcFormComponent {
         this.tabs.push({
           key: 'reviewSubmit',
           label: 'Review & Submit',
-          'displayPriority': this.totalTabs + 1,
+          displayPriority: this.totalTabs + 1,
         });
 
         this.form = this.formService.tabControl(this.tabs);
@@ -157,12 +158,18 @@ export class XviFcFormComponent {
           this.form?.markAllAsTouched();
         }
         if (this.isFormEditable) {
-          this.oldyearOfElectionOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfElection').options;
+          this.oldyearOfElectionOptions = this.tabs[0].data.find(
+            (e: any) => e.key === 'yearOfElection',
+          ).options;
           if (this.tabs[0].formType === 'form2') {
-            this.oldYearOfSlbOptions = this.tabs[0].data.find((e: any) => e.key === 'yearOfSlb').options;
+            this.oldYearOfSlbOptions = this.tabs[0].data.find(
+              (e: any) => e.key === 'yearOfSlb',
+            ).options;
           }
 
-          const yearOfConstitutionIndex = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfConstitution');
+          const yearOfConstitutionIndex = this.tabs[0].data.findIndex(
+            (e: any) => e.key === 'yearOfConstitution',
+          );
 
           this.setOption(yearOfConstitutionIndex);
           this.setOnValueChange(yearOfConstitutionIndex);
@@ -171,19 +178,19 @@ export class XviFcFormComponent {
         this.isLoader = false;
         this.formSaveLoader = false;
         this.tabChangeLoader = false;
-      }, error: () => {
+      },
+      error: () => {
         this.isLoader = false;
-      }
+      },
     });
   }
 
-
   setOnValueChange(yearOfConstitutionIndex: number) {
-
-    this.getFG('demographicData', yearOfConstitutionIndex).valueChanges.pipe(
+    this.getFG('demographicData', yearOfConstitutionIndex)
+      .valueChanges.pipe
       // debounceTime(400),
       // distinctUntilChanged()
-    )
+      ()
       .subscribe((data: any) => {
         if (data['yearOfConstitution']) {
           this.setOption(yearOfConstitutionIndex);
@@ -192,14 +199,15 @@ export class XviFcFormComponent {
   }
 
   setOption(yearOfConstitutionIndex: number) {
-    const yearOfConstitutionValue = this.getFG('demographicData', yearOfConstitutionIndex).get('yearOfConstitution').value;
+    const yearOfConstitutionValue = this.getFG('demographicData', yearOfConstitutionIndex).get(
+      'yearOfConstitution',
+    ).value;
     const yearOfConstitutionOptions = this.tabs[0].data[yearOfConstitutionIndex].options;
 
     const index = yearOfConstitutionOptions.indexOf(yearOfConstitutionValue);
     const yearOfElection = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfElection');
 
     this.tabs[0].data[yearOfElection].options = this.oldyearOfElectionOptions.slice(0, index + 2);
-
 
     if (this.tabs[0].formType === 'form2') {
       const yearOfSlbIndex = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfSlb');
@@ -220,8 +228,6 @@ export class XviFcFormComponent {
     }
   }
 
-
-
   submit() {
     if (this.form.valid) {
       Swal.fire({
@@ -241,31 +247,23 @@ export class XviFcFormComponent {
           // this.service.submitUlbForm(this.ulbId, formData).subscribe((res) => {
           this.service.submitUlbForm(this.ulbId, formData).subscribe({
             next: (res) => {
-              Swal.fire(
-                'Done!',
-                'Your action has been confirmed.',
-                'success'
-              );
+              Swal.fire('Done!', 'Your action has been confirmed.', 'success');
               this.onLoad();
-            }, error: (error: any) => {
+            },
+            error: (error: any) => {
               this.handleHttpError(error);
-            }
+            },
           });
-
         } else if (result.dismiss === Swal.DismissReason.cancel) {
           // Cancel the action
-          Swal.fire(
-            'Cancelled',
-            'Your action has been cancelled.',
-            'error'
-          );
+          Swal.fire('Cancelled', 'Your action has been cancelled.', 'error');
         }
       });
     } else {
       Swal.fire(
         'Incomplete or incorrect data entered!',
         'Please fill in all required fields marked as N/A to submit the form.',
-        'error'
+        'error',
       ).then(() => {
         //scroll to fisrt error tab
         setTimeout(() => {
@@ -273,20 +271,16 @@ export class XviFcFormComponent {
             // console.log('tab.key', tab.key, 'invalid', this.form.get(tab.key)?.invalid);
 
             if (this.form.get(tab.key)?.invalid) {
-              document.getElementById(tab.key)?.scrollIntoView({ behavior: "smooth" });
+              document.getElementById(tab.key)?.scrollIntoView({ behavior: 'smooth' });
               return;
             }
           }
-        }, 500)
+        }, 500);
       });
     }
   }
   handleHttpError(error: any) {
-    Swal.fire(
-      'Error',
-      error.message || 'Something went wrong! Please try again',
-      'error'
-    );
+    Swal.fire('Error', error.message || 'Something went wrong! Please try again', 'error');
     this.formSaveLoader = false;
     this.tabChangeLoader = false;
   }
@@ -321,9 +315,10 @@ export class XviFcFormComponent {
             this.tabChangeLoader = false;
           }
           this.triggerSnackbar();
-        }, error: (error: any) => {
+        },
+        error: (error: any) => {
           this.handleHttpError(error);
-        }
+        },
       });
     }
   }
@@ -343,14 +338,15 @@ export class XviFcFormComponent {
         this.triggerSnackbar();
         this.formSaveLoader = false;
         this.actionType = '';
-      }, error: (error: any) => {
+      },
+      error: (error: any) => {
         this.handleHttpError(error);
-      }
+      },
     });
   }
 
   getFormData() {
-    const formData: any = { tab: [], formStatus: 'IN_PROGRESS' }
+    const formData: any = { tab: [], formStatus: 'IN_PROGRESS' };
     formData.tab.push(this.getFormTabData(this.tabs[this.selectedStepIndex]));
     return formData;
   }
@@ -368,7 +364,7 @@ export class XviFcFormComponent {
         const fieldData = {
           key: field.key,
           value: formJsonTab[i][field.key],
-          saveAsDraftValue: formJsonTab[i][field.key]
+          saveAsDraftValue: formJsonTab[i][field.key],
         };
         tabData.data.push(fieldData);
       });
@@ -403,9 +399,7 @@ export class XviFcFormComponent {
         // console.log('formJsonTab[i][field.key]', formJsonTab[i][field.key]);
         for (const [key, value] of Object.entries(formJsonTab[i][field.key])) {
           if (this.isPlainObject(value)) {
-            tabData.data.push(
-              { key, saveAsDraftValue: value['value'], ...value }
-            );
+            tabData.data.push({ key, saveAsDraftValue: value['value'], ...value });
           }
         }
       });
@@ -413,10 +407,9 @@ export class XviFcFormComponent {
 
     // console.log('formData----', formData);
     return tabData;
-
   }
 
-  isPlainObject(data: unknown): data is { [s: string]: unknown; } {
+  isPlainObject(data: unknown): data is { [s: string]: unknown } {
     return typeof data === 'object' && data !== null && !Array.isArray(data);
   }
 
@@ -425,22 +418,20 @@ export class XviFcFormComponent {
       horizontalPosition: 'end',
       verticalPosition: 'top',
       duration: 10000,
-      panelClass: ['custom-snackbar-success']
+      panelClass: ['custom-snackbar-success'],
     });
   }
 
   getTabGroup(tabKey: string): FormArray {
-    return (this.form.get(tabKey) as FormArray)
+    return this.form.get(tabKey) as FormArray;
   }
 
   getFG(tabKey: string, i: number): any {
-    // console.log('tabKey',tabKey, 'i',i, '---',(this.form.get(tabKey) as FormArray).controls[i]);    
+    // console.log('tabKey',tabKey, 'i',i, '---',(this.form.get(tabKey) as FormArray).controls[i]);
     return (this.form.get(tabKey) as FormArray).controls[i];
   }
 
   getStatusClass(status: string): string {
-    return status ? FORM_STATUSES[status].class : "";
+    return status ? FORM_STATUSES[status].class : '';
   }
-
 }
-

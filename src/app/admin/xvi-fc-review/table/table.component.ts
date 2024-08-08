@@ -20,7 +20,7 @@ import { XviFcService } from '../../../core/services/xvi-fc.service';
   imports: [MatProgressSpinnerModule, MatTableModule, MatSortModule, MatPaginatorModule, DatePipe],
 })
 export class TableComponent implements AfterViewInit {
-  displayedColumns: string[] = ['ulbName', 'censusCode', ];
+  displayedColumns: string[] = ['ulbName', 'censusCode'];
   exampleDatabase!: ExampleHttpDatabase | null;
   data: GithubIssue[] = [];
 
@@ -40,7 +40,10 @@ export class TableComponent implements AfterViewInit {
   totalForms: any;
   dataSource: any;
 
-  constructor(private _httpClient: HttpClient, public service: XviFcService,) { }
+  constructor(
+    private _httpClient: HttpClient,
+    public service: XviFcService,
+  ) {}
 
   onLoad() {
     // this.page = 50;
@@ -54,7 +57,7 @@ export class TableComponent implements AfterViewInit {
       state: '5dcf9d7216a06aed41c748dd',
       skip: this.paginator.pageIndex,
       limit: this.limit,
-    }
+    };
     const payload = {
       sort: {
         [this.sort.active]: this.sort.direction === 'asc' ? 1 : -1,
@@ -64,26 +67,27 @@ export class TableComponent implements AfterViewInit {
       },
       filter: {
         // formStatus: 'IN_PROGRESS'
-        formStatus: this.formStatus
+        formStatus: this.formStatus,
       },
-      searchText: this.ulbName
+      searchText: this.ulbName,
     };
     this.service.getFormList(queryParams, payload).subscribe({
       next: (res: any) => {
         // console.log(res);
         this.totalForms = res.totalForms;
         // this.dataSource.paginator =  1000;
-        this.dataSource = res.data
+        this.dataSource = res.data;
 
         this.isLoader = false;
-      }, error: () => {
+      },
+      error: () => {
         this.isLoader = false;
-      }
+      },
     });
   }
   ngAfterViewInit() {
     console.log('--in-');
-    
+
     this.exampleDatabase = new ExampleHttpDatabase(this._httpClient);
 
     // If the user changes the sort order, reset back to the first page.
@@ -135,17 +139,17 @@ export interface GithubIssue {
 
 /** An example database that the data source uses to retrieve data for the table. */
 export class ExampleHttpDatabase {
-  constructor(private _httpClient: HttpClient) { }
+  constructor(private _httpClient: HttpClient) {}
 
   getRepoIssues(sort: string, order: SortDirection, page: number): Observable<GithubApi> {
     const href = 'https://api.github.com/search/issues';
-    const requestUrl = `${href}?q=repo:angular/components&sort=${sort}&order=${order}&page=${page + 1
-      }`;
+    const requestUrl = `${href}?q=repo:angular/components&sort=${sort}&order=${order}&page=${
+      page + 1
+    }`;
 
     return this._httpClient.get<GithubApi>(requestUrl);
   }
 }
-
 
 /**  Copyright 2024 Google LLC. All Rights Reserved.
     Use of this source code is governed by an MIT-style license that

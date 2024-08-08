@@ -10,15 +10,12 @@ import { MaterialModule } from '../../../material.module';
   imports: [CommonModule, MaterialModule],
 })
 export class LoaderComponent {
-
   colorSequence = ['success', 'danger', 'warning', 'info'];
 
-  constructor() { }
+  constructor() {}
   @Input() show: boolean = false;
   @Input() dots: number = 3;
   ngOnInit(): void {
     // console.log('show', this.show);
-    
   }
-
 }

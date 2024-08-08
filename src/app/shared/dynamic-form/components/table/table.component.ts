@@ -11,12 +11,11 @@ import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
   selector: 'app-table',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MaterialModule, InputComponent, SelectComponent,],
+  imports: [MaterialModule, InputComponent, SelectComponent],
   templateUrl: './table.component.html',
-  styleUrl: './table.component.scss'
+  styleUrl: './table.component.scss',
 })
 export class TableComponent {
-
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   collapsed = false;
@@ -26,7 +25,7 @@ export class TableComponent {
   sumFields: any[] = [];
   yearFields: string[] = [];
 
-  constructor() { }
+  constructor() {}
   ngOnInit() {
     // console.log('----field table --', this.field);
     // console.log('----group table --', this.group);
@@ -34,25 +33,27 @@ export class TableComponent {
     // console.log('----group table getRawValue --', this.group.getRawValue());
     this.getYears();
     this.sumLogic();
-
   }
 
   getYears() {
     const firstField = this.field.data ? this.field.data[0].year : [];
-    this.yearFields = firstField.map((value: any) => { return value.year; });
+    this.yearFields = firstField.map((value: any) => {
+      return value.year;
+    });
     // console.log('this.years-----', this.yearFields);
   }
   sumLogic() {
-    const sumFields = this.field.data ? this.field.data.filter(e => e.sumOf && e.sumOf.length).sort((a, b) => a.sumOrder - b.sumOrder) : [];
+    const sumFields = this.field.data
+      ? this.field.data
+          .filter((e) => e.sumOf && e.sumOf.length)
+          .sort((a, b) => a.sumOrder - b.sumOrder)
+      : [];
     // const totalSumFields = this.field.data ? this.field.data.filter(e => e.totalSumOf) : [];
     // console.log('----sumFields --', sumFields);
 
     this.subscription = this.group.valueChanges
-      .pipe(
-        debounceTime(400),
-        distinctUntilChanged()
-      )
-      .subscribe(data => {
+      .pipe(debounceTime(400), distinctUntilChanged())
+      .subscribe((data) => {
         // console.log('-----data----', data);
         // const currentTable = data[this.field.key];
         if (!sumFields.length) return;
@@ -73,21 +74,27 @@ export class TableComponent {
               const yearKey = `fy${yearField}_${subField}`;
               // console.log('yearKey', yearKey);
 
-              if (currentTable[subField] && currentTable[subField][yearKey] && !isNaN(parseInt(currentTable[subField][yearKey]))) {
+              if (
+                currentTable[subField] &&
+                currentTable[subField][yearKey] &&
+                !isNaN(parseInt(currentTable[subField][yearKey]))
+              ) {
                 sumYears[sumFieldYearKey] += parseInt(currentTable[subField][yearKey]);
               }
               // if (currentTable[subField] && currentTable[subField][yearField] && !isNaN(parseInt(currentTable[subField][yearField]))) {
               //   sumYears[yearField] += parseInt(currentTable[subField][yearField]);
               // }
             });
-
           });
           // console.log('sumYears', sumYears);
 
-          this.group.get(this.field.key)?.get(sumField['key'])?.patchValue(sumYears, { emitEvent: false, onlySelf: true });
-        })
+          this.group
+            .get(this.field.key)
+            ?.get(sumField['key'])
+            ?.patchValue(sumYears, { emitEvent: false, onlySelf: true });
+        });
         // this.total = data.reduce((a: any, b: any) => a + +b.fdnTotalShares, 0)
-      })
+      });
   }
 
   ngOnDestroy() {
@@ -97,6 +104,4 @@ export class TableComponent {
   getTableGroup(fieldKey: any, rowKey: string): FormGroup {
     return (this.group.get(fieldKey) as FormGroup).get(rowKey) as FormGroup;
   }
-
-
 }

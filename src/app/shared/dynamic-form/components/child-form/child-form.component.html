@@ -1,20 +1,20 @@
-<div fxLayout="column" fxLayoutAlign="center stretch" >
+<div fxLayout="column" fxLayoutAlign="center stretch">
   <mat-card>
     <mat-card-header>
       <mat-card-title>
-        {{field.label}}
+        {{ field.label }}
       </mat-card-title>
     </mat-card-header>
     dfgdfg 123
-    <div class="wrapper" *ngFor="let arrGroup of getSubItems(field.name);let i = index;">
+    <div class="wrapper" *ngFor="let arrGroup of getSubItems(field.name); let i = index">
       <!-- ----{{field | json}}----------- -->
-      <div *ngFor="let field of field?.formArrays[i];let idx=index;">
+      <div *ngFor="let field of field?.formArrays[i]; let idx = index">
         <!-- <div [className]="(idx==0)?'box1':'box2'" dynamicField [field]="field" [group]="arrGroup">
         </div> -->
         <!-- {{field | json}}-----  -->
         <!-- {{arrGroup}}----- -->
         @switch (field.type) {
-<!-- 
+          <!-- 
         @case ('input') {
         <app-input [field]="field" [group]="arrGroup"></app-input>
         }
@@ -24,7 +24,6 @@
         @case ('date') {
         <app-date [field]="field" [group]="arrGroup"></app-date>
         } -->
-
         }
       </div>
     </div>

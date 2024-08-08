@@ -14,7 +14,8 @@ import { APP_BASE_HREF } from '@angular/common';
 export const appConfig: ApplicationConfig = {
   providers: [
     // {provide:APP_BASE_HREF, useValue: '/xvi-fc/'},
-    provideRouter(routes), provideAnimationsAsync(),
+    provideRouter(routes),
+    provideAnimationsAsync(),
     importProvidersFrom(HttpClientModule),
 
     // CustomHttpInterceptor,
@@ -29,5 +30,5 @@ export const appConfig: ApplicationConfig = {
     AuthService,
     AuthGuard,
     VersionCheckService,
-  ]
+  ],
 };

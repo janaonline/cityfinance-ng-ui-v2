@@ -2,10 +2,9 @@ import { Directive, HostListener } from '@angular/core';
 
 @Directive({
   selector: '[appNoUpDown]',
-  standalone: true
+  standalone: true,
 })
 export class NoUpDownDirective {
-
   @HostListener('keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
     // Check if the key pressed is the up/down arrow key
@@ -27,5 +26,4 @@ export class NoUpDownDirective {
       event.preventDefault();
     }
   }
-
 }

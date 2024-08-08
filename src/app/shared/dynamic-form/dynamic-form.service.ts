@@ -1,21 +1,30 @@
 import { Injectable } from '@angular/core';
-import { FormGroup, FormBuilder, FormArray, Validators, FormControl, AbstractControl } from '@angular/forms';
-import { compareArrFieldsValidator, compareFieldsValidator } from '../../core/validators/comparison.validator';
+import {
+  FormGroup,
+  FormBuilder,
+  FormArray,
+  Validators,
+  FormControl,
+  AbstractControl,
+} from '@angular/forms';
+import {
+  compareArrFieldsValidator,
+  compareFieldsValidator,
+} from '../../core/validators/comparison.validator';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DynamicFormService {
-
   form!: FormGroup;
-  constructor(private fb: FormBuilder,) { }
+  constructor(private fb: FormBuilder) {}
 
   getFG(tabKey: string, i: number): any {
-    return (this.form.get(tabKey) as FormArray).controls[i]
+    return (this.form.get(tabKey) as FormArray).controls[i];
   }
   setTableData(childField: any) {
     const tableRow: any = [];
-    const childRows = childField['data'] || childField['tableRow']
+    const childRows = childField['data'] || childField['tableRow'];
     childRows.forEach((row: any) => {
       const tableData = row.year || row.tableData;
       if (tableData) {
@@ -31,15 +40,13 @@ export class DynamicFormService {
         //     [row.key]: new FormGroup(tableCol),
         //   }));
       }
-
-    })
+    });
 
     return new FormGroup(tableRow);
-
   }
   setTableData_bkp(childField: any) {
     const tableRow: any = [];
-    const childRows = childField['data'] || childField['tableRow']
+    const childRows = childField['data'] || childField['tableRow'];
     childRows.forEach((row: any) => {
       const tableData = row.year || row.tableData;
       if (tableData) {
@@ -51,24 +58,23 @@ export class DynamicFormService {
               // [col.key]: new FormControl(col.value),
               [col.key]: this.createContorl(col),
               // 'sum': new FormControl(col.sum),
-            }));
+            }),
+          );
         });
         tableRow.push(
           new FormGroup({
             [row.key]: new FormArray(tableCol),
-            ...(row.sum && { 'sum': new FormControl(row.sum) })
-          }));
+            ...(row.sum && { sum: new FormControl(row.sum) }),
+          }),
+        );
       }
-
-    })
+    });
 
     return new FormArray(tableRow);
-
   }
   // custom validator to check that two fields match
   MustMatch(controlName: string, matchingControlName: string) {
     return (group: AbstractControl) => {
-
       const control = group.get(controlName)?.get('value');
 
       const matchingControl = group.get(matchingControlName)?.get('value');
@@ -77,7 +83,6 @@ export class DynamicFormService {
         return null;
       }
       console.log('control va', control.value, 'matchingControl va', matchingControl.value);
-
 
       // return if another validator has already found an error on the matchingControl
       if (matchingControl.errors && !matchingControl.errors['lessThan']) {
@@ -91,12 +96,11 @@ export class DynamicFormService {
         matchingControl.setErrors(null);
       }
       return null;
-    }
+    };
   }
   // custom validator to check that if the cuurent field less than compare fields
   lessThanValidator(controlName: string, matchingControlName: string) {
     return (group: AbstractControl) => {
-
       const control = group.get(controlName)?.get('value');
 
       const matchingControl = group.get(matchingControlName)?.get('value');
@@ -117,19 +121,21 @@ export class DynamicFormService {
         matchingControl.setErrors(null);
       }
       return null;
-    }
+    };
   }
   setQuestionnaireData(childField: any) {
     const tableRow: any = [];
     childField.data.forEach((row: any) => {
-      tableRow[row.key] = new FormGroup({ value: this.createContorl(row), reason: new FormControl(row.reason) });
-    })
+      tableRow[row.key] = new FormGroup({
+        value: this.createContorl(row),
+        reason: new FormControl(row.reason),
+      });
+    });
     return new FormGroup(tableRow, {
       // validators: this.MustMatch('password', 'confirmPassword')
       // validators: [this.lessThanValidator('totSanction', 'totVacancy')]
-      validators: [compareFieldsValidator('totVacancy', 'totSanction', 'lessThan')]
+      validators: [compareFieldsValidator('totVacancy', 'totSanction', 'lessThan')],
     });
-
   }
   setFilesData(childField: any) {
     const years: any = [];
@@ -147,11 +153,9 @@ export class DynamicFormService {
 
         // );
       });
-
     }
     // return new FormGroup(years);
     return new FormGroup(years);
-
   }
 
   createFileForm(yearField: any, required: boolean) {
@@ -170,7 +174,9 @@ export class DynamicFormService {
       fileValidator.push(Validators.required);
     }
     // except accept/reject others null
-    const verifyStatus = [2, 3].includes(Number(yearField.verifyStatus)) ? yearField.verifyStatus : null;
+    const verifyStatus = [2, 3].includes(Number(yearField.verifyStatus))
+      ? yearField.verifyStatus
+      : null;
     return new FormGroup({
       file: new FormGroup({
         name: new FormControl(yearField.file?.name || null, fileValidator),
@@ -235,40 +241,38 @@ export class DynamicFormService {
         let formArrays: any[] = [];
         const validators: any = [];
         fieldFormArrays.forEach((childField: any) => {
-          const compareValid = childField.validations?.find((e: { name: string; }) => e.name === 'greaterThanEqualTo');
+          const compareValid = childField.validations?.find(
+            (e: { name: string }) => e.name === 'greaterThanEqualTo',
+          );
 
           if (compareValid) {
-            validators.push(compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name));
+            validators.push(
+              compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name),
+            );
           }
           // table row
           const childFieldData: any = {};
           if (childField.formFieldType === 'table') {
             childFieldData[childField.key] = this.setTableData(childField);
-          }
-          else if (childField.formFieldType === 'questionnaire') {
-
+          } else if (childField.formFieldType === 'questionnaire') {
             childFieldData[childField.key] = this.setQuestionnaireData(childField);
-          }
-          else if (childField.formFieldType === 'file') {
+          } else if (childField.formFieldType === 'file') {
             // console.log('childField----', childField);
             childFieldData[childField.key] = this.setFilesData(childField);
-          }
-          else {
+          } else {
             // childFieldData[childField.key] = new FormControl(childField.value);
             childFieldData[childField.key] = this.createContorl(childField);
           }
           // console.log('validators', validators);
           formArrays.push(new FormGroup(childFieldData));
-
         });
-        group[field.key] = new FormArray(formArrays,
+        group[field.key] = new FormArray(
+          formArrays,
           // { validators: [compareArrFieldsValidator('popApril2024', 'pop2011', 'greaterThanEqualTo')] },
-          { validators }
+          { validators },
         );
-
       }
     });
     return new FormGroup(group);
   }
-
 }

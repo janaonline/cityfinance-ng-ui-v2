@@ -1,4 +1,3 @@
-
 export interface TableResponse {
   success?: boolean;
   message?: string;
@@ -52,9 +51,8 @@ export interface TableColumnsEntity {
 //   @Input() tableName : string = '';
 //   @Output() update: EventEmitter<any> = new EventEmitter<any>();
 
-
 //   isSearchable: boolean = false;
-  
+
 //   constructor(
 //     private dialog: MatDialog
 //   ) { }
@@ -73,7 +71,7 @@ export interface TableColumnsEntity {
 //   }
 
 //   get queryParams() {
-    
+
 //     const params = {
 //       skip: '' + this.page * this.limit,
 //       limit: '' + this.limit,

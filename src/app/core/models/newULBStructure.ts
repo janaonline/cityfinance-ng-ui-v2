@@ -13,16 +13,16 @@ export interface NewULBStructure {
     state: string;
     name: string;
     code: string;
-    amrut: "Yes" | "No" | undefined;
+    amrut: 'Yes' | 'No' | undefined;
     area: any;
-    natureOfUlb: IULB["natureOfUlb"];
-    type: IULB["type"];
-    population: IULB["population"];
-    wards: IULB["wards"];
+    natureOfUlb: IULB['natureOfUlb'];
+    type: IULB['type'];
+    population: IULB['population'];
+    wards: IULB['wards'];
   };
 
   ulbtypes: {
-    name: IULB["type"];
+    name: IULB['type'];
     _id: string;
   };
   state: {
