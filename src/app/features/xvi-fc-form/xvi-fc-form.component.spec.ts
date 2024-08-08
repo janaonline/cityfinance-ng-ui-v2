@@ -8,10 +8,9 @@ describe('XviFcFormComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [XviFcFormComponent]
-    })
-    .compileComponents();
-    
+      imports: [XviFcFormComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(XviFcFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

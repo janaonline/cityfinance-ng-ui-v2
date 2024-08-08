@@ -1,9 +1,8 @@
-import { HttpClient } from "@angular/common/http";
-import { Injectable } from "@angular/core";
-import { JwtHelperService } from "@auth0/angular-jwt";
-import { Subject } from "rxjs";
-import { environment } from "../../../environments/environment";
-
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { JwtHelperService } from '@auth0/angular-jwt';
+import { Subject } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable()
 export class AuthService {
@@ -18,30 +17,27 @@ export class AuthService {
 
   loginLogoutCheck = new Subject<any>();
   authenticateUser(user: any) {
-    this.http.post(environment.api.url + "users/signin", user);
+    this.http.post(environment.api.url + 'users/signin', user);
   }
 
   getLastUpdated(params?: any) {
     return this.http.get(
       environment.api.url +
-        `ledger/lastUpdated?ulb=${params?.ulb ?? ""}&state=${
-          params?.state ?? ""
-        }`
+        `ledger/lastUpdated?ulb=${params?.ulb ?? ''}&state=${params?.state ?? ''}`,
     );
   }
 
   getCityData(ulbId: any) {
     return this.http.get(
-      environment.api.url +
-        `all-dashboard/people-information?type=ulb&ulb=${ulbId}`
+      environment.api.url + `all-dashboard/people-information?type=ulb&ulb=${ulbId}`,
     );
   }
   signin(user: any) {
-    return this.http.post(environment.api.url + "login", user);
+    return this.http.post(environment.api.url + 'login', user);
   }
 
   signup(newUser: any) {
-    return this.http.post(environment.api.url + "register", newUser);
+    return this.http.post(environment.api.url + 'register', newUser);
   }
 
   decodeToken() {
@@ -49,7 +45,7 @@ export class AuthService {
   }
 
   getToken(): string {
-    return localStorage.getItem("id_token") || '';
+    return localStorage.getItem('id_token') || '';
   }
 
   /**

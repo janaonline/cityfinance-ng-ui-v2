@@ -15,16 +15,15 @@ import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
   standalone: true,
   imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe],
   templateUrl: './file.component.html',
-  styleUrl: './file.component.scss'
+  styleUrl: './file.component.scss',
 })
 export class FileComponent {
-
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   progress = 50;
   currentFile!: File | null;
   s3Subscribe!: Subscription;
-  fileTypes: any = { 'pdf': 'application/pdf', 'xlsx': 'application/vnd.ms-excel' };
+  fileTypes: any = { pdf: 'application/pdf', xlsx: 'application/vnd.ms-excel' };
   allowedFileTypeStr: string = '';
   maxFileSize: number = 20;
   readonly: boolean | undefined = false;
@@ -36,18 +35,17 @@ export class FileComponent {
     // const years = JSON.parse(localStorage.getItem("Years"));
     // const year = this.getKeyByValue(years, this.design_year);
     // return `${this.userData?.role}/${year}/sfc/${this.userData?.stateCode}`
-    return `ulb/year/audited/ulbCode`
+    return `ulb/year/audited/ulbCode`;
   }
 
-  constructor(private fileService: FileService) {
-
-  }
+  constructor(private fileService: FileService) {}
 
   ngOnInit() {
     // console.log('----field file --', this.field);
     // console.log('----parentField file --', this.parentField);
     // console.log('----group file --', this.group);
-    this.allowedFileTypeStr = this.field.allowedFileTypes?.map((e: string) => this.fileTypes[e])?.join(',') || '';
+    this.allowedFileTypeStr =
+      this.field.allowedFileTypes?.map((e: string) => this.fileTypes[e])?.join(',') || '';
     this.readonly = this.parentField?.readonly || this.field?.readonly;
   }
 
@@ -57,7 +55,6 @@ export class FileComponent {
   get getRawValue() {
     return this.group.getRawValue();
   }
-
 
   @ViewChild('fileDropRef', { static: false }) fileDropRef!: ElementRef;
   resetFileInput() {
@@ -96,7 +93,6 @@ export class FileComponent {
     if (this.s3Subscribe) this.s3Subscribe.unsubscribe();
     // console.log('this.group.123', );
     // console.log('this.group.', this.group);
-
   }
 
   /**
@@ -120,8 +116,6 @@ export class FileComponent {
   //   }, 1000);
   // }
 
-
-
   /**
    * Convert Files list to normal array list
    * @param files (Files List)
@@ -137,7 +131,6 @@ export class FileComponent {
 
     // this.uploadFilesSimulator(0);
     this.uploadFileToS3();
-
   }
 
   isValidFile(file: File): Boolean {
@@ -145,18 +138,22 @@ export class FileComponent {
 
     const fileExtension: any = file.name.split('.').pop();
     if (this.field.allowedFileTypes && !this.field.allowedFileTypes?.includes(fileExtension)) {
-      swal("Error", `Allowed file extensions: ${this.field.allowedFileTypes?.join(', ')}`, "error");
+      swal('Error', `Allowed file extensions: ${this.field.allowedFileTypes?.join(', ')}`, 'error');
       return false;
     }
 
-    if ((file.size / 1024 / 1024) > this.maxFileSize) {
-      swal("File Limit Error", `Maximum ${this.maxFileSize} mb file can be allowed.`, "error");
+    if (file.size / 1024 / 1024 > this.maxFileSize) {
+      swal('File Limit Error', `Maximum ${this.maxFileSize} mb file can be allowed.`, 'error');
       return false;
     }
 
     let isfileValid = this.fileService.checkSpcialCharInFileName(file);
     if (isfileValid == false) {
-      swal("Error", "File name has special characters ~`!#$%^&*+=[]\\\';,/{}|\":<>?@ \nThese are not allowed in file name,please edit file name then upload.\n", 'error');
+      swal(
+        'Error',
+        'File name has special characters ~`!#$%^&*+=[]\\\';,/{}|":<>?@ \nThese are not allowed in file name,please edit file name then upload.\n',
+        'error',
+      );
       return false;
     }
 
@@ -178,7 +175,7 @@ export class FileComponent {
         }
         const { url, path } = s3Response.data[0];
         this.progress = 80;
-        this.s3Subscribe = this.fileService.newUploadFileToS3(file, url).subscribe(res => {
+        this.s3Subscribe = this.fileService.newUploadFileToS3(file, url).subscribe((res) => {
           if (res.type !== HttpEventType.Response) return;
           // control.patchValue({ uploading: false, name: file.name, url: path });
           this.field.uploading = false;
@@ -186,7 +183,8 @@ export class FileComponent {
           const fileData: any = { name: file.name, url: path, size: this.formatBytes(file.size) };
           this.group.get('file')?.patchValue(fileData);
         });
-      }, error: err => console.log(err)
+      },
+      error: (err) => console.log(err),
     });
     return;
   }
@@ -206,5 +204,4 @@ export class FileComponent {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   }
-
 }

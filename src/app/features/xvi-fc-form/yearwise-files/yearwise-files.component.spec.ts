@@ -8,10 +8,9 @@ describe('YearwiseFilesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [YearwiseFilesComponent]
-    })
-    .compileComponents();
-    
+      imports: [YearwiseFilesComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(YearwiseFilesComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

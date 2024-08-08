@@ -1,5 +1,3 @@
-
-
 import { USER_TYPE } from '../../models/user/userType';
 import { UserUtility } from '../user/user';
 

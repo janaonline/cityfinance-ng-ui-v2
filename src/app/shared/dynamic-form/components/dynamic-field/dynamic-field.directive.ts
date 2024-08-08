@@ -6,19 +6,19 @@ import {
   Input,
   OnInit,
   Type,
-  ViewContainerRef
-} from "@angular/core";
-import { FormGroup } from "@angular/forms";
-import { FieldConfig } from "../../field.interface";
-import { InputComponent } from "../input/input.component";
-import { ButtonComponent } from "../button/button.component";
-import { SelectComponent } from "../select/select.component";
-import { DateComponent } from "../date/date.component";
-import { RadiobuttonComponent } from "../radiobutton/radiobutton.component";
-import { CheckboxComponent } from "../checkbox/checkbox.component";
-import { ChildFormComponent } from "../child-form/child-form.component";
-import { ActivatedRoute, Params } from "@angular/router";
-import { Subject, mergeMap, takeUntil, tap } from "rxjs";
+  ViewContainerRef,
+} from '@angular/core';
+import { FormGroup } from '@angular/forms';
+import { FieldConfig } from '../../field.interface';
+import { InputComponent } from '../input/input.component';
+import { ButtonComponent } from '../button/button.component';
+import { SelectComponent } from '../select/select.component';
+import { DateComponent } from '../date/date.component';
+import { RadiobuttonComponent } from '../radiobutton/radiobutton.component';
+import { CheckboxComponent } from '../checkbox/checkbox.component';
+import { ChildFormComponent } from '../child-form/child-form.component';
+import { ActivatedRoute, Params } from '@angular/router';
+import { Subject, mergeMap, takeUntil, tap } from 'rxjs';
 // const componentMapper: Record<any, Type<any>>  = {
 //   input: InputComponent,
 //   button: ButtonComponent,
@@ -29,20 +29,20 @@ import { Subject, mergeMap, takeUntil, tap } from "rxjs";
 //   childform: ChildFormComponent
 // };
 
-// export type ServiceComponentType = InputComponent 
-// | ButtonComponent 
+// export type ServiceComponentType = InputComponent
+// | ButtonComponent
 // | DateComponent;
 
-// export const servicesComponentFactory: 
-//   Record<string, Type<Component>> 
+// export const servicesComponentFactory:
+//   Record<string, Type<Component>>
 // = {
 //   [ServiceTypes.consultancy]: ConsultancyComponent,
 //   [ServiceTypes.trainings]: TrainingsComponent,
 //   [ServiceTypes.engineering]: SoftwareEngineeringComponent,
 // };
 
-// export const servicesComponentFactory: 
-//   Record<ServiceTypes, Type<ServiceComponentType>> 
+// export const servicesComponentFactory:
+//   Record<ServiceTypes, Type<ServiceComponentType>>
 // = {
 //   [ServiceTypes.consultancy]: ConsultancyComponent,
 //   [ServiceTypes.trainings]: TrainingsComponent,
@@ -50,7 +50,7 @@ import { Subject, mergeMap, takeUntil, tap } from "rxjs";
 // };
 
 @Directive({
-  selector: "[dynamicField]",
+  selector: '[dynamicField]',
   standalone: true,
 })
 export class DynamicFieldDirective {
@@ -65,7 +65,7 @@ export class DynamicFieldDirective {
     private viewContainerRef: ViewContainerRef,
     private readonly route: ActivatedRoute,
     // private readonly servicesDataService: ServicesDataService,
-  ) { }
+  ) {}
 
   ngOnInit() {
     // const factory = this.resolver.resolveComponentFactory(
@@ -85,9 +85,7 @@ export class DynamicFieldDirective {
     //this.componentRef.instance.className = this.className;
   }
 
-  
   ngOnDestroy(): void {
     this.destroy.next();
   }
-
 }

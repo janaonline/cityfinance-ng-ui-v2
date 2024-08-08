@@ -78,13 +78,13 @@ export const validateOnlyText = (control: AbstractControl) => {
   const value = control.value;
   const regex = /^[a-zA-Z_ ]+$/;
   return regex.test(value) ? null : { onlyText: true };
-}
+};
 
 export const urlValidator = (control: AbstractControl) => {
   const value = control.value;
   const regex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/;
   return regex.test(value) ? null : { onlyText: true };
-}
+};
 /**
  * @description This Validator must be used for string inputs only.
  * The in-built <code> Validators.required </code> accepts empty string as valid,
@@ -109,7 +109,7 @@ export const atLeast1AplhabetRequired = (control: AbstractControl) => {
   }
 
   if (value.search(/[a-zA-Z]/) < 0) {
-    return { alphabet_required: "Atleast 1 alphabet is required" };
+    return { alphabet_required: 'Atleast 1 alphabet is required' };
   }
 
   return null;
@@ -117,7 +117,7 @@ export const atLeast1AplhabetRequired = (control: AbstractControl) => {
 
 export const PartnerFormEmailValidations = (
   emailControl: AbstractControl,
-  departmentEmailControl: AbstractControl
+  departmentEmailControl: AbstractControl,
 ) => {
   const emailObserver = emailControl.valueChanges;
   const departmentEmailObserver = departmentEmailControl.valueChanges;

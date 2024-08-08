@@ -11,7 +11,7 @@ import { cloneDeep } from 'lodash-es';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 
 export enum FileVerifyStatus {
-  pending = 1, 
+  pending = 1,
   accept = 2,
   reject = 3,
 }
@@ -21,10 +21,9 @@ export enum FileVerifyStatus {
   standalone: true,
   imports: [MaterialModule, FileComponent, ToStorageUrlPipe],
   templateUrl: './yearwise-files.component.html',
-  styleUrl: './yearwise-files.component.scss'
+  styleUrl: './yearwise-files.component.scss',
 })
 export class YearwiseFilesComponent {
-
   @Input() field!: any;
   @Input() group!: FormArray;
   collapsed = false;
@@ -35,16 +34,19 @@ export class YearwiseFilesComponent {
 
   dialogRef!: MatDialogRef<any>;
 
-  constructor(public dialog: MatDialog) { }
+  constructor(public dialog: MatDialog) {}
   ngOnInit() {
     // console.log('----field table --', this.field);
     // console.log('----group table -val-', this.group.value);
   }
 
   getYearGroup(sectionIndex: number, i: number, fieldKey: any): FormGroup {
-    return (((this.group.controls[sectionIndex]) as FormGroup).get(this.field.data[sectionIndex].key) as FormGroup).get(fieldKey) as FormGroup;
+    return (
+      (this.group.controls[sectionIndex] as FormGroup).get(
+        this.field.data[sectionIndex].key,
+      ) as FormGroup
+    ).get(fieldKey) as FormGroup;
   }
-
 
   openDialog(sectionIndex: number, year: FieldConfig, i: number): void {
     const fg = new FormGroup({});
@@ -58,12 +60,11 @@ export class YearwiseFilesComponent {
         field: year,
         // fileRejectOptions: this.field.fileRejectOptions,
         group: this.getYearGroup(sectionIndex, i, year.key),
-        verifyForm
+        verifyForm,
       },
     });
 
-
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       // console.log('The dialog was closed', result);
       // this.field = result;
     });
@@ -73,4 +74,3 @@ export class YearwiseFilesComponent {
     this.getYearGroup(sectionIndex, 0, key).reset();
   }
 }
-

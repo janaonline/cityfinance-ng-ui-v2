@@ -1,1101 +1,1105 @@
 export const tabsJson = {
-    "status": true,
-    "message": "Sucessfully fetched form 1!",
-    "data": {
-        "ulb": "5dcfca53df6f59198c4ac3d5",
-        "censusCode": "801557",
-        "sbCode": null,
-        "ulbName": "Barpeta Municipal Board",
-        "stateId": "5dcf9d7216a06aed41c748df",
-        "stateName": "Assam",
-        "tabs": [
-            {
-                "_id": "666764fa1d285021388bedba",
-                "key": "demographicData",
-                "icon": "",
-                "formType": "form1",
-                "label": "Demographic Data",
-                "id": "s1",
-                "displayPriority": 1,
-                "__v": 0,
-                "data": [
-                    {
-                        "key": "nameOfUlb",
-                        "readonly": true,
-                        "class": "",
-                        "label": "Name of ULB",
-                        "position": "1",
-                        "quesPos": 1,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "text",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            }
-                        ],
-                        "year": [],
-                        "status": "Na",
-                        "value": "Barpeta Municipal Board",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "nameOfState",
-                        "readonly": true,
-                        "class": "",
-                        "label": "Name of State/Union Territory ",
-                        "position": "2",
-                        "quesPos": 2,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "text",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            }
-                        ],
-                        "year": [],
-                        "status": "Na",
-                        "value": "Assam",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "pop2011",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Population as per Census 2011",
-                        "position": "3",
-                        "quesPos": 3,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "number",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            },
-                            {
-                                "name": "min",
-                                "validator": 0,
-                                "message": "Please enter a number between 0 and 100000000."
-                            },
-                            {
-                                "name": "max",
-                                "validator": 100000000,
-                                "message": "Please enter a number between 0 and 100000000."
-                            },
-                            {
-                                "name": "decimal",
-                                "validator": 0,
-                                "message": "Please enter a whole number for this field."
-                            },
-                            []
-                        ],
-                        "year": [],
-                        "warning": [
-                            {
-                                "value": 0,
-                                "condition": "equalTo",
-                                "message": "Are you sure you want to continue with 0"
-                            }
-                        ],
-                        "sumOf": [],
-                        "max": 100000000,
-                        "min": 0,
-                        "decimal": 0,
-                        "status": "Na",
-                        "value": "66",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "popApril2024",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Population as per 01 April 2024",
-                        "position": "4",
-                        "quesPos": 4,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "number",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            },
-                            {
-                                "name": "min",
-                                "validator": 0,
-                                "message": "Please enter a number between 0 and 100000000."
-                            },
-                            {
-                                "name": "max",
-                                "validator": 100000000,
-                                "message": "Please enter a number between 0 and 100000000."
-                            },
-                            {
-                                "name": "decimal",
-                                "validator": 0,
-                                "message": "Please enter a whole number for this field."
-                            },
-                            []
-                        ],
-                        "year": [],
-                        "warning": [
-                            {
-                                "value": 0,
-                                "condition": "equalTo",
-                                "message": "Are you sure you want to continue with 0"
-                            },
-                            {
-                                "name": "greaterThanEqualTo",
-                                "validator": 0,
-                                "field": "pop2011",
-                                "message": "Population as per 2024 value entered is lower than Population as per Census 2011."
-                            }
-                        ],
-                        "sumOf": [],
-                        "max": 100000000,
-                        "min": 0,
-                        "decimal": 0,
-                        "status": "Na",
-                        "value": "77",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "areaOfUlb",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Area as on 01 April 2024 (in Sq. Km.)",
-                        "position": "5",
-                        "quesPos": 5,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "number",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            },
-                            {
-                                "name": "min",
-                                "validator": 0.1,
-                                "message": "Please enter a number between 0.1 and 1000."
-                            },
-                            {
-                                "name": "max",
-                                "validator": 1000,
-                                "message": "Please enter a number between 0.1 and 1000."
-                            },
-                            {
-                                "name": "decimal",
-                                "validator": 2,
-                                "message": "Please enter number with at most 2 places."
-                            },
-                            []
-                        ],
-                        "year": [],
-                        "warning": [
-                            {
-                                "value": 0,
-                                "condition": "equalTo",
-                                "message": "Are you sure you want to continue with 0"
-                            }
-                        ],
-                        "sumOf": [],
-                        "max": 1000,
-                        "min": 0.1,
-                        "decimal": 2,
-                        "status": "Na",
-                        "value": "88",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "yearOfConstitution",
-                        "readonly": false,
-                        "class": "",
-                        "label": "In which year was the ULB constituted?",
-                        "position": "6",
-                        "quesPos": 6,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "dropdown",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            }
-                        ],
-                        "year": [],
-                        "options": [
-                            "After 2022-23",
-                            "2022-23",
-                            "2021-22",
-                            "2020-21",
-                            "2019-20",
-                            "2018-19",
-                            "2017-18",
-                            "2016-17",
-                            "In 2015-16",
-                            "Before 2015-16"
-                        ],
-                        "reason": "",
-                        "status": "Na",
-                        "value": "2022-23",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "yearOfElection",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Which is the latest year when ULB's election was held?",
-                        "position": "7",
-                        "quesPos": 7,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "dropdown",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            }
-                        ],
-                        "year": [],
-                        "options": [
-                            "2024-25",
-                            "2023-24",
-                            "2022-23",
-                            "2021-22",
-                            "2020-21",
-                            "2019-20",
-                            "2018-19",
-                            "2017-18",
-                            "2016-17",
-                            "2015-16",
-                            "Before 2015-16"
-                        ],
-                        "reason": "",
-                        "status": "Na",
-                        "value": "2023-24",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "isElected",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Is the elected body in place as on 01 April 2024?",
-                        "position": "8",
-                        "quesPos": 8,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "radio",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            }
-                        ],
-                        "year": [],
-                        "options": [
-                            "Yes",
-                            "No"
-                        ],
-                        "reason": "",
-                        "status": "Na",
-                        "value": "Yes",
-                        "isDraft": true
-                    }
-                ]
-            },
-           
-            {
-                "_id": "666764fa1d285021388bedbc",
-                "key": "uploadDoc",
-                "icon": "",
-                "formType": "form1",
-                "label": "View/ Upload Document",
-                "id": "s3",
-                "displayPriority": 3,
-                "__v": 0,
-                "data": [
-                    {
-                        "key": "auditedAnnualFySt",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Copy of Audited Annual Financial Statements preferably in English",
-                        "position": "",
-                        "quesPos": 52,
-                        "required": true,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "file",
-                        "canShow": true,
-                        "validations": [
-                            {
-                                "name": "required",
-                                "validator": "required",
-                                "message": "Please fill the required field."
-                            }
-                        ],
-                        "year": [
-                            {
-                                "label": "FY 2023-24",
-                                "key": "fy2023-24_auditedAnnualFySt",
-                                "year": "2023-24",
-                                "position": 1,
-                                "refKey": "auditedAnnualFySt",
-                                "formFieldType": "file",
-                                "value": "",
-                                "isPdfAvailable": true,
-                                "file": {
-                                    "name": "",
-                                    "url": ""
-                                },
-                                "fileAlreadyOnCf": [
-                                    {
-                                        "name": "ODF_declaretion_city.pdf",
-                                        "url": "/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_d0cc4c48-3da8-4a21-9f88-afc7bcf5dcd6.pdf",
-                                        "type": "bal_sheet",
-                                        "label": "Balance Sheet"
-                                    },
-                                    {
-                                        "name": "ODF_declaretion_city.pdf",
-                                        "url": "/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_fe8ce78d-b75e-4aa4-912a-c1c2675d76f1.pdf",
-                                        "type": "bal_sheet_schedules",
-                                        "label": "Schedules To Balance Sheet"
-                                    },
-                                    {
-                                        "name": "ODF_declaretion_city.pdf",
-                                        "url": "/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_44b550f5-afea-47c3-9124-4f37fac319e2.pdf",
-                                        "type": "inc_exp",
-                                        "label": "Income And Expenditure"
-                                    },
-                                    {
-                                        "name": "ODF_declaretion_city.pdf",
-                                        "url": "/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_981a017b-442d-43e7-99c4-0d783e4e5c7f.pdf",
-                                        "type": "inc_exp_schedules",
-                                        "label": "Schedules To Income And Expenditure"
-                                    },
-                                    {
-                                        "name": "ODF_declaretion_city.pdf",
-                                        "url": "/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_fd3d78ed-780b-4f5e-8697-7127126c202f.pdf",
-                                        "type": "cash_flow",
-                                        "label": "Cash Flow Statement"
-                                    }
-                                ],
-                                "fileRejectOptions": [
-                                    "Balance Sheet",
-                                    "Schedules To Balance Sheet",
-                                    "Income And Expenditure",
-                                    "Schedules To Income And Expenditure",
-                                    "Cash Flow Statement",
-                                    "Auditor Report"
-                                ],
-                                "verifyStatus": 1,
-                                "rejectOption": "",
-                                "rejectReason": "",
-                                "allowedFileTypes": [
-                                    "pdf"
-                                ]
-                            }
-                        ],
-                        "max": 20,
-                        "min": 0,
-                        "bottomText": "Maximum of 20MB",
-                        "instruction": [
-                            {
-                                "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement."
-                            },
-                            {
-                                "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB."
-                            },
-                            {
-                                "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation."
-                            },
-                            {
-                                "instruction": "Date of Constitution: Please upload the Gazette notification regarding the constitution of the ULB (applicable only for ULBs constituted in 2015-16 or later)."
-                            },
-                            {
-                                "instruction": "Population: Please upload the supporting document for the population estimate as on 01 April 2024."
-                            }
-                        ],
-                        "allowedFileTypes": [
-                            "pdf"
-                        ],
-                        "status": "Na",
-                        "value": "",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "gazetteUpload",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Please upload the Gazette notification regarding the constitution of the ULB.",
-                        "position": "",
-                        "quesPos": 94,
-                        "required": false,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "file",
-                        "canShow": true,
-                        "validations": [],
-                        "year": [
-                            {
-                                "label": "",
-                                "key": "gazetteUpload",
-                                "year": "",
-                                "position": 1,
-                                "refKey": "gazetteUpload",
-                                "formFieldType": "file",
-                                "file": {
-                                    "name": "",
-                                    "url": ""
-                                }
-                            }
-                        ],
-                        "max": 20,
-                        "min": 0,
-                        "bottomText": "Maximum of 20MB",
-                        "instruction": [],
-                        "allowedFileTypes": [
-                            "pdf"
-                        ],
-                        "status": "Na",
-                        "value": "",
-                        "isDraft": true
-                    },
-                    {
-                        "key": "pop2024Upload",
-                        "readonly": false,
-                        "class": "",
-                        "label": "Please upload the supporting document for the population estimate as on 01 April 2024.",
-                        "position": "",
-                        "quesPos": 95,
-                        "required": false,
-                        "info": "",
-                        "placeHolder": "",
-                        "formFieldType": "file",
-                        "canShow": true,
-                        "validations": [],
-                        "year": [
-                            {
-                                "label": "",
-                                "key": "pop2024Upload",
-                                "year": "",
-                                "position": 1,
-                                "refKey": "pop2024Upload",
-                                "formFieldType": "file",
-                                "file": {
-                                    "name": "",
-                                    "url": ""
-                                }
-                            }
-                        ],
-                        "max": 20,
-                        "min": 0,
-                        "bottomText": "Maximum of 20MB",
-                        "instruction": [],
-                        "allowedFileTypes": [
-                            "pdf"
-                        ],
-                        "status": "Na",
-                        "value": "",
-                        "isDraft": true
-                    }
-                ],
-                "message": ""
-            },
-            {
-                "_id": "666764fa1d285021388bedbd",
-                "key": "accountPractice",
-                "icon": "",
-                "formType": "form1",
-                "label": "Accounting Practice",
-                "id": "s4",
-                "displayPriority": 4,
-                "__v": 0,
-                "data": [
-                    {
-                        "key": "accSysAndProcess",
-                        "section": "accordion",
-                        "formFieldType": "questionnaire",
-                        "label": "I. Accounting Systems and Processes",
-                        "data": [
-                            {
-                                "key": "accSystem",
-                                "readonly": false,
-                                "class": "",
-                                "label": "What is the accounting system being followed by the ULB?",
-                                "position": "1",
-                                "quesPos": 53,
-                                "required": true,
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Cash Basis of Accounting",
-                                        "info": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place."
-                                    },
-                                    {
-                                        "id": "Accrual Basis of Accounting",
-                                        "info": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate."
-                                    },
-                                    {
-                                        "id": "Modified Cash/ Accrual Accounting",
-                                        "info": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "accProvision",
-                                "readonly": false,
-                                "class": "",
-                                "label": "What accounting provisions or framework does the ULB follow?",
-                                "position": "2",
-                                "quesPos": 54,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "National Municipal Accounting Manual"
-                                    },
-                                    {
-                                        "id": "State-specific Municipal Accounting Manual"
-                                    },
-                                    {
-                                        "id": "Other (Please specify)",
-                                        "showInputBox": true
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "accInCashBasis",
-                                "readonly": false,
-                                "class": "",
-                                "label": "Are there any accounts/books/registers maintained in cash basis?",
-                                "position": "3",
-                                "quesPos": 55,
-                                "required": true,
-                                "info": "Types of registers maintained: cash book, receipt register, register of bills for payment, collection register, deposit register, register of fixed assets etc.",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Yes (Please specify)",
-                                        "showInputBox": true
-                                    },
-                                    {
-                                        "id": "No"
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "fsTransactionRecord",
-                                "readonly": false,
-                                "class": "",
-                                "label": "Does the ULB initially record transactions on a cash basis and subsequently prepare accrual accounts for consolidation of financial statements?",
-                                "position": "4",
-                                "quesPos": 56,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Yes"
-                                    },
-                                    {
-                                        "id": "No"
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "fsPreparedBy",
-                                "readonly": false,
-                                "class": "",
-                                "label": "Are the Financial Statements prepared internally by the ULB's accounting department, or are they compiled by an external Chartered Accountant?",
-                                "position": "5",
-                                "quesPos": 57,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Internally (by Accounts Department)"
-                                    },
-                                    {
-                                        "id": "External Chartered Accountants"
-                                    },
-                                    {
-                                        "id": "Both"
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "revReceiptRecord",
-                                "readonly": false,
-                                "class": "",
-                                "label": "Is the revenue receipt recorded when the cash is received or when it is accrued/event occurs?",
-                                "position": "6",
-                                "quesPos": 58,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Recorded when cash is received"
-                                    },
-                                    {
-                                        "id": "Recorded when they are accrued"
-                                    },
-                                    {
-                                        "id": "Both (Please specify which transactions are recognised in accrual basis)",
-                                        "showInputBox": true
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "expRecord",
-                                "readonly": false,
-                                "class": "",
-                                "label": "Is the expense recorded when it is paid or when it is incurred/event occurs?",
-                                "position": "7",
-                                "quesPos": 59,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Recorded when cash is paid"
-                                    },
-                                    {
-                                        "id": "Recorded when they are accrued"
-                                    },
-                                    {
-                                        "id": "Both (Please specify which transactions are recognised in accrual basis)",
-                                        "showInputBox": true
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "accSoftware",
-                                "readonly": false,
-                                "class": "",
-                                "label": "What accounting software is currently in use by the ULB?",
-                                "position": "8",
-                                "quesPos": 60,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Centralized system provided by the State"
-                                    },
-                                    {
-                                        "id": "Standalone software"
-                                    },
-                                    {
-                                        "id": "Tally"
-                                    },
-                                    {
-                                        "id": "Other (Please specify)",
-                                        "showInputBox": true
-                                    },
-                                    {
-                                        "id": "None"
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "onlineAccSysIntegrate",
-                                "readonly": false,
-                                "class": "",
-                                "label": "Does the online accounting system integrate seamlessly with other municipal/ State/ Central systems?",
-                                "position": "9",
-                                "quesPos": 61,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "Yes (Please specify which all system, e.g., tax collection, payroll, asset management)",
-                                        "showInputBox": true
-                                    },
-                                    {
-                                        "id": "No"
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "muniAudit",
-                                "readonly": false,
-                                "class": "",
-                                "label": "Who does the municipal audit of financial statements ?",
-                                "position": "10",
-                                "quesPos": 62,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "radio",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    }
-                                ],
-                                "year": [],
-                                "options": [
-                                    {
-                                        "id": "External Chartered Accountant (CA)"
-                                    },
-                                    {
-                                        "id": "State Audit Department"
-                                    },
-                                    {
-                                        "id": "Other (Please specify)",
-                                        "showInputBox": true
-                                    }
-                                ],
-                                "reason": "",
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            }
-                        ]
-                    },
-                    {
-                        "key": "staffing",
-                        "section": "accordion",
-                        "formFieldType": "questionnaire",
-                        "label": "II.Staffing - Finance & Accounts Department",
-                        "data": [
-                            {
-                                "key": "totSanction",
-                                "readonly": false,
-                                "class": "",
-                                "label": "What is the total sanctioned posts for finance & accounts related positions?",
-                                "position": "11",
-                                "quesPos": 63,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "number",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    },
-                                    {
-                                        "name": "min",
-                                        "validator": 0,
-                                        "message": "Please enter a number between 0 and 9999."
-                                    },
-                                    {
-                                        "name": "max",
-                                        "validator": 9999,
-                                        "message": "Please enter a number between 0 and 9999."
-                                    },
-                                    {
-                                        "name": "decimal",
-                                        "validator": 0,
-                                        "message": "Please enter a whole number for this field."
-                                    },
-                                    []
-                                ],
-                                "year": [],
-                                "warning": [
-                                    {
-                                        "value": 0,
-                                        "condition": "equalTo",
-                                        "message": "Are you sure you want to continue with 0"
-                                    }
-                                ],
-                                "sumOf": [],
-                                "max": 9999,
-                                "min": 0,
-                                "decimal": 0,
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "totVacancy",
-                                "readonly": false,
-                                "class": "",
-                                "label": "What is the total vacancy across finance & accounts related positions?",
-                                "position": "12",
-                                "quesPos": 64,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "number",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    },
-                                    {
-                                        "name": "min",
-                                        "validator": 0,
-                                        "message": "Please enter a number between 0 and 9999."
-                                    },
-                                    {
-                                        "name": "max",
-                                        "validator": 9999,
-                                        "message": "Please enter a number between 0 and 9999."
-                                    },
-                                    {
-                                        "name": "decimal",
-                                        "validator": 0,
-                                        "message": "Please enter a whole number for this field."
-                                    },
-                                    {
-                                        "name": "lessThan",
-                                        "validator": 0,
-                                        "field": "totSanction",
-                                        "message": "'Total vacancy across finance & accounts related positions' cannot be greater than 'Total sanctioned posts for finance & accounts related positions '"
-                                    }
-                                ],
-                                "year": [],
-                                "warning": [
-                                    {
-                                        "value": 0,
-                                        "condition": "equalTo",
-                                        "message": "Are you sure you want to continue with 0"
-                                    }
-                                ],
-                                "sumOf": [],
-                                "max": 9999,
-                                "min": 0,
-                                "decimal": 0,
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            },
-                            {
-                                "key": "accPosition",
-                                "readonly": false,
-                                "class": "",
-                                "label": "How many finance & accounts related positions currently are filled on contractual basis or outsourced?",
-                                "position": "13",
-                                "quesPos": 65,
-                                "required": true,
-                                "info": "",
-                                "placeHolder": "",
-                                "formFieldType": "number",
-                                "canShow": true,
-                                "validations": [
-                                    {
-                                        "name": "required",
-                                        "validator": "required",
-                                        "message": "Please fill the required field."
-                                    },
-                                    {
-                                        "name": "min",
-                                        "validator": 0,
-                                        "message": "Please enter a number between 0 and 9999."
-                                    },
-                                    {
-                                        "name": "max",
-                                        "validator": 9999,
-                                        "message": "Please enter a number between 0 and 9999."
-                                    },
-                                    {
-                                        "name": "decimal",
-                                        "validator": 0,
-                                        "message": "Please enter a whole number for this field."
-                                    },
-                                    []
-                                ],
-                                "year": [],
-                                "warning": [
-                                    {
-                                        "value": 0,
-                                        "condition": "equalTo",
-                                        "message": "Are you sure you want to continue with 0"
-                                    }
-                                ],
-                                "sumOf": [],
-                                "max": 9999,
-                                "min": 0,
-                                "decimal": 0,
-                                "status": "Na",
-                                "value": "",
-                                "isDraft": true
-                            }
-                        ]
-                    }
-                ]
-            }
+  status: true,
+  message: 'Sucessfully fetched form 1!',
+  data: {
+    ulb: '5dcfca53df6f59198c4ac3d5',
+    censusCode: '801557',
+    sbCode: null,
+    ulbName: 'Barpeta Municipal Board',
+    stateId: '5dcf9d7216a06aed41c748df',
+    stateName: 'Assam',
+    tabs: [
+      {
+        _id: '666764fa1d285021388bedba',
+        key: 'demographicData',
+        icon: '',
+        formType: 'form1',
+        label: 'Demographic Data',
+        id: 's1',
+        displayPriority: 1,
+        __v: 0,
+        data: [
+          {
+            key: 'nameOfUlb',
+            readonly: true,
+            class: '',
+            label: 'Name of ULB',
+            position: '1',
+            quesPos: 1,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'text',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+            ],
+            year: [],
+            status: 'Na',
+            value: 'Barpeta Municipal Board',
+            isDraft: true,
+          },
+          {
+            key: 'nameOfState',
+            readonly: true,
+            class: '',
+            label: 'Name of State/Union Territory ',
+            position: '2',
+            quesPos: 2,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'text',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+            ],
+            year: [],
+            status: 'Na',
+            value: 'Assam',
+            isDraft: true,
+          },
+          {
+            key: 'pop2011',
+            readonly: false,
+            class: '',
+            label: 'Population as per Census 2011',
+            position: '3',
+            quesPos: 3,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'number',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+              {
+                name: 'min',
+                validator: 0,
+                message: 'Please enter a number between 0 and 100000000.',
+              },
+              {
+                name: 'max',
+                validator: 100000000,
+                message: 'Please enter a number between 0 and 100000000.',
+              },
+              {
+                name: 'decimal',
+                validator: 0,
+                message: 'Please enter a whole number for this field.',
+              },
+              [],
+            ],
+            year: [],
+            warning: [
+              {
+                value: 0,
+                condition: 'equalTo',
+                message: 'Are you sure you want to continue with 0',
+              },
+            ],
+            sumOf: [],
+            max: 100000000,
+            min: 0,
+            decimal: 0,
+            status: 'Na',
+            value: '66',
+            isDraft: true,
+          },
+          {
+            key: 'popApril2024',
+            readonly: false,
+            class: '',
+            label: 'Population as per 01 April 2024',
+            position: '4',
+            quesPos: 4,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'number',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+              {
+                name: 'min',
+                validator: 0,
+                message: 'Please enter a number between 0 and 100000000.',
+              },
+              {
+                name: 'max',
+                validator: 100000000,
+                message: 'Please enter a number between 0 and 100000000.',
+              },
+              {
+                name: 'decimal',
+                validator: 0,
+                message: 'Please enter a whole number for this field.',
+              },
+              [],
+            ],
+            year: [],
+            warning: [
+              {
+                value: 0,
+                condition: 'equalTo',
+                message: 'Are you sure you want to continue with 0',
+              },
+              {
+                name: 'greaterThanEqualTo',
+                validator: 0,
+                field: 'pop2011',
+                message:
+                  'Population as per 2024 value entered is lower than Population as per Census 2011.',
+              },
+            ],
+            sumOf: [],
+            max: 100000000,
+            min: 0,
+            decimal: 0,
+            status: 'Na',
+            value: '77',
+            isDraft: true,
+          },
+          {
+            key: 'areaOfUlb',
+            readonly: false,
+            class: '',
+            label: 'Area as on 01 April 2024 (in Sq. Km.)',
+            position: '5',
+            quesPos: 5,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'number',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+              {
+                name: 'min',
+                validator: 0.1,
+                message: 'Please enter a number between 0.1 and 1000.',
+              },
+              {
+                name: 'max',
+                validator: 1000,
+                message: 'Please enter a number between 0.1 and 1000.',
+              },
+              {
+                name: 'decimal',
+                validator: 2,
+                message: 'Please enter number with at most 2 places.',
+              },
+              [],
+            ],
+            year: [],
+            warning: [
+              {
+                value: 0,
+                condition: 'equalTo',
+                message: 'Are you sure you want to continue with 0',
+              },
+            ],
+            sumOf: [],
+            max: 1000,
+            min: 0.1,
+            decimal: 2,
+            status: 'Na',
+            value: '88',
+            isDraft: true,
+          },
+          {
+            key: 'yearOfConstitution',
+            readonly: false,
+            class: '',
+            label: 'In which year was the ULB constituted?',
+            position: '6',
+            quesPos: 6,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'dropdown',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+            ],
+            year: [],
+            options: [
+              'After 2022-23',
+              '2022-23',
+              '2021-22',
+              '2020-21',
+              '2019-20',
+              '2018-19',
+              '2017-18',
+              '2016-17',
+              'In 2015-16',
+              'Before 2015-16',
+            ],
+            reason: '',
+            status: 'Na',
+            value: '2022-23',
+            isDraft: true,
+          },
+          {
+            key: 'yearOfElection',
+            readonly: false,
+            class: '',
+            label: "Which is the latest year when ULB's election was held?",
+            position: '7',
+            quesPos: 7,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'dropdown',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+            ],
+            year: [],
+            options: [
+              '2024-25',
+              '2023-24',
+              '2022-23',
+              '2021-22',
+              '2020-21',
+              '2019-20',
+              '2018-19',
+              '2017-18',
+              '2016-17',
+              '2015-16',
+              'Before 2015-16',
+            ],
+            reason: '',
+            status: 'Na',
+            value: '2023-24',
+            isDraft: true,
+          },
+          {
+            key: 'isElected',
+            readonly: false,
+            class: '',
+            label: 'Is the elected body in place as on 01 April 2024?',
+            position: '8',
+            quesPos: 8,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'radio',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+            ],
+            year: [],
+            options: ['Yes', 'No'],
+            reason: '',
+            status: 'Na',
+            value: 'Yes',
+            isDraft: true,
+          },
         ],
-        "formStatus": "IN_PROGRESS",
-        "rejectReason": "",
-        "validationCounter": 0,
-        "financialYearTableHeader": [
-            "2023-24",
-            "2022-23",
-            "2021-22",
-            "2020-21",
-            "2019-20",
-            "2018-19",
-            "2017-18",
-            "2016-17",
-            "2015-16"
-        ]
-    }
+      },
+
+      {
+        _id: '666764fa1d285021388bedbc',
+        key: 'uploadDoc',
+        icon: '',
+        formType: 'form1',
+        label: 'View/ Upload Document',
+        id: 's3',
+        displayPriority: 3,
+        __v: 0,
+        data: [
+          {
+            key: 'auditedAnnualFySt',
+            readonly: false,
+            class: '',
+            label: 'Copy of Audited Annual Financial Statements preferably in English',
+            position: '',
+            quesPos: 52,
+            required: true,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'file',
+            canShow: true,
+            validations: [
+              {
+                name: 'required',
+                validator: 'required',
+                message: 'Please fill the required field.',
+              },
+            ],
+            year: [
+              {
+                label: 'FY 2023-24',
+                key: 'fy2023-24_auditedAnnualFySt',
+                year: '2023-24',
+                position: 1,
+                refKey: 'auditedAnnualFySt',
+                formFieldType: 'file',
+                value: '',
+                isPdfAvailable: true,
+                file: {
+                  name: '',
+                  url: '',
+                },
+                fileAlreadyOnCf: [
+                  {
+                    name: 'ODF_declaretion_city.pdf',
+                    url: '/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_d0cc4c48-3da8-4a21-9f88-afc7bcf5dcd6.pdf',
+                    type: 'bal_sheet',
+                    label: 'Balance Sheet',
+                  },
+                  {
+                    name: 'ODF_declaretion_city.pdf',
+                    url: '/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_fe8ce78d-b75e-4aa4-912a-c1c2675d76f1.pdf',
+                    type: 'bal_sheet_schedules',
+                    label: 'Schedules To Balance Sheet',
+                  },
+                  {
+                    name: 'ODF_declaretion_city.pdf',
+                    url: '/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_44b550f5-afea-47c3-9124-4f37fac319e2.pdf',
+                    type: 'inc_exp',
+                    label: 'Income And Expenditure',
+                  },
+                  {
+                    name: 'ODF_declaretion_city.pdf',
+                    url: '/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_981a017b-442d-43e7-99c4-0d783e4e5c7f.pdf',
+                    type: 'inc_exp_schedules',
+                    label: 'Schedules To Income And Expenditure',
+                  },
+                  {
+                    name: 'ODF_declaretion_city.pdf',
+                    url: '/ULB/2024-25/annual_accounts/AS001/ODF_declaretion_city_fd3d78ed-780b-4f5e-8697-7127126c202f.pdf',
+                    type: 'cash_flow',
+                    label: 'Cash Flow Statement',
+                  },
+                ],
+                fileRejectOptions: [
+                  'Balance Sheet',
+                  'Schedules To Balance Sheet',
+                  'Income And Expenditure',
+                  'Schedules To Income And Expenditure',
+                  'Cash Flow Statement',
+                  'Auditor Report',
+                ],
+                verifyStatus: 1,
+                rejectOption: '',
+                rejectReason: '',
+                allowedFileTypes: ['pdf'],
+              },
+            ],
+            max: 20,
+            min: 0,
+            bottomText: 'Maximum of 20MB',
+            instruction: [
+              {
+                instruction:
+                  "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement.",
+              },
+              {
+                instruction:
+                  ' All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB.',
+              },
+              {
+                instruction:
+                  'Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation.',
+              },
+              {
+                instruction:
+                  'Date of Constitution: Please upload the Gazette notification regarding the constitution of the ULB (applicable only for ULBs constituted in 2015-16 or later).',
+              },
+              {
+                instruction:
+                  'Population: Please upload the supporting document for the population estimate as on 01 April 2024.',
+              },
+            ],
+            allowedFileTypes: ['pdf'],
+            status: 'Na',
+            value: '',
+            isDraft: true,
+          },
+          {
+            key: 'gazetteUpload',
+            readonly: false,
+            class: '',
+            label: 'Please upload the Gazette notification regarding the constitution of the ULB.',
+            position: '',
+            quesPos: 94,
+            required: false,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'file',
+            canShow: true,
+            validations: [],
+            year: [
+              {
+                label: '',
+                key: 'gazetteUpload',
+                year: '',
+                position: 1,
+                refKey: 'gazetteUpload',
+                formFieldType: 'file',
+                file: {
+                  name: '',
+                  url: '',
+                },
+              },
+            ],
+            max: 20,
+            min: 0,
+            bottomText: 'Maximum of 20MB',
+            instruction: [],
+            allowedFileTypes: ['pdf'],
+            status: 'Na',
+            value: '',
+            isDraft: true,
+          },
+          {
+            key: 'pop2024Upload',
+            readonly: false,
+            class: '',
+            label:
+              'Please upload the supporting document for the population estimate as on 01 April 2024.',
+            position: '',
+            quesPos: 95,
+            required: false,
+            info: '',
+            placeHolder: '',
+            formFieldType: 'file',
+            canShow: true,
+            validations: [],
+            year: [
+              {
+                label: '',
+                key: 'pop2024Upload',
+                year: '',
+                position: 1,
+                refKey: 'pop2024Upload',
+                formFieldType: 'file',
+                file: {
+                  name: '',
+                  url: '',
+                },
+              },
+            ],
+            max: 20,
+            min: 0,
+            bottomText: 'Maximum of 20MB',
+            instruction: [],
+            allowedFileTypes: ['pdf'],
+            status: 'Na',
+            value: '',
+            isDraft: true,
+          },
+        ],
+        message: '',
+      },
+      {
+        _id: '666764fa1d285021388bedbd',
+        key: 'accountPractice',
+        icon: '',
+        formType: 'form1',
+        label: 'Accounting Practice',
+        id: 's4',
+        displayPriority: 4,
+        __v: 0,
+        data: [
+          {
+            key: 'accSysAndProcess',
+            section: 'accordion',
+            formFieldType: 'questionnaire',
+            label: 'I. Accounting Systems and Processes',
+            data: [
+              {
+                key: 'accSystem',
+                readonly: false,
+                class: '',
+                label: 'What is the accounting system being followed by the ULB?',
+                position: '1',
+                quesPos: 53,
+                required: true,
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Cash Basis of Accounting',
+                    info: 'Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.',
+                  },
+                  {
+                    id: 'Accrual Basis of Accounting',
+                    info: 'Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.',
+                  },
+                  {
+                    id: 'Modified Cash/ Accrual Accounting',
+                    info: 'Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation.',
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'accProvision',
+                readonly: false,
+                class: '',
+                label: 'What accounting provisions or framework does the ULB follow?',
+                position: '2',
+                quesPos: 54,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'National Municipal Accounting Manual',
+                  },
+                  {
+                    id: 'State-specific Municipal Accounting Manual',
+                  },
+                  {
+                    id: 'Other (Please specify)',
+                    showInputBox: true,
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'accInCashBasis',
+                readonly: false,
+                class: '',
+                label: 'Are there any accounts/books/registers maintained in cash basis?',
+                position: '3',
+                quesPos: 55,
+                required: true,
+                info: 'Types of registers maintained: cash book, receipt register, register of bills for payment, collection register, deposit register, register of fixed assets etc.',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Yes (Please specify)',
+                    showInputBox: true,
+                  },
+                  {
+                    id: 'No',
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'fsTransactionRecord',
+                readonly: false,
+                class: '',
+                label:
+                  'Does the ULB initially record transactions on a cash basis and subsequently prepare accrual accounts for consolidation of financial statements?',
+                position: '4',
+                quesPos: 56,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Yes',
+                  },
+                  {
+                    id: 'No',
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'fsPreparedBy',
+                readonly: false,
+                class: '',
+                label:
+                  "Are the Financial Statements prepared internally by the ULB's accounting department, or are they compiled by an external Chartered Accountant?",
+                position: '5',
+                quesPos: 57,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Internally (by Accounts Department)',
+                  },
+                  {
+                    id: 'External Chartered Accountants',
+                  },
+                  {
+                    id: 'Both',
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'revReceiptRecord',
+                readonly: false,
+                class: '',
+                label:
+                  'Is the revenue receipt recorded when the cash is received or when it is accrued/event occurs?',
+                position: '6',
+                quesPos: 58,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Recorded when cash is received',
+                  },
+                  {
+                    id: 'Recorded when they are accrued',
+                  },
+                  {
+                    id: 'Both (Please specify which transactions are recognised in accrual basis)',
+                    showInputBox: true,
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'expRecord',
+                readonly: false,
+                class: '',
+                label:
+                  'Is the expense recorded when it is paid or when it is incurred/event occurs?',
+                position: '7',
+                quesPos: 59,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Recorded when cash is paid',
+                  },
+                  {
+                    id: 'Recorded when they are accrued',
+                  },
+                  {
+                    id: 'Both (Please specify which transactions are recognised in accrual basis)',
+                    showInputBox: true,
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'accSoftware',
+                readonly: false,
+                class: '',
+                label: 'What accounting software is currently in use by the ULB?',
+                position: '8',
+                quesPos: 60,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Centralized system provided by the State',
+                  },
+                  {
+                    id: 'Standalone software',
+                  },
+                  {
+                    id: 'Tally',
+                  },
+                  {
+                    id: 'Other (Please specify)',
+                    showInputBox: true,
+                  },
+                  {
+                    id: 'None',
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'onlineAccSysIntegrate',
+                readonly: false,
+                class: '',
+                label:
+                  'Does the online accounting system integrate seamlessly with other municipal/ State/ Central systems?',
+                position: '9',
+                quesPos: 61,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'Yes (Please specify which all system, e.g., tax collection, payroll, asset management)',
+                    showInputBox: true,
+                  },
+                  {
+                    id: 'No',
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'muniAudit',
+                readonly: false,
+                class: '',
+                label: 'Who does the municipal audit of financial statements ?',
+                position: '10',
+                quesPos: 62,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'radio',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                ],
+                year: [],
+                options: [
+                  {
+                    id: 'External Chartered Accountant (CA)',
+                  },
+                  {
+                    id: 'State Audit Department',
+                  },
+                  {
+                    id: 'Other (Please specify)',
+                    showInputBox: true,
+                  },
+                ],
+                reason: '',
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+            ],
+          },
+          {
+            key: 'staffing',
+            section: 'accordion',
+            formFieldType: 'questionnaire',
+            label: 'II.Staffing - Finance & Accounts Department',
+            data: [
+              {
+                key: 'totSanction',
+                readonly: false,
+                class: '',
+                label:
+                  'What is the total sanctioned posts for finance & accounts related positions?',
+                position: '11',
+                quesPos: 63,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'number',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                  {
+                    name: 'min',
+                    validator: 0,
+                    message: 'Please enter a number between 0 and 9999.',
+                  },
+                  {
+                    name: 'max',
+                    validator: 9999,
+                    message: 'Please enter a number between 0 and 9999.',
+                  },
+                  {
+                    name: 'decimal',
+                    validator: 0,
+                    message: 'Please enter a whole number for this field.',
+                  },
+                  [],
+                ],
+                year: [],
+                warning: [
+                  {
+                    value: 0,
+                    condition: 'equalTo',
+                    message: 'Are you sure you want to continue with 0',
+                  },
+                ],
+                sumOf: [],
+                max: 9999,
+                min: 0,
+                decimal: 0,
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'totVacancy',
+                readonly: false,
+                class: '',
+                label: 'What is the total vacancy across finance & accounts related positions?',
+                position: '12',
+                quesPos: 64,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'number',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                  {
+                    name: 'min',
+                    validator: 0,
+                    message: 'Please enter a number between 0 and 9999.',
+                  },
+                  {
+                    name: 'max',
+                    validator: 9999,
+                    message: 'Please enter a number between 0 and 9999.',
+                  },
+                  {
+                    name: 'decimal',
+                    validator: 0,
+                    message: 'Please enter a whole number for this field.',
+                  },
+                  {
+                    name: 'lessThan',
+                    validator: 0,
+                    field: 'totSanction',
+                    message:
+                      "'Total vacancy across finance & accounts related positions' cannot be greater than 'Total sanctioned posts for finance & accounts related positions '",
+                  },
+                ],
+                year: [],
+                warning: [
+                  {
+                    value: 0,
+                    condition: 'equalTo',
+                    message: 'Are you sure you want to continue with 0',
+                  },
+                ],
+                sumOf: [],
+                max: 9999,
+                min: 0,
+                decimal: 0,
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+              {
+                key: 'accPosition',
+                readonly: false,
+                class: '',
+                label:
+                  'How many finance & accounts related positions currently are filled on contractual basis or outsourced?',
+                position: '13',
+                quesPos: 65,
+                required: true,
+                info: '',
+                placeHolder: '',
+                formFieldType: 'number',
+                canShow: true,
+                validations: [
+                  {
+                    name: 'required',
+                    validator: 'required',
+                    message: 'Please fill the required field.',
+                  },
+                  {
+                    name: 'min',
+                    validator: 0,
+                    message: 'Please enter a number between 0 and 9999.',
+                  },
+                  {
+                    name: 'max',
+                    validator: 9999,
+                    message: 'Please enter a number between 0 and 9999.',
+                  },
+                  {
+                    name: 'decimal',
+                    validator: 0,
+                    message: 'Please enter a whole number for this field.',
+                  },
+                  [],
+                ],
+                year: [],
+                warning: [
+                  {
+                    value: 0,
+                    condition: 'equalTo',
+                    message: 'Are you sure you want to continue with 0',
+                  },
+                ],
+                sumOf: [],
+                max: 9999,
+                min: 0,
+                decimal: 0,
+                status: 'Na',
+                value: '',
+                isDraft: true,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    formStatus: 'IN_PROGRESS',
+    rejectReason: '',
+    validationCounter: 0,
+    financialYearTableHeader: [
+      '2023-24',
+      '2022-23',
+      '2021-22',
+      '2020-21',
+      '2019-20',
+      '2018-19',
+      '2017-18',
+      '2016-17',
+      '2015-16',
+    ],
+  },
 };

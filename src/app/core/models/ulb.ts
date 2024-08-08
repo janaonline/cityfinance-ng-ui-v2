@@ -1,8 +1,7 @@
-import { ulbType } from "./ulbTypes";
-
+import { ulbType } from './ulbTypes';
 
 export interface IULB {
-  amrut: "Yes" | "No" | undefined;
+  amrut: 'Yes' | 'No' | undefined;
   _id: string;
   area: number;
   code: string;

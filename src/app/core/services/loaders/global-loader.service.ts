@@ -2,13 +2,12 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
-  providedIn: "root"
+  providedIn: 'root',
 })
 export class GlobalLoaderService {
   private _loading = new BehaviorSubject<boolean>(false);
 
-  constructor() {
-  }
+  constructor() {}
 
   observerLoading() {
     return this._loading;

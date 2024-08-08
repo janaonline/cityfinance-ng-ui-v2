@@ -1,36 +1,36 @@
 <!-- <ng-container *ngFor="let field of fields;"> -->
 
 @switch (this.formFieldType) {
-    @case ('input')  {
+  @case ('input') {
     <!-- <app-input [field]="field" [group]="group"></app-input> -->
     <app-input [field]="field" [group]="group"></app-input>
-    }
-    @case ('radio') {
+  }
+  @case ('radio') {
     <app-radiobutton [field]="field" [group]="group"></app-radiobutton>
-    }
-    @case ('checkbox') {
+  }
+  @case ('checkbox') {
     <app-checkbox [field]="field" [group]="group"></app-checkbox>
-    }
-    @case ('select') {
+  }
+  @case ('select') {
     <app-select [field]="field" [group]="group"></app-select>
-    }
-    @case ('dropdown') {
+  }
+  @case ('dropdown') {
     <app-select [field]="field" [group]="group"></app-select>
-    }
-    @case ('date') {
+  }
+  @case ('date') {
     <app-date [field]="field" [group]="group"></app-date>
-    }
-    @case ('childform') {
+  }
+  @case ('childform') {
     <app-child-form [field]="field" [group]="group"></app-child-form>
-    }
-    @case ('table') {
+  }
+  @case ('table') {
     <app-table [field]="field" [group]="group"></app-table>
-    }
-    @case ('button') {
+  }
+  @case ('button') {
     <app-button [field]="field" [group]="group"></app-button>
-    }
-    
-<!-- @default {
+  }
+
+  <!-- @default {
               <span>Default case (Not 0 or 1 or 2)</span>
             } -->
 }

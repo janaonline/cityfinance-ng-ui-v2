@@ -8,10 +8,9 @@ describe('AccountingPracticeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AccountingPracticeComponent]
-    })
-    .compileComponents();
-    
+      imports: [AccountingPracticeComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(AccountingPracticeComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

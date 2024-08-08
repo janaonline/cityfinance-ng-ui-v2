@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 export class Login_Logout {
   private static logoutEvent = new Subject<{
-    redirectLink?: string | undefined
+    redirectLink?: string | undefined;
   }>();
 
   static getListenToLogoutEvent() {

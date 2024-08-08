@@ -1,6 +1,5 @@
-import { TAddKey } from "./addKey.type";
-import { IULB } from "./ulb";
-
+import { TAddKey } from './addKey.type';
+import { IULB } from './ulb';
 
 export interface IBasicLedgerData {
   success: boolean;
@@ -22,18 +21,18 @@ export interface LedgerULB {
   financialYear?: string[];
   ulb: string;
   name: string;
-  ulbType: IULB["type"];
+  ulbType: IULB['type'];
   code: string;
   state: string;
   stateId: string;
 }
 
 export enum FinancialYear {
-  The201516 = "2015-16",
-  The201617 = "2016-17",
-  The201718 = "2017-18",
-  The201819 = "2018-19",
-  The201920 = "2019-20",
+  The201516 = '2015-16',
+  The201617 = '2016-17',
+  The201718 = '2017-18',
+  The201819 = '2018-19',
+  The201920 = '2019-20',
 }
 
-export type TSearchedULB = TAddKey<"searchedName", LedgerULB>;
+export type TSearchedULB = TAddKey<'searchedName', LedgerULB>;

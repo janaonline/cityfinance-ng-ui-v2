@@ -7,50 +7,54 @@ import { authGuard } from './core/guards/auth.guard';
 // import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
-    {
-        path: '',
-        canActivate: [authGuard],
-        children: [
-            { path: '', component: HomeComponent },
-            {
-                path: 'xvifc-form',
-                loadComponent: () => import('./features/xvi-fc-form/xvi-fc-form.component').then(m => m.XviFcFormComponent),
-                // canActivate: [authGuard],
-            },
-            { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(mod => mod.ADMIN_ROUTES) },
-            // {
-            //     path: 'admin/xvi-fc-review',
-            //     loadComponent: () => import('./admin/xvi-fc-review/xvi-fc-review.component').then(m => m.XviFcReviewComponent)
-            // },
-            // Add other protected routes here
-        ]
-    },
-    // { path: 'login', component: LoginComponent },
-    {
-        path: 'login',
-        loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent),
-    },
-    // {
-    //     path: '',
-    //     component: HomeComponent,
-    //     canActivate: [MaintenanceGuard],
-    // },
-    {
-        path: 'maintenance',
-        component: MaintenanceComponent,
-    },    
-    // {
-    //     path: 'pdf',
-    //     loadComponent: () => import('./pdf-content/pdf-content.component').then(m => m.PdfContentComponent),
-    // },
-    {
-        path: 'error',
-        component: ErrorComponent,
-        canActivate: [MaintenanceGuard],
-    },
+  {
+    path: '',
+    canActivate: [authGuard],
+    children: [
+      { path: '', component: HomeComponent },
+      {
+        path: 'xvifc-form',
+        loadComponent: () =>
+          import('./features/xvi-fc-form/xvi-fc-form.component').then((m) => m.XviFcFormComponent),
+        // canActivate: [authGuard],
+      },
+      {
+        path: 'admin',
+        loadChildren: () => import('./admin/admin.routes').then((mod) => mod.ADMIN_ROUTES),
+      },
+      // {
+      //     path: 'admin/xvi-fc-review',
+      //     loadComponent: () => import('./admin/xvi-fc-review/xvi-fc-review.component').then(m => m.XviFcReviewComponent)
+      // },
+      // Add other protected routes here
+    ],
+  },
+  // { path: 'login', component: LoginComponent },
+  {
+    path: 'login',
+    loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  // {
+  //     path: '',
+  //     component: HomeComponent,
+  //     canActivate: [MaintenanceGuard],
+  // },
+  {
+    path: 'maintenance',
+    component: MaintenanceComponent,
+  },
+  // {
+  //     path: 'pdf',
+  //     loadComponent: () => import('./pdf-content/pdf-content.component').then(m => m.PdfContentComponent),
+  // },
+  {
+    path: 'error',
+    component: ErrorComponent,
+    canActivate: [MaintenanceGuard],
+  },
 
-    {
-        path: '**',
-        redirectTo: 'error',
-    },
+  {
+    path: '**',
+    redirectTo: 'error',
+  },
 ];

@@ -7,31 +7,28 @@ import { Subject } from 'rxjs';
 import { UserUtility } from '../../core/util/user/user';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApproveRejectFormService {
-
   isDataSaved: Subject<boolean> = new Subject();
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
-    isLoader: boolean = true;
-    isLoader1: boolean = false;
-    loggedInUserType: any;
-    user!: IUserLoggedInDetails | null;
-    isLoggedIn: boolean = false;
-    USER_TYPE = USER_TYPE;
-    currentUserRole = this.loggedInUserDetails.role;
-    userData = this.loggedInUserDetails;
+  isLoader: boolean = true;
+  isLoader1: boolean = false;
+  loggedInUserType: any;
+  user!: IUserLoggedInDetails | null;
+  isLoggedIn: boolean = false;
+  USER_TYPE = USER_TYPE;
+  currentUserRole = this.loggedInUserDetails.role;
+  userData = this.loggedInUserDetails;
 
-  constructor(
-    public service: XviFcService,
-  ) { }
+  constructor(public service: XviFcService) {}
 
   openDialogue(statusType: string, ulbs: string[]) {
     type LoginFormResult = {
-      reason: string
-    }
+      reason: string;
+    };
 
-    let reasonInput: HTMLInputElement
+    let reasonInput: HTMLInputElement;
     // let passwordInput: HTMLInputElement
     let html = '';
 
@@ -42,7 +39,7 @@ export class ApproveRejectFormService {
     //   html += `<p>Are you sure you want to return this form? Once returned, it will be sent to the ULB for resubmission.</p>`;
     //   html += `<textarea type="text" id="reason" class="swal2-input" placeholder="Reason"></textarea>`;
     // } else {
-    //   html = `<p>Are you sure you want to approve this form? Once approved, 
+    //   html = `<p>Are you sure you want to approve this form? Once approved,
     //     it will be sent to XVI FC for Review.</p>`;
     // }
 
@@ -60,9 +57,6 @@ export class ApproveRejectFormService {
         html += `<p>Are you sure you want to approve this form? Once approved, it will be sent to XVI FC for Review.</p>`;
       }
     }
-    
-
-    
 
     Swal.fire<LoginFormResult>({
       title: 'Confirmation?',
@@ -74,10 +68,10 @@ export class ApproveRejectFormService {
       focusConfirm: false,
       didOpen: () => {
         if (statusType === 'reject') {
-          const popup = Swal.getPopup()!
-          reasonInput = popup.querySelector('#reason') as HTMLInputElement
+          const popup = Swal.getPopup()!;
+          reasonInput = popup.querySelector('#reason') as HTMLInputElement;
           // passwordInput = popup.querySelector('#password') as HTMLInputElement
-          reasonInput.onkeyup = (event) => event.key === 'Enter' && Swal.clickConfirm()
+          reasonInput.onkeyup = (event) => event.key === 'Enter' && Swal.clickConfirm();
           // passwordInput.onkeyup = (event) => event.key === 'Enter' && Swal.clickConfirm()
         }
       },
@@ -85,7 +79,7 @@ export class ApproveRejectFormService {
         let reason = '';
         let validData = true;
         if (statusType === 'reject') {
-          reason = reasonInput.value
+          reason = reasonInput.value;
           // const password = passwordInput.value
           if (!reason) {
             Swal.showValidationMessage(`Please enter reason`);
@@ -97,7 +91,7 @@ export class ApproveRejectFormService {
           this.submitStatus(ulbs, statusType, reason);
         }
       },
-    })
+    });
   }
 
   submitStatus(ulbs: string[], statusType: string, reason: string) {
@@ -106,8 +100,8 @@ export class ApproveRejectFormService {
       ulbs,
       ...(statusType === 'reject' && {
         reject: true,
-        rejectMessage: reason
-      })
+        rejectMessage: reason,
+      }),
     };
     // this.isDataSaved.next(true);
     // console.log('formData', formData);
@@ -115,24 +109,16 @@ export class ApproveRejectFormService {
 
     this.service.submitFormStatus(statusType, formData).subscribe({
       next: (res) => {
-        Swal.fire(
-          'Done!',
-          'Your action has been confirmed.',
-          'success'
-        );
+        Swal.fire('Done!', 'Your action has been confirmed.', 'success');
         this.isDataSaved.next(true);
-      }, error: (error: any) => {
+      },
+      error: (error: any) => {
         this.handleHttpError(error);
-      }
+      },
     });
   }
 
-
   handleHttpError(error: any) {
-    Swal.fire(
-      'Error',
-      error.message || 'Something went wrong! Please try again',
-      'error'
-    );
+    Swal.fire('Error', error.message || 'Something went wrong! Please try again', 'error');
   }
 }

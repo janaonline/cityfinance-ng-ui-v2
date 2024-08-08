@@ -1,59 +1,68 @@
 <div class="container" appDnd (fileDropped)="onFileDropped($event)" *ngIf="!readonly">
-    <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowseHandler($event)"
-        [accept]="this.allowedFileTypeStr" />
-    <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
-    <p class="fw-bold mt-2 mb-1">Upload consolidated PDF</p>
-    <label for="fileDropRef"><small class="text-secondary">Drag and drop the file here.</small></label>
+  <input
+    type="file"
+    #fileDropRef
+    id="fileDropRef"
+    (change)="fileBrowseHandler($event)"
+    [accept]="this.allowedFileTypeStr"
+  />
+  <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
+  <p class="fw-bold mt-2 mb-1">Upload consolidated PDF</p>
+  <label for="fileDropRef"
+    ><small class="text-secondary">Drag and drop the file here.</small></label
+  >
 </div>
 <!-- {{getRawValue|json}} -->
 @if (currentFile) {
-<div class="files-list">
-    <p class="mb-1">Uploaded file: </p>
+  <div class="files-list">
+    <p class="mb-1">Uploaded file:</p>
     <div class="single-file dotted-border-secondary">
-        <div class="file-icon" style="width: 50px">
-            <div class="align-self-center">
-                <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
-            </div>
+      <div class="file-icon" style="width: 50px">
+        <div class="align-self-center">
+          <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
         </div>
-        <div class="info">
-            <h4 class="name"> {{ currentFile.name }} </h4>
-            <p class="size"> {{ formatBytes(currentFile.size) }} </p>
-            <!-- <app-progress [progress]="progress"></app-progress> -->
-            <mat-progress-bar mode="determinate" [value]="progress"></mat-progress-bar>
-        </div>
-        <a [href]="getRawValue.file.url | toStorageUrl" target="_blank"><i
-                class="bi bi-eye-fill fs-5 me-1 text-dark"></i></a>
-        <div class="delete align-self-center" (click)="deleteFile()">
-            <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
-        </div>
+      </div>
+      <div class="info">
+        <h4 class="name">{{ currentFile.name }}</h4>
+        <p class="size">{{ formatBytes(currentFile.size) }}</p>
+        <!-- <app-progress [progress]="progress"></app-progress> -->
+        <mat-progress-bar mode="determinate" [value]="progress"></mat-progress-bar>
+      </div>
+      <a [href]="getRawValue.file.url | toStorageUrl" target="_blank"
+        ><i class="bi bi-eye-fill fs-5 me-1 text-dark"></i
+      ></a>
+      <div class="delete align-self-center" (click)="deleteFile()">
+        <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
+      </div>
     </div>
-</div>
+  </div>
 } @else if (getRawValue.file.name) {
-<div class="files-list">
-    <p class="mb-1">Uploaded file: </p>
+  <div class="files-list">
+    <p class="mb-1">Uploaded file:</p>
     <div class="single-file dotted-border-secondary p-3">
-        <div class="file-icon" style="width: 50px">
-            <div class="align-self-center">
-                <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
-            </div>
+      <div class="file-icon" style="width: 50px">
+        <div class="align-self-center">
+          <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
         </div>
+      </div>
 
-        <div class="info">
-            <h4 class="name"> {{ getRawValue.file.name }} </h4>
-        </div>
-        <a [href]="getRawValue.file.url | toStorageUrl" target="_blank"><i
-                class="bi bi-eye-fill fs-5 me-1 text-dark"></i></a>
-        <div class="delete align-self-center" (click)="deleteFile()">
-            <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
-        </div>
+      <div class="info">
+        <h4 class="name">{{ getRawValue.file.name }}</h4>
+      </div>
+      <a [href]="getRawValue.file.url | toStorageUrl" target="_blank"
+        ><i class="bi bi-eye-fill fs-5 me-1 text-dark"></i
+      ></a>
+      <div class="delete align-self-center" (click)="deleteFile()">
+        <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
+      </div>
     </div>
-</div>
+  </div>
 }
-@if(getRawValue.file.name) {
-<div class="verified-info">
+@if (getRawValue.file.name) {
+  <div class="verified-info">
     <div class="d-flex align-items-center justify-content-start">
-        <span><mat-icon class="material-icons-round  me-2 text-success"> verified </mat-icon></span>
-        <p>File uploaded successfully.</p>
+      <span><mat-icon class="material-icons-round me-2 text-success"> verified </mat-icon></span>
+      <p>File uploaded successfully.</p>
     </div>
-</div>
+  </div>
 }

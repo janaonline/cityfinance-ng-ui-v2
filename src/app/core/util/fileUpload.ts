@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 @Injectable()
 export class FileUpload {
   get uploading(): boolean {
@@ -34,5 +34,4 @@ export class FileUpload {
     this.currentUploadedFiles = 0;
     this.totalFiles = 0;
   }
-
 }

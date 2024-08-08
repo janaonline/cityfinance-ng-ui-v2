@@ -12,7 +12,7 @@ export class JSONUtility {
   public convertToFlatJSON(original: any) {
     let newJSON: any = {};
     Object.keys(original).forEach((key: any) => {
-      if (typeof original[key] === "object") {
+      if (typeof original[key] === 'object') {
         const nestedValue = this.convertToFlatJSON(original[key]);
         newJSON = { ...newJSON, ...nestedValue };
         return;
@@ -37,10 +37,10 @@ export class JSONUtility {
       if (obj[key] === null || obj[key] === undefined) {
         return;
       }
-      if (typeof obj[key] === "string" && !obj[key].trim()) {
+      if (typeof obj[key] === 'string' && !obj[key].trim()) {
         return;
       }
-      if (typeof obj[key] === "string") {
+      if (typeof obj[key] === 'string') {
         value[key] = obj[key].trim();
       } else if (deepFilter) {
         if (Array.isArray(obj[key])) {
@@ -49,7 +49,7 @@ export class JSONUtility {
 
           value[key] = [...newArray];
           return;
-        } else if (typeof obj[key] === "object") {
+        } else if (typeof obj[key] === 'object') {
           const newObj = this.filterEmptyValue(obj[key], true);
           if (!newObj) return;
 
@@ -68,7 +68,7 @@ export class JSONUtility {
     const newArray: {}[] = [];
     data.forEach((obj) => {
       if (obj === null || obj === undefined) return;
-      if (typeof obj === "object") {
+      if (typeof obj === 'object') {
         const newObj = this.filterEmptyValue(obj, deepFilter);
         if (!newObj || !Object.keys(newObj).length) return;
         return newArray.push(newObj);
@@ -85,7 +85,7 @@ export class JSONUtility {
     let copy: any;
 
     // Handle the 3 simple types, and null or undefined
-    if (null == obj || "object" != typeof obj) return obj;
+    if (null == obj || 'object' != typeof obj) return obj;
 
     // Handle Date
     if (obj instanceof Date) {
@@ -133,11 +133,11 @@ export class JSONUtility {
    */
   public convert(input: any): any {
     if (!input) return;
-    if (typeof input === "number") {
+    if (typeof input === 'number') {
       return Number(`${input}`).toFixed(2);
     }
 
-    if (typeof input === "string") {
+    if (typeof input === 'string') {
       if (Number.isNaN(Number(`${input}`))) return input;
       return Number(`${input}`).toFixed(2);
     }
@@ -152,14 +152,11 @@ export class JSONUtility {
   private convertObjectValuesToDecimalValues(inputObj: { [key: string]: any }) {
     if (!inputObj) return;
     Object.keys(inputObj).forEach((key) => {
-      if (
-        typeof inputObj[key] === "number" ||
-        typeof inputObj[key] === "string"
-      ) {
+      if (typeof inputObj[key] === 'number' || typeof inputObj[key] === 'string') {
         inputObj[key] = this.convert(inputObj[key]);
       } else if (Array.isArray(inputObj[key])) {
         inputObj[key] = this.convertArrayValuesToDecimalValues(inputObj[key]);
-      } else if (typeof inputObj[key] === "object") {
+      } else if (typeof inputObj[key] === 'object') {
         inputObj[key] = this.convertObjectValuesToDecimalValues(inputObj[key]);
       }
     });
@@ -168,7 +165,7 @@ export class JSONUtility {
 
   private convertArrayValuesToDecimalValues(inputArray: any[]): any {
     return inputArray.map((value) => {
-      if (typeof value === "number") return this.convert(value);
+      if (typeof value === 'number') return this.convert(value);
       if (Array.isArray(value)) {
         return this.convertArrayValuesToDecimalValues(value);
       }

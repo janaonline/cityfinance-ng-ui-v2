@@ -13,14 +13,9 @@ import { first } from 'rxjs';
 @Component({
   selector: 'app-preview',
   standalone: true,
-  imports: [
-    MaterialModule,
-    ReviewSubmitComponent,
-
-    RouterModule,
-  ],
+  imports: [MaterialModule, ReviewSubmitComponent, RouterModule],
   templateUrl: './preview.component.html',
-  styleUrl: './preview.component.scss'
+  styleUrl: './preview.component.scss',
 })
 export class PreviewComponent {
   formStatus!: string;
@@ -33,12 +28,13 @@ export class PreviewComponent {
   totalTabs: any;
   formSaveLoader: boolean = false;
 
-  constructor(private fb: FormBuilder,
+  constructor(
+    private fb: FormBuilder,
     public service: XviFcService,
     public approveRejectService: ApproveRejectFormService,
     // public formService: DynamicFormService,
-    private route: ActivatedRoute,) {
-  }
+    private route: ActivatedRoute,
+  ) {}
 
   productId!: string;
 
@@ -75,9 +71,10 @@ export class PreviewComponent {
         this.totalTabs = this.tabs.length;
 
         this.isLoader = false;
-      }, error: () => {
+      },
+      error: () => {
         this.isLoader = false;
-      }
+      },
     });
   }
 
@@ -91,5 +88,4 @@ export class PreviewComponent {
       // console.log('success: ', success);
     });
   }
-
 }

@@ -1,17 +1,14 @@
-import * as L from "leaflet";
-import { ILeafletStateClickEvent } from "src/app/shared/components/re-useable-heat-map/models/leafletStateClickEvent";
+import * as L from 'leaflet';
+import { ILeafletStateClickEvent } from 'src/app/shared/components/re-useable-heat-map/models/leafletStateClickEvent';
 
-import {
-  IMapCreationConfig,
-  IStateLayerStyle,
-} from "./models/mapCreationConfig";
+import { IMapCreationConfig, IStateLayerStyle } from './models/mapCreationConfig';
 
 export class MapUtil {
   private static readonly defaultStateLayerStyle: IStateLayerStyle = {
-    fillColor: "#efefef",
+    fillColor: '#efefef',
     weight: 1,
     opacity: 1,
-    color: "#403f3f",
+    color: '#403f3f',
     fillOpacity: 1,
   };
 
@@ -39,8 +36,8 @@ export class MapUtil {
     Punjab: { lat: 31.632808, lng: 75.976851 },
     Goa: { lat: 15.441705, lng: 74.699032 },
     Haryana: { lat: 29.501121, lng: 76.180837 },
-    "The Government of NCT of Delhi": { lat: 28.689453, lng: 77.814074 },
-    "Himachal Pradesh": { lat: 31.747344, lng: 78.364865 },
+    'The Government of NCT of Delhi': { lat: 28.689453, lng: 77.814074 },
+    'Himachal Pradesh': { lat: 31.747344, lng: 78.364865 },
   };
 
   public static getStateName(layer: ILeafletStateClickEvent | L.Layer): string {
@@ -71,7 +68,7 @@ export class MapUtil {
         fillColor,
         weight: -1,
       },
-      true
+      true,
     );
   }
 
@@ -87,14 +84,11 @@ export class MapUtil {
     const options = configuration.options
       ? { ...MapUtil.defaultMapConfiguration, ...configuration.options }
       : MapUtil.defaultMapConfiguration;
-    let map = L.map(configuration.containerId, options).setView(
-      [20.59, 78.96],
-      0.1
-    );
+    let map = L.map(configuration.containerId, options).setView([20.59, 78.96], 0.1);
 
     const stateLayers = MapUtil.applyStyleOnStates(
       configuration.geoData,
-      configuration.layerOptions
+      configuration.layerOptions,
     ).addTo(map);
 
     map = MapUtil.centerMap(map, stateLayers);
@@ -131,8 +125,8 @@ export class MapUtil {
   }
 
   private static applyStyleOnStates(
-    geoData: IMapCreationConfig["geoData"],
-    style?: IStateLayerStyle
+    geoData: IMapCreationConfig['geoData'],
+    style?: IStateLayerStyle,
   ) {
     if (style) {
       return L.geoJSON(geoData, {

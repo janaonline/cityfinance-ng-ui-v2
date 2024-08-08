@@ -1,26 +1,26 @@
-import { HttpClient, HttpParams } from "@angular/common/http";
-import { Injectable } from "@angular/core";
-import { BehaviorSubject, Observable, of, Subject } from "rxjs";
-import { map, switchMap } from "rxjs/operators";
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
-import { environment } from "./../../../environments/environment";
-import { DomSanitizer } from "@angular/platform-browser";
-import { MatSnackBar } from "@angular/material/snack-bar";
-import { HttpUtility } from "../util/httpUtil";
-import { JSONUtility } from "../util/jsonUtil";
-import { IULBResponse } from "../models/IULBResponse";
-import { NewULBStructure, NewULBStructureResponse } from "../models/newULBStructure";
-import { IULB } from "../models/ulb";
-import { USER_TYPE } from "../models/user/userType";
-import { ULBsStatistics } from "../models/statistics/ulbsStatistics";
-import { IULBWithPopulationResponse } from "../models/ulbsForMapResponse";
-import { IStateULBCoveredResponse } from "../models/stateUlbConvered";
-import { IBasicLedgerData } from "../models/basicLedgerData.interface";
-import { IStateListResponse } from "../models/state/state-response";
+import { environment } from './../../../environments/environment';
+import { DomSanitizer } from '@angular/platform-browser';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { HttpUtility } from '../util/httpUtil';
+import { JSONUtility } from '../util/jsonUtil';
+import { IULBResponse } from '../models/IULBResponse';
+import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
+import { IULB } from '../models/ulb';
+import { USER_TYPE } from '../models/user/userType';
+import { ULBsStatistics } from '../models/statistics/ulbsStatistics';
+import { IULBWithPopulationResponse } from '../models/ulbsForMapResponse';
+import { IStateULBCoveredResponse } from '../models/stateUlbConvered';
+import { IBasicLedgerData } from '../models/basicLedgerData.interface';
+import { IStateListResponse } from '../models/state/state-response';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class CommonService {
   userType: string | undefined | null;
@@ -28,7 +28,7 @@ export class CommonService {
   public states: Subject<any> = new Subject<any>();
   OpenModalTrigger = new Subject<any>();
   state_name_data = new Subject<any>();
-  lastUpdatedYear = new BehaviorSubject<any>("");
+  lastUpdatedYear = new BehaviorSubject<any>('');
   private httpUtil = new HttpUtility();
   jsonUtil = new JSONUtility();
 
@@ -41,29 +41,27 @@ export class CommonService {
   constructor(
     private http: HttpClient,
     private sanitizer: DomSanitizer,
-    private snackbar: MatSnackBar
-  ) { }
+    private snackbar: MatSnackBar,
+  ) {}
 
   private searchItem: BehaviorSubject<any> = new BehaviorSubject([]);
   castSearchItem = this.searchItem.asObservable();
 
   updateSearchItem(searchItem: any) {
-    this.searchItem.next(searchItem)
+    this.searchItem.next(searchItem);
   }
 
-  searchUlb(body: any, type: any, state = "") {
+  searchUlb(body: any, type: any, state = '') {
     return this.http.post(
       `${environment.api.url}recentSearchKeyword/search?type=${type}&state=${state}`,
-      body
+      body,
     );
   }
 
   getFinancialYearBasedOnData() {
     return this.http
       .get(`${environment.api.url}dynamic-financial-year`)
-      .pipe(
-        map((res: any) => ({ ...res, data: this.sortFinancialYears(res["data"]) }))
-      );
+      .pipe(map((res: any) => ({ ...res, data: this.sortFinancialYears(res['data']) })));
   }
   /**
    * @description Sort the Financial Years only.
@@ -73,16 +71,13 @@ export class CommonService {
    * sorted = ["2014-15", "2015-16", "2018-19"]
    */
   private sortFinancialYears(years: string[]) {
-
-    return years.sort(
-      (yearA, yearB) => +yearA.split("-")[0] - +yearB.split("-")[0]
-    );
+    return years.sort((yearA, yearB) => +yearA.split('-')[0] - +yearB.split('-')[0]);
   }
 
   public getWebsiteVisitCount() {
     return this.http
       .get(`${environment.api.url}visit_count`)
-      .pipe(map((res: any) => (res && res["data"] ? res["data"] : 0)));
+      .pipe(map((res: any) => (res && res['data'] ? res['data'] : 0)));
   }
 
   // we are loading states while loading dashboard
@@ -90,8 +85,8 @@ export class CommonService {
     if (this.stateArr.length > 0 && !doLoadFromServer) {
       this.states.next(this.stateArr);
     }
-    this.http.get(environment.api.url + "/state").subscribe((res: any) => {
-      this.stateArr = res["data"];
+    this.http.get(environment.api.url + '/state').subscribe((res: any) => {
+      this.stateArr = res['data'];
       this.states.next(this.stateArr);
     });
   }
@@ -105,15 +100,15 @@ export class CommonService {
 
   public fetchStateList() {
     return this.http
-      .get<IStateListResponse>(environment.api.url + "state")
-      .pipe(map((res) => res["data"]));
+      .get<IStateListResponse>(environment.api.url + 'state')
+      .pipe(map((res) => res['data']));
   }
 
   public fetchDataForHomepageMap(stateId: string = '') {
     const params = this.httpUtil.convertToHttpParams({ state: stateId });
     return this.http
       .get(environment.api.url + `report/dashboard/home-page-data`, { params })
-      .pipe(map((res: any) => res["data"]));
+      .pipe(map((res: any) => res['data']));
   }
 
   public verifyULBCodeAndName(body: { name: string; code: string }) {
@@ -122,15 +117,15 @@ export class CommonService {
     }
 
     return this.getULBByCode(body.code).pipe(
-      map((res: any) => res["data"]),
+      map((res: any) => res['data']),
       switchMap((data) => {
         let isValid = true;
-        if (!data || data["code"] !== body.code || data["name"] !== body.name) {
+        if (!data || data['code'] !== body.code || data['name'] !== body.name) {
           isValid = false;
         }
 
         return of({ isValid, ulb: data });
-      })
+      }),
     );
 
     //
@@ -147,19 +142,17 @@ export class CommonService {
   }
 
   getAllUlbs() {
-    return this.http.get<IULBResponse>(environment.api.url + "ulbs");
+    return this.http.get<IULBResponse>(environment.api.url + 'ulbs');
   }
 
   // since ULB is based on state, query will happen on demand
   getUlbByState(stateCode: string) {
-    return this.http.get(
-      environment.api.url + "/states/" + stateCode + "/ulbs"
-    );
+    return this.http.get(environment.api.url + '/states/' + stateCode + '/ulbs');
   }
 
   getCachedResponse(years: string[]) {
     if (!years.length) {
-      return this.NewULBStructureResponseCache["NoYear"];
+      return this.NewULBStructureResponseCache['NoYear'];
     }
 
     const yearsAsString = years.reduce((a, b) => a + b);
@@ -172,10 +165,9 @@ export class CommonService {
     //   return of(cachedResponse);
     // }
 
-    return this.http.post<NewULBStructureResponse>(
-      `${environment.api.url}/ledger/getAllLegders`,
-      { year: years }
-    );
+    return this.http.post<NewULBStructureResponse>(`${environment.api.url}/ledger/getAllLegders`, {
+      year: years,
+    });
   }
 
   // fetchBasicLedgerData() {
@@ -211,25 +203,30 @@ export class CommonService {
    * 3. Year - Descreasing (Latest year first).
    */
   private sortLedgeData(res: IBasicLedgerData) {
-    return res.data.sort((stateA: { ulbList: any[]; _id: { name: string; state: any; }; }, stateB: { ulbList: any[]; _id: { name: any; state: any; }; }) => {
-      stateA.ulbList = stateA.ulbList
-        .sort((ulbA: { name: string; }, ulbB: { name: any; }) => ulbA.name.localeCompare(ulbB.name))
-        .map((ulb: { financialYear: string[]; }) => ({
-          ...ulb,
-          state: stateA._id.name,
-          stateId: stateA._id.state,
-          financialYear: this.sortFinancialYear(ulb.financialYear),
-        }));
-      stateB.ulbList = stateB.ulbList
-        .sort((ulbA: { name: string; }, ulbB: { name: any; }) => ulbA.name.localeCompare(ulbB.name))
-        .map((ulb: { financialYear: string[]; }) => ({
-          ...ulb,
-          state: stateB._id.name,
-          stateId: stateB._id.state,
-          financialYear: this.sortFinancialYear(ulb.financialYear),
-        }));
-      return stateA._id.name.localeCompare(stateB._id.name);
-    });
+    return res.data.sort(
+      (
+        stateA: { ulbList: any[]; _id: { name: string; state: any } },
+        stateB: { ulbList: any[]; _id: { name: any; state: any } },
+      ) => {
+        stateA.ulbList = stateA.ulbList
+          .sort((ulbA: { name: string }, ulbB: { name: any }) => ulbA.name.localeCompare(ulbB.name))
+          .map((ulb: { financialYear: string[] }) => ({
+            ...ulb,
+            state: stateA._id.name,
+            stateId: stateA._id.state,
+            financialYear: this.sortFinancialYear(ulb.financialYear),
+          }));
+        stateB.ulbList = stateB.ulbList
+          .sort((ulbA: { name: string }, ulbB: { name: any }) => ulbA.name.localeCompare(ulbB.name))
+          .map((ulb: { financialYear: string[] }) => ({
+            ...ulb,
+            state: stateB._id.name,
+            stateId: stateB._id.state,
+            financialYear: this.sortFinancialYear(ulb.financialYear),
+          }));
+        return stateA._id.name.localeCompare(stateB._id.name);
+      },
+    );
   }
 
   /**
@@ -239,7 +236,7 @@ export class CommonService {
    * sortedYear = ['2017-18', '2016-17']
    */
   private sortFinancialYear(years: string[]) {
-    return years?.sort((A, B) => +B.split("-")[0] - +A.split("-")[0]);
+    return years?.sort((A, B) => +B.split('-')[0] - +A.split('-')[0]);
   }
   // TODO: check later
   // getULBSByYears(years: string[] = []) {
@@ -324,8 +321,11 @@ export class CommonService {
     };
   }
 
-  fetchULBList(body: { [x: string]: string; registration?: any; role?: any; skip?: any; limit?: any; }, sort?: {}) {
-    if (body.registration === "Yes") {
+  fetchULBList(
+    body: { [x: string]: string; registration?: any; role?: any; skip?: any; limit?: any },
+    sort?: {},
+  ) {
+    if (body.registration === 'Yes') {
       body.role = USER_TYPE.ULB;
     }
     const skip = body.skip;
@@ -334,7 +334,7 @@ export class CommonService {
     delete body.limit;
     if (body) {
       Object.keys(body).forEach((key) => {
-        if (typeof body[key] === "string") body[key] = body[key].trim();
+        if (typeof body[key] === 'string') body[key] = body[key].trim();
       });
     }
 
@@ -344,7 +344,7 @@ export class CommonService {
       limit,
     });
     if (sort) {
-      params = params.append("sort", JSON.stringify(sort));
+      params = params.append('sort', JSON.stringify(sort));
     }
 
     return this.http.get(`${environment.api.url}xv-fc-form/fc-grant/ulbList`, {
@@ -352,12 +352,18 @@ export class CommonService {
     });
   }
 
-  getULBListApi(body: { [x: string]: string | number | boolean; registration?: any; role?: any; skip?: any; limit?: any; }) {
-    const token = localStorage.getItem("id_token");
-    body["token"] = token ? token.replace('"', "") : '';
-    body["csv"] = true;
+  getULBListApi(body: {
+    [x: string]: string | number | boolean;
+    registration?: any;
+    role?: any;
+    skip?: any;
+    limit?: any;
+  }) {
+    const token = localStorage.getItem('id_token');
+    body['token'] = token ? token.replace('"', '') : '';
+    body['csv'] = true;
     let params = new HttpParams();
-    if (body.registration === "Yes") {
+    if (body.registration === 'Yes') {
       body.role = USER_TYPE.ULB;
     }
     const skip = body.skip;
@@ -365,7 +371,7 @@ export class CommonService {
     delete body.skip;
     delete body.limit;
     Object.keys(body).forEach((key) => {
-      if (typeof body[key] === "object") {
+      if (typeof body[key] === 'object') {
         const value = JSON.stringify(body[key]);
         params = params.append(key, value);
       } else {
@@ -376,25 +382,17 @@ export class CommonService {
   }
 
   fetchDashboardCardData() {
-    return this.http.get(
-      `${environment.api.url}xv-fc-form/fc-grant/dashboard-card`
-    );
+    return this.http.get(`${environment.api.url}xv-fc-form/fc-grant/dashboard-card`);
   }
 
   fetchDashboardChartData(queryParams: any) {
     const params = this.httpUtil.convertToHttpParams(queryParams);
-    return this.http.get(
-      `${environment.api.url}xv-fc-form/fc-grant/dashboard-chart`,
-      { params }
-    );
+    return this.http.get(`${environment.api.url}xv-fc-form/fc-grant/dashboard-chart`, { params });
   }
 
   getULBsStatistics() {
     return this.http
-      .post<NewULBStructureResponse>(
-        `${environment.api.url}/ledger/getAllLegders`,
-        { year: [] }
-      )
+      .post<NewULBStructureResponse>(`${environment.api.url}/ledger/getAllLegders`, { year: [] })
       .pipe(map((response) => this.getCount(response.data)));
   }
 
@@ -414,9 +412,8 @@ export class CommonService {
           ulbsByYears: {
             [ulb.financialYear]: {
               total: 1,
-              amrut: ulb.ulb.amrut == "Yes" ? 1 : 0,
-              nonAmrut:
-                ulb.ulb.amrut == "No" || ulb.ulb.amrut == undefined ? 1 : 0,
+              amrut: ulb.ulb.amrut == 'Yes' ? 1 : 0,
+              nonAmrut: ulb.ulb.amrut == 'No' || ulb.ulb.amrut == undefined ? 1 : 0,
             },
           },
         };
@@ -424,7 +421,7 @@ export class CommonService {
       }
       newObj[ulb.state._id].totalULBS.push(ulb);
       const doesULBAlreadyExist = newObj[ulb.state._id].uniqueULBS.find(
-        (ulbToSearch: { ulb: { code: any; }; }) => ulbToSearch.ulb.code === ulb.ulb.code
+        (ulbToSearch: { ulb: { code: any } }) => ulbToSearch.ulb.code === ulb.ulb.code,
       );
       if (!doesULBAlreadyExist) {
         newObj[ulb.state._id].uniqueULBS.push(ulb);
@@ -433,16 +430,15 @@ export class CommonService {
       if (!newObj[ulb.state._id].ulbsByYears[ulb.financialYear]) {
         newObj[ulb.state._id].ulbsByYears[ulb.financialYear] = {
           total: 1,
-          amrut: ulb.ulb.amrut == "Yes" ? 1 : 0,
-          nonAmrut: ulb.ulb.amrut == "No" || ulb.ulb.amrut == undefined ? 1 : 0,
+          amrut: ulb.ulb.amrut == 'Yes' ? 1 : 0,
+          nonAmrut: ulb.ulb.amrut == 'No' || ulb.ulb.amrut == undefined ? 1 : 0,
         };
         return;
       }
       newObj[ulb.state._id].ulbsByYears[ulb.financialYear].total += 1;
-      newObj[ulb.state._id].ulbsByYears[ulb.financialYear].amrut +=
-        ulb.ulb.amrut == "Yes" ? 1 : 0;
+      newObj[ulb.state._id].ulbsByYears[ulb.financialYear].amrut += ulb.ulb.amrut == 'Yes' ? 1 : 0;
       newObj[ulb.state._id].ulbsByYears[ulb.financialYear].nonAmrut +=
-        ulb.ulb.amrut == "No" || ulb.ulb.amrut == undefined ? 1 : 0;
+        ulb.ulb.amrut == 'No' || ulb.ulb.amrut == undefined ? 1 : 0;
       // newObj[ulb.state._id].ulbsByYears[ulb.financialYear].push({ ...ulb });
     });
 
@@ -457,11 +453,11 @@ export class CommonService {
   }
 
   loadStatesAgg(): Observable<any> {
-    return this.http.get("/assets/files/homeDashboardStateAggData.json");
+    return this.http.get('/assets/files/homeDashboardStateAggData.json');
   }
 
   loadHomeStatisticsData(): Observable<any> {
-    return this.http.get("/assets/files/homeDashboardData.json");
+    return this.http.get('/assets/files/homeDashboardData.json');
   }
 
   getStateUlbCovered(body?: { year: string[] }) {
@@ -470,34 +466,26 @@ export class CommonService {
     //   queryParams = this.getHttpClientParams(params);
     // }
     return this.http
-      .post<IStateULBCoveredResponse>(
-        `${environment.api.url}states-with-ulb-count`,
-        body
-      )
+      .post<IStateULBCoveredResponse>(`${environment.api.url}states-with-ulb-count`, body)
       .pipe(
         map((res: any) => {
-          res.data = res.data.sort((stateA: { name: number; }, stateB: { name: number; }) =>
-            stateA.name > stateB.name ? 1 : -1
+          res.data = res.data.sort((stateA: { name: number }, stateB: { name: number }) =>
+            stateA.name > stateB.name ? 1 : -1,
           );
           return res;
-        })
+        }),
       );
   }
 
-  getULBSWithPopulationAndCoordinates(body?: {
-    year: string[];
-    [key: string]: any;
-  }) {
-    return this.http
-      .post<IULBWithPopulationResponse>(`${environment.api.url}ulb-list`, body)
-      .pipe(
-        map((res: any) => {
-          res.data = res.data.sort((ulbA: { name: number; }, ulbB: { name: number; }) =>
-            ulbA.name > ulbB.name ? 1 : -1
-          );
-          return res;
-        })
-      );
+  getULBSWithPopulationAndCoordinates(body?: { year: string[]; [key: string]: any }) {
+    return this.http.post<IULBWithPopulationResponse>(`${environment.api.url}ulb-list`, body).pipe(
+      map((res: any) => {
+        res.data = res.data.sort((ulbA: { name: number }, ulbB: { name: number }) =>
+          ulbA.name > ulbB.name ? 1 : -1,
+        );
+        return res;
+      }),
+    );
   }
 
   public getHttpClientParams(obj: any) {
@@ -522,7 +510,7 @@ export class CommonService {
   getPublicFileList() {
     return this.http
       .get(`${environment.api.url}resource/all`)
-      .pipe(map((res: any) => res["data"]["data"]));
+      .pipe(map((res: any) => res['data']['data']));
   }
 
   getNodalOfficer(state: any) {
@@ -533,9 +521,7 @@ export class CommonService {
     // let data = {design_year: '606aaf854dff55e6c075d219'}
     // const newData = this.jsonUtil.convert(data);
     if (ulbId != null) {
-      return this.http.get(
-        `${environment.api.url}xv-fc-form/admin/${ulbId}?${params}`
-      );
+      return this.http.get(`${environment.api.url}xv-fc-form/admin/${ulbId}?${params}`);
     } else {
       return this.http.get(`${environment.api.url}xv-fc-form?${params}`);
     }
@@ -543,18 +529,12 @@ export class CommonService {
 
   postSlbData(data: any) {
     const newData = this.jsonUtil.convert(data);
-    return this.http.post(
-      `${environment.api.url}xv-fc-form`,
-      JSON.stringify(newData)
-    );
+    return this.http.post(`${environment.api.url}xv-fc-form`, JSON.stringify(newData));
   }
 
   updateSlbData(data: any, id: any) {
     const newData = this.jsonUtil.convert(data);
-    return this.http.put(
-      `${environment.api.url}xv-fc-form/${id}`,
-      JSON.stringify(newData)
-    );
+    return this.http.put(`${environment.api.url}xv-fc-form/${id}`, JSON.stringify(newData));
   }
   setUser(get: any, user = null) {
     if (get) {
@@ -567,13 +547,13 @@ export class CommonService {
     let dataString = {
       matchingWord: data,
     };
-    let stateData = "";
+    let stateData = '';
     if (state) {
       stateData = `&state=${state}`;
     }
     return this.http.post(
       `${environment.api.url}recentSearchKeyword/search?type=${type}${stateData}`,
-      dataString
+      dataString,
     );
   }
   postRecentSearchValue(data: any) {
@@ -596,17 +576,14 @@ export class CommonService {
   }
 
   formatNumber(num: number | bigint) {
-    return new Intl.NumberFormat("en-IN").format(num);
+    return new Intl.NumberFormat('en-IN').format(num);
   }
 
-  changeCountFormat(
-    value: any,
-    chartAnimation: string = "defaultBarChartOptions"
-  ) {
+  changeCountFormat(value: any, chartAnimation: string = 'defaultBarChartOptions') {
     let formattedValue: any;
-    if (chartAnimation == "croreBarChartOptions") {
+    if (chartAnimation == 'croreBarChartOptions') {
       formattedValue = Math.round(value / 10000000);
-    } else if (chartAnimation == "lakhBarChartOptions") {
+    } else if (chartAnimation == 'lakhBarChartOptions') {
       formattedValue = Math.round(value / 100000);
     } else {
       formattedValue = Math.round(value);
@@ -618,9 +595,9 @@ export class CommonService {
   toTitleCase(phrase: string) {
     return phrase
       .toLowerCase()
-      .split(" ")
+      .split(' ')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+      .join(' ');
   }
 
   getStateWiseFYs(paramContent: any) {
@@ -640,37 +617,37 @@ export class CommonService {
   createEmbedUrl(paramContent: any, embeddedRoute: string = '') {
     let queryString = new URLSearchParams(paramContent).toString();
     // let embeddedRoute = "revenuchart";
-    console.log("queryString", queryString);
+    console.log('queryString', queryString);
     let finalURL = `${window.location.origin}/${embeddedRoute}?widgetMode=true&${queryString}`;
     // let finalURL = `${window.location.origin}/${embeddedRoute}?widgetMode=true&data=${btoa(queryString)}`;
     return finalURL;
   }
 
   showSnackbarMessage(message: string) {
-    this.snackbar.open(message, "", {
+    this.snackbar.open(message, '', {
       duration: 1500,
-      verticalPosition: "bottom",
+      verticalPosition: 'bottom',
     });
   }
 
-  copyToClipboard(copyHTMLElement: any, copyMessage: string = "") {
+  copyToClipboard(copyHTMLElement: any, copyMessage: string = '') {
     this.showSnackbarMessage(copyMessage);
 
-    let selBox = document.createElement("textarea");
-    selBox.style.position = "fixed";
-    selBox.style.left = "0";
-    selBox.style.top = "0";
-    selBox.style.opacity = "0";
+    let selBox = document.createElement('textarea');
+    selBox.style.position = 'fixed';
+    selBox.style.left = '0';
+    selBox.style.top = '0';
+    selBox.style.opacity = '0';
     selBox.value = copyHTMLElement;
     document.body.appendChild(selBox);
     selBox.focus();
     selBox.select();
-    document.execCommand("copy");
+    document.execCommand('copy');
     document.body.removeChild(selBox);
   }
 
   decodeIframeUrl(dataUrl: any) {
-    console.log("decodeIframeUrl", dataUrl);
+    console.log('decodeIframeUrl', dataUrl);
     let decodedUrl = atob(dataUrl);
     return decodedUrl;
   }
@@ -683,14 +660,14 @@ export class CommonService {
    * "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiw
    */
   paramsToObject(queryParamContent: any) {
-    console.log("queryParamContent", queryParamContent);
+    console.log('queryParamContent', queryParamContent);
     var paramObject: any = {};
-    var pairs = queryParamContent.split("&");
+    var pairs = queryParamContent.split('&');
     for (let key in pairs) {
-      var split = pairs[key].split("=");
+      var split = pairs[key].split('=');
       paramObject[decodeURIComponent(split[0])] = decodeURIComponent(split[1]);
     }
-    console.log("paramObject", paramObject);
+    console.log('paramObject', paramObject);
     return paramObject;
   }
 
@@ -731,7 +708,10 @@ export class CommonService {
 
   downloadCsvApi(csvType: any, payload: any) {
     const params = this.httpUtil.convertToHttpParams(payload);
-    return this.http.get(`${environment.api.url}fiscal-ranking/${csvType}`, { params: params as any, responseType: 'blob' })
+    return this.http.get(`${environment.api.url}fiscal-ranking/${csvType}`, {
+      params: params as any,
+      responseType: 'blob',
+    });
   }
 
   createCsv(result: BlobPart, fileName: string) {
@@ -751,15 +731,17 @@ export class CommonService {
   sortDataSource(dataset: any, sortKey: string) {
     let sortedData: any = [];
     // sortedData = dataset.sort((a, b) => a[sortKey].toLowerCase() > b[sortKey].toLowerCase() ? 1 : -1);
-    sortedData = dataset.sort((a: { [x: string]: string; }, b: { [x: string]: any; }) => a[sortKey].localeCompare(b[sortKey]));
+    sortedData = dataset.sort((a: { [x: string]: string }, b: { [x: string]: any }) =>
+      a[sortKey].localeCompare(b[sortKey]),
+    );
     return sortedData;
   }
 
   createCityTooltip(markerDataPoint: any) {
     const tooltipStyle = {
-      color: "#000000",
+      color: '#000000',
       fontWeight: 600,
-      fontSize: "0.7rem",
+      fontSize: '0.7rem',
     };
     if (markerDataPoint && markerDataPoint.name) {
       return `<p style="color: ${tooltipStyle?.color}; font-weight: ${tooltipStyle?.fontWeight}; font-size: ${tooltipStyle?.fontSize};">
@@ -770,7 +752,7 @@ export class CommonService {
   }
 
   roundOffValue(data: any) {
-    data ? Math.round(data) : "---";
+    data ? Math.round(data) : '---';
   }
 
   getSLBdashboardForntData() {
@@ -778,11 +760,8 @@ export class CommonService {
   }
 
   getCallMethod(endPoints: string, queryParam: any) {
-    return this.http.get(
-      `${environment.api.url}${endPoints}`,
-      {
-        params: queryParam
-      }
-    );
+    return this.http.get(`${environment.api.url}${endPoints}`, {
+      params: queryParam,
+    });
   }
 }
