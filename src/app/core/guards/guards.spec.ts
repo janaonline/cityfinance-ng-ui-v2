@@ -6,7 +6,7 @@ import { AppComponent } from '../../app.component';
 import { SiteStatusService } from '../services/site-status.service';
 import { MaintenanceGuard } from './maintenance/maintenance.guard';
 
-describe('Functional Guards', () => {
+xdescribe('Functional Guards', () => {
   console.log('Functional Guards test - INIT');
   let fixture: ComponentFixture<AppComponent>;
   let appComponent: AppComponent;

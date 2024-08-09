@@ -1,5 +1,7 @@
 # CityfinanceNgUiV2
 
+[![codecov](https://codecov.io/gh/janaonline/cityfinance-ng-ui-v2/graph/badge.svg?token=3UNOUB3NL3)](https://codecov.io/gh/janaonline/cityfinance-ng-ui-v2)
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.7.
 
 ## Development server

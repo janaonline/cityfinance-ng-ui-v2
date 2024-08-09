@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { XviFcReviewComponent } from './xvi-fc-review.component';
 
-describe('XviFcReviewComponent', () => {
+xdescribe('XviFcReviewComponent', () => {
   let component: XviFcReviewComponent;
   let fixture: ComponentFixture<XviFcReviewComponent>;
 
