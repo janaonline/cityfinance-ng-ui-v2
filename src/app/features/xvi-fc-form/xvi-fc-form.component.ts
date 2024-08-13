@@ -110,7 +110,7 @@ export class XviFcFormComponent {
     public service: XviFcService,
     public formService: DynamicFormService,
     private _snackBar: MatSnackBar,
-  ) {}
+  ) { }
 
   ngOnInit() {
     // this.form.valueChanges.subscribe(x => {
@@ -207,7 +207,8 @@ export class XviFcFormComponent {
     const index = yearOfConstitutionOptions.indexOf(yearOfConstitutionValue);
     const yearOfElection = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfElection');
 
-    this.tabs[0].data[yearOfElection].options = this.oldyearOfElectionOptions.slice(0, index + 2);
+    // get the addtional 3 option
+    this.tabs[0].data[yearOfElection].options = this.oldyearOfElectionOptions.slice(0, index + 3);
 
     if (this.tabs[0].formType === 'form2') {
       const yearOfSlbIndex = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfSlb');
