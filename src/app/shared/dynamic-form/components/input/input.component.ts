@@ -1,29 +1,26 @@
-import { Component, Input } from "@angular/core";
-import { FormControl, FormGroup } from "@angular/forms";
-import { FieldConfig } from "../../field.interface";
+import { Component, Input } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
-import { NoUpDownDirective } from "../../../../core/directives/no-up-down.directive";
-import { DecimalLimitDirective } from "../../../../core/directives/decimal-limit.directive";
-import { RestrictEInputDirective } from "../../../../core/directives/restrict-e-input.directive";
+import { NoUpDownDirective } from '../../../../core/directives/no-up-down.directive';
+import { DecimalLimitDirective } from '../../../../core/directives/decimal-limit.directive';
+import { RestrictEInputDirective } from '../../../../core/directives/restrict-e-input.directive';
 @Component({
-  selector: "app-input",
+  selector: 'app-input',
   standalone: true,
-  imports: [MaterialModule,
-    DecimalLimitDirective,
-    NoUpDownDirective,
-    RestrictEInputDirective
-  ],
+  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, RestrictEInputDirective],
   templateUrl: './input.component.html',
-  styles: [`   
-.warning-hint {
-  display: block;
-  color: orange;
-}
-
-    `]
+  styles: [
+    `
+      .warning-hint {
+        display: block;
+        color: orange;
+      }
+    `,
+  ],
 })
 export class InputComponent {
-  className: string = "box1";
+  className: string = 'box1';
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() displayLabel: boolean = true;
@@ -35,20 +32,22 @@ export class InputComponent {
   decimal: number = 0;
   // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 
-  constructor() { }
+  constructor() {}
   ngOnInit() {
     this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
-    this.decimal = (this.parentField?.decimal || this.parentField?.decimal === 0) ? this.parentField?.decimal : this.field?.decimal;
+    this.decimal =
+      this.parentField?.decimal || this.parentField?.decimal === 0
+        ? this.parentField?.decimal
+        : this.field?.decimal;
     this.warnings = this.parentField?.warning;
   }
   hasError(key: string, name: string) {
-    return (this.group.get(key) as FormControl).hasError(name)
+    return (this.group.get(key) as FormControl).hasError(name);
   }
 
   hasWarning(key: string, warning: any) {
-
-    const errors: any = this.group.get(key)?.errors
+    const errors: any = this.group.get(key)?.errors;
 
     if (errors && errors.length) {
       return true;
@@ -67,8 +66,5 @@ export class InputComponent {
     return res;
   }
 
-  onKeypressNumber() {
-
-  }
-
+  onKeypressNumber() {}
 }

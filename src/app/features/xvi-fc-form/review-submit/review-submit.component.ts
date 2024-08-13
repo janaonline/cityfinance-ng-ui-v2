@@ -9,7 +9,7 @@ import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
   standalone: true,
   imports: [MaterialModule, ToStorageUrlPipe],
   templateUrl: './review-submit.component.html',
-  styleUrl: './review-submit.component.scss'
+  styleUrl: './review-submit.component.scss',
 })
 export class ReviewSubmitComponent {
   @Input() fields!: any[];
@@ -19,18 +19,17 @@ export class ReviewSubmitComponent {
   panelOpenState = true;
   @Input('stepper') stepper: MatStepper | undefined;
 
-  constructor() { }
-  ngOnInit() {
-
-  }
+  constructor() {}
+  ngOnInit() {}
 
   printPage() {
     window.print();
   }
 
   getTableGroup(fieldKey: any, i = 0, rowKey: string, j = 0): FormGroup {
-    return ((((this.group.get(fieldKey) as FormArray)
-      .controls[i] as FormGroup).get(rowKey) as FormArray).controls[j]) as FormGroup;
+    return (
+      ((this.group.get(fieldKey) as FormArray).controls[i] as FormGroup).get(rowKey) as FormArray
+    ).controls[j] as FormGroup;
   }
 
   editStep(index: number) {
@@ -39,11 +38,11 @@ export class ReviewSubmitComponent {
 
   isFormValid(tabKey: string): Boolean {
     // console.log('this.form.get()?.valid',this.form.get('demographicData')?.valid);
-    return !this.isFormEditable || this.group.get(tabKey)?.valid as boolean;
+    return !this.isFormEditable || (this.group.get(tabKey)?.valid as boolean);
   }
 
   checkReason(question: any): string {
-    let option = question?.options.find((x: { id: string; }) => x?.id === question.value);
+    let option = question?.options.find((x: { id: string }) => x?.id === question.value);
     return option && option.showInputBox && question.reason === '' ? 'N/A' : question.reason;
   }
 }

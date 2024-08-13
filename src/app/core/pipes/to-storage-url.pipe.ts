@@ -2,15 +2,13 @@ import { Injectable, Pipe, PipeTransform } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
-  providedIn: "root"
+  providedIn: 'root',
 })
-
 @Pipe({
   name: 'toStorageUrl',
   standalone: true,
 })
 export class ToStorageUrlPipe implements PipeTransform {
-
   transform(value: string): string {
     if (value && value.toLowerCase().startsWith('https://')) {
       return value;
@@ -25,5 +23,4 @@ export class ToStorageUrlPipe implements PipeTransform {
     //   return "";
     // }
   }
-
 }

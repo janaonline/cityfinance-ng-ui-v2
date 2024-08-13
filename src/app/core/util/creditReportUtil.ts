@@ -1,5 +1,5 @@
 export const CreditScale = {
-  CRISIL: {title: 'CRISIL', description: ''},
+  CRISIL: { title: 'CRISIL', description: '' },
   CRISIL_AAA: {
     title: 'CRISIL AAA (Highest Safety)',
     description:
@@ -43,14 +43,14 @@ export const CreditScale = {
   CRISIL_Note_1: {
     title: 'Note 1',
     description:
-      'CRISIL may apply \'+\' (plus) or \'-\' (minus) signs for ratings from \'CRISIL AA\' to \'CRISIL C\' to reflect comparative standing within the category. ',
+      "CRISIL may apply '+' (plus) or '-' (minus) signs for ratings from 'CRISIL AA' to 'CRISIL C' to reflect comparative standing within the category. ",
   },
   CRISIL_Note_2: {
     title: 'Note 2',
     description:
-      'CRISIL may assign rating outlooks for ratings from \'CRISIL AAA\' to \'CRISIL B\'. Ratings on Rating Watch will not carry outlooks. A rating outlook indicates the direction in which a rating may move over a medium-term horizon of one to two years. A rating outlook can be \'Positive\', \'Stable\', or \'Negative\'. A \'Positive\' or \'Negative\' rating outlook is not necessarily a precursor of a rating change. ',
+      "CRISIL may assign rating outlooks for ratings from 'CRISIL AAA' to 'CRISIL B'. Ratings on Rating Watch will not carry outlooks. A rating outlook indicates the direction in which a rating may move over a medium-term horizon of one to two years. A rating outlook can be 'Positive', 'Stable', or 'Negative'. A 'Positive' or 'Negative' rating outlook is not necessarily a precursor of a rating change. ",
   },
-  CARE: {title: 'CARE', description: ''},
+  CARE: { title: 'CARE', description: '' },
   CARE_AAA: {
     title: 'CARE AAA',
     description:
@@ -96,7 +96,7 @@ export const CreditScale = {
     description:
       'Modifiers (plus) /  - (minus) can be used with the rating symbols for the categories CARE AA to CARE C. The modifiers reflect the comparative standing within the category.',
   },
-  ICRA: {title: 'ICRA', description: ''},
+  ICRA: { title: 'ICRA', description: '' },
   ICRA_AAA: {
     title: 'AAA',
     description:
@@ -134,15 +134,14 @@ export const CreditScale = {
   },
   ICRA_D: {
     title: 'D',
-    description:
-      'Issuers with this rating are in default or are expected to be in default soon.',
+    description: 'Issuers with this rating are in default or are expected to be in default soon.',
   },
   ICRA_Note_1: {
     title: 'Note 1',
     description:
       'For the rating categories [ICRA]AA through to [ICRA]C, the modifier + (plus) or – (minus) may be appended to the rating symbols to indicate their relative position within the rating categories concerned. Thus, the rating of [ICRA]AA+ is one notch higher than [ICRA]AA, while [ICRA]AA- is one notch lower than [ICRA]AA.',
   },
-  Brickwork: {title: 'Brickwork', description: ''},
+  Brickwork: { title: 'Brickwork', description: '' },
   BWR_AAA: {
     title: 'BWR AAA',
     description:
@@ -165,30 +164,26 @@ export const CreditScale = {
   },
   BWR_BB: {
     title: 'BWR BB',
-    description:
-      'Issuers with this rating are considered to offer moderate risk of default',
+    description: 'Issuers with this rating are considered to offer moderate risk of default',
   },
   BWR_B: {
     title: 'BWR B',
-    description:
-      'Issuers with this rating are considered to offer high risk of default',
+    description: 'Issuers with this rating are considered to offer high risk of default',
   },
   BWR_C: {
     title: 'BWR C',
-    description:
-      'Issuers with this rating are considered to offer very high risk of default',
+    description: 'Issuers with this rating are considered to offer very high risk of default',
   },
   BWR_D: {
     title: 'BWR D',
-    description:
-      'Issuers with this rating are in default or are expected to be in default soon.',
+    description: 'Issuers with this rating are in default or are expected to be in default soon.',
   },
   BWR_Note_1: {
     title: 'Note 1',
     description:
       '+ or - modifiers can be used with BWR AA to BWR C. They reflect comparitive standing for the same category',
   },
-  IRR: {title: 'IRR', description: ''},
+  IRR: { title: 'IRR', description: '' },
   IND_AAA: {
     title: 'IND AAA(SO)',
     description:

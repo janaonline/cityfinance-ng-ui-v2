@@ -42,3 +42,6 @@ testem.log
 Thumbs.db
 src/assets/scss - Copy/
 src/assets/scss-5.1-tobeDelete
+
+.nx/cache
+.nx/workspace-data

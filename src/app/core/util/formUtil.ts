@@ -17,8 +17,8 @@ import {
 export class FormUtil {
   private fb: FormBuilder;
 
-  private regexForUserName = "[A-Z]+[a-zA-Z]*[\\s*[a-zA-Z]*";
-  private regexForAtleast1AplhabetWithSpecialCharacter = "\\w+.?\\s*\\w*\\D";
+  private regexForUserName = '[A-Z]+[a-zA-Z]*[\\s*[a-zA-Z]*';
+  private regexForAtleast1AplhabetWithSpecialCharacter = '\\w+.?\\s*\\w*\\D';
   private regexForOnlyNumberWithoutDecimalAccept = `\\d*$`;
 
   /**
@@ -30,43 +30,29 @@ export class FormUtil {
     this.fb = new FormBuilder();
   }
 
-  public getUserForm(purpose: "CREATION" | "EDIT" = "CREATION") {
+  public getUserForm(purpose: 'CREATION' | 'EDIT' = 'CREATION') {
     let form = this.fb.group({
       name: [
-        "",
-        [
-          Validators.required,
-          Validators.pattern(this.regexForUserName),
-          atLeast1AplhabetRequired,
-        ],
+        '',
+        [Validators.required, Validators.pattern(this.regexForUserName), atLeast1AplhabetRequired],
       ],
-      mobile: ["", [Validators.required, mobileNoValidator]],
-      email: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-      designation: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      organization: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
+      mobile: ['', [Validators.required, mobileNoValidator]],
+      email: ['', [Validators.required, Validators.email, customEmailValidator]],
+      designation: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      organization: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
     });
-    if (purpose === "CREATION") {
+    if (purpose === 'CREATION') {
       form = this.fb.group({
         ...form.controls,
-        password: ["", [customPasswordValidator]],
+        password: ['', [customPasswordValidator]],
         confirmPassword: [
-          "",
+          '',
           Validators.required,
           (control: AbstractControl) => {
             if (!control.value) return of(null);
             if (control.value !== form.controls.password.value) {
               return of({
-                passwordMisMatch:
-                  "Password and Confirm Password does not match",
+                passwordMisMatch: 'Password and Confirm Password does not match',
               });
             }
             return of(null);
@@ -80,33 +66,24 @@ export class FormUtil {
     return form;
   }
 
-  public getULBForm(purpose: "CREATION" | "EDIT" = "CREATION") {
+  public getULBForm(purpose: 'CREATION' | 'EDIT' = 'CREATION') {
     const baseForm = this.fb.group({
-      state: ["", [Validators.required]],
-      ulb: ["", [Validators.required]],
-      commissionerName: ["", [Validators.pattern(this.regexForUserName)]],
-      commissionerConatactNumber: ["", [CommisionormobileNoValidator]],
-      name: ["", [Validators.required, nonEmptyValidator]],
+      state: ['', [Validators.required]],
+      ulb: ['', [Validators.required]],
+      commissionerName: ['', [Validators.pattern(this.regexForUserName)]],
+      commissionerConatactNumber: ['', [CommisionormobileNoValidator]],
+      name: ['', [Validators.required, nonEmptyValidator]],
 
-      commissionerEmail: [
-        "",
-        [Validators.email, CommissionercustomEmailValidator],
-      ],
-      accountantName: [
-        "",
-        [Validators.required, Validators.pattern(this.regexForUserName)],
-      ],
-      accountantConatactNumber: ["", [Validators.required, mobileNoValidator]],
-      accountantEmail: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-       isActive: ["", Validators.required],
+      commissionerEmail: ['', [Validators.email, CommissionercustomEmailValidator]],
+      accountantName: ['', [Validators.required, Validators.pattern(this.regexForUserName)]],
+      accountantConatactNumber: ['', [Validators.required, mobileNoValidator]],
+      accountantEmail: ['', [Validators.required, Validators.email, customEmailValidator]],
+      isActive: ['', Validators.required],
     });
-    if (purpose === "CREATION") {
+    if (purpose === 'CREATION') {
       return this.fb.group({
         ...baseForm.controls,
-        password: [""],
+        password: [''],
         captcha: [null, [Validators.required]],
       });
     }
@@ -114,33 +91,24 @@ export class FormUtil {
     const updationForm = this.fb.group({
       ...baseForm.controls,
       ulb: this.fb.group({
-        censusCode: [""],
-        sbCode: [""],
+        censusCode: [''],
+        sbCode: [''],
         wards: [
-          "",
-          [
-            Validators.required,
-            Validators.pattern(this.regexForOnlyNumberWithoutDecimalAccept),
-          ],
+          '',
+          [Validators.required, Validators.pattern(this.regexForOnlyNumberWithoutDecimalAccept)],
         ],
         population: [
-          "",
-          [
-            Validators.required,
-            Validators.pattern(this.regexForOnlyNumberWithoutDecimalAccept),
-          ], /// ^[0-9]\d*$/
+          '',
+          [Validators.required, Validators.pattern(this.regexForOnlyNumberWithoutDecimalAccept)], /// ^[0-9]\d*$/
         ],
         area: [
-          "",
-          [
-            Validators.required,
-            Validators.pattern(this.regexForOnlyNumbericWithDecimalAccept),
-          ],
+          '',
+          [Validators.required, Validators.pattern(this.regexForOnlyNumbericWithDecimalAccept)],
         ],
         ulbType: this.fb.group({
-          _id: ["", [Validators.required]],
+          _id: ['', [Validators.required]],
         }),
-        name: ["", [Validators.required, atLeast1AplhabetRequired]],
+        name: ['', [Validators.required, atLeast1AplhabetRequired]],
         // isActive: ["", Validators.required],
       }),
     });
@@ -148,20 +116,18 @@ export class FormUtil {
     (updationForm.controls.ulb as FormGroup).controls.censusCode.setValidators([
       (control) => {
         const censusCode = control.value ? control.value.trim() : null;
-        let sbCode = (updationForm.controls.ulb as FormGroup).controls.sbCode
-          .value;
+        let sbCode = (updationForm.controls.ulb as FormGroup).controls.sbCode.value;
         sbCode = sbCode ? sbCode.trim() : null;
-        if (!sbCode && !censusCode) return { required: "ERRRRRRR" };
+        if (!sbCode && !censusCode) return { required: 'ERRRRRRR' };
         return null;
       },
     ]);
     (updationForm.controls.ulb as FormGroup).controls.sbCode.setValidators([
       (control) => {
         const sbCode = control.value ? control.value.trim() : null;
-        let censusCode = (updationForm.controls.ulb as FormGroup).controls
-          .censusCode.value;
+        let censusCode = (updationForm.controls.ulb as FormGroup).controls.censusCode.value;
         censusCode = censusCode ? censusCode.trim() : null;
-        if (!sbCode && !censusCode) return { required: "sbCode" };
+        if (!sbCode && !censusCode) return { required: 'sbCode' };
         return null;
       },
     ]);
@@ -169,24 +135,20 @@ export class FormUtil {
     (updationForm.controls.ulb as FormGroup).controls.censusCode.valueChanges
       .pipe(debounceTime(1000), distinctUntilChanged())
       .subscribe((newValue) => {
-        (updationForm.controls
-          .ulb as FormGroup).controls.censusCode.updateValueAndValidity({
+        (updationForm.controls.ulb as FormGroup).controls.censusCode.updateValueAndValidity({
           onlySelf: true,
         });
-        (updationForm.controls
-          .ulb as FormGroup).controls.sbCode.updateValueAndValidity({
+        (updationForm.controls.ulb as FormGroup).controls.sbCode.updateValueAndValidity({
           onlySelf: true,
         });
       });
     (updationForm.controls.ulb as FormGroup).controls.sbCode.valueChanges
       .pipe(debounceTime(1000), distinctUntilChanged())
       .subscribe((newValue) => {
-        (updationForm.controls
-          .ulb as FormGroup).controls.sbCode.updateValueAndValidity({
+        (updationForm.controls.ulb as FormGroup).controls.sbCode.updateValueAndValidity({
           onlySelf: true,
         });
-        (updationForm.controls
-          .ulb as FormGroup).controls.censusCode.updateValueAndValidity({
+        (updationForm.controls.ulb as FormGroup).controls.censusCode.updateValueAndValidity({
           onlySelf: true,
         });
       });
@@ -196,34 +158,16 @@ export class FormUtil {
 
   public getStateForm() {
     const form = this.fb.group({
-      state: ["", Validators.required],
-      name: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      email: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-      mobile: ["", [Validators.required, mobileNoValidator]],
-      designation: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      address: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      departmentName: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      departmentEmail: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-      departmentContactNumber: ["", [Validators.required, mobileNoValidator]],
-      isActive : ["", Validators.required]
+      state: ['', Validators.required],
+      name: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      email: ['', [Validators.required, Validators.email, customEmailValidator]],
+      mobile: ['', [Validators.required, mobileNoValidator]],
+      designation: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      address: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      departmentName: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      departmentEmail: ['', [Validators.required, Validators.email, customEmailValidator]],
+      departmentContactNumber: ['', [Validators.required, mobileNoValidator]],
+      isActive: ['', Validators.required],
     });
 
     form.controls.email.valueChanges
@@ -241,32 +185,14 @@ export class FormUtil {
 
   public getMoHUAForm() {
     const form = this.fb.group({
-      name: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      email: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-      mobile: ["", [Validators.required, mobileNoValidator]],
-      designation: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      address: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      departmentName: [
-        "MoHUA",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      departmentEmail: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-      departmentContactNumber: ["", [Validators.required, mobileNoValidator]],
+      name: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      email: ['', [Validators.required, Validators.email, customEmailValidator]],
+      mobile: ['', [Validators.required, mobileNoValidator]],
+      designation: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      address: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      departmentName: ['MoHUA', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      departmentEmail: ['', [Validators.required, Validators.email, customEmailValidator]],
+      departmentContactNumber: ['', [Validators.required, mobileNoValidator]],
     });
     form.controls.email.valueChanges
       .pipe(debounceTime(500), distinctUntilChanged())
@@ -284,56 +210,32 @@ export class FormUtil {
 
   public getPartnerForm() {
     const form = this.fb.group({
-      name: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      email: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-      mobile: ["", [Validators.required, mobileNoValidator]],
-      designation: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      address: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      departmentName: [
-        "",
-        [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired],
-      ],
-      departmentEmail: [
-        "",
-        [Validators.required, Validators.email, customEmailValidator],
-      ],
-      departmentContactNumber: ["", [Validators.required, mobileNoValidator]],
+      name: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      email: ['', [Validators.required, Validators.email, customEmailValidator]],
+      mobile: ['', [Validators.required, mobileNoValidator]],
+      designation: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      address: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      departmentName: ['', [Validators.required, nonEmptyValidator, atLeast1AplhabetRequired]],
+      departmentEmail: ['', [Validators.required, Validators.email, customEmailValidator]],
+      departmentContactNumber: ['', [Validators.required, mobileNoValidator]],
     });
 
-    setPartnerFormEmailValidations(
-      form.controls.email,
-      form.controls.departmentEmail
-    );
+    setPartnerFormEmailValidations(form.controls.email, form.controls.departmentEmail);
     return form;
   }
 
   public validadteUserForm(
     form: FormGroup,
-    options: { validationType: "CREATION" | "EDIT" } = {
-      validationType: "CREATION",
-    }
+    options: { validationType: 'CREATION' | 'EDIT' } = {
+      validationType: 'CREATION',
+    },
   ) {
     const errors: string[] = [];
-    if (options.validationType === "CREATION") {
+    if (options.validationType === 'CREATION') {
       const passwordControl = form.controls.password;
       try {
         const validator = new PasswordValidator();
-        validator.validate(
-          passwordControl.value,
-          form.controls.confirmPassword.value
-        );
+        validator.validate(passwordControl.value, form.controls.confirmPassword.value);
       } catch (error) {
         errors.push(error.message);
       }
@@ -344,35 +246,29 @@ export class FormUtil {
       /**
        * We dont need to check for password here as we have already validated it earlier.
        */
-      if (controlName === "password") {
+      if (controlName === 'password') {
         return;
       }
       if (!control.valid) {
-        const newControlName = controlName.split(/(?=[A-Z])/).join(" ");
+        const newControlName = controlName.split(/(?=[A-Z])/).join(' ');
 
         if (control.errors && control.errors.required) {
           return errors.push(
-            `${
-              newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-            } is required`
+            `${newControlName.charAt(0).toUpperCase() + newControlName.substr(1)} is required`,
           );
         }
         if (control.errors && control.errors.pattern) {
-          if (controlName == "accountant Name") {
-            return errors.push(
-              `ULB Nodal Officer Name should be alphabetic only`
-            );
+          if (controlName == 'accountant Name') {
+            return errors.push(`ULB Nodal Officer Name should be alphabetic only`);
           }
           return errors.push(
             `${
               newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-            } should be alphabetic only`
+            } should be alphabetic only`,
           );
         }
         errors.push(
-          `${
-            newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-          } is invalid`
+          `${newControlName.charAt(0).toUpperCase() + newControlName.substr(1)} is invalid`,
         );
       }
     });
@@ -393,9 +289,7 @@ export class FormUtil {
     // commissionerEmail = commissionerEmail
     //   ? commissionerEmail.trim()
     //   : commissionerEmail;
-    accountantEmail = accountantEmail
-      ? accountantEmail.trim()
-      : accountantEmail;
+    accountantEmail = accountantEmail ? accountantEmail.trim() : accountantEmail;
 
     // if (
     //   accountantEmail.trim() &&
@@ -409,31 +303,24 @@ export class FormUtil {
     Object.keys(form.controls).forEach((controlName) => {
       const control = form.controls[controlName];
       if (!control.valid) {
-        let newControlName = controlName.split(/(?=[A-Z])/).join(" ");
-        if (newControlName.includes("accountant")) {
-          newControlName = newControlName.replace(
-            "accountant",
-            "ULB Nodal Officer"
-          );
+        let newControlName = controlName.split(/(?=[A-Z])/).join(' ');
+        if (newControlName.includes('accountant')) {
+          newControlName = newControlName.replace('accountant', 'ULB Nodal Officer');
         }
         if (control.errors && control.errors.required) {
           return errors.push(
-            `${
-              newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-            } is required`
+            `${newControlName.charAt(0).toUpperCase() + newControlName.substr(1)} is required`,
           );
         }
         if (control.errors && control.errors.pattern) {
           return errors.push(
             `${
               newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-            } should be alphabetic only`
+            } should be alphabetic only`,
           );
         }
         errors.push(
-          `${
-            newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-          } is invalid`
+          `${newControlName.charAt(0).toUpperCase() + newControlName.substr(1)} is invalid`,
         );
       }
     });
@@ -445,16 +332,14 @@ export class FormUtil {
    * need 2 different method to validate it.
    */
   public validationULBProfileUpdateForm(form: FormGroup) {
-    
     let errors: string[] = [];
     if (form.controls.ulb) {
-      let censusCode = (form.controls.ulb as FormGroup).controls.censusCode
-        .value;
+      let censusCode = (form.controls.ulb as FormGroup).controls.censusCode.value;
       censusCode = censusCode ? censusCode.trim() : null;
       let ulbCode = (form.controls.ulb as FormGroup).controls.sbCode.value;
       ulbCode = ulbCode ? ulbCode.trim() : null;
       if (!censusCode && !ulbCode) {
-        errors.push("Either Census Code or ULB Code must be entered.");
+        errors.push('Either Census Code or ULB Code must be entered.');
       }
     }
 
@@ -462,12 +347,8 @@ export class FormUtil {
       let commissionerEmail: string = form.controls.commissionerEmail.value;
       let accountantEmail: string = form.controls.accountantEmail.value;
 
-      commissionerEmail = commissionerEmail
-        ? commissionerEmail.trim()
-        : commissionerEmail;
-      accountantEmail = accountantEmail
-        ? accountantEmail.trim()
-        : accountantEmail;
+      commissionerEmail = commissionerEmail ? commissionerEmail.trim() : commissionerEmail;
+      accountantEmail = accountantEmail ? accountantEmail.trim() : accountantEmail;
 
       // if (accountantEmail == commissionerEmail) {
       //   errors.push(
@@ -504,9 +385,7 @@ export class FormUtil {
     let departmentEmailID: string = form.controls.departmentEmail.value;
 
     stateEmailID = stateEmailID ? stateEmailID.trim() : stateEmailID;
-    departmentEmailID = departmentEmailID
-      ? departmentEmailID.trim()
-      : departmentEmailID;
+    departmentEmailID = departmentEmailID ? departmentEmailID.trim() : departmentEmailID;
 
     // new changes --   departmentEmailID and stateEmailID can be same 09-2022
     // if (departmentEmailID == stateEmailID) {
@@ -518,37 +397,28 @@ export class FormUtil {
     Object.keys(form.controls).forEach((controlName) => {
       const control = form.controls[controlName];
       if (!control.valid) {
-        const newControlName = controlName.split(/(?=[A-Z])/).join(" ");
+        const newControlName = controlName.split(/(?=[A-Z])/).join(' ');
         if (control.errors && control.errors.required) {
           return errors.push(
-            `${
-              newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-            } is required`
+            `${newControlName.charAt(0).toUpperCase() + newControlName.substr(1)} is required`,
           );
         }
         if (control.errors && control.errors.pattern) {
           return errors.push(
             `${
               newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-            } should be alphabetic only`
+            } should be alphabetic only`,
           );
         }
 
         console.warn(newControlName);
-        if (
-          newControlName === "email" ||
-          newControlName === "department Email"
-        ) {
-          if (
-            form.controls.email.value == form.controls.departmentEmail.value
-          ) {
+        if (newControlName === 'email' || newControlName === 'department Email') {
+          if (form.controls.email.value == form.controls.departmentEmail.value) {
             return;
           }
         }
         errors.push(
-          `${
-            newControlName.charAt(0).toUpperCase() + newControlName.substr(1)
-          } is invalid`
+          `${newControlName.charAt(0).toUpperCase() + newControlName.substr(1)} is invalid`,
         );
       }
     });

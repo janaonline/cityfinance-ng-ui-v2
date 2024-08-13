@@ -1,47 +1,56 @@
 <div class="example-container mat-elevation-z8">
-    @if (isLoader) {
-      <div class="example-loading-shade">
-        @if (isLoader) {
-          <mat-spinner></mat-spinner>
-        }
-       
-          <div class="example-rate-limit-reached">
-            GitHub's API rate limit has been reached. It will be reset in one minute.
-          </div>
+  @if (isLoader) {
+    <div class="example-loading-shade">
+      @if (isLoader) {
+        <mat-spinner></mat-spinner>
+      }
+
+      <div class="example-rate-limit-reached">
+        GitHub's API rate limit has been reached. It will be reset in one minute.
       </div>
-    }
-  
-    <div class="example-table-container">
-  
-      <table mat-table [dataSource]="dataSource" class="example-table"
-             matSort matSortActive="ulbName" matSortDisableClear matSortDirection="desc">
-        <!-- Number Column -->
-        <ng-container matColumnDef="number">
-          <th mat-header-cell *matHeaderCellDef>#</th>
-          <td mat-cell *matCellDef="let row">{{row.number}}</td>
-        </ng-container>
-  
-        <!-- Title Column -->
-        <ng-container matColumnDef="ulbName">
-          <th mat-header-cell *matHeaderCellDef>ulbName</th>
-          <td mat-cell *matCellDef="let row">{{row.ulbName}}</td>
-        </ng-container>
-  
-        <!-- State Column -->
-        <ng-container matColumnDef="censusCode">
-          <th mat-header-cell *matHeaderCellDef>censusCode</th>
-          <td mat-cell *matCellDef="let row">{{row.censusCode}}</td>
-        </ng-container>
-  
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
     </div>
-  
-    <mat-paginator [length]="totalForms" [pageSize]="30" aria-label="Select page of GitHub search results"></mat-paginator>
+  }
+
+  <div class="example-table-container">
+    <table
+      mat-table
+      [dataSource]="dataSource"
+      class="example-table"
+      matSort
+      matSortActive="ulbName"
+      matSortDisableClear
+      matSortDirection="desc"
+    >
+      <!-- Number Column -->
+      <ng-container matColumnDef="number">
+        <th mat-header-cell *matHeaderCellDef>#</th>
+        <td mat-cell *matCellDef="let row">{{ row.number }}</td>
+      </ng-container>
+
+      <!-- Title Column -->
+      <ng-container matColumnDef="ulbName">
+        <th mat-header-cell *matHeaderCellDef>ulbName</th>
+        <td mat-cell *matCellDef="let row">{{ row.ulbName }}</td>
+      </ng-container>
+
+      <!-- State Column -->
+      <ng-container matColumnDef="censusCode">
+        <th mat-header-cell *matHeaderCellDef>censusCode</th>
+        <td mat-cell *matCellDef="let row">{{ row.censusCode }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
   </div>
-  
-  
-  <!-- Copyright 2024 Google LLC. All Rights Reserved.
+
+  <mat-paginator
+    [length]="totalForms"
+    [pageSize]="30"
+    aria-label="Select page of GitHub search results"
+  ></mat-paginator>
+</div>
+
+<!-- Copyright 2024 Google LLC. All Rights Reserved.
       Use of this source code is governed by an MIT-style license that
       can be found in the LICENSE file at https://angular.io/license -->

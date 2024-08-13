@@ -10,6 +10,6 @@ export interface S3FileURLResponse {
       path: string;
       file_url: string;
       file_alias: string;
-    }
+    },
   ];
 }

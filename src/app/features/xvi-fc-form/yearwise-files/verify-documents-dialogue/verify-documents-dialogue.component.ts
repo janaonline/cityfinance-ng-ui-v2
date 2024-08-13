@@ -19,38 +19,49 @@ export interface DialogData {
 @Component({
   selector: 'app-verify-documents-dialogue',
   standalone: true,
-  imports: [MaterialModule, FileComponent,
-    InputComponent, RadiobuttonComponent,
-    SelectComponent, ToStorageUrlPipe
+  imports: [
+    MaterialModule,
+    FileComponent,
+    InputComponent,
+    RadiobuttonComponent,
+    SelectComponent,
+    ToStorageUrlPipe,
   ],
   templateUrl: './verify-documents-dialogue.component.html',
-  styleUrl: './verify-documents-dialogue.component.scss'
+  styleUrl: './verify-documents-dialogue.component.scss',
 })
 export class VerifyDocumentsDialogueComponent {
-
-  verifyOptions = [{ id: 2, label: 'Accept Existing Document' }, { id: 3, label: 'Reject Existing Document' }];
+  verifyOptions = [
+    { id: 2, label: 'Accept Existing Document' },
+    { id: 3, label: 'Reject Existing Document' },
+  ];
 
   verifyStatus: FieldConfig = {
-    formFieldType: 'radio', label: '', key: 'verifyStatus',
+    formFieldType: 'radio',
+    label: '',
+    key: 'verifyStatus',
     options: this.verifyOptions,
   };
 
   rejectOption: FieldConfig = {
     multiple: true,
     options: this.data.field.fileRejectOptions,
-    formFieldType: 'select', label: 'File(s) that require replacement', key: 'rejectOption',
+    formFieldType: 'select',
+    label: 'File(s) that require replacement',
+    key: 'rejectOption',
   };
 
   rejectReason: FieldConfig = {
-    formFieldType: 'text', label: 'Please let us know the reason for replacing existing file(s)', key: 'rejectReason',
+    formFieldType: 'text',
+    label: 'Please let us know the reason for replacing existing file(s)',
+    key: 'rejectReason',
   };
-
 
   // formfields: any = { rejectReason: FieldConfig { formField }}
   constructor(
     public dialogRef: MatDialogRef<VerifyDocumentsDialogueComponent>,
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
-  ) { }
+  ) {}
 
   ngOnInit() {
     // console.log('----this.data.field --', this.data.field);
@@ -69,16 +80,18 @@ export class VerifyDocumentsDialogueComponent {
   }
 
   getVerifyFormGroup(): FormGroup {
-    return (this.data.verifyForm) as FormGroup;
+    return this.data.verifyForm as FormGroup;
   }
   getFormGroup(): FormGroup {
-    return (this.data.group) as FormGroup;
+    return this.data.group as FormGroup;
   }
 
   disableStatus(): boolean {
     if (![2, 3].includes(this.rawValue.verifyStatus)) return true;
-    if (this.rawValue.verifyStatus === 3 &&
-      (!this.rawValue.rejectOption || !this.rawValue.rejectReason || !this.rawValue.file.name)) {
+    if (
+      this.rawValue.verifyStatus === 3 &&
+      (!this.rawValue.rejectOption || !this.rawValue.rejectReason || !this.rawValue.file.name)
+    ) {
       return true;
     }
     return false;

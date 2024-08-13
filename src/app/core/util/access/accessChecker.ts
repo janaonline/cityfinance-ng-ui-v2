@@ -1,9 +1,8 @@
-
 import { USER_TYPE } from '../../models/user/userType';
 import { UserUtility } from '../user/user';
 import { ACTIONS } from './actions';
 import { MODULES, MODULES_NAME } from './modules';
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 
 @Injectable()
 export class AccessChecker {

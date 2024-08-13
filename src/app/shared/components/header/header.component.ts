@@ -10,19 +10,16 @@ import { NavbarComponent } from '../navbar/navbar.component';
   standalone: true,
   imports: [CommonModule, NavbarComponent, RouterModule],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.scss'
+  styleUrl: './header.component.scss',
 })
 export class HeaderComponent {
-
   size: any;
-  textSize = ["sm", "rg", "lg"];
+  textSize = ['sm', 'rg', 'lg'];
   currentTextSize: any;
-  constructor(
-  ) { }
-
+  constructor() {}
 
   setFontSize(size: string) {
-    console.log('setFontSize', size)
+    console.log('setFontSize', size);
     // this.size= size;
     let elem = document.documentElement;
 
@@ -30,10 +27,10 @@ export class HeaderComponent {
     elem.classList.add(size);
     this.currentTextSize = size;
     localStorage.setItem(
-      "myLSkey",
+      'myLSkey',
       JSON.stringify({
         currentTextSize: size,
-      })
+      }),
     );
   }
 
@@ -41,8 +38,7 @@ export class HeaderComponent {
     window.scrollTo({
       top: 1000,
 
-      behavior: "smooth",
+      behavior: 'smooth',
     });
   }
-
 }
