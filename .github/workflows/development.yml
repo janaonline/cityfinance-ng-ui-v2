@@ -54,7 +54,7 @@ jobs:
     - name: Send acknowledgment to Microsoft Teams
       run: |
               curl -H 'Content-Type: application/json' -d '{
-                "text": "Deployment successful! on Development Server."
+                "text": " UI2 Deployment successful! on Development Server."
               }' ${{ secrets.TEAMS_WEBHOOK_URL }}
     # - name: Deploy to server
     #   run: scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r ${{ github.workspace }}/dist/* ${{ secrets.SERVER_USERNAME }}:${{ secrets.SERVER_PASSWORD }}@${{ secrets.SERVER_IP }}:/var/www/html/dev-jana/citifinance-ng-ui/dist/
