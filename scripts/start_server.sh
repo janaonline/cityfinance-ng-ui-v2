@@ -4,4 +4,3 @@ cd /var/www/html/cityfinance/cityfinance-ng-ui-v2
 npm i
 npm run build
 cp dist/ dist_live/
-cd /var/www/html/cityfinance/cityfinance-ng-ui-v2/dist_live
