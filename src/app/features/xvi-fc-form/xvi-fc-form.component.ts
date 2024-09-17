@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 // import { CommonModule } from '@angular/common';
 // import { tabsJson } from './formJson';
@@ -55,7 +55,7 @@ import { FORM_STATUSES } from '../../core/constants/statuses';
   templateUrl: './xvi-fc-form.component.html',
   styleUrl: './xvi-fc-form.component.scss',
 })
-export class XviFcFormComponent {
+export class XviFcFormComponent implements OnInit {
   form!: FormGroup;
   dynamicForm!: FormGroup;
 
@@ -193,12 +193,12 @@ export class XviFcFormComponent {
       ()
       .subscribe((data: any) => {
         if (data['yearOfConstitution']) {
-          this.setOption(yearOfConstitutionIndex);
+          this.setOption(yearOfConstitutionIndex, true);
         }
       });
   }
 
-  setOption(yearOfConstitutionIndex: number) {
+  setOption(yearOfConstitutionIndex: number, onchangeParent: boolean = false) {
     const yearOfConstitutionValue = this.getFG('demographicData', yearOfConstitutionIndex).get(
       'yearOfConstitution',
     ).value;
@@ -207,6 +207,15 @@ export class XviFcFormComponent {
     const index = yearOfConstitutionOptions.indexOf(yearOfConstitutionValue);
     const yearOfElection = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfElection');
 
+    // reset the field to null if parent field change
+    if (onchangeParent) {
+      const yearOfElectionIndex = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfElection');
+      const yearOfElectionControl = this.getFG('demographicData', yearOfElectionIndex).get('yearOfElection');
+      yearOfElectionControl.patchValue(null);
+      yearOfElectionControl.updateValueAndValidity();
+    }
+
+
     // get the addtional 3 option
     this.tabs[0].data[yearOfElection].options = this.oldyearOfElectionOptions.slice(0, index + 3);
 
@@ -214,6 +223,9 @@ export class XviFcFormComponent {
       const yearOfSlbIndex = this.tabs[0].data.findIndex((e: any) => e.key === 'yearOfSlb');
       this.tabs[0].data[yearOfSlbIndex].options = this.oldYearOfSlbOptions.slice(0, index);
       const yearOfSlbControl = this.getFG('demographicData', yearOfSlbIndex).get('yearOfSlb');
+      if (onchangeParent) {
+        yearOfSlbControl.patchValue(null);
+      }
       if (index === 0) {
         this.tabs[0].data[yearOfSlbIndex].required = false;
         yearOfSlbControl.patchValue(null);
@@ -221,6 +233,7 @@ export class XviFcFormComponent {
         yearOfSlbControl.clearValidators();
         yearOfSlbControl.updateValueAndValidity();
       } else {
+        // yearOfSlbControl.patchValue(null);
         this.tabs[0].data[yearOfSlbIndex].required = true;
         yearOfSlbControl.enable();
         yearOfSlbControl.setValidators([Validators.required]);
@@ -287,7 +300,7 @@ export class XviFcFormComponent {
   }
   getAllTabData() {
     const formData: any = { tab: [] };
-    for (let tab of this.tabs) {
+    for (const tab of this.tabs) {
       if (tab.key !== 'reviewSubmit') {
         formData.tab.push(this.getFormTabData(tab));
       }
