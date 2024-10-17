@@ -7,7 +7,7 @@ const basicTab = {
   key: 'demographicData',
   icon: '',
   formType: 'form2',
-  label: 'Demographic Data',
+  label: 'Demographic Data test',
   id: 's1',
   displayPriority: 1,
   __v: 0,
