@@ -1,0 +1,66 @@
+name: Build and Deploy Node.js and Angular
+ 
+on:
+  workflow_dispatch: {}
+ 
+env:
+  angular_folder: angular-app
+  AWS_REGION: ##region##
+  S3BUCKET: ##s3-bucket##
+ 
+jobs:
+  build:
+    name: Build and Package for Angular
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout Repository
+ 
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.IAMROLE_GITHUB }}
+          role-session-name: GitHub-Action-Role
+          aws-region: ${{ env.AWS_REGION }}
+ 
+      # Set up Node.js for the Angular build
+      - name: Set up Node.js for Angular
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.8.1'
+ 
+      # Build Angular Application
+      - name: Install Angular Dependencies
+        working-directory: ${{ env.angular_folder }}
+        run: npm install
+ 
+      - name: Build Angular Application
+        working-directory: ${{ env.angular_folder }}
+        run: npm run build
+ 
+      - name: Upload Artifacts to S3
+        run: |
+          aws s3 cp ${{ env.angular_folder }}/dist/ s3://${{ env.S3BUCKET }}/angular/ --recursive
+       
+ 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: Production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v2
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.IAMROLE_GITHUB }}
+          role-session-name: GitHub-Action-Role
+          aws-region: ${{ env.AWS_REGION }}
+ 
+      - run: |
+          echo "Deploying branch ${{ github.ref }} to ${{ github.event.inputs.environment }}"
+          commit_hash=$(git rev-parse HEAD)
+          aws deploy create-deployment --application-name CodeDeployAppNameWithASG --deployment-group-name CodeDeployGroupName --github-location repository=$GITHUB_REPOSITORY,commitId=$commit_hash --ignore-application-stop-failures
