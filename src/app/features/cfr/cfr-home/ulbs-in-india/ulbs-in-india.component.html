@@ -1,0 +1,62 @@
+<section class="py-5 header">
+    <div class="container text-center">
+        <h2 class="fw-bold"><span class="color-orange">{{ data.participatedUlbCount | number }} </span> <span
+                class="color-blue">ULBs are Ranked</span></h2>
+    </div>
+</section>
+
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 py-5 section-1 d-flex flex-column justify-content-between align-items-start">
+                <div>
+                    <h2 class="fw-bold mb-4 color-blue"><span class="color-orange">{{ data?.participatedUlbCount |
+                            number
+                            }}</span> ULBs Participated in <span class="color-orange">{{ data?.participatedStateCount |
+                            number
+                            }}</span> States/Union Territories.</h2>
+                    <p class="text-muted">Witness collaboration at its finest as {{ data?.participatedUlbCount | number
+                        }} ULBs
+                        actively participate in {{ data?.participatedStateCount | number }}
+                        different
+                        States and Union
+                        Territories. Explore the geographic spread and regional impact of these ULBs in shaping urban
+                        financial
+                        governance.</p>
+                    <p class="text-muted">Top Participating States:</p>
+                    <ul class="text-muted">
+                        <li *ngFor="let state of data.top3ParticipatedState">{{ state?.name }}</li>
+                    </ul>
+                </div>
+                <a class="btn btn-orange mt-4" routerLink="/rankings/participated-states-ut">View More Participants</a>
+            </div>
+            <div class="col-md-6 py-5 ps-md-5 section-2 justify-content-between align-items-start">
+                <div>
+                    <h2 class="fw-bold mb-4 color-blue">Top Performer ULBs</h2>
+                    <p class="text-muted">Discover the top-performing ULBs in each category, showcasing exemplary
+                        financial
+                        governance and performance. Explore leaders in Resource Mobilization, Expenditure Performance,
+                        and
+                        Fiscal Governance.</p>
+                    <p class="text-muted">Top Ranked ULBs in Each Category :</p>
+                    <div class="table-border table-responsive text-muted">
+                        <table>
+                            <tr>
+                                <th *ngFor="let column of data?.topCategoryUlb?.columns">{{ column?.label }}</th>
+                            </tr>
+                            <tr *ngFor="let row of data?.topCategoryUlb?.data">
+                                <td [title]="row[column.key]" class="data-item"
+                                    *ngFor="let column of data?.topCategoryUlb?.columns">
+                                    <div>{{ row[column.key] }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <a class="btn btn-orange mt-4" routerLink="/rankings/top-rankings">View More Ranked ULBs</a>
+            </div>
+        </div>
+
+    </div>
+</section>

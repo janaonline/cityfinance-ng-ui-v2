@@ -8,9 +8,9 @@ import { FormGroup } from '@angular/forms';
 
 import { map } from 'rxjs/operators';
 import { TableResponse } from './common-table.interface';
-import { environment } from '../../../../../environments/environment';
-import { USER_TYPE } from '../../../../core/models/user/userType';
-import { UserUtility } from '../../../../core/util/user/user';
+import { environment } from '../../../../environments/environment';
+import { USER_TYPE } from '../../../core/models/user/userType';
+import { UserUtility } from '../../../core/util/user/user';
 // import { environment } from '../../../../environments/environment';
 // import { USER_TYPE } from '../../../core/models/user/userType';
 // import { UserUtility } from '../../../core/util/user/user';
