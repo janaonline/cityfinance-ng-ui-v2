@@ -62,6 +62,6 @@ export const CFR_ROUTES: Route[] = [
     component: ParticipatingStateComponent,
   },
   {
-    path: 'participated-ulbs/:id', component: ParticipatingUlbsComponent
+    path: 'participated-ulbs/:stateId', component: ParticipatingUlbsComponent
   },
 ];
