@@ -1,6 +1,8 @@
 import { Route } from "@angular/router";
 import { CfrHomeComponent } from "./cfr-home/cfr-home.component";
 import { ParticipatingStateComponent } from "./participating-state/participating-state.component";
+import { TopRankingsComponent } from "./top-rankings/top-rankings.component";
+import { UlbDetailsComponent } from "./ulb-details/ulb-details.component";
 
 export const CFR_ROUTES: Route[] = [
     { path: '', component: CfrHomeComponent },
@@ -9,8 +11,8 @@ export const CFR_ROUTES: Route[] = [
     // { path: "login", component: FiscalLoginComponent },
     // { path: "annual-financial-statements", component: AnnualFinancialStatementsComponent },
     // { path: "annual-budgets", component: AnnualBudgetsComponent },
-    // { path: "top-rankings", component: TopRankingsComponent },
-    // { path: "ulb/:ulbId", component: UlbDetailsComponent },
+    { path: "top-rankings", component: TopRankingsComponent },
+    { path: "ulb/:ulbId", component: UlbDetailsComponent },
     // {
     //     path: "ulb-form/:ulbId",
     //     component: UlbFiscalNewComponent,

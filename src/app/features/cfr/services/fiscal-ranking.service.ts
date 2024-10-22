@@ -28,7 +28,7 @@ export interface Table {
   id?: string;
   info?: string;
   endpoint?: string;
-  response: TableResponse;
+  response: TableResponse | null;
 }
 
 export interface MapData {
