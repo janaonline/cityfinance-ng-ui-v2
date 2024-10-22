@@ -128,7 +128,7 @@ export class FiscalRankingService {
   public badCredentials: Subject<boolean> = new Subject<boolean>();
   public helper = new JwtHelperService();
   loginLogoutCheck = new Subject<any>();
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
   getfiscalUlbForm(dYr: any, id: any) {
     return this.http.get(`${environment.api.url}fiscal-ranking/view?design_year=${dYr}&ulb=${id}`);
   }
