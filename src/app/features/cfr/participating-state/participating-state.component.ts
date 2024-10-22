@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { FiscalRankingService, FrFilter, Filter, Table } from '../services/fiscal-ranking.service';
 import { CommonTableComponent } from '../common-table/common-table.component';
-import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
+import { IndiaMapComponent } from '../india-map/india-map.component';
 // const swal: SweetAlert = require("sweetalert");
 
 @Component({
@@ -15,7 +15,7 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
   templateUrl: './participating-state.component.html',
   styleUrls: ['./participating-state.component.scss'],
   standalone: true,
-  imports: [CommonModule, BreadcrumbComponent, CommonTableComponent, MatCommonTableComponent],
+  imports: [CommonModule, BreadcrumbComponent, CommonTableComponent, IndiaMapComponent],
 })
 export class ParticipatingStateComponent implements OnInit {
   constructor(private fiscalRankingService: FiscalRankingService) {

@@ -19,6 +19,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatMenuModule } from '@angular/material/menu';
 
 const materialModules: any[] | Type<any> | ModuleWithProviders<{}> = [
   MatButtonModule,
@@ -37,6 +38,7 @@ const materialModules: any[] | Type<any> | ModuleWithProviders<{}> = [
   MatDialogModule,
   MatProgressSpinnerModule,
   MatPaginatorModule,
+  MatMenuModule,
 
   CommonModule,
   FormsModule,

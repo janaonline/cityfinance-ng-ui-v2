@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MaterialModule } from '../../../material.module';
 import { FileUrlCheckPipe } from '../../../core/pipes/file-url-check.pipe';
@@ -53,9 +53,9 @@ export interface TableColumnsEntity {
   standalone: true,
   imports: [CommonModule, MaterialModule, FileUrlCheckPipe, TableRowCalculatorPipe, TypeofPipe],
 })
-export class CommonTableComponent implements OnInit, OnChanges {
+export class CommonTableComponent implements OnChanges {
   @Input() theme?: 'white';
-  @Input() response!: TableResponse;
+  @Input() response!: TableResponse | null;
   @Input() isDialog!: boolean;
   @Input() pageSizeOptions = [10, 20, 50, 100];
   @Input() order: 1 | -1 = 1;
@@ -75,13 +75,10 @@ export class CommonTableComponent implements OnInit, OnChanges {
     private dialog: MatDialog
   ) { }
 
-  ngOnInit(): void {
-    // this.loadData();
-  }
   ngOnChanges(changes: SimpleChanges) {
     const tableResponces = changes['response'];
     if (tableResponces.currentValue?.data?.length > 0) {
-      this.isSearchable = Boolean(this.response.columns?.some(column => column.hasOwnProperty('query')));
+      this.isSearchable = Boolean(this.response?.columns?.some(column => column.hasOwnProperty('query')));
     }
   }
   closeDialog() {
@@ -107,8 +104,8 @@ export class CommonTableComponent implements OnInit, OnChanges {
 
   updateSorting(column: TableColumnsEntity) {
     if (!column?.sortable || !column.sort) return;
-    if (!this.response.multipleSort) {
-      this.response.columns?.forEach(col => {
+    if (!this.response?.multipleSort) {
+      this.response?.columns?.forEach(col => {
         if (col.sortable && column.key != col.key) {
           col.sort = 0;
         }
