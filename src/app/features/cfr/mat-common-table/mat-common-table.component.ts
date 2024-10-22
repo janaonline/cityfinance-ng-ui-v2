@@ -1,39 +1,9 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, Input, SimpleChanges, OnChanges } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
-
-export interface PeriodicElement {
-  name: string;
-  position: number;
-  weight: number;
-  symbol: string;
-}
-
-const ELEMENT_DATA: any[] = [
-  {
-    _id: '5dcf9d7216a06aed41c748dd',
-    sNo: 1,
-    name: 'Andhra Pradesh',
-    totalULBs: 123,
-    participatedUlbs: 123,
-    rankedUlbs: 88,
-    nonRankedUlbs: 35,
-    rankedtoTotal: 71.54,
-    nameLink: '/rankings/participated-ulbs/5dcf9d7216a06aed41c748dd',
-  },
-  {
-    _id: '5dcf9d7216a06aed41c748e2',
-    sNo: 2,
-    name: 'Chhattisgarh',
-    totalULBs: 169,
-    participatedUlbs: 169,
-    rankedUlbs: 118,
-    nonRankedUlbs: 51,
-    rankedtoTotal: 69.82,
-    nameLink: '/rankings/participated-ulbs/5dcf9d7216a06aed41c748e2',
-  },
-];
+// import { responseJson } from './res-json';
+// import { TableResponse } from '../services/common-table.interface';
 
 @Component({
   selector: 'app-mat-common-table',
@@ -42,36 +12,29 @@ const ELEMENT_DATA: any[] = [
   templateUrl: './mat-common-table.component.html',
   styleUrl: './mat-common-table.component.scss',
 })
-export class MatCommonTableComponent {
-  @Input() response!: any;
-  @Input() classLists!: string;
-  @Input() tableName!: string;
+export class MatCommonTableComponent implements OnChanges {
+  // @Input({
+  //   // transform: (value: any) => {
+  //   //   return value?.map((e: { key: string; }) => e.key)
+  //   // }
+  // }) tableColumns: any;
+  // @Input() response!: TableResponse;
+  @Input() tableRow!: any[];
+  columnsToDisplay: string[] = [];
 
-  displayedColumns: string[] = ['name', 'weight', 'symbol', 'position'];
-  columnsToDisplay: string[] = this.displayedColumns.slice();
-  // data: any[] = ELEMENT_DATA;
+  @Input() response: any;
+  tableColumns: any[] = [];
 
-  // addColumn() {
-  //   const randomColumn = Math.floor(Math.random() * this.displayedColumns.length);
-  //   this.columnsToDisplay.push(this.displayedColumns[randomColumn]);
-  // }
+  ngOnChanges(changes: SimpleChanges) {
+    const res = changes['response'].currentValue;
+    this.tableColumns = res?.columns.map((e: { key: string; }) => e.key);
+    // if (tableResponces.currentValue?.data?.length > 0) {
+    //   this.isSearchable = Boolean(this.response?.columns?.some(column => column.hasOwnProperty('query')));
+    // }
+  }
 
-  // removeColumn() {
-  //   if (this.columnsToDisplay.length) {
-  //     this.columnsToDisplay.pop();
-  //   }
-  // }
-
-  // shuffle() {
-  //   let currentIndex = this.columnsToDisplay.length;
-  //   while (0 !== currentIndex) {
-  //     let randomIndex = Math.floor(Math.random() * currentIndex);
-  //     currentIndex -= 1;
-
-  //     // Swap
-  //     let temp = this.columnsToDisplay[currentIndex];
-  //     this.columnsToDisplay[currentIndex] = this.columnsToDisplay[randomIndex];
-  //     this.columnsToDisplay[randomIndex] = temp;
-  //   }
-  // }
+  /** Gets the total cost of all transactions. */
+  getTotalCost() {
+    // return this.response.data.map((t: { cost: any; }) => t.cost).reduce((acc: any, value: any) => acc + value, 0);
+  }
 }

@@ -8,6 +8,7 @@ import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.co
 import { FiscalRankingService, FrFilter, Filter, Table } from '../services/fiscal-ranking.service';
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { IndiaMapComponent } from '../india-map/india-map.component';
+import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 // const swal: SweetAlert = require("sweetalert");
 
 @Component({
@@ -15,7 +16,7 @@ import { IndiaMapComponent } from '../india-map/india-map.component';
   templateUrl: './participating-state.component.html',
   styleUrls: ['./participating-state.component.scss'],
   standalone: true,
-  imports: [CommonModule, BreadcrumbComponent, CommonTableComponent, IndiaMapComponent],
+  imports: [CommonModule, BreadcrumbComponent, CommonTableComponent, IndiaMapComponent, MatCommonTableComponent],
 })
 export class ParticipatingStateComponent implements OnInit {
   constructor(private fiscalRankingService: FiscalRankingService) {
@@ -289,7 +290,7 @@ export class ParticipatingStateComponent implements OnInit {
       )
       .subscribe(
         (res: any) => {
-          // console.log('participated-state table responces ------>', res);
+          console.log('participated-state table responces ------>', res);
           this.table['response'] = res?.data?.tableData;
           this.colorCoding = res?.data?.mapData;
           this.isApiInProgress = false;
@@ -334,5 +335,5 @@ export class ParticipatingStateComponent implements OnInit {
     this.getTableData(table, event?.queryParams);
   }
 
-  updateSorting() {}
+  updateSorting() { }
 }
