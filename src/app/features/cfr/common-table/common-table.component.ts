@@ -64,7 +64,7 @@ export class CommonTableComponent implements OnChanges {
   @Input() classLists?: string;
   @Input() allowedExtensions: string[] = [];
   @Input() targetExtension: string = "";
-  @Input() info: string = '';
+  @Input() info?: string = '';
   @Input() tableName: string = '';
   @Output() update: EventEmitter<any> = new EventEmitter<any>();
 
