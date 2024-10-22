@@ -5,6 +5,7 @@
     "ng": "ng",
     "local": "ng serve --configuration=local --port 4300",
     "staging": "ng serve --configuration=staging --port 4300",
+    "dev": "ng serve --configuration=development --port 4300",
     "start": "ng serve",
     "build": "ng build --base-href /fc/",
     "build:stats": "ng build --stats-json",
