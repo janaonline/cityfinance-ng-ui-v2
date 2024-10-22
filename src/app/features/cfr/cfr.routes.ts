@@ -1,6 +1,7 @@
 import { Route } from "@angular/router";
 import { CfrHomeComponent } from "./cfr-home/cfr-home.component";
 import { ParticipatingStateComponent } from "./participating-state/participating-state.component";
+import { AssessmentParameterComponent } from "./assessment-parameter/assessment-parameter.component";
 
 export const CFR_ROUTES: Route[] = [
     { path: '', component: CfrHomeComponent },
@@ -51,9 +52,9 @@ export const CFR_ROUTES: Route[] = [
     //         }
     //     }
     // },
-    // {
-    //     path: 'assesst-parameters/:id', component: AssessmentParameterComponent
-    // },
+    {
+        path: 'assesst-parameters/:id', component: AssessmentParameterComponent
+    },
     {
         path: 'participated-states-ut', component: ParticipatingStateComponent
     },
