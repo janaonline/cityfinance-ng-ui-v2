@@ -1,15 +1,18 @@
-import { Component, Input, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, Input, SimpleChanges, OnChanges, ViewChild, Output, EventEmitter } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
+import { MaterialModule } from '../../../material.module';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
 // import { responseJson } from './res-json';
 // import { TableResponse } from '../services/common-table.interface';
 
 @Component({
   selector: 'app-mat-common-table',
   standalone: true,
-  imports: [MatTableModule, MatButtonModule, CommonModule, ToStorageUrlPipe],
+  imports: [MatTableModule, MatButtonModule, CommonModule, ToStorageUrlPipe, MaterialModule],
   templateUrl: './mat-common-table.component.html',
   styleUrl: './mat-common-table.component.scss',
 })
@@ -21,14 +24,30 @@ export class MatCommonTableComponent implements OnChanges {
   // }) tableColumns: any;
   // @Input() response!: TableResponse;
   @Input() tableRow!: any[];
+  @Input() isPagination = false;
   columnsToDisplay: string[] = [];
 
   @Input() response: any;
+  @Input() isLoadingResults = false;
+  @Input() pageSize = 10;
+
+  @Output() pageChange = new EventEmitter()
+
   tableColumns: any[] = [];
   columnData: any[] = [];
   subHeaderColumns: string[] = [];
 
+  resultsLength = 0;
+  isRateLimitReached = false;
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+  skip: number = 0;
+
   ngOnChanges(changes: SimpleChanges) {
+    if (!changes['response']) {
+      return;
+    }
     const res = changes['response'].currentValue;
     this.tableColumns = res?.columns.filter((e: any) => !e.hidden).map((e: { key: string; }) => e.key);
     this.columnData = res?.columns.map((e: { key: string; }) => e.key);
@@ -39,6 +58,14 @@ export class MatCommonTableComponent implements OnChanges {
     // }
   }
 
+  pageChanged(event: any) {
+    // console.log('event',event);
+    this.skip = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.pageChange.emit(event);
+    // console.log('event', event);
+    // this.onLoad();
+  }
   /** Gets the total cost of all transactions. */
   getTotalCost() {
     // return this.response.data.map((t: { cost: any; }) => t.cost).reduce((acc: any, value: any) => acc + value, 0);

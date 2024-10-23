@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, EventEmitter } from '@angular/core';
 import { FrFilter, Filter, FiscalRankingService, Table } from '../services/fiscal-ranking.service';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
@@ -18,6 +18,8 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 })
 export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
   stateId!: string;
+  limit: number = 10;
+  skip: number = 0;
 
   constructor(
     private fiscalRankingService: FiscalRankingService,
@@ -63,6 +65,8 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
     info: "Note: The '-' sign denotes data that has not been submitted on the portal."
   };
 
+  isLoadingResults = false;
+
   ngOnInit(): void {
     this.selectedStateId = <string>this.route.snapshot.paramMap.get('stateId');
     console.log('this.selectedStateId', this.selectedStateId);
@@ -85,12 +89,20 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
     this.routerSubs.unsubscribe();
   }
 
+  pageChange(event: any) {
+    this.limit = event.pageSize;
+    this.skip = event.pageIndex * event.pageSize;
+    this.getTableData(this.table, '');
+  }
   // get the ulbs data 
   getTableData(table: Table, queryParams: string = '') {
+    this.isLoadingResults = true;
     const filterObj = {
       populationBucket: this.populationBucket,
       ulbParticipationFilter: this.ulbParticipation,
       ulbRankingStatusFilter: this.ulbRankingStatus,
+      skip: this.skip,
+      limit: this.limit,
     }
 
     const endpoint = `${this.table.endpoint}/${this.selectedStateId}`;
@@ -99,10 +111,12 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
       // console.log('participated-state table responces', res);
       this.table["response"] = res?.data;
       // this.table["response"] = participatedULBRes.data;
-      this.selectedStateName = res?.data?.state?.name
+      this.selectedStateName = res?.data?.state?.name;
+      this.isLoadingResults = false;
     },
       (error) => {
         console.log('participated-state table error', error);
+        this.isLoadingResults = false;
       }
     );
 
@@ -111,7 +125,7 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
   // for all filters
   getFilters() {
     this.fiscalRankingService.callGetMethod('scoring-fr/filters', null).subscribe((res: any) => {
-      console.log('scoring-fr/participated-state-filter', res);
+      // console.log('scoring-fr/participated-state-filter', res);
       const filter: Filter = res?.data;
       this.populationCategoryFilter = filter?.populationBucketFilter;
       this.ulbParticipationFilter = filter?.ulbParticipationFilter;

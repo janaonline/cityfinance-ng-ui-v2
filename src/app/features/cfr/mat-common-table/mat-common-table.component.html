@@ -1,4 +1,4 @@
-<section *ngIf="response" class="table-container mat-elevation-z8 rounded" tabindex="0">
+<!-- <section *ngIf="response" class="table-container mat-elevation-z8 rounded" tabindex="0">
   <table mat-table [dataSource]="response?.data" class="mat-elevation-z8">
     @for (column of response?.columns; track column) {
     <ng-container [matColumnDef]="column.key">
@@ -40,9 +40,80 @@
     }
 
     <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true" class="fw-bold"></tr>
-    <!-- @if (response.subHeaders.length) { -->
     <tr mat-header-row *matHeaderRowDef="subHeaderColumns"></tr>
-    <!-- } -->
-    <tr mat-row *matRowDef="let row; columns: columnData"></tr>
+     <tr mat-row *matRowDef="let row; columns: columnData"></tr>
   </table>
-</section>
+</section> -->
+
+<div class="example-container mat-elevation-z8">
+  @if (isLoadingResults || isRateLimitReached) {
+  <div class="example-loading-shade">
+    @if (isLoadingResults) {
+    <mat-spinner></mat-spinner>
+    }
+    @if (isRateLimitReached) {
+    <div class="example-rate-limit-reached">
+      GitHub's API rate limit has been reached. It will be reset in one minute.
+    </div>
+    }
+  </div>
+  }
+
+  <div class="example-table-container">
+
+    <table mat-table [dataSource]="response?.data" class="example-table" matSort matSortActive="created"
+      matSortDisableClear matSortDirection="desc">
+      @for (column of response?.columns; track column) {
+      <ng-container [matColumnDef]="column.key">
+        @if (!column?.hidden) {
+        <th mat-header-cell *matHeaderCellDef class="text-center" [attr.colspan]="column?.colspan || 1">{{ column.label
+          }}
+        </th>
+        }
+
+        <td mat-cell *matCellDef="let element">
+          @if (column.pdfLink) {
+          @if (element[column.key] === 'Click here') {
+          <a [href]="element[column.key+ 'Config'].link" target="_blank">
+            {{element[column.key]}}
+          </a>
+          } @else {
+          <a [href]="element[column.key] | toStorageUrl" target="_blank">
+            <img [src]="'assets/fiscal-rankings/pdf.png'" alt="{{column.key}}" srcset="">
+          </a>
+          }
+
+          }
+          @else if (column.link) {
+          <a [href]="element[column.link]" target="_blank">{{ element[column.key] }}</a>
+          }
+          @else {
+          {{element[column.key]}}
+          }
+
+        </td>
+      </ng-container>
+      }
+
+      @for (subHeader of response?.subHeaders; track subHeader.key;) {
+      <ng-container [matColumnDef]="'id-'+subHeader.key">
+        <td mat-header-cell *matHeaderCellDef class="text-muted fst-italic text-nowrap br-r"
+          [ngClass]="'table-primary'">
+          {{ subHeader.label}}
+        </td>
+      </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true" class="fw-bold"></tr>
+      @if (response?.subHeaders) {
+      <tr mat-header-row *matHeaderRowDef="subHeaderColumns"></tr>
+      }
+      <tr mat-row *matRowDef="let row; columns: columnData"></tr>
+    </table>
+  </div>
+  @if(isPagination) {
+  <mat-paginator [length]="response?.total" [pageSize]="pageSize" (page)="pageChanged($event)"
+    [pageSizeOptions]="[5, 10, 20, 50]" [pageIndex]="skip" showFirstLastButtons
+    aria-label="Select page of results"></mat-paginator>
+  }
+</div>

@@ -93,7 +93,8 @@
                     [classLists]="'scroll p-ulb'" [allowedExtensions]="allowedExtensions"
                     [targetExtension]="targetExtension" (update)="onUpdate(table, $event)" *ngIf="table?.response">
                 </app-common-table> -->
-                <app-mat-common-table [response]="table.response"></app-mat-common-table>
+                <app-mat-common-table [response]="table.response" [isLoadingResults]="isLoadingResults"
+                    [isPagination]="true" (pageChange)="pageChange($event)"></app-mat-common-table>
             </div>
         </div>
     </div>
