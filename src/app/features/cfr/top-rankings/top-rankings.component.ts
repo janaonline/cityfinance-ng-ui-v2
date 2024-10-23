@@ -91,7 +91,10 @@ export class TopRankingsComponent implements OnInit {
     { color: '#31CFF1', text: '9 to 10', min: 9, max: 10 },
     { color: '#04DC00', text: '10+', min: 11, max: Infinity },
   ];
-  isShowingMap: boolean = false;
+  // TODO: skip to be added.
+  isLoadingResults: boolean = false;
+  limit: number = 10;
+  skip: number = 0;
 
   constructor(
     private matDialog: MatDialog,
@@ -103,6 +106,8 @@ export class TopRankingsComponent implements OnInit {
       stateData: [''],
       state: '',
       category: 'overAllRank',
+      limit: this.limit,
+      skip: this.skip,
     });
 
     this.filter.get('stateData')?.valueChanges.subscribe((value) => {
@@ -133,19 +138,31 @@ export class TopRankingsComponent implements OnInit {
     return '';
   }
 
+  pageChange(event: any) {
+    this.limit = event.pageSize;
+    this.skip = event.pageIndex * event.pageSize;
+    this.loadData();
+  }
+
   loadData() {
     this.loadTopRankedStatesMap();
     this.loadTopRankedUlbs(this.table, '');
   }
 
   loadTopRankedUlbs(table: Table, queryParams: string = '') {
-    this.isShowingMap = false;
+    this.isLoadingResults = true;
     this.fiscalRankingService
       .topRankedUlbs(queryParams, table?.response?.columns, this.params)
-      .subscribe((res: any) => {
-        this.isShowingMap = true;
-        this.table.response = res.tableData;
-        this.markers = res.mapDataTopUlbs;
+      .subscribe({
+        next: (res: any) => {
+          this.table.response = res.tableData;
+          this.markers = res.mapDataTopUlbs;
+          this.isLoadingResults = false;
+        },
+        error: (error) => {
+          console.error('Error in loading top ranked ulbs: ', error);
+          this.isLoadingResults = false;
+        },
       });
   }
 
