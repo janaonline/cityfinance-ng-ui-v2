@@ -2,27 +2,16 @@
 <div class="container-fluid common-pro-fm" *ngIf="!isApiInProgress && !isEmptyObject(currentPageData)">
     <div class="row">
         <div class="col-sm-9">
-            <!-- <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb> -->
+            <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
         </div>
         <div class="col-sm-3">
             <div class="drp-down">
-                <!-- <select class="form-select" aria-label="assestParametersDropdown" [(ngModel)]="pageKey"
-                    (change)="setPageKey($event.target.value)">
-                    <option value="{{item?.key}}" selected *ngFor="let item of assestParameters?.data">{{item?.label}}
-                    </option>
-                </select> -->
                 <select class="form-select" aria-label="assestParametersDropdown" [(ngModel)]="pageKey"
                     (change)="setPageKey($event)">
                     <option *ngFor="let item of assestParameters?.data" [value]="item?.key">
                         {{item?.label}}
                     </option>
                 </select>
-
-                <!-- <select class="form-select" aria-label="assestParametersDropdown" [(ngModel)]="pageKey" (change)="setPageKey($event)">
-                    <option *ngFor="let item of assestParameters?.data" [value]="item?.key">
-                        {{item?.label}}
-                    </option>
-                </select> -->
 
             </div>
         </div>
