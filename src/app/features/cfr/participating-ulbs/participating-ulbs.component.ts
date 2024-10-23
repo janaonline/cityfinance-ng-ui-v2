@@ -7,6 +7,7 @@ import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.co
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { MaterialModule } from '../../../material.module';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
+// import { participatedULBRes } from './participatin-ulb-json';
 // const swal: SweetAlert = require("sweetalert");
 @Component({
   selector: 'app-participating-ulbs',
@@ -123,6 +124,7 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
     this.fiscalRankingService.getTableResponse(endpoint, queryParams, table?.response?.columns, 'data', filterObj).subscribe((res: any) => {
       console.log('participated-state table responces', res);
       this.table["response"] = res?.data;
+      // this.table["response"] = participatedULBRes.data;
       this.selectedStateName = res?.data?.state?.name
     },
       (error) => {

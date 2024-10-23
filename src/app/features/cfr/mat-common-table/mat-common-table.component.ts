@@ -2,13 +2,14 @@ import { Component, Input, SimpleChanges, OnChanges } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
+import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 // import { responseJson } from './res-json';
 // import { TableResponse } from '../services/common-table.interface';
 
 @Component({
   selector: 'app-mat-common-table',
   standalone: true,
-  imports: [MatTableModule, MatButtonModule, CommonModule],
+  imports: [MatTableModule, MatButtonModule, CommonModule, ToStorageUrlPipe],
   templateUrl: './mat-common-table.component.html',
   styleUrl: './mat-common-table.component.scss',
 })
@@ -24,10 +25,12 @@ export class MatCommonTableComponent implements OnChanges {
 
   @Input() response: any;
   tableColumns: any[] = [];
+  columnData: any[] = [];
 
   ngOnChanges(changes: SimpleChanges) {
     const res = changes['response'].currentValue;
-    this.tableColumns = res?.columns.map((e: { key: string; }) => e.key);
+    this.tableColumns = res?.columns.filter((e: any) => !e.hidden).map((e: { key: string; }) => e.key);
+    this.columnData = res?.columns.map((e: { key: string; }) => e.key);
     // if (tableResponces.currentValue?.data?.length > 0) {
     //   this.isSearchable = Boolean(this.response?.columns?.some(column => column.hasOwnProperty('query')));
     // }
