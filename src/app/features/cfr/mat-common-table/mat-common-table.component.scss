@@ -3,13 +3,6 @@
   font-weight: var(--fw-medium);
 }
 
-// .table-container {
-//   max-height: 100vh;
-//   width: auto;
-//   max-width: 100%;
-//   overflow: auto;
-// }
-
 .mat-mdc-table .mat-mdc-header-cell {
   background: var(--clr-secondary) !important;
   color: #fff;
@@ -21,14 +14,14 @@
 }
 
 /* Structure */
-.example-container {
+.loader-container {
   position: relative;
 }
 
-.example-table-container {
+.table-container {
   position: relative;
-  min-height: 200px;
-  max-height: 700px;
+  min-height: 32vh;
+  max-height: 110vh;
   overflow: auto;
 }
 
@@ -36,11 +29,11 @@ table {
   width: 100%;
 }
 
-.example-loading-shade {
+.loading-shade {
   position: absolute;
   top: 0;
   left: 0;
-  bottom: 56px;
+  bottom: 3.5rem;
   right: 0;
   background: rgba(0, 0, 0, 0.15);
   z-index: 1;
@@ -49,17 +42,17 @@ table {
   justify-content: center;
 }
 
-.example-rate-limit-reached {
-  max-width: 360px;
+.no-result-found {
+  max-width: 22.5rem;
   text-align: center;
 }
 
 /* Column Widths */
 .mat-column-number,
 .mat-column-state {
-  width: 64px;
+  width: 4rem;
 }
 
 .mat-column-created {
-  width: 124px;
+  width: 7.75rem;
 }
