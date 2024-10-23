@@ -11,9 +11,6 @@ import { MaterialModule } from '../../../../material.module';
 })
 export class HeaderComponent {
 
-  @Output() onGuidelinesPopup = new EventEmitter();
-  @Output() onVideosPopup = new EventEmitter();
-
   constructor() { }
 
   get getRatio() {
