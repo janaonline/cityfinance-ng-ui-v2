@@ -31,8 +31,8 @@
     </ng-container>
     }
 
-    @for (subHeader of response?.subHeaders; track subHeader; let index = $index) {
-    <ng-container [matColumnDef]="subHeader">
+    @for (subHeader of response?.subHeaders; track subHeader.key;) {
+    <ng-container [matColumnDef]="'id-'+subHeader.key">
       <td mat-header-cell *matHeaderCellDef class="text-muted fst-italic text-nowrap br-r" [ngClass]="'table-primary'">
         {{ subHeader.label}}
       </td>
@@ -40,9 +40,9 @@
     }
 
     <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true" class="fw-bold"></tr>
-    @if (response.subHeaders) {
-    <tr mat-header-row *matHeaderRowDef="response.subHeaders;"></tr>
-    }
+    <!-- @if (response.subHeaders.length) { -->
+    <tr mat-header-row *matHeaderRowDef="subHeaderColumns"></tr>
+    <!-- } -->
     <tr mat-row *matRowDef="let row; columns: columnData"></tr>
   </table>
 </section>

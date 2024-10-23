@@ -134,7 +134,6 @@ export class ParticipatingStateComponent implements OnInit {
   getTableData(table: Table, queryParams: string) {
     this.colorCoding = [];
     this.isApiInProgress = true;
-    //  https://staging.cityfinance.in/api/v1/scoring-fr/participated-state?stateType=all&ulbParticipationFilter=all&ulbRankingStatusFilter=nonRanked
     const filterObj = {
       stateType: this.stateType,
       ulbParticipationFilter: this.ulbParticipation,
@@ -151,18 +150,17 @@ export class ParticipatingStateComponent implements OnInit {
         'data.tableData',
         filterObj,
       )
-      .subscribe(
-        (res: any) => {
-          console.log('participated-state table responces ------>', res);
-          // this.table['response'] = res?.data?.tableData;
-          this.table['response'] = responseJson;
+      .subscribe({
+        next: (res: any) => {
+          this.table['response'] = res?.data?.tableData;
           this.colorCoding = res?.data?.mapData;
           this.isApiInProgress = false;
         },
-        (error) => {
-          console.error('participated-state table error', error);
+        error: (error) => {
+          // console.error('participated-state table error', error);
           this.isApiInProgress = false;
         },
+      }
       );
   }
   // getStateWiseForm() {

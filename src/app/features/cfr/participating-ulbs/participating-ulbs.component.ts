@@ -21,10 +21,9 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
 
   constructor(
     private fiscalRankingService: FiscalRankingService,
-    // private router: Router,
     private route: ActivatedRoute,
   ) {
-    this.fetchStateList();
+
 
   }
   breadcrumbLinks: BreadcrumbLink[] = [
@@ -66,47 +65,22 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.selectedStateId = <string>this.route.snapshot.paramMap.get('stateId');
+    console.log('this.selectedStateId', this.selectedStateId);
+
     this.getFilters();
+    this.getTableData(this.table, '');
   }
   dropDownValueChanges(e: any) {
     this.getTableData(this.table, '');
   }
-  // ulbParticipationChange(e) {
-  //   this.getTableData();
-  // }
-  // ulbRankingStatusFilterChange(e) {
-  //   this.getTableData();
-  // }
 
-  // get the state Id from routes
-  // checkRouterForApi() {
-  //   this.routerSubs = this.router.events.subscribe((event) => {
-  //     if (event instanceof NavigationEnd) {
-  //       const urlArray = event.url.split("/");
-  //       console.log('abcdef', urlArray);
-  //       this.selectedStateId = urlArray[3];
-  //     }
-  //   });
-  // }
-
-  // find the state from state list and call the api for data
-  private fetchStateList() {
-    this.fiscalRankingService.callGetMethod('scoring-fr/states', null).subscribe((res: any) => {
-      console.log('1234', res);
-      this.stateList = res?.data;
-      const selectedState = this.stateList.find(({ _id }) => _id === this.selectedStateId);
-      console.log('selectedState', selectedState);
-      // this.selectedStateName = selectedState?.name;
-      this.getTableData(this.table, '');
-
-    });
-  }
   resetFilter() {
     // this.populationBucket = this.populationCategoryFilter ? this.populationCategoryFilter[0]?.value : '';
     // this.ulbParticipation = this.ulbParticipationFilter[0]?.value;
     // this.ulbRankingStatus = this.ulbRankingStatusFilter[0]?.value;
     this.getTableData(this.table, '');
   }
+
   ngOnDestroy() {
     this.routerSubs.unsubscribe();
   }
@@ -122,7 +96,7 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
     const endpoint = `${this.table.endpoint}/${this.selectedStateId}`;
 
     this.fiscalRankingService.getTableResponse(endpoint, queryParams, table?.response?.columns, 'data', filterObj).subscribe((res: any) => {
-      console.log('participated-state table responces', res);
+      // console.log('participated-state table responces', res);
       this.table["response"] = res?.data;
       // this.table["response"] = participatedULBRes.data;
       this.selectedStateName = res?.data?.state?.name
@@ -132,15 +106,6 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
       }
     );
 
-
-    // this.fiscalRankingService.callGetMethod(`scoring-fr/ulbs/${this.selectedStateId}?${queryParams}`, filterObj).subscribe((res: any) => {
-    //    console.log('participated-state table responces', res);
-    //    this.table["response"] = res?.data;
-    // },
-    //   (error) => {
-    //     console.log('participated-state table error', error);
-    //   }
-    // )
   }
 
   // for all filters
