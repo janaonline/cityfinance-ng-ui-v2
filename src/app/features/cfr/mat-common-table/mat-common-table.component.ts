@@ -51,7 +51,7 @@ export class MatCommonTableComponent implements OnChanges {
     const res = changes['response'].currentValue;
     this.tableColumns = res?.columns.filter((e: any) => !e.hidden).map((e: { key: string; }) => e.key);
     this.columnData = res?.columns.map((e: { key: string; }) => e.key);
-    this.subHeaderColumns = res?.subHeaders.map((e: { key: string; }) => 'id-' + e.key);
+    this.subHeaderColumns = res?.subHeaders?.map((e: { key: string; }) => 'id-' + e.key);
 
     // if (tableResponces.currentValue?.data?.length > 0) {
     //   this.isSearchable = Boolean(this.response?.columns?.some(column => column.hasOwnProperty('query')));
