@@ -40,7 +40,9 @@
     }
 
     <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true" class="fw-bold"></tr>
+    @if (response.subHeaders) {
     <tr mat-header-row *matHeaderRowDef="response.subHeaders;"></tr>
+    }
     <tr mat-row *matRowDef="let row; columns: columnData"></tr>
   </table>
 </section>
