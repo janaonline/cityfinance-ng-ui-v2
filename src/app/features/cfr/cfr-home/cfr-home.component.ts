@@ -15,13 +15,14 @@ import { FooterComponent } from './footer/footer.component';
 import { RankingCategoriesComponent } from './ranking-categories/ranking-categories.component';
 import { AssessmentParametersComponent } from './assessment-parameters/assessment-parameters.component';
 import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
+import { GuidelinesBrochureVideoComponent } from './guidelines-brochure-video/guidelines-brochure-video.component';
 
 @Component({
   selector: 'app-cfr-home',
   standalone: true,
   imports: [CommonModule, ToStorageUrlPipe, HeaderComponent, UnionMinistorComponent,
     VideosPopupComponent, ScrollToTopComponent, FooterComponent, RankingCategoriesComponent, AssessmentParametersComponent,
-    UlbsInIndiaComponent],
+    UlbsInIndiaComponent, GuidelinesBrochureVideoComponent],
   templateUrl: './cfr-home.component.html',
   styleUrl: './cfr-home.component.scss'
 })

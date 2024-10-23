@@ -4,6 +4,7 @@ import { ParticipatingStateComponent } from './participating-state/participating
 import { TopRankingsComponent } from './top-rankings/top-rankings.component';
 import { UlbDetailsComponent } from './ulb-details/ulb-details.component';
 import { ParticipatingUlbsComponent } from './participating-ulbs/participating-ulbs.component';
+import { AssessmentParameterComponent } from './assessment-parameter/assessment-parameter.component';
 
 export const CFR_ROUTES: Route[] = [
   { path: '', component: CfrHomeComponent },
@@ -54,9 +55,9 @@ export const CFR_ROUTES: Route[] = [
   //         }
   //     }
   // },
-  // {
-  //     path: 'assesst-parameters/:id', component: AssessmentParameterComponent
-  // },
+  {
+    path: 'assesst-parameters/:id', component: AssessmentParameterComponent
+  },
   {
     path: 'participated-states-ut',
     component: ParticipatingStateComponent,
