@@ -110,10 +110,10 @@ export class ParticipatingStateComponent implements OnInit {
   colorCoding: any;
 
   colorDetails: any[] = [
-    { color: '#04DC00', text: '76%-100%', min: 76, max: 100 },
-    { color: '#F8A70B', text: '51%-75%', min: 51, max: 75 },
-    { color: '#FFDB5B', text: '26%-50%', min: 26, max: 50 },
-    { color: '#FFF281', text: '1%-25%', min: 1, max: 25 },
+    { color: '#06668F', text: '76%-100%', min: 76, max: 100 },
+    { color: '#0B8CC3', text: '51%-75%', min: 51, max: 75 },
+    { color: '#73BFE0', text: '26%-50%', min: 26, max: 50 },
+    { color: '#BCE2F2', text: '1%-25%', min: 1, max: 25 },
     { color: '#E5E5E5', text: '0%', min: 0, max: 0 },
   ];
 
