@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 import { SweetAlert } from "sweetalert/typings/core";
-import { BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
+import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 // const swal: SweetAlert = require("sweetalert");
@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './assessment-parameter.component.html',
   styleUrls: ['./assessment-parameter.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule, BreadcrumbComponent]
 })
 export class AssessmentParameterComponent implements OnInit {
 
