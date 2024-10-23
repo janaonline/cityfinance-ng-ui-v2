@@ -12,6 +12,7 @@ export const responseJson = {
       "label": "State Name",
       "key": "name",
       "sort": 1,
+      link: 'nameLink',
       "sortable": true,
       "class": "th-common-cls",
       "width": "8"
@@ -77,7 +78,7 @@ export const responseJson = {
       "rankedUlbs": 88,
       "nonRankedUlbs": 35,
       "rankedtoTotal": 71.54,
-      "nameLink": "/rankings/participated-ulbs/5dcf9d7216a06aed41c748dd"
+      "nameLink": "/cfr/participated-ulbs/5dcf9d7216a06aed41c748dd"
     },
     {
       "_id": "5dcf9d7216a06aed41c748e2",
@@ -88,7 +89,7 @@ export const responseJson = {
       "rankedUlbs": 118,
       "nonRankedUlbs": 51,
       "rankedtoTotal": 69.82,
-      "nameLink": "/rankings/participated-ulbs/5dcf9d7216a06aed41c748e2"
+      "nameLink": "/cfr/participated-ulbs/5dcf9d7216a06aed41c748e2"
     },
     {
       "_id": "5dcf9d7516a06aed41c748fa",
@@ -99,7 +100,7 @@ export const responseJson = {
       "rankedUlbs": 424,
       "nonRankedUlbs": 227,
       "rankedtoTotal": 65.13,
-      "nameLink": "/rankings/participated-ulbs/5dcf9d7516a06aed41c748fa"
+      "nameLink": "/cfr/participated-ulbs/5dcf9d7516a06aed41c748fa"
     },
     {
       "_id": "5fa25a6e0fb1d349c0fdfbc7",
@@ -110,7 +111,7 @@ export const responseJson = {
       "rankedUlbs": 0,
       "nonRankedUlbs": 1,
       "rankedtoTotal": 0,
-      "nameLink": "/rankings/participated-ulbs/5fa25a6e0fb1d349c0fdfbc7"
+      "nameLink": "/cfr/participated-ulbs/5fa25a6e0fb1d349c0fdfbc7"
     },
     {
       "_id": "5dcf9d7516a06aed41c748fb",
@@ -121,7 +122,7 @@ export const responseJson = {
       "rankedUlbs": 67,
       "nonRankedUlbs": 74,
       "rankedtoTotal": 46.85,
-      "nameLink": "/rankings/participated-ulbs/5dcf9d7516a06aed41c748fb"
+      "nameLink": "/cfr/participated-ulbs/5dcf9d7516a06aed41c748fb"
     },
     {
       "_id": "5dcf9d7316a06aed41c748e7",
@@ -132,7 +133,7 @@ export const responseJson = {
       "rankedUlbs": 108,
       "nonRankedUlbs": 53,
       "rankedtoTotal": 65.06,
-      "nameLink": "/rankings/participated-ulbs/5dcf9d7316a06aed41c748e7"
+      "nameLink": "/cfr/participated-ulbs/5dcf9d7316a06aed41c748e7"
     },
     {
       "_id": "5dcf9d7416a06aed41c748f0",
@@ -143,7 +144,7 @@ export const responseJson = {
       "rankedUlbs": 276,
       "nonRankedUlbs": 124,
       "rankedtoTotal": 66.19,
-      "nameLink": "/rankings/participated-ulbs/5dcf9d7416a06aed41c748f0"
+      "nameLink": "/cfr/participated-ulbs/5dcf9d7416a06aed41c748f0"
     },
 
     {
@@ -155,7 +156,7 @@ export const responseJson = {
       "rankedUlbs": 0,
       "nonRankedUlbs": 0,
       "rankedtoTotal": 0,
-      "nameLink": "/rankings/participated-ulbs/5efd6a2fb5cd039b5c0cfed2"
+      "nameLink": "/cfr/participated-ulbs/5efd6a2fb5cd039b5c0cfed2"
     }
   ],
   "lastRow": ["", "", "Total", "$sum", "$sum", "$sum", "$sum", "$sum"],

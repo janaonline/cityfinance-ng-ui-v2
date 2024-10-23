@@ -9,7 +9,9 @@ import { FiscalRankingService, FrFilter, Filter, Table } from '../services/fisca
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { IndiaMapComponent } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
+import { responseJson } from '../mat-common-table/res-json';
 // const swal: SweetAlert = require("sweetalert");
+
 
 @Component({
   selector: 'app-participating-state',
@@ -105,145 +107,6 @@ export class ParticipatingStateComponent implements OnInit {
   ulbRankingStatus: string = 'All';
   table: object | any = { response: null };
   isApiInProgress: boolean = true;
-  // table = {
-  //   response: {
-  // "status": true,
-  // "message": "Successfully saved data!",
-  // "columns": [
-  //   {
-  //     "label": "S.No",
-  //     "key": "sNo",
-  //     "sort": 0,
-  //     "sortable": false,
-  //     "class": "th-common-cls",
-  //     "width": "3"
-  //   },
-  //   {
-  //     "label": "State Name",
-  //     "key": "stateName",
-  //     "sort": 1,
-  //     "sortable": true,
-  //     "class": "th-common-cls",
-  //     "width": "8"
-  //   },
-  //   {
-  //     "label": "State Type",
-  //     "key": "stateType",
-  //     "sortable": false,
-  //     "sort": 1,
-  //     "class": "th-common-cls",
-  //     "width": "6"
-  //   },
-  //   {
-  //     "label": "Total ULBs",
-  //     "key": "totalULBs",
-  //     "sortable": false,
-  //     "sort": 0,
-  //     "class": "th-common-cls",
-  //     "width": "6"
-  //   },
-  //   {
-  //     "label": "Participated ULBs",
-  //     "key": "participatedULBs",
-  //     "sortable": true,
-  //     "sort": 1,
-  //     "class": "th-common-cls",
-  //     "width": "7"
-  //   },
-  //   {
-  //     "label": "Ranked ULBs",
-  //     "key": "rankedULBs",
-  //     "sortable": true,
-  //     "sort": 1,
-  //     "class": "th-common-cls",
-  //     "width": "6"
-  //   },
-  //   {
-  //     "label": "Non Ranked ULBs",
-  //     "key": "nonRankedULBs",
-  //     "sortable": true,
-  //     "sort": 1,
-  //     "class": "th-common-cls",
-  //     "width": "7"
-  //   },
-  //   {
-  //     "label": "Ranked to Total(%)",
-  //     "key": "rankedtoTotal",
-  //     "sortable": true,
-  //     "sort": 1,
-  //     "class": "th-color-cls",
-  //     "width": "7"
-  //   },
-
-  // ],
-  // "name": "",
-  // "data": [
-  //   {
-  //     "_id": "",
-  //     "sNo" : "",
-  //     "stateType": "",
-  //     "totalULBs": "A",
-  //     "participatedULBs": "B",
-  //     "rankedULBs": "C",
-  //     "nonRankedULBs": "D",
-  //     "stateName": "",
-  //     "selected": false,
-  //     "rankedtoTotal": "E=C/A",
-  //     "stateNameLink": ""
-  //   },
-  //   {
-  //     "_id": "1",
-  //     "sNo" : 1,
-  //     "stateType": "Large",
-  //     "totalULBs": 6,
-  //     "participatedULBs": 0,
-  //     "rankedULBs": 0,
-  //     "nonRankedULBs": 3,
-  //     "stateName": "Andhra Pradesh",
-  //     "selected": false,
-  //     "rankedtoTotal": 5,
-  //     "stateNameLink": "/rankings/participated-ulbs"
-  //   },
-  //   {
-  //     "_id": "2",
-  //     "sNo" : 2,
-  //     "stateType": "Large",
-  //     "totalULBs": 9,
-  //     "participatedULBs": 3,
-  //     "rankedULBs": 4,
-  //     "nonRankedULBs": 5,
-  //     "stateName": "Uttar Pradesh",
-  //     "selected": false,
-  //     "rankedtoTotal": 5,
-  //     "stateNameLink": "/rankings/participated-ulbs"
-  //   },
-  //   {
-  //     "_id": "3",
-  //     "sNo" : 3,
-  //     "stateType": "Small",
-  //     "totalULBs": 3,
-  //     "participatedULBs": 3,
-  //     "rankedULBs": 1,
-  //     "nonRankedULBs": 2,
-  //     "stateName": "Andaman and Nicobar Islands",
-  //     "selected": false,
-  //     "rankedtoTotal": 2,
-  //     "stateNameLink": "/rankings/participated-ulbs"
-  //   },
-
-  // ],
-  // "lastRow": [
-  //   "",
-  //   "",
-  //   "Total",
-  //   "$sum",
-  //   "$sum",
-  //   "$sum",
-  //   "$sum",
-  //   "$sum",
-  // ],
-  //   }
-  // };
   colorCoding: any;
 
   colorDetails: any[] = [
@@ -291,7 +154,8 @@ export class ParticipatingStateComponent implements OnInit {
       .subscribe(
         (res: any) => {
           console.log('participated-state table responces ------>', res);
-          this.table['response'] = res?.data?.tableData;
+          // this.table['response'] = res?.data?.tableData;
+          this.table['response'] = responseJson;
           this.colorCoding = res?.data?.mapData;
           this.isApiInProgress = false;
         },
