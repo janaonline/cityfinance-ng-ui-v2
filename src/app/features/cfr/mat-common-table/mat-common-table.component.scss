@@ -1,0 +1,21 @@
+* {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
+}
+
+.table-container {
+  max-height: 100vh;
+  width: auto;
+  max-width: 100%;
+  overflow: auto;
+}
+
+.mat-mdc-table .mat-mdc-header-cell {
+  background: var(--clr-secondary) !important;
+  color: #fff;
+  border-bottom: 1px solid lightgrey;
+}
+
+.mat-mdc-table .mdc-data-table__cell {
+  border-bottom: 1px solid lightgrey;
+}

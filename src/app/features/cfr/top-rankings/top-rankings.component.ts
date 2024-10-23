@@ -11,28 +11,34 @@ import { MaterialModule } from '../../../material.module';
 import { AngularMultiSelectModule } from 'angular2-multiselect-dropdown';
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { ColorDetails, IndiaMapComponent, Marker } from '../india-map/india-map.component';
+import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 
 @Component({
   selector: 'app-top-rankings',
   templateUrl: './top-rankings.component.html',
   styleUrls: ['./top-rankings.component.scss'],
   standalone: true,
-  imports: [CommonModule, MaterialModule, BreadcrumbComponent, AngularMultiSelectModule,
-    CommonTableComponent, IndiaMapComponent
+  imports: [
+    CommonModule,
+    MaterialModule,
+    BreadcrumbComponent,
+    AngularMultiSelectModule,
+    CommonTableComponent,
+    IndiaMapComponent,
+    MatCommonTableComponent,
   ],
 })
 export class TopRankingsComponent implements OnInit {
-
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
-      url: '/rankings/home'
+      url: '/rankings/home',
     },
     {
       label: 'Top rankings',
       url: '/rankings/top-rankings',
-      class: 'disabled'
-    }
+      class: 'disabled',
+    },
   ];
   markers: Marker[] = [];
   types = [
@@ -42,17 +48,17 @@ export class TopRankingsComponent implements OnInit {
     },
     {
       key: 'resourceMobilizationRank',
-      label: 'Resource Mobilization (RM)'
+      label: 'Resource Mobilization (RM)',
     },
     {
       key: 'expenditurePerformanceRank',
-      label: 'Expenditure Performance (EP)'
+      label: 'Expenditure Performance (EP)',
     },
     {
       key: 'fiscalGovernanceRank',
-      label: 'Fiscal Governance (FG)'
+      label: 'Fiscal Governance (FG)',
     },
-  ]
+  ];
 
   filter: FormGroup;
   table: Table = {
@@ -64,33 +70,33 @@ export class TopRankingsComponent implements OnInit {
     { _id: '1', name: '4M+' },
     { _id: '2', name: '1M to 4M' },
     { _id: '3', name: '100K to 1M' },
-    { _id: '4', name: '<100K' }
+    { _id: '4', name: '<100K' },
   ];
   dropdownSettings = {
     singleSelection: true,
-    text: "India",
+    text: 'India',
     enableSearchFilter: true,
-    labelKey: "name",
-    primaryKey: "_id",
+    labelKey: 'name',
+    primaryKey: '_id',
     showCheckbox: false,
-    classes: "homepage-stateList custom-class",
+    classes: 'homepage-stateList custom-class',
   };
 
   colorCoding: any;
   colorDetails: ColorDetails[] = [
-    { color: "#E5E5E5", text: "0", min: 0, max: 0 },
-    { color: "#FFF281", text: "1 to 2", min: 1, max: 2 },
-    { color: "#FFDB5B", text: "3 to 5", min: 3, max: 5 },
-    { color: "#F8A70B", text: "6 to 8", min: 6, max: 8 },
-    { color: "#31CFF1", text: "9 to 10", min: 9, max: 10 },
-    { color: "#04DC00", text: "10+", min: 11, max: Infinity },
+    { color: '#E5E5E5', text: '0', min: 0, max: 0 },
+    { color: '#FFF281', text: '1 to 2', min: 1, max: 2 },
+    { color: '#FFDB5B', text: '3 to 5', min: 3, max: 5 },
+    { color: '#F8A70B', text: '6 to 8', min: 6, max: 8 },
+    { color: '#31CFF1', text: '9 to 10', min: 9, max: 10 },
+    { color: '#04DC00', text: '10+', min: 11, max: Infinity },
   ];
   isShowingMap: boolean = false;
 
   constructor(
     private matDialog: MatDialog,
     private fiscalRankingService: FiscalRankingService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
   ) {
     this.filter = this.fb.group({
       populationBucket: '1',
@@ -99,7 +105,7 @@ export class TopRankingsComponent implements OnInit {
       category: 'overAllRank',
     });
 
-    this.filter.get('stateData')?.valueChanges.subscribe(value => {
+    this.filter.get('stateData')?.valueChanges.subscribe((value) => {
       this.table.response = null;
       this.filter.patchValue({ state: value?.[0]?._id || '' }, { emitEvent: false });
     });
@@ -122,7 +128,7 @@ export class TopRankingsComponent implements OnInit {
 
   get footnote() {
     if (this.filter.value?.populationBucket == '1') {
-      return "Note: These are the ULBs that submitted their records to complete the ranking."
+      return 'Note: These are the ULBs that submitted their records to complete the ranking.';
     }
     return '';
   }
@@ -134,13 +140,14 @@ export class TopRankingsComponent implements OnInit {
 
   loadTopRankedUlbs(table: Table, queryParams: string = '') {
     this.isShowingMap = false;
-    this.fiscalRankingService.topRankedUlbs(queryParams, table?.response?.columns, this.params).subscribe((res: any) => {
-      this.isShowingMap = true;
-      this.table.response = res.tableData;
-      this.markers = res.mapDataTopUlbs;
-    })
+    this.fiscalRankingService
+      .topRankedUlbs(queryParams, table?.response?.columns, this.params)
+      .subscribe((res: any) => {
+        this.isShowingMap = true;
+        this.table.response = res.tableData;
+        this.markers = res.mapDataTopUlbs;
+      });
   }
-
 
   onUpdate(table: any, event: any) {
     this.loadTopRankedUlbs(table, event?.queryParams);
@@ -164,6 +171,6 @@ export class TopRankingsComponent implements OnInit {
       height: '100%',
       maxWidth: '100%',
       panelClass: 'search-page',
-    })
+    });
   }
 }
