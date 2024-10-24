@@ -30,7 +30,7 @@
   <div class="container">
     <div class="row m-0 min-h-60">
       <div class="col-md-5 p-3">
-        <ng-container *ngIf="isShowingMap; else mapLoader">
+        <ng-container *ngIf="!isLoadingResults; else mapLoader">
           <app-india-map *ngIf="selectedMap === 'topUlbs'" [markers]="markers"> </app-india-map>
           <app-india-map
             *ngIf="selectedMap === 'rankHolders'"
@@ -125,17 +125,12 @@
           </ng-container>
         </div>
 
-        <!-- <app-common-table
-          *ngIf="table?.response"
-          theme="white"
-          [info]="footnote"
-          [response]="table.response"
-          (update)="onUpdate(table, $event)"
-        >
-        </app-common-table> -->
         <app-mat-common-table
           *ngIf="table?.response"
           [response]="table.response"
+          [isLoadingResults]="isLoadingResults"
+          [isPagination]="true"
+          (pageChange)="pageChange($event)"
         ></app-mat-common-table>
       </form>
     </div>
