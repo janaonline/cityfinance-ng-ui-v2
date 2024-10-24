@@ -45,7 +45,7 @@ export class UlbDetailsComponent implements OnInit {
     }
   ];
 
-  data!: APIResponse;
+  data: APIResponse = {} as APIResponse;
 
   constructor(
     private activatedRoute: ActivatedRoute,

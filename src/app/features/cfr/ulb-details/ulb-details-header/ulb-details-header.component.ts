@@ -71,12 +71,12 @@ export class UlbDetailsHeaderComponent implements OnChanges {
     this.fsData = this.data?.fsData;
     this.colorCoding = [{
       "_id": this.ulb?.stateName,
-      "stateId": this.ulb.state,
+      "stateId": this.ulb?.state,
       "code": this.ulb?.stateCode,
       "color": "#FFF0E0"
     }];
 
-    const { lat, lng } = this.ulb?.location;
+    const { lat, lng } = this.ulb?.location || {};
     this.markers = [{ lat, lng, name: this.ulb?.name }];
     this.populationCategory = getPopulationCategory(this.ulb?.population);
     this.categories = this.getCategories();

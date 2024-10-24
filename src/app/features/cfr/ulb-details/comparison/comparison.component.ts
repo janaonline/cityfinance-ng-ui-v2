@@ -1,12 +1,13 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Chart } from 'chart.js';
+import { Chart, registerables } from 'chart.js';
 // import { getPopulationCategory } from 'src/app/util/common';
 // import { FiscalRankingService, UlbData } from '../../fiscal-ranking.service';
 import { ComparisionFiltersComponent } from '../comparision-filters/comparision-filters.component';
 import { MaterialModule } from '../../../../material.module';
 import { getPopulationCategory } from '../../../../core/util/common';
 import { FiscalRankingService, UlbData } from '../../services/fiscal-ranking.service';
+Chart.register(...registerables)
 
 
 @Component({
@@ -156,4 +157,59 @@ export class ComparisonComponent implements OnChanges {
     };
     this.getBarchartData();
   }
+
+  // chartdata: any[] = []
+  // labeldata: number[] = [];
+  // realdata: number[] = [];
+  // colordata: string[] = [];
+
+  // loadchartdata() {
+  //   this.fiscalRankingService.loadsalesdata().subscribe(item => {
+  //     this.chartdata = item;
+  //     if (this.chartdata != null) {
+  //       this.chartdata.map(o => {
+  //         this.labeldata.push(o.year);
+  //         this.realdata.push(o.amount);
+  //         this.colordata.push(o.colorcode)
+  //       })
+  //       this.Renderbarchart(this.labeldata, this.realdata, this.colordata);
+  //       // this.Renderpiechart(this.labeldata, this.realdata, this.colordata);
+  //       // this.Renderdoughnutchart(this.labeldata, this.realdata, this.colordata);
+  //       // this.RenderPAchart(this.labeldata, this.realdata, this.colordata);
+  //       // this.RenderRadarchart(this.labeldata, this.realdata, this.colordata);
+  //       // this.Renderlinechart(this.labeldata, this.realdata, this.colordata);
+  //       // this.RenderBubblechart();
+  //       // this.RenderScatterchart();
+  //     }
+  //   });
+  // }
+
+  // Renderbarchart(labeldata: any, valuedata: any, colordata: any) {
+  //   this.Renderchart(labeldata, valuedata, colordata, 'barchart', 'bar')
+  // }
+
+  // Renderchart(labeldata: any, valuedata: any, colordata: any, chartid: string, charttype: any) {
+  //   const mychar = new Chart(chartid, {
+  //     type: charttype,
+  //     data: {
+  //       labels: labeldata,
+  //       datasets: [
+  //         {
+  //           label: 'Yearly sales',
+  //           data: valuedata,
+  //           backgroundColor: colordata,
+
+  //         }
+  //       ]
+  //     },
+  //     options: {
+  //       scales: {
+  //         y: {
+  //           beginAtZero: false
+  //         }
+  //       }
+  //     }
+
+  //   });
+  // }
 }
