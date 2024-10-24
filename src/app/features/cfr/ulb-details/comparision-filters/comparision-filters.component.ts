@@ -1,20 +1,14 @@
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatMenuTrigger } from '@angular/material/menu';
-// import { Subject } from 'rxjs';
-// import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
-// import { DialogComponent } from 'src/app/shared/components/dialog/dialog.component';
-// import { UtilityService } from 'src/app/shared/services/utility.service';
 import { FiscalRankingService } from '../../services/fiscal-ranking.service';
 import { DialogComponent } from '../../../../shared/components/dialog/dialog.component';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 
 import Swal from 'sweetalert2';
-
-// import { FiscalRankingService } from '../../fiscal-ranking.service';
-
-// const swal: SweetAlert = require("sweetalert");
+import { debounceTime, distinctUntilChanged, map, of, Subject, switchMap, tap } from 'rxjs';
+import { FormControl } from '@angular/forms';
 
 @Component({
   selector: 'app-comparision-filters',
@@ -23,16 +17,23 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [MaterialModule],
 })
-export class ComparisionFiltersComponent implements OnInit {
+export class ComparisionFiltersComponent implements OnInit, OnDestroy {
 
   @ViewChild(MatMenuTrigger) menuTrigger!: MatMenuTrigger;
 
-  query: string = '';
+  // query: string = '';
+  // searchField: string = '';
+  searchField = new FormControl();
+
   searchResults: any = [];
 
   ulbs: any = [];
 
   datasetsFilter: any = {};
+  isSearching: boolean = false;
+  noDataFound: boolean = false;
+  showSearches: boolean = false;
+  filteredOptions: any = [];
 
   constructor(
     private matDialog: MatDialog,
@@ -42,29 +43,108 @@ export class ComparisionFiltersComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: any
   ) { }
 
-  ngOnInit(): void {
+  // ngOnInit(): void {
+  //   this.ulbs = this.data?.ulbs;
+  //   this.datasetsFilter = this.data?.datasetsFilter;
+  // }
+
+  private searchSubject = new Subject<string>();
+  private readonly debounceTimeMs = 300; // Set the debounce time (in milliseconds)
+
+
+  ngOnInit() {
     this.ulbs = this.data?.ulbs;
     this.datasetsFilter = this.data?.datasetsFilter;
+    this.searchSubject.pipe(debounceTime(this.debounceTimeMs)).subscribe((searchValue) => {
+      // this.performSearch(searchValue);
+      // this.search();
+    });
+    this.onSearchValueChange();
+  }
+
+  onSearchValueChange() {
+    const search$ = this.searchField.valueChanges.pipe(
+      map((value: any) => {
+        return value
+      }),
+      debounceTime(500),
+      distinctUntilChanged(),
+      tap(() => this.isSearching = true),
+      switchMap((term) => term ? this.search(term) : of<any>({ data: this.filteredOptions })),
+      tap(() => {
+        this.isSearching = false,
+          this.showSearches = true;
+      }));
+
+    search$.subscribe(resp => {
+      this.isSearching = false
+      if (resp['ulbs'].length > 0) {
+        this.noDataFound = false;
+      } else {
+        this.noDataFound = true;
+      }
+      this.filteredOptions = resp["ulbs"]
+    });
+
+  }
+
+  search(matchingWord: any) {
+    const body = {
+      matchingWord,
+      onlyUlb: true,
+    };
+    // return this.commonService.searchUlb(body, "ulb", this.stateId);
+    return this.fiscalRankingService.searchUlb(matchingWord);
+    //   .subscribe((res: any) => {
+    //   this.searchResults = res.ulbs;
+    //   this.menuTrigger.openMenu();
+    // })
+  }
+
+  ngOnDestroy() {
+    this.searchSubject.complete();
+  }
+
+  onSearch(searchValue: string) {
+    this.searchSubject.next(searchValue);
   }
 
   filterKeys() {
     return Object.keys(this.datasetsFilter);
   }
 
-  search() {
-    this.fiscalRankingService.searchUlb(this.query).subscribe((res: any) => {
-      this.searchResults = res.ulbs;
-      this.menuTrigger.openMenu();
-    })
-  }
+  // search() {
+  //   this.fiscalRankingService.searchUlb(this.query).subscribe((res: any) => {
+  //     this.searchResults = res.ulbs;
+  //     this.menuTrigger.openMenu();
+  //   })
+  // }
 
-  debouncedSearch = this.utilityService.debounce(this.search, 500);
+  // debouncedSearch = this.utilityService.debounce(this.search, 500);
 
   async addUlb(ulb: any) {
 
-    const isAgree = true;
+    // const isAgree = true;
 
     if (this.data?.ulb.populationBucket != ulb.populationBucket) {
+      Swal.fire({
+        title: "Are you sure?",
+        text: `${ulb?.name} does not fall under ${this.data?.bucketShortName} if you still want to compare, please click on apply button.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Apply"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.ulbs.push(ulb);
+          // Swal.fire({
+          //   title: "Deleted!",
+          //   text: "Your file has been deleted.",
+          //   icon: "success"
+          // });
+        }
+      });
       // isAgree = await Swal.fire(
       //   "Are you sure?",
       //   `${ulb?.name} does not fall under ${this.data?.bucketShortName} if you still want to compare, please click on apply button.`,
@@ -84,17 +164,20 @@ export class ComparisionFiltersComponent implements OnInit {
       //     },
       //   }
       // );
-    }
-
-
-    console.log('isAgree', isAgree);
-
-    this.query = '';
-    this.searchResults = [];
-    if (isAgree) {
+    } else {
       this.ulbs.push(ulb);
-      this.menuTrigger.closeMenu();
     }
+
+
+    // console.log('isAgree', isAgree);
+
+    // this.query = '';
+    this.searchField.setValue('');
+    this.searchResults = [];
+    // if (isAgree) {
+    //   this.ulbs.push(ulb);
+    //   // this.menuTrigger.closeMenu();
+    // }
   }
 
 

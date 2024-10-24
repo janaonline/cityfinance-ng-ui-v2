@@ -1,16 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-// import { BreadcrumbLink } from 'src/app/fiscal-ranking/breadcrumb/breadcrumb.component';
-// import { ColorDetails } from 'src/app/fiscal-ranking/india-map/india-map.component';
-// import { FrFilter, Filter, FiscalRankingService, Table } from 'src/app/fiscal-ranking/fiscal-ranking.service';
-// import { SweetAlert } from "sweetalert/typings/core";
 import { CommonModule } from '@angular/common';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { FiscalRankingService, FrFilter, Filter, Table } from '../services/fiscal-ranking.service';
+import { FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { IndiaMapComponent } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
-import { responseJson } from '../mat-common-table/res-json';
-// const swal: SweetAlert = require("sweetalert");
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-participating-state',
@@ -203,7 +198,7 @@ export class ParticipatingStateComponent implements OnInit {
         // this.ulbRankingStatusFilter = filter?.ulbRankingStatusFilter;
       },
       (error) => {
-        // swal('Error', error?.message ?? 'Something went wrong', 'error');
+        Swal.fire('Error', error?.message ?? 'Something went wrong', 'error');
       },
     );
   }
@@ -212,5 +207,5 @@ export class ParticipatingStateComponent implements OnInit {
     this.getTableData(table, event?.queryParams);
   }
 
-  updateSorting() {}
+  updateSorting() { }
 }

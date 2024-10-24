@@ -1,14 +1,12 @@
-import { Component, OnInit, OnDestroy, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FrFilter, Filter, FiscalRankingService, Table } from '../services/fiscal-ranking.service';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, } from '@angular/router';
 
-// import { SweetAlert } from "sweetalert/typings/core";
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { MaterialModule } from '../../../material.module';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
-// import { participatedULBRes } from './participatin-ulb-json';
-// const swal: SweetAlert = require("sweetalert");
+import Swal from 'sweetalert2';
 @Component({
   selector: 'app-participating-ulbs',
   templateUrl: './participating-ulbs.component.html',
@@ -133,7 +131,7 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
 
     },
       (error) => {
-        // swal('Error', error?.message ?? 'Something went wrong', 'error');
+        Swal.fire('Error', error?.message ?? 'Something went wrong', 'error');
       }
     )
   }

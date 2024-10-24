@@ -9,6 +9,7 @@ import { UlbDetailsAssessmentParametersComponent } from './ulb-details-assessmen
 import { PerformanceFourMComponent } from './performance-four-m/performance-four-m.component';
 import { ComparisonComponent } from './comparison/comparison.component';
 
+// import Swal from 'sweetalert2';
 
 interface APIResponse {
   assessmentParameter: any;
@@ -65,6 +66,7 @@ export class UlbDetailsComponent implements OnInit {
     });
 
     this.loadUlbData();
+    // Swal.fire('Error', 'Something went wrong', 'error');
   }
 
   loadUlbData() {
