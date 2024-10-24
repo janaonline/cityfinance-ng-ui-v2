@@ -32,11 +32,11 @@ export class TopRankingsComponent implements OnInit {
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
-      url: '/rankings/home',
+      url: '/cfr/home',
     },
     {
       label: 'Top rankings',
-      url: '/rankings/top-rankings',
+      url: '/cfr/top-rankings',
       class: 'disabled',
     },
   ];

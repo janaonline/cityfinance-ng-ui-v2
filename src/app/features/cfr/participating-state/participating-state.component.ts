@@ -27,11 +27,11 @@ export class ParticipatingStateComponent implements OnInit {
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
-      url: '/rankings/home',
+      url: '/cfr/home',
     },
     {
       label: 'Participated States and UT ',
-      url: '/rankings/participated-states-ut',
+      url: '/cfr/participated-states-ut',
       class: 'disabled',
     },
   ];

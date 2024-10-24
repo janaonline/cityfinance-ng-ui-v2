@@ -36,7 +36,7 @@ export class NavbarComponent {
     {
       name: `<img src="./assets/images/city-finance-ranking.png"/>`,
       class: 'navbar-brand cityLogo',
-      href: '/rankings/home',
+      href: '/cfr/home',
     },
     {
       name: 'Dashboard',
@@ -98,7 +98,7 @@ export class NavbarComponent {
         name: `Review XVI FC`,
         link: '/admin/xvi-fc-review',
       },
-      // (this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && { name: `Rankings'22 Dashboard`, href: '/rankings/review-rankings-ulbform' }),
+      // (this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && { name: `Rankings'22 Dashboard`, href: '/cfr/review-rankings-ulbform' }),
       // (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: 'Users', href: '/user/list/ULB' }),
     ];
   }
@@ -155,7 +155,7 @@ export class NavbarComponent {
     // if (type == '15th_Fc') {
     //   this._router.navigateByUrl("/fc_grant");
     // } else if (type == 'ranking') {
-    //   this._router.navigateByUrl("/rankings/login");
+    //   this._router.navigateByUrl("/cfr/login");
     // } else if (type == 'logout') {
     this.authService.loginLogoutCheck.next(false);
     // this.newCommonService.setFormStatus2223.next(false);

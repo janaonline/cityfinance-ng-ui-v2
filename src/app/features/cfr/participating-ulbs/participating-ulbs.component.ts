@@ -31,17 +31,17 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
-      url: '/rankings/home',
+      url: '/cfr/home',
       class: ''
     },
     {
       label: 'Participated States & UT ',
-      url: '/rankings/participated-states-ut',
+      url: '/cfr/participated-states-ut',
       class: ''
     },
     {
       label: 'Participated ULBs',
-      url: '/rankings/participated-ulbs',
+      url: '/cfr/participated-ulbs',
       class: 'disabled'
     },
 

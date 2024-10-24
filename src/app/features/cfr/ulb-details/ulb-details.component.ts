@@ -37,11 +37,11 @@ export class UlbDetailsComponent implements OnInit {
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
-      url: '/rankings/home'
+      url: '/cfr/home'
     },
     {
       label: 'Top rankings',
-      url: '/rankings/top-rankings'
+      url: '/cfr/top-rankings'
     }
   ];
 
@@ -60,7 +60,7 @@ export class UlbDetailsComponent implements OnInit {
   ngOnInit(): void {
     this.breadcrumbLinks.push({
       label: 'ULB details',
-      url: `/rankings/ulb/${this.ulbId}`,
+      url: `/cfr/ulb/${this.ulbId}`,
       class: 'disabled'
     });
 
