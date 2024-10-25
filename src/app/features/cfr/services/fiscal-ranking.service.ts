@@ -128,7 +128,7 @@ export class FiscalRankingService {
   public badCredentials: Subject<boolean> = new Subject<boolean>();
   public helper = new JwtHelperService();
   loginLogoutCheck = new Subject<any>();
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
   getfiscalUlbForm(dYr: any, id: any) {
     return this.http.get(`${environment.api.url}fiscal-ranking/view?design_year=${dYr}&ulb=${id}`);
   }
@@ -157,13 +157,6 @@ export class FiscalRankingService {
     return this.http.post(`${environment.api.url}captcha_validate`, {
       recaptcha,
     });
-  }
-  postFiscalRankingData(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/create-form`, body);
-  }
-
-  actionByMohua(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/action-by-mohua`, body);
   }
 
   getToken() {
@@ -257,5 +250,10 @@ export class FiscalRankingService {
 
   getBarchartData(ulbsString: any) {
     return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?${ulbsString}`);
+  }
+
+  getApiResponse(endPoints: string, params: any) {
+    // const params = { ulb };
+    return this.http.get(`${environment.api.url}${endPoints}`, { params });
   }
 }
