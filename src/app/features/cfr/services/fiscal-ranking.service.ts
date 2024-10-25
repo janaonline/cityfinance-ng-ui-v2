@@ -11,6 +11,9 @@ import { TableResponse } from './common-table.interface';
 import { environment } from '../../../../environments/environment';
 import { USER_TYPE } from '../../../core/models/user/userType';
 import { UserUtility } from '../../../core/util/user/user';
+// import { environment } from '../../../../environments/environment';
+// import { USER_TYPE } from '../../../core/models/user/userType';
+// import { UserUtility } from '../../../core/util/user/user';
 
 export enum StatusType {
   'notStarted' = 1,
@@ -25,7 +28,7 @@ export interface Table {
   id?: string;
   info?: string;
   endpoint?: string;
-  response: TableResponse;
+  response: TableResponse | null;
 }
 
 export interface MapData {
@@ -58,14 +61,14 @@ export interface FormWiseData {
 
 export interface TrackingHistoryData {
   srNo: number;
-  action: String;
-  Date: String;
+  action: string;
+  Date: string;
 }
 
 export interface TrackingHistoryResponse {
-  success: Boolean;
+  success: boolean;
   data: TrackingHistoryData[];
-  message: String;
+  message: string;
 }
 export interface FrFilter {
   label: string;
