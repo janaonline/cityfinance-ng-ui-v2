@@ -27,7 +27,7 @@ export class ParticipatingStateComponent implements OnInit {
   table: object | any = { response: null };
   isLoadingResults: boolean = false;
   skip: number = 0;
-  limit: number = 10;
+  limit: number = 100;
   colorCoding: any;
 
   constructor(private fiscalRankingService: FiscalRankingService) {

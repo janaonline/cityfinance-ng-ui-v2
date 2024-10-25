@@ -6,6 +6,7 @@ import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { MaterialModule } from '../../../material.module';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
+import { environment } from '../../../../environments/environment';
 // import { responseJson } from './res-json';
 // import { TableResponse } from '../services/common-table.interface';
 
@@ -31,7 +32,8 @@ export class MatCommonTableComponent implements OnChanges {
   @Input() isLoadingResults = false;
   @Input() pageSize = 10;
 
-  @Output() pageChange = new EventEmitter()
+  @Output() pageChange = new EventEmitter();
+  prefixUrl = ['dev', 'staging', 'prod'].includes(environment.environment) ? '/fc' : '';
 
   tableColumns: any[] = [];
   columnData: any[] = [];

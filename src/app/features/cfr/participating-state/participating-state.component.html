@@ -21,11 +21,8 @@
             </div>
           </ng-container>
           <ng-template class="map-con" #map>
-            <app-india-map
-              [colorCoding]="colorCoding"
-              label="% of Participation"
-              [colorDetails]="colorDetails"
-            ></app-india-map>
+            <app-india-map [colorCoding]="colorCoding" label="% of Participation"
+              [colorDetails]="colorDetails"></app-india-map>
           </ng-template>
         </div>
         <div class="com-sm-12 col-md-6">
@@ -33,12 +30,8 @@
             <!-- <app-common-table theme="white" [response]="table?.response" [classLists]="'scroll fixed-ui-tb'"
               (update)="onUpdate(table, $event)" [tableName]="'Participated State'">
             </app-common-table> -->
-            <app-mat-common-table
-              [response]="table.response"
-              [isLoadingResults]="isLoadingResults"
-              [isPagination]="true"
-              (pageChange)="pageChange($event)"
-            ></app-mat-common-table>
+            <app-mat-common-table [response]="table.response" [isLoadingResults]="isLoadingResults"
+              [isPagination]="false" (pageChange)="pageChange($event)"></app-mat-common-table>
           </div>
         </div>
       </div>
