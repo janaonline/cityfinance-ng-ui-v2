@@ -1,4 +1,4 @@
-import { Component, ViewChild, inject } from '@angular/core';
+import { Component, ViewChild, inject, OnInit } from '@angular/core';
 import { MaterialModule } from '../../../material.module';
 import { ReviewSubmitComponent } from '../../../features/xvi-fc-form/review-submit/review-submit.component';
 import { FormBuilder } from '@angular/forms';
@@ -17,7 +17,7 @@ import { first } from 'rxjs';
   templateUrl: './preview.component.html',
   styleUrl: './preview.component.scss',
 })
-export class PreviewComponent {
+export class PreviewComponent implements OnInit {
   formStatus!: string;
   isLoader: boolean = false;
   submittedFormStatuses = ['UNDER_REVIEW_BY_STATE'];
@@ -34,7 +34,7 @@ export class PreviewComponent {
     public approveRejectService: ApproveRejectFormService,
     // public formService: DynamicFormService,
     private route: ActivatedRoute,
-  ) {}
+  ) { }
 
   productId!: string;
 
@@ -54,7 +54,7 @@ export class PreviewComponent {
     return this.isReviewable(this.formStatus);
   }
 
-  isReviewable(formStatus: string): Boolean {
+  isReviewable(formStatus: string): boolean {
     const status = FORM_STATUSES[formStatus] || '';
     if (status && status.roles && status.roles.includes(this.loggedInUserDetails.role)) {
       return true;

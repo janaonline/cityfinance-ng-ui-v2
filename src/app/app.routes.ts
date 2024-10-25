@@ -40,6 +40,11 @@ export const routes: Routes = [
   //     canActivate: [MaintenanceGuard],
   // },
   {
+    path: 'cfr',
+    // loadComponent: () => import('./features/cfr/cfr-home/cfr-home.component').then((m) => m.CfrHomeComponent),
+    loadChildren: () => import('./features/cfr/cfr.routes').then((mod) => mod.CFR_ROUTES),
+  },
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },

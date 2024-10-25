@@ -1,14 +1,15 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild, OnInit } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 import { HttpEventType } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
-import swal from 'sweetalert';
+// import swal from 'sweetalert';
 import { FileService } from './file.service';
 import { FieldConfig } from '../../field.interface';
 import { DndDirective } from './dnd.directive';
 import { Subscription } from 'rxjs';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-file',
@@ -17,7 +18,7 @@ import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss',
 })
-export class FileComponent {
+export class FileComponent implements OnInit {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   progress = 50;
@@ -38,12 +39,9 @@ export class FileComponent {
     return `ulb/year/audited/ulbCode`;
   }
 
-  constructor(private fileService: FileService) {}
+  constructor(private fileService: FileService) { }
 
   ngOnInit() {
-    // console.log('----field file --', this.field);
-    // console.log('----parentField file --', this.parentField);
-    // console.log('----group file --', this.group);
     this.allowedFileTypeStr =
       this.field.allowedFileTypes?.map((e: string) => this.fileTypes[e])?.join(',') || '';
     this.readonly = this.parentField?.readonly || this.field?.readonly;
@@ -72,9 +70,7 @@ export class FileComponent {
   /**
    * handle file from browsing
    */
-  // fileBrowseHandler(files: any[]) {
   fileBrowseHandler(event: Event) {
-    // console.log('event-----', event);
 
     const files: FileList | null = (<HTMLInputElement>event.target).files;
     this.prepareFilesList(files);
@@ -87,34 +83,9 @@ export class FileComponent {
   deleteFile() {
     this.resetFileInput();
     this.currentFile = null;
-    // this.group.reset()
     this.group.get('file')?.reset();
-    // this.group.get(this.field.key)?.patchValue({ name: '', url: '' });
     if (this.s3Subscribe) this.s3Subscribe.unsubscribe();
-    // console.log('this.group.123', );
-    // console.log('this.group.', this.group);
   }
-
-  /**
-   * To be removed
-   * Simulate the upload process
-   */
-  // uploadFilesSimulator(index: number) {
-  //   setTimeout(() => {
-  //     if (index !== 0) {
-  //       return;
-  //     } else {
-  //       const progressInterval = setInterval(() => {
-  //         if (this.progress === 100) {
-  //           clearInterval(progressInterval);
-  //           this.uploadFilesSimulator(index + 1);
-  //         } else {
-  //           this.progress += 5;
-  //         }
-  //       }, 200);
-  //     }
-  //   }, 1000);
-  // }
 
   /**
    * Convert Files list to normal array list
@@ -133,23 +104,23 @@ export class FileComponent {
     this.uploadFileToS3();
   }
 
-  isValidFile(file: File): Boolean {
+  isValidFile(file: File): boolean {
     if (!file) return false;
 
     const fileExtension: any = file.name.split('.').pop();
     if (this.field.allowedFileTypes && !this.field.allowedFileTypes?.includes(fileExtension)) {
-      swal('Error', `Allowed file extensions: ${this.field.allowedFileTypes?.join(', ')}`, 'error');
+      Swal.fire('Error', `Allowed file extensions: ${this.field.allowedFileTypes?.join(', ')}`, 'error');
       return false;
     }
 
     if (file.size / 1024 / 1024 > this.maxFileSize) {
-      swal('File Limit Error', `Maximum ${this.maxFileSize} mb file can be allowed.`, 'error');
+      Swal.fire('File Limit Error', `Maximum ${this.maxFileSize} mb file can be allowed.`, 'error');
       return false;
     }
 
-    let isfileValid = this.fileService.checkSpcialCharInFileName(file);
+    const isfileValid = this.fileService.checkSpcialCharInFileName(file);
     if (isfileValid == false) {
-      swal(
+      Swal.fire(
         'Error',
         'File name has special characters ~`!#$%^&*+=[]\\\';,/{}|":<>?@ \nThese are not allowed in file name,please edit file name then upload.\n',
         'error',

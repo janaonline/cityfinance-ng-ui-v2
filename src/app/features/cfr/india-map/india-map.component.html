@@ -1,0 +1,8 @@
+<ng-container *ngIf="isMapInProgress; else map">
+    <app-pre-loader></app-pre-loader>
+    <app-pre-loader></app-pre-loader>
+    <app-pre-loader></app-pre-loader>
+</ng-container>
+<ng-template class="map-con" #map>
+    <div class="stateMap analytics-map" [id]="'mapidd' + randomNumber"></div>
+</ng-template>

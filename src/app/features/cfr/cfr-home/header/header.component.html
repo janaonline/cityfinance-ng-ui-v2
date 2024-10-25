@@ -1,0 +1,21 @@
+<section [ngStyle]="{'zoom': getRatio}">
+    <div class="container">
+        <h1 class="mb-4">City Finance Ranking 2022</h1>
+        <h3 class="fw-bold mb-4">Ranking of ULBs based on their financial health</h3>
+        <div class="mt-4 pt-4">
+            <a routerLink="/cfr/top-rankings" class="btn btn-orange m-auto d-flex btn-lg px-5"
+                style="width: fit-content;">
+                View Ranking
+            </a>
+            <div class="btn btn-orange m-auto d-flex" style="width: fit-content;">
+                <mat-icon>download</mat-icon> Download Report
+            </div>
+        </div>
+        <div class="container main-content">
+            <div class="explore-more" (click)="scrollOnePageDown()">
+                <p>Explore more</p>
+                <img width="100px" src="./assets/fiscal-rankings/down-arrow.gif">
+            </div>
+        </div>
+    </div>
+</section>

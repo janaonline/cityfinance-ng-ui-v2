@@ -1,6 +1,6 @@
 export const environment = {
   api: {
-    url: 'http://localhost:8080/api/v1/',
+    url: 'https://dev.cityfinance.in/api/v1/',
   },
   environment: 'dev',
   isProduction: false,

@@ -1,0 +1,30 @@
+.dotted-card {
+  background-color: #2f1803ad;
+  color: orange;
+  border: 1px dashed orange;
+  border-radius: 10px;
+  padding: 20px;
+  align-items: center;
+  @media screen and (min-width: 1200px) {
+    min-width: 275px;
+  }
+  .content {
+    text-align: left;
+    .download-link {
+      text-decoration: none;
+      color: inherit;
+      color: orange;
+      display: flex;
+      font-size: 14px;
+      mat-icon {
+        font-size: 20px;
+      }
+    }
+    p {
+      color: white;
+      font-size: 18px;
+      margin: 0;
+      padding: 5px;
+    }
+  }
+}
