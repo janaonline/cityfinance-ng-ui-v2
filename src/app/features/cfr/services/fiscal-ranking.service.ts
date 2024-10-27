@@ -1,19 +1,15 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Subject } from 'rxjs';
-import { JwtHelperService } from '@auth0/angular-jwt';
 import { KeyValue } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-// import { TableResponse } from "./common-table/common-table.component";
+import { JwtHelperService } from '@auth0/angular-jwt';
+import { Subject } from 'rxjs';
 
 import { map } from 'rxjs/operators';
-import { TableResponse } from './common-table.interface';
 import { environment } from '../../../../environments/environment';
 import { USER_TYPE } from '../../../core/models/user/userType';
 import { UserUtility } from '../../../core/util/user/user';
-// import { environment } from '../../../../environments/environment';
-// import { USER_TYPE } from '../../../core/models/user/userType';
-// import { UserUtility } from '../../../core/util/user/user';
+import { TableResponse } from './common-table.interface';
 
 export enum StatusType {
   'notStarted' = 1,
