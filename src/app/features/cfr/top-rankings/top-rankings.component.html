@@ -33,12 +33,13 @@
           <app-statewise-map [markers]="markers"></app-statewise-map>
         </ng-container>
         <ng-template #mapLoader>
-          <div class="map-loader">
+          <app-pre-loader></app-pre-loader>
+          <!-- <div class="map-loader">
             <div class="spinner-border" role="status">
               <span class="sr-only">Loading...</span>
             </div>
             <p class="text-center">Loading map</p>
-          </div>
+          </div> -->
         </ng-template>
         <!-- <div class="btn-group btn-group-sm btn-group-lg mt-3 text-center d-block" role="group"
           aria-label="Basic radio toggle button group">
