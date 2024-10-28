@@ -1,21 +1,10 @@
-import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { FeatureCollection, Geometry } from 'geojson';
 import * as L from 'leaflet';
-// import { IState } from 'src/app/models/state/state';
-// import { USER_TYPE } from 'src/app/models/user/userType';
-// import { NationalMapSectionService } from 'src/app/pages/new-dashbords/national/national-map-section/national-map-section.service';
-// import { ILeafletStateClickEvent } from 'src/app/shared/components/re-useable-heat-map/models/leafletStateClickEvent';
-// import { NationalHeatMapComponent } from 'src/app/shared/components/re-useable-heat-map/national-heat-map/national-heat-map.component';
-// import { IStateULBCovered } from 'src/app/shared/models/stateUlbConvered';
-// import { CommonService } from 'src/app/shared/services/common.service';
-// import { GeographicalService } from 'src/app/shared/services/geographical/geographical.service';
-// import { GlobalLoaderService } from 'src/app/shared/services/loaders/global-loader.service';
-// import { MapUtil } from 'src/app/util/map/mapUtil';
-// import { IMapCreationConfig } from 'src/app/util/map/models/mapCreationConfig';
-// import { FiscalRankingService, MapData } from '../fiscal-ranking.service';
+
 import { IState } from '../../../core/models/state/state';
 import { IStateULBCovered } from '../../../core/models/stateUlbConvered';
 import { USER_TYPE } from '../../../core/models/user/userType';
@@ -375,9 +364,12 @@ export class IndiaMapComponent extends NationalHeatMapComponent implements After
     this.markers.forEach(marker => {
       L.marker([marker.lat, marker.lng], {
         icon: new L.Icon({
-          iconUrl: 'assets/images/maps/simple_blue_dot.png',
-          iconSize: [10, 10],
-          iconAnchor: [6, 6],
+          // iconUrl: 'assets/images/maps/simple_blue_dot.png',
+          // iconSize: [10, 10],
+          // iconAnchor: [6, 6],
+          iconUrl: 'assets/images/maps/map-marker.png',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
         }), title: marker.name
       }).addTo(this.nationalLevelMap);
     });

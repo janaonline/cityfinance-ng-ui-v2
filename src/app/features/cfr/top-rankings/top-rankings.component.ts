@@ -1,17 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-// import { FiscalRankingService, Table } from '../fiscal-ranking.service';
-// import { ColorDetails, Marker } from '../india-map/india-map.component';
-import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
-import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
-import { CommonModule } from '@angular/common';
-import { MaterialModule } from '../../../material.module';
 import { AngularMultiSelectModule } from 'angular2-multiselect-dropdown';
+import { MaterialModule } from '../../../material.module';
+import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { CommonTableComponent } from '../common-table/common-table.component';
-import { ColorDetails, IndiaMapComponent, Marker } from '../india-map/india-map.component';
+import { IndiaMapComponent, Marker } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
+import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
+import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
+import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
 
 @Component({
   selector: 'app-top-rankings',
@@ -26,6 +25,7 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
     CommonTableComponent,
     IndiaMapComponent,
     MatCommonTableComponent,
+    StatewiseMapComponent
   ],
 })
 export class TopRankingsComponent implements OnInit {
@@ -82,15 +82,6 @@ export class TopRankingsComponent implements OnInit {
     classes: 'homepage-stateList custom-class',
   };
 
-  colorCoding: any;
-  colorDetails: ColorDetails[] = [
-    { color: '#E5E5E5', text: '0', min: 0, max: 0 },
-    { color: '#FFF281', text: '1 to 2', min: 1, max: 2 },
-    { color: '#FFDB5B', text: '3 to 5', min: 3, max: 5 },
-    { color: '#F8A70B', text: '6 to 8', min: 6, max: 8 },
-    { color: '#31CFF1', text: '9 to 10', min: 9, max: 10 },
-    { color: '#04DC00', text: '10+', min: 11, max: Infinity },
-  ];
   // TODO: skip to be added.
   isLoadingResults: boolean = false;
   limit: number = 10;
@@ -145,7 +136,7 @@ export class TopRankingsComponent implements OnInit {
   }
 
   loadData() {
-    this.loadTopRankedStatesMap();
+    // this.loadTopRankedStatesMap();
     this.loadTopRankedUlbs(this.table, '');
   }
 
@@ -173,12 +164,6 @@ export class TopRankingsComponent implements OnInit {
   loadStates() {
     this.fiscalRankingService.states().subscribe((res: any) => {
       this.stateList = res.data;
-    });
-  }
-
-  loadTopRankedStatesMap() {
-    this.fiscalRankingService.topRankedStates(this.params).subscribe((res: any) => {
-      this.colorCoding = res?.states?.map((state: any) => ({ ...state, percentage: state.count }));
     });
   }
 
