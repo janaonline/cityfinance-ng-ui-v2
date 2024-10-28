@@ -34,7 +34,7 @@ jobs:
 
       - name: Archive build folder
         run: |
-          zip -r ${{ env.ZIP_FILE }} dist
+          zip -r ${{ env.ZIP_FILE }} dist/ appspec.yml scripts/
 
       - uses: aws-actions/configure-aws-credentials@v1
         with:
