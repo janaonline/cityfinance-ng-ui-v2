@@ -1,21 +1,18 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, HostListener, Renderer2 } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { DownloadPopupComponent } from './download-popup/download-popup.component';
-import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { CommonModule } from '@angular/common';
-import { FiscalRankingService } from '../services/fiscal-ranking.service';
-import { HeaderComponent } from './header/header.component';
-import { VideosPopupComponent } from './videos-popup/videos-popup.component';
-import { GuidelinesPopupComponent } from './guidelines-popup/guidelines-popup.component';
-import { UnionMinistorComponent } from './union-ministor/union-ministor.component';
+import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { ScrollToTopComponent } from '../../../shared/components/scroll-to-top/scroll-to-top.component';
-import { FooterComponent } from './footer/footer.component';
-import { RankingCategoriesComponent } from './ranking-categories/ranking-categories.component';
+import { FiscalRankingService } from '../services/fiscal-ranking.service';
 import { AssessmentParametersComponent } from './assessment-parameters/assessment-parameters.component';
-import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
+import { FooterComponent } from './footer/footer.component';
 import { GuidelinesBrochureVideoComponent } from './guidelines-brochure-video/guidelines-brochure-video.component';
+import { GuidelinesPopupComponent } from './guidelines-popup/guidelines-popup.component';
+import { HeaderComponent } from './header/header.component';
+import { RankingCategoriesComponent } from './ranking-categories/ranking-categories.component';
+import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
+import { UnionMinistorComponent } from './union-ministor/union-ministor.component';
+import { VideosPopupComponent } from './videos-popup/videos-popup.component';
 
 @Component({
   selector: 'app-cfr-home',

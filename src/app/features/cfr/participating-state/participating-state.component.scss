@@ -26,14 +26,14 @@
 }
 
 .bg-img {
-  background-image: url('/src/assets/fiscal-rankings/participedUlb.png');
+  background-image: url('/assets/fiscal-rankings/participedUlb.png');
   background-position: right bottom;
   background-repeat: no-repeat;
   background-size: 100%;
 }
 
 .map-bg {
-  background-image: url('/src/assets/fiscal-rankings/map-background.png');
+  background-image: url('/assets/fiscal-rankings/map-background.png');
   background-repeat: no-repeat;
   background-size: cover;
   padding: 0 0 100px 0;
@@ -48,6 +48,7 @@
   vertical-align: top;
   align-items: flex-start;
 }
+
 .form-h-fr {
   font-family: Montserrat;
   font-size: 26px;

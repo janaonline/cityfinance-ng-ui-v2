@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
 import { CommonTableComponent } from '../common-table/common-table.component';
-import { IndiaMapComponent } from '../india-map/india-map.component';
+import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import Swal from 'sweetalert2';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
   selector: 'app-participating-state',
@@ -18,6 +19,7 @@ import Swal from 'sweetalert2';
     CommonTableComponent,
     IndiaMapComponent,
     MatCommonTableComponent,
+    PreLoaderComponent
   ],
 })
 export class ParticipatingStateComponent implements OnInit {
@@ -27,8 +29,8 @@ export class ParticipatingStateComponent implements OnInit {
   table: object | any = { response: null };
   isLoadingResults: boolean = false;
   skip: number = 0;
-  limit: number = 10;
-  colorCoding: any;
+  limit: number = 100;
+  colorCoding: any[] = [];
 
   constructor(private fiscalRankingService: FiscalRankingService) {
     this.getFilters();
@@ -113,7 +115,7 @@ export class ParticipatingStateComponent implements OnInit {
     },
   ];
 
-  colorDetails: any[] = [
+  colorDetails: ColorDetails[] = [
     { color: '#06668F', text: '76%-100%', min: 76, max: 100 },
     { color: '#0B8CC3', text: '51%-75%', min: 51, max: 75 },
     { color: '#73BFE0', text: '26%-50%', min: 26, max: 50 },

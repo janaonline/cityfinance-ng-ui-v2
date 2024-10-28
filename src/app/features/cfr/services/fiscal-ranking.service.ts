@@ -1,19 +1,15 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Subject } from 'rxjs';
-import { JwtHelperService } from '@auth0/angular-jwt';
 import { KeyValue } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-// import { TableResponse } from "./common-table/common-table.component";
+import { JwtHelperService } from '@auth0/angular-jwt';
+import { Subject } from 'rxjs';
 
 import { map } from 'rxjs/operators';
-import { TableResponse } from './common-table.interface';
 import { environment } from '../../../../environments/environment';
 import { USER_TYPE } from '../../../core/models/user/userType';
 import { UserUtility } from '../../../core/util/user/user';
-// import { environment } from '../../../../environments/environment';
-// import { USER_TYPE } from '../../../core/models/user/userType';
-// import { UserUtility } from '../../../core/util/user/user';
+import { TableResponse } from './common-table.interface';
 
 export enum StatusType {
   'notStarted' = 1,
@@ -128,7 +124,7 @@ export class FiscalRankingService {
   public badCredentials: Subject<boolean> = new Subject<boolean>();
   public helper = new JwtHelperService();
   loginLogoutCheck = new Subject<any>();
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
   getfiscalUlbForm(dYr: any, id: any) {
     return this.http.get(`${environment.api.url}fiscal-ranking/view?design_year=${dYr}&ulb=${id}`);
   }
@@ -157,13 +153,6 @@ export class FiscalRankingService {
     return this.http.post(`${environment.api.url}captcha_validate`, {
       recaptcha,
     });
-  }
-  postFiscalRankingData(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/create-form`, body);
-  }
-
-  actionByMohua(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/action-by-mohua`, body);
   }
 
   getToken() {
@@ -257,5 +246,10 @@ export class FiscalRankingService {
 
   getBarchartData(ulbsString: any) {
     return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?${ulbsString}`);
+  }
+
+  getApiResponse(endPoints: string, params: any) {
+    // const params = { ulb };
+    return this.http.get(`${environment.api.url}${endPoints}`, { params });
   }
 }
