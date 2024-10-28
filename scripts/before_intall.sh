@@ -1,6 +1,7 @@
 #!/bin/bash
 # Before install
 
-if [ -f /var/www/html/cityfinance/cityfinancev2/appspec.yml ]; then
-  rm /var/www/html/cityfinance/cityfinancev2/appspec.yml
+if [ -d /var/www/html/cityfinance/cityfinancev2 ]; then
+  echo "Deleting /var/www/html/cityfinance/cityfinancev2..."
+  rm -rf /var/www/html/cityfinance/cityfinancev2
 fi
