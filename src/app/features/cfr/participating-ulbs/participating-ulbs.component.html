@@ -23,9 +23,9 @@
     <div class="row justify-content-center mb-4 p-4">
       <div class="col-md-10">
         <div class="mx-auto">
-          <div class="card fl-card">
+          <div class="card fl-card p-4">
             <div class="card-body">
-              <div class="row mb-4">
+              <div class="row">
                 <div class="col-6 text-start common-cls fl-label">Filter by :</div>
                 <div class="col-6 text-end">
                   <button class="btn color-orange btn-outline" (click)="resetFilter()">
@@ -35,7 +35,7 @@
               </div>
               <div class="row">
                 <!-- State type filter -->
-                <div class="col-4 mb-4">
+                <div class="col-4">
                   <div class="filter-heading common-cls">Population Category</div>
                   <div class="filer">
                     <select class="form-select" aria-label="populationBucket" [(ngModel)]="populationBucket"
@@ -47,7 +47,7 @@
                   </div>
                 </div>
                 <!-- ULB Participation -->
-                <div class="col-4 mb-4">
+                <div class="col-4">
                   <div class="filter-heading common-cls">ULB Participation</div>
                   <div class="filer">
                     <select class="form-select" aria-label="ulbParticipation" [(ngModel)]="ulbParticipation"
