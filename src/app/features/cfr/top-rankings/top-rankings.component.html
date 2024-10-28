@@ -4,13 +4,8 @@
       <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
     </div>
     <div class="col-3 mt-2 pd-top">
-      <input
-        type="text"
-        readonly
-        class="form-control cursor-pointer px-4 py-3"
-        placeholder="Search for any ULB"
-        (click)="openSearch()"
-      />
+      <input type="text" readonly class="form-control cursor-pointer px-4 py-3" placeholder="Search for any ULB"
+        (click)="openSearch()" />
     </div>
   </div>
 </div>
@@ -32,13 +27,8 @@
       <div class="col-md-5 p-3">
         <ng-container *ngIf="!isLoadingResults; else mapLoader">
           <app-india-map *ngIf="selectedMap === 'topUlbs'" [markers]="markers"> </app-india-map>
-          <app-india-map
-            *ngIf="selectedMap === 'rankHolders'"
-            [colorCoding]="colorCoding"
-            [identifier]="'top-ranking'"
-            [colorDetails]="colorDetails"
-            label="Number of rank holding ULBs in each state"
-          >
+          <app-india-map *ngIf="selectedMap === 'rankHolders'" [colorCoding]="colorCoding" [identifier]="'top-ranking'"
+            [colorDetails]="colorDetails" label="Number of rank holding ULBs in each state">
           </app-india-map>
         </ng-container>
         <ng-template #mapLoader>
@@ -49,31 +39,14 @@
             <p class="text-center">Loading map</p>
           </div>
         </ng-template>
-        <div
-          class="btn-group btn-group-sm btn-group-lg mt-3 text-center d-block"
-          role="group"
-          aria-label="Basic radio toggle button group"
-        >
-          <input
-            type="radio"
-            class="btn-check"
-            name="map-filter"
-            id="topUlbs"
-            autocomplete="off"
-            [(ngModel)]="selectedMap"
-            [value]="'topUlbs'"
-          />
+        <div class="btn-group btn-group-sm btn-group-lg mt-3 text-center d-block" role="group"
+          aria-label="Basic radio toggle button group">
+          <input type="radio" class="btn-check" name="map-filter" id="topUlbs" autocomplete="off"
+            [(ngModel)]="selectedMap" [value]="'topUlbs'" />
           <label class="btn btn-outline-primary" for="topUlbs">Top ULBs</label>
 
-          <input
-            type="radio"
-            class="btn-check"
-            name="map-filter"
-            id="rankHolders"
-            autocomplete="off"
-            [(ngModel)]="selectedMap"
-            [value]="'rankHolders'"
-          />
+          <input type="radio" class="btn-check" name="map-filter" id="rankHolders" autocomplete="off"
+            [(ngModel)]="selectedMap" [value]="'rankHolders'" />
           <label class="btn btn-outline-primary" for="rankHolders">ULB Rank Holders</label>
         </div>
       </div>
@@ -87,12 +60,8 @@
             <div class="form-group col-md-4">
               <div class="input-group inp-grp">
                 <div class="w-100">
-                  <angular2-multiselect
-                    class="expo-drp-in"
-                    [data]="stateList"
-                    formControlName="stateData"
-                    [settings]="dropdownSettings"
-                  >
+                  <angular2-multiselect class="expo-drp-in" [data]="stateList" formControlName="stateData"
+                    [settings]="dropdownSettings">
                   </angular2-multiselect>
                 </div>
               </div>
@@ -108,30 +77,16 @@
           </div>
         </div>
 
-        <div
-          class="btn-group btn-group-sm custom-btn-group btn-group-lg mt-3 text-center d-block"
-          role="group"
-          aria-label="Basic radio toggle button group"
-        >
+        <div class="btn-group btn-group-sm custom-btn-group btn-group-lg mt-3 text-center d-block mb-2" role="group"
+          aria-label="Basic radio toggle button group">
           <ng-container *ngFor="let type of types">
-            <input
-              type="radio"
-              class="btn-check"
-              formControlName="category"
-              [id]="type?.key"
-              [value]="type?.key"
-            />
+            <input type="radio" class="btn-check" formControlName="category" [id]="type?.key" [value]="type?.key" />
             <label class="btn btn-outline-primary" [for]="type?.key">{{ type?.label }}</label>
           </ng-container>
         </div>
 
-        <app-mat-common-table
-          *ngIf="table?.response"
-          [response]="table.response"
-          [isLoadingResults]="isLoadingResults"
-          [isPagination]="true"
-          (pageChange)="pageChange($event)"
-        ></app-mat-common-table>
+        <app-mat-common-table *ngIf="table?.response" [response]="table.response" [isLoadingResults]="isLoadingResults"
+          [isPagination]="true" (pageChange)="pageChange($event)"></app-mat-common-table>
       </form>
     </div>
   </div>
