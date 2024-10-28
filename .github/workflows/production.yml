@@ -10,10 +10,43 @@ on:
 
 env:
   AWS_REGION: ap-south-1
-  S3BUCKET: cf-code-deployment
+  S3BUCKET: cityfinance-frontend
+  ZIP_FILE: cityfinancev2
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.9.0]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Angular project
+        run: npm run build
+
+      - name: Archive build folder
+        run: |
+          zip -r ${{ env.ZIP_FILE }} dist
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Copy to s3 bucket
+        run: |
+          aws s3 cp ${{ env.ZIP_FILE }} s3://${{ env.S3BUCKET }}/
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -28,4 +61,4 @@ jobs:
       - run: |
           echo "Deploying branch ${{ env.GITHUB_REF }} to ${{ github.event.inputs.environment }}"
           commit_hash=`git rev-parse HEAD`
-          aws deploy create-deployment --application-name CF-CodeDeployment-Application --deployment-group-name CF-DeploymentGroup-Frontend --github-location repository=$GITHUB_REPOSITORY,commitId=$commit_hash --ignore-application-stop-failures
+          aws deploy create-deployment --application-name CF-CodeDeployment-Application --deployment-group-name CF-DeploymentGroup-Frontend --s3-location bucket=cityfinance-frontend,bundleType=zip,key=${{ env.ZIP_FILE }} \ --ignore-application-stop-failures
