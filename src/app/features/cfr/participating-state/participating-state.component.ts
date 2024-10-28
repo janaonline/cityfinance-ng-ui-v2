@@ -1,12 +1,13 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import Swal from 'sweetalert2';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
-import Swal from 'sweetalert2';
-import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
+import { FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
+import { StatewiseMapComponent } from "../statewise-map/statewise-map.component";
 
 @Component({
   selector: 'app-participating-state',
@@ -19,7 +20,8 @@ import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-lo
     CommonTableComponent,
     IndiaMapComponent,
     MatCommonTableComponent,
-    PreLoaderComponent
+    PreLoaderComponent,
+    StatewiseMapComponent
   ],
 })
 export class ParticipatingStateComponent implements OnInit {
@@ -29,7 +31,7 @@ export class ParticipatingStateComponent implements OnInit {
   table: object | any = { response: null };
   isLoadingResults: boolean = false;
   skip: number = 0;
-  limit: number = 100;
+  limit: number = 10;
   colorCoding: any[] = [];
 
   constructor(private fiscalRankingService: FiscalRankingService) {

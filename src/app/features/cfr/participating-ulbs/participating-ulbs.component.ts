@@ -1,12 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FrFilter, Filter, FiscalRankingService, Table } from '../services/fiscal-ranking.service';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, } from '@angular/router';
+import { Filter, FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
 
+import Swal from 'sweetalert2';
+import { MaterialModule } from '../../../material.module';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { CommonTableComponent } from '../common-table/common-table.component';
-import { MaterialModule } from '../../../material.module';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
-import Swal from 'sweetalert2';
 @Component({
   selector: 'app-participating-ulbs',
   templateUrl: './participating-ulbs.component.html',
@@ -14,7 +14,7 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [CommonTableComponent, MaterialModule, BreadcrumbComponent, MatCommonTableComponent],
 })
-export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
+export class ParticipatingUlbsComponent implements OnInit {
   stateId!: string;
   limit: number = 10;
   skip: number = 0;
@@ -81,10 +81,6 @@ export class ParticipatingUlbsComponent implements OnInit, OnDestroy {
     // this.ulbParticipation = this.ulbParticipationFilter[0]?.value;
     // this.ulbRankingStatus = this.ulbRankingStatusFilter[0]?.value;
     this.getTableData(this.table, '');
-  }
-
-  ngOnDestroy() {
-    this.routerSubs.unsubscribe();
   }
 
   pageChange(event: any) {
