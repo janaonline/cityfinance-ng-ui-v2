@@ -1,25 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
-import { ColorDetails, IndiaMapComponent } from '../../india-map/india-map.component';
-import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
-import { FiscalRankingService, Table } from '../../services/fiscal-ranking.service';
-import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
-import { responseJson } from './res-json';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
+import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.component';
+import { FiscalRankingService } from '../services/fiscal-ranking.service';
 
 @Component({
-  selector: 'app-ulbs-in-india',
-  templateUrl: './ulbs-in-india.component.html',
-  styleUrls: ['./ulbs-in-india.component.scss'],
+  selector: 'app-statewise-map',
   standalone: true,
-  imports: [CommonModule, PreLoaderComponent, IndiaMapComponent, MatCommonTableComponent,
-    RouterModule, StatewiseMapComponent]
-
+  imports: [IndiaMapComponent, PreLoaderComponent, CommonModule],
+  templateUrl: './statewise-map.component.html',
+  styleUrl: './statewise-map.component.scss'
 })
-export class UlbsInIndiaComponent implements OnInit {
+export class StatewiseMapComponent implements OnInit {
 
   @Input() data: any;
+  @Input() markers: any[] = [];
 
   isLoadingResults: boolean = false;
 
@@ -27,10 +22,8 @@ export class UlbsInIndiaComponent implements OnInit {
   ulbParticipation: string = 'All';
   ulbRankingStatus: string = 'All';
 
-  table: Table = {} as Table;
-  skip: number = 0;
-  limit: number = 100;
   colorCoding: any[] = [];
+  limit = 100;
 
   colorDetails: ColorDetails[] = [
     { color: '#06668F', text: '76%-100%', min: 76, max: 100 },
@@ -45,9 +38,7 @@ export class UlbsInIndiaComponent implements OnInit {
 
 
   ngOnInit(): void {
-    //  this.getStateWiseForm();
     this.getStateData();
-    this.ulbResponse = responseJson; // TODO: get response from api
   }
 
   getStateData() {
@@ -57,7 +48,7 @@ export class UlbsInIndiaComponent implements OnInit {
       // stateType: this.stateType,
       // ulbParticipationFilter: this.ulbParticipation,
       // ulbRankingStatusFilter: this.ulbRankingStatus,
-      skip: this.skip,
+      // skip: this.skip,
       limit: this.limit,
     };
     const endpoint = `scoring-fr/participated-state`;
