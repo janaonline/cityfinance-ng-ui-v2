@@ -26,9 +26,9 @@ export class StatewiseMapComponent implements OnInit {
   limit = 100;
 
   colorDetails: ColorDetails[] = [
-    { color: '#06668F', text: '76%-100%', min: 76, max: 100 },
-    { color: '#0B8CC3', text: '51%-75%', min: 51, max: 75 },
-    { color: '#73BFE0', text: '26%-50%', min: 26, max: 50 },
+    { color: '#06668F', text: '76%-100%', min: 75, max: 100 },
+    { color: '#0B8CC3', text: '51%-75%', min: 50, max: 75 },
+    { color: '#73BFE0', text: '26%-50%', min: 25, max: 50 },
     { color: '#BCE2F2', text: '1%-25%', min: 1, max: 25 },
     { color: '#E5E5E5', text: '0%', min: 0, max: 0 },
   ];
@@ -51,7 +51,8 @@ export class StatewiseMapComponent implements OnInit {
       // skip: this.skip,
       limit: this.limit,
     };
-    const endpoint = `scoring-fr/participated-state`;
+    // const endpoint = `scoring-fr/participated-state`;
+    const endpoint = `scoring-fr/participated-state-map`;
     this.fiscalRankingService
       .getApiResponse(
         endpoint,
