@@ -5,6 +5,7 @@ import { TopRankingsComponent } from './top-rankings/top-rankings.component';
 import { UlbDetailsComponent } from './ulb-details/ulb-details.component';
 import { ParticipatingUlbsComponent } from './participating-ulbs/participating-ulbs.component';
 import { AssessmentParameterComponent } from './assessment-parameter/assessment-parameter.component';
+import { MapComponent } from './map/map.component';
 
 export const CFR_ROUTES: Route[] = [
   { path: '', component: CfrHomeComponent },
@@ -64,5 +65,8 @@ export const CFR_ROUTES: Route[] = [
   },
   {
     path: 'participated-ulbs/:stateId', component: ParticipatingUlbsComponent
+  },
+  {
+    path: 'map', component: MapComponent
   },
 ];

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, Input, NgZone, OnInit, Output } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
@@ -16,20 +16,20 @@ import * as L from 'leaflet';
 // import { MapUtil } from 'src/app/util/map/mapUtil';
 // import { IMapCreationConfig } from 'src/app/util/map/models/mapCreationConfig';
 // import { FiscalRankingService, MapData } from '../fiscal-ranking.service';
-import { MaterialModule } from '../../../material.module';
-import { NationalHeatMapComponent } from '../../../shared/components/re-useable-heat-map/national-heat-map/national-heat-map.component';
-import { MapUtil } from '../../../core/util/map/mapUtil';
-import { IStateULBCovered } from '../../../core/models/stateUlbConvered';
-import { FiscalRankingService, MapData } from '../services/fiscal-ranking.service';
-import { USER_TYPE } from '../../../core/models/user/userType';
 import { IState } from '../../../core/models/state/state';
-import { ILeafletStateClickEvent } from '../../../shared/components/re-useable-heat-map/models/leafletStateClickEvent';
+import { IStateULBCovered } from '../../../core/models/stateUlbConvered';
+import { USER_TYPE } from '../../../core/models/user/userType';
 import { CommonService } from '../../../core/services/common.service';
 import { GeographicalService } from '../../../core/services/geographical/geographical.service';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
-import { NationalMapSectionService } from '../services/national-map-section.service';
+import { MapUtil } from '../../../core/util/map/mapUtil';
 import { IMapCreationConfig } from '../../../core/util/map/models/mapCreationConfig';
+import { MaterialModule } from '../../../material.module';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
+import { ILeafletStateClickEvent } from '../../../shared/components/re-useable-heat-map/models/leafletStateClickEvent';
+import { NationalHeatMapComponent } from '../../../shared/components/re-useable-heat-map/national-heat-map/national-heat-map.component';
+import { FiscalRankingService, MapData } from '../services/fiscal-ranking.service';
+import { NationalMapSectionService } from '../services/national-map-section.service';
 
 export interface ColorDetails {
   color: string,
@@ -51,7 +51,7 @@ export interface Marker {
   standalone: true,
   imports: [MaterialModule, NationalHeatMapComponent, PreLoaderComponent]
 })
-export class IndiaMapComponent extends NationalHeatMapComponent implements OnInit {
+export class IndiaMapComponent extends NationalHeatMapComponent implements AfterViewInit {
   @Output() onStateChange = new EventEmitter();
   @Input() label: string = '';
   @Input() identifier: string = '';
@@ -126,7 +126,11 @@ export class IndiaMapComponent extends NationalHeatMapComponent implements OnIni
     this.fetchStateList();
   }
 
-  ngOnInit(): void {
+  // ngAfterViewInit(): void {
+
+  // }
+
+  ngAfterViewInit(): void {
     this.initializeNationalLevelMapLayer(this.stateLayers);
     this.createNationalLevelMap(
       this.StatesJSONForMapCreation,
@@ -254,7 +258,7 @@ export class IndiaMapComponent extends NationalHeatMapComponent implements OnIni
     };
     let map: L.Map;
     ({ stateLayers: this.stateLayers, map } =
-      MapUtil?.createDefaultNationalMap(configuration));
+      MapUtil.createDefaultNationalMap(configuration));
 
     this.nationalLevelMap = map;
     this.createControls(this.nationalLevelMap);
