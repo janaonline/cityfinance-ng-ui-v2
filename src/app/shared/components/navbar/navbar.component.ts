@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, OnInit, AfterViewInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { AccessChecker } from '../../../core/util/access/accessChecker';
@@ -19,7 +19,7 @@ import { USER_TYPE } from '../../../core/models/user/userType';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit, AfterViewInit {
   private accessChecker = new AccessChecker();
   isProd: boolean = false;
   canViewUserList: boolean = false;
@@ -31,12 +31,13 @@ export class NavbarComponent {
   btnName = 'Login for 15th FC Grants';
   sticky: boolean = false;
   isCollapsed = true;
+  prefixUrl = environment.prefixUrl;
 
   menus: any = [
     {
       name: `<img src="./assets/images/city-finance-ranking.png"/>`,
       class: 'navbar-brand cityLogo',
-      href: '/cfr/home',
+      href: `${this.prefixUrl}/cfr/home`,
     },
     {
       name: 'Dashboard',
@@ -129,7 +130,7 @@ export class NavbarComponent {
   }
 
   removeSessionItem() {
-    let postLoginNavigation = sessionStorage.getItem('postLoginNavigation'),
+    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation'),
       sessionID = sessionStorage.getItem('sessionID');
     sessionStorage.clear();
     sessionStorage.setItem('sessionID', sessionID || '');

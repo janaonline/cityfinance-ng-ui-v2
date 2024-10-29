@@ -2,6 +2,7 @@ export const environment = {
   api: {
     url: 'http://localhost:8080/api/v1/',
   },
+  prefixUrl: '',
   environment: 'local',
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',

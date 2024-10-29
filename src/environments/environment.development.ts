@@ -2,6 +2,7 @@ export const environment = {
   api: {
     url: 'https://dev.cityfinance.in/api/v1/',
   },
+  prefixUrl: '',
   environment: 'dev_local',
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',
