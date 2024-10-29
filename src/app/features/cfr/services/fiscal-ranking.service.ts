@@ -124,7 +124,7 @@ export class FiscalRankingService {
   public badCredentials: Subject<boolean> = new Subject<boolean>();
   public helper = new JwtHelperService();
   loginLogoutCheck = new Subject<any>();
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
   getfiscalUlbForm(dYr: any, id: any) {
     return this.http.get(`${environment.api.url}fiscal-ranking/view?design_year=${dYr}&ulb=${id}`);
   }
@@ -163,19 +163,27 @@ export class FiscalRankingService {
     return !this.helper.isTokenExpired(this.getToken());
   }
 
-  downloadFile(blob: any, type: string, filename: string): string {
-    const url = window.URL.createObjectURL(blob); // <-- work with blob directly
+  downloadFile(blob: any, type: string, filename: string): void {
+    try {
+      // Create an object URL for the blob
+      const url = window.URL.createObjectURL(blob);
 
-    // create hidden dom element (so it works in all browsers)
-    const a = document.createElement('a');
-    a.setAttribute('style', 'display:none;');
-    document.body.appendChild(a);
+      // Create a hidden anchor element
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
 
-    // create file, attach to hidden element and open hidden element
-    a.href = url;
-    a.download = filename;
-    a.click();
-    return url;
+      // Append the anchor to the body, trigger the download, and remove the anchor
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Release the object URL to free memory
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading the file:', error);
+    }
   }
 
   getTableResponse(
@@ -251,5 +259,11 @@ export class FiscalRankingService {
   getApiResponse(endPoints: string, params: any) {
     // const params = { ulb };
     return this.http.get(`${environment.api.url}${endPoints}`, { params });
+  }
+
+  downloadRankings() {
+    return this.http.get(`${environment.api.url}scoring-fr/top-ranked-ulbs-dump`, {
+      responseType: 'blob',
+    });
   }
 }
