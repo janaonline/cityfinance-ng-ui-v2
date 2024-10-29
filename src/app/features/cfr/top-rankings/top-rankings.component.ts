@@ -11,6 +11,7 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
   selector: 'app-top-rankings',
@@ -25,7 +26,8 @@ import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.c
     CommonTableComponent,
     IndiaMapComponent,
     MatCommonTableComponent,
-    StatewiseMapComponent
+    StatewiseMapComponent,
+    PreLoaderComponent,
   ],
 })
 export class TopRankingsComponent implements OnInit {
@@ -173,6 +175,25 @@ export class TopRankingsComponent implements OnInit {
       height: '100%',
       maxWidth: '100%',
       panelClass: 'search-page',
+    });
+  }
+
+  // TODO: Add a popup/ toster.
+  downloadRankings() {
+    this.isLoadingResults = true;
+    this.fiscalRankingService.downloadRankings().subscribe({
+      next: (blob) => {
+        this.fiscalRankingService.downloadFile(
+          blob,
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'CFR_Top_Ranked_Ulbs.xlsx',
+        );
+        this.isLoadingResults = false;
+      },
+      error: (error) => {
+        console.error('Failed to download: ', error);
+        this.isLoadingResults = false;
+      },
     });
   }
 }

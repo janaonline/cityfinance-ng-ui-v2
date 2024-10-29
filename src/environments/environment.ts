@@ -18,6 +18,7 @@ export const environment = {
   api: {
     url: baseUrl + '/api/v1/',
   },
+  prefixUrl: '/fc',
   environment: env,
   isProduction,
   versionCheckURL: baseUrl + '/version.json',
