@@ -27,7 +27,7 @@ import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-lo
     IndiaMapComponent,
     MatCommonTableComponent,
     StatewiseMapComponent,
-    PreLoaderComponent
+    PreLoaderComponent,
   ],
 })
 export class TopRankingsComponent implements OnInit {
@@ -175,6 +175,25 @@ export class TopRankingsComponent implements OnInit {
       height: '100%',
       maxWidth: '100%',
       panelClass: 'search-page',
+    });
+  }
+
+  // TODO: Add a popup/ toster.
+  downloadRankings() {
+    this.isLoadingResults = true;
+    this.fiscalRankingService.downloadRankings().subscribe({
+      next: (blob) => {
+        this.fiscalRankingService.downloadFile(
+          blob,
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'CFR_Top_Ranked_Ulbs.xlsx',
+        );
+        this.isLoadingResults = false;
+      },
+      error: (error) => {
+        console.error('Failed to download: ', error);
+        this.isLoadingResults = false;
+      },
     });
   }
 }
