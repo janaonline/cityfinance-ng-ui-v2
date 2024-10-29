@@ -46,7 +46,7 @@ export class TopRankingsComponent implements OnInit {
   types = [
     {
       key: 'overAllRank',
-      label: 'All',
+      label: 'Overall',
     },
     {
       key: 'resourceMobilizationRank',
