@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { ColorDetails, IndiaMapComponent } from '../../india-map/india-map.component';
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
 import { FiscalRankingService, Table } from '../../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
-import { responseJson } from './res-json';
 
 @Component({
   selector: 'app-ulbs-in-india',
@@ -47,9 +46,15 @@ export class UlbsInIndiaComponent implements OnInit {
   ngOnInit(): void {
     //  this.getStateWiseForm();
     this.getStateData();
-    this.ulbResponse = responseJson; // TODO: get response from api
+  } 
+  
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['data']) {
+      this.data.data = changes['data'].currentValue.bucketWiseTop10UlbsArr;
+      this.data.columns = changes['data'].currentValue.columns;
+    }
   }
-
+  
   getStateData() {
     this.colorCoding = [];
     this.isLoadingResults = true;

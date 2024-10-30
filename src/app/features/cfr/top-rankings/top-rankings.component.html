@@ -56,7 +56,7 @@
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
             <button
               type="button"
-              class="btn btn-outline-cfPrimary me-2 py-2"
+              class="btn btn-outline-cfPrimary"
               matTooltip="Download Rankings"
               (click)="downloadRankings()"
             >
@@ -65,7 +65,7 @@
             </button>
           </div>
 
-          <div class="d-flex justify-content-between align-items-center gap-4 mt-4">
+          <div class="d-flex justify-content-between gap-4 mt-4">
             <div class="d-flex w-100 justify-content-between flex-column">
               <h6>State Name</h6>
               <angular2-multiselect
@@ -101,7 +101,11 @@
               [id]="type?.key"
               [value]="type?.key"
             />
-            <label class="btn btn-sm btn-outline-cfPrimary" [for]="type?.key">
+            <label 
+              class="btn btn-sm btn-outline-cfPrimary text-truncate"
+              matTooltip="{{type?.label}}"
+              [for]="type?.key"
+            >
               {{ type?.label }}
             </label>
           </ng-container>
