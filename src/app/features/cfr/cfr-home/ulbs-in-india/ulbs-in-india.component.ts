@@ -50,8 +50,8 @@ export class UlbsInIndiaComponent implements OnInit {
   
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['data']) {
-      this.data.data = changes['data'].currentValue.bucketWiseTop10UlbsArr;
-      this.data.columns = changes['data'].currentValue.columns;
+      this.data.data = changes['data'].currentValue.bucketWiseTop10Ulbs.bucketWiseTop10UlbsArr;
+      this.data.columns = changes['data'].currentValue.bucketWiseTop10Ulbs.columns;
     }
   }
   
