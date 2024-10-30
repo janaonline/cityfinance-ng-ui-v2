@@ -43,36 +43,38 @@ export class CfrHomeComponent implements OnInit {
 
   loadData() {
     this.fiscalRankingService.dashboard().subscribe(({ data }: any) => {
-      this.data = data;
-      // const topCategoryUlbLength = Math.max(...Object.values(this.data.bucketWiseUlb).map((item: any[]) => item.length))
-      const topCategoryUlbLength = 4;
-      const columns = [
-        {
-          "label": "4M+",
-          "key": "populationBucket1"
-        },
-        {
-          "label": "1M-4M",
-          "key": "populationBucket2"
-        },
-        {
-          "label": "100K-1M",
-          "key": "populationBucket3"
-        },
-        {
-          "label": "<100K",
-          "key": "populationBucket4"
-        }
-      ];
-      this.data['topCategoryUlb'] = {
-        "columns": columns,
-        "data": Array.from({ length: topCategoryUlbLength }).map((_, index) => (
-          columns.reduce((obj, column) => ({
-            ...obj,
-            [column.key]: this.data?.bucketWiseUlb?.[column.key]?.[index]?.name
-          }), {})
-        ))
-      };
+      this.data = data.bucketWiseTop10Ulbs;
+      // console.log("cfr home---->", this.data);
+      
+      // // const topCategoryUlbLength = Math.max(...Object.values(this.data.bucketWiseUlb).map((item: any[]) => item.length))
+      // const topCategoryUlbLength = 4;
+      // const columns = [
+      //   {
+      //     "label": "4M+",
+      //     "key": "populationBucket1"
+      //   },
+      //   {
+      //     "label": "1M-4M",
+      //     "key": "populationBucket2"
+      //   },
+      //   {
+      //     "label": "100K-1M",
+      //     "key": "populationBucket3"
+      //   },
+      //   {
+      //     "label": "<100K",
+      //     "key": "populationBucket4"
+      //   }
+      // ];
+      // this.data['topCategoryUlb'] = {
+      //   "columns": columns,
+      //   "data": Array.from({ length: topCategoryUlbLength }).map((_, index) => (
+      //     columns.reduce((obj, column) => ({
+      //       ...obj,
+      //       [column.key]: this.data?.bucketWiseUlb?.[column.key]?.[index]?.name
+      //     }), {})
+      //   ))
+      // };
     });
   }
 
