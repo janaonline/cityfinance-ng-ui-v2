@@ -19,8 +19,17 @@ type ActiveFilter =
 export class PerformanceFourMComponent implements OnChanges {
   @Input() data: any;
 
-  parameterkey: 'overAll' | 'resourceMobilization' | 'expenditurePerformance' | 'fiscalGovernance' =
-    'overAll';
+  parameterkey: string = 'overAll';
+  populationCategory: number = 1;
+  ulb: any;
+  selectedRank!: string;
+  parameterlabel: any = {
+    overAll: 'OverAll',
+    resourceMobilization: 'Resource Mobilization',
+    expenditurePerformance: 'Expenditure Performance',
+    fiscalGovernance: 'Fiscal Governance',
+  };
+
   parameters: any = [
     { key: 'overAll', code: 'OA', label: 'Over All', maxScore: 1200 },
     { key: 'resourceMobilization', code: 'RM', label: 'Resource Mobilization', maxScore: 600 },
@@ -28,34 +37,24 @@ export class PerformanceFourMComponent implements OnChanges {
     { key: 'fiscalGovernance', code: 'FG', label: 'Fiscal Governance', maxScore: 300 },
   ];
 
-  activeFilter: ActiveFilter = 'overAll';
-  populationCategory!: PopulationCategory;
-
-  ulb: any;
-  selectedRank!: string;
-
-  get activeFilterName() {
-    return {
-      overAll: 'Over All',
-      resourceMobilization: 'Resource Mobilization',
-      expenditurePerformance: 'Expenditure Performance',
-      fiscalGovernance: 'Fiscal Governance',
-    }[this.activeFilter];
-  }
+  popCat: any = {
+    1: '4M+',
+    2: '1M-4M',
+    3: '100K to 1M',
+    4: '<100K',
+  };
 
   constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['data']?.currentValue) this.updateInputDataDependencies();
+    console.log(changes['data']?.currentValue);
+    if (changes['data']?.currentValue) this.updatePortalData('overAll');
   }
 
-  updatePortalData() {
-    console.log('laj;fje');
-  }
-
-  updateInputDataDependencies() {
+  updatePortalData(key: string) {
+    this.parameterkey = key;
     this.ulb = this.data?.ulb;
-    this.selectedRank = this.ulb?.[this.activeFilter]?.rank;
-    this.populationCategory = getPopulationCategory(this.ulb?.population);
+    this.selectedRank = this.ulb?.[key]?.rank;
+    this.populationCategory = this.popCat[this.ulb?.populationBucket];
   }
 }
