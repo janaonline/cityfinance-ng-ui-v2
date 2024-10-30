@@ -1,13 +1,5 @@
-import { Component, Input, SimpleChanges, OnChanges } from '@angular/core';
-// import { getPopulationCategory, PopulationCategory } from 'src/app/util/common';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
-import { getPopulationCategory, PopulationCategory } from '../../../../core/util/common';
-
-type ActiveFilter =
-  | 'overAll'
-  | 'resourceMobilization'
-  | 'expenditurePerformance'
-  | 'fiscalGovernance';
 
 @Component({
   selector: 'app-performance-four-m',
@@ -29,14 +21,12 @@ export class PerformanceFourMComponent implements OnChanges {
     expenditurePerformance: 'Expenditure Performance',
     fiscalGovernance: 'Fiscal Governance',
   };
-
   parameters: any = [
     { key: 'overAll', code: 'OA', label: 'Over All', maxScore: 1200 },
     { key: 'resourceMobilization', code: 'RM', label: 'Resource Mobilization', maxScore: 600 },
     { key: 'expenditurePerformance', code: 'EP', label: 'Expenditure Performance', maxScore: 300 },
     { key: 'fiscalGovernance', code: 'FG', label: 'Fiscal Governance', maxScore: 300 },
   ];
-
   popCat: any = {
     1: '4M+',
     2: '1M-4M',
