@@ -6,7 +6,6 @@ import { ColorDetails, IndiaMapComponent } from '../../india-map/india-map.compo
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
 import { FiscalRankingService, Table } from '../../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
-import { responseJson } from './res-json';
 
 @Component({
   selector: 'app-ulbs-in-india',
@@ -47,9 +46,9 @@ export class UlbsInIndiaComponent implements OnInit {
   ngOnInit(): void {
     //  this.getStateWiseForm();
     this.getStateData();
-    this.ulbResponse = responseJson; // TODO: get response from api
+    // this.ulbResponse = responseJson; // TODO: get response from api - Done in ngOnChange
   }
-
+  
   getStateData() {
     this.colorCoding = [];
     this.isLoadingResults = true;
