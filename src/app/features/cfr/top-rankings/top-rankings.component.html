@@ -50,7 +50,7 @@
       </div>
 
       <form class="col-md-7" [formGroup]="filter">
-        <div class="card p-4 mt-4 border border-secondary-subtle rounded">
+        <div class="card-clr p-4 mt-4 border border-secondary-subtle rounded">
           <div class="d-flex align-items-center justify-content-between">
             <p class="fw-bold">Explore Ranking across State and Population Category</p>
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
@@ -101,9 +101,9 @@
               [id]="type?.key"
               [value]="type?.key"
             />
-            <label 
+            <label
               class="btn btn-sm btn-outline-cfPrimary text-truncate"
-              matTooltip="{{type?.label}}"
+              matTooltip="{{ type?.label }}"
               [for]="type?.key"
             >
               {{ type?.label }}
