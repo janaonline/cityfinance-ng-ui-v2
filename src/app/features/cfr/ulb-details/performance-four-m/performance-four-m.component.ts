@@ -3,7 +3,11 @@ import { Component, Input, SimpleChanges, OnChanges } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 import { getPopulationCategory, PopulationCategory } from '../../../../core/util/common';
 
-type ActiveFilter = 'overAll' | 'resourceMobilization' | 'expenditurePerformance' | 'fiscalGovernance';
+type ActiveFilter =
+  | 'overAll'
+  | 'resourceMobilization'
+  | 'expenditurePerformance'
+  | 'fiscalGovernance';
 
 @Component({
   selector: 'app-performance-four-m',
@@ -13,8 +17,16 @@ type ActiveFilter = 'overAll' | 'resourceMobilization' | 'expenditurePerformance
   imports: [MaterialModule],
 })
 export class PerformanceFourMComponent implements OnChanges {
-
   @Input() data: any;
+
+  parameterkey: 'overAll' | 'resourceMobilization' | 'expenditurePerformance' | 'fiscalGovernance' =
+    'overAll';
+  parameters: any = [
+    { key: 'overAll', code: 'OA', label: 'Over All', maxScore: 1200 },
+    { key: 'resourceMobilization', code: 'RM', label: 'Resource Mobilization', maxScore: 600 },
+    { key: 'expenditurePerformance', code: 'EP', label: 'Expenditure Performance', maxScore: 300 },
+    { key: 'fiscalGovernance', code: 'FG', label: 'Fiscal Governance', maxScore: 300 },
+  ];
 
   activeFilter: ActiveFilter = 'overAll';
   populationCategory!: PopulationCategory;
@@ -22,21 +34,23 @@ export class PerformanceFourMComponent implements OnChanges {
   ulb: any;
   selectedRank!: string;
 
-
   get activeFilterName() {
     return {
       overAll: 'Over All',
       resourceMobilization: 'Resource Mobilization',
       expenditurePerformance: 'Expenditure Performance',
-      fiscalGovernance: 'Fiscal Governance'
+      fiscalGovernance: 'Fiscal Governance',
     }[this.activeFilter];
   }
 
-
-  constructor() { }
+  constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['data']?.currentValue) this.updateInputDataDependencies();
+  }
+
+  updatePortalData() {
+    console.log('laj;fje');
   }
 
   updateInputDataDependencies() {
@@ -44,5 +58,4 @@ export class PerformanceFourMComponent implements OnChanges {
     this.selectedRank = this.ulb?.[this.activeFilter]?.rank;
     this.populationCategory = getPopulationCategory(this.ulb?.population);
   }
-
 }
