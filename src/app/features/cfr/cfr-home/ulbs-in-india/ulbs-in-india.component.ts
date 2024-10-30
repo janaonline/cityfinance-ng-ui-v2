@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { ColorDetails, IndiaMapComponent } from '../../india-map/india-map.component';
@@ -46,7 +46,13 @@ export class UlbsInIndiaComponent implements OnInit {
   ngOnInit(): void {
     //  this.getStateWiseForm();
     this.getStateData();
-    // this.ulbResponse = responseJson; // TODO: get response from api - Done in ngOnChange
+  } 
+  
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['data']) {
+      this.data.data = changes['data'].currentValue.bucketWiseTop10UlbsArr;
+      this.data.columns = changes['data'].currentValue.columns;
+    }
   }
   
   getStateData() {
