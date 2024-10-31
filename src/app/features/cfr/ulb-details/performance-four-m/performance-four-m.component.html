@@ -8,8 +8,8 @@
     <div class="d-flex flex-column">
       <h4 class="fw-bold">
         National Rank&#58;
-        <span class="text-shadow text-cfPrimary fw-bold huge-font">{{ selectedRank }}</span>
-        <span class="text-shadow text-cfPrimary fw-bold"
+        <span class="text-shadow text-cfPrimary fw-bold huge-font">{{ selectedRank }}</span
+        ><span class="text-shadow text-cfPrimary fw-bold"
           >&#47;&nbsp;{{ data?.populationBucketUlbCount }}ULBs</span
         >
       </h4>
@@ -40,8 +40,8 @@
               </u>
             </p>
             <h3 class="fw-bold">
-              {{ ulb?.[parameter.key]?.score }}
-              <span class="fs-6">&#47;&nbsp;{{ parameter.maxScore }}</span>
+              {{ ulb?.[parameter.key]?.score
+              }}<span class="fs-6">&#47;&nbsp;{{ parameter.maxScore }}</span>
             </h3>
           </div>
         }
