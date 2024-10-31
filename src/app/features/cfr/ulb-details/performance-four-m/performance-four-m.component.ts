@@ -1,9 +1,5 @@
-import { Component, Input, SimpleChanges, OnChanges } from '@angular/core';
-// import { getPopulationCategory, PopulationCategory } from 'src/app/util/common';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
-import { getPopulationCategory, PopulationCategory } from '../../../../core/util/common';
-
-type ActiveFilter = 'overAll' | 'resourceMobilization' | 'expenditurePerformance' | 'fiscalGovernance';
 
 @Component({
   selector: 'app-performance-four-m',
@@ -13,36 +9,42 @@ type ActiveFilter = 'overAll' | 'resourceMobilization' | 'expenditurePerformance
   imports: [MaterialModule],
 })
 export class PerformanceFourMComponent implements OnChanges {
-
   @Input() data: any;
 
-  activeFilter: ActiveFilter = 'overAll';
-  populationCategory!: PopulationCategory;
-
+  parameterkey: string = 'overAll';
+  populationCategory: number = 1;
   ulb: any;
   selectedRank!: string;
+  parameterlabel: any = {
+    overAll: 'OverAll',
+    resourceMobilization: 'Resource Mobilization',
+    expenditurePerformance: 'Expenditure Performance',
+    fiscalGovernance: 'Fiscal Governance',
+  };
+  parameters: any = [
+    { key: 'overAll', code: 'OA', label: 'Over All', maxScore: 1200 },
+    { key: 'resourceMobilization', code: 'RM', label: 'Resource Mobilization', maxScore: 600 },
+    { key: 'expenditurePerformance', code: 'EP', label: 'Expenditure Performance', maxScore: 300 },
+    { key: 'fiscalGovernance', code: 'FG', label: 'Fiscal Governance', maxScore: 300 },
+  ];
+  popCat: any = {
+    1: '4M+',
+    2: '1M-4M',
+    3: '100K to 1M',
+    4: '<100K',
+  };
 
-
-  get activeFilterName() {
-    return {
-      overAll: 'Over All',
-      resourceMobilization: 'Resource Mobilization',
-      expenditurePerformance: 'Expenditure Performance',
-      fiscalGovernance: 'Fiscal Governance'
-    }[this.activeFilter];
-  }
-
-
-  constructor() { }
+  constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['data']?.currentValue) this.updateInputDataDependencies();
+    console.log(changes['data']?.currentValue);
+    if (changes['data']?.currentValue) this.updatePortalData('overAll');
   }
 
-  updateInputDataDependencies() {
+  updatePortalData(key: string) {
+    this.parameterkey = key;
     this.ulb = this.data?.ulb;
-    this.selectedRank = this.ulb?.[this.activeFilter]?.rank;
-    this.populationCategory = getPopulationCategory(this.ulb?.population);
+    this.selectedRank = this.ulb?.[key]?.rank;
+    this.populationCategory = this.popCat[this.ulb?.populationBucket];
   }
-
 }

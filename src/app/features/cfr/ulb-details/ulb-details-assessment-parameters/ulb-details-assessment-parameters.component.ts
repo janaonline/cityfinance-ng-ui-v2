@@ -1,7 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 import { CommonTableComponent } from '../../common-table/common-table.component';
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-ulb-details-assessment-parameters',
@@ -10,28 +11,32 @@ import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table
   standalone: true,
   imports: [MaterialModule, CommonTableComponent, MatCommonTableComponent],
 })
-export class UlbDetailsAssessmentParametersComponent {
+export class UlbDetailsAssessmentParametersComponent implements OnInit {
   @Input() tables: any;
 
-  activeFilter: 'resourceMobilization' | 'expenditurePerformance' | 'fiscalGovernance' =
-    'resourceMobilization';
+  filter: FormGroup;
+  tableData: any = {};
 
-  constructor() {}
+  parameters: any[] = [
+    { key: 'resourceMobilization', label: 'Resource Mobilization' },
+    { key: 'expenditurePerformance', label: 'Expenditure Performance' },
+    { key: 'fiscalGovernance', label: 'Fiscal Governance' },
+  ];
 
-  get footnotes() {
-    return this.activeFilter == 'fiscalGovernance'
-      ? `
-      Note:  <br />
-      For 10a &b, 'Yes' means the average time taken for the ULB to close their audit is less than 12 months in a financial year. If yes, the marks allotted are 25. 
-      <br />
-      For 11a & b, if the answer to this question is 'Yes', the ULB will be awarded 25 marks.
-    `
-      : '';
+  constructor(private fb: FormBuilder) {
+    this.filter = this.fb.group({ category: 'resourceMobilization' });
   }
 
-  get table() {
-    return {
-      response: this.tables?.[this.activeFilter],
-    };
+  ngOnInit(): void {
+    this.filter.get('category')?.valueChanges.subscribe((value) => {
+      this.tableData = this.tables?.[value];
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Check if `tables` has been initialized or updated
+    if (changes['tables'] && this.tables) {
+      this.tableData = this.tables[this.filter.get('category')?.value];
+    }
   }
 }
