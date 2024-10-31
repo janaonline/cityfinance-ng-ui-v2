@@ -93,39 +93,88 @@ export class ComparisonComponent implements OnChanges {
         })),
       },
       options: {
+        responsive: true,
         maintainAspectRatio: false,
-        scales: {
-          yAxes: [{
-            ticks: {
-              suggestedMin: this.suggestedMinMax,
-              suggestedMax: this.suggestedMinMax,
-              beginAtZero: true,
-              stepSize: 100
-            }
-          }],
-          xAxes: [{
-            gridLines: {
-              display: false
-            }
-          }],
+        layout: {
+          padding: 0
         },
-        legend: {
-          position: 'bottom',
-          display: true,
-          labels: {
-            boxWidth: 10
+        plugins: {
+          legend: {
+            labels: {
+              font: {
+                size: 12,
+                family: 'Montserrat'
+              }
+            }
           },
-          // onClick: function (event: any, legendItem: any) {
-          //   if (Object.keys(that.datasetsFilter).includes(legendItem.text)) {
-          //     that.datasetsFilter[legendItem.text] = legendItem?.hidden;
-          //   }
-          //   Chart.defaults.plugins.legend.onClick.call(this, event, legendItem, );
-          // }
+          tooltip: {
+            titleFont: {
+              size: 14,
+              family: 'Montserrat'
+            },
+            bodyFont: {
+              size: 12,
+              family: 'Montserrat'
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              font: {
+                size: 12,
+                family: 'Montserrat'
+              }
+            }
+          },
+          y: {
+            ticks: {
+              // min: this.suggestedMinMax,
+              // max: this.suggestedMinMax,
+              beginAtZero: true,
+              // stepSize: 100,
+              font: {
+                size: 12,
+                family: 'Montserrat'
+              }
+            }
+          },
         }
       }
+      // options: {
+      //   maintainAspectRatio: false,
+      //   scales: {
+      //     yAxes: [{
+      //       ticks: {
+      //         suggestedMin: this.suggestedMinMax,
+      //         suggestedMax: this.suggestedMinMax,
+      //         beginAtZero: true,
+      //         stepSize: 100
+      //       }
+      //     }],
+      //     xAxes: [{
+      //       gridLines: {
+      //         display: false
+      //       }
+      //     }],
+      //   },
+      //   legend: {
+      //     position: 'bottom',
+      //     display: true,
+      //     labels: {
+      //       boxWidth: 10
+      //     },
+      //     // onClick: function (event: any, legendItem: any) {
+      //     //   if (Object.keys(that.datasetsFilter).includes(legendItem.text)) {
+      //     //     that.datasetsFilter[legendItem.text] = legendItem?.hidden;
+      //     //   }
+      //     //   Chart.defaults.plugins.legend.onClick.call(this, event, legendItem, );
+      //     // }
+      //   }
+      // }
     } as any);
 
-    this.chart.canvas.style.height = '55vh';
+    // this.chart.canvas.style.height = '55vh';
   }
 
   openFilter() {
