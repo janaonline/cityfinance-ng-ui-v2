@@ -132,8 +132,9 @@ export class TopRankingsComponent implements OnInit {
   }
 
   pageChange(event: any) {
-    this.limit = event.pageSize;
-    this.skip = event.pageIndex * event.pageSize;
+    // console.log("event ~~~~~>", event);
+    this.params.limit = event.pageSize;
+    this.params.skip = event.pageIndex * event.pageSize;
     this.loadData();
   }
 
@@ -148,7 +149,9 @@ export class TopRankingsComponent implements OnInit {
       .topRankedUlbs(queryParams, table?.response?.columns, this.params)
       .subscribe({
         next: (res: any) => {
+          // console.log("api Response --->", res.tableData)
           this.table.response = res.tableData;
+          if (this.table.response) this.table.response.total = res.total;
           this.markers = res.mapDataTopUlbs;
           this.isLoadingResults = false;
         },
