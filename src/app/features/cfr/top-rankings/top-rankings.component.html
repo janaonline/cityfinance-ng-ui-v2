@@ -54,6 +54,8 @@
           <div class="d-flex align-items-center justify-content-between">
             <p class="fw-bold">Explore Ranking across State and Population Category</p>
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
+            @if (['ADMIN', 'MoHUA', 'ULB', 'STATE'].includes(userRole)) {
+              <!-- <p>{{userRole}}</p> -->
             <button
               type="button"
               class="btn btn-outline-cfPrimary"
@@ -61,8 +63,8 @@
               (click)="downloadRankings()"
             >
               <i class="bi bi-download"></i>
-              <!-- <span class="ms-2 d-none d-md-inline fw-bold">Download</span> -->
             </button>
+          }
           </div>
 
           <div class="d-flex justify-content-between gap-4 mt-4">

@@ -3,7 +3,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { AngularMultiSelectModule } from 'angular2-multiselect-dropdown';
+import { UserUtility } from '../../../core/util/user/user';
 import { MaterialModule } from '../../../material.module';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { IndiaMapComponent, Marker } from '../india-map/india-map.component';
@@ -11,7 +13,7 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
-import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
+
 
 @Component({
   selector: 'app-top-rankings',
@@ -31,6 +33,8 @@ import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-lo
   ],
 })
 export class TopRankingsComponent implements OnInit {
+  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();  
+  userRole: string = this.loggedInUserDetails.role;
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
