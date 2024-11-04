@@ -70,10 +70,12 @@ export class ComparisonComponent implements OnChanges {
   }
 
   getBarBackgroundColor(item: any) {
+    // console.log("item", item)
     if (item.type != 'bar') return item?.backgroundColor;
     const colors = this.ulbs.map((ulb: { populationBucket: any; }) => {
       return ulb?.populationBucket == this.ulb?.populationBucket ? item?.backgroundColor : 'red'
     });
+    // console.log("colors--->", colors);
     return colors;
   }
 
@@ -81,7 +83,9 @@ export class ComparisonComponent implements OnChanges {
     if (this.chart) this.chart.destroy();
     console.log('ulbs', this.ulbs);
     this.hasNonBucketUlb = this.ulbs.some((ulb: { populationBucket: any; }) => ulb?.populationBucket != this.ulb?.populationBucket);
+    // console.log("this.hasNonBucketUlb --->", this.hasNonBucketUlb);
     const that = this;
+    // console.log("dataset", this.graphData.datasets);
     this.chart = new Chart("bar-chart-with-line", {
       type: 'bar',
       data: {
@@ -189,6 +193,7 @@ export class ComparisonComponent implements OnChanges {
     }).afterClosed().subscribe(res => {
       if (res) {
         if (res == 'reset') return this.reset();
+        // console.log("res", res);
         this.ulbs = res.ulbs;
         this.datasetsFilter = res.datasetsFilter;
         this.getBarchartData();
@@ -200,8 +205,8 @@ export class ComparisonComponent implements OnChanges {
     console.log('reset');
     this.ulbs = [{ ...this.ulb, disabled: true }];
     this.datasetsFilter = {
-      "State Average": true,
-      "National Average": true,
+      // "State Average": true,
+      // "National Average": true,
       "Population Average": true,
     };
     this.getBarchartData();

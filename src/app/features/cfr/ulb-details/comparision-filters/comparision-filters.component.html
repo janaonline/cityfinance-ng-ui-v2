@@ -27,14 +27,17 @@
       <!-- <input type="search" [(ngModel)]="query" name="query" (blur)="closeMenu()" (input)="search()"
             class="form-control" placeholder="Search ULB..."> -->
       <!-- <div class="" #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="menu"></div> -->
+       <!-- <p>{{ulbs.length}}</p> -->
       <input
-        matInput
-        [formControl]="searchField"
-        [matAutocomplete]="auto"
-        class="form-control"
-        style="height: 3rem"
-        type="text"
-        placeholder="Search ULB..."
+      [attr.disabled]="ulbs.length >= 5"
+      [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''"
+      matInput
+      [formControl]="searchField"
+      [matAutocomplete]="auto"
+      class="form-control"
+      style="height: 3rem"
+      type="text"
+      placeholder="Search ULB..."
       />
       <!-- {{filteredOptions | json}} -->
 
@@ -64,7 +67,9 @@
     </mat-menu> -->
 
     <div class="my-2">
-      <p class="d-block p-0 m-0" *ngFor="let ulb of ulbs; let i = index">
+      <div class="mb-1"><span class="badge rounded-pill text-bg-cfSecondary p-2">{{ data?.ulb?.name }}</span></div>
+      <div class="d-block p-0 m-0" *ngFor="let ulb of ulbs; let i = index">
+        @if (ulb.name !== data?.ulb?.name) {
         <span
           class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
           [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }"
@@ -77,7 +82,8 @@
             >close
           </mat-icon> -->
         </span>
-      </p>
+      }
+      </div>
     </div>
     <div class="mt-3 text-center">
       <button type="submit" class="primary-btn-1 me-3">Apply</button>

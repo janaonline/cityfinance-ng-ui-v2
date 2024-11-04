@@ -54,6 +54,7 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.ulbs = this.data?.ulbs;
+    // console.log("filter size", this.ulbs.length);
     this.datasetsFilter = this.data?.datasetsFilter;
     this.searchSubject.pipe(debounceTime(this.debounceTimeMs)).subscribe((searchValue) => {
       // this.performSearch(searchValue);
@@ -83,6 +84,8 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
       } else {
         this.noDataFound = true;
       }
+      // this.ulb.name
+      // console.log("resp", resp["ulbs"])
       this.filteredOptions = resp["ulbs"]
     });
 
@@ -94,6 +97,7 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
       onlyUlb: true,
     };
     // return this.commonService.searchUlb(body, "ulb", this.stateId);
+    // console.log("matchingWord", matchingWord)
     return this.fiscalRankingService.searchUlb(matchingWord);
     //   .subscribe((res: any) => {
     //   this.searchResults = res.ulbs;
@@ -106,6 +110,7 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
   }
 
   onSearch(searchValue: string) {
+    // console.log("searchValue", searchValue);
     this.searchSubject.next(searchValue);
   }
 
@@ -125,6 +130,8 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
   async addUlb(ulb: any) {
 
     // const isAgree = true;
+
+    // console.log("from add function", ulb)
 
     if (this.data?.ulb.populationBucket != ulb.populationBucket) {
       Swal.fire({
@@ -164,7 +171,12 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
       //     },
       //   }
       // );
-    } else {
+    } else if (this.data?.ulb.name === ulb.name) {
+      Swal.fire({
+        title: "Oops!",
+        text: `${ulb?.name} already exists.`,
+      });
+    }  else {
       this.ulbs.push(ulb);
     }
 
