@@ -31,8 +31,8 @@ export class ComparisonComponent implements OnChanges {
   type = 'overAll';
 
   datasetsFilter: any = {
-    "State Average": true,
-    "National Average": true,
+    // "State Average": true,
+    // "National Average": true,
     "Population Average": true,
   }
 
