@@ -12,7 +12,7 @@ import { MaterialModule } from '../../../../material.module';
 })
 export class HeaderComponent {
 
-  @Input() participatedUlbCount: number = 2596;
+  @Input() rankedUlbCount: number = 0;
 
   constructor() { }
 
