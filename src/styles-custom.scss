@@ -19,6 +19,7 @@ $cfPrimary: map-get($theme-colors, "cfPrimary"); // Orange.
 $cfSecondary: map-get($theme-colors, "cfSecondary"); // Dark blue.
 
 .btn-outline-cfPrimary:hover {
+    background-color: $cfPrimary !important;
     color: white !important;
 }
 
