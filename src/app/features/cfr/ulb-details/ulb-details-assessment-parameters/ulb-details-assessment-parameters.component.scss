@@ -4,6 +4,9 @@ section {
   background-image: url('/assets/fiscal-rankings/assignment-parameters-background.png');
 }
 
+.btn-check:checked + .font-white{
+  color: white;
+}
 // $primary-color: #E67E15;
 
 // .btn-outline-primary {
