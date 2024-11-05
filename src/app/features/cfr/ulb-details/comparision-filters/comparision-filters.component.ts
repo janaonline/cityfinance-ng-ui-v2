@@ -171,7 +171,7 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
       //     },
       //   }
       // );
-    } else if (this.data?.ulb.name === ulb.name) {
+    } else if (this.data?.ulb?.name === ulb?.name) {
       Swal.fire({
         title: "Oops!",
         text: `${ulb?.name} already exists.`,

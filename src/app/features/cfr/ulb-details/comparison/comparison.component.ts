@@ -71,7 +71,7 @@ export class ComparisonComponent implements OnChanges {
 
   getBarBackgroundColor(item: any) {
     // console.log("item", item)
-    if (item.type != 'bar') return item?.backgroundColor;
+    if (item?.type != 'bar') return item?.backgroundColor;
     const colors = this.ulbs.map((ulb: { populationBucket: any; }) => {
       return ulb?.populationBucket == this.ulb?.populationBucket ? item?.backgroundColor : 'red'
     });
