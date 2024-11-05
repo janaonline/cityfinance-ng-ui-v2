@@ -1,12 +1,12 @@
-import { Component, Input, SimpleChanges, OnChanges, ViewChild, Output, EventEmitter } from '@angular/core';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
-import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
-import { MaterialModule } from '../../../material.module';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
+import { MatTableModule } from '@angular/material/table';
 import { environment } from '../../../../environments/environment';
+import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
+import { MaterialModule } from '../../../material.module';
 // import { responseJson } from './res-json';
 // import { TableResponse } from '../services/common-table.interface';
 
@@ -33,7 +33,7 @@ export class MatCommonTableComponent implements OnChanges {
   @Input() pageSize = 10;
 
   @Output() pageChange = new EventEmitter();
-  prefixUrl = ['dev', 'staging', 'prod'].includes(environment.environment) ? '/fc' : '';
+  prefixUrl = environment.prefixUrl;
 
   tableColumns: any[] = [];
   columnData: any[] = [];
