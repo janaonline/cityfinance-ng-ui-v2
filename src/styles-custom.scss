@@ -18,6 +18,11 @@ $theme-colors: map-merge($theme-colors, $custom-colors);
 $cfPrimary: map-get($theme-colors, "cfPrimary"); // Orange.
 $cfSecondary: map-get($theme-colors, "cfSecondary"); // Dark blue.
 
+.btn-outline-cfPrimary:hover {
+    background-color: $cfPrimary !important;
+    color: white !important;
+}
+
 // 5. Include remainder of required parts
 @import "../node_modules/bootstrap/scss/maps";
 @import "../node_modules/bootstrap/scss/mixins";

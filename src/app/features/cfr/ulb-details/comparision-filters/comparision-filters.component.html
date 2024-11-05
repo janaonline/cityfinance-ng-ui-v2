@@ -1,42 +1,63 @@
-<div class="d-flex justify-content-between">
-    <div><button class="btn btn-text btn-orange" (click)="reset()">Reset</button></div>
-    <h4 class="text-center">Filter</h4>
-    <div>
-        <mat-icon class="cursor-pointer" (click)="close()">close</mat-icon>
-    </div>
-</div>
+<section class="p-3 scroll-bar">
+  <div class="d-flex justify-content-between">
+    <h4 class="fw-bold">Filter</h4>
+    <mat-icon class="cursor-pointer" (click)="close()">close</mat-icon>
+  </div>
 
-<form (submit)="apply()">
+  <form (submit)="apply()">
     <div class="mt-4">
-        <div *ngFor="let key of filterKeys()" class="form-check">
-            <input class="form-check-input" type="checkbox" [ngModelOptions]="{standalone: true}"
-                [id]="key + 'Checkbox'" [(ngModel)]="datasetsFilter[key]">
-            <label class="form-check-label" [for]="key + 'Checkbox'">
-                {{ key }}
-            </label>
-        </div>
+      <div
+        *ngFor="let key of filterKeys()"
+        class="cursor-pointer border-bottom border-light-subtle my-2 p-2"
+      >
+        <input
+          class="me-3"
+          type="checkbox"
+          [ngModelOptions]="{ standalone: true }"
+          [id]="key + 'Checkbox'"
+          [(ngModel)]="datasetsFilter[key]"
+        />
+        <label class="form-check-label" [for]="key + 'Checkbox'">
+          {{ key }}
+        </label>
+      </div>
     </div>
-    <div class="mt-3">
-        <!-- <input type="search" [(ngModel)]="query" name="query" (blur)="closeMenu()" (input)="search()"
+
+    <div class="mt-4">
+      <!-- <input type="search" [(ngModel)]="query" name="query" (blur)="closeMenu()" (input)="search()"
             class="form-control" placeholder="Search ULB..."> -->
-        <!-- <div class="" #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="menu"></div> -->
-        <input matInput [formControl]="searchField" [matAutocomplete]="auto" class="form-control" type="text"
-            placeholder="Search ULB..." />
-        <!-- {{filteredOptions | json}} -->
+      <!-- <div class="" #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="menu"></div> -->
+       <!-- <p>{{ulbs.length}}</p> -->
+      <input
+      [readonly]="ulbs.length >= 5"
+      [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''"
+      matInput
+      [formControl]="searchField"
+      [matAutocomplete]="auto"
+      class="form-control"
+      style="height: 3rem"
+      type="text"
+      placeholder="Search ULB..."
+      />
+      <!-- {{filteredOptions | json}} -->
 
-        <mat-autocomplete #auto="matAutocomplete">
-            <span *ngFor="let option of filteredOptions; let i = index" style="direction: none">
-                <mat-option (click)="addUlb(option)" [ngClass]="{ firstCls: i === 0 }" [value]="option?.name">
-                    <span> {{ option?.name }}</span>
-                </mat-option>
-            </span>
+      <mat-autocomplete #auto="matAutocomplete">
+        <span *ngFor="let option of filteredOptions; let i = index" style="direction: none">
+          <mat-option
+            (click)="addUlb(option)"
+            [ngClass]="{ firstCls: i === 0 }"
+            [value]="option?.name"
+          >
+            <span> {{ option?.name }}</span>
+          </mat-option>
+        </span>
 
-            <mat-option *ngIf="noDataFound" class="text-danger firstCls">
-                Sorry, we can’t find anything related to your search. Try
-                searching for a city or state
-            </mat-option>
-        </mat-autocomplete>
-        <div id="emailHelp" class="form-text">Maximum of 5 ULBs can be compared at once</div>
+        <mat-option *ngIf="noDataFound" class="text-danger firstCls ff">
+          Sorry, we can&#39;t find anything related to your search. Try searching for a city or
+          state.
+        </mat-option>
+      </mat-autocomplete>
+      <div id="emailHelp" class="form-text ff">Maximum of 5 ULBs can be compared at once</div>
     </div>
 
     <!-- <mat-menu #menu="matMenu">
@@ -45,15 +66,28 @@
         </button>
     </mat-menu> -->
 
-
-    <div class="chip-container">
-        <span class="chip" [ngClass]="{'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket}"
-            *ngFor="let ulb of ulbs; let i = index;">
-            {{ ulb?.name }} <mat-icon *ngIf="!ulb?.disabled" class="cursor-pointer" (click)="removeUlb(i)">close
-            </mat-icon>
+    <div class="my-2">
+      <div class="mb-1"><span class="badge rounded-pill text-bg-cfSecondary p-2">{{ data?.ulb?.name }}</span></div>
+      <div class="d-block p-0 m-0" *ngFor="let ulb of ulbs; let i = index">
+        @if (ulb.name !== data?.ulb?.name) {
+        <span
+          class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
+          [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }"
+          >{{ ulb?.name }}&nbsp;<i
+            *ngIf="!ulb?.disabled"
+            (click)="removeUlb(i)"
+            class="bi bi-x fs-4 cursor-pointer"
+          ></i>
+          <!-- <mat-icon *ngIf="!ulb?.disabled" class="cursor-pointer" (click)="removeUlb(i)"
+            >close
+          </mat-icon> -->
         </span>
+      }
+      </div>
     </div>
     <div class="mt-3 text-center">
-        <button type="submit" class="btn btn-orange">Apply</button>
+      <button type="submit" class="primary-btn-1 me-3">Apply</button>
+      <button class="primary-btn-2" (click)="reset()">Reset</button>
     </div>
-</form>
+  </form>
+</section>
