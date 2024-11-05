@@ -1,94 +1,110 @@
-.nav-h {
-  color: #193369;
-  text-decoration: none;
+// .nav-h {
+//   color: #193369;
+//   text-decoration: none;
+// }
+
+// .qus {
+//   font-size: 20px;
+//   font-weight: 700;
+//   line-height: 24px;
+//   text-align: left;
+//   color: #193369;
+// }
+
+// .ans {
+//   font-size: 16px;
+//   font-weight: 500;
+//   line-height: 24px;
+//   text-align: left;
+//   color: #000000;
+// }
+
+// .qus-info {
+//   font-size: 28px;
+//   font-weight: 700;
+//   line-height: 34px;
+//   text-align: left;
+//   color: #193369;
+// }
+
+// .ind {
+//   font-size: 18px;
+//   font-weight: 500;
+//   line-height: 27px;
+//   text-align: left;
+//   color: #000000;
+// }
+
+// .ind-val {
+//   font-size: 26px;
+//   font-weight: 700;
+//   line-height: 32px;
+//   text-align: left;
+//   color: #000000;
+//   margin-bottom: 0.75rem;
+// }
+
+// .scor-met {
+//   font-size: 16px;
+//   font-weight: 500;
+//   line-height: 24px;
+//   text-align: left;
+//   color: #000000;
+// }
+
+// .w-80 {
+//   width: 80%;
+// }
+
+// .drp-down {
+//   padding: 2rem 0rem 0rem 2rem;
+// }
+
+// .form-select {
+//   font-size: 18px;
+//   font-weight: 500;
+// }
+
+// .common-pro-fm {
+//   font-family: Montserrat;
+//   letter-spacing: 0em;
+// }
+
+// .footnote {
+//   font-size: 13px;
+// }
+
+// .form-h-fr {
+//   font-family: Montserrat;
+//   font-size: 26px;
+//   font-weight: 700;
+//   line-height: 34px;
+//   letter-spacing: 0em;
+//   text-align: center;
+//   color: #000000;
+// }
+
+// .sub-def-fr {
+//   font-family: Montserrat;
+//   font-size: 16px;
+//   font-weight: 500;
+//   line-height: 24px;
+//   letter-spacing: 0em;
+//   text-align: center;
+// }
+
+* {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
 }
 
-.qus {
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 24px;
-  text-align: left;
-  color: #193369;
+p {
+  margin: 0;
+  padding: 0;
 }
 
-.ans {
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 24px;
-  text-align: left;
-  color: #000000;
-}
-
-.qus-info {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 34px;
-  text-align: left;
-  color: #193369;
-}
-
-.ind {
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 27px;
-  text-align: left;
-  color: #000000;
-}
-
-.ind-val {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 32px;
-  text-align: left;
-  color: #000000;
-  margin-bottom: 0.75rem;
-}
-
-.scor-met {
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 24px;
-  text-align: left;
-  color: #000000;
-}
-
-.w-80 {
-  width: 80%;
-}
-
-.drp-down {
-  padding: 2rem 0rem 0rem 2rem;
-}
-
-.form-select {
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.common-pro-fm {
-  font-family: Montserrat;
-  letter-spacing: 0em;
-}
-
-.footnote {
-  font-size: 13px;
-}
-
-.form-h-fr {
-  font-family: Montserrat;
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 34px;
-  letter-spacing: 0em;
-  text-align: center;
-  color: #000000;
-}
-
-.sub-def-fr {
-  font-family: Montserrat;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 24px;
-  letter-spacing: 0em;
-  text-align: center;
+.bg-img {
+  background-image: url(../../../../assets/fiscal-rankings/asse-para.svg);
+  background-repeat: no-repeat;
+  background-position: right bottom;
 }

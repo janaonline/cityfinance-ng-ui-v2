@@ -1,5 +1,5 @@
 <!-- <app-loader [show]="isApiInProgress && isEmptyObject(currentPageData)"></app-loader> -->
-<div class="container-fluid common-pro-fm" *ngIf="!isApiInProgress && !isEmptyObject(currentPageData)">
+<!-- <div class="container-fluid common-pro-fm" *ngIf="!isApiInProgress && !isEmptyObject(currentPageData)">
     <div class="row">
         <div class="col-sm-9">
             <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
@@ -98,4 +98,53 @@
             No data Found
         </div>
     </div>
+</div> -->
+
+<div class="container bg-img">
+  <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
+
+  <section class="d-flex justify-content-end">
+    <select
+      class="p-2 border rounded"
+      aria-label="assestParametersDropdown"
+      [(ngModel)]="pageKey"
+      (change)="setPageKey($event)"
+    >
+      <option *ngFor="let item of assestParameters?.data" [value]="item?.key">
+        {{ item?.label }}
+      </option>
+    </select>
+  </section>
+
+  <section class="text-center">
+    <h3 class="fs-3 fw-bold">{{ parameterData?.name }}</h3>
+    <p class="mt-3">{{ parameterData?.description }}</p>
+  </section>
+
+  <section class="d-flex gap-3 my-4">
+    <div>
+      <img src="{{ parameterData?.imgUrl }}" alt="" width="90%" height="90%" />
+    </div>
+    <div class="">
+      <div class="my-4">
+        <h6 class="fw-bold fs-3 text-cfSecondary mb-3">{{ parameterData?.scoringInfo?.header }}</h6>
+        <div class="row">
+          <div class="col-6 mb-2" *ngFor="let elem of parameterData?.scoringInfo?.items">
+            <p class="fw-bold fs-3">{{ elem?.value }}</p>
+            <p>{{ elem?.title }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-4">
+    <h4 class="fw-bold fs-4 mb-2">{{ parameterData?.scoringMethodology?.header }}</h4>
+    <!-- <p>{{ pageKey }}</p> -->
+    <app-mat-common-table
+      [response]="parameterData.table"
+      [isLoadingResults]="isLoadingResults"
+      [isPagination]="false"
+    ></app-mat-common-table>
+  </section>
 </div>
