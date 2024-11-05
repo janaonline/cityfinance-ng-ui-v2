@@ -29,7 +29,7 @@
       <!-- <div class="" #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="menu"></div> -->
        <!-- <p>{{ulbs.length}}</p> -->
       <input
-      [attr.disabled]="ulbs.length >= 5"
+      [readonly]="ulbs.length >= 5"
       [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''"
       matInput
       [formControl]="searchField"
