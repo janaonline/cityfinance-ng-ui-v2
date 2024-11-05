@@ -87,6 +87,21 @@ export class AssessmentParameterComponent implements OnInit {
     const selectedValue = selectElement.value;
     this.router.navigateByUrl(`cfr/assesst-parameters/${selectedValue}`);
     this.parameterData = this.apiResponse?.[selectedValue];
+
+    const parameterLabel = this.assestParameters.data.find(
+      (ele: any) => ele.key === selectedValue,
+    )!.label;
+    this.updateBreadCrumb(parameterLabel);
+  }
+
+  updateBreadCrumb(parameter: string) {
+    const currentPageLink = {
+      // label: `Ranking assessment parameter : ${this.currentPageData?.name}`,
+      label: `Ranking assessment parameter : ${parameter}`,
+      url: '/cfr/participated-states-ut',
+      class: 'disabled',
+    };
+    this.breadcrumbLinks.splice(1, 1, currentPageLink);
   }
 
   // setPageKey(data: any) {
@@ -101,13 +116,7 @@ export class AssessmentParameterComponent implements OnInit {
         this.apiResponse = res?.data;
         // this.allPageData = res?.data;
         // this.currentPageData = this.allPageData[this.pageKey];
-        const currentPageLink = {
-          // label: `Ranking assessment parameter : ${this.currentPageData?.name}`,
-          label: `Ranking assessment parameter : ${this.parameterData?.name}`,
-          url: '/cfr/participated-states-ut',
-          class: 'disabled',
-        };
-        this.breadcrumbLinks.splice(1, 1, currentPageLink);
+        this.updateBreadCrumb(this.parameterData?.name);
         this.isLoadingResults = false;
       },
       error: (error) => {
