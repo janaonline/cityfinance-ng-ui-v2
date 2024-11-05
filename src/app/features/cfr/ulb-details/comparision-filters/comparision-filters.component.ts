@@ -133,7 +133,7 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
 
     // console.log("from add function", ulb)
 
-    if (this.data?.ulb.populationBucket != ulb.populationBucket) {
+    if (this.data?.ulb?.populationBucket != ulb?.populationBucket) {
       Swal.fire({
         title: "Are you sure?",
         text: `${ulb?.name} does not fall under ${this.data?.bucketShortName} if you still want to compare, please click on apply button.`,
