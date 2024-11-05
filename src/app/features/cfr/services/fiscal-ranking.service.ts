@@ -239,7 +239,7 @@ export class FiscalRankingService {
   }
 
   states() {
-    return this.http.get(`${environment.api.url}scoring-fr/states`);
+    return this.http.get(`${environment.api.url}scoring-fr/states?limit=40`);
   }
 
   topRankedUlbs(queryParams: string, columns: any, params: any) {
