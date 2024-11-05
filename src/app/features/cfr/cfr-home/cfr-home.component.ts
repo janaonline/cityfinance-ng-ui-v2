@@ -43,7 +43,7 @@ export class CfrHomeComponent implements OnInit {
 
   loadData() {
     this.fiscalRankingService.dashboard().subscribe(({ data }: any) => {
-      this.data = data.bucketWiseTop10Ulbs;
+      this.data = data;
       // console.log("cfr home---->", this.data);
       
       // // const topCategoryUlbLength = Math.max(...Object.values(this.data.bucketWiseUlb).map((item: any[]) => item.length))

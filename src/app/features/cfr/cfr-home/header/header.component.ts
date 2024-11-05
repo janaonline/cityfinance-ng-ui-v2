@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
-import { MaterialModule } from '../../../../material.module';
+import { Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { MaterialModule } from '../../../../material.module';
 
 @Component({
   selector: 'app-header',
@@ -11,6 +11,8 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, MaterialModule, RouterModule],
 })
 export class HeaderComponent {
+
+  @Input() rankedUlbCount: number = 0;
 
   constructor() { }
 

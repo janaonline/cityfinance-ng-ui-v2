@@ -102,6 +102,10 @@ p {
   padding: 0.12rem;
 }
 
-.card {
+.card-clr {
   background-color: rgba(248, 250, 255, 1);
+}
+
+.btn-check:checked + .font-white{
+  color: white;
 }

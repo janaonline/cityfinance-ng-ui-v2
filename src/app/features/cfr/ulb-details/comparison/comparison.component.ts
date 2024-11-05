@@ -31,8 +31,8 @@ export class ComparisonComponent implements OnChanges {
   type = 'overAll';
 
   datasetsFilter: any = {
-    "State Average": true,
-    "National Average": true,
+    // "State Average": true,
+    // "National Average": true,
     "Population Average": true,
   }
 
@@ -70,10 +70,12 @@ export class ComparisonComponent implements OnChanges {
   }
 
   getBarBackgroundColor(item: any) {
-    if (item.type != 'bar') return item?.backgroundColor;
+    // console.log("item", item)
+    if (item?.type != 'bar') return item?.backgroundColor;
     const colors = this.ulbs.map((ulb: { populationBucket: any; }) => {
       return ulb?.populationBucket == this.ulb?.populationBucket ? item?.backgroundColor : 'red'
     });
+    // console.log("colors--->", colors);
     return colors;
   }
 
@@ -81,7 +83,9 @@ export class ComparisonComponent implements OnChanges {
     if (this.chart) this.chart.destroy();
     console.log('ulbs', this.ulbs);
     this.hasNonBucketUlb = this.ulbs.some((ulb: { populationBucket: any; }) => ulb?.populationBucket != this.ulb?.populationBucket);
+    // console.log("this.hasNonBucketUlb --->", this.hasNonBucketUlb);
     const that = this;
+    // console.log("dataset", this.graphData.datasets);
     this.chart = new Chart("bar-chart-with-line", {
       type: 'bar',
       data: {
@@ -93,39 +97,88 @@ export class ComparisonComponent implements OnChanges {
         })),
       },
       options: {
+        responsive: true,
         maintainAspectRatio: false,
-        scales: {
-          yAxes: [{
-            ticks: {
-              suggestedMin: this.suggestedMinMax,
-              suggestedMax: this.suggestedMinMax,
-              beginAtZero: true,
-              stepSize: 100
-            }
-          }],
-          xAxes: [{
-            gridLines: {
-              display: false
-            }
-          }],
+        layout: {
+          padding: 0
         },
-        legend: {
-          position: 'bottom',
-          display: true,
-          labels: {
-            boxWidth: 10
+        plugins: {
+          legend: {
+            labels: {
+              font: {
+                size: 12,
+                family: 'Montserrat'
+              }
+            }
           },
-          // onClick: function (event: any, legendItem: any) {
-          //   if (Object.keys(that.datasetsFilter).includes(legendItem.text)) {
-          //     that.datasetsFilter[legendItem.text] = legendItem?.hidden;
-          //   }
-          //   Chart.defaults.plugins.legend.onClick.call(this, event, legendItem, );
-          // }
+          tooltip: {
+            titleFont: {
+              size: 14,
+              family: 'Montserrat'
+            },
+            bodyFont: {
+              size: 12,
+              family: 'Montserrat'
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              font: {
+                size: 12,
+                family: 'Montserrat'
+              }
+            }
+          },
+          y: {
+            ticks: {
+              // min: this.suggestedMinMax,
+              // max: this.suggestedMinMax,
+              beginAtZero: true,
+              // stepSize: 100,
+              font: {
+                size: 12,
+                family: 'Montserrat'
+              }
+            }
+          },
         }
       }
+      // options: {
+      //   maintainAspectRatio: false,
+      //   scales: {
+      //     yAxes: [{
+      //       ticks: {
+      //         suggestedMin: this.suggestedMinMax,
+      //         suggestedMax: this.suggestedMinMax,
+      //         beginAtZero: true,
+      //         stepSize: 100
+      //       }
+      //     }],
+      //     xAxes: [{
+      //       gridLines: {
+      //         display: false
+      //       }
+      //     }],
+      //   },
+      //   legend: {
+      //     position: 'bottom',
+      //     display: true,
+      //     labels: {
+      //       boxWidth: 10
+      //     },
+      //     // onClick: function (event: any, legendItem: any) {
+      //     //   if (Object.keys(that.datasetsFilter).includes(legendItem.text)) {
+      //     //     that.datasetsFilter[legendItem.text] = legendItem?.hidden;
+      //     //   }
+      //     //   Chart.defaults.plugins.legend.onClick.call(this, event, legendItem, );
+      //     // }
+      //   }
+      // }
     } as any);
 
-    this.chart.canvas.style.height = '55vh';
+    // this.chart.canvas.style.height = '55vh';
   }
 
   openFilter() {
@@ -140,6 +193,7 @@ export class ComparisonComponent implements OnChanges {
     }).afterClosed().subscribe(res => {
       if (res) {
         if (res == 'reset') return this.reset();
+        // console.log("res", res);
         this.ulbs = res.ulbs;
         this.datasetsFilter = res.datasetsFilter;
         this.getBarchartData();
@@ -151,8 +205,8 @@ export class ComparisonComponent implements OnChanges {
     console.log('reset');
     this.ulbs = [{ ...this.ulb, disabled: true }];
     this.datasetsFilter = {
-      "State Average": true,
-      "National Average": true,
+      // "State Average": true,
+      // "National Average": true,
       "Population Average": true,
     };
     this.getBarchartData();

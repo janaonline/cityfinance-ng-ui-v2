@@ -4,8 +4,7 @@
   <section class="d-flex justify-content-end">
     <input
       type="text"
-      readonly
-      class="form-control cursor-pointer px-4 py-3 w-25"
+      class="form-control px-4 py-3 w-25"
       placeholder="Search for any ULB..."
       (click)="openSearch()"
     />
@@ -50,19 +49,21 @@
       </div>
 
       <form class="col-md-7" [formGroup]="filter">
-        <div class="card p-4 mt-4 border border-secondary-subtle rounded">
+        <div class="card-clr p-4 mt-4 border border-secondary-subtle rounded">
           <div class="d-flex align-items-center justify-content-between">
             <p class="fw-bold">Explore Ranking across State and Population Category</p>
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
-            <button
-              type="button"
-              class="btn btn-outline-cfPrimary"
-              matTooltip="Download Rankings"
-              (click)="downloadRankings()"
-            >
-              <i class="bi bi-download"></i>
-              <!-- <span class="ms-2 d-none d-md-inline fw-bold">Download</span> -->
-            </button>
+            @if (isLoggedIn && ['ADMIN', 'MoHUA', 'ULB', 'STATE'].includes(userRole)) {
+              <!-- <p>{{userRole}} | {{isLoggedIn}}</p> -->
+              <button
+                type="button"
+                class="btn btn-outline-cfPrimary"
+                matTooltip="Download Rankings"
+                (click)="downloadRankings()"
+              >
+                <i class="bi bi-download"></i>
+              </button>
+            }
           </div>
 
           <div class="d-flex justify-content-between gap-4 mt-4">
@@ -101,9 +102,9 @@
               [id]="type?.key"
               [value]="type?.key"
             />
-            <label 
-              class="btn btn-sm btn-outline-cfPrimary text-truncate"
-              matTooltip="{{type?.label}}"
+            <label
+              class="btn btn-sm btn-outline-cfPrimary font-white text-truncate"
+              matTooltip="{{ type?.label }}"
               [for]="type?.key"
             >
               {{ type?.label }}
