@@ -145,36 +145,15 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
       }).then((result) => {
         if (result.isConfirmed) {
           this.ulbs.push(ulb);
-          // Swal.fire({
-          //   title: "Deleted!",
-          //   text: "Your file has been deleted.",
-          //   icon: "success"
-          // });
         }
       });
-      // isAgree = await Swal.fire(
-      //   "Are you sure?",
-      //   `${ulb?.name} does not fall under ${this.data?.bucketShortName} if you still want to compare, please click on apply button.`,
-      //   "warning"
-      //   , {
-      //     buttons: {
-      //       Leave: {
-      //         text: "Cancel",
-      //         className: 'btn-danger',
-      //         value: false,
-      //       },
-      //       Stay: {
-      //         text: "Apply",
-      //         className: 'btn-success',
-      //         value: true,
-      //       },
-      //     },
-      //   }
-      // );
-    } else if (this.data?.ulb?.name === ulb?.name) {
+    } else if (
+        this.data?.ulb?.name === ulb?.name ||
+        this.ulbs?.some((element: any) => element?.name === ulb?.name)
+      ){
       Swal.fire({
         title: "Oops!",
-        text: `${ulb?.name} already exists.`,
+        text: `${ulb?.name ?? 'Serached ULB'} already exists.`,
       });
     }  else {
       this.ulbs.push(ulb);
