@@ -1,16 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, ViewChild, OnInit, AfterViewInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { environment } from '../../../../environments/environment';
-import { AccessChecker } from '../../../core/util/access/accessChecker';
-import { MODULES_NAME } from '../../../core/util/access/modules';
-import { ACTIONS } from '../../../core/util/access/actions';
-import { AuthService } from '../../../core/services/auth.service';
-import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
-import { UserUtility } from '../../../core/util/user/user';
-import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { CollapseModule } from 'ngx-bootstrap/collapse';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { environment } from '../../../../environments/environment';
+import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../../core/models/user/userType';
+import { AuthService } from '../../../core/services/auth.service';
+import { AccessChecker } from '../../../core/util/access/accessChecker';
+import { ACTIONS } from '../../../core/util/access/actions';
+import { MODULES_NAME } from '../../../core/util/access/modules';
+import { UserUtility } from '../../../core/util/user/user';
 
 @Component({
   selector: 'app-navbar',
