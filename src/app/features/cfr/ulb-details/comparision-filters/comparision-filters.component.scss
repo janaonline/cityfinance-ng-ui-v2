@@ -9,6 +9,10 @@
   overflow-y: auto;
 }
 
+input[type='checkbox'] {
+  accent-color: var(--clr-secondary);
+}
+
 // .form-check-label {
 //     font-size: 20px;
 // }
