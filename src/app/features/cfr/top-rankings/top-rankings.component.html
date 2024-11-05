@@ -2,8 +2,13 @@
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
   <section class="d-flex justify-content-end">
-    <input type="text" readonly class="form-control cursor-pointer px-4 py-3 w-25" placeholder="Search for any ULB..."
-      (click)="openSearch()" />
+    <input
+      type="text"
+      readonly
+      class="form-control cursor-pointer px-4 py-3 w-25"
+      placeholder="Search for any ULB..."
+      (click)="openSearch()"
+    />
   </section>
 
   <section class="text-center">
@@ -50,19 +55,27 @@
             <p class="fw-bold">Explore Ranking across State and Population Category</p>
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
             @if (isLoggedIn && ['ADMIN', 'MoHUA', 'ULB', 'STATE'].includes(userRole)) {
-            <p>{{userRole}} | {{isLoggedIn}}</p>
-            <button type="button" class="btn btn-outline-cfPrimary" matTooltip="Download Rankings"
-              (click)="downloadRankings()">
-              <i class="bi bi-download"></i>
-            </button>
+              <!-- <p>{{userRole}} | {{isLoggedIn}}</p> -->
+              <button
+                type="button"
+                class="btn btn-outline-cfPrimary"
+                matTooltip="Download Rankings"
+                (click)="downloadRankings()"
+              >
+                <i class="bi bi-download"></i>
+              </button>
             }
           </div>
 
           <div class="d-flex justify-content-between gap-4 mt-4">
             <div class="d-flex w-100 justify-content-between flex-column">
               <h6>State Name</h6>
-              <angular2-multiselect class="fw-bold" [data]="stateList" formControlName="stateData"
-                [settings]="dropdownSettings">
+              <angular2-multiselect
+                class="fw-bold"
+                [data]="stateList"
+                formControlName="stateData"
+                [settings]="dropdownSettings"
+              >
               </angular2-multiselect>
             </div>
             <div class="d-flex w-100 justify-content-between flex-column">
@@ -77,21 +90,37 @@
           </div>
         </div>
 
-        <div class="btn-group my-4 d-flex justify-content-center" role="group"
-          aria-label="Basic radio toggle button group">
+        <div
+          class="btn-group my-4 d-flex justify-content-center"
+          role="group"
+          aria-label="Basic radio toggle button group"
+        >
           <ng-container *ngFor="let type of types">
-            <input type="radio" class="btn-check" formControlName="category" [id]="type?.key" [value]="type?.key" />
-            <label class="btn btn-sm btn-outline-cfPrimary font-white text-truncate" matTooltip="{{ type?.label }}"
-              [for]="type?.key">
+            <input
+              type="radio"
+              class="btn-check"
+              formControlName="category"
+              [id]="type?.key"
+              [value]="type?.key"
+            />
+            <label
+              class="btn btn-sm btn-outline-cfPrimary font-white text-truncate"
+              matTooltip="{{ type?.label }}"
+              [for]="type?.key"
+            >
               {{ type?.label }}
             </label>
           </ng-container>
         </div>
 
         <div class="my-4">
-          <app-mat-common-table *ngIf="table?.response" [response]="table.response"
-            [isLoadingResults]="isLoadingResults" [isPagination]="true"
-            (pageChange)="pageChange($event)"></app-mat-common-table>
+          <app-mat-common-table
+            *ngIf="table?.response"
+            [response]="table.response"
+            [isLoadingResults]="isLoadingResults"
+            [isPagination]="true"
+            (pageChange)="pageChange($event)"
+          ></app-mat-common-table>
         </div>
       </form>
     </div>
