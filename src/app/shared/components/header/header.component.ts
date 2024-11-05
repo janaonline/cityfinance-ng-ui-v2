@@ -1,8 +1,6 @@
-import { Component } from '@angular/core';
-import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
-import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { NavbarComponent } from '../navbar/navbar.component';
 
 @Component({

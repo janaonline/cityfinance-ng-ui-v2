@@ -3,7 +3,10 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { AngularMultiSelectModule } from 'angular2-multiselect-dropdown';
+import { AuthService } from '../../../core/services/auth.service';
+import { UserUtility } from '../../../core/util/user/user';
 import { MaterialModule } from '../../../material.module';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { IndiaMapComponent, Marker } from '../india-map/india-map.component';
@@ -11,7 +14,7 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
-import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
+
 
 @Component({
   selector: 'app-top-rankings',
@@ -31,6 +34,9 @@ import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-lo
   ],
 })
 export class TopRankingsComponent implements OnInit {
+  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();  
+  userRole: string = this.loggedInUserDetails.role;
+  isLoggedIn: boolean = false;
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
@@ -90,10 +96,14 @@ export class TopRankingsComponent implements OnInit {
   skip: number = 0;
 
   constructor(
+    private authService: AuthService,
     private matDialog: MatDialog,
     private fiscalRankingService: FiscalRankingService,
     private fb: FormBuilder,
   ) {
+
+    this.isLoggedIn = this.authService.loggedIn();
+
     this.filter = this.fb.group({
       populationBucket: '1',
       stateData: [''],
@@ -132,8 +142,9 @@ export class TopRankingsComponent implements OnInit {
   }
 
   pageChange(event: any) {
-    this.limit = event.pageSize;
-    this.skip = event.pageIndex * event.pageSize;
+    // console.log("event ~~~~~>", event);
+    this.params.limit = event.pageSize;
+    this.params.skip = event.pageIndex * event.pageSize;
     this.loadData();
   }
 
@@ -148,7 +159,9 @@ export class TopRankingsComponent implements OnInit {
       .topRankedUlbs(queryParams, table?.response?.columns, this.params)
       .subscribe({
         next: (res: any) => {
+          // console.log("api Response --->", res.tableData)
           this.table.response = res.tableData;
+          if (this.table.response) this.table.response.total = res.total;
           this.markers = res.mapDataTopUlbs;
           this.isLoadingResults = false;
         },

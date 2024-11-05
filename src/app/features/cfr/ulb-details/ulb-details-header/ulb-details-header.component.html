@@ -1,4 +1,10 @@
-<section class="container py-5">
+<section class="d-flex justify-content-end me-5">
+  <a class="text-cfPrimary"
+    ><i class="text-cfPrimary bi bi-download"></i>&nbsp;Download City Brief</a
+  >
+</section>
+<h3 class="fw-bold text-center my-4">{{ ulb?.name }} ({{ ulb?.censusCode || ulb?.sbCode }})</h3>
+<!-- <section class="container py-5">
     <div class="row">
         <div class="col-5">
             <h2 class="my-3 fw-bold">{{ ulb?.name }} (#{{ ulb?.censusCode || ulb?.sbCode }})</h2>
@@ -9,7 +15,7 @@
                 <p>Population Category</p>
             </div>
 
-            <!-- <div class="card p-4 mt-3 me-5">
+            <div class="card p-4 mt-3 me-5">
                 <ng-container *ngFor="let category of categories">
                     <p><strong>{{ category.title }} :</strong></p>
                     <ol>
@@ -24,7 +30,7 @@
                         </li>
                     </ol>
                 </ng-container>
-            </div> -->
+            </div>
         </div>
     </div>
-</section>
+</section> -->
