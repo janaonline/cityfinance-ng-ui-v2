@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { AngularMultiSelectModule } from 'angular2-multiselect-dropdown';
+import { AuthService } from '../../../core/services/auth.service';
 import { UserUtility } from '../../../core/util/user/user';
 import { MaterialModule } from '../../../material.module';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
@@ -35,6 +36,7 @@ import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.c
 export class TopRankingsComponent implements OnInit {
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();  
   userRole: string = this.loggedInUserDetails.role;
+  isLoggedIn: boolean = false;
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
@@ -94,10 +96,14 @@ export class TopRankingsComponent implements OnInit {
   skip: number = 0;
 
   constructor(
+    private authService: AuthService,
     private matDialog: MatDialog,
     private fiscalRankingService: FiscalRankingService,
     private fb: FormBuilder,
   ) {
+
+    this.isLoggedIn = this.authService.loggedIn();
+
     this.filter = this.fb.group({
       populationBucket: '1',
       stateData: [''],
