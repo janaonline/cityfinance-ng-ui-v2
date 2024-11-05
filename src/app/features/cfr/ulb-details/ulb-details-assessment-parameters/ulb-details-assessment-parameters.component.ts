@@ -3,13 +3,14 @@ import { MaterialModule } from '../../../../material.module';
 import { CommonTableComponent } from '../../common-table/common-table.component';
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-ulb-details-assessment-parameters',
   templateUrl: './ulb-details-assessment-parameters.component.html',
   styleUrls: ['./ulb-details-assessment-parameters.component.scss'],
   standalone: true,
-  imports: [MaterialModule, CommonTableComponent, MatCommonTableComponent],
+  imports: [MaterialModule, CommonTableComponent, MatCommonTableComponent, RouterModule],
 })
 export class UlbDetailsAssessmentParametersComponent implements OnInit {
   @Input() tables: any;
@@ -28,6 +29,7 @@ export class UlbDetailsAssessmentParametersComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    console.log("--->", this.filter)
     this.filter.get('category')?.valueChanges.subscribe((value) => {
       this.tableData = this.tables?.[value];
     });
