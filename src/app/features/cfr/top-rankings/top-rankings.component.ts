@@ -6,6 +6,7 @@ import { AngularMultiSelectModule } from 'angular2-multiselect-dropdown';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserUtility } from '../../../core/util/user/user';
 import { MaterialModule } from '../../../material.module';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { CommonTableComponent } from '../common-table/common-table.component';
@@ -14,7 +15,6 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
-
 
 @Component({
   selector: 'app-top-rankings',
@@ -31,10 +31,11 @@ import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.c
     MatCommonTableComponent,
     StatewiseMapComponent,
     PreLoaderComponent,
+    LoaderComponent,
   ],
 })
 export class TopRankingsComponent implements OnInit {
-  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();  
+  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   userRole: string = this.loggedInUserDetails.role;
   isLoggedIn: boolean = false;
   breadcrumbLinks: BreadcrumbLink[] = [
@@ -90,7 +91,6 @@ export class TopRankingsComponent implements OnInit {
     classes: 'homepage-stateList custom-class',
   };
 
-  // TODO: skip to be added.
   isLoadingResults: boolean = false;
   limit: number = 10;
   skip: number = 0;
@@ -101,7 +101,6 @@ export class TopRankingsComponent implements OnInit {
     private fiscalRankingService: FiscalRankingService,
     private fb: FormBuilder,
   ) {
-
     this.isLoggedIn = this.authService.loggedIn();
 
     this.filter = this.fb.group({
@@ -191,7 +190,6 @@ export class TopRankingsComponent implements OnInit {
     });
   }
 
-  // TODO: Add a popup/ toster.
   downloadRankings() {
     this.isLoadingResults = true;
     this.fiscalRankingService.downloadRankings().subscribe({

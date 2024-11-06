@@ -17,6 +17,7 @@ export class UlbDetailsAssessmentParametersComponent implements OnInit {
 
   filter: FormGroup;
   tableData: any = {};
+  isLoadingResults: boolean = true;
 
   parameters: any[] = [
     { key: 'resourceMobilization', label: 'Resource Mobilization' },
@@ -29,16 +30,20 @@ export class UlbDetailsAssessmentParametersComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log("--->", this.filter)
+    // console.log("--->", this.filter)
+    this.isLoadingResults = true;
     this.filter.get('category')?.valueChanges.subscribe((value) => {
       this.tableData = this.tables?.[value];
     });
+    this.isLoadingResults = false;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    this.isLoadingResults = true;
     // Check if `tables` has been initialized or updated
     if (changes['tables'] && this.tables) {
       this.tableData = this.tables[this.filter.get('category')?.value];
     }
+    this.isLoadingResults = false;
   }
 }
