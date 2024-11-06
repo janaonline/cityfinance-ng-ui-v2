@@ -17,7 +17,7 @@
             </div>
         </form>
         <ul class="list-group w-50 text-start search-result" *ngIf="ulbs?.length">
-            <a class="list-group-item" *ngFor="let ulb of ulbs" [routerLink]="['rankings', 'ulb', ulb?.ulb]"
+            <a class="list-group-item" *ngFor="let ulb of ulbs" [routerLink]="['cfr', 'ulb', ulb?.ulb]"
                 (click)="close()">
                 {{ ulb?.name }}
             </a>
