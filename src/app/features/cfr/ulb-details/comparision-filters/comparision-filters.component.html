@@ -24,20 +24,16 @@
     </div>
 
     <div class="mt-4">
-      <!-- <input type="search" [(ngModel)]="query" name="query" (blur)="closeMenu()" (input)="search()"
-            class="form-control" placeholder="Search ULB..."> -->
-      <!-- <div class="" #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="menu"></div> -->
-       <!-- <p>{{ulbs.length}}</p> -->
       <input
-      [readonly]="ulbs.length >= 5"
-      [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''"
-      matInput
-      [formControl]="searchField"
-      [matAutocomplete]="auto"
-      class="form-control"
-      style="height: 3rem"
-      type="text"
-      placeholder="Search ULB..."
+        [readonly]="ulbs.length >= 5"
+        [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''"
+        matInput
+        [formControl]="searchField"
+        [matAutocomplete]="auto"
+        class="form-control"
+        style="height: 3rem"
+        type="text"
+        placeholder="Search ULB..."
       />
       <!-- {{filteredOptions | json}} -->
 
@@ -60,29 +56,22 @@
       <div id="emailHelp" class="form-text ff">Maximum of 5 ULBs can be compared at once</div>
     </div>
 
-    <!-- <mat-menu #menu="matMenu">
-        <button mat-menu-item *ngFor="let result of searchResults" (click)="addUlb(result)">
-            {{ result.name }}
-        </button>
-    </mat-menu> -->
-
     <div class="my-2">
-      <div class="mb-1"><span class="badge rounded-pill text-bg-cfSecondary p-2">{{ data?.ulb?.name }}</span></div>
+      <div class="mb-1">
+        <span class="badge rounded-pill text-bg-cfSecondary p-2">{{ data?.ulb?.name }}</span>
+      </div>
       <div class="d-block p-0 m-0" *ngFor="let ulb of ulbs; let i = index">
         @if (ulb.name !== data?.ulb?.name) {
-        <span
-          class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
-          [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }"
-          >{{ ulb?.name }}&nbsp;<i
-            *ngIf="!ulb?.disabled"
-            (click)="removeUlb(i)"
-            class="bi bi-x fs-4 cursor-pointer"
-          ></i>
-          <!-- <mat-icon *ngIf="!ulb?.disabled" class="cursor-pointer" (click)="removeUlb(i)"
-            >close
-          </mat-icon> -->
-        </span>
-      }
+          <span
+            class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
+            [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }"
+            >{{ ulb?.name }}&nbsp;<i
+              *ngIf="!ulb?.disabled"
+              (click)="removeUlb(i)"
+              class="bi bi-x fs-4 cursor-pointer"
+            ></i>
+          </span>
+        }
       </div>
     </div>
     <div class="mt-3 text-center">
