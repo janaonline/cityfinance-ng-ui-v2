@@ -61,4 +61,4 @@ jobs:
       - run: |
           echo "Deploying branch ${{ env.GITHUB_REF }} to ${{ github.event.inputs.environment }}"
           commit_hash=`git rev-parse HEAD`
-          aws deploy create-deployment --application-name CF-CodeDeployment-Application --deployment-group-name CF-DeploymentGroup-Frontendv2 --s3-location bucket=cityfinance-frontend,bundleType=zip,key=${{ env.ZIP_FILE }}.zip --file-exists-behavior OVERWRITE
+          aws deploy create-deployment --application-name CF-CodeDeployment-Application --deployment-group-name CF-DeploymentGroup-Frontendv2 --s3-location bucket=cityfinance-frontend,bundleType=zip,key=${{ env.ZIP_FILE }}.zip --file-exists-behavior OVERWRITE --ignore-application-stop-failures
