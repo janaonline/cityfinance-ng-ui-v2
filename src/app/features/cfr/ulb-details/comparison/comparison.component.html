@@ -37,6 +37,10 @@
     <!-- Graph -->
     <div class="col-6">
       <div class="chart-container" style="width: 100%; height: 90%">
+        @if (isPreLoader) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        }
         <canvas id="bar-chart-with-line">{{ chart }}</canvas>
       </div>
       <p class="text-danger text-end" *ngIf="hasNonBucketUlb">

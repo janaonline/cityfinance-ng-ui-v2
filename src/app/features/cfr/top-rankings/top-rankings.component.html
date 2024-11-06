@@ -1,3 +1,4 @@
+<app-loader *ngIf="isLoadingResults"></app-loader>
 <div class="container bg-img">
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
@@ -36,16 +37,6 @@
             <p class="text-center">Loading map</p>
           </div> -->
         </ng-template>
-        <!-- <div class="btn-group btn-group-sm btn-group-lg mt-3 text-center d-block" role="group"
-          aria-label="Basic radio toggle button group">
-          <input type="radio" class="btn-check" name="map-filter" id="topUlbs" autocomplete="off"
-            [(ngModel)]="selectedMap" [value]="'topUlbs'" />
-          <label class="btn btn-outline-primary" for="topUlbs">Top ULBs</label>
-
-          <input type="radio" class="btn-check" name="map-filter" id="rankHolders" autocomplete="off"
-            [(ngModel)]="selectedMap" [value]="'rankHolders'" />
-          <label class="btn btn-outline-primary" for="rankHolders">ULB Rank Holders</label>
-        </div> -->
       </div>
 
       <form class="col-md-7" [formGroup]="filter">
@@ -116,7 +107,6 @@
           <app-mat-common-table
             *ngIf="table?.response"
             [response]="table.response"
-            [isLoadingResults]="isLoadingResults"
             [isPagination]="true"
             (pageChange)="pageChange($event)"
           ></app-mat-common-table>
