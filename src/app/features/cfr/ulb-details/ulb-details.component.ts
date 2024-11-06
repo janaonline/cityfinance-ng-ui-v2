@@ -1,15 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-// import { FiscalRankingService, UlbData } from '../fiscal-ranking.service';
 import { MaterialModule } from '../../../material.module';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { FiscalRankingService, UlbData } from '../services/fiscal-ranking.service';
-import { UlbDetailsHeaderComponent } from './ulb-details-header/ulb-details-header.component';
-import { UlbDetailsAssessmentParametersComponent } from './ulb-details-assessment-parameters/ulb-details-assessment-parameters.component';
-import { PerformanceFourMComponent } from './performance-four-m/performance-four-m.component';
 import { ComparisonComponent } from './comparison/comparison.component';
-
-// import Swal from 'sweetalert2';
+import { PerformanceFourMComponent } from './performance-four-m/performance-four-m.component';
+import { UlbDetailsAssessmentParametersComponent } from './ulb-details-assessment-parameters/ulb-details-assessment-parameters.component';
+import { UlbDetailsHeaderComponent } from './ulb-details-header/ulb-details-header.component';
 
 interface APIResponse {
   assessmentParameter: any;
@@ -17,8 +15,8 @@ interface APIResponse {
     [key: string]: {
       value: string | null;
       status: 'APPROVED' | 'REJECTED' | 'PENDING';
-    }
-  },
+    };
+  };
   topUlbs: UlbData[];
   ulb: any;
 }
@@ -28,41 +26,45 @@ interface APIResponse {
   templateUrl: './ulb-details.component.html',
   styleUrls: ['./ulb-details.component.scss'],
   standalone: true,
-  imports: [MaterialModule, BreadcrumbComponent, UlbDetailsHeaderComponent, UlbDetailsAssessmentParametersComponent,
-    PerformanceFourMComponent, ComparisonComponent
+  imports: [
+    MaterialModule,
+    BreadcrumbComponent,
+    UlbDetailsHeaderComponent,
+    UlbDetailsAssessmentParametersComponent,
+    PerformanceFourMComponent,
+    ComparisonComponent,
+    LoaderComponent,
   ],
 })
 export class UlbDetailsComponent implements OnInit {
-
-
   breadcrumbLinks: BreadcrumbLink[] = [
     {
       label: 'City Finance Ranking - Home',
-      url: '/cfr/home'
+      url: '/cfr/home',
     },
     {
       label: 'Top rankings',
-      url: '/cfr/top-rankings'
-    }
+      url: '/cfr/top-rankings',
+    },
   ];
 
   data: APIResponse = {} as APIResponse;
+  isLoading: boolean = true;
 
   constructor(
     private activatedRoute: ActivatedRoute,
-    private fiscalRankingService: FiscalRankingService
-  ) { }
+    private fiscalRankingService: FiscalRankingService,
+  ) {}
 
   get ulbId() {
     return this.activatedRoute.snapshot.params['ulbId'];
   }
 
-
   ngOnInit(): void {
     this.breadcrumbLinks.push({
       label: 'ULB details',
       url: `/cfr/ulb/${this.ulbId}`,
-      class: 'disabled'
+      class: 'disabled',
     });
 
     this.loadUlbData();
@@ -70,10 +72,11 @@ export class UlbDetailsComponent implements OnInit {
   }
 
   loadUlbData() {
+    this.isLoading = true;
     this.fiscalRankingService.ulbDetails(this.ulbId).subscribe((res: any) => {
-      console.log(res);
+      // console.log(res);
       this.data = res.data;
-    })
+      this.isLoading = false;
+    });
   }
-
 }
