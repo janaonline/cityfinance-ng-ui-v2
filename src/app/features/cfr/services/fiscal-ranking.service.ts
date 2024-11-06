@@ -252,8 +252,8 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/top-ranked-states`, { params });
   }
 
-  getBarchartData(ulbsString: any) {
-    return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?${ulbsString}`);
+  getBarchartData(ulbsString: any, populationBucket: number) {
+    return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?populationBucket=${populationBucket}&${ulbsString}`);
   }
 
   getApiResponse(endPoints: string, params: any) {

@@ -55,7 +55,7 @@ export class ComparisonComponent implements OnChanges {
 
   getBarchartData() {
     const ulbQuery = this.ulbs.map((item: { ulb: any; }) => `ulb[]=${item?.ulb}`).join('&');
-    this.fiscalRankingService.getBarchartData(ulbQuery).subscribe((res: any) => {
+    this.fiscalRankingService.getBarchartData(ulbQuery, this.ulb?.populationBucket).subscribe((res: any) => {
       this.allTypeGraphData = res.graphData;
       this.createChart();
     })
@@ -69,30 +69,29 @@ export class ComparisonComponent implements OnChanges {
     return this.types?.find(type => type.id == this.type)?.maxScore;
   }
 
-  getBarBackgroundColor(item: any) {
-    // console.log("item", item)
-    if (item?.type != 'bar') return item?.backgroundColor;
-    const colors = this.ulbs.map((ulb: { populationBucket: any; }) => {
-      return ulb?.populationBucket == this.ulb?.populationBucket ? item?.backgroundColor : 'red'
-    });
-    // console.log("colors--->", colors);
-    return colors;
-  }
+  // getBarBackgroundColor(item: any) {
+  //   // console.log("item", item)
+  //   if (item?.type != 'bar') return item?.backgroundColor;
+  //   const colors = this.ulbs.map((ulb: { populationBucket: any; }) => {
+  //     return ulb?.populationBucket == this.ulb?.populationBucket ? item?.backgroundColor : 'red'
+  //   });
+  //   // console.log("colors--->", colors);
+  //   return colors;
+  // }
 
   createChart() {
     if (this.chart) this.chart.destroy();
-    console.log('ulbs', this.ulbs);
+    // console.log('ulb', this.ulb);
+    // console.log('ulbs', this.ulbs);
     this.hasNonBucketUlb = this.ulbs.some((ulb: { populationBucket: any; }) => ulb?.populationBucket != this.ulb?.populationBucket);
-    // console.log("this.hasNonBucketUlb --->", this.hasNonBucketUlb);
     const that = this;
-    // console.log("dataset", this.graphData.datasets);
     this.chart = new Chart("bar-chart-with-line", {
       type: 'bar',
       data: {
         ...this.graphData,
         datasets: this.graphData.datasets.map((item: any) => ({
           ...item,
-          backgroundColor: this.getBarBackgroundColor(item),
+          // backgroundColor: this.getBarBackgroundColor(item),
           hidden: !(this.datasetsFilter[item.label] != undefined ? this.datasetsFilter[item.label] : true)
         })),
       },
