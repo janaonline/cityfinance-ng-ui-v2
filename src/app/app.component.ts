@@ -1,7 +1,7 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, ViewportScroller } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
 // import { MenuComponent } from './shared/components/menu/menu.component';
 import { environment } from '../environments/environment';
@@ -26,7 +26,11 @@ export class AppComponent {
   title = 'Cityfinance';
   baseUrl = environment.environment;
 
-  constructor(private route: ActivatedRoute) {
+  constructor(
+    private route: ActivatedRoute,
+    private _router: Router,
+    private _viewportScroller: ViewportScroller,
+  ) {
     // const  userData:any = '{"_id":"66772cd175ff6f339c3efb45","name":"User 1","email":"user1_16fc@cityfinance.in","isActive":true,"role":"XVIFC","designation":"XVIFC_USER","ulbCode":"","stateCode":"","isUA":null,"isMillionPlus":null,"isUserVerified2223":false}';
     // const  userData:any = '{"_id":"669761dfa3abb74244cd394f","name":"Kerala","email":"kl_16fc@cityfinance.in","isActive":true,"role":"XVIFC_STATE","state":"5dcf9d7316a06aed41c748ed","stateName":"Kerala","designation":"XVIFC_STATE","ulbCode":"","stateCode":"","isUA":null,"isMillionPlus":null,"isUserVerified2223":false}';
     const userData: any =
@@ -44,6 +48,12 @@ export class AppComponent {
 
   ngOnInit(): void {
     this.getQueryParams();
+
+    this._router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this._viewportScroller.scrollToPosition([0, 0]);
+      }
+    });
   }
 
   getQueryParams(): void {

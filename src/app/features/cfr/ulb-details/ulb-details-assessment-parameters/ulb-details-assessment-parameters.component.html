@@ -15,7 +15,11 @@
   </form>
 
   <div class="container mt-4 p-0">
-    <app-mat-common-table [response]="tableData"></app-mat-common-table>
+    <app-mat-common-table 
+      [response]="tableData"
+      [isLoadingResults]="isLoadingResults"
+      [isPagination]="false"
+    ></app-mat-common-table>
     <p class="mt-3 py-3">Note : <a routerLink="/cfr/assesst-parameters/{{filter.value?.category}}">click here</a> for
       the scoring methodology *</p>
   </div>
