@@ -24,7 +24,7 @@ export class ComparisonComponent implements OnChanges {
   allTypeGraphData: any = {};
   types = [
     { id: 'overAll', label: 'Over All', maxScore: 1200 },
-    { id: 'resourceMobilization', label: 'Resource mobilisation', maxScore: 600 },
+    { id: 'resourceMobilization', label: 'Resource mobilization', maxScore: 600 },
     { id: 'expenditurePerformance', label: 'Expenditure performance', maxScore: 300 },
     { id: 'fiscalGovernance', label: 'Fiscal Governance', maxScore: 300 }
   ];
