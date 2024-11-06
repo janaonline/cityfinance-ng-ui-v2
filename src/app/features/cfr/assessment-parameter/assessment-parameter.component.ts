@@ -25,7 +25,7 @@ export class AssessmentParameterComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) this.pageKey = id;
   }
-  pageKey: string = 'resourceMobilisation';
+  pageKey: string = 'resourceMobilization';
   isLoadingResults: boolean = false;
   apiResponse: any = {};
   parameterData: any = {};
@@ -34,8 +34,8 @@ export class AssessmentParameterComponent implements OnInit {
     data: [
       {
         id: 1,
-        key: 'resourceMobilisation',
-        label: 'Resource Mobilisation',
+        key: 'resourceMobilization',
+        label: 'Resource Mobilization',
       },
       {
         id: 2,
@@ -56,7 +56,7 @@ export class AssessmentParameterComponent implements OnInit {
     },
     {
       label: `Ranking assessment parameter : `,
-      url: '/cfr/participated-states-ut',
+      url: '',
       class: 'disabled',
     },
   ];
