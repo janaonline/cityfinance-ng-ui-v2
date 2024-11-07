@@ -47,101 +47,73 @@
 
 <div class="loader-container mat-elevation-z8 rounded">
   @if (isLoadingResults || isRateLimitReached) {
-    <div class="loading-shade">
-      @if (isLoadingResults) {
-        <mat-spinner></mat-spinner>
-      }
-      @if (isRateLimitReached) {
-        <div class="no-result-found">
-          GitHub's API rate limit has been reached. It will be reset in one minute.
-        </div>
-      }
+  <div class="loading-shade">
+    @if (isLoadingResults) {
+    <mat-spinner></mat-spinner>
+    }
+    @if (isRateLimitReached) {
+    <div class="no-result-found">
+      GitHub's API rate limit has been reached. It will be reset in one minute.
     </div>
+    }
+  </div>
   }
 
   <div class="table-container rounded">
-    <table
-      mat-table
-      [dataSource]="response?.data"
-      class="table-class"
-      matSort
-      matSortActive="created"
-      matSortDisableClear
-      matSortDirection="desc"
-    >
+    <table mat-table [dataSource]="response?.data" class="table-class" matSort matSortActive="created"
+      matSortDisableClear matSortDirection="desc">
       @for (column of response?.columns; track column) {
-        <ng-container [matColumnDef]="column.key">
-          @if (!column?.hidden) {
-            <th
-              mat-header-cell
-              *matHeaderCellDef
-              class="text-center px-3 py-2"
-              [attr.colspan]="column?.colspan || 1"
-            >
-              {{ column.label }}
-            </th>
-          }
+      <ng-container [matColumnDef]="column.key">
+        @if (!column?.hidden) {
+        <th mat-header-cell *matHeaderCellDef class="text-center px-3 py-2" [attr.colspan]="column?.colspan || 1">
+          {{ column.label }}
+        </th>
+        }
 
-          <td
-            mat-cell
-            *matCellDef="let element"
-            style="white-space: pre-wrap"
-            class="px-3 py-2"
-            [ngClass]="column?.class"
-          >
-            @if (column.pdfLink) {
-              @if (element[column.key] === 'Click here') {
-                <a [href]="element[column.key + 'Config'].link" target="_blank"
-                  ><!-- {{ element[column.key] }} --><i
-                    class="bi bi-file-earmark-pdf-fill text-danger fs-4"
-                  ></i
-                ></a>
-              } @else {
-                <a [href]="element[column.key] | toStorageUrl" target="_blank"
-                  ><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i
-                ></a>
-              }
-            } @else if (column.link) {
-              <a [href]="prefixUrl + element[column.link]" target="_blank">{{
-                element[column.key]
-              }}</a>
-            } @else {
-              {{ element[column.key] }}
-            }
-          </td>
-        </ng-container>
+        <td mat-cell *matCellDef="let element" style="white-space: pre-wrap" class="px-3 py-2"
+          [ngClass]="column?.class">
+          @if (column.pdfLink) {
+          @if (element[column.key] === 'Click here') {
+          <a [href]="element[column.key + 'Config'].link" target="_blank"><!-- {{ element[column.key] }} --><i
+              class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></a>
+          }
+          @else if (element[column.key] === '-') {
+          {{ element[column.key] }}
+          }
+          @else {
+          <a [href]="element[column.key] | toStorageUrl" target="_blank"><i
+              class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></a>
+          }
+          } @else if (column.link) {
+          <a [href]="prefixUrl + element[column.link]" target="_blank">{{
+            element[column.key]
+            }}</a>
+          } @else {
+          {{ element[column.key] }}
+          }
+        </td>
+      </ng-container>
       }
 
       @for (subHeader of response?.subHeaders; track subHeader.key) {
-        <ng-container [matColumnDef]="'id-' + subHeader.key">
-          <td
-            mat-header-cell
-            *matHeaderCellDef
-            class="text-muted fst-italic text-nowrap br-r"
-            [ngClass]="'table-primary'"
-          >
-            {{ subHeader.label }}
-          </td>
-        </ng-container>
+      <ng-container [matColumnDef]="'id-' + subHeader.key">
+        <td mat-header-cell *matHeaderCellDef class="text-muted fst-italic text-nowrap br-r"
+          [ngClass]="'table-primary'">
+          {{ subHeader.label }}
+        </td>
+      </ng-container>
       }
 
       <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true" class="fw-bold"></tr>
       @if (response?.subHeaders) {
-        <tr mat-header-row *matHeaderRowDef="subHeaderColumns"></tr>
+      <tr mat-header-row *matHeaderRowDef="subHeaderColumns"></tr>
       }
       <tr mat-row *matRowDef="let row; columns: columnData"></tr>
     </table>
   </div>
   @if (isPagination) {
-    <mat-paginator
-      [length]="response?.total"
-      [pageSize]="pageSize"
-      (page)="pageChanged($event)"
-      [pageSizeOptions]="[5, 10, 20, 50]"
-      [pageIndex]="skip"
-      showFirstLastButtons
-      aria-label="Select page of results"
-      class="rounded"
-    ></mat-paginator>
+  <mat-paginator [length]="response?.total" [pageSize]="pageSize" (page)="pageChanged($event)"
+    [pageSizeOptions]="[5, 10, 20, 50]" [pageIndex]="skip" showFirstLastButtons aria-label="Select page of results"
+    class="rounded"></mat-paginator>
   }
 </div>
