@@ -1,40 +1,31 @@
-<div class="container main-content mb-5">
-    <div class="d-lg-flex justify-content-around dotted_card_bottom">
-
-        <div class="row dotted-card mb-3">
-            <div class="col-3 icon">
-                <img src="./assets/fiscal-rankings/guidelines-icon.svg">
-            </div>
-            <div class="col-9 content">
-                <p>Guidelines</p>
-                <div class="download-link cursor-pointer" (click)="onGuidelinesPopup.emit()">
-                    <mat-icon>download</mat-icon> Download
-                </div>
-            </div>
+<div class="container mb-5">
+  <div class="row justify-content-center gy-3">
+    <!-- Card Template -->
+    @for (card of data; track $index) {
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="dotted-card d-flex gap-3 p-3 align-items-center">
+          <img [src]="card.cardImgUrl" alt="Icon" />
+          <div class="d-flex flex-column">
+            <p class="text-white">{{ card.cardLabel }}</p>
+            @if (card.cardEmitValue) {
+              <p
+                class="cursor-pointer text-cfPrimary text-decoration-underline"
+                (click)="card.cardEmitValue.emit()"
+              >
+                <i [class]="card.cardIcon" class="text-cfPrimary"></i>&nbsp;{{ card.cardIconLabel }}
+              </p>
+            } @else {
+              <p class="cursor-pointer text-cfPrimary text-decoration-underline">
+                <a target="_blank" [href]="card.cardHref" class="download-link cursor-pointer"
+                  ><i [class]="card.cardIcon + ' text-cfPrimary'"></i>&nbsp;{{
+                    card.cardIconLabel
+                  }}</a
+                >
+              </p>
+            }
+          </div>
         </div>
-        <div class="row dotted-card mb-3">
-            <div class="col-3 icon">
-                <img src="./assets/fiscal-rankings/brochure-icon.svg">
-            </div>
-            <div class="col-9 content">
-                <p>Brochure</p>
-                <a target="_blank"
-                    href="https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/FiscalRanking/City_Finance_Rankings_2022_Brochure_March_2023_3708f180-5be7-41ef-96c9-2d98db398575.pdf"
-                    class="download-link cursor-pointer">
-                    <mat-icon>download</mat-icon> Download
-                </a>
-            </div>
-        </div>
-        <div class="row dotted-card mb-3">
-            <div class="col-3 icon">
-                <img src="./assets/fiscal-rankings/video-icon.svg">
-            </div>
-            <div class="col-9 content">
-                <p>Videos</p>
-                <div class="download-link cursor-pointer" (click)="onVideosPopup.emit()">
-                    <mat-icon>fast_forward</mat-icon> Play video
-                </div>
-            </div>
-        </div>
-    </div>
+      </div>
+    }
+  </div>
 </div>

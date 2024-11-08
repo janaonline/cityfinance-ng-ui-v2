@@ -1,86 +1,42 @@
 *:not(mat-icon) {
-    font-family: 'Montserrat';
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
 }
 
 .header {
-    background-color: #C2D6FC1A;
-}
-
-.table-border {
-    border: 1px solid gray;
-    border-radius: 10px;
-
-    table {
-        border-collapse: collapse;
-        width: 100%;
-        text-align: center;
-
-        th {
-            border-bottom: 1px solid gray;
-        }
-
-        td,
-        th {
-            padding: 8px;
-        }
-    }
+  background-color: #c2d6fc1a;
 }
 
 .section-1 {
-    background-image: url('../../../../../assets/fiscal-rankings/ulbs-in-india-bg-1.png');
-    background-position: right bottom;
-    background-repeat: no-repeat;
+  background-image: url('../../../../../assets/fiscal-rankings/ulbs-in-india-bg-1.png');
+  background-position: right bottom;
+  background-repeat: no-repeat;
 }
 
 .section-2 {
-    border-left: 1px solid #d4d3d3;
-    background-image: url('../../../../../assets/fiscal-rankings/ulbs-in-india-bg-2.png');
-    background-color: #FFC2E71A;
-    background-position: right top;
-    background-repeat: no-repeat;
+  border-left: 1px solid #d4d3d3;
+  background-image: url('../../../../../assets/fiscal-rankings/ulbs-in-india-bg-2.png');
+  background-color: #ffc2e71a;
+  background-position: right top;
+  background-repeat: no-repeat;
 }
 
 .section-3 {
-    background-image: url('../../../../../assets/fiscal-rankings/ulbs-in-india-bg-3.png');
-    background-size: 90%;
-    background-position: center center;
-    background-repeat: no-repeat;
-}
-
-.child {
-    padding-top: 80px !important;
-    padding-bottom: 80px !important;
-}
-
-.data-item * {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    font-size: 14px;
+  background-image: url('../../../../../assets/fiscal-rankings/ulbs-in-india-bg-3.png');
+  background-size: 90%;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
 
 @media (max-width: 767.98px) {
-    .section-2 {
-        border-left: none !important;
-    }
+  .section-2 {
+    border-left: none !important;
+  }
 }
-
 
 .map-bg {
-    background-image: url('../../../../../assets/fiscal-rankings/map-background.png');
-    background-repeat: no-repeat;
-    background-size: cover;
-    padding: 0 0 100px 0;
+  background-image: url('../../../../../assets/fiscal-rankings/map-background.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding: 0 0 100px 0;
 }
-
-// .table-card {
-//     background-color: #ffffff;
-// }
-
-// .map-con {
-//     height: 40rem;
-//     vertical-align: top;
-//     align-items: flex-start;
-// }

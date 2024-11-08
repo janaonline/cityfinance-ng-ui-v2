@@ -1,5 +1,6 @@
 *:not(mat-icon) {
-    font-family: 'Montserrat';
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
 }
 
 .rankings-card {

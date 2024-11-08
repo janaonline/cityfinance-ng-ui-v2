@@ -1,30 +1,17 @@
 <section class="partners mb-4">
-    <div class="container">
-        <div class="row justify-content-evenly">
-
-
-            <div class="col-md-3">
-                <div class="item mb-3 text-center">
-                    <p class="text-muted fw-bold mb-1">Knowledge Partner</p>
-                    <img src="./assets/fiscal-rankings/partner-janaagrah.png" alt="Janaagraha">
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="item mb-3 text-center">
-                    <p class="text-muted fw-bold mb-1">An Initiative by</p>
-                    <img src="./assets/fiscal-rankings/partner-ministry.png"
-                        alt="Ministry of housing and urban affairs">
-                </div>
-            </div>
-
-
-            <div class="col-md-3">
-                <div class="text-muted fw-bold mb-1 text-center">
-                    <p class="text-muted">Project Monitoring Unit (PMU)</p>
-                    <img src="./assets/fiscal-rankings/partner-quality-council.png" alt="Quality council">
-                </div>
-            </div>
+  <div class="container">
+    <div class="row justify-content-center">
+      @for (card of data; track $index) {
+        <div class="col-12 col-md-4 text-center mb-3">
+          <p class="text-muted fw-bold mb-2">{{ card.cardLabel }}</p>
+          <img
+            [src]="card.cardImgUrl"
+            [alt]="card.altTxt"
+            class="img-fluid"
+            style="max-width: 150px"
+          />
         </div>
+      }
     </div>
+  </div>
 </section>
