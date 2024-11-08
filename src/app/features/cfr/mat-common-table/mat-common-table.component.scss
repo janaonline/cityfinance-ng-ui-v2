@@ -6,11 +6,13 @@
 .mat-mdc-table .mat-mdc-header-cell {
   background: var(--clr-secondary) !important;
   color: #fff;
-  border-bottom: 1px solid lightgrey;
+  border-bottom: 0.5px solid lightgrey;
+  border-right: 0.5px solid lightgrey;
 }
 
 .mat-mdc-table .mdc-data-table__cell {
-  border-bottom: 1px solid lightgrey;
+  border-bottom: 0.5px solid lightgrey;
+  border-right: 0.5px solid lightgrey;
 }
 
 /* Structure */
@@ -20,7 +22,7 @@
 
 .table-container {
   position: relative;
-  min-height: 32vh;
+  // min-height: 32vh;
   max-height: 110vh;
   overflow: auto;
 }
@@ -48,11 +50,11 @@ table {
 }
 
 /* Column Widths */
-.mat-column-number,
-.mat-column-state {
-  width: 4rem;
-}
+// .mat-column-number,
+// .mat-column-state {
+//   width: 4rem;
+// }
 
-.mat-column-created {
-  width: 7.75rem;
-}
+// .mat-column-created {
+//   width: 7.75rem;
+// }
