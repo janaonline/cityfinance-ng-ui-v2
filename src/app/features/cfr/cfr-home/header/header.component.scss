@@ -1,127 +1,84 @@
 *:not(mat-icon) {
-  font-family: 'Montserrat';
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
 }
 
-section {
-  text-align: center;
+p {
+  margin: 0;
+  padding: 0;
+}
+
+.section-background {
   background-image: url('../../../../../assets/fiscal-rankings/homepage-banner.jpg');
   background-repeat: no-repeat;
   background-size: cover;
   color: white;
-  padding: 50px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+
   position: relative;
-  // height: calc(100vh - 116.75px);
-  // min-height: 90vh;
-  // min-height: calc(100vh - 116.75px);
-
-  .mask {
-    background-color: rgb(0 0 0 / 50%);
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-  }
-
-  h1 {
-    font-size: 50px;
-    font-weight: 600;
-  }
-
-  .main-content {
-    display: flex;
-    flex-direction: column;
-    gap: 60px;
-
-    @media screen and (max-height: 800px) {
-      gap: 10px;
-    }
-  }
-
-  .dotted-card {
-    background-color: #2f1803ad;
-    color: orange;
-    border: 1px dashed orange;
-    border-radius: 10px;
-    padding: 20px;
-    align-items: center;
-
-    @media screen and (min-width: 1200px) {
-      min-width: 275px;
-    }
-
-    .content {
-      text-align: left;
-
-      .download-link {
-        text-decoration: none;
-        color: inherit;
-        color: orange;
-        display: flex;
-        font-size: 14px;
-
-        mat-icon {
-          font-size: 20px;
-        }
-      }
-
-      p {
-        color: white;
-        font-size: 18px;
-        margin: 0;
-        padding: 5px;
-      }
-    }
-  }
-
-  .explore-more {
-    font-size: 30px;
-    color: orange;
-    cursor: pointer;
-    padding: 0;
-
-    // position: absolute;
-    // bottom: 50px;
-    // left: 50%;
-    // transform: translateX(-50%);
-    .down {
-      transform: scaleX(8.5);
-      font-weight: 100;
-    }
-  }
+  isolation: isolate;
 }
 
-.subText {
-  margin-bottom: 75px;
+.section-background::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-color: black;
+  opacity: 0.6;
 }
 
-.btn-orange {
-  margin-bottom: 30px !important;
-}
+// .top-block {
+//   border: 0.7px solid transparent;
+//   border-image: linear-gradient(
+//     133.32deg,
+//     #e67e15 1.16%,
+//     rgba(78, 39, 1, 0.8) 28.06%,
+//     rgba(58, 30, 3, 0.73) 64.96%,
+//     #e67e15 103.88%
+//   );
+//   border-image-slice: 1;
+//   border-radius: 15px;
+//   background-color: rgba(14, 14, 15, 0.397);
 
-.dotted_card_bottom {
-  margin-bottom: 30px;
-}
+//   img {
+//     position: relative;
+//     top: -1.75rem;
+//   }
+// }
 
 .top-block {
-  border: 1px solid #4e2701cc;
-  padding-top: 0 !important;
-  background-color: rgb(0 0 0 / 30%);
+  position: relative;
+  padding: 1rem;
+  border-radius: 15px;
+  background-color: rgba(14, 14, 15, 0.664);
+  z-index: 0; /* Ensure content stays above the ::before border */
 
   img {
     position: relative;
-    top: -30px;
+    top: -1.75rem;
   }
+}
 
-  h5 {
-    font-weight: bold;
-    font-size: 24px;
-  }
-
-  p {
-    font-size: 18px;
-  }
+.top-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 15px;
+  padding: 1px;
+  background: linear-gradient(
+    133.32deg,
+    #e67e15 1.16%,
+    rgba(78, 39, 1, 0.8) 28.06%,
+    rgba(58, 30, 3, 0.73) 64.96%,
+    #e67e15 103.88%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  z-index: -1;
 }
