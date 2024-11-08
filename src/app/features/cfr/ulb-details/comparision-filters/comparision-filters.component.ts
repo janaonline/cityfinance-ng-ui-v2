@@ -1,8 +1,8 @@
-import { Component, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatMenuTrigger } from '@angular/material/menu';
-import { debounceTime, distinctUntilChanged, map, of, Subject, switchMap, tap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, of, switchMap, tap } from 'rxjs';
 import Swal from 'sweetalert2';
 import { MaterialModule } from '../../../../material.module';
 import { DialogComponent } from '../../../../shared/components/dialog/dialog.component';
@@ -15,7 +15,7 @@ import { FiscalRankingService } from '../../services/fiscal-ranking.service';
   standalone: true,
   imports: [MaterialModule],
 })
-export class ComparisionFiltersComponent implements OnInit, OnDestroy {
+export class ComparisionFiltersComponent implements OnInit {
   @ViewChild(MatMenuTrigger) menuTrigger!: MatMenuTrigger;
 
   searchField = new FormControl();
@@ -31,16 +31,16 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
     private fiscalRankingService: FiscalRankingService,
     public dialogRef: MatDialogRef<DialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
-  ) {}
+  ) { }
 
-  private searchSubject = new Subject<string>();
-  private readonly debounceTimeMs = 300; // Set the debounce time (in milliseconds)
+  // private searchSubject = new Subject<string>();
+  // private readonly debounceTimeMs = 300; // Set the debounce time (in milliseconds)
 
   ngOnInit() {
     this.ulbs = this.data?.ulbs;
     // console.log("filter size", this.ulbs.length);
     this.datasetsFilter = this.data?.datasetsFilter;
-    this.searchSubject.pipe(debounceTime(this.debounceTimeMs)).subscribe((searchValue) => {});
+    // this.searchSubject.pipe(debounceTime(this.debounceTimeMs)).subscribe((searchValue) => { });
     this.onSearchValueChange();
   }
 
@@ -52,39 +52,21 @@ export class ComparisionFiltersComponent implements OnInit, OnDestroy {
       debounceTime(500),
       distinctUntilChanged(),
       tap(() => (this.isSearching = true)),
-      switchMap((term) => (term ? this.search(term) : of<any>({ data: this.filteredOptions }))),
+      switchMap((term) => (term ? this.fiscalRankingService.searchUlb(term) : of<any>({ data: this.filteredOptions }))),
       tap(() => {
         (this.isSearching = false), (this.showSearches = true);
       }),
     );
 
-    search$.subscribe((resp) => {
+    search$.subscribe((resp: any) => {
       this.isSearching = false;
       if (resp['ulbs'].length > 0) {
         this.noDataFound = false;
       } else {
         this.noDataFound = true;
       }
-      // this.ulb.name
-      // console.log("resp", resp["ulbs"])
       this.filteredOptions = resp['ulbs'];
     });
-  }
-
-  search(matchingWord: any) {
-    const body = {
-      matchingWord,
-      onlyUlb: true,
-    };
-    return this.fiscalRankingService.searchUlb(matchingWord);
-  }
-
-  ngOnDestroy() {
-    this.searchSubject.complete();
-  }
-
-  onSearch(searchValue: string) {
-    this.searchSubject.next(searchValue);
   }
 
   filterKeys() {

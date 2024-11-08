@@ -6,17 +6,9 @@
 
   <form (submit)="apply()">
     <div class="mt-4">
-      <div
-        *ngFor="let key of filterKeys()"
-        class="cursor-pointer border-bottom border-light-subtle my-2 p-2"
-      >
-        <input
-          class="me-3"
-          type="checkbox"
-          [ngModelOptions]="{ standalone: true }"
-          [id]="key + 'Checkbox'"
-          [(ngModel)]="datasetsFilter[key]"
-        />
+      <div *ngFor="let key of filterKeys()" class="cursor-pointer border-bottom border-light-subtle my-2 p-2">
+        <input class="me-3" type="checkbox" [ngModelOptions]="{ standalone: true }" [id]="key + 'Checkbox'"
+          [(ngModel)]="datasetsFilter[key]" />
         <label class="form-check-label" [for]="key + 'Checkbox'">
           {{ key }}
         </label>
@@ -24,26 +16,15 @@
     </div>
 
     <div class="mt-4">
-      <input
-        [readonly]="ulbs.length >= 5"
-        [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''"
-        matInput
-        [formControl]="searchField"
-        [matAutocomplete]="auto"
-        class="form-control"
-        style="height: 3rem"
-        type="text"
-        placeholder="Search ULB..."
-      />
+      <input [readonly]="ulbs.length >= 5"
+        [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''" matInput
+        [formControl]="searchField" [matAutocomplete]="auto" class="form-control" style="height: 3rem" type="text"
+        placeholder="Search ULB..." />
       <!-- {{filteredOptions | json}} -->
 
       <mat-autocomplete #auto="matAutocomplete">
         <span *ngFor="let option of filteredOptions; let i = index" style="direction: none">
-          <mat-option
-            (click)="addUlb(option)"
-            [ngClass]="{ firstCls: i === 0 }"
-            [value]="option?.name"
-          >
+          <mat-option (click)="addUlb(option)" [ngClass]="{ firstCls: i === 0 }" [value]="option?.name">
             <span> {{ option?.name }}</span>
           </mat-option>
         </span>
@@ -62,15 +43,10 @@
       </div>
       <div class="d-block p-0 m-0" *ngFor="let ulb of ulbs; let i = index">
         @if (ulb.name !== data?.ulb?.name) {
-          <span
-            class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
-            [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }"
-            >{{ ulb?.name }}&nbsp;<i
-              *ngIf="!ulb?.disabled"
-              (click)="removeUlb(i)"
-              class="bi bi-x fs-4 cursor-pointer"
-            ></i>
-          </span>
+        <span class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
+          [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }">{{ ulb?.name }}&nbsp;<i
+            *ngIf="!ulb?.disabled" (click)="removeUlb(i)" class="bi bi-x fs-4 cursor-pointer"></i>
+        </span>
         }
       </div>
     </div>
