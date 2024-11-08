@@ -45,6 +45,8 @@ export class MatCommonTableComponent implements OnChanges {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   skip: number = 0;
+  lastRows: any[] = [];
+  lastRowColumns: any[] = [];
 
   ngOnChanges(changes: SimpleChanges) {
     if (!changes['response']) {
@@ -54,6 +56,8 @@ export class MatCommonTableComponent implements OnChanges {
     this.tableColumns = res?.columns.filter((e: any) => !e.hidden).map((e: { key: string; }) => e.key);
     this.columnData = res?.columns.map((e: { key: string; }) => e.key);
     this.subHeaderColumns = res?.subHeaders?.map((e: { key: string; }) => 'id-' + e.key);
+    this.lastRows = res?.lastRow;
+    this.lastRowColumns = this.lastRows?.map((e: { key: string; }) => 'lastRowId-' + e.key);
 
     // if (tableResponces.currentValue?.data?.length > 0) {
     //   this.isSearchable = Boolean(this.response?.columns?.some(column => column.hasOwnProperty('query')));

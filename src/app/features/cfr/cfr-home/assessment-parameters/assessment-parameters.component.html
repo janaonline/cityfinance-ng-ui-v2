@@ -1,77 +1,21 @@
-<section class="pt-5">
+<section class="pt-5 section-background">
     <div class="container">
-        <h2 class="fw-bold">Ranking Parameters</h2>
-        <p>The City Finance Ranking has been done on 15 Indicators</p>
-
+        <h2 class="text-center fw-bold">Ranking Parameters</h2>
+        <p class="text-center">The City Finance Ranking has been done on 15 Indicators</p>
 
         <div class="row">
-            <div class="col-md-4 mb-3">
-                <div class="card h-100 mb-3 p-4">
-                    <img src="./assets/fiscal-rankings/RM.svg" alt="Resource Mobilization">
-                    <h5 class="card-title mt-2">Resource Mobilization</h5>
-                    <p class="text-muted">Comprises assessment of the size and growth in receipts of the ULB</p>
-                    <button class="btn btn-outline btn-orange m-auto"
-                        routerLink="/cfr/assesst-parameters/resourceMobilization">
-                        Learn more
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <div class="card h-100 mb-3 p-4">
-                    <img src="./assets/fiscal-rankings/EP.svg" alt="Expenditure Performance">
-                    <h5 class="card-title mt-2">Expenditure Performance</h5>
-                    <p class="text-muted">Comprises assessment of the size and quality of expenditure</p>
-                    <button class="btn btn-outline btn-orange m-auto"
-                        routerLink="/cfr/assesst-parameters/expenditurePerformance">
-                        Learn more
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <div class="card h-100 mb-3 p-4">
-                    <img src="./assets/fiscal-rankings/FG.svg" alt="Fiscal Governance">
-                    <h5 class="card-title mt-2">Fiscal Governance</h5>
-                    <p class="text-muted">Comprises assessment of Transparency and accountability</p>
-                    <button class="btn btn-outline btn-orange m-auto"
-                        routerLink="/cfr/assesst-parameters/fiscalGovernance">
-                        Learn more
-                    </button>
-                </div>
-            </div>
+            @for (card of data; track $index) {
+            <div class="col-12 col-md m-3  py-4 border rounded-4 shadow text-center bg-white">
+                <img [src]="card.cardUrl" [alt]="card.cardLabel">
+                <h5 class="mt-2 text-black">{{card.cardLabel}}</h5>
+                <p class="text-muted">{{card.cardDescription}}</p>
+                <button 
+                    class="btn btn-outline-cfPrimary m-auto fw-bold"
+                    [routerLink]="['/cfr/assesst-parameters', card.cardKey]"
+                >Learn more</button>
+              </div>
+            }
         </div>
-
-        <!-- <div class="container d-flex justify-content-around mt-5 pt-5">
-            <div class="row card p-4">
-                <img src="./assets/fiscal-rankings/resource-mobilization.png" style="width: 100px;">
-                <h5 class="card-title mt-2">Resource Mobilization</h5>
-                <p class="text-muted">signifies the size and growth trend in the total receipts and own revenues of the ULB
-                    ...</p>
-                <button class="btn btn-outline btn-orange w-50 m-auto"
-                    routerLink="../assesst-parameters/resourceMobilization">
-                    Learn more
-                </button>
-            </div>
-            <div class="row card p-4">
-                <img src="./assets/fiscal-rankings/expenditure-performance.png" style="width: 100px;">
-                <h5 class="card-title mt-2">Expenditure Performance</h5>
-                <p class="text-muted">signifies size and quality of expenditure (spending) towards building
-                    infrastructure...</p>
-                <button class="btn btn-outline btn-orange w-50 m-auto"
-                    routerLink="../assesst-parameters/expenditurePerformance">
-                    Learn more
-                </button>
-            </div>
-            <div class="row card p-4">
-                <img src="./assets/fiscal-rankings/fiscal-governance.png" style="width: 100px;">
-                <h5 class="card-title mt-2">Fiscal Governance</h5>
-                <p class="text-muted">refers to robustness of systems in place with respect to transparency and
-                    accountabili...</p>
-                <button class="btn btn-outline btn-orange w-50 m-auto" routerLink="../assesst-parameters/fiscalGovernance">
-                    Learn more
-                </button>
-            </div>
-        </div> -->
+    
     </div>
 </section>
