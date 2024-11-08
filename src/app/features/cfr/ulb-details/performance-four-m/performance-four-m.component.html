@@ -4,8 +4,8 @@
     ><span class="text-cfPrimary"> {{ populationCategory }} Population Category</span>
   </h3>
 
-  <div class="container my-4 d-flex justify-content-evenly align-items-center gap-5">
-    <div class="d-flex flex-column">
+  <div class="container my-4 row mx-auto">
+    <div class="col d-flex flex-column">
       <h4 class="fw-bold">
         National Rank&#58;
         <span class="text-shadow text-cfPrimary fw-bold huge-font">{{ selectedRank }}</span
@@ -16,7 +16,7 @@
       <h4 class="fw-bold">Ranking Category&#58;&nbsp;{{ parameterlabel[parameterkey] }}</h4>
     </div>
 
-    <div class="rounded border p-3">
+    <div class="col rounded border p-3 mt-3">
       <h4 class="fw-bold cursor-pointer" (click)="updatePortalData('overAll')">
         <span [ngClass]="{ 'text-cfPrimary': parameterkey === 'overAll' }"><u>Over All</u></span>
         Score&#58;&nbsp;{{ ulb?.overAll?.score }}<span class="fs-6">&#47;&nbsp;1200</span>
@@ -24,7 +24,7 @@
 
       <mat-divider class="my-3"></mat-divider>
 
-      <div class="d-flex justify-content-center gap-4 cursor-pointer">
+      <div class="d-flex justify-content-around cursor-pointer">
         @for (parameter of parameters; track $index) {
           <div
             *ngIf="parameter.key !== 'overAll'"
