@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges, OnChanges } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { ColorDetails, IndiaMapComponent } from '../../india-map/india-map.component';
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
 import { FiscalRankingService, Table } from '../../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
+import { SearchPopupComponent } from '../../ulb-details/search-popup/search-popup.component';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-ulbs-in-india',
@@ -16,7 +18,7 @@ import { StatewiseMapComponent } from '../../statewise-map/statewise-map.compone
     RouterModule, StatewiseMapComponent]
 
 })
-export class UlbsInIndiaComponent implements OnInit {
+export class UlbsInIndiaComponent implements OnInit, OnChanges {
 
   @Input() data: any;
 
@@ -40,21 +42,23 @@ export class UlbsInIndiaComponent implements OnInit {
   ];
   ulbResponse: any = {};
 
-  constructor(private fiscalRankingService: FiscalRankingService,) { }
+  constructor(private fiscalRankingService: FiscalRankingService,
+    private matDialog: MatDialog,
+  ) { }
 
 
   ngOnInit(): void {
     //  this.getStateWiseForm();
     this.getStateData();
-  } 
-  
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['data']) {
       this.data.data = changes['data'].currentValue.bucketWiseTop10Ulbs.bucketWiseTop10UlbsArr;
       this.data.columns = changes['data'].currentValue.bucketWiseTop10Ulbs.columns;
     }
   }
-  
+
   getStateData() {
     this.colorCoding = [];
     this.isLoadingResults = true;
@@ -82,5 +86,14 @@ export class UlbsInIndiaComponent implements OnInit {
           this.isLoadingResults = false;
         },
       });
+  }
+
+  openSearch() {
+    this.matDialog.open(SearchPopupComponent, {
+      width: '100vw',
+      height: '100%',
+      maxWidth: '100%',
+      panelClass: 'search-page',
+    });
   }
 }
