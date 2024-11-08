@@ -1,7 +1,9 @@
 *:not(mat-icon) {
-    font-family: 'Montserrat';
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
 }
 
-.item img {
-    width: 200px;
+p {
+  margin: 0;
+  padding: 0;
 }

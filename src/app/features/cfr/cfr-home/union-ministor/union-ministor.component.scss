@@ -1,11 +1,10 @@
 *:not(mat-icon) {
-    font-family: 'Montserrat';
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
 }
-
-.card {
-    border-radius: 20px;
-    box-shadow: #959da533 0px 8px 24px;
-}
-.quote {
-    font-size: 22px;
+  
+p,
+h4 {
+    margin: 0;
+    padding: 0;
 }
