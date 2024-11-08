@@ -109,6 +109,11 @@
       <tr mat-header-row *matHeaderRowDef="subHeaderColumns"></tr>
       }
       <tr mat-row *matRowDef="let row; columns: columnData"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell text-center" [attr.colspan]="response?.columns.length">
+          <b> No data found.</b>
+        </td>
+      </tr>
     </table>
   </div>
   @if (isPagination) {
