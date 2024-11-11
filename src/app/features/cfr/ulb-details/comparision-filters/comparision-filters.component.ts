@@ -85,7 +85,8 @@ export class ComparisionFiltersComponent implements OnInit {
         confirmButtonText: 'Apply',
       }).then((result) => {
         if (result.isConfirmed) {
-          this.ulbs.push(ulb);
+          this.AddToUlbsArr(ulb);
+          // this.ulbs.push(ulb);
         }
       });
     } else if (
@@ -97,10 +98,17 @@ export class ComparisionFiltersComponent implements OnInit {
         text: `${ulb?.name ?? 'Serached ULB'} already exists.`,
       });
     } else {
-      this.ulbs.push(ulb);
+      this.AddToUlbsArr(ulb)
+      // this.ulbs.push(ulb);
     }
     this.searchField.setValue('');
     this.searchResults = [];
+  }
+
+  AddToUlbsArr(ulb: any){
+    if (ulb.currentFormStatus !== 11) {
+      Swal.fire('OOPS!', `${ulb.name} is not ranked.`, 'info');
+    } else this.ulbs.push(ulb);
   }
 
   closeMenu() {
