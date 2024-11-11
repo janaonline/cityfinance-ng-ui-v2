@@ -13,19 +13,21 @@ import { RankingCategoriesComponent } from './ranking-categories/ranking-categor
 import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
 import { UnionMinistorComponent } from './union-ministor/union-ministor.component';
 import { VideosPopupComponent } from './videos-popup/videos-popup.component';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
   selector: 'app-cfr-home',
   standalone: true,
   imports: [CommonModule, ToStorageUrlPipe, HeaderComponent, UnionMinistorComponent,
     VideosPopupComponent, ScrollToTopComponent, FooterComponent, RankingCategoriesComponent, AssessmentParametersComponent,
-    UlbsInIndiaComponent, GuidelinesBrochureVideoComponent],
+    UlbsInIndiaComponent, GuidelinesBrochureVideoComponent, PreLoaderComponent],
   templateUrl: './cfr-home.component.html',
   styleUrl: './cfr-home.component.scss'
 })
 export class CfrHomeComponent implements OnInit {
 
   data: any;
+  isLoadingData: boolean = false;
 
 
   constructor(
@@ -42,8 +44,10 @@ export class CfrHomeComponent implements OnInit {
   }
 
   loadData() {
+    this.isLoadingData = true;
     this.fiscalRankingService.dashboard().subscribe(({ data }: any) => {
       this.data = data;
+      // this.isLoadingData = false;
     });
   }
 
