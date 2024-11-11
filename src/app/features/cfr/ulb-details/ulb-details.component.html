@@ -1,8 +1,11 @@
-<app-loader *ngIf="isLoading"></app-loader>
 <div class="container">
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 </div>
+@if(isLoading) {
+<!-- <app-loader *ngIf="isLoading"></app-loader> -->
 
+<app-pre-loader></app-pre-loader>
+} @else {
 <app-ulb-details-header [data]="data"></app-ulb-details-header>
 
 <app-performance-four-m [data]="data"></app-performance-four-m>
@@ -13,6 +16,5 @@
 
 <app-comparison [ulb]="data.ulb" [topUlbs]="data.topUlbs"></app-comparison>
 
-<app-ulb-details-assessment-parameters
-  [tables]="data.assessmentParameter"
-></app-ulb-details-assessment-parameters>
+<app-ulb-details-assessment-parameters [tables]="data.assessmentParameter"></app-ulb-details-assessment-parameters>
+}

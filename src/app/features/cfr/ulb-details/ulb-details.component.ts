@@ -8,6 +8,7 @@ import { ComparisonComponent } from './comparison/comparison.component';
 import { PerformanceFourMComponent } from './performance-four-m/performance-four-m.component';
 import { UlbDetailsAssessmentParametersComponent } from './ulb-details-assessment-parameters/ulb-details-assessment-parameters.component';
 import { UlbDetailsHeaderComponent } from './ulb-details-header/ulb-details-header.component';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 
 interface APIResponse {
   assessmentParameter: any;
@@ -34,6 +35,7 @@ interface APIResponse {
     PerformanceFourMComponent,
     ComparisonComponent,
     LoaderComponent,
+    PreLoaderComponent
   ],
 })
 export class UlbDetailsComponent implements OnInit {
@@ -54,7 +56,7 @@ export class UlbDetailsComponent implements OnInit {
   constructor(
     private activatedRoute: ActivatedRoute,
     private fiscalRankingService: FiscalRankingService,
-  ) {}
+  ) { }
 
   get ulbId() {
     return this.activatedRoute.snapshot.params['ulbId'];

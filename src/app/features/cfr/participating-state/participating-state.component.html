@@ -31,8 +31,13 @@
             <!-- <app-common-table theme="white" [response]="table?.response" [classLists]="'scroll fixed-ui-tb'"
               (update)="onUpdate(table, $event)" [tableName]="'Participated State'">
             </app-common-table> -->
-            <app-mat-common-table [response]="table.response" [isLoadingResults]="isLoadingResults"
-              [isPagination]="true" (pageChange)="pageChange($event)"></app-mat-common-table>
+            @if (isLoadingResults) {
+            <app-pre-loader></app-pre-loader>
+            } @else {
+            <app-mat-common-table [tableHeight]='80' [response]="table.response" [isLoadingResults]="isLoadingResults"
+              [isPagination]="false" (pageChange)="pageChange($event)"></app-mat-common-table>
+            }
+
           </div>
         </div>
       </div>

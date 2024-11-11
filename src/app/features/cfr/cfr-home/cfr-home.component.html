@@ -1,4 +1,9 @@
-<app-header [rankedUlbCount]="data.rankedUlbCount"></app-header>
+@if (isLoadingData) {
+<section class="container">
+    <app-pre-loader></app-pre-loader>
+</section>
+} @else {
+<app-header [rankedUlbCount]="data?.rankedUlbCount"></app-header>
 <app-union-ministor></app-union-ministor>
 <app-ulbs-in-india [data]="data"></app-ulbs-in-india>
 <app-assessment-parameters (onGuidelinesPopup)="guidelinesPopup()"></app-assessment-parameters>
@@ -10,3 +15,4 @@
 </div>
 <app-footer></app-footer>
 <app-scroll-to-top></app-scroll-to-top>
+}
