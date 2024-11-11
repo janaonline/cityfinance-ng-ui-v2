@@ -26,11 +26,12 @@ export class MatCommonTableComponent implements OnChanges {
   // @Input() response!: TableResponse;
   @Input() tableRow!: any[];
   @Input() isPagination = false;
-  columnsToDisplay: string[] = [];
-
   @Input() response: any;
   @Input() isLoadingResults = false;
   @Input() pageSize = 10;
+  @Input() tableHeight = 110;
+  columnsToDisplay: string[] = [];
+  decimalPlace = 2;
 
   @Output() pageChange = new EventEmitter();
   prefixUrl = environment.prefixUrl;
@@ -45,7 +46,7 @@ export class MatCommonTableComponent implements OnChanges {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   skip: number = 0;
-  lastRows: any[] = [];
+  lastRow!: any[];
   lastRowColumns: any[] = [];
 
   ngOnChanges(changes: SimpleChanges) {
@@ -56,24 +57,33 @@ export class MatCommonTableComponent implements OnChanges {
     this.tableColumns = res?.columns.filter((e: any) => !e.hidden).map((e: { key: string; }) => e.key);
     this.columnData = res?.columns.map((e: { key: string; }) => e.key);
     this.subHeaderColumns = res?.subHeaders?.map((e: { key: string; }) => 'id-' + e.key);
-    this.lastRows = res?.lastRow;
-    this.lastRowColumns = this.lastRows?.map((e: { key: string; }) => 'lastRowId-' + e.key);
+    this.lastRow = res?.lastRow;
+    if (this.lastRow) {
+      this.lastRow.map((e: any) => {
+        if (e['sum'] || e['avg']) {
+          const opr = e['sum'] ? 'sum' : 'avg';
+          e.value = this.getTotal(res.data, e[opr], opr).toFixed(e.decimalPlace);
+        }
+        return e;
+      })
 
-    // if (tableResponces.currentValue?.data?.length > 0) {
-    //   this.isSearchable = Boolean(this.response?.columns?.some(column => column.hasOwnProperty('query')));
-    // }
+      this.lastRowColumns = this.lastRow?.map((e: { key: string; }) => 'lastRowId-' + e.key);
+
+    }
   }
 
   pageChanged(event: any) {
-    // console.log('event',event);
     this.skip = event.pageIndex;
     this.pageSize = event.pageSize;
     this.pageChange.emit(event);
-    // console.log('event', event);
-    // this.onLoad();
   }
-  /** Gets the total cost of all transactions. */
-  getTotalCost() {
-    // return this.response.data.map((t: { cost: any; }) => t.cost).reduce((acc: any, value: any) => acc + value, 0);
+
+  /** Gets the total. */
+  getTotal(data: any, column: string, operator: string) {
+    let total = data.map((t: any) => t[column]).reduce((acc: any, value: any) => Number(acc) + Number(value), 0);
+    if (operator === 'avg') {
+      total = total / data.length;
+    }
+    return total;
   }
 }
