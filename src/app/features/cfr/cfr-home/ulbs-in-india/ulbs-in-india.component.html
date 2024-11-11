@@ -2,7 +2,7 @@
   <div class="container text-center">
     <h2 class="">
       <span class="fw-bold text-cfPrimary">{{ data?.rankedUlbCount | number }} </span>
-      <span class="fw-bold text-cfSecondary">ULBs are Ranked</span>
+      <span class="fw-bold text-cfSecondary">ULBs Ranked</span>
     </h2>
   </div>
 </section>
@@ -11,7 +11,7 @@
   <div class="container-fluid px-5">
     <!-- Left section -->
     <div class="row">
-      <div class="col-sm-12 col-md-6 d-flex flex-column gap-5" style="height: 100vh">
+      <div class="col-sm-12 col-md-6 d-flex flex-column gap-4" style="height: 100vh">
         <h4 class="fw-bold text-cfSecondary">Ranked ULBs across States and UTs</h4>
         <div class="h-100 w-100 flex-grow-1"><app-statewise-map></app-statewise-map></div>
       </div>
@@ -19,16 +19,19 @@
       <!-- Right section -->
       <div class="col-md-6 pt-0 section-2 justify-content-between align-items-start">
         <div>
-          <div class="row">
-            <h4 class="col-9 fw-bold mb-4 text-cfSecondary">Top Performer ULBs</h4>
-            <input
-              type="text"
-              class="col-3 form-control px-4 py-3 w-25"
-              placeholder="Search for ULB..."
-              (click)="openSearch()"
-            />
+          <div class="row mb-3">
+            <h4 class="col-8 fw-bold mb-4 text-cfSecondary">Top Performer ULBs</h4>
+            <div class="col-4">
+              <input
+                type="text"
+                class="form-control px-4 py-3"
+                placeholder="Search for ULB..."
+                (click)="openSearch()"
+              />
+            </div>
           </div>
           <app-mat-common-table
+            [tableHeight]="77"
             [response]="data"
             [isLoadingResults]="isLoadingResults"
             [isPagination]="false"
