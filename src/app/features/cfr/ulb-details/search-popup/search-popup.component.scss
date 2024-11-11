@@ -1,37 +1,4 @@
-section {
-  background-color: black;
-  height: 100%;
-  width: 100%;
-  color: white;
-
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-
-    .card {
-      font-size: 20px;
-
-      input {
-        outline: none;
-      }
-    }
-
-    .search-result {
-      max-height: 50vh;
-      overflow-y: auto;
-      .list-group-item {
-        transition: 300ms ease all;
-        &:hover {
-          background-color: #e67e15;
-          color: white;
-        }
-      }
-    }
-  }
-  .search-btn {
-    top: 3px;
-    right: 3px;
-  }
+*:not(mat-icon) {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
 }
