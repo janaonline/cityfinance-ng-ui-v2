@@ -47,7 +47,7 @@ export class CfrHomeComponent implements OnInit {
     this.isLoadingData = true;
     this.fiscalRankingService.dashboard().subscribe(({ data }: any) => {
       this.data = data;
-      // this.isLoadingData = false;
+      this.isLoadingData = false;
     });
   }
 
