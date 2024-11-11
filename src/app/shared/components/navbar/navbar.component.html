@@ -52,19 +52,19 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-login" *dropdownMenu aria-labelledby="loginDrp" style="left: -7px">
           <li>
-            <a class="dropdown-item" href="/fc_grant">
+            <a class="dropdown-item" (click)="loginLogout('15thFC')" href="javascript:;">
               <i class="bi bi-box-arrow-in-right"></i> XV FC Grant
             </a>
           </li>
           <hr class="m-0" />
           <li>
-            <a class="dropdown-item" href="/login/xvi-fc">
+            <a class="dropdown-item" (click)="loginLogout('XVIFC')" href="javascript:;">
               <i class="bi bi-box-arrow-in-right"></i> XVI FC Data Collection
             </a>
           </li>
           <hr class="m-0" />
           <li>
-            <a class="dropdown-item" href="rankings/login">
+            <a class="dropdown-item" (click)="loginLogout('ranking')" href="javascript:;">
               <i class="bi bi-box-arrow-in-right"></i> Rankings 2022
             </a>
           </li>
