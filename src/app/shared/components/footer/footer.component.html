@@ -17,25 +17,11 @@
         </h6>
       </div>
       <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+        @for (link of footerLinks; track $index) {
         <h6>
-          <a class="foot-links" style="color: #ff9922" routerLink="/home" routerLinkActive="active">Home</a>
+          <a class="foot-links text-cfPrimary" [href]="link.href">{{link.title}}</a>
         </h6>
-        <h6>
-          <a class="foot-links" style="color: #ff9922"
-            routerLink="/dashboard/national/61e150439ed0e8575c881028">Financial</a>
-        </h6>
-        <h6>
-          <a class="foot-links" style="color: #ff9922" routerLink="/own-revenue-dashboard">Own Revenue Performance</a>
-        </h6>
-        <h6>
-          <a class="foot-links" style="color: #ff9922" routerLink="/dashboard/slb">Service Level Benchmarks
-            Performance</a>
-        </h6>
-        <!-- <h6><a class="foot-links" style="color: #FF9922;">Infrastructure Borrowings</a></h6> -->
-        <h6>
-          <a class="foot-links" style="color: #ff9922"
-            routerLink="/resources-dashboard/learning-center/toolkits">Resources</a>
-        </h6>
+        }
       </div>
       <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
         <h6 class="info-dir foot-links" [innerHtml]="address">
@@ -52,7 +38,7 @@
             >{{ mailLabel }}
             contact@cityfinance.in
           </a> -->
-          <a class="foot-links" href="mailto:rankings@cityfinance.in" style="color: #ff9922">
+          <a class="foot-links text-cfPrimary" href="mailto:rankings@cityfinance.in">
             rankings&#64;cityfinance.in
           </a>
         </h4>

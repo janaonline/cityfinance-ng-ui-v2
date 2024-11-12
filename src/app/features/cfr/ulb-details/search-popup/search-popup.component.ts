@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, map, of, switchMap, tap } from 'rxjs';
+import Swal from 'sweetalert2';
 import { MaterialModule } from '../../../../material.module';
 import { FiscalRankingService } from '../../services/fiscal-ranking.service';
 
@@ -11,7 +12,7 @@ import { FiscalRankingService } from '../../services/fiscal-ranking.service';
   templateUrl: './search-popup.component.html',
   styleUrls: ['./search-popup.component.scss'],
   standalone: true,
-  imports: [MaterialModule, RouterModule],
+  imports: [MaterialModule],
 })
 export class SearchPopupComponent implements OnInit {
 
@@ -29,7 +30,8 @@ export class SearchPopupComponent implements OnInit {
 
   constructor(
     private matDialog: MatDialog,
-    private fiscalRankingService: FiscalRankingService
+    private fiscalRankingService: FiscalRankingService,
+    private router: Router
   ) { }
 
   ngOnInit() {
@@ -62,9 +64,20 @@ export class SearchPopupComponent implements OnInit {
         this.noDataFound = true;
       }
       // this.ulb.name
-      // console.log("resp", resp["ulbs"])
+      console.log("resp", resp["ulbs"])
       this.filteredOptions = resp['ulbs'];
     });
+
+  }
+
+  getUlbDetails(ulbData: any){
+    // this.isRanked = true;
+    if(ulbData.currentFormStatus === 11) {
+      this.router.navigateByUrl(`cfr/ulb/${ulbData.ulb}`);
+      this.close();
+    } else {
+      Swal.fire('OOPS!', `${ulbData.name} is not ranked.`, 'info');
+    }
   }
 
   async addUlb(ulb: any) {

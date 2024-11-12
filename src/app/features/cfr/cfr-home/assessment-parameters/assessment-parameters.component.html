@@ -3,9 +3,9 @@
         <h2 class="text-center fw-bold">Ranking Parameters</h2>
         <p class="text-center">The City Finance Ranking has been done on 15 Indicators</p>
 
-        <div class="row">
+        <div class="row gap-3">
             @for (card of data; track $index) {
-            <div class="col-12 col-md m-3  py-4 border rounded-4 shadow text-center bg-white">
+            <div class="col-12 col-md py-4 border rounded-4 shadow text-center bg-white">
                 <img [src]="card.cardUrl" [alt]="card.cardLabel">
                 <h5 class="mt-2 text-black">{{card.cardLabel}}</h5>
                 <p class="text-muted">{{card.cardDescription}}</p>

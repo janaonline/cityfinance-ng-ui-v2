@@ -59,7 +59,7 @@
   </div>
   }
 
-  <div class="table-container rounded">
+  <div class="table-container rounded" [style.max-height.vh]='tableHeight'>
     <table mat-table [dataSource]="response?.data" class="table-class" matSort matSortActive="created"
       matSortDisableClear matSortDirection="desc">
       @for (column of response?.columns; track column) {
@@ -96,29 +96,28 @@
         </td>
 
       </ng-container>
-    }
-    
+      }
+
       <!-- Sub headers -->
       @for (subHeader of response?.subHeaders; track subHeader.key) {
-        <ng-container [matColumnDef]="'id-' + subHeader.key">
-          <td mat-header-cell *matHeaderCellDef class="text-muted fst-italic text-nowrap br-r"
+      <ng-container [matColumnDef]="'id-' + subHeader.key">
+        <td mat-header-cell *matHeaderCellDef class="text-muted fst-italic text-nowrap br-r"
           [ngClass]="'table-primary'">
           {{ subHeader.label }}
         </td>
       </ng-container>
-    }
-    
+      }
+
       <!-- Last row - footer -->
-      @for (lastRow of lastRows; track lastRow.key) {
-        <ng-container [matColumnDef]="'lastRowId-' + lastRow.key">
-          <td mat-footer-cell *matFooterCellDef class="fw-bold"
-          [ngClass]="lastRow.class">
-          {{ lastRow.value }}
+      @for (lastCol of lastRow; track lastCol.key) {
+      <ng-container [matColumnDef]="'lastRowId-' + lastCol.key">
+        <td mat-footer-cell *matFooterCellDef class="fw-bold" [ngClass]="lastCol.class">
+          {{ lastCol.value }}
         </td>
       </ng-container>
-    }
+      }
 
-  
+
       <!-- Table header rows -->
       <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true" class="fw-bold"></tr>
 
@@ -128,15 +127,16 @@
       }
 
       <!-- Add Total in the footer -->
-      @if(lastRows){
-        <tr mat-footer-row *matFooterRowDef="lastRowColumns"></tr>
+      @if(lastRow){
+      <tr mat-footer-row *matFooterRowDef="lastRowColumns; sticky: true"></tr>
       }
+
 
       <!-- Table data rows -->
       <tr mat-row *matRowDef="let row; columns: columnData"></tr>
       <tr class="mat-row" *matNoDataRow>
         <td class="mat-cell text-center" [attr.colspan]="response?.columns.length">
-          <p class="fw-bold fs-4 text-danger"> No data found.</p>
+          <p class="fw-bold fs-5 text-danger p-2">No data found.</p>
         </td>
       </tr>
     </table>

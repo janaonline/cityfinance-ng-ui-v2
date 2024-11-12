@@ -16,7 +16,9 @@
     </div>
 
     <div class="mt-4">
-      <input [readonly]="ulbs.length >= 5"
+      <input 
+        [ngClass]="{'custom-readonly-input': ulbs.length >= 5}"
+        [readonly]="ulbs.length >= 5"
         [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''" matInput
         [formControl]="searchField" [matAutocomplete]="auto" class="form-control" style="height: 3rem" type="text"
         placeholder="Search ULB..." />
