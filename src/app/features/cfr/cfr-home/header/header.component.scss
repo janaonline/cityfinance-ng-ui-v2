@@ -16,6 +16,7 @@ p {
 
   position: relative;
   isolation: isolate;
+  min-height: 85vh;
 }
 
 .section-background::after {
@@ -51,7 +52,8 @@ p {
   padding: 1rem;
   border-radius: 15px;
   background-color: rgba(14, 14, 15, 0.664);
-  z-index: 0; /* Ensure content stays above the ::before border */
+  z-index: 0;
+  /* Ensure content stays above the ::before border */
 
   img {
     position: relative;
@@ -68,13 +70,11 @@ p {
   bottom: 0;
   border-radius: 15px;
   padding: 1px;
-  background: linear-gradient(
-    133.32deg,
-    #e67e15 1.16%,
-    rgba(78, 39, 1, 0.8) 28.06%,
-    rgba(58, 30, 3, 0.73) 64.96%,
-    #e67e15 103.88%
-  );
+  background: linear-gradient(133.32deg,
+      #e67e15 1.16%,
+      rgba(78, 39, 1, 0.8) 28.06%,
+      rgba(58, 30, 3, 0.73) 64.96%,
+      #e67e15 103.88%);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
