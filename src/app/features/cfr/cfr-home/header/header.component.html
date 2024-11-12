@@ -1,5 +1,5 @@
 <section class="section-background">
-  <div class="container d-flex flex-column gap-4 gap-lg-5">
+  <div class="container d-flex flex-column justify-content-around" style="min-height: 90vh;">
     <div class="text-center">
       <h2 class="fw-bold mt-4">City Finance Ranking 2022</h2>
       <p>
@@ -10,22 +10,18 @@
 
     <div class="row">
       @for (card of data; track $index) {
-        <div class="col my-4">
-          <div class="py-1 top-block text-center h-100">
-            <img [src]="card.cardUrl" />
-            <p class="fw-bold">{{ card?.cardValueNo | number }}</p>
-            <p class="">{{ card.cardLabel }}</p>
-          </div>
+      <div class="col my-4">
+        <div class="py-1 top-block text-center h-100">
+          <img [src]="card.cardUrl" [alt]="card.cardLabel" />
+          <p class="fw-bold">{{ card?.cardValueNo | number }}</p>
+          <p class="">{{ card.cardLabel }}</p>
         </div>
+      </div>
       }
     </div>
 
     <div class="">
-      <button
-        type="button"
-        class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3"
-        [routerLink]="['/cfr/top-rankings']"
-      >
+      <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3" [routerLink]="['/cfr/top-rankings']">
         View Ranking
       </button>
       <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto">
@@ -34,11 +30,11 @@
       </button>
     </div>
 
-    <div class="cursor-pointer">
-      <div class="text-center" (click)="scrollOnePageDown()">
-        <p class="text-cfPrimary">Explore more</p>
-        <img width="100px" src="./assets/fiscal-rankings/down-arrow.gif" />
-      </div>
+    <div class="cursor-pointer d-flex justify-content-center">
+      <button class="text-center text-cfPrimary btn" (click)="scrollOnePageDown()">
+        Explore more <br />
+        <img width="100px" src="./assets/fiscal-rankings/down-arrow.gif" alt="down-arrow">
+      </button>
     </div>
   </div>
 </section>
