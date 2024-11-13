@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "local": "ng serve --configuration=local --port 4300",
-    "staging": "ng serve --configuration=staging --port 4300",
+    "staging": "ng serve --configuration=staging --port 3000",
     "dev": "ng serve --configuration=development --port 4300",
     "start": "ng serve",
     "build": "ng build --base-href /fc/",
@@ -27,6 +27,7 @@
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
     "@auth0/angular-jwt": "^5.2.0",
+    "@superset-ui/embedded-sdk": "^0.1.2",
     "@sweetalert2/ngx-sweetalert2": "^12.3.0",
     "ag-grid-community": "^31.3.2",
     "angular2-multiselect-dropdown": "^10.0.0",
