@@ -181,6 +181,13 @@ export class TopRankingsComponent implements OnInit {
     });
   }
 
+  resetFilter() {
+    this.filter.patchValue({ stateData: ""});
+    this.filter.patchValue({ populationBucket: 1 });
+    this.filter.patchValue({ category: "overAllRank" });
+    this.loadData();
+  }
+
   openSearch() {
     this.matDialog.open(SearchPopupComponent, {
       width: '100vw',
