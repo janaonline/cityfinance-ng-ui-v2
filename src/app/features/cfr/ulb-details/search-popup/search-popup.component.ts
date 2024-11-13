@@ -58,7 +58,7 @@ export class SearchPopupComponent implements OnInit {
 
     search$.subscribe((resp) => {
       this.isSearching = false;
-      if (resp['ulbs'].length > 0) {
+      if (resp['ulbs'] && resp['ulbs'].length > 0) {
         this.noDataFound = false;
       } else {
         this.noDataFound = true;
