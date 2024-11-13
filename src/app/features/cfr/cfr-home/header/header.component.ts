@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { MaterialModule } from '../../../../material.module';
 
@@ -17,11 +17,11 @@ interface Card {
   standalone: true,
   imports: [CommonModule, MaterialModule, RouterModule],
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   @Input() rankedUlbCount: number = 0;
   data: Card[] = [];
 
-  constructor() {}
+  constructor() { }
 
   ngOnInit(): void {
     this.data = [
