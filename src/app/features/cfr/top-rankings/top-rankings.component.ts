@@ -182,14 +182,9 @@ export class TopRankingsComponent implements OnInit {
   }
 
   resetFilter() {
-    this.params.category = "overAllRank";
-    this.params.populationBucket = 1;
-    this.params.skip = 0;
-    this.params.limit = 10;
-    this.params.state = "";
-
     this.filter.patchValue({ stateData: ""});
     this.filter.patchValue({ populationBucket: 1 });
+    this.filter.patchValue({ category: "overAllRank" });
     this.loadData();
   }
 
