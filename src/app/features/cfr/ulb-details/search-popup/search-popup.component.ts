@@ -76,7 +76,11 @@ export class SearchPopupComponent implements OnInit {
       this.router.navigateByUrl(`cfr/ulb/${ulbData.ulb}`);
       this.close();
     } else {
-      Swal.fire('OOPS!', `${ulbData.name} is not ranked.`, 'info');
+      // Swal.fire('OOPS!', `${ulbData.name} is not ranked.`, 'info');
+      Swal.fire({
+        // title: 'Oops!',
+        text: `${ulbData.name} is not ranked.`,
+      })
     }
   }
 

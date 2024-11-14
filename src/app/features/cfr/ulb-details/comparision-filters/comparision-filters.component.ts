@@ -94,7 +94,7 @@ export class ComparisionFiltersComponent implements OnInit {
       this.ulbs?.some((element: any) => element?.name === ulb?.name)
     ) {
       Swal.fire({
-        title: 'Oops!',
+        // title: 'Oops!',
         text: `${ulb?.name ?? 'Serached ULB'} already exists.`,
       });
     } else {
@@ -107,7 +107,11 @@ export class ComparisionFiltersComponent implements OnInit {
 
   AddToUlbsArr(ulb: any){
     if (ulb.currentFormStatus !== 11) {
-      Swal.fire('OOPS!', `${ulb.name} is not ranked.`, 'info');
+      // Swal.fire('OOPS!', `${ulb.name} is not ranked.`, 'info');
+      Swal.fire({
+        // title: 'Oops!',
+        text: `${ulb.name} is not ranked.`,
+      })
     } else this.ulbs.push(ulb);
   }
 
