@@ -4,6 +4,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
+import { DalgoComponent } from './auth/login/dalgo/dalgo.component';
 // import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
@@ -29,6 +30,8 @@ export const routes: Routes = [
   //     // Add other protected routes here
   //   ],
   // },
+
+  { path: "dalgo", component: DalgoComponent },
   {
     path: '',
     // redirectTo: 'cfr',
