@@ -1,16 +1,15 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Subject } from 'rxjs';
-import { JwtHelperService } from '@auth0/angular-jwt';
 import { KeyValue } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-// import { TableResponse } from "./common-table/common-table.component";
+import { JwtHelperService } from '@auth0/angular-jwt';
+import { Subject } from 'rxjs';
 
 import { map } from 'rxjs/operators';
-import { TableResponse } from './common-table.interface';
 import { environment } from '../../../../environments/environment';
 import { USER_TYPE } from '../../../core/models/user/userType';
 import { UserUtility } from '../../../core/util/user/user';
+import { TableResponse } from './common-table.interface';
 
 export enum StatusType {
   'notStarted' = 1,
@@ -25,7 +24,7 @@ export interface Table {
   id?: string;
   info?: string;
   endpoint?: string;
-  response: TableResponse;
+  response: TableResponse | null;
 }
 
 export interface MapData {
@@ -58,14 +57,14 @@ export interface FormWiseData {
 
 export interface TrackingHistoryData {
   srNo: number;
-  action: String;
-  Date: String;
+  action: string;
+  Date: string;
 }
 
 export interface TrackingHistoryResponse {
-  success: Boolean;
+  success: boolean;
   data: TrackingHistoryData[];
-  message: String;
+  message: string;
 }
 export interface FrFilter {
   label: string;
@@ -155,13 +154,6 @@ export class FiscalRankingService {
       recaptcha,
     });
   }
-  postFiscalRankingData(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/create-form`, body);
-  }
-
-  actionByMohua(body: any) {
-    return this.http.post(`${environment.api.url}fiscal-ranking/action-by-mohua`, body);
-  }
 
   getToken() {
     return localStorage.getItem('id_token');
@@ -171,19 +163,27 @@ export class FiscalRankingService {
     return !this.helper.isTokenExpired(this.getToken());
   }
 
-  downloadFile(blob: any, type: string, filename: string): string {
-    const url = window.URL.createObjectURL(blob); // <-- work with blob directly
+  downloadFile(blob: any, type: string, filename: string): void {
+    try {
+      // Create an object URL for the blob
+      const url = window.URL.createObjectURL(blob);
 
-    // create hidden dom element (so it works in all browsers)
-    const a = document.createElement('a');
-    a.setAttribute('style', 'display:none;');
-    document.body.appendChild(a);
+      // Create a hidden anchor element
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
 
-    // create file, attach to hidden element and open hidden element
-    a.href = url;
-    a.download = filename;
-    a.click();
-    return url;
+      // Append the anchor to the body, trigger the download, and remove the anchor
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Release the object URL to free memory
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading the file:', error);
+    }
   }
 
   getTableResponse(
@@ -239,7 +239,7 @@ export class FiscalRankingService {
   }
 
   states() {
-    return this.http.get(`${environment.api.url}scoring-fr/states`);
+    return this.http.get(`${environment.api.url}scoring-fr/states?limit=40`);
   }
 
   topRankedUlbs(queryParams: string, columns: any, params: any) {
@@ -252,7 +252,18 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/top-ranked-states`, { params });
   }
 
-  getBarchartData(ulbsString: any) {
-    return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?${ulbsString}`);
+  getBarchartData(ulbsString: any, populationBucket: number) {
+    return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?populationBucket=${populationBucket}&${ulbsString}`);
+  }
+
+  getApiResponse(endPoints: string, params: any) {
+    // const params = { ulb };
+    return this.http.get(`${environment.api.url}${endPoints}`, { params });
+  }
+
+  downloadRankings() {
+    return this.http.get(`${environment.api.url}scoring-fr/top-ranked-ulbs-dump`, {
+      responseType: 'blob',
+    });
   }
 }

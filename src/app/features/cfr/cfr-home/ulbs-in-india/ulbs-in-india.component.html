@@ -1,0 +1,62 @@
+<section class="py-3 header">
+  <div class="container text-center">
+    <h2 class="">
+      <span class="fw-bold text-cfPrimary">{{ data?.rankedUlbCount | number }} </span>
+      <span class="fw-bold text-cfSecondary">ULBs Ranked</span>
+    </h2>
+  </div>
+</section>
+
+<section class="map-bg py-5">
+  <div class="container-fluid px-5">
+    <!-- Left section -->
+    <div class="row">
+      <div class="col-sm-12 col-md-6 d-flex flex-column gap-4" style="height: 100vh">
+        <h4 class="fw-bold text-cfSecondary">Ranked ULBs across States and UTs</h4>
+        <div class="h-100 w-100 flex-grow-1"><app-statewise-map></app-statewise-map></div>
+      </div>
+
+      <!-- Right section -->
+      <div class="col-md-6 pt-0 section-2 justify-content-between align-items-start">
+        <div>
+          <div class="row mb-3">
+            <h4 class="col-8 fw-bold mb-4 text-cfSecondary">Top Performer ULBs</h4>
+            <div class="col-4">
+              <input
+                type="text"
+                class="form-control px-4 py-3"
+                placeholder="Search for ULB..."
+                (click)="openSearch()"
+              />
+            </div>
+          </div>
+          <app-mat-common-table
+            [tableHeight]="77"
+            [response]="data"
+            [isLoadingResults]="isLoadingResults"
+            [isPagination]="false"
+          ></app-mat-common-table>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="row mt-4">
+        <button
+          type="button"
+          class="col-4 d-block btn btn-cfPrimary fw-bold mx-auto text-truncate"
+          title="View Ranked ULBs across States and UTs"
+          [routerLink]="['/cfr/participated-states-ut']"
+        >
+          View Ranked ULBs across States and UTs
+        </button>
+        <button
+          type="button"
+          class="col-4 d-block btn btn-cfPrimary fw-bold mx-auto"
+          [routerLink]="['/cfr/top-rankings']"
+        >
+          View Ranking
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

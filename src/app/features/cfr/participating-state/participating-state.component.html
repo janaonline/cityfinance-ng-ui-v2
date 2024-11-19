@@ -1,0 +1,46 @@
+<section class="bg-img">
+  <div class="container">
+    <div class="row mb-3">
+      <div class="col-sm-12">
+        <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
+      </div>
+    </div>
+    <div class="row mb-4">
+      <div class="col-sm-12 text-center">
+        <span class="form-h-fr">Overview of State-wise participated ULBs</span>
+      </div>
+    </div>
+  </div>
+  <section class="map-bg">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12 col-md-6 my-0 map-con">
+          <!-- <ng-container *ngIf="isLoadingResults; else map">
+            <div class="loader">
+              <app-pre-loader></app-pre-loader>
+            </div>
+          </ng-container>
+          <ng-template class="map-con" #map>
+            <app-india-map [colorCoding]="colorCoding" label="% of Participation"
+              [colorDetails]="colorDetails"></app-india-map>
+          </ng-template> -->
+          <app-statewise-map></app-statewise-map>
+        </div>
+        <div class="com-sm-12 col-md-6">
+          <div class="table-card mt-3">
+            <!-- <app-common-table theme="white" [response]="table?.response" [classLists]="'scroll fixed-ui-tb'"
+              (update)="onUpdate(table, $event)" [tableName]="'Participated State'">
+            </app-common-table> -->
+            @if (isLoadingResults) {
+            <app-pre-loader></app-pre-loader>
+            } @else {
+            <app-mat-common-table [tableHeight]='80' [response]="table.response" [isLoadingResults]="isLoadingResults"
+              [isPagination]="false" (pageChange)="pageChange($event)"></app-mat-common-table>
+            }
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>

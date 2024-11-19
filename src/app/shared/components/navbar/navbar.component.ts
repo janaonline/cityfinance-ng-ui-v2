@@ -1,16 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { environment } from '../../../../environments/environment';
-import { AccessChecker } from '../../../core/util/access/accessChecker';
-import { MODULES_NAME } from '../../../core/util/access/modules';
-import { ACTIONS } from '../../../core/util/access/actions';
-import { AuthService } from '../../../core/services/auth.service';
-import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
-import { UserUtility } from '../../../core/util/user/user';
-import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { CollapseModule } from 'ngx-bootstrap/collapse';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { environment } from '../../../../environments/environment';
+import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../../core/models/user/userType';
+import { AuthService } from '../../../core/services/auth.service';
+import { AccessChecker } from '../../../core/util/access/accessChecker';
+import { ACTIONS } from '../../../core/util/access/actions';
+import { MODULES_NAME } from '../../../core/util/access/modules';
+import { UserUtility } from '../../../core/util/user/user';
 
 @Component({
   selector: 'app-navbar',
@@ -19,7 +19,7 @@ import { USER_TYPE } from '../../../core/models/user/userType';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit, AfterViewInit {
   private accessChecker = new AccessChecker();
   isProd: boolean = false;
   canViewUserList: boolean = false;
@@ -31,12 +31,13 @@ export class NavbarComponent {
   btnName = 'Login for 15th FC Grants';
   sticky: boolean = false;
   isCollapsed = true;
+  prefixUrl = environment.prefixUrl;
 
   menus: any = [
     {
       name: `<img src="./assets/images/city-finance-ranking.png"/>`,
       class: 'navbar-brand cityLogo',
-      href: '/rankings/home',
+      href: `${this.prefixUrl}/cfr/home`,
     },
     {
       name: 'Dashboard',
@@ -98,7 +99,7 @@ export class NavbarComponent {
         name: `Review XVI FC`,
         link: '/admin/xvi-fc-review',
       },
-      // (this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && { name: `Rankings'22 Dashboard`, href: '/rankings/review-rankings-ulbform' }),
+      // (this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && { name: `Rankings'22 Dashboard`, href: '/cfr/review-rankings-ulbform' }),
       // (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: 'Users', href: '/user/list/ULB' }),
     ];
   }
@@ -129,7 +130,7 @@ export class NavbarComponent {
   }
 
   removeSessionItem() {
-    let postLoginNavigation = sessionStorage.getItem('postLoginNavigation'),
+    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation'),
       sessionID = sessionStorage.getItem('sessionID');
     sessionStorage.clear();
     sessionStorage.setItem('sessionID', sessionID || '');
@@ -151,11 +152,37 @@ export class NavbarComponent {
       behavior: 'smooth',
     });
   }
+
   loginLogout(type: string) {
+    localStorage.setItem('loginType', type);
+    if (type == '15thFC') {
+      // this._router.navigateByUrl("/fc_grant");
+      window.location.href = '/fc_grant';
+    }
+    else if (type == 'XVIFC') {
+      // this._router.navigateByUrl("/login/xvi-fc");
+      window.location.href = '/login/xvi-fc';
+    }
+    else if (type == 'ranking') {
+      // this._router.navigateByUrl("/rankings/login");
+      window.location.href = '/rankings/login';
+    } else if (type == 'logout') {
+      this.authService.loginLogoutCheck.next(false);
+      // this.newCommonService.setFormStatus2223.next(false);
+      localStorage.clear();
+      this.removeSessionItem();
+      this.isLoggedIn = false;
+      // this._router.navigateByUrl("rankings/home");
+      window.location.href = '/';
+    }
+
+  }
+
+  loginLogout_bkp(type: string) {
     // if (type == '15th_Fc') {
     //   this._router.navigateByUrl("/fc_grant");
     // } else if (type == 'ranking') {
-    //   this._router.navigateByUrl("/rankings/login");
+    //   this._router.navigateByUrl("/cfr/login");
     // } else if (type == 'logout') {
     this.authService.loginLogoutCheck.next(false);
     // this.newCommonService.setFormStatus2223.next(false);

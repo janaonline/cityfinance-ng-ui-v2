@@ -1,0 +1,9 @@
+*:not(mat-icon) {
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
+}
+
+.rankings-card {
+    border-radius: 20px;
+    border: 2px dashed gray;
+}

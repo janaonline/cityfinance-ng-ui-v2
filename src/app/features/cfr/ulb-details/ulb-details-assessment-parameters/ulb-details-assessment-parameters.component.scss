@@ -1,0 +1,9 @@
+section {
+  background-repeat: no-repeat;
+  background-size: 100% 80%;
+  background-image: url('../../../../../assets/fiscal-rankings/assignment-parameters-background.png');
+}
+
+.btn-check:checked + .font-white {
+  color: white;
+}

@@ -1,0 +1,15 @@
+* {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
+}
+
+.card-clr {
+  background-color: rgba(248, 250, 255, 1);
+}
+
+.bg-img {
+  background-image: url('../../../../assets/fiscal-rankings/participedUlb.png');
+  background-position: right bottom;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}

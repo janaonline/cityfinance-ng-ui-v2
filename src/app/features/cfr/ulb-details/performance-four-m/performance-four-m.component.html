@@ -1,0 +1,51 @@
+<section class="my-5 d-flex flex-column">
+  <h3 class="my-4 text-center fw-bold">
+    <span class="text-cfSecondary">Performance in</span
+    ><span class="text-cfPrimary"> {{ populationCategory }} Population Category</span>
+  </h3>
+
+  <div class="container my-4 row mx-auto">
+    <div class="col d-flex flex-column">
+      <h4 class="fw-bold">
+        National Rank&#58;
+        <span class="text-shadow text-cfPrimary fw-bold huge-font">{{ selectedRank }}</span
+        ><span class="text-shadow text-cfPrimary fw-bold"
+          >&#47;&nbsp;{{ data?.populationBucketUlbCount }}&nbsp;ULBs</span
+        >
+      </h4>
+      <h4 class="fw-bold">Ranking Category&#58;&nbsp;{{ parameterlabel[parameterkey] }}</h4>
+    </div>
+
+    <div class="col rounded border p-3 mt-3">
+      <h4 class="fw-bold cursor-pointer" (click)="updatePortalData('overAll')">
+        <span [ngClass]="{ 'text-cfPrimary': parameterkey === 'overAll' }"><u>Over All</u></span>
+        Score&#58;&nbsp;{{ ulb?.overAll?.score }}<span class="fs-6">&#47;&nbsp;1200</span>
+      </h4>
+
+      <mat-divider class="my-3"></mat-divider>
+
+      <div class="d-flex justify-content-around cursor-pointer">
+        @for (parameter of parameters; track $index) {
+          <div
+            *ngIf="parameter.key !== 'overAll'"
+            class="d-flex align-items-center justify-content-end flex-column"
+            (click)="updatePortalData(parameter.key)"
+          >
+            <img class="w-50 mb-2" [src]="'assets/fiscal-rankings/' + parameter.code + '.svg'" />
+            <p class="fw-bold text-center mb-2 text">
+              <u [ngClass]="{ 'text-cfPrimary': parameter.key === parameterkey }">
+                <span>{{ parameter.label.split(' ')[0] }}</span
+                ><br />
+                <span>{{ parameter.label.split(' ')[1] }}</span>
+              </u>
+            </p>
+            <h3 class="fw-bold">
+              {{ ulb?.[parameter.key]?.score
+              }}<span class="fs-6">&#47;&nbsp;{{ parameter.maxScore }}</span>
+            </h3>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>
