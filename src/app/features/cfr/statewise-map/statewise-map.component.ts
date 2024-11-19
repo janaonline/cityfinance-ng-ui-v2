@@ -26,10 +26,10 @@ export class StatewiseMapComponent implements OnInit {
   limit = 100;
 
   colorDetails: ColorDetails[] = [
-    { color: '#06668F', text: '76%-100%', min: 75, max: 100 },
-    { color: '#0B8CC3', text: '51%-75%', min: 50, max: 75 },
-    { color: '#73BFE0', text: '26%-50%', min: 25, max: 50 },
-    { color: '#BCE2F2', text: '1%-25%', min: 1, max: 25 },
+    { color: '#06668F', text: '76%-100%', min: 75.51, max: 100 },
+    { color: '#0B8CC3', text: '51%-75%', min: 50.51, max: 75.50 },
+    { color: '#73BFE0', text: '26%-50%', min: 25.51, max: 50.50 },
+    { color: '#BCE2F2', text: '0.1%-25%', min: 0.1, max: 25.50 },
     { color: '#E5E5E5', text: '0%', min: 0, max: 0 },
   ];
   ulbResponse: any = {};

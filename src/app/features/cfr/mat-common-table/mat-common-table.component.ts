@@ -62,7 +62,7 @@ export class MatCommonTableComponent implements OnChanges {
       this.lastRow.map((e: any) => {
         if (e['sum'] || e['avg']) {
           const opr = e['sum'] ? 'sum' : 'avg';
-          e.value = this.getTotal(res.data, e[opr], opr).toFixed(e.decimalPlace);
+          e.value = this.getTotal(res.data, e, opr)
         }
         return e;
       })
@@ -79,11 +79,12 @@ export class MatCommonTableComponent implements OnChanges {
   }
 
   /** Gets the total. */
-  getTotal(data: any, column: string, operator: string) {
+  getTotal(data: any, columnData: any, operator: string) {
+    const column = columnData[operator];
     let total = data.map((t: any) => t[column]).reduce((acc: any, value: any) => Number(acc) + Number(value), 0);
     if (operator === 'avg') {
       total = total / data.length;
     }
-    return total;
+    return Number(total.toFixed(columnData.decimalPlace)).toLocaleString('ta-IN');
   }
 }
