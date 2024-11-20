@@ -126,7 +126,6 @@ export class ParticipatingStateComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    //  this.getStateWiseForm();
     this.getTableData(this.table, '');
   }
   dropDownValueChanges(e: any) {
@@ -177,11 +176,7 @@ export class ParticipatingStateComponent implements OnInit {
         },
       });
   }
-  // getStateWiseForm() {
-  //   this.fiscalRankingService.getStateWiseForm().subscribe(res => {
-  //     this.colorCoding = res?.data.heatMaps;
-  //   });
-  // }
+
   // reset all filter
   resetFilter() {
     // this.stateType = this.stateTypeFilter[0]?.value;

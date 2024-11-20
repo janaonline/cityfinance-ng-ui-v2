@@ -48,7 +48,6 @@ export class UlbsInIndiaComponent implements OnInit, OnChanges {
 
 
   ngOnInit(): void {
-    //  this.getStateWiseForm();
     this.getStateData();
   }
 
