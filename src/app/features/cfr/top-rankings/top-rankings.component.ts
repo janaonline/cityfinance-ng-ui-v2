@@ -9,8 +9,7 @@ import { MaterialModule } from '../../../material.module';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { CommonTableComponent } from '../common-table/common-table.component';
-import { IndiaMapComponent, Marker } from '../india-map/india-map.component';
+import { Marker } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
@@ -26,8 +25,6 @@ import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.c
     MaterialModule,
     BreadcrumbComponent,
     AngularMultiSelectModule,
-    CommonTableComponent,
-    IndiaMapComponent,
     MatCommonTableComponent,
     StatewiseMapComponent,
     PreLoaderComponent,
@@ -94,6 +91,7 @@ export class TopRankingsComponent implements OnInit {
   isLoadingResults: boolean = false;
   limit: number = 10;
   skip: number = 0;
+  params: any;
 
   constructor(
     private authService: AuthService,
@@ -108,57 +106,44 @@ export class TopRankingsComponent implements OnInit {
       stateData: [''],
       state: '',
       category: 'overAllRank',
-      limit: this.limit,
-      skip: this.skip,
     });
 
-    this.filter.get('stateData')?.valueChanges.subscribe((value) => {
-      this.table.response = null;
-      this.filter.patchValue({ state: value?.[0]?._id || '' }, { emitEvent: false });
+    this.filter.valueChanges.subscribe(() => {
+      this.skip = 0;
+      this.loadTopRankedUlbs();
     });
-    this.filter.get('category')?.valueChanges.subscribe(() => {
-      this.table.response = null;
-    });
-    this.filter.valueChanges.subscribe(() => this.loadData());
   }
 
   ngOnInit(): void {
+    this.getParams();
     this.loadStates();
-    this.loadData();
+    this.loadTopRankedUlbs();
   }
 
-  get params() {
+  getParams() {
     const params = this.filter.value;
     delete params.stateData;
-    return params;
-  }
-
-  get footnote() {
-    if (this.filter.value?.populationBucket == '1') {
-      return 'Note: These are the ULBs that submitted their records to complete the ranking.';
-    }
-    return '';
+    this.params = params;
   }
 
   pageChange(event: any) {
-    // console.log("event ~~~~~>", event);
-    this.params.limit = event.pageSize;
-    this.params.skip = event.pageIndex * event.pageSize;
-    this.loadData();
+    this.limit = event.pageSize;
+    this.skip = event.pageIndex;
+    this.loadTopRankedUlbs();
   }
 
-  loadData() {
-    // this.loadTopRankedStatesMap();
-    this.loadTopRankedUlbs(this.table, '');
-  }
-
-  loadTopRankedUlbs(table: Table, queryParams: string = '') {
+  loadTopRankedUlbs() {
     this.isLoadingResults = true;
+    const pageParams = {
+      skip: this.skip * this.limit,
+      limit: this.limit,
+    }
+    const params = { ...this.filter.value, ...pageParams };
+
     this.fiscalRankingService
-      .topRankedUlbs(queryParams, table?.response?.columns, this.params)
+      .topRankedUlbs(this.table?.response?.columns, params)
       .subscribe({
         next: (res: any) => {
-          // console.log("api Response --->", res.tableData)
           this.table.response = res.tableData;
           if (this.table.response) this.table.response.total = res.total;
           this.markers = res.mapDataTopUlbs;
@@ -171,10 +156,6 @@ export class TopRankingsComponent implements OnInit {
       });
   }
 
-  onUpdate(table: any, event: any) {
-    this.loadTopRankedUlbs(table, event?.queryParams);
-  }
-
   loadStates() {
     this.fiscalRankingService.states().subscribe((res: any) => {
       this.stateList = res.data;
@@ -182,10 +163,10 @@ export class TopRankingsComponent implements OnInit {
   }
 
   resetFilter() {
-    this.filter.patchValue({ stateData: ""});
+    this.filter.patchValue({ stateData: "" });
     this.filter.patchValue({ populationBucket: 1 });
     this.filter.patchValue({ category: "overAllRank" });
-    this.loadData();
+    this.loadTopRankedUlbs();
   }
 
   openSearch() {

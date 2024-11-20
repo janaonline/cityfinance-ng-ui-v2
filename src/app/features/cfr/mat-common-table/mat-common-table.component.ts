@@ -45,7 +45,7 @@ export class MatCommonTableComponent implements OnChanges {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  skip: number = 0;
+  @Input() skip: number = 0;
   lastRow!: any[];
   lastRowColumns: any[] = [];
 

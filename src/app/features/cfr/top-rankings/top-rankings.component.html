@@ -3,12 +3,7 @@
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
   <section class="d-flex justify-content-end">
-    <input
-      type="text"
-      class="form-control px-4 py-3 w-25"
-      placeholder="Search for any ULB..."
-      (click)="openSearch()"
-    />
+    <input type="text" class="form-control px-4 py-3 w-25" placeholder="Search for any ULB..." (click)="openSearch()" />
   </section>
 
   <section class="text-center">
@@ -22,10 +17,6 @@
     <div class="row m-0 min-h-60">
       <div class="col-md-5 p-3">
         <ng-container *ngIf="!isLoadingResults; else mapLoader">
-          <!-- <app-india-map *ngIf="selectedMap === 'topUlbs'" [markers]="markers"> </app-india-map> -->
-          <!-- <app-india-map [colorCoding]="colorCoding" [identifier]="'top-ranking'" [colorDetails]="colorDetails"
-            label="Number of rank holding ULBs in each state" [markers]="markers">
-          </app-india-map> -->
           <app-statewise-map [markers]="markers"></app-statewise-map>
         </ng-container>
         <ng-template #mapLoader>
@@ -46,17 +37,13 @@
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
             @if (isLoggedIn && ['ADMIN', 'MoHUA', 'ULB', 'STATE'].includes(userRole)) {
             <!-- <p>{{userRole}} | {{isLoggedIn}}</p> -->
-            <button
-            type="button"
-            class="btn btn-outline-cfPrimary"
-            matTooltip="Download Rankings"
-            (click)="downloadRankings()"
-            >
-            <i class="bi bi-download"></i>
-          </button>
-          }
-        </div>
-        
+            <button type="button" class="btn btn-outline-cfPrimary" matTooltip="Download Rankings"
+              (click)="downloadRankings()">
+              <i class="bi bi-download"></i>
+            </button>
+            }
+          </div>
+
           <div class="d-flex justify-content-end">
             <button class="btn text-cfPrimary p-0 border-0 mb-2 mt-4" (click)="resetFilter()">Reset</button>
           </div>
@@ -64,12 +51,8 @@
           <div class="d-flex justify-content-between gap-4">
             <div class="d-flex w-100 justify-content-between flex-column">
               <h6>State Name</h6>
-              <angular2-multiselect
-                class="fw-bold"
-                [data]="stateList"
-                formControlName="stateData"
-                [settings]="dropdownSettings"
-              >
+              <angular2-multiselect class="fw-bold" [data]="stateList" formControlName="stateData"
+                [settings]="dropdownSettings">
               </angular2-multiselect>
             </div>
             <div class="d-flex w-100 justify-content-between flex-column">
@@ -84,36 +67,20 @@
           </div>
         </div>
 
-        <div
-          class="btn-group my-4 d-flex justify-content-center"
-          role="group"
-          aria-label="Basic radio toggle button group"
-        >
+        <div class="btn-group my-4 d-flex justify-content-center" role="group"
+          aria-label="Basic radio toggle button group">
           <ng-container *ngFor="let type of types">
-            <input
-              type="radio"
-              class="btn-check"
-              formControlName="category"
-              [id]="type?.key"
-              [value]="type?.key"
-            />
-            <label
-              class="btn btn-sm btn-outline-cfPrimary font-white text-truncate"
-              matTooltip="{{ type?.label }}"
-              [for]="type?.key"
-            >
+            <input type="radio" class="btn-check" formControlName="category" [id]="type?.key" [value]="type?.key" />
+            <label class="btn btn-sm btn-outline-cfPrimary font-white text-truncate" matTooltip="{{ type?.label }}"
+              [for]="type?.key">
               {{ type?.label }}
             </label>
           </ng-container>
         </div>
 
         <div class="my-4">
-          <app-mat-common-table
-            *ngIf="table?.response"
-            [response]="table.response"
-            [isPagination]="true"
-            (pageChange)="pageChange($event)"
-          ></app-mat-common-table>
+          <app-mat-common-table *ngIf="table?.response" [skip]="skip" [response]="table.response" [isPagination]="true"
+            (pageChange)="pageChange($event)"></app-mat-common-table>
         </div>
       </form>
     </div>
