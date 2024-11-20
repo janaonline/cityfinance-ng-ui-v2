@@ -6,7 +6,8 @@ import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.co
 import { CommonTableComponent } from '../common-table/common-table.component';
 import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
-import { FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
+import { Table } from '../services/common-table.interface';
+import { FiscalRankingService, FrFilter } from '../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from "../statewise-map/statewise-map.component";
 
 @Component({

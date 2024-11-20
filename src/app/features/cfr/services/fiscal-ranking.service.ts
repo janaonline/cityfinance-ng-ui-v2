@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
-import { TableResponse } from './common-table.interface';
 
 export enum StatusType {
   'notStarted' = 1,
@@ -14,12 +13,12 @@ export enum StatusType {
   'ackByPMU' = 11,
 }
 
-export interface Table {
-  id?: string;
-  info?: string;
-  endpoint?: string;
-  response: TableResponse | null;
-}
+// export interface Table {
+//   id?: string;
+//   info?: string;
+//   endpoint?: string;
+//   response: TableResponse;
+// }
 
 export interface MapData {
   _id: string;

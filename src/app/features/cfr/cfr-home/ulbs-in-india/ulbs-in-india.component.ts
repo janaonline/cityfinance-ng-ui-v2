@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { ColorDetails, IndiaMapComponent } from '../../india-map/india-map.component';
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
-import { FiscalRankingService, Table } from '../../services/fiscal-ranking.service';
+import { Table } from '../../services/common-table.interface';
+import { FiscalRankingService } from '../../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../../ulb-details/search-popup/search-popup.component';
-import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-ulbs-in-india',

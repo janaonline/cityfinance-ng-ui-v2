@@ -7,8 +7,7 @@ import { MatTableModule } from '@angular/material/table';
 import { environment } from '../../../../environments/environment';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { MaterialModule } from '../../../material.module';
-// import { responseJson } from './res-json';
-// import { TableResponse } from '../services/common-table.interface';
+import { TableResponse } from '../services/common-table.interface';
 
 @Component({
   selector: 'app-mat-common-table',
@@ -18,15 +17,9 @@ import { MaterialModule } from '../../../material.module';
   styleUrl: './mat-common-table.component.scss',
 })
 export class MatCommonTableComponent implements OnChanges {
-  // @Input({
-  //   // transform: (value: any) => {
-  //   //   return value?.map((e: { key: string; }) => e.key)
-  //   // }
-  // }) tableColumns: any;
-  // @Input() response!: TableResponse;
-  @Input() tableRow!: any[];
+  @Input() response: TableResponse = {} as TableResponse;
   @Input() isPagination = false;
-  @Input() response: any;
+  // @Input() response: any;
   @Input() isLoadingResults = false;
   @Input() pageSize = 10;
   @Input() tableHeight = 110;

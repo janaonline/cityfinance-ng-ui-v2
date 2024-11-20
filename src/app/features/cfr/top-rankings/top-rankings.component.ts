@@ -11,7 +11,8 @@ import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-lo
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { Marker } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
-import { FiscalRankingService, Table } from '../services/fiscal-ranking.service';
+import { Table, TableResponse } from '../services/common-table.interface';
+import { FiscalRankingService } from '../services/fiscal-ranking.service';
 import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
 
@@ -68,7 +69,7 @@ export class TopRankingsComponent implements OnInit {
 
   filter: FormGroup;
   table: Table = {
-    response: null,
+    response: {} as TableResponse,
   };
   selectedMap: string = 'topUlbs'; // Initialize to default value
   stateList: { _id: string, name: string }[] = [];
@@ -107,21 +108,18 @@ export class TopRankingsComponent implements OnInit {
       category: 'overAllRank',
     });
 
+
+  }
+
+  ngOnInit(): void {
+
     this.filter.valueChanges.subscribe(() => {
       this.skip = 0;
       this.loadTopRankedUlbs();
     });
-  }
 
-  ngOnInit(): void {
-    this.getParams();
     this.loadStates();
     this.loadTopRankedUlbs();
-  }
-
-  getParams() {
-    const params = this.filter.value;
-    this.params = params;
   }
 
   pageChange(event: any) {
