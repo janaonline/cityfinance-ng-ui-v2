@@ -1,8 +1,8 @@
-import { AfterViewInit, Component, OnDestroy } from '@angular/core';
+import { Component, AfterViewInit } from '@angular/core';
 import * as L from 'leaflet';
-import { Subscription } from 'rxjs';
+import { IMapCreationConfig, IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
+import { MapUtil } from '../../../core/util/map/mapUtil';
 import { GeographicalService } from '../../../core/services/geographical/geographical.service';
-import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
 @Component({
   selector: 'app-map',
   standalone: true,
@@ -10,125 +10,42 @@ import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfi
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss'
 })
-export class MapComponent implements AfterViewInit, OnDestroy {
+export class MapComponent implements AfterViewInit {
   private map!: L.Map;
-  private subscription!: Subscription;
-  private resizeListener!: () => void;
 
   // Center coordinates of India
   private indiaCenter: L.LatLngExpression = [20.5937, 78.9629];
   StatesJSONForMapCreation: any;
   defaultStateLayerStyle: IStateLayerStyle = {
-    fillColor: 'red',
+    fillColor: '#efefef',
     weight: 1,
     opacity: 1,
-    color: 'blue',
-    fillOpacity: 0.5,
+    color: '#403f3f',
+    fillOpacity: 1,
   };
 
-  constructor(protected _geoService: GeographicalService,) { }
+  constructor(protected _geoService: GeographicalService,) {
+    this.createNationalMapJson();
+  }
 
   // Initialize the map after view is ready
   ngAfterViewInit(): void {
+    console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
     this.initMap();
-    this.createNationalMapJson();
-    this.addMarkers();
-    // console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
   }
 
   createNationalMapJson() {
-    this.subscription = this._geoService.loadConvertedIndiaGeoData().subscribe((data) => {
+    const promise = this._geoService.loadConvertedIndiaGeoData().subscribe((data) => {
       this.StatesJSONForMapCreation = data;
-      console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
-
-      // Add GeoJSON data to the map
+      // this.initMap();
       L.geoJSON(this.StatesJSONForMapCreation, {
-        // style: this.defaultStateLayerStyle,
-        style: this.getStateStyle.bind(this),
-        onEachFeature: this.onEachFeature.bind(this),
+        style: this.defaultStateLayerStyle,
       }).addTo(this.map)
 
     });
+    // promise.then((data) => (this.StatesJSONForMapCreation = data));
+    // return Promise.all([promise]);
   }
-
-  // Add popup or events;
-  private onEachFeature(feature: any, layer: L.Layer): void {
-    if (feature.properties && feature.properties.ST_NM) {
-      /** State name on click. */
-      layer.bindPopup(`<strong>${feature.properties.ST_NM}</strong>`); // On click = popup.
-
-      // /** State name on hover */
-      // // Create a popup content
-      // const popupContent = `<b>${feature.properties.ST_NM}</b>`;
-
-      // // Add a popup on hover (mouseover)
-      // layer.on('mouseover', (event) => {
-      //   const popup = L.popup()
-      //     .setLatLng(event.latlng) // Use the latitude and longitude of the event
-      //     .setContent(popupContent)
-      //     .openOn(this.map); // Open the popup on the map
-      // });
-
-      // // Remove the popup on mouseout
-      // layer.on('mouseout', () => {
-      //   this.map.closePopup(); // Close the popup
-      // });
-    }
-  }
-
-  // Generate dynamic styles to states;
-  private getStateStyle(feature: any): L.PathOptions {
-    const stateCode = feature.properties?.['ST_CODE'];
-
-    //  Assign colors based on state codes.
-    const colorMapping: { [key: string]: string } = {
-      'MH': 'blue',
-      'GJ': 'green',
-      'RJ': 'orange',
-      'KA': 'purple',
-      'KL': 'pink',
-      'MP': 'red',
-      'PB': 'yellow',
-      'AS': 'pink',
-      'BR': 'black',
-      // Add more states and colors here
-    };
-
-    return {
-      fillColor: colorMapping[stateCode] || 'lightblue', // Default to gray if no match
-      weight: 1,
-      opacity: 1,
-      color: 'black',
-      fillOpacity: 0.7,
-    };
-  }
-
-  // Add markers.
-  addMarkers() {
-    // Example markers for different states
-    const markersData = [
-      { name: 'Delhi', coordinates: [28.6139, 77.209], description: 'Capital of India' },
-      { name: 'Mumbai', coordinates: [19.076, 72.8777], description: 'Financial Capital of India' },
-      { name: 'Kolkata', coordinates: [22.5726, 88.3639], description: 'City of Joy' },
-      { name: 'Chennai', coordinates: [13.0827, 80.2707], description: 'Gateway to South India' },
-    ];
-
-    markersData.forEach((markerData) => {
-      const coordinates: L.LatLngTuple = markerData.coordinates as L.LatLngTuple;
-
-      // Create a marker for each location
-      const marker = L.marker(coordinates, {
-        icon: new L.Icon({
-          iconUrl: 'assets/images/maps/map-marker.png',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-        })
-      })
-        .addTo(this.map) // Add the marker to the map
-        .bindPopup(`<b>${markerData.name}</b><br>${markerData.description}`); // Add a popup
-    });
-  }
-
 
   private initMap(): void {
     const options = {
@@ -165,7 +82,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     this.map.scrollWheelZoom.disable();
     this.map.boxZoom.disable();
     this.map.keyboard.disable();
-    this.map.dragging.enable();
+    this.map.dragging.disable();
 
     // Add OpenStreetMap tile layer
     // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -173,20 +90,18 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     //   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     // }).addTo(this.map);
 
-    // // // Optional: Add a marker for New Delhi
-    // const marker = L.marker([28.6139, 77.2090], {
-    //   icon: new L.Icon({
-    //     // iconUrl: 'assets/images/maps/simple_blue_dot.png',
-    //     // iconSize: [10, 10],
-    //     // iconAnchor: [6, 6],
-    //     iconUrl: 'assets/images/maps/map-marker.png',
-    //     iconSize: [20, 20],
-    //     iconAnchor: [10, 10],
-    //   }), title: 'delhi'
-    // }).addTo(this.map);
-
-    // marker.bindPopup("<b>New Delhi</b><br>Capital of India"); //.openPopup();
-
+    // // Optional: Add a marker for New Delhi
+    const marker = L.marker([28.6139, 77.2090], {
+      icon: new L.Icon({
+        // iconUrl: 'assets/images/maps/simple_blue_dot.png',
+        // iconSize: [10, 10],
+        // iconAnchor: [6, 6],
+        iconUrl: 'assets/images/maps/map-marker.png',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      }), title: 'delhi'
+    }).addTo(this.map);
+    marker.bindPopup("<b>New Delhi</b><br>Capital of India"); //.openPopup();
   }
 
   // public static createDefaultNationalMap(configuration: IMapCreationConfig) {
@@ -212,25 +127,5 @@ export class MapComponent implements AfterViewInit, OnDestroy {
   //   return { map, stateLayers };
   //   //store map instance for feature reference to destroy.
   // }
-
-  // Dynamically handle screen size changes
-  // private handleWindowResize(): void {
-  //   this.resizeListener = () => {
-  //     // Call the map.invalidateSize() method to recalculate map dimensions
-  //     this.map.invalidateSize();
-  //   };
-
-  //   // Add the resize event listener
-  //   window.addEventListener('resize', this.resizeListener);
-  // }
-
-
-  ngOnDestroy(): void {
-    // Clean up the subscription
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
-  }
-
 
 }
