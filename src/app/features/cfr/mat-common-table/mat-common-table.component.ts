@@ -8,6 +8,7 @@ import { environment } from '../../../../environments/environment';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { MaterialModule } from '../../../material.module';
 import { TableResponse } from '../services/common-table.interface';
+import { isEmpty } from 'lodash-es';
 
 @Component({
   selector: 'app-mat-common-table',
@@ -46,10 +47,18 @@ export class MatCommonTableComponent implements OnChanges {
     if (!changes['response']) {
       return;
     }
+
+    if (isEmpty(changes['response'].currentValue)) {
+      return;
+    }
     const res = changes['response'].currentValue;
     this.tableColumns = res?.columns.filter((e: any) => !e.hidden).map((e: { key: string; }) => e.key);
     this.columnData = res?.columns.map((e: { key: string; }) => e.key);
     this.subHeaderColumns = res?.subHeaders?.map((e: { key: string; }) => 'id-' + e.key);
+    this.getLastRow(res);
+  }
+
+  getLastRow(res: TableResponse) {
     this.lastRow = res?.lastRow;
     if (this.lastRow) {
       this.lastRow.map((e: any) => {
