@@ -7,8 +7,8 @@ import { MatTableModule } from '@angular/material/table';
 import { environment } from '../../../../environments/environment';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { MaterialModule } from '../../../material.module';
-// import { responseJson } from './res-json';
-// import { TableResponse } from '../services/common-table.interface';
+import { TableResponse } from '../services/common-table.interface';
+import { isEmpty } from 'lodash-es';
 
 @Component({
   selector: 'app-mat-common-table',
@@ -18,15 +18,9 @@ import { MaterialModule } from '../../../material.module';
   styleUrl: './mat-common-table.component.scss',
 })
 export class MatCommonTableComponent implements OnChanges {
-  // @Input({
-  //   // transform: (value: any) => {
-  //   //   return value?.map((e: { key: string; }) => e.key)
-  //   // }
-  // }) tableColumns: any;
-  // @Input() response!: TableResponse;
-  @Input() tableRow!: any[];
+  @Input() response: TableResponse = {} as TableResponse;
   @Input() isPagination = false;
-  @Input() response: any;
+  // @Input() response: any;
   @Input() isLoadingResults = false;
   @Input() pageSize = 10;
   @Input() tableHeight = 110;
@@ -45,7 +39,7 @@ export class MatCommonTableComponent implements OnChanges {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  skip: number = 0;
+  @Input() skip: number = 0;
   lastRow!: any[];
   lastRowColumns: any[] = [];
 
@@ -53,16 +47,24 @@ export class MatCommonTableComponent implements OnChanges {
     if (!changes['response']) {
       return;
     }
+
+    if (isEmpty(changes['response'].currentValue)) {
+      return;
+    }
     const res = changes['response'].currentValue;
     this.tableColumns = res?.columns.filter((e: any) => !e.hidden).map((e: { key: string; }) => e.key);
     this.columnData = res?.columns.map((e: { key: string; }) => e.key);
     this.subHeaderColumns = res?.subHeaders?.map((e: { key: string; }) => 'id-' + e.key);
+    this.getLastRow(res);
+  }
+
+  getLastRow(res: TableResponse) {
     this.lastRow = res?.lastRow;
     if (this.lastRow) {
       this.lastRow.map((e: any) => {
         if (e['sum'] || e['avg']) {
           const opr = e['sum'] ? 'sum' : 'avg';
-          e.value = this.getTotal(res.data, e[opr], opr).toFixed(e.decimalPlace);
+          e.value = this.getTotal(res.data, e, opr)
         }
         return e;
       })
@@ -79,11 +81,12 @@ export class MatCommonTableComponent implements OnChanges {
   }
 
   /** Gets the total. */
-  getTotal(data: any, column: string, operator: string) {
+  getTotal(data: any, columnData: any, operator: string) {
+    const column = columnData[operator];
     let total = data.map((t: any) => t[column]).reduce((acc: any, value: any) => Number(acc) + Number(value), 0);
     if (operator === 'avg') {
       total = total / data.length;
     }
-    return total;
+    return Number(total.toFixed(columnData.decimalPlace)).toLocaleString('ta-IN');
   }
 }

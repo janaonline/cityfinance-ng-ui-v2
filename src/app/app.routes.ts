@@ -29,6 +29,7 @@ export const routes: Routes = [
   //     // Add other protected routes here
   //   ],
   // },
+
   {
     path: '',
     // redirectTo: 'cfr',
