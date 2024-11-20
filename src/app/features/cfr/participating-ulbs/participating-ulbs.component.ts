@@ -5,7 +5,6 @@ import { Filter, FiscalRankingService, FrFilter } from '../services/fiscal-ranki
 import Swal from 'sweetalert2';
 import { MaterialModule } from '../../../material.module';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { CommonTableComponent } from '../common-table/common-table.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import { Table, TableResponse } from '../services/common-table.interface';
 @Component({
@@ -13,7 +12,7 @@ import { Table, TableResponse } from '../services/common-table.interface';
   templateUrl: './participating-ulbs.component.html',
   styleUrls: ['./participating-ulbs.component.scss'],
   standalone: true,
-  imports: [CommonTableComponent, MaterialModule, BreadcrumbComponent, MatCommonTableComponent],
+  imports: [MaterialModule, BreadcrumbComponent, MatCommonTableComponent],
 })
 export class ParticipatingUlbsComponent implements OnInit {
   stateId!: string;
