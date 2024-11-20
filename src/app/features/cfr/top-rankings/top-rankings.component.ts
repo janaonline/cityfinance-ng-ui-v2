@@ -103,7 +103,6 @@ export class TopRankingsComponent implements OnInit {
 
     this.filter = this.fb.group({
       populationBucket: '1',
-      stateData: [''],
       state: '',
       category: 'overAllRank',
     });
@@ -122,7 +121,6 @@ export class TopRankingsComponent implements OnInit {
 
   getParams() {
     const params = this.filter.value;
-    delete params.stateData;
     this.params = params;
   }
 
@@ -141,9 +139,10 @@ export class TopRankingsComponent implements OnInit {
     const params = { ...this.filter.value, ...pageParams };
 
     this.fiscalRankingService
-      .topRankedUlbs(this.table?.response?.columns, params)
+      .topRankedUlbs(params)
       .subscribe({
         next: (res: any) => {
+          // console.log("res--->", res)
           this.table.response = res.tableData;
           if (this.table.response) this.table.response.total = res.total;
           this.markers = res.mapDataTopUlbs;
@@ -163,8 +162,8 @@ export class TopRankingsComponent implements OnInit {
   }
 
   resetFilter() {
-    this.filter.patchValue({ stateData: "" });
-    this.filter.patchValue({ populationBucket: 1 });
+    this.filter.patchValue({ state: "" });
+    this.filter.patchValue({ populationBucket: "1" });
     this.filter.patchValue({ category: "overAllRank" });
     this.loadTopRankedUlbs();
   }
