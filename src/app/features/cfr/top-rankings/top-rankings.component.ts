@@ -71,7 +71,7 @@ export class TopRankingsComponent implements OnInit {
     response: null,
   };
   selectedMap: string = 'topUlbs'; // Initialize to default value
-  stateList = [];
+  stateList: { _id: string, name: string }[] = [];
   populationCategories = [
     { _id: '1', name: '4M+' },
     { _id: '2', name: '1M to 4M' },
