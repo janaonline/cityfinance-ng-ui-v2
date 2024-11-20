@@ -3,17 +3,17 @@ import * as L from 'leaflet';
 import { Subscription } from 'rxjs';
 import { GeographicalService } from '../../../core/services/geographical/geographical.service';
 import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
+
 @Component({
-  selector: 'app-map',
+  selector: 'app-map-state-rank',
   standalone: true,
   imports: [],
-  templateUrl: './map.component.html',
-  styleUrl: './map.component.scss'
+  templateUrl: './map-state-rank.component.html',
+  styleUrl: './map-state-rank.component.scss'
 })
-export class MapComponent implements AfterViewInit, OnDestroy {
+export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   private map!: L.Map;
   private subscription!: Subscription;
-  private resizeListener!: () => void;
 
   // Center coordinates of India
   private indiaCenter: L.LatLngExpression = [20.5937, 78.9629];
@@ -129,7 +129,6 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-
   private initMap(): void {
     const options = {
       "scrollWheelZoom": false,
@@ -144,86 +143,15 @@ export class MapComponent implements AfterViewInit, OnDestroy {
       "tap": false,
       "zoom": 4.2
     };
-    // Initialize the map with the center on India
-    // this.map = L.map('map', {
-    //   center: this.indiaCenter,
-    //   zoom: 5
-    // });
+
     this.map = L.map('map', options).setView([20.59, 78.96], 0.1);
-
-    // const stateLayers = MapUtil.applyStyleOnStates(
-    //   configuration.geoData,
-    //   configuration.layerOptions,
-    // );
-
-    // L.geoJSON(this.StatesJSONForMapCreation, {
-    //   style: this.defaultStateLayerStyle,
-    // }).addTo(this.map)
-
     this.map.touchZoom.disable();
     this.map.doubleClickZoom.disable();
     this.map.scrollWheelZoom.disable();
     this.map.boxZoom.disable();
     this.map.keyboard.disable();
     this.map.dragging.enable();
-
-    // Add OpenStreetMap tile layer
-    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    //   maxZoom: 18,
-    //   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    // }).addTo(this.map);
-
-    // // // Optional: Add a marker for New Delhi
-    // const marker = L.marker([28.6139, 77.2090], {
-    //   icon: new L.Icon({
-    //     // iconUrl: 'assets/images/maps/simple_blue_dot.png',
-    //     // iconSize: [10, 10],
-    //     // iconAnchor: [6, 6],
-    //     iconUrl: 'assets/images/maps/map-marker.png',
-    //     iconSize: [20, 20],
-    //     iconAnchor: [10, 10],
-    //   }), title: 'delhi'
-    // }).addTo(this.map);
-
-    // marker.bindPopup("<b>New Delhi</b><br>Capital of India"); //.openPopup();
-
   }
-
-  // public static createDefaultNationalMap(configuration: IMapCreationConfig) {
-  //   console.log(configuration);
-  //   const options = configuration.options
-  //     ? { ...MapUtil.defaultMapConfiguration, ...configuration.options }
-  //     : MapUtil.defaultMapConfiguration;
-  //   let map = L.map(configuration.containerId, options).setView([20.59, 78.96], 0.1);
-
-  //   const stateLayers = MapUtil.applyStyleOnStates(
-  //     configuration.geoData,
-  //     configuration.layerOptions,
-  //   ).addTo(map);
-
-  //   map = MapUtil.centerMap(map, stateLayers);
-  //   map.touchZoom.disable();
-  //   map.doubleClickZoom.disable();
-  //   map.scrollWheelZoom.disable();
-  //   map.boxZoom.disable();
-  //   map.keyboard.disable();
-  //   map.dragging.disable();
-
-  //   return { map, stateLayers };
-  //   //store map instance for feature reference to destroy.
-  // }
-
-  // Dynamically handle screen size changes
-  // private handleWindowResize(): void {
-  //   this.resizeListener = () => {
-  //     // Call the map.invalidateSize() method to recalculate map dimensions
-  //     this.map.invalidateSize();
-  //   };
-
-  //   // Add the resize event listener
-  //   window.addEventListener('resize', this.resizeListener);
-  // }
-
 
   ngOnDestroy(): void {
     // Clean up the subscription
@@ -231,6 +159,4 @@ export class MapComponent implements AfterViewInit, OnDestroy {
       this.subscription.unsubscribe();
     }
   }
-
-
 }
