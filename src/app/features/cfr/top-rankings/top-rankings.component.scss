@@ -30,12 +30,6 @@ p {
   background-size: 100%;
 }
 
-::ng-deep .selected-list {
-  border: 1px solid lightgray;
-  background-color: white !important;
-  padding: 0.12rem;
-}
-
 .card-clr {
   background-color: rgba(248, 250, 255, 1);
 }
@@ -43,3 +37,14 @@ p {
 .btn-check:checked + .font-white {
   color: white;
 }
+
+::ng-deep input,
+::ng-deep mat-select,
+::ng-deep mat-option {
+	margin: 0;
+	padding: 0;
+	font-family: var(--ff-base) !important;
+	font-size: 1rem !important;
+	font-weight: var(--fw-medium) !important;
+}
+
