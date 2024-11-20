@@ -174,10 +174,10 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/states?limit=40`);
   }
 
-  topRankedUlbs(columns: any, params: any) {
+  topRankedUlbs(params: any) {
     return this.http
       .get(`${environment.api.url}scoring-fr/top-ranked-ulbs`, { params })
-      .pipe(tableMapperPipe(columns, 'tableData'));
+    // .pipe(tableMapperPipe(columns, 'tableData'));
   }
 
   topRankedStates(params: any) {

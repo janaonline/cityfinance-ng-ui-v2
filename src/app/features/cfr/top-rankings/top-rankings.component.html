@@ -49,21 +49,27 @@
           </div>
 
           <div class="d-flex justify-content-between gap-4">
-            <div class="d-flex w-100 justify-content-between flex-column">
-              <h6>State Name</h6>
-              <angular2-multiselect class="fw-bold" [data]="stateList" formControlName="stateData"
-                [settings]="dropdownSettings">
-              </angular2-multiselect>
-            </div>
-            <div class="d-flex w-100 justify-content-between flex-column">
-              <h6>Population Category</h6>
-              <select class="form-select p-2 fw-bold" formControlName="populationBucket">
-                <option value="">All Categories</option>
-                <option *ngFor="let item of populationCategories" [value]="item._id">
-                  {{ item.name }}
-                </option>
-              </select>
-            </div>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Select a State</mat-label>
+              <mat-select class="fw-bold" formControlName="state">
+                <mat-option value="">All States</mat-option>
+                @for (state of stateList; track $index) {
+                  <mat-option [value]="state._id">{{ state.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field  appearance="outline">
+              <mat-label>Population Category</mat-label>
+              <mat-select formControlName="populationBucket" class="fw-bold">
+                <mat-option value="">All Categories</mat-option>
+                @for (item of populationCategories; track $index) {
+                  <mat-option [value]="item._id">{{ item.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
           </div>
         </div>
 
