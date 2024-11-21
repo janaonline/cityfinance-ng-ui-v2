@@ -1,8 +1,17 @@
 import { AfterViewInit, Component, OnDestroy } from '@angular/core';
 import * as L from 'leaflet';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { GeographicalService } from '../../../core/services/geographical/geographical.service';
 import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
+import { FiscalRankingService } from '../services/fiscal-ranking.service';
+import { MapUtil } from '../../../core/util/map/mapUtil';
+
+export interface ColorDetails {
+  color: string,
+  text: string,
+  min: number,
+  max: number
+}
 
 @Component({
   selector: 'app-map-state-rank',
@@ -22,31 +31,73 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     fillColor: 'red',
     weight: 1,
     opacity: 1,
-    color: 'blue',
-    fillOpacity: 0.5,
+    color: "#193369",
+    // fillOpacity: 0.5,
   };
 
-  constructor(protected _geoService: GeographicalService,) { }
+  colorDetails: ColorDetails[] = [
+    { color: '#06668F', text: '76%-100%', min: 75.51, max: 100 },
+    { color: '#0B8CC3', text: '51%-75%', min: 50.51, max: 75.50 },
+    { color: '#73BFE0', text: '26%-50%', min: 25.51, max: 50.50 },
+    { color: '#BCE2F2', text: '0.1%-25%', min: 0.1, max: 25.50 },
+    { color: '#E5E5E5', text: '0%', min: 0, max: 0 },
+  ];
+  label: any = '% of Ranked';
+
+  constructor(protected _geoService: GeographicalService,
+    private fiscalRankingService: FiscalRankingService,) { }
 
   // Initialize the map after view is ready
   ngAfterViewInit(): void {
     this.initMap();
     this.createNationalMapJson();
+    this.createLegends();
     this.addMarkers();
     // console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
   }
 
+  private initMap(): void {
+    const options = {
+      "scrollWheelZoom": false,
+      "fadeAnimation": true,
+      "minZoom": 4.2,
+      "maxZoom": 4.2,
+      "zoomControl": false,
+      "keyboard": false,
+      "attributionControl": false,
+      "doubleClickZoom": false,
+      "dragging": false,
+      "tap": false,
+      "zoom": 4.2
+    };
+
+    this.map = L.map('map', options).setView([20.59, 78.96], 0.1);
+    this.map.touchZoom.disable();
+    this.map.doubleClickZoom.disable();
+    this.map.scrollWheelZoom.disable();
+    this.map.boxZoom.disable();
+    this.map.keyboard.disable();
+    this.map.dragging.enable();
+  }
+
   createNationalMapJson() {
-    this.subscription = this._geoService.loadConvertedIndiaGeoData().subscribe((data) => {
-      this.StatesJSONForMapCreation = data;
-      console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
+    const sources = [
+      this._geoService.loadConvertedIndiaGeoData(),
+      this.fiscalRankingService.getApiResponse(`scoring-fr/participated-state-map`, { limit: 100 }),
+    ];
+
+    // this.subscription = this._geoService.loadConvertedIndiaGeoData().subscribe((data) => {
+    this.subscription = forkJoin(sources).subscribe((res: any) => {
+      this.StatesJSONForMapCreation = res[0];
+      const colorCoding = res[1].data.mapData;
+      // console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
 
       // Add GeoJSON data to the map
-      L.geoJSON(this.StatesJSONForMapCreation, {
+      const layers = L.geoJSON(this.StatesJSONForMapCreation, {
+        style: this.getStateStyle.bind(this, colorCoding),
         // style: this.defaultStateLayerStyle,
-        style: this.getStateStyle.bind(this),
         onEachFeature: this.onEachFeature.bind(this),
-      }).addTo(this.map)
+      }).addTo(this.map);
 
     });
   }
@@ -76,30 +127,52 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  createLegends() {
+    const legend = new L.Control({ position: 'bottomleft' });
+    const labels: any[] = [
+      // `<span style="width: 100%; display: block; font-size: 12px" class="text-center">${this.label}</span>`,
+    ];
+    const colorDetails = this.colorDetails;
+    legend.onAdd = map => {
+      const div = L.DomUtil.create("div", "info legend");
+      div.id = "legendContainer";
+      div.style.width = "100%";
+      colorDetails?.forEach((value) => {
+        labels.push(
+          `<div>
+            <i class="circle" style="background: ${value.color}; padding:6px; display: inline-block; margin-right: 12%; "> </i> 
+            ${value.text}
+            </div>`
+        );
+      });
+
+      const labelString = labels.join(``);
+
+
+      div.innerHTML = `
+        ${this?.label ? `<div class="heading text-start mb-3">${this?.label}</div>` : ''}
+        <div class="indicator-items">${labelString}</div>
+      `;
+      return div;
+    };
+    legend.addTo(this.map);
+  }
+
   // Generate dynamic styles to states;
-  private getStateStyle(feature: any): L.PathOptions {
+  private getStateStyle(stateData: any, feature: any): L.PathOptions {
+
     const stateCode = feature.properties?.['ST_CODE'];
 
-    //  Assign colors based on state codes.
-    const colorMapping: { [key: string]: string } = {
-      'MH': 'blue',
-      'GJ': 'green',
-      'RJ': 'orange',
-      'KA': 'purple',
-      'KL': 'pink',
-      'MP': 'red',
-      'PB': 'yellow',
-      'AS': 'pink',
-      'BR': 'black',
-      // Add more states and colors here
-    };
+    const match = stateData.find((e: { code: any; }) => {
+      return e.code === stateCode;
+    })
 
     return {
-      fillColor: colorMapping[stateCode] || 'lightblue', // Default to gray if no match
+      fillColor: match ? match.color : '#e5e5e5', // Default to gray if no match
       weight: 1,
       opacity: 1,
-      color: 'black',
-      fillOpacity: 0.7,
+      color: '#193369',
+      fillOpacity: 1,
     };
   }
 
@@ -129,29 +202,7 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private initMap(): void {
-    const options = {
-      "scrollWheelZoom": false,
-      "fadeAnimation": true,
-      "minZoom": 4.2,
-      "maxZoom": 4.2,
-      "zoomControl": false,
-      "keyboard": false,
-      "attributionControl": false,
-      "doubleClickZoom": false,
-      "dragging": false,
-      "tap": false,
-      "zoom": 4.2
-    };
 
-    this.map = L.map('map', options).setView([20.59, 78.96], 0.1);
-    this.map.touchZoom.disable();
-    this.map.doubleClickZoom.disable();
-    this.map.scrollWheelZoom.disable();
-    this.map.boxZoom.disable();
-    this.map.keyboard.disable();
-    this.map.dragging.enable();
-  }
 
   ngOnDestroy(): void {
     // Clean up the subscription

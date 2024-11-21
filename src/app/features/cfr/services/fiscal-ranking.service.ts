@@ -187,7 +187,7 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?populationBucket=${populationBucket}&${ulbsString}`);
   }
 
-  getApiResponse(endPoints: string, params: any) {
+  getApiResponse(endPoints: string, params: any = {}) {
     // const params = { ulb };
     return this.http.get(`${environment.api.url}${endPoints}`, { params });
   }
