@@ -193,7 +193,8 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
 
       L.marker([marker.lat, marker.lng], {
         icon: new L.Icon({
-          iconUrl: 'assets/images/maps/map-marker.png',
+          // iconUrl: 'assets/images/maps/map-marker.png',
+          iconUrl: 'assets/images/maps/location_on.svg',
           iconSize: [20, 20],
           iconAnchor: [10, 10],
         })
@@ -201,7 +202,7 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
         .addTo(this.map)
         // .bindPopup(`${marker.ulbName}`)
         .on('mouseover', (event) => {
-          const popup = L.popup()
+          L.popup()
             .setLatLng(event.latlng) // Use the latitude and longitude of the event
             .setContent(`${marker.ulbName}`)
             .openOn(this.map); // Open the popup on the map
