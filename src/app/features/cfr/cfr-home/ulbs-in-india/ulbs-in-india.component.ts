@@ -7,8 +7,9 @@ import { ColorDetails, IndiaMapComponent } from '../../india-map/india-map.compo
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
 import { Table } from '../../services/common-table.interface';
 import { FiscalRankingService } from '../../services/fiscal-ranking.service';
-import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
+// import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../../ulb-details/search-popup/search-popup.component';
+import { MapStateRankComponent } from "../../map-state-rank/map-state-rank.component";
 
 @Component({
   selector: 'app-ulbs-in-india',
@@ -16,7 +17,7 @@ import { SearchPopupComponent } from '../../ulb-details/search-popup/search-popu
   styleUrls: ['./ulbs-in-india.component.scss'],
   standalone: true,
   imports: [CommonModule, PreLoaderComponent, IndiaMapComponent, MatCommonTableComponent,
-    RouterModule, StatewiseMapComponent]
+    RouterModule, MapStateRankComponent]
 
 })
 export class UlbsInIndiaComponent implements OnInit, OnChanges {

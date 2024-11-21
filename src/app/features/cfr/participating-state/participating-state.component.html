@@ -15,22 +15,12 @@
     <div class="container">
       <div class="row">
         <div class="col-sm-12 col-md-6 my-0 map-con">
-          <!-- <ng-container *ngIf="isLoadingResults; else map">
-            <div class="loader">
-              <app-pre-loader></app-pre-loader>
-            </div>
-          </ng-container>
-          <ng-template class="map-con" #map>
-            <app-india-map [colorCoding]="colorCoding" label="% of Participation"
-              [colorDetails]="colorDetails"></app-india-map>
-          </ng-template> -->
-          <app-statewise-map></app-statewise-map>
+          @if (!isLoadingResults) {
+          <app-map-state-rank></app-map-state-rank>
+          }
         </div>
         <div class="com-sm-12 col-md-6">
           <div class="table-card mt-3">
-            <!-- <app-common-table theme="white" [response]="table?.response" [classLists]="'scroll fixed-ui-tb'"
-              (update)="onUpdate(table, $event)" [tableName]="'Participated State'">
-            </app-common-table> -->
             @if (isLoadingResults) {
             <app-pre-loader></app-pre-loader>
             } @else {
