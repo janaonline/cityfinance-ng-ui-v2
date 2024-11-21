@@ -9,12 +9,14 @@ import { MaterialModule } from '../../../material.module';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { Marker } from '../india-map/india-map.component';
+import { Marker } from '../map-state-rank/map-state-rank.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import { Table, TableResponse } from '../services/common-table.interface';
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
-import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
+// import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
+import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
+
 
 @Component({
   selector: 'app-top-rankings',
@@ -27,9 +29,10 @@ import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.c
     BreadcrumbComponent,
     AngularMultiSelectModule,
     MatCommonTableComponent,
-    StatewiseMapComponent,
+    // StatewiseMapComponent,
     PreLoaderComponent,
     LoaderComponent,
+    MapStateRankComponent
   ],
 })
 export class TopRankingsComponent implements OnInit {

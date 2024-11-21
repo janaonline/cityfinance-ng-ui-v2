@@ -1,4 +1,20 @@
+* {
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
+}
+
 #map {
     width: 100%;
-    height: 100vh;
+    height: 80vh;
+    background-color: transparent;
+}
+
+::ng-deep .indicator-items {
+    display: flex;
+    gap: 20px;
+
+    div {
+        display: flex;
+        align-items: center;
+    }
 }
