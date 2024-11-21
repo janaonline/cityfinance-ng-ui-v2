@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, HostListener, Input, OnDestroy } from '@angular/core';
 import * as L from 'leaflet';
 import { forkJoin, Subscription } from 'rxjs';
 import { GeographicalService } from '../../../core/services/geographical/geographical.service';
@@ -13,6 +13,12 @@ export interface ColorDetails {
   max: number
 }
 
+export interface Marker {
+  lat: number,
+  lng: number,
+  ulbName: string,
+}
+
 @Component({
   selector: 'app-map-state-rank',
   standalone: true,
@@ -21,6 +27,8 @@ export interface ColorDetails {
   styleUrl: './map-state-rank.component.scss'
 })
 export class MapStateRankComponent implements AfterViewInit, OnDestroy {
+  @Input() markers: Marker[] = [];
+
   private map!: L.Map;
   private subscription!: Subscription;
 
@@ -53,6 +61,7 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     this.createNationalMapJson();
     this.createLegends();
     this.addMarkers();
+    this.adjustZoom();
     // console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
   }
 
@@ -60,18 +69,19 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     const options = {
       "scrollWheelZoom": false,
       "fadeAnimation": true,
-      "minZoom": 4.2,
-      "maxZoom": 4.2,
-      "zoomControl": false,
       "keyboard": false,
       "attributionControl": false,
-      "doubleClickZoom": false,
       "dragging": false,
       "tap": false,
-      "zoom": 4.2
+      "doubleClickZoom": false,
+      "zoomControl": false,
+      "zoom": 4.2, // initial zoom value
+      "minZoom": 4.2, // Prevent zooming out beyond level y
+      "maxZoom": 4.2, // Prevent zooming in beyond level x
+
     };
 
-    this.map = L.map('map', options).setView([20.59, 78.96], 0.1);
+    this.map = L.map('map', options).setView([22, 85], 0.1);
     this.map.touchZoom.disable();
     this.map.doubleClickZoom.disable();
     this.map.scrollWheelZoom.disable();
@@ -134,9 +144,9 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     ];
     const colorDetails = this.colorDetails;
     legend.onAdd = map => {
-      const div = L.DomUtil.create("div", "info legend");
+      const div = L.DomUtil.create("div", "map-legend");
       div.id = "legendContainer";
-      div.style.width = "100%";
+      // div.style.width = "100%";
       colorDetails?.forEach((value) => {
         labels.push(
           `<div>
@@ -150,7 +160,7 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
 
 
       div.innerHTML = `
-        ${this?.label ? `<div class="heading text-start mb-3">${this?.label}</div>` : ''}
+        ${this?.label ? `<div class="heading text-start mb-2">${this?.label}</div>` : ''}
         <div class="indicator-items">${labelString}</div>
       `;
       return div;
@@ -178,31 +188,50 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
 
   // Add markers.
   addMarkers() {
-    // Example markers for different states
-    const markersData = [
-      { name: 'Delhi', coordinates: [28.6139, 77.209], description: 'Capital of India' },
-      { name: 'Mumbai', coordinates: [19.076, 72.8777], description: 'Financial Capital of India' },
-      { name: 'Kolkata', coordinates: [22.5726, 88.3639], description: 'City of Joy' },
-      { name: 'Chennai', coordinates: [13.0827, 80.2707], description: 'Gateway to South India' },
-    ];
+    // console.log("from map maper: ", this.markers)
+    this.markers.forEach(marker => {
 
-    markersData.forEach((markerData) => {
-      const coordinates: L.LatLngTuple = markerData.coordinates as L.LatLngTuple;
-
-      // Create a marker for each location
-      const marker = L.marker(coordinates, {
+      L.marker([marker.lat, marker.lng], {
         icon: new L.Icon({
           iconUrl: 'assets/images/maps/map-marker.png',
           iconSize: [20, 20],
           iconAnchor: [10, 10],
         })
       })
-        .addTo(this.map) // Add the marker to the map
-        .bindPopup(`<b>${markerData.name}</b><br>${markerData.description}`); // Add a popup
+        .addTo(this.map)
+        // .bindPopup(`${marker.ulbName}`)
+        .on('mouseover', (event) => {
+          const popup = L.popup()
+            .setLatLng(event.latlng) // Use the latitude and longitude of the event
+            .setContent(`${marker.ulbName}`)
+            .openOn(this.map); // Open the popup on the map
+        })
+        .on('mouseout', () => {
+          this.map.closePopup(); // Close the popup
+        });
     });
   }
 
+  // Function to adjust zoom based on screen width
+  private adjustZoom(): void {
+    const screenWidth = window.innerWidth;
 
+    if (screenWidth >= 770 && screenWidth < 996) {
+      // For medium-small screens
+      this.map.setZoom(3.8); // Adjust zoom to fit better
+      this.map.setMinZoom(3.8);
+      this.map.setMaxZoom(3.8);
+    } else {
+      this.map.setZoom(4.2); // Default zoom
+      this.map.setMinZoom(4.2);
+      this.map.setMaxZoom(4.2);
+    }
+  }
+  @HostListener('window:resize', [])
+  onResize(): void {
+    // Adjust zoom whenever the window is resized
+    this.adjustZoom();
+  }
 
   ngOnDestroy(): void {
     // Clean up the subscription

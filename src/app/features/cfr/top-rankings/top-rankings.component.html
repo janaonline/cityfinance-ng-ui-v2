@@ -14,24 +14,9 @@
   </section>
 
   <section class="map-bg mt-4">
-    <div class="row m-0 min-h-60">
-      <div class="col-md-5 p-3">
-        <ng-container *ngIf="!isLoadingResults; else mapLoader">
-          <app-statewise-map [markers]="markers"></app-statewise-map>
-        </ng-container>
-        <ng-template #mapLoader>
-          <app-pre-loader></app-pre-loader>
-          <!-- <div class="map-loader">
-            <div class="spinner-border" role="status">
-              <span class="sr-only">Loading...</span>
-            </div>
-            <p class="text-center">Loading map</p>
-          </div> -->
-        </ng-template>
-      </div>
-
-      <form class="col-md-7" [formGroup]="filter">
-        <div class="card-clr p-4 mt-4 border border-secondary-subtle rounded">
+    <form class="" [formGroup]="filter">
+      <div class="row justify-content-end">
+        <div class="offset-md-5 col-md-7 p-4 mt-4 card-clr border border-secondary-subtle rounded">
           <div class="d-flex align-items-center justify-content-between">
             <p class="fw-bold">Explore Ranking across State and Population Category</p>
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
@@ -45,7 +30,7 @@
           </div>
 
           <div class="d-flex justify-content-end">
-            <button class="btn text-cfPrimary p-0 border-0 mb-2 mt-4" (click)="resetFilter()">Reset</button>
+            <button class="btn text-cfPrimary p-0 border-0 mb-2 my-2" (click)="resetFilter()">Reset</button>
           </div>
 
           <div class="d-flex justify-content-between gap-4">
@@ -55,40 +40,51 @@
               <mat-select class="fw-bold" formControlName="state">
                 <mat-option value="">All States</mat-option>
                 @for (state of stateList; track $index) {
-                  <mat-option [value]="state._id">{{ state.name }}</mat-option>
+                <mat-option [value]="state._id">{{ state.name }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
 
-            <mat-form-field  appearance="outline">
+            <mat-form-field appearance="outline">
               <mat-label>Population Category</mat-label>
               <mat-select formControlName="populationBucket" class="fw-bold">
                 <mat-option value="">All Categories</mat-option>
                 @for (item of populationCategories; track $index) {
-                  <mat-option [value]="item._id">{{ item.name }}</mat-option>
+                <mat-option [value]="item._id">{{ item.name }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
 
           </div>
         </div>
+      </div>
 
-        <div class="btn-group my-4 d-flex justify-content-center" role="group"
-          aria-label="Basic radio toggle button group">
-          <ng-container *ngFor="let type of types">
-            <input type="radio" class="btn-check" formControlName="category" [id]="type?.key" [value]="type?.key" />
-            <label class="btn btn-sm btn-outline-cfPrimary font-white text-truncate" matTooltip="{{ type?.label }}"
-              [for]="type?.key">
-              {{ type?.label }}
-            </label>
-          </ng-container>
+      <div class="my-4 row">
+
+        <div class="col-sm-12 col-md-5 align-items-center">
+          @if(!isLoadingResults){
+          <app-map-state-rank [markers]="markers"></app-map-state-rank>
+          }
         </div>
 
-        <div class="my-4">
-          <app-mat-common-table *ngIf="table?.response" [skip]="skip" [response]="table.response" [isPagination]="true"
-            (pageChange)="pageChange($event)"></app-mat-common-table>
+        <div class="col-sm-12 col-md-7">
+
+          <div class="btn-group my-4 d-flex justify-content-center" role="group"
+            aria-label="Basic radio toggle button group">
+            <ng-container *ngFor="let type of types">
+              <input type="radio" class="btn-check" formControlName="category" [id]="type?.key" [value]="type?.key" />
+              <label class="btn btn-sm btn-outline-cfPrimary font-white text-truncate" matTooltip="{{ type?.label }}"
+                [for]="type?.key">
+                {{ type?.label }}
+              </label>
+            </ng-container>
+          </div>
+
+          <app-mat-common-table *ngIf="table?.response" [skip]="skip" [tableHeight]="70" [response]="table.response"
+            [isPagination]="true" (pageChange)="pageChange($event)"></app-mat-common-table>
         </div>
-      </form>
-    </div>
+
+      </div>
+    </form>
   </section>
 </div>
