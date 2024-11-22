@@ -28,6 +28,7 @@ export interface Marker {
 })
 export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   @Input() markers: Marker[] = [];
+  @Input() maxHeight: number = 38;
 
   private map!: L.Map;
   private subscription!: Subscription;
