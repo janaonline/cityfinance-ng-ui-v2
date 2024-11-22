@@ -7,7 +7,8 @@ import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.componen
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import { Table } from '../services/common-table.interface';
 import { FiscalRankingService, FrFilter } from '../services/fiscal-ranking.service';
-import { StatewiseMapComponent } from "../statewise-map/statewise-map.component";
+// import { StatewiseMapComponent } from "../statewise-map/statewise-map.component";
+import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
 
 @Component({
   selector: 'app-participating-state',
@@ -20,7 +21,8 @@ import { StatewiseMapComponent } from "../statewise-map/statewise-map.component"
     IndiaMapComponent,
     MatCommonTableComponent,
     PreLoaderComponent,
-    StatewiseMapComponent
+    // StatewiseMapComponent,
+    MapStateRankComponent
   ],
 })
 export class ParticipatingStateComponent implements OnInit {
