@@ -12,7 +12,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.html\""
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.html\"",
+    "sourceMap": "ng build --configuration production --source-map --stats-json",
+    "analyze": "webpack-bundle-analyzer ./dist/cityfinance-ng-ui-v2/stats.json",
+    "sm": "source-map-explorer dist/cityfinance-ng-ui-v2/browser/main.*.js",
+    "analyze-esbuild": "ng build && esbuild dist/cityfinance-ng-ui-v2/browser/main.*.js --bundle --metafile=dist/cityfinance-ng-ui-v2/browser/meta.json --outfile=out.js",
+    "analyze-esbuil1": "esbuild dist/cityfinance-ng-ui-v2/browser/main-*.js --bundle --outdir=analyzed.js --metafile=meta.json"
   },
   "private": true,
   "dependencies": {
@@ -44,7 +49,6 @@
     "sweetalert": "^2.1.2",
     "sweetalert2": "^11.11.1",
     "to-words": "^4.0.1",
-    "topojson": "^3.0.2",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
   },
@@ -63,9 +67,9 @@
     "@types/lodash": "^4.17.4",
     "@types/lodash-es": "^4.17.12",
     "@types/pdfmake": "^0.2.9",
-    "@types/topojson": "^3.2.6",
     "@typescript-eslint/eslint-plugin": "7.11.0",
     "@typescript-eslint/parser": "7.11.0",
+    "esbuild": "0.24.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
