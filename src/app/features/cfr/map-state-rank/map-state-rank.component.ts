@@ -7,16 +7,16 @@ import { FiscalRankingService } from '../services/fiscal-ranking.service';
 import { MapUtil } from '../../../core/util/map/mapUtil';
 
 export interface ColorDetails {
-  color: string,
-  text: string,
-  min: number,
-  max: number
+  color: string;
+  text: string;
+  min: number;
+  max: number;
 }
 
 export interface Marker {
-  lat: number,
-  lng: number,
-  ulbName: string,
+  lat: number;
+  lng: number;
+  ulbName: string;
 }
 
 @Component({
@@ -24,7 +24,7 @@ export interface Marker {
   standalone: true,
   imports: [],
   templateUrl: './map-state-rank.component.html',
-  styleUrl: './map-state-rank.component.scss'
+  styleUrl: './map-state-rank.component.scss',
 })
 export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   @Input() markers: Marker[] = [];
@@ -40,21 +40,32 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     fillColor: 'red',
     weight: 1,
     opacity: 1,
-    color: "#193369",
+    color: '#193369',
     // fillOpacity: 0.5,
   };
 
-  colorDetails: ColorDetails[] = [
-    { color: '#06668F', text: '76%-100%', min: 75.51, max: 100 },
-    { color: '#0B8CC3', text: '51%-75%', min: 50.51, max: 75.50 },
-    { color: '#73BFE0', text: '26%-50%', min: 25.51, max: 50.50 },
-    { color: '#BCE2F2', text: '0.1%-25%', min: 0.1, max: 25.50 },
-    { color: '#E5E5E5', text: '0%', min: 0, max: 0 },
+  colorDetails: {
+    color: string;
+    text: string;
+  }[] = [
+    { color: '#0B8CC3', text: 'High Participation' }, // (>75% of ULBs participated from state)
+    { color: '#52b788', text: 'Low Participation' }, // (<75% of ULBs participated from state)
+    { color: '#d69f7e', text: 'Hilly/ North Eastern State' },
+    { color: '#E5E5E5', text: 'Not Participated' },
   ];
-  label: any = '% of Ranked';
+  // colorDetails: ColorDetails[] = [
+  //   { color: '#06668F', text: '76%-100%', min: 75.51, max: 100 },
+  //   { color: '#0B8CC3', text: '51%-75%', min: 50.51, max: 75.5 },
+  //   { color: '#73BFE0', text: '26%-50%', min: 25.51, max: 50.5 },
+  //   { color: '#BCE2F2', text: '0.1%-25%', min: 0.1, max: 25.5 },
+  //   { color: '#E5E5E5', text: '0%', min: 0, max: 0 },
+  // ];
+  label: any = '% of Participated';
 
-  constructor(protected _geoService: GeographicalService,
-    private fiscalRankingService: FiscalRankingService,) { }
+  constructor(
+    protected _geoService: GeographicalService,
+    private fiscalRankingService: FiscalRankingService,
+  ) {}
 
   // Initialize the map after view is ready
   ngAfterViewInit(): void {
@@ -68,18 +79,17 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
 
   private initMap(): void {
     const options = {
-      "scrollWheelZoom": false,
-      "fadeAnimation": true,
-      "keyboard": false,
-      "attributionControl": false,
-      "dragging": false,
-      "tap": false,
-      "doubleClickZoom": false,
-      "zoomControl": false,
-      "zoom": 4.2, // initial zoom value
-      "minZoom": 4.2, // Prevent zooming out beyond level y
-      "maxZoom": 4.2, // Prevent zooming in beyond level x
-
+      scrollWheelZoom: false,
+      fadeAnimation: true,
+      keyboard: false,
+      attributionControl: false,
+      dragging: false,
+      tap: false,
+      doubleClickZoom: false,
+      zoomControl: false,
+      zoom: 4.2, // initial zoom value
+      minZoom: 4.2, // Prevent zooming out beyond level y
+      maxZoom: 4.2, // Prevent zooming in beyond level x
     };
 
     this.map = L.map('map', options).setView([22, 85], 0.1);
@@ -107,34 +117,40 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
       const layers = L.geoJSON(this.StatesJSONForMapCreation, {
         style: this.getStateStyle.bind(this, colorCoding),
         // style: this.defaultStateLayerStyle,
-        onEachFeature: this.onEachFeature.bind(this),
+        onEachFeature: this.onEachFeature.bind(this, colorCoding),
       }).addTo(this.map);
-
     });
   }
 
   // Add popup or events;
-  private onEachFeature(feature: any, layer: L.Layer): void {
+  private onEachFeature(stateData: any, feature: any, layer: L.Layer): void {
+    const stateCode = feature.properties?.['ST_CODE'];
+    const stateObj = stateData.find((e: { code: any }) => {
+      return e.code === stateCode;
+    });
+    const rankedPercentage = stateObj?.rankedPercentage ?? 0;
+    const participatedPercentage = stateObj?.participatedPercentage ?? 0;
+
     if (feature.properties && feature.properties.ST_NM) {
-      /** State name on click. */
-      layer.bindPopup(`<strong>${feature.properties.ST_NM}</strong>`); // On click = popup.
+      // /** State name on click. */
+      // layer.bindPopup(`<strong>${feature.properties.ST_NM}</strong>`); // On click = popup.
 
-      // /** State name on hover */
-      // // Create a popup content
-      // const popupContent = `<b>${feature.properties.ST_NM}</b>`;
+      /** State name on hover */
+      // Create a popup content
+      const popupContent = `Out of <b>${participatedPercentage}%</b> participated ULBs <b>${rankedPercentage}%</b> are ranked in <b>${feature.properties.ST_NM}</b>`;
 
-      // // Add a popup on hover (mouseover)
-      // layer.on('mouseover', (event) => {
-      //   const popup = L.popup()
-      //     .setLatLng(event.latlng) // Use the latitude and longitude of the event
-      //     .setContent(popupContent)
-      //     .openOn(this.map); // Open the popup on the map
-      // });
+      // Add a popup on hover (mouseover)
+      layer.on('mouseover', (event) => {
+        const popup = L.popup()
+          .setLatLng(event.latlng) // Use the latitude and longitude of the event
+          .setContent(popupContent)
+          .openOn(this.map); // Open the popup on the map
+      });
 
-      // // Remove the popup on mouseout
-      // layer.on('mouseout', () => {
-      //   this.map.closePopup(); // Close the popup
-      // });
+      // Remove the popup on mouseout
+      layer.on('mouseout', () => {
+        this.map.closePopup(); // Close the popup
+      });
     }
   }
 
@@ -144,21 +160,20 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
       // `<span style="width: 100%; display: block; font-size: 12px" class="text-center">${this.label}</span>`,
     ];
     const colorDetails = this.colorDetails;
-    legend.onAdd = map => {
-      const div = L.DomUtil.create("div", "map-legend");
-      div.id = "legendContainer";
+    legend.onAdd = (map) => {
+      const div = L.DomUtil.create('div', 'map-legend');
+      div.id = 'legendContainer';
       // div.style.width = "100%";
       colorDetails?.forEach((value) => {
         labels.push(
           `<div>
             <i class="circle" style="background: ${value.color}; padding:6px; display: inline-block; margin-right: 12%; "> </i> 
             ${value.text}
-            </div>`
+            </div>`,
         );
       });
 
       const labelString = labels.join(``);
-
 
       div.innerHTML = `
         ${this?.label ? `<div class="heading text-start mb-2">${this?.label}</div>` : ''}
@@ -171,12 +186,11 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
 
   // Generate dynamic styles to states;
   private getStateStyle(stateData: any, feature: any): L.PathOptions {
-
     const stateCode = feature.properties?.['ST_CODE'];
 
-    const match = stateData.find((e: { code: any; }) => {
+    const match = stateData.find((e: { code: any }) => {
       return e.code === stateCode;
-    })
+    });
 
     return {
       fillColor: match ? match.color : '#e5e5e5', // Default to gray if no match
@@ -190,15 +204,14 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   // Add markers.
   addMarkers() {
     // console.log("from map maper: ", this.markers)
-    this.markers.forEach(marker => {
-
+    this.markers.forEach((marker) => {
       L.marker([marker.lat, marker.lng], {
         icon: new L.Icon({
           // iconUrl: 'assets/images/maps/map-marker.png',
           iconUrl: 'assets/images/maps/location_on.svg',
           iconSize: [20, 20],
           iconAnchor: [10, 10],
-        })
+        }),
       })
         .addTo(this.map)
         // .bindPopup(`${marker.ulbName}`)
