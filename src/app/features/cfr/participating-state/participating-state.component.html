@@ -7,7 +7,9 @@
     </div>
     <div class="row mb-4">
       <div class="col-sm-12 text-center">
-        <span class="form-h-fr">Overview of State-wise participated ULBs</span>
+        <span class="form-h-fr"
+          >Overview of Participated and Ranked ULBs across States and UTs</span
+        >
       </div>
     </div>
   </div>
@@ -16,18 +18,22 @@
       <div class="row">
         <div class="col-sm-12 col-md-6 my-0 map-con">
           @if (!isLoadingResults) {
-          <app-map-state-rank></app-map-state-rank>
+            <app-map-state-rank></app-map-state-rank>
           }
         </div>
         <div class="com-sm-12 col-md-6">
           <div class="table-card mt-3">
             @if (isLoadingResults) {
-            <app-pre-loader></app-pre-loader>
+              <app-pre-loader></app-pre-loader>
             } @else {
-            <app-mat-common-table [tableHeight]='80' [response]="table.response" [isLoadingResults]="isLoadingResults"
-              [isPagination]="false" (pageChange)="pageChange($event)"></app-mat-common-table>
+              <app-mat-common-table
+                [tableHeight]="80"
+                [response]="table.response"
+                [isLoadingResults]="isLoadingResults"
+                [isPagination]="false"
+                (pageChange)="pageChange($event)"
+              ></app-mat-common-table>
             }
-
           </div>
         </div>
       </div>

@@ -45,7 +45,7 @@ export class ParticipatingStateComponent implements OnInit {
       url: '/cfr/home',
     },
     {
-      label: 'Participated States and UT ',
+      label: 'Participated and Ranked ULBs across States and UTs',
       url: '/cfr/participated-states-ut',
       class: 'disabled',
     },
