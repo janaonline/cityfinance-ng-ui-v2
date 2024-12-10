@@ -37,7 +37,6 @@ export class PerformanceFourMComponent implements OnChanges {
   constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes['data']?.currentValue);
     if (changes['data']?.currentValue) this.updatePortalData('overAll');
   }
 
