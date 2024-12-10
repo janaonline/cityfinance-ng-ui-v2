@@ -16,7 +16,7 @@
   <section class="map-bg mt-4">
     <form class="" [formGroup]="filter">
       <div class="row">
-        <div class="offset-md-5 col-md-7 p-4 mt-4 card-clr border border-secondary-subtle rounded">
+        <div class="offset-md-1 col-md-10 p-4 mt-4 card-clr border border-secondary-subtle rounded">
           <div class="d-flex align-items-center justify-content-between">
             <p class="fw-bold">Explore Ranking across State and Population Category</p>
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
@@ -34,6 +34,24 @@
           </div>
 
           <div class="d-flex justify-content-between gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>State Sub-Category</mat-label>
+              <mat-select formControlName="participationCategory" class="fw-bold">
+                <mat-option value="">All Categories</mat-option>
+                @for (item of participationCategories; track $index) {
+                <mat-option [value]="item._id">{{ item.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Population Category</mat-label>
+              <mat-select formControlName="populationBucket" class="fw-bold">
+                <mat-option value="">All Categories</mat-option>
+                @for (item of populationCategories; track $index) {
+                <mat-option [value]="item._id">{{ item.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Select a State</mat-label>
@@ -45,22 +63,14 @@
               </mat-select>
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Population Category</mat-label>
-              <mat-select formControlName="populationBucket" class="fw-bold">
-                <mat-option value="">All Categories</mat-option>
-                @for (item of populationCategories; track $index) {
-                <mat-option [value]="item._id">{{ item.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+
 
           </div>
         </div>
       </div>
 
       <div class="row">
-        <div class="offset-md-5 col-md-7 btn-group my-4 d-flex justify-content-center" role="group"
+        <div class="offset-md-3 col-md-7 btn-group my-4 d-flex justify-content-center" role="group"
           aria-label="Basic radio toggle button group">
           <ng-container *ngFor="let type of types">
             <input type="radio" class="btn-check" formControlName="category" [id]="type?.key" [value]="type?.key" />

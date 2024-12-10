@@ -7,15 +7,14 @@ import { AuthService } from '../../../core/services/auth.service';
 import { UserUtility } from '../../../core/util/user/user';
 import { MaterialModule } from '../../../material.module';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
-import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
 import { Marker } from '../map-state-rank/map-state-rank.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import { Table, TableResponse } from '../services/common-table.interface';
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 // import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
-import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
 import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
+import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
 
 
 @Component({
@@ -30,7 +29,7 @@ import { MapStateRankComponent } from "../map-state-rank/map-state-rank.componen
     AngularMultiSelectModule,
     MatCommonTableComponent,
     // StatewiseMapComponent,
-    PreLoaderComponent,
+    // PreLoaderComponent,
     LoaderComponent,
     MapStateRankComponent
   ],
@@ -82,6 +81,11 @@ export class TopRankingsComponent implements OnInit {
     { _id: '3', name: '100K to 1M' },
     { _id: '4', name: '<100K' },
   ];
+  participationCategories = [
+    { _id: 'high', name: 'High Participation' },
+    { _id: 'low', name: 'Low Participation' },
+    { _id: 'hilly', name: 'Hilly/North Eastern States' },
+  ];
   dropdownSettings = {
     singleSelection: true,
     text: 'India',
@@ -106,6 +110,7 @@ export class TopRankingsComponent implements OnInit {
     this.isLoggedIn = this.authService.loggedIn();
 
     this.filter = this.fb.group({
+      participationCategory: '',
       populationBucket: '1',
       state: '',
       category: 'overAllRank',
