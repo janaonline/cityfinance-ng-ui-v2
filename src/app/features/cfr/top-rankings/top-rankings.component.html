@@ -3,7 +3,8 @@
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
   <section class="d-flex justify-content-end">
-    <input type="text" class="form-control px-4 py-3 w-25" placeholder="Search for any ULB..." (click)="openSearch()" />
+    <input type="text" class="form-control border-danger px-4 py-3 w-25" placeholder="Search for any ULB..."
+      (click)="openSearch()" />
   </section>
 
   <section class="text-center">
@@ -87,7 +88,10 @@
           @if(!isLoadingResults){
           <app-map-state-rank [markers]="markers"></app-map-state-rank>
           }
+          <span>Source: <a href="https://onlinemaps.surveyofindia.gov.in/Digital_Product_Show.aspx" target="_blank"
+              rel="noopener noreferrer">Survey of India (SOI)</a></span>
         </div>
+
 
         <div class="col-sm-12 col-md-7">
           <app-mat-common-table *ngIf="table?.response" [skip]="skip" [tableHeight]="70" [response]="table.response"
