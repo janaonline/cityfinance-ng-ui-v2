@@ -12,7 +12,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.html\""
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.html\"",
+    "sourceMap": "ng build --configuration production --source-map --stats-json",
+    "analyze": "webpack-bundle-analyzer ./dist/cityfinance-ng-ui-v2/stats.json",
+    "sm": "source-map-explorer dist/cityfinance-ng-ui-v2/browser/main.*.js",
+    "analyze-esbuild": "ng build && esbuild dist/cityfinance-ng-ui-v2/browser/main.*.js --bundle --metafile=dist/cityfinance-ng-ui-v2/browser/meta.json --outfile=out.js",
+    "analyze-esbuil1": "esbuild dist/cityfinance-ng-ui-v2/browser/main-*.js --bundle --outdir=analyzed.js --metafile=meta.json"
   },
   "private": true,
   "dependencies": {
@@ -66,6 +71,7 @@
     "@types/topojson": "^3.2.6",
     "@typescript-eslint/eslint-plugin": "7.11.0",
     "@typescript-eslint/parser": "7.11.0",
+    "esbuild": "0.24.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
