@@ -3,8 +3,12 @@
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
   <section class="d-flex justify-content-end">
-    <input type="text" class="form-control border-danger px-4 py-3 w-25" placeholder="Search for any ULB..."
-      (click)="openSearch()" />
+    <input
+      type="text"
+      class="form-control px-4 py-3 w-25"
+      placeholder="Search for any ULB..."
+      (click)="openSearch()"
+    />
   </section>
 
   <section class="text-center">
@@ -22,34 +26,41 @@
             <p class="fw-bold">Explore Ranking across State and Population Category</p>
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
             @if (isLoggedIn && ['ADMIN', 'MoHUA', 'ULB', 'STATE'].includes(userRole)) {
-            <!-- <p>{{userRole}} | {{isLoggedIn}}</p> -->
-            <button type="button" class="btn btn-outline-cfPrimary" matTooltip="Download Rankings"
-              (click)="downloadRankings()">
-              <i class="bi bi-download"></i>
-            </button>
+              <!-- <p>{{userRole}} | {{isLoggedIn}}</p> -->
+              <button
+                type="button"
+                class="btn btn-outline-cfPrimary"
+                matTooltip="Download Rankings"
+                (click)="downloadRankings()"
+              >
+                <i class="bi bi-download"></i>
+              </button>
             }
           </div>
 
           <div class="d-flex justify-content-end">
-            <button class="btn text-cfPrimary p-0 border-0 mb-2 my-2" (click)="resetFilter()">Reset</button>
+            <button class="btn text-cfPrimary p-0 border-0 mb-2 my-2" (click)="resetFilter()">
+              Reset
+            </button>
           </div>
 
           <div class="d-flex justify-content-between gap-4">
             <mat-form-field appearance="outline">
               <mat-label>State Sub-Category</mat-label>
-              <mat-select formControlName="participationCategory" class="fw-bold">
+              <mat-select formControlName="stateParticipationCategory" class="fw-bold">
                 <mat-option value="">All Categories</mat-option>
                 @for (item of participationCategories; track $index) {
-                <mat-option [value]="item._id">{{ item.name }}</mat-option>
+                  <mat-option [value]="item._id">{{ item.name }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
+
             <mat-form-field appearance="outline">
               <mat-label>Population Category</mat-label>
               <mat-select formControlName="populationBucket" class="fw-bold">
                 <mat-option value="">All Categories</mat-option>
                 @for (item of populationCategories; track $index) {
-                <mat-option [value]="item._id">{{ item.name }}</mat-option>
+                  <mat-option [value]="item._id">{{ item.name }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
@@ -59,24 +70,33 @@
               <mat-select class="fw-bold" formControlName="state">
                 <mat-option value="">All States</mat-option>
                 @for (state of stateList; track $index) {
-                <mat-option [value]="state._id">{{ state.name }}</mat-option>
+                  <mat-option [value]="state._id">{{ state.name }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
-
-
-
           </div>
         </div>
       </div>
 
       <div class="row">
-        <div class="offset-md-3 col-md-7 btn-group my-4 d-flex justify-content-center" role="group"
-          aria-label="Basic radio toggle button group">
+        <div
+          class="offset-md-3 col-md-7 btn-group my-4 d-flex justify-content-center"
+          role="group"
+          aria-label="Basic radio toggle button group"
+        >
           <ng-container *ngFor="let type of types">
-            <input type="radio" class="btn-check" formControlName="category" [id]="type?.key" [value]="type?.key" />
-            <label class="btn btn-sm btn-outline-cfPrimary font-white text-truncate" matTooltip="{{ type?.label }}"
-              [for]="type?.key">
+            <input
+              type="radio"
+              class="btn-check"
+              formControlName="category"
+              [id]="type?.key"
+              [value]="type?.key"
+            />
+            <label
+              class="btn btn-sm btn-outline-cfPrimary font-white text-truncate"
+              matTooltip="{{ type?.label }}"
+              [for]="type?.key"
+            >
               {{ type?.label }}
             </label>
           </ng-container>
@@ -85,17 +105,20 @@
 
       <div class="my-4 row">
         <div class="col-sm-12 col-md-5 align-items-center">
-          @if(!isLoadingResults){
-          <app-map-state-rank [markers]="markers"></app-map-state-rank>
+          @if (!isLoadingResults) {
+            <app-map-state-rank [markers]="markers"></app-map-state-rank>
           }
-          <span>Source: <a href="https://onlinemaps.surveyofindia.gov.in/Digital_Product_Show.aspx" target="_blank"
-              rel="noopener noreferrer">Survey of India (SOI)</a></span>
         </div>
 
-
         <div class="col-sm-12 col-md-7">
-          <app-mat-common-table *ngIf="table?.response" [skip]="skip" [tableHeight]="70" [response]="table.response"
-            [isPagination]="true" (pageChange)="pageChange($event)"></app-mat-common-table>
+          <app-mat-common-table
+            *ngIf="table?.response"
+            [skip]="skip"
+            [tableHeight]="70"
+            [response]="table.response"
+            [isPagination]="true"
+            (pageChange)="pageChange($event)"
+          ></app-mat-common-table>
         </div>
       </div>
     </form>

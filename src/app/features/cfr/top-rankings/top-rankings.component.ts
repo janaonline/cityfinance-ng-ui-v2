@@ -13,9 +13,8 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 import { Table, TableResponse } from '../services/common-table.interface';
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 // import { StatewiseMapComponent } from '../statewise-map/statewise-map.component';
-import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
+import { MapStateRankComponent } from '../map-state-rank/map-state-rank.component';
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
-
 
 @Component({
   selector: 'app-top-rankings',
@@ -31,7 +30,7 @@ import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.c
     // StatewiseMapComponent,
     // PreLoaderComponent,
     LoaderComponent,
-    MapStateRankComponent
+    MapStateRankComponent,
   ],
 })
 export class TopRankingsComponent implements OnInit {
@@ -74,7 +73,7 @@ export class TopRankingsComponent implements OnInit {
     response: {} as TableResponse,
   };
   selectedMap: string = 'topUlbs'; // Initialize to default value
-  stateList: { _id: string, name: string }[] = [];
+  stateList: { _id: string; name: string }[] = [];
   populationCategories = [
     { _id: '1', name: '4M+' },
     { _id: '2', name: '1M to 4M' },
@@ -82,8 +81,8 @@ export class TopRankingsComponent implements OnInit {
     { _id: '4', name: '<100K' },
   ];
   participationCategories = [
-    { _id: 'high', name: 'High Participation' },
-    { _id: 'low', name: 'Low Participation' },
+    { _id: 'high', name: 'High Participation' }, //(>75% of ULBs from the State participated)
+    { _id: 'low', name: 'Low Participation' }, //(<75% of ULBs from the State participated)
     { _id: 'hilly', name: 'Hilly/North Eastern States' },
   ];
   dropdownSettings = {
@@ -110,17 +109,14 @@ export class TopRankingsComponent implements OnInit {
     this.isLoggedIn = this.authService.loggedIn();
 
     this.filter = this.fb.group({
-      participationCategory: '',
+      stateParticipationCategory: '',
       populationBucket: '1',
       state: '',
       category: 'overAllRank',
     });
-
-
   }
 
   ngOnInit(): void {
-
     this.filter.valueChanges.subscribe(() => {
       this.skip = 0;
       this.loadTopRankedUlbs();
@@ -141,24 +137,22 @@ export class TopRankingsComponent implements OnInit {
     const pageParams = {
       skip: this.skip * this.limit,
       limit: this.limit,
-    }
+    };
     const params = { ...this.filter.value, ...pageParams };
 
-    this.fiscalRankingService
-      .topRankedUlbs(params)
-      .subscribe({
-        next: (res: any) => {
-          // console.log("res--->", res)
-          this.table.response = res.tableData;
-          if (this.table.response) this.table.response.total = res.total;
-          this.markers = res.mapDataTopUlbs;
-          this.isLoadingResults = false;
-        },
-        error: (error) => {
-          console.error('Error in loading top ranked ulbs: ', error);
-          this.isLoadingResults = false;
-        },
-      });
+    this.fiscalRankingService.topRankedUlbs(params).subscribe({
+      next: (res: any) => {
+        // console.log("res--->", res)
+        this.table.response = res.tableData;
+        if (this.table.response) this.table.response.total = res.total;
+        this.markers = res.mapDataTopUlbs;
+        this.isLoadingResults = false;
+      },
+      error: (error) => {
+        console.error('Error in loading top ranked ulbs: ', error);
+        this.isLoadingResults = false;
+      },
+    });
   }
 
   loadStates() {
@@ -168,10 +162,16 @@ export class TopRankingsComponent implements OnInit {
   }
 
   resetFilter() {
-    this.filter.patchValue({ state: "" });
-    this.filter.patchValue({ populationBucket: "1" });
-    this.filter.patchValue({ category: "overAllRank" });
-    this.loadTopRankedUlbs();
+    this.filter.patchValue({
+      state: '',
+      populationBucket: '1',
+      category: 'overAllRank',
+      stateParticipationCategory: '',
+    });
+    // this.filter.patchValue({});
+    // this.filter.patchValue({ category: 'overAllRank' });
+    // this.filter.patchValue({ stateParticipationCategory: '' });
+    // this.loadTopRankedUlbs();
   }
 
   openSearch() {
