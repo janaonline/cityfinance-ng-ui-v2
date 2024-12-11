@@ -10,7 +10,7 @@
 
         <form class="d-flex justify-content-center">
             <input matInput [formControl]="searchField" [matAutocomplete]="auto" class="form-control w-50"
-                style="height: 3rem" type="text" placeholder="Search for ULB..." />
+                style="height: 3rem" type="text" placeholder="Search ULB..." />
             <mat-autocomplete #auto="matAutocomplete">
                 <span *ngFor="let option of filteredOptions; let i = index" style="direction: none">
                     <mat-option [ngClass]="{ firstCls: i === 0 }" [value]="option?.name"
