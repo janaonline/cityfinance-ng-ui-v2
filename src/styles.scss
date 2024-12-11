@@ -248,61 +248,85 @@ mat-form-field {
   background: none;
   border: 1px solid rgba(255, 0, 0, 1);
 }
-.btn-orange {
-  $orange: #e67e15;
-  border-radius: 8px;
-  padding-right: 20px;
-  padding-left: 20px;
-  background: $orange;
-  color: #fff;
-  font-weight: bold;
-  transition:
-    background 0.3s ease,
-    color 0.3s ease;
-  box-shadow: 1px 11px 28px 2px #e67e1561;
+// .btn-orange {
+//   $orange: #e67e15;
+//   border-radius: 8px;
+//   padding-right: 20px;
+//   padding-left: 20px;
+//   background: $orange;
+//   color: #fff;
+//   font-weight: bold;
+//   transition:
+//     background 0.3s ease,
+//     color 0.3s ease;
+//   box-shadow: 1px 11px 28px 2px #e67e1561;
 
-  &.btn-outline {
-    background: #fff;
-    border: 1px solid $orange;
-    color: $orange;
-    transition:
-      background 0.3s ease,
-      color 0.3s ease,
-      border 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
+//   &.btn-outline {
+//     background: #fff;
+//     border: 1px solid $orange;
+//     color: $orange;
+//     transition:
+//       background 0.3s ease,
+//       color 0.3s ease,
+//       border 0.3s ease;
+//     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+//   }
 
-  &.btn-text {
-    color: $orange;
-    background-color: inherit;
-    transition:
-      background 0.3s ease,
-      color 0.3s ease,
-      border 0.3s ease;
-    box-shadow: none;
-  }
+//   &.btn-text {
+//     color: $orange;
+//     background-color: inherit;
+//     transition:
+//       background 0.3s ease,
+//       color 0.3s ease,
+//       border 0.3s ease;
+//     box-shadow: none;
+//   }
 
-  &:hover {
-    background: #cf7113;
-    border-color: #cf7113;
-    color: #fff;
-  }
-}
+//   &:hover {
+//     background: #cf7113;
+//     border-color: #cf7113;
+//     color: #fff;
+//   }
+// }
 
-.color-orange {
-  color: #e67e15;
-}
-.color-blue {
-  color: #00486f;
-}
+// .color-orange {
+//   color: #e67e15;
+// }
+// .color-blue {
+//   color: #00486f;
+// }
 .cursor-pointer {
   cursor: pointer !important;
 }
+
 .material-icons {
   font-family: 'Material Icons' !important;
 }
+
 .custom-readonly-input {
   background-color: lightgrey !important;
   border: 1px solid gray !important;
   cursor: not-allowed !important;
+}
+
+// ----- Add button group ----- //
+// Select the first button
+.custom-btn-check:first-of-type + .btn {
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+// Select the last button
+.custom-btn-check:last-of-type + .btn {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+}
+
+// To ensure the buttons in between don't have extra borders
+.custom-btn-check:not(:first-of-type):not(:last-of-type) + .btn {
+  border-radius: 0;
 }
