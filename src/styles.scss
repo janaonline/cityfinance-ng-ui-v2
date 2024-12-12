@@ -330,3 +330,16 @@ mat-form-field {
 .custom-btn-check:not(:first-of-type):not(:last-of-type) + .btn {
   border-radius: 0;
 }
+
+// ---- Backgroud blur effect ---- //
+.blur-effect {
+  filter: blur(20px);
+  pointer-events: none;
+  user-select: none;
+}
+
+// Style swal (popup)
+.swal2-popup {
+  font-size: small;
+  font-family: var(--ff-base);
+}

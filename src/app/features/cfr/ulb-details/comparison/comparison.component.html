@@ -44,7 +44,10 @@
         <canvas id="bar-chart-with-line">{{ chart }}</canvas>
       </div>
       <p class="text-danger text-end" *ngIf="hasNonBucketUlb">
-        <small>🔴 The ULB selected does not fall under {{ bucketShortName }}</small>
+        <small
+          >🔴 The ULB selected does not fall under {{ bucketShortName }} or
+          {{ ulb.statePartCat }}</small
+        >
       </p>
     </div>
   </div>
