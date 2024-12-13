@@ -112,9 +112,7 @@ export const tableMapperPipe = (columns: any, tablePath: string = '') => {
   providedIn: 'root',
 })
 export class FiscalRankingService {
-
-  constructor(private http: HttpClient) { }
-
+  constructor(private http: HttpClient) {}
 
   downloadFile(blob: any, type: string, filename: string): void {
     try {
@@ -174,8 +172,7 @@ export class FiscalRankingService {
   }
 
   topRankedUlbs(params: any) {
-    return this.http
-      .get(`${environment.api.url}scoring-fr/top-ranked-ulbs`, { params })
+    return this.http.get(`${environment.api.url}scoring-fr/top-ranked-ulbs`, { params });
     // .pipe(tableMapperPipe(columns, 'tableData'));
   }
 
@@ -183,8 +180,10 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/top-ranked-states`, { params });
   }
 
-  getBarchartData(ulbsString: any, populationBucket: number) {
-    return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?populationBucket=${populationBucket}&${ulbsString}`);
+  getBarchartData(ulbsString: any, populationBucket: number, stateParticipationCategory: string) {
+    return this.http.get(
+      `${environment.api.url}scoring-fr/search-ulbs?stateParticipationCategory=${stateParticipationCategory}&populationBucket=${populationBucket}&${ulbsString}`,
+    );
   }
 
   getApiResponse(endPoints: string, params: any = {}) {

@@ -38,7 +38,8 @@
             "allowedCommonJsDependencies": [
               "sweetalert2",
               "file-saver",
-              "@tweenjs/tween.js"
+              "@tweenjs/tween.js",
+              "leaflet"
             ]
           },
           "configurations": {

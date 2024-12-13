@@ -55,7 +55,7 @@ export class ComparisonComponent implements OnChanges {
     this.isPreLoader = true;
     const ulbQuery = this.ulbs.map((item: { ulb: any }) => `ulb[]=${item?.ulb}`).join('&');
     this.fiscalRankingService
-      .getBarchartData(ulbQuery, this.ulb?.populationBucket)
+      .getBarchartData(ulbQuery, this.ulb?.populationBucket, this.ulb?.stateParticipationCategory)
       .subscribe((res: any) => {
         this.allTypeGraphData = res.graphData;
         this.createChart();
@@ -73,9 +73,12 @@ export class ComparisonComponent implements OnChanges {
 
   createChart() {
     if (this.chart) this.chart.destroy();
-    this.hasNonBucketUlb = this.ulbs.some(
-      (ulb: { populationBucket: any }) => ulb?.populationBucket != this.ulb?.populationBucket,
-    );
+    this.hasNonBucketUlb = this.ulbs.some((ulb: any) => {
+      return (
+        ulb?.populationBucket != this.ulb?.populationBucket ||
+        ulb?.stateParticipationCategory != this.ulb?.stateParticipationCategory
+      );
+    });
     const that = this;
     this.chart = new Chart('bar-chart-with-line', {
       type: 'bar',
