@@ -9,19 +9,23 @@ import { Table } from '../../services/common-table.interface';
 import { FiscalRankingService } from '../../services/fiscal-ranking.service';
 // import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../../ulb-details/search-popup/search-popup.component';
-import { MapStateRankComponent } from "../../map-state-rank/map-state-rank.component";
+import { MapStateRankComponent } from '../../map-state-rank/map-state-rank.component';
 
 @Component({
   selector: 'app-ulbs-in-india',
   templateUrl: './ulbs-in-india.component.html',
   styleUrls: ['./ulbs-in-india.component.scss'],
   standalone: true,
-  imports: [CommonModule, PreLoaderComponent, IndiaMapComponent, MatCommonTableComponent,
-    RouterModule, MapStateRankComponent]
-
+  imports: [
+    CommonModule,
+    PreLoaderComponent,
+    IndiaMapComponent,
+    MatCommonTableComponent,
+    RouterModule,
+    MapStateRankComponent,
+  ],
 })
 export class UlbsInIndiaComponent implements OnInit, OnChanges {
-
   @Input() data: any;
 
   isLoadingResults: boolean = false;
@@ -44,10 +48,10 @@ export class UlbsInIndiaComponent implements OnInit, OnChanges {
   ];
   ulbResponse: any = {};
 
-  constructor(private fiscalRankingService: FiscalRankingService,
+  constructor(
+    private fiscalRankingService: FiscalRankingService,
     private matDialog: MatDialog,
-  ) { }
-
+  ) {}
 
   ngOnInit(): void {
     this.getStateData();
@@ -55,8 +59,8 @@ export class UlbsInIndiaComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['data']) {
-      this.data.data = changes['data'].currentValue.bucketWiseTop10Ulbs.bucketWiseTop10UlbsArr;
-      this.data.columns = changes['data'].currentValue.bucketWiseTop10Ulbs.columns;
+      this.data.data = changes['data'].currentValue.bucketWiseTopUlbs.bucketWiseTopUlbsArr;
+      this.data.columns = changes['data'].currentValue.bucketWiseTopUlbs.columns;
     }
   }
 
@@ -71,22 +75,17 @@ export class UlbsInIndiaComponent implements OnInit, OnChanges {
       limit: this.limit,
     };
     const endpoint = `scoring-fr/participated-state`;
-    this.fiscalRankingService
-      .getApiResponse(
-        endpoint,
-        queryParams,
-      )
-      .subscribe({
-        next: (res: any) => {
-          // this.table['response'] = res?.data?.tableData;
-          this.colorCoding = res?.data?.mapData;
-          this.isLoadingResults = false;
-        },
-        error: (error: any) => {
-          // console.error('participated-state table error', error);
-          this.isLoadingResults = false;
-        },
-      });
+    this.fiscalRankingService.getApiResponse(endpoint, queryParams).subscribe({
+      next: (res: any) => {
+        // this.table['response'] = res?.data?.tableData;
+        this.colorCoding = res?.data?.mapData;
+        this.isLoadingResults = false;
+      },
+      error: (error: any) => {
+        // console.error('participated-state table error', error);
+        this.isLoadingResults = false;
+      },
+    });
   }
 
   openSearch() {
