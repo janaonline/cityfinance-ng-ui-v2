@@ -41,7 +41,7 @@ export class GoogleAnalyticsService {
     });
   }
 
-  trackEvent(action: string, params: any) {
+  trackEvent(action: string, params?: any) {
     gtag('event', action, params);
   }
 

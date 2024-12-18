@@ -46,6 +46,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.gaService.init();
+    // this.gaService.trackEvent('button click',{});
     this.getQueryParams();
 
     this._router.events.subscribe((event) => {
