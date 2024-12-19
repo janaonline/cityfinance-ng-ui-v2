@@ -36,12 +36,16 @@
       class="demo-full-width mt-2"
       [formGroup]="group"
     >
-      <mat-label *ngIf="displayInlineLabel">{{ field.label }}</mat-label>
+      <mat-label *ngIf="displayInlineLabel" for="field.key"
+        >{{ field.label
+        }}<span *ngIf="field.showAsterisk" class="text-danger"><sup>*</sup></span></mat-label
+      >
       @if (field.formFieldType === 'number') {
         <input
           onwheel="this.blur()"
           matInput
           [formControlName]="field.key"
+          [id]="field.key"
           type="number"
           [appDecimalLimit]="decimal"
           [readonly]="readonly"
@@ -52,6 +56,7 @@
           onwheel="this.blur()"
           matInput
           [formControlName]="field.key"
+          [id]="field.key"
           [type]="field.formFieldType"
           [readonly]="readonly"
         />

@@ -12,11 +12,13 @@ import { RestrictEInputDirective } from '../../../../core/directives/restrict-e-
   templateUrl: './input.component.html',
   styles: [
     `
-      .warning-hint {
+    * {
+        font-family: var(--ff-base) !important;
+    }
+    .warning-hint {
         display: block;
         color: orange;
-      }
-    `,
+    }`,
   ],
 })
 export class InputComponent {
@@ -32,7 +34,7 @@ export class InputComponent {
   decimal: number = 0;
   // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 
-  constructor() {}
+  constructor() { }
   ngOnInit() {
     this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
@@ -43,6 +45,7 @@ export class InputComponent {
     this.warnings = this.parentField?.warning;
   }
   hasError(key: string, name: string) {
+    if (name === 'email') name = 'pattern';
     return (this.group.get(key) as FormControl).hasError(name);
   }
 
@@ -66,5 +69,5 @@ export class InputComponent {
     return res;
   }
 
-  onKeypressNumber() {}
+  onKeypressNumber() { }
 }
