@@ -1,0 +1,86 @@
+<button (click)="downloadPDF()">Download PDF</button>
+<div #pdfDownload id="pdfDownload" class="pdfDownload">
+    <div class="d-flex mb-3">
+        <h1 class="p-2 text-uppercase text-cfSecondary fw-bold">City Finance Ranking</h1>
+        <div class="ms-auto p-2"><img src="./assets/images/city-finance-ranking.png"></div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="px-4 py-2 mb-4 bg-warning-subtle">
+                <div class="fw-bold text-cfSecondary fs-3">25,3434</div>
+                <div>Population (2011 Census)</div>
+            </div>
+            <div class="px-4 py-2 mb-4 bg-warning-subtle">
+                <div class="fw-bold text-cfSecondary fs-3">4 Million +</div>
+                <div>Population Category</div>
+            </div>
+            <div class="px-4 py-2 mb-4 bg-warning-subtle">
+                <div class="fw-bold text-cfSecondary fs-3">2/4</div>
+                <div>National Rank</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-4 mb-2 bg-dark-blue text-white">
+                <div class="d-flex mb-2">
+                    <div class="flex-shrink-0 bg-white">
+                        <img src="assets/fiscal-rankings/RM.svg">
+                    </div>
+                    <div class="flex-grow-1 ms-3 fs-5">
+                        Resource Mobilization
+                    </div>
+                </div>
+                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
+                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <hr>
+                <div class="fs-6">This parameter evaluates the current size and growth
+                    trend of a ULB’s diverse revenue sources, including
+                    revenue generation and property tax collection.</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-4 mb-2 bg-dark-blue text-white">
+                <div class="d-flex mb-2">
+                    <div class="flex-shrink-0 bg-white">
+                        <img src="assets/fiscal-rankings/EP.svg">
+                    </div>
+                    <div class="flex-grow-1 ms-3 fs-5">
+                        Expenditure Performance
+                    </div>
+                </div>
+                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
+                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <hr>
+                <div class="fs-6">This parameter assesses the amount and
+                    effectiveness of a ULB's spending on infrastructure
+                    and services that benefit residents.</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-4 mb-2 bg-dark-blue text-white">
+                <div class="d-flex mb-2">
+                    <div class="flex-shrink-0 bg-white">
+                        <img src="assets/fiscal-rankings/FG.svg">
+                    </div>
+                    <div class="flex-grow-1 ms-3 fs-5">
+                        Fiscal Governance
+                    </div>
+                </div>
+                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
+                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <hr>
+                <div class="fs-6">Compare Amdavad Municipal Corporation performance with category. Use below selection
+                    modes to
+                    explore.</div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <p>Chart</p>
+            <canvas #chartCanvas></canvas>
+        </div>
+    </div>
+</div>
