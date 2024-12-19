@@ -4,6 +4,8 @@
   "scripts": {
     "ng": "ng",
     "local": "ng serve --configuration=local --port 4300",
+    "host": "ng serve --configuration=staging --host local.cityfinance.in --port 4300",
+    "net": "ng serve --configuration=staging --host 0.0.0.0 --port 4300",
     "staging": "ng serve --configuration=staging --port 4300",
     "dev": "ng serve --configuration=development --port 4300",
     "start": "ng serve",

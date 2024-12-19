@@ -145,8 +145,9 @@ html {
 
 button:disabled,
 button[disabled] {
-  opacity: 0.7;
-  cursor: not-allowed;
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+  pointer-events: all !important;
 }
 
 @media (max-width: 767px) {
@@ -297,6 +298,9 @@ mat-form-field {
 // }
 .cursor-pointer {
   cursor: pointer !important;
+}
+.cursor-not-allowed {
+  cursor: not-allowed !important;
 }
 
 .material-icons {

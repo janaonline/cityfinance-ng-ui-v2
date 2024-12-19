@@ -1,6 +1,6 @@
 const baseUrl = window.location.origin;
 //let baseUrl = 'http://localhost:8080';
-let GoogleTagID: string = 'G-5Z5B41B3G4';
+let GoogleTagID = 'G-803HPPLFMM';
 let isProduction: boolean = false;
 let STORAGE_BASEURL = 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com';
 let env = 'dev';
@@ -23,5 +23,6 @@ export const environment = {
   isProduction,
   versionCheckURL: baseUrl + '/version.json',
   STORAGE_BASEURL,
+  googleAnalyticsId: GoogleTagID,
   storageType: 'S3Url', // 'S3Url' for S3 storage type, for azure change this to 'BlobUrl'
 };
