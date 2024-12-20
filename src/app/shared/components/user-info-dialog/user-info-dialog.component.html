@@ -1,0 +1,49 @@
+<div>
+  <h2 mat-dialog-title class="fw-bold">Download</h2>
+  <p class="px-4 text-secondary">
+    <small>Please enter your information below to download the resources.</small>
+  </p>
+</div>
+
+<mat-divider class="py-2"></mat-divider>
+
+@if (isLoading) {
+  <app-pre-loader></app-pre-loader>
+  <app-pre-loader></app-pre-loader>
+}
+
+<mat-dialog-content class="px-5 py-2">
+  <div class="row">
+    @for (field of fields; track $index) {
+      <div class="col-md-6">
+        @switch (field.formFieldType) {
+          @case ('input') {
+            <app-input
+              [field]="field"
+              [group]="userInfo"
+              [displayInlineLabel]="true"
+              [displayLabel]="false"
+            ></app-input>
+          }
+          @default {
+            <app-dynamic-form [field]="field" [group]="userInfo"> </app-dynamic-form>
+          }
+        }
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="px-5 mb-3 row justify-content-center gap-3">
+  <button
+    type="button"
+    class="col-auto py-2 btn btn-cfPrimary"
+    (click)="submitUserInfo()"
+    [disabled]="userInfo.invalid"
+  >
+    Submit
+  </button>
+  <button mat-dialog-close type="button" class="col-auto py-2 btn btn-outline-cfPrimary">
+    Cancel
+  </button>
+</mat-dialog-actions>

@@ -11,13 +11,14 @@ import {
   compareArrFieldsValidator,
   compareFieldsValidator,
 } from '../../core/validators/comparison.validator';
+import { FieldConfig } from './field.interface';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DynamicFormService {
   form!: FormGroup;
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder) { }
 
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i];
@@ -209,10 +210,10 @@ export class DynamicFormService {
           case 'max':
             validators.push(Validators.max(row.validator));
             break;
-          case 'minLength':
+          case 'minlength':
             validators.push(Validators.minLength(row.validator));
             break;
-          case 'maxLength':
+          case 'maxlength':
             validators.push(Validators.maxLength(row.validator));
             break;
           case 'email':
@@ -272,6 +273,14 @@ export class DynamicFormService {
           { validators },
         );
       }
+    });
+    return new FormGroup(group);
+  }
+
+  toFormGroup(questions: FieldConfig[]): FormGroup {
+    const group: any = {};
+    questions.forEach((question: FieldConfig) => {
+      group[question.key] = new FormControl(question.value || '', this.bindValidations(question.validations))
     });
     return new FormGroup(group);
   }
