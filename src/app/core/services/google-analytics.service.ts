@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { UserUtility } from '../util/user/user';
 
 declare let gtag: (command: string, eventName: string | Date, params?: Record<string, any>) => void;
 
@@ -10,7 +11,7 @@ declare let gtag: (command: string, eventName: string | Date, params?: Record<st
 })
 export class GoogleAnalyticsService {
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private userUtility: UserUtility) { }
 
   init() {
     this.appendScript();
@@ -35,10 +36,25 @@ export class GoogleAnalyticsService {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
-      const url = event.urlAfterRedirects;
+      // const url = event.urlAfterRedirects;
       gtag('js', new Date());
-      gtag('config', environment.googleAnalyticsId, { page_path: url });
+      this.setUserId();
+      // gtag('config', environment.googleAnalyticsId, { page_path: url });
     });
+  }
+
+  /**
+   * Set user ID for tracking logged-in users.
+   */
+  public setUserId(): void {
+    const user = this.userUtility.getLoggedInUserDetails();
+    let args = {};
+    if (user && user._id) {
+      args = {
+        user_id: user._id,
+      };
+    }
+    gtag('config', environment.googleAnalyticsId, args);
   }
 
   trackEvent(action: string, params?: any) {
