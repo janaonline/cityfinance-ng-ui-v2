@@ -11,7 +11,9 @@ declare let gtag: (command: string, eventName: string | Date, params?: Record<st
 })
 export class GoogleAnalyticsService {
 
-  constructor(private router: Router, private userUtility: UserUtility) { }
+  loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
+
+  constructor(private router: Router) { }
 
   init() {
     this.appendScript();
@@ -47,7 +49,7 @@ export class GoogleAnalyticsService {
    * Set user ID for tracking logged-in users.
    */
   public setUserId(): void {
-    const user = this.userUtility.getLoggedInUserDetails();
+    const user = this.loggedInUserDetails;
     let args = {};
     if (user && user._id) {
       args = {
