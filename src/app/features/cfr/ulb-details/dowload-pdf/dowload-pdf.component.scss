@@ -1,0 +1,28 @@
+.bg-dark-blue {
+  background-color: rgba(24, 51, 103, 1);
+  min-height: 320px;
+
+  p {
+    margin: 0;
+  }
+}
+.fs-6 {
+  font-size: 14px !important;
+}
+.pdf-col {
+  width: 33% !important;
+}
+hr {
+  margin: 0.5rem 0;
+}
+.about {
+  background-color: rgba(229, 125, 21, 1);
+  color: #fff;
+  p {
+    margin: 0;
+  }
+}
+.border-set {
+  border-left: 2px solid rgba(24, 51, 103, 1);
+  padding-left: 1rem;
+}
