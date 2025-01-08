@@ -6,6 +6,7 @@ import { take } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { DownloadUserInfoService } from '../../../../shared/components/user-info-dialog/download-user-info.service';
 import { UtilityService } from '../../../../core/services/utility.service';
+import { GoogleAnalyticsService } from '../../../../core/services/google-analytics.service';
 
 interface Card {
   cardKey: number;
@@ -25,7 +26,10 @@ export class HeaderComponent implements OnInit {
   @Input() rankedUlbCount: number = 0;
   data: Card[] = [];
 
-  constructor(public userInfoService: DownloadUserInfoService, private utilityService: UtilityService) { }
+  constructor(public userInfoService: DownloadUserInfoService,
+    private utilityService: UtilityService,
+    public gaService: GoogleAnalyticsService,
+  ) { }
 
   ngOnInit(): void {
     this.data = [
@@ -62,6 +66,7 @@ export class HeaderComponent implements OnInit {
   }
 
   public openUserInfoDialog(): void {
+    this.gaService.trackEvent('Download Report button clicked', 'CFR Home Page')
     const fileName = 'Download_CFR_Rankings_Reports.pdf';
     const downloadInfo = { module: 'cfr', fileDownloaded: [{ fileName }] };
 
