@@ -10,29 +10,22 @@
 
     <div class="row">
       @for (card of data; track $index) {
-        <div class="col my-4">
-          <div class="py-1 top-block text-center h-100">
-            <img [src]="card.cardUrl" [alt]="card.cardLabel" />
-            <p class="fw-bold">{{ card?.cardValueNo | number }}</p>
-            <p class="">{{ card.cardLabel }}</p>
-          </div>
+      <div class="col my-4">
+        <div class="py-1 top-block text-center h-100">
+          <img [src]="card.cardUrl" [alt]="card.cardLabel" />
+          <p class="fw-bold">{{ card?.cardValueNo | number }}</p>
+          <p class="">{{ card.cardLabel }}</p>
         </div>
+      </div>
       }
     </div>
 
     <div class="">
-      <button
-        type="button"
-        class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3"
-        [routerLink]="['/cfr/top-rankings']"
-      >
+      <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3" [routerLink]="['/cfr/top-rankings']"
+        (click)="gaService.trackEvent('View Ranking button clicked', 'CFR Home Page')">
         View Ranking
       </button>
-      <button
-        type="button"
-        class="d-block btn btn-cfPrimary fw-bold mx-auto"
-        (click)="openUserInfoDialog()"
-      >
+      <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto" (click)="openUserInfoDialog()">
         <i class="bi bi-download me-1"></i>
         Download Report
       </button>
