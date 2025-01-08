@@ -10,6 +10,7 @@ import { FiscalRankingService } from '../../services/fiscal-ranking.service';
 // import { StatewiseMapComponent } from '../../statewise-map/statewise-map.component';
 import { SearchPopupComponent } from '../../ulb-details/search-popup/search-popup.component';
 import { MapStateRankComponent } from '../../map-state-rank/map-state-rank.component';
+import { GoogleAnalyticsService } from '../../../../core/services/google-analytics.service';
 
 @Component({
   selector: 'app-ulbs-in-india',
@@ -51,7 +52,8 @@ export class UlbsInIndiaComponent implements OnInit, OnChanges {
   constructor(
     private fiscalRankingService: FiscalRankingService,
     private matDialog: MatDialog,
-  ) {}
+    public gaService: GoogleAnalyticsService
+  ) { }
 
   ngOnInit(): void {
     this.getStateData();
