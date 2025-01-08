@@ -9,7 +9,6 @@ import { PerformanceFourMComponent } from './performance-four-m/performance-four
 import { UlbDetailsAssessmentParametersComponent } from './ulb-details-assessment-parameters/ulb-details-assessment-parameters.component';
 import { UlbDetailsHeaderComponent } from './ulb-details-header/ulb-details-header.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
-import { DowloadPdfComponent } from './dowload-pdf/dowload-pdf.component';
 import { isPlatformBrowser } from '@angular/common';
 
 interface APIResponse {
@@ -36,7 +35,6 @@ interface APIResponse {
     UlbDetailsAssessmentParametersComponent,
     PerformanceFourMComponent,
     ComparisonComponent,
-    DowloadPdfComponent,
     LoaderComponent,
     PreLoaderComponent
   ],

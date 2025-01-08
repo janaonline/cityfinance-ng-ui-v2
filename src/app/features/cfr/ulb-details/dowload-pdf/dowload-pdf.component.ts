@@ -1,10 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, Inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Chart, registerables } from 'chart.js';
+// import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the plugin
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'app-dowload-pdf',
@@ -13,234 +14,273 @@ import html2canvas from 'html2canvas';
   templateUrl: './dowload-pdf.component.html',
   styleUrl: './dowload-pdf.component.scss'
 })
-export class DowloadPdfComponent implements AfterViewInit {
+// export class DowloadPdfComponent implements AfterViewInit {
+export class DowloadPdfComponent {
 
-  @ViewChild('chartCanvas1', { static: false }) chartCanvas1!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('chartCanvas2', { static: false }) chartCanvas2!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('chartCanvas3', { static: false }) chartCanvas3!: ElementRef<HTMLCanvasElement>;
+  downloadPDF() {
+    // Create a new offscreen template
+    const offscreenTemplate = document.createElement('div');
 
-  chart1!: Chart;
-  chart2!: Chart;
-  chart3!: Chart;
+    // Set up the template structure
+    offscreenTemplate.innerHTML = `
+      <div style="width:99%;">
+    <div class="d-flex mb-3">
+        <h1 class="p-2 text-uppercase text-cfSecondary fw-bold">City Finance Ranking</h1>
+        <div class="ms-auto p-2"><img src="./assets/images/city-finance-ranking.png"></div>
+    </div>
+    <div class="row mb-2">
+        <div class="col">
+            <div class="px-4 py-2 mb-4 bg-warning-subtle">
+                <div class="fw-bold text-cfSecondary fs-3">25,3434</div>
+                <div>Population (2011 Census)</div>
+            </div>
+            <div class="px-4 py-2 mb-4 bg-warning-subtle">
+                <div class="fw-bold text-cfSecondary fs-3">4 Million +</div>
+                <div>Population Category</div>
+            </div>
+            <div class="px-4 py-2 mb-4 bg-warning-subtle">
+                <div class="fw-bold text-cfSecondary fs-3">2/4</div>
+                <div>National Rank</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-dark-blue text-white" style="background-color: rgb(24, 51, 103); height: 320px;">
+                <div class="d-flex mb-2">
+                    <div class="flex-shrink-0 bg-white">
+                        <img src="assets/fiscal-rankings/RM.svg">
+                    </div>
+                    <div class="flex-grow-1 ms-3 fs-5">
+                        Resource Mobilization
+                    </div>
+                </div>
+                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
+                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <hr>
+                <p class="fs-6">This parameter evaluates the current size and growth trend of a ULB’s diverse revenue
+                    sources, including revenue generation and property tax collection.</p>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-dark-blue text-white" style="background-color: rgb(24, 51, 103); height: 320px;">
+                <div class="d-flex mb-2">
+                    <div class="flex-shrink-0 bg-white">
+                        <img src="assets/fiscal-rankings/EP.svg">
+                    </div>
+                    <div class="flex-grow-1 ms-3 fs-5">
+                        Expenditure Performance
+                    </div>
+                </div>
+                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
+                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <hr>
+                <p class="fs-6">This parameter assesses the amount and effectiveness of a ULB's spending on
+                    infrastructure and services that benefit residents.</p>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-dark-blue text-white" style="background-color: rgb(24, 51, 103); height: 320px;">
+                <div class="d-flex mb-2">
+                    <div class="flex-shrink-0 bg-white">
+                        <img src="assets/fiscal-rankings/FG.svg">
+                    </div>
+                    <div class="flex-grow-1 ms-3 fs-5">
+                        Fiscal Governance
+                    </div>
+                </div>
+                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
+                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <hr>
+                <p class="fs-6">This parameter assesses the strength of a ULB's financial management systems,
+                    including transparency, efficiency, and effectiveness in revenue collection and budgeting.</p>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col pdf-col">
+            <div class="shadow-lg p-2">
+                <h5 class="text-cfPrimary">Parameter wise score</h5>
+                <p class="fs-6">This section presents the city’s scores for the three pillars of sound financial
+                    management:
+                    resource
+                    mobilisation, expenditure performance, and fiscal governance. A high score in resource mobilisation
+                    indicates strong revenue generation, while a high score in expenditure performance reflects
+                    efficient
+                    use of fund.</p>
+                <canvas id="chart1"></canvas>
+                <div class="mt-4">
+                    <p class="fs-6">Note:<br>
+                        State Subcategory<br>
+                        1. High Participation (>75% of ULBs from the State participated in the ranking)<br>
+                        2. Low Participation (<75% of ULBs from the State participated in the ranking) <br>
+                            3. Hilly/ North Eastern States- High Participation State </p>
+                </div>
+            </div>
+        </div>
+        <div class="col pdf-col">
+            <div class="shadow-lg p-2 mb-2">
+                <h5 class="text-cfPrimary">Overall score</h5>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="flex-shrink-0 bg-white">
+                        <div class="fw-bold fs-6 text-cfSecondary">876.03/ 1200</div>
+                        <p>Overall score </p>
+                    </div>
+                    <div class="flex-grow-1 ms-3 border-set"
+                        style="border-left: 2px solid rgb(24, 51, 103); padding-left: 1rem;">
+                        <p class="fs-6">This section shows the city’s overall score (out of 1200) based on its
+                            performance across 15 key indicators of financial health. The city’s rank among all
+                            participating cities is also provided.</p>
+                    </div>
+                </div>
 
-  ngAfterViewInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      // Register Chart.js components and the data labels plugin
-      Chart.register(...registerables, ChartDataLabels);
-      this.createChart1();
-      this.createChart2();
-      this.createChart3();
-    }
-  }
+            </div>
+            <div class="shadow-lg p-2">
+                <h5 class="text-cfPrimary">Parameter wise Ranks </h5>
+                <p class="fs-6">This section presents the city’s rank for each parameter – resource mobilisation,
+                    expenditure
+                    performance, and fiscal governance – compared to other cities in its population category. Higher
+                    ranks
+                    indicate better performance than peer cities in revenue generation, efficient spending, and
+                    financial
+                    transparency.</p>
+                <canvas id="chart2"></canvas>
+            </div>
+        </div>
+        <div class="col pdf-col">
+            <div class="shadow-lg p-2 mb-2">
+                <h5 class="text-cfPrimary">Indicator-wise scores</h5>
+                <p class="fs-6">This section provides a detailed breakdown of the city’s performance on the 15
+                    indicators
+                    used to
+                    calculate the overall score. These indicators cover various aspects of resource mobilisation,
+                    expenditure performance, and fiscal governance, providing a granular view of the city’s financial
+                    health. Each indicator is scored out of 100.</p>
+                <canvas id="chart3"></canvas>
+            </div>
+            <div class="about p-2" style="background-color: rgb(229, 125, 21); color: #fff;">
+                <h6>About City Finance Rankings</h6>
+                <p class="fs-6">The CityFinance Rankings, an initiative of the Ministry of Housing and Urban Affairs
+                    (MoHUA)
+                    in
+                    collaboration with Janaagraha, evaluates the financial health of India's cities (Urban Local
+                    Bodies—ULBs) based on their financial performance across various parameters. By promoting fiscal
+                    accountability and transparency among ULBs, the rankings ultimately aim to improve the quality
+                    of
+                    life
+                    for residents across India's urban landscape.</p>
+            </div>
+        </div>
+    </div>
+</div>
+    `;
 
+    // Append the offscreen template temporarily
+    document.body.appendChild(offscreenTemplate);
 
-  constructor(
-    @Inject(PLATFORM_ID) private platformId: any,
-    private activatedRoute: ActivatedRoute,
-  ) { }
+    // Get references to the canvases
+    const chart1Canvas = offscreenTemplate.querySelector('#chart1') as HTMLCanvasElement;
+    const chart2Canvas = offscreenTemplate.querySelector('#chart2') as HTMLCanvasElement;
+    const chart3Canvas = offscreenTemplate.querySelector('#chart3') as HTMLCanvasElement;
 
-
-  createChart1(): void {
-    this.chart1 = new Chart(this.chartCanvas1.nativeElement, {
+    // Create the charts using Chart.js
+    const chart1 = new Chart(chart1Canvas.getContext('2d')!, {
       type: 'bar',
       data: {
-        labels: ['January', 'February', 'March', 'April', 'May'],
+        labels: ['Jan', 'Feb', 'Mar', 'Apr'],
         datasets: [
           {
-            label: 'Score',
-            data: [12, 19, 3, 5, 2],
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.2)',
-              'rgba(54, 162, 235, 0.2)',
-              'rgba(255, 206, 86, 0.2)',
-              'rgba(75, 192, 192, 0.2)',
-              'rgba(153, 102, 255, 0.2)',
-            ],
-            borderColor: [
-              'rgba(255, 99, 132, 1)',
-              'rgba(54, 162, 235, 1)',
-              'rgba(255, 206, 86, 1)',
-              'rgba(75, 192, 192, 1)',
-              'rgba(153, 102, 255, 1)',
-            ],
+            label: 'Sales',
+            data: [12, 19, 3, 5],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 1,
           },
         ],
       },
       options: {
-        plugins: {
-          datalabels: {
-            color: 'black', // Set the color of the labels
-            anchor: 'end', // Where the label should appear (e.g., on top of the bars)
-            align: 'top', // Align the label
-            formatter: function (value: number) {
-              return value.toString(); // Format value as a string
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            type: 'linear',
-          },
-        },
+        responsive: false,
       },
-      plugins: [ChartDataLabels], // Enable the plugin
     });
-  }
-  createChart2(): void {
-    this.chart2 = new Chart(this.chartCanvas2.nativeElement, {
+
+    const chart2 = new Chart(chart2Canvas.getContext('2d')!, {
       type: 'line',
       data: {
-        labels: ['January', 'February', 'March', 'April', 'May'],
+        labels: ['Jan', 'Feb', 'Mar', 'Apr'],
         datasets: [
           {
-            label: 'Rank',
-            data: [12, 19, 3, 5, 2],
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.2)',
-              'rgba(54, 162, 235, 0.2)',
-              'rgba(255, 206, 86, 0.2)',
-              'rgba(75, 192, 192, 0.2)',
-              'rgba(153, 102, 255, 0.2)',
-            ],
-            borderColor: [
-              'rgba(255, 99, 132, 1)',
-              'rgba(54, 162, 235, 1)',
-              'rgba(255, 206, 86, 1)',
-              'rgba(75, 192, 192, 1)',
-              'rgba(153, 102, 255, 1)',
-            ],
+            label: 'Revenue',
+            data: [15, 10, 25, 18],
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            borderColor: 'rgba(153, 102, 255, 1)',
             borderWidth: 1,
           },
         ],
       },
       options: {
-        plugins: {
-          datalabels: {
-            color: 'black', // Set the color of the labels
-            anchor: 'end', // Where the label should appear (e.g., on top of the bars)
-            align: 'top', // Align the label
-            formatter: function (value: number) {
-              return value.toString(); // Format value as a string
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            type: 'linear',
-          },
-        },
+        responsive: false,
       },
-      plugins: [ChartDataLabels], // Enable the plugin
     });
-  }
-  createChart3(): void {
-    this.chart3 = new Chart(this.chartCanvas3.nativeElement, {
+
+    const chart3 = new Chart(chart3Canvas.getContext('2d')!, {
       type: 'bar',
       data: {
-        labels: ['January', 'February', 'March', 'April', 'May'],
+        labels: ['Product A', 'Product B', 'Product C'],
         datasets: [
           {
-            label: 'Score',
-            data: [12, 19, 3, 5, 2],
+            label: 'Product Share',
+            data: [30, 50, 20],
             backgroundColor: [
               'rgba(255, 99, 132, 0.2)',
               'rgba(54, 162, 235, 0.2)',
               'rgba(255, 206, 86, 0.2)',
-              'rgba(75, 192, 192, 0.2)',
-              'rgba(153, 102, 255, 0.2)',
             ],
             borderColor: [
               'rgba(255, 99, 132, 1)',
               'rgba(54, 162, 235, 1)',
               'rgba(255, 206, 86, 1)',
-              'rgba(75, 192, 192, 1)',
-              'rgba(153, 102, 255, 1)',
             ],
             borderWidth: 1,
           },
         ],
       },
       options: {
-        plugins: {
-          datalabels: {
-            color: 'black', // Set the color of the labels
-            anchor: 'end', // Where the label should appear (e.g., on top of the bars)
-            align: 'top', // Align the label
-            formatter: function (value: number) {
-              return value.toString(); // Format value as a string
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            type: 'linear',
-          },
-        },
+        responsive: false,
       },
-      plugins: [ChartDataLabels], // Enable the plugin
-    });
-  }
-
-  @ViewChild('pdfDownload') pdfDownload!: ElementRef;
-  async downloadPDF() {
-    const templateElement = this.pdfDownload.nativeElement;
-
-    // Ensure the hidden template is rendered properly
-    templateElement.style.display = 'block';
-
-    html2canvas(templateElement, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-
-      const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-
-      const finalWidth = imgWidth * ratio;
-      const finalHeight = imgHeight * ratio;
-
-      pdf.addImage(imgData, 'PNG', 0, 0, finalWidth, finalHeight);
-      pdf.save('city-report-card.pdf');
-
-      // Hide the template again
-      templateElement.style.display = 'none';
     });
 
-    // const canvas = this.pdfDownload.nativeElement;
-    // const pdf = new jsPDF('landscape'); // Landscape orientation
-    // const canvasImage = await html2canvas(canvas)
-    // const imgData = canvasImage.toDataURL('image/png');
-    // pdf.addImage(imgData, 'PNG', 10, 20, 180, 160); // Adjust size as needed
-    // pdf.save('chart.pdf');
+    // Wait for the charts to render before generating the PDF
+    setTimeout(() => {
+      html2canvas(offscreenTemplate, { scale: 2 }).then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+
+        const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+
+        const finalWidth = imgWidth * ratio;
+        const finalHeight = imgHeight * ratio;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, finalWidth, finalHeight);
+        pdf.save('City-report-card.pdf');
+
+        // Clean up the temporary template
+        document.body.removeChild(offscreenTemplate);
+
+        // Destroy charts to avoid memory leaks
+        chart1.destroy();
+        chart2.destroy();
+        chart3.destroy();
+      });
+    }, 500); // Delay to ensure charts are fully rendered
   }
 
-
-
-  // downloadPDF() {
-  //   const element = document.getElementById('pdf-download'); // Replace 'content' with your HTML element's ID.
-
-  //   if (!element) {
-  //     console.error('Element not found!');
-  //     return;
-  //   }
-
-  //   html2canvas(element).then((canvas) => {
-  //     const imgData = canvas.toDataURL('image/png');
-  //     const pdf = new jsPDF('landscape', 'mm', 'a4'); // Landscape orientation
-
-  //     const pdfWidth = pdf.internal.pageSize.getWidth();
-  //     const pdfHeight = (canvas.height * pdfWidth) / canvas.width; // Maintain aspect ratio.
-
-  //     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-  //     pdf.save('webpage.pdf');
-  //   });
-  // }
 }
+
+
