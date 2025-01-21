@@ -21,11 +21,13 @@
     </div>
 
     <div class="">
-      <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3" [routerLink]="['/cfr/top-rankings']"
+      <button id="view_ranking" type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3"
+        [routerLink]="['/cfr/top-rankings']"
         (click)="gaService.trackEvent('View Ranking button clicked', 'CFR Home Page')">
         View Ranking
       </button>
-      <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto" (click)="openUserInfoDialog()">
+      <button id="download_report" type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto"
+        (click)="openUserInfoDialog()">
         <i class="bi bi-download me-1"></i>
         Download Report
       </button>
