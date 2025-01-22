@@ -5,11 +5,11 @@
 
         <div class="row gap-3">
             @for (card of data; track $index) {
-            <div [id]="card.id" class="col-12 col-md py-4 border rounded-4 shadow text-center bg-white">
+            <div class="col-12 col-md py-4 border rounded-4 shadow text-center bg-white">
                 <img [src]="card.cardUrl" [alt]="card.cardLabel">
                 <h5 class="mt-2 text-black">{{card.cardLabel}}</h5>
                 <p class="text-muted">{{card.cardDescription}}</p>
-                <button class="btn btn-outline-cfPrimary m-auto fw-bold"
+                <button [id]="card.id" class="btn btn-outline-cfPrimary m-auto fw-bold"
                     [routerLink]="['/cfr/assesst-parameters', card.cardKey]">Learn more</button>
             </div>
             }

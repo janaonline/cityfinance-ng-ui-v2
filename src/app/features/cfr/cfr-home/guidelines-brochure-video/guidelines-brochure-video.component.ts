@@ -3,8 +3,8 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 
 interface Card {
-  id: string,
   cardEmitValue?: EventEmitter<any>;
+  id: string,
   cardHref: string;
   cardImgUrl: string;
   cardLabel: string;
