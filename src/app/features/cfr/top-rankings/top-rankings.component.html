@@ -23,8 +23,8 @@
             <!-- Show the button only to:  MoHUA, Admin, ULBs, States.  -->
             @if (isLoggedIn && ['ADMIN', 'MoHUA', 'ULB', 'STATE'].includes(userRole)) {
             <!-- <p>{{userRole}} | {{isLoggedIn}}</p> -->
-            <button type="button" class="btn btn-outline-cfPrimary" matTooltip="Download Rankings"
-              (click)="downloadRankings()">
+            <button id="download-rankings" type="button" class="btn btn-outline-cfPrimary"
+              matTooltip="Download Rankings" (click)="downloadRankings()">
               <i class="bi bi-download"></i>
             </button>
             }
