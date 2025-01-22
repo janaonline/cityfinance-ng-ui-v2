@@ -8,8 +8,10 @@
         <div class="d-flex flex-column">
           <p class="text-white">{{ card.cardLabel }}</p>
           @if (card.cardEmitValue) {
-          <p class="cursor-pointer text-cfPrimary text-decoration-underline" (click)="card.cardEmitValue.emit()">
-            <i [class]="card.cardIcon" class="text-cfPrimary"></i>&nbsp;{{ card.cardIconLabel }}
+          <p class="cursor-pointer text-cfPrimary text-decoration-underline">
+            <a (click)="card.cardEmitValue.emit()" [id]="card.id" class="download-link cursor-pointer">
+              <i [class]="card.cardIcon" class="text-cfPrimary"></i>&nbsp;{{ card.cardIconLabel }}
+            </a>
           </p>
           } @else {
           <p class="cursor-pointer text-cfPrimary text-decoration-underline">
