@@ -3,6 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserUtility } from '../util/user/user';
+import { GtmService } from './gtm.service';
 
 declare let gtag: (command: string, eventName: string | Date, params?: Record<string, any>) => void;
 
@@ -13,7 +14,7 @@ export class GoogleAnalyticsService {
 
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private gtmService: GtmService) { }
 
   init() {
     this.appendScript();
@@ -61,6 +62,15 @@ export class GoogleAnalyticsService {
 
   trackEvent(action: string, params?: any) {
     gtag('event', action, params);
+    const gtmTag = {
+      event: 'button_click',
+      // category: 'User Actions',
+      category: params,
+      action: 'Click',
+      // label: 'Buy Now Button',
+      label: action,
+    };
+    this.gtmService.pushEvent(gtmTag);
   }
 
   // trackEvent1(eventName: string, params: any) {

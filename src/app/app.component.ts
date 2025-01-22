@@ -6,6 +6,7 @@ import { FooterComponent } from './shared/components/footer/footer.component';
 import { environment } from '../environments/environment';
 import { GoogleAnalyticsService } from './core/services/google-analytics.service';
 import { HeaderComponent } from './shared/components/header/header.component';
+import { GtmService } from './core/services/gtm.service';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +30,7 @@ export class AppComponent implements OnInit {
     private _router: Router,
     private _viewportScroller: ViewportScroller,
     private gaService: GoogleAnalyticsService,
+    private gtmService: GtmService,
   ) {
     // const  userData:any = '{"_id":"66772cd175ff6f339c3efb45","name":"User 1","email":"user1_16fc@cityfinance.in","isActive":true,"role":"XVIFC","designation":"XVIFC_USER","ulbCode":"","stateCode":"","isUA":null,"isMillionPlus":null,"isUserVerified2223":false}';
     // const  userData:any = '{"_id":"669761dfa3abb74244cd394f","name":"Kerala","email":"kl_16fc@cityfinance.in","isActive":true,"role":"XVIFC_STATE","state":"5dcf9d7316a06aed41c748ed","stateName":"Kerala","designation":"XVIFC_STATE","ulbCode":"","stateCode":"","isUA":null,"isMillionPlus":null,"isUserVerified2223":false}';
@@ -46,6 +48,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.gaService.init();
+    this.gtmService.initScript();
     // this.gaService.trackEvent('button click',{});
     this.getQueryParams();
 

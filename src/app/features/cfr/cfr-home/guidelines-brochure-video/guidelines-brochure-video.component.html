@@ -13,7 +13,7 @@
           </p>
           } @else {
           <p class="cursor-pointer text-cfPrimary text-decoration-underline">
-            <a target="_blank" [href]="card.cardHref" class="download-link cursor-pointer"><i
+            <a [id]="card.id" target="_blank" [href]="card.cardHref" class="download-link cursor-pointer"><i
                 [class]="card.cardIcon + ' text-cfPrimary'"></i>&nbsp;{{
               card.cardIconLabel
               }}</a>
