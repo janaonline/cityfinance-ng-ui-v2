@@ -1,11 +1,24 @@
 import { isPlatformBrowser } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, Inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-// import { Chart, registerables } from 'chart.js';
+import { FiscalRankingService, UlbData } from '../../services/fiscal-ranking.service';
 import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the plugin
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Chart from 'chart.js/auto';
+import { HttpClient } from '@angular/common/http';
+
+interface APIResponse {
+  assessmentParameter: any;
+  fsData: {
+    [key: string]: {
+      value: string | null;
+      status: 'APPROVED' | 'REJECTED' | 'PENDING';
+    };
+  };
+  topUlbs: UlbData[];
+  ulb: any;
+}
 
 @Component({
   selector: 'app-dowload-pdf',
@@ -15,7 +28,33 @@ import Chart from 'chart.js/auto';
   styleUrl: './dowload-pdf.component.scss'
 })
 // export class DowloadPdfComponent implements AfterViewInit {
-export class DowloadPdfComponent {
+export class DowloadPdfComponent implements OnInit {
+
+  data: APIResponse = {} as APIResponse;
+  isLoading: boolean = true;
+
+  constructor(
+    private activatedRoute: ActivatedRoute,
+    private fiscalRankingService: FiscalRankingService,
+    private http: HttpClient
+  ) { }
+
+  get ulbId() {
+    return this.activatedRoute.snapshot.params['ulbId'];
+  }
+
+  ngOnInit(): void {
+    this.loadUlbData();
+  }
+
+  loadUlbData() {
+    this.isLoading = true;
+    this.fiscalRankingService.ulbDetails(this.ulbId).subscribe((res: any) => {
+      console.log('Dynamic data fetched', res);
+      this.data = res.data;
+      this.isLoading = false;
+    });
+  }
 
   downloadPDF() {
     // Create a new offscreen template
@@ -31,15 +70,15 @@ export class DowloadPdfComponent {
     <div class="row mb-2">
         <div class="col">
             <div class="px-4 py-2 mb-4 bg-warning-subtle">
-                <div class="fw-bold text-cfSecondary fs-3">25,3434</div>
+                <div class="fw-bold text-cfSecondary fs-3">${this.data?.ulb?.population}</div>
                 <div>Population (2011 Census)</div>
             </div>
             <div class="px-4 py-2 mb-4 bg-warning-subtle">
-                <div class="fw-bold text-cfSecondary fs-3">4 Million +</div>
-                <div>Population Category</div>
+                <div class="fw-bold text-cfSecondary fs-3">${this.data?.ulb?.overAll?.score}</div>
+                <div>Population Category ${this.data?.ulb?.statePartCat}</div>
             </div>
             <div class="px-4 py-2 mb-4 bg-warning-subtle">
-                <div class="fw-bold text-cfSecondary fs-3">2/4</div>
+                <div class="fw-bold text-cfSecondary fs-3">${this.data?.ulb?.overAll?.score}/4</div>
                 <div>National Rank</div>
             </div>
         </div>
@@ -53,9 +92,9 @@ export class DowloadPdfComponent {
                         Resource Mobilization
                     </div>
                 </div>
-                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
-                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
-                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">Over All Score: ${this.data?.ulb?.overAll?.score}/1200</div>
+                <div class="fw-bold fs-6">National Rank: ${this.data?.ulb?.overAll?.score}/4</div>
+                <div class="fw-bold fs-6">Avarage Score: ${this.data?.ulb?.overAll?.score}/1200</div>
                 <hr>
                 <p class="fs-6">This parameter evaluates the current size and growth trend of a ULB’s diverse revenue
                     sources, including revenue generation and property tax collection.</p>
@@ -71,9 +110,9 @@ export class DowloadPdfComponent {
                         Expenditure Performance
                     </div>
                 </div>
-                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
-                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
-                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">Over All Score:${this.data?.ulb?.overAll?.score}/1200</div>
+                <div class="fw-bold fs-6">National Rank: ${this.data?.ulb?.overAll?.score}/4</div>
+                <div class="fw-bold fs-6">Avarage Score: ${this.data?.ulb?.overAll?.score}/1200</div>
                 <hr>
                 <p class="fs-6">This parameter assesses the amount and effectiveness of a ULB's spending on
                     infrastructure and services that benefit residents.</p>
@@ -89,9 +128,9 @@ export class DowloadPdfComponent {
                         Fiscal Governance
                     </div>
                 </div>
-                <div class="fw-bold fs-6">Over All Score: 876.03/ 1200</div>
-                <div class="fw-bold fs-6">National Rank: 1/ 4</div>
-                <div class="fw-bold fs-6">Avarage Score: 876.03/ 1200</div>
+                <div class="fw-bold fs-6">Over All Score: ${this.data?.ulb?.overAll?.score}/1200</div>
+                <div class="fw-bold fs-6">National Rank: ${this.data?.ulb?.overAll?.score}/4</div>
+                <div class="fw-bold fs-6">Avarage Score: ${this.data?.ulb?.overAll?.score}/1200</div>
                 <hr>
                 <p class="fs-6">This parameter assesses the strength of a ULB's financial management systems,
                     including transparency, efficiency, and effectiveness in revenue collection and budgeting.</p>
@@ -124,7 +163,7 @@ export class DowloadPdfComponent {
                 <h5 class="text-cfPrimary">Overall score</h5>
                 <div class="d-flex align-items-center mb-2">
                     <div class="flex-shrink-0 bg-white">
-                        <div class="fw-bold fs-6 text-cfSecondary">876.03/ 1200</div>
+                        <div class="fw-bold fs-6 text-cfSecondary">${this.data?.ulb?.overAll?.score}/1200</div>
                         <p>Overall score </p>
                     </div>
                     <div class="flex-grow-1 ms-3 border-set"
@@ -254,7 +293,7 @@ export class DowloadPdfComponent {
     setTimeout(() => {
       html2canvas(offscreenTemplate, { scale: 2 }).then((canvas) => {
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdf = new jsPDF('landscape', 'mm', 'a4');
 
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
