@@ -1,3 +1,121 @@
-<!-- <app-loader *ngIf="isLoader"></app-loader> -->
-<app-dowload-pdf></app-dowload-pdf>
+<section class="d-flex justify-content-end me-5">
+	<a id="download-city-brief" (click)="downloadPdf()" class="text-cfPrimary">
+		<i class="text-cfPrimary bi bi-download"></i>&nbsp;Download City Brief
+	</a>
+</section>
 <h3 class="fw-bold text-center my-4">{{ ulb?.name }} ({{ ulb?.censusCode || ulb?.sbCode }})</h3>
+
+<div id='rankings-pdf' class="d-flex flex-column justify-content-between p-2 border border-2"
+	style="height: 210mm; width: 297mm;">
+	<!-- 1st section -->
+	<div class="d-flex p-1">
+		<h2 class="flex-grow-1 text-center text-cfSecondary fw-bold">CITY FINANCE RANKINGS</h2>
+		<img src="./assets/images/city-finance-ranking.png" />
+	</div>
+
+	<!-- 2nd section -->
+	<div class="row gap-1 p-1 mb-1">
+		<!-- 1st box -->
+		<div class="col-auto d-flex flex-column justify-content-between">
+			@for (item of section1_card1; track $index) {
+			<div class="p-2 rounded-1" [ngStyle]="{'background-color': cfPrimaryLight}">
+				<h5 class="fw-bold text-cfSecondary">{{item.title}}</h5>
+				<p class="fs-8 text-secondary" [innerHTML]="item.subtitle"></p>
+			</div>
+			}
+		</div>
+		<!-- 2nd - 4th box -->
+		@for (item of section1_card2; track $index) {
+		<div class="col bg-cfSecondary text-white p-2 rounded-1">
+			<div class="row mb-3 align-items-center">
+				<img class=" col-3" [src]="'assets/fiscal-rankings/' + item.key + '.svg'" alt="" width="30px"
+					height="30px" />
+				<p class="col-auto fw-bold">{{item.label}}</p>
+			</div>
+			<div>
+				<p class="fs-7">{{item.key}} score: {{item.scoreNumerator}}/ {{item.scoreDenominator}}</p>
+				<p class="fs-7">{{item.key}} Rank: {{item.rankNumerator}}/ {{item.rankDenominator}}</p>
+				<p class="fs-7">Average score: {{item.avgNumerator}}/ {{item.avgDenominator}}</p>
+			</div>
+			<mat-divider class="my-2"></mat-divider>
+			<p class="fs-8">{{item.desc}}</p>
+		</div>
+		}
+	</div>
+
+	<!-- 3rd section -->
+	<div class="row flex-grow-1">
+		<!-- 1st box -->
+		<div class="col-3 bg-light rounded-1 p-2">
+			<p class="fs-7 fw-bold text-cfPrimary">Parameter wise Scores</p>
+			<p class="fs-8"> This section presents the city’s scores for the 3 pillars of sound financial
+				management: resource mobilisation, expenditure performance, and fiscal governance. A high score
+				in resource mobilisation indicates strong revenue generation, while a high score in
+				expenditure performance reflects efficient use of fund
+			</p>
+			<div class="">
+				<canvas class="w-100 h-100 border border-2 border-light" id="chart1Canvas">{{ chart1 }}</canvas>
+			</div>
+			<div>
+				<p class="fs-8">Note: Subcategory - % of ULB participation for rankings from each state.</p>
+				<ol class="fs-8">
+					<li>High Participation (>75% Participation)</li>
+					<li>Low Participation (<75% Participated)</li>
+					<li>Hilly/ North Eastern states</li>
+				</ol>
+			</div>
+		</div>
+		<!-- 2nd box -->
+		<div class="col-4 d-flex flex-column justify-content-between">
+			<!-- upper box -->
+			<div class="bg-light rounded-1 p-2 mb-2">
+				<p class="fs-8 fw-bold text-cfPrimary">Overall Score</p>
+				<div class="row">
+					<div class="col-auto d-flex flex-column justify-content-center">
+						<p class="text-cfSecondary">{{overAllScore}}/ 1200</p>
+						<p class="fs-7">Overall Score</p>
+					</div>
+					<p class="col fs-8">This section shows the city’s overall score (out of 1200)
+						based on its performance across 15 key indicators of
+						financial health. The city’s rank among all participating
+						cities is also provided.</p>
+				</div>
+			</div>
+			<!-- lower box -->
+			<div class="bg-light rounded-1 p-2 flex-grow-1">
+				<p class="fs-7 fw-bold text-cfPrimary">Parameter wise rank</p>
+				<p class="fs-8">This section presents the city’s rank for each parameter resource
+					mobilisation, expenditure performance, and fiscal governance compared to
+					other cities in its population category. Higher ranks indicate better
+					performance than peer cities in revenue generation, efficient spending, and
+					financial transparency.</p>
+				<div class="">
+					<canvas class="w-100" id="chart2Canvas">{{ chart2 }}</canvas>
+				</div>
+			</div>
+		</div>
+		<!-- 3rd box -->
+		<div class="col d-flex flex-column">
+			<div class="bg-light rounded-1 p-2 mb-2 flex-grow-1">
+				<p class="fs-7 fw-bold text-cfPrimary">Indicator-wise Score</p>
+				<p class="fs-8">This section provides a detailed breakdown of the city’s performance on the 15indicators
+					used to calculate the overall score. These indicators cover various aspectsof resource
+					mobilisation, expenditure performance, and fiscal governance, providing agranular view of the city’s
+					financial health. Each indicator is scored out of 100.</p>
+				<!-- <div class="">GRAPH</div> -->
+				<div class="">
+					<canvas id="chart3Canvas" class="w-100">{{ chart3 }}</canvas>
+				</div>
+			</div>
+			<div class="bg-cfPrimary text-white shadow rounded p-2">
+				<p class="fs-8 fw-bold">About City Finance Rankings</p>
+				<p class="fs-8">The CityFinance Rankings, an initiative of the Ministry of Housing and Urban
+					Affairs in collaboration with Janaagraha, evaluates the financial health of India's cities
+					(Urban Local Bodies ULBs) based on their financial performance across various parameters. By
+					promoting fiscal accountability and transparency among ULBs, the rankings ultimately aim to improve
+					the quality of life for residents across India's urban landscape.
+				</p>
+			</div>
+		</div>
+	</div>
+</div>
