@@ -10,6 +10,7 @@ import { UlbDetailsAssessmentParametersComponent } from './ulb-details-assessmen
 import { UlbDetailsHeaderComponent } from './ulb-details-header/ulb-details-header.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { isPlatformBrowser } from '@angular/common';
+import { DownloadPdfComponent } from './download-pdf/download-pdf.component';
 
 interface APIResponse {
   assessmentParameter: any;
@@ -36,7 +37,8 @@ interface APIResponse {
     PerformanceFourMComponent,
     ComparisonComponent,
     LoaderComponent,
-    PreLoaderComponent
+    PreLoaderComponent,
+    DownloadPdfComponent
   ],
 })
 export class UlbDetailsComponent implements OnInit {
