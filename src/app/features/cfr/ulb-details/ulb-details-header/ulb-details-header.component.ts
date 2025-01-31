@@ -10,22 +10,29 @@ import { MaterialModule } from '../../../../material.module';
 })
 export class UlbDetailsHeaderComponent implements OnChanges {
   @Input() data: any;
-  ulb: any;
+  ulbName: string = '';
+  censusCode: string = '';
+  sbCode: string = '';
+  ulbId: string = '';
 
   constructor() { }
 
   ngOnInit(): void { }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['data']?.currentValue) this.updateInputDataDependencies();
-  }
-
-  private updateInputDataDependencies() {
-    this.ulb = this.data?.ulb;
+    if (changes['data']?.currentValue) {
+      this.ulbName = this.data.ulbName;
+      this.censusCode = this.data.censusCode;
+      this.sbCode = this.data.sbCode;
+      this.ulbId = this.data.ulbId;
+    }
   }
 
   public downloadPdf() {
-    window.open(`ulb-donwload/${this.ulb.ulb}`);
+    if (this.ulbId)
+      window.open(`ulb-donwload/${this.ulbId}`);
+    else
+      throw new Error('Error in downloadPdf(): ulbId not found.');
   }
 
 }

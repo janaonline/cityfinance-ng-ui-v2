@@ -60,6 +60,7 @@ export class DownloadPdfComponent implements OnInit {
   // Default variables.
   private fontFamily: string = 'Montserrat';
   cfPrimaryLight: string = 'hsl(27, 79%, 92%)';
+  ulbData: any = {};
   section2: any = {};
   section3: any = {};
   overAllScore: number = 0;
@@ -71,6 +72,7 @@ export class DownloadPdfComponent implements OnInit {
     this.fiscalRankingService.downloadRankedUlbPdf(this.ulbId).subscribe({
       next: (res: any) => {
         this.isDataFetched = false;
+        this.ulbData = res.ulbData;
         this.section2 = res.section2;
         this.section3 = res.section3;
         this.overAllScore = res.overAllScore;

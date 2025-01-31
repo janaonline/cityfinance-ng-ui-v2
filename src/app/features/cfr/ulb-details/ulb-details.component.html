@@ -6,7 +6,12 @@
 
 <app-pre-loader></app-pre-loader>
 } @else {
-<app-ulb-details-header [data]="data"></app-ulb-details-header>
+<app-ulb-details-header [data]=" {
+    ulbName:data.ulb.name,
+    censusCode: data.ulb?.censusCode,
+    sbCode: data.ulb?.sbCode,
+    ulbId: data.ulb?.ulb
+  }"></app-ulb-details-header>
 
 <app-performance-four-m [data]="data"></app-performance-four-m>
 
