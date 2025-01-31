@@ -1,28 +1,22 @@
-.bg-dark-blue {
-  background-color: rgba(24, 51, 103, 1);
-  min-height: 320px;
+* {
+  font-family: var(--ff-base);
+}
 
-  p {
-    margin: 0;
-  }
+p,
+h5 {
+  overflow-wrap: break-word;
+  margin: 0;
+  padding: 0;
 }
-.fs-6 {
-  font-size: 14px !important;
+
+mat-divider {
+  border-top-color: white !important;
 }
-.pdf-col {
-  width: 33% !important;
+
+.fs-7 {
+  font-size: 0.75rem;
 }
-hr {
-  margin: 0.5rem 0;
-}
-.about {
-  background-color: rgba(229, 125, 21, 1);
-  color: #fff;
-  p {
-    margin: 0;
-  }
-}
-.border-set {
-  border-left: 2px solid rgba(24, 51, 103, 1);
-  padding-left: 1rem;
+
+.fs-8 {
+  font-size: 0.65rem;
 }
