@@ -23,14 +23,6 @@ interface ChartData {
 // interface AnyOject {
 //   [key: string]: any
 // }
-interface Section {
-  remainingCards: any;
-  card1: any;
-  card2a: any;
-  card2b: any;
-  card3a: any;
-  card3b: any;
-}
 
 @Component({
   selector: 'app-download-pdf',
