@@ -1,0 +1,97 @@
+<div class="loader-container mat-elevation-z8 rounded">
+  @if (isLoadingResults || isRateLimitReached) {
+  <div class="loading-shade">
+    @if (isLoadingResults) {
+    <mat-spinner></mat-spinner>
+    }
+    @if (isRateLimitReached) {
+    <div class="no-result-found">
+      API rate limit has been reached. It will be reset in one minute.
+    </div>
+    }
+  </div>
+  }
+
+  <div class="table-container rounded" [style.max-height.vh]="tableHeight">
+    <table mat-table [dataSource]="response.data" class="table-class" matSort matSortActive="created"
+      matSortDisableClear matSortDirection="desc">
+      @for (column of response.columns; track column) {
+      <ng-container [matColumnDef]="column.key">
+        <!-- Column header -->
+        @if (!column?.hidden) {
+        <th mat-header-cell *matHeaderCellDef class="text-center px-3 py-2" [attr.colspan]="column?.colspan || 1">
+          {{ column.label }}
+        </th>
+        }
+
+        <!-- Column data -->
+        <td mat-cell *matCellDef="let element" style="white-space: pre-wrap" class="px-3 py-2" [ngClass]="column.class"
+          [style.backgroundColor]="element['bgColor']">
+          @if (column.pdfLink) {
+          @if (element[column.key] === 'Click here') {
+          <a [href]="element[column.key + 'Config'].link" target="_blank"><!-- {{ element[column.key] }} --><i
+              class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></a>
+          } @else if (element[column.key] === '-') {
+          {{ element[column.key] }}
+          } @else {
+          <a [href]="element[column.key] | toStorageUrl" target="_blank"><i
+              class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></a>
+          }
+          } @else if (column.link) {
+          <a [href]="prefixUrl + element[column.link]" target="_blank">{{
+            element[column.key]
+            }}</a>
+          } @else {
+          {{ element[column.key] }}
+          }
+        </td>
+      </ng-container>
+      }
+
+      <!-- Sub headers -->
+      @for (subHeader of response.subHeaders; track subHeader.key) {
+      <ng-container [matColumnDef]="'id-' + subHeader.key">
+        <td mat-header-cell *matHeaderCellDef class="text-muted fst-italic text-nowrap br-r"
+          [ngClass]="'table-primary'">
+          {{ subHeader.label }}
+        </td>
+      </ng-container>
+      }
+
+      <!-- Last row - footer -->
+      @for (lastCol of lastRow; track lastCol.key) {
+      <ng-container [matColumnDef]="'lastRowId-' + lastCol.key">
+        <td mat-footer-cell *matFooterCellDef class="fw-bold" [ngClass]="lastCol.class">
+          {{ lastCol.value }}
+        </td>
+      </ng-container>
+      }
+
+      <!-- Table header rows -->
+      <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true" class="fw-bold"></tr>
+
+      <!-- Table subHeader rows -->
+      @if (response.subHeaders) {
+      <tr mat-header-row *matHeaderRowDef="subHeaderColumns"></tr>
+      }
+
+      <!-- Add Total in the footer -->
+      @if (lastRow) {
+      <tr mat-footer-row *matFooterRowDef="lastRowColumns; sticky: true"></tr>
+      }
+
+      <!-- Table data rows -->
+      <tr mat-row *matRowDef="let row; columns: columnData"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell text-center" [attr.colspan]="response.columns?.length">
+          <p class="fw-bold fs-5 text-danger p-2">Zero participation of ULBs under this category.</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+  @if (isPagination) {
+  <mat-paginator [length]="response.total" [pageSize]="pageSize" (page)="pageChanged($event)"
+    [pageSizeOptions]="[5, 10, 20, 50]" [pageIndex]="skip" showFirstLastButtons aria-label="Select page of results"
+    class="rounded"></mat-paginator>
+  }
+</div>

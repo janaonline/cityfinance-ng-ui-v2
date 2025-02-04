@@ -10,11 +10,13 @@ import { AuthService } from './core/services/auth.service';
 import { AuthGuard } from './core/security/auth-guard.service';
 import { VersionCheckService } from './core/services/version-check.service';
 import { APP_BASE_HREF } from '@angular/common';
+import { provideClientHydration } from '@angular/platform-browser';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     // {provide:APP_BASE_HREF, useValue: '/xvi-fc/'},
     provideRouter(routes),
+    provideClientHydration(),
     provideAnimationsAsync(),
     importProvidersFrom(HttpClientModule),
 

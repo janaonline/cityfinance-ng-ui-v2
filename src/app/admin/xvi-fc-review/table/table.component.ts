@@ -24,9 +24,9 @@ export class TableComponent implements AfterViewInit {
   exampleDatabase!: ExampleHttpDatabase | null;
   data: GithubIssue[] = [];
 
-  resultsLength = 0;
-  isLoadingResults = false;
-  isRateLimitReached = false;
+  resultsLength: number = 0;
+  isLoadingResults: boolean = false;
+  isRateLimitReached: boolean = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;

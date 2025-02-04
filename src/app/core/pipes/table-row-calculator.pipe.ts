@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'tableRowCalculator',
+  standalone: true
 })
 export class TableRowCalculatorPipe implements PipeTransform {
   transform(value: string, key: string, data: any[], excludeFirstItem: boolean): unknown {

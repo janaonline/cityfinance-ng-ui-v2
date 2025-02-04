@@ -1,0 +1,29 @@
+<div class="p-4 rounded-4">
+  <div class="d-flex justify-content-between">
+    <div class="icon"></div>
+    <div class="text-center d-flex align-items-center gap-2">
+      <img src="./assets/fiscal-rankings/guidelines-icon.svg" alt="Guidelines" />
+      <h4 class="m-0">Guidelines</h4>
+    </div>
+    <div>
+      <mat-icon class="cursor-pointer" (click)="close()">close</mat-icon>
+    </div>
+  </div>
+
+  <p class="my-4">
+    These are final guidelines. Please
+    <a
+      target="_blank"
+      href="https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/FR_Module/Shared/City%20Finance%20Rankings%202022_Draft%20Guidelines_84d751ba-3050-4216-9bdb-ebf5e7ee8304.pdf"
+      class="text-cfPrimary"
+      >click here</a
+    >
+    to open the Draft guidelines.
+  </p>
+
+  <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto" (click)="openPdf()">
+    <i class="bi bi-download me-1"></i>
+    Download
+  </button>
+
+</div>

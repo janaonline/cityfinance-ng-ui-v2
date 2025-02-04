@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
 import { CommonService } from '../../../core/services/common.service';
@@ -9,8 +9,16 @@ import { CommonService } from '../../../core/services/common.service';
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.scss',
 })
-export class FooterComponent {
+export class FooterComponent implements OnInit {
   totalUsersVisit: number | undefined;
+
+  footerLinks = [
+    { href: '/home', title: 'Home' },
+    { href: '/dashboard/national/61e150439ed0e8575c881028', title: 'Financial' },
+    { href: '/own-revenue-dashboard', title: 'Own Revenue Performance' },
+    { href: '/dashboard/slb', title: 'Service Level Benchmarks Performance' },
+    { href: '/resources-dashboard/learning-center/toolkits', title: 'Resources' },
+  ];
 
   constructor(
     private _commonService: CommonService,

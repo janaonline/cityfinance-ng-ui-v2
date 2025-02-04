@@ -1,0 +1,88 @@
+*:not(mat-icon) {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
+}
+
+p {
+  margin: 0;
+  padding: 0;
+}
+
+.section-background {
+  background-image: url('../../../../../assets/fiscal-rankings/homepage-banner.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  color: white;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 85vh;
+}
+.btn-cfPrimary {
+  font-size: 1.25rem;
+}
+.section-background::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-color: black;
+  opacity: 0.6;
+}
+
+// .top-block {
+//   border: 0.7px solid transparent;
+//   border-image: linear-gradient(
+//     133.32deg,
+//     #e67e15 1.16%,
+//     rgba(78, 39, 1, 0.8) 28.06%,
+//     rgba(58, 30, 3, 0.73) 64.96%,
+//     #e67e15 103.88%
+//   );
+//   border-image-slice: 1;
+//   border-radius: 15px;
+//   background-color: rgba(14, 14, 15, 0.397);
+
+//   img {
+//     position: relative;
+//     top: -1.75rem;
+//   }
+// }
+
+.top-block {
+  position: relative;
+  padding: 1rem;
+  border-radius: 15px;
+  background-color: rgba(14, 14, 15, 0.664);
+  z-index: 0;
+  /* Ensure content stays above the ::before border */
+
+  img {
+    position: relative;
+    top: -1.75rem;
+  }
+}
+
+.top-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 15px;
+  padding: 1px;
+  background: linear-gradient(
+    133.32deg,
+    #e67e15 1.16%,
+    rgba(78, 39, 1, 0.8) 28.06%,
+    rgba(58, 30, 3, 0.73) 64.96%,
+    #e67e15 103.88%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  z-index: -1;
+}

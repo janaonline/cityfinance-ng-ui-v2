@@ -1,0 +1,10 @@
+*:not(mat-icon) {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
+}
+
+.section-background {
+  color: white;
+  background-image: url('../../../../../assets/fiscal-rankings/assignment-parameters.png');
+  background-size: cover;
+}

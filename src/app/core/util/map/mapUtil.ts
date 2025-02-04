@@ -1,7 +1,7 @@
 import * as L from 'leaflet';
-import { ILeafletStateClickEvent } from 'src/app/shared/components/re-useable-heat-map/models/leafletStateClickEvent';
 
 import { IMapCreationConfig, IStateLayerStyle } from './models/mapCreationConfig';
+import { ILeafletStateClickEvent } from '../../../shared/components/re-useable-heat-map/models/leafletStateClickEvent';
 
 export class MapUtil {
   private static readonly defaultStateLayerStyle: IStateLayerStyle = {
@@ -31,7 +31,7 @@ export class MapUtil {
    * within the state boundry.Therefore, we need to statically set centroid co ordinates for
    * those states.
    */
-  private static readonly customStateCentroids = {
+  private static readonly customStateCentroids: any = {
     Kerala: { lat: 9.999675, lng: 77.199765 },
     Punjab: { lat: 31.632808, lng: 75.976851 },
     Goa: { lat: 15.441705, lng: 74.699032 },
@@ -114,8 +114,8 @@ export class MapUtil {
   public static getStateCentroid(layer: ILeafletStateClickEvent | L.Layer): {
     lat: number;
     lng: number;
-  } {
-    const stateName = MapUtil.getStateName(layer);
+  } | null {
+    const stateName: any = MapUtil.getStateName(layer);
     if (!stateName) {
       return null;
     }

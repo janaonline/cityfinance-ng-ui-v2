@@ -1,0 +1,19 @@
+@if (isLoadingData) {
+<section class="container">
+    <app-pre-loader></app-pre-loader>
+</section>
+} @else {
+<app-header [rankedUlbCount]="data?.rankedUlbCount"></app-header>
+<!-- Hiding Ministers section now -->
+<!-- <app-union-ministor></app-union-ministor> -->
+<app-ulbs-in-india [data]="data"></app-ulbs-in-india>
+<app-assessment-parameters (onGuidelinesPopup)="guidelinesPopup()"></app-assessment-parameters>
+<app-ranking-categories></app-ranking-categories>
+<app-guidelines-brochure-video (onGuidelinesPopup)="guidelinesPopup()"
+    (onVideosPopup)="videosPopup()"></app-guidelines-brochure-video>
+<div class="container">
+    <div class="yellow-divider"></div>
+</div>
+<app-footer></app-footer>
+<app-scroll-to-top></app-scroll-to-top>
+}

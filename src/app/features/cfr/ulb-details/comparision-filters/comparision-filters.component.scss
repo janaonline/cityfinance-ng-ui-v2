@@ -1,0 +1,14 @@
+*,
+.ff {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
+}
+
+.scroll-bar {
+  max-height: 35rem;
+  overflow-y: auto;
+}
+
+input[type='checkbox'] {
+  accent-color: var(--clr-secondary);
+}

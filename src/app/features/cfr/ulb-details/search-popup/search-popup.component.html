@@ -1,0 +1,27 @@
+<section class="p-4 bg-black text-white h-100">
+    <div class="d-flex justify-content-end">
+        <mat-icon class="cursor-pointer" (click)="close()">close</mat-icon>
+    </div>
+    <div class="container text-center">
+        <h2 class="fw-bold mb-3">Explore ULBs in India</h2>
+        <!-- <p class="mb-5">Discover and access detailed information about Urban Local Bodies (ULBs) across India. Begin
+            your exploration
+            by selecting a ULB from the dropdown list below. Each ULB has a unique story, financial</p> -->
+
+        <form class="d-flex justify-content-center">
+            <input matInput [formControl]="searchField" [matAutocomplete]="auto" class="form-control w-50"
+                style="height: 3rem" type="text" placeholder="Search ULB..." />
+            <mat-autocomplete #auto="matAutocomplete">
+                <span *ngFor="let option of filteredOptions; let i = index" style="direction: none">
+                    <mat-option [ngClass]="{ firstCls: i === 0 }" [value]="option?.name"
+                        (click)="getUlbDetails(option)">
+                        <span> {{ option?.name }}</span>
+                    </mat-option>
+                </span>
+                <mat-option *ngIf="noDataFound" class="text-danger firstCls ff">
+                    Sorry, we can&#39;t find anything related to your search. Try searching for a city.
+                </mat-option>
+            </mat-autocomplete>
+        </form>
+    </div>
+</section>

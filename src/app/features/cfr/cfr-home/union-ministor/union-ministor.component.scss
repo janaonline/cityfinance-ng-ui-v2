@@ -1,0 +1,10 @@
+*:not(mat-icon) {
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
+}
+  
+p,
+h4 {
+    margin: 0;
+    padding: 0;
+}

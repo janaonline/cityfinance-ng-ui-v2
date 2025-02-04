@@ -1,0 +1,15 @@
+* {
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
+}
+
+p {
+  margin: 0;
+  padding: 0;
+}
+
+.bg-img {
+  background-image: url(../../../../assets/fiscal-rankings/asse-para.svg);
+  background-repeat: no-repeat;
+  background-position: right bottom;
+}

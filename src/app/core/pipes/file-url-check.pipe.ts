@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'fileUrlCheck',
+  standalone: true
 })
 export class FileUrlCheckPipe implements PipeTransform {
   transform(url: string, targetExtension: string, allowedExtensions: string[]): boolean {
