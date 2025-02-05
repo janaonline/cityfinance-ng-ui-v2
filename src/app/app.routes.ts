@@ -30,12 +30,12 @@ export const routes: Routes = [
   //   ],
   // },
 
-  {
-    path: '',
-    // redirectTo: 'cfr',
-    // pathMatch: 'full',
-    loadChildren: () => import('./features/cfr/cfr.routes').then((mod) => mod.CFR_ROUTES),
-  },
+  // {
+  //   path: '',
+  //   // redirectTo: 'cfr',
+  //   // pathMatch: 'full',
+  //   loadChildren: () => import('./features/cfr/cfr.routes').then((mod) => mod.CFR_ROUTES),
+  // },
   {
     path: 'xvifc-form',
     loadComponent: () =>
@@ -51,6 +51,10 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'home',
+    loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
   },
   // {
   //     path: '',

@@ -1025,7 +1025,7 @@ export class ReUseableHeatMapComponent implements OnChanges, OnDestroy {
     let newValues: string[];
 
     if (ulbAlreadySelect) {
-      this.currentULBClicked = null;
+      // this.currentULBClicked = null;
       newValues = [];
       this.changeMarkerToUnselected(marker);
     } else {
@@ -1033,7 +1033,7 @@ export class ReUseableHeatMapComponent implements OnChanges, OnDestroy {
       this.unselectAllDistrictMarker();
       this.changeMarkerToSelected(marker);
     }
-    this.ulbsSelected.setValue(newValues);
+    // this.ulbsSelected.setValue(newValues);
   };
 
   unselectAllDistrictMarker() {
@@ -1156,21 +1156,21 @@ export class ReUseableHeatMapComponent implements OnChanges, OnDestroy {
 
   clearDistrictMapContainer() {
     const height = this.userUtil.isUserOnMobile() ? `100%` : "57vh";
-    document.getElementById("districtMapContainer").innerHTML = `
-      <div
-    id="districtMapId"
-    class=" col-sm-12"
-    style="background: transparent;z-index: 8; display: inline-block; width: 99%;height: ${height};"
-  > <p class="text-center state-map-click-guide" >
-    Click on any ULB to view it's data or click on India map to go back
-  </p>
-  </div>`;
+    //   document.getElementById("districtMapContainer").innerHTML = `
+    //     <div
+    //   id="districtMapId"
+    //   class=" col-sm-12"
+    //   style="background: transparent;z-index: 8; display: inline-block; width: 99%;height: ${height};"
+    // > <p class="text-center state-map-click-guide" >
+    //   Click on any ULB to view it's data or click on India map to go back
+    // </p>
+    // </div>`;
   }
 
   clearNationalMapContainer() {
     if (this.nationalLevelMap) {
       this.nationalLevelMap.remove();
-      this.nationalLevelMap = null;
+      // this.nationalLevelMap = null;
     }
   }
 
@@ -1189,6 +1189,6 @@ export class ReUseableHeatMapComponent implements OnChanges, OnDestroy {
 
   removeCustomStyleTag() {
     const element = document.getElementById("customReuseable");
-    element.remove();
+    element?.remove();
   }
 }
