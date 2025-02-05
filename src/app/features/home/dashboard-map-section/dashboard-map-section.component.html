@@ -100,7 +100,7 @@
                 <div class="row mt-4" *ngIf="!dataForVisualization.loading">
                     <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-2">
                         <div *ngIf="!stateDim" class="num-data">
-                            {{ dataForVisualization?.coveredUlbCount || 0 | inrCurrency: { currencyTypeInUser: 0 } }}
+                            {{ dataForVisualization.coveredUlbCount || 0 | inrCurrency: { currencyTypeInUser: 0 } }}
                         </div>
                         <div *ngIf="stateDim" class="num-data">
                             {{ cityInfo?.population ? (cityInfo?.population / 1000 | number: "1.0-0") : 0 }}k
@@ -113,7 +113,7 @@
                     </div>
                     <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-2">
                         <div *ngIf="!stateDim" class="num-data">
-                            {{ dataForVisualization?.financialStatements || 0 | inrCurrency: { currencyTypeInUser: 0
+                            {{ dataForVisualization.financialStatements || 0 | inrCurrency: { currencyTypeInUser: 0
                             } }}
                             <span mat-raised-button [matTooltip]="dataAvailTooltip" matTooltipClass="my-tooltip"
                                 aria-label="Button that displays a tooltip with a custom message"><img
@@ -125,10 +125,10 @@
                         <span *ngIf="!stateDim" class="data-point-name num-text my-1">
                             Financial Statements for FYs
                             <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                                {{ financialYearTexts?.min || "2015-16" }}
+                                {{ financialYearTexts.min || "2015-16" }}
                             </span> to
                             <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                                {{ financialYearTexts?.max || "15-16" }}
+                                {{ financialYearTexts.max || "15-16" }}
                             </span>
                         </span>
                         <div *ngIf="stateDim" class="num-text my-1">Area</div>
