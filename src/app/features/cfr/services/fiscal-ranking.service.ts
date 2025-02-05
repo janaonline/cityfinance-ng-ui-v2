@@ -112,7 +112,7 @@ export const tableMapperPipe = (columns: any, tablePath: string = '') => {
   providedIn: 'root',
 })
 export class FiscalRankingService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   downloadFile(blob: any, type: string, filename: string): void {
     try {
@@ -195,5 +195,9 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/top-ranked-ulbs-dump`, {
       responseType: 'blob',
     });
+  }
+
+  downloadRankedUlbPdf(ulbId: string, downloadPdf: boolean = true) {
+    return this.http.get(`${environment.api.url}scoring-fr/ulb/${ulbId}?downloadPdf=${downloadPdf}`);
   }
 }
