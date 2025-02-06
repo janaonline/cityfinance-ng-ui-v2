@@ -53,8 +53,26 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
-    path: 'home',
-    loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+    path: '',
+    children: [
+      {
+        path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+      },
+      {
+        path: "own-revenue-dashboard",
+        loadChildren: () =>
+          import("./features/pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
+            (m) => m.OwnRevenueDashboardModule
+          ),
+      },
+      {
+        path: "resources-dashboard",
+        loadChildren: () =>
+          import("./features/pages/resources-dashboard/resources-dashboard.module").then(
+            (m) => m.ResourcesDashboardModule
+          ),
+      },
+    ],
   },
   // {
   //     path: '',
