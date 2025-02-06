@@ -6,7 +6,7 @@ import { BehaviorSubject, Subject } from "rxjs";
 // import { Chart } from "chart.js";
 // import { Observable } from "rxjs/internal/Observable";
 
-import { environment } from "../../../environments/environment";
+import { environment } from "../../../../environments/environment";
 @Injectable({
   providedIn: "root",
 })

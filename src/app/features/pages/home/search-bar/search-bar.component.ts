@@ -1,8 +1,8 @@
-import { Component, Renderer2, OnInit } from '@angular/core';
-import { MaterialModule } from '../../../material.module';
+import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CommonService } from '../../../core/services/common.service';
+import { CommonService } from '../../../../core/services/common.service';
+import { MaterialModule } from '../../../../material.module';
 import { ResourcesDashboardService } from '../resources-dashboard.service';
 
 @Component({

@@ -1,20 +1,9 @@
-@import '../../../../node_modules/bootstrap/scss/functions';
-@import "../../../../node_modules/bootstrap/scss/variables";
-@import "../../../../node_modules/bootstrap/scss/mixins";
+@import '../../../../../../node_modules/bootstrap/scss/functions';
+@import "../../../../../../node_modules/bootstrap/scss/variables";
+@import "../../../../../../node_modules/bootstrap/scss/mixins";
 
 .container-fluid {
     padding-left: 0;
-}
-
-.wrap-bg {
-    background-image: url("../../../assets/images/homepage/new_dashBord_ftr_hdr/landingBg.png");
-    background-repeat: no-repeat;
-    background-size: cover;
-    padding-bottom: $spacer * 15;
-
-    @include media-breakpoint-up(sm) {
-        padding-bottom: $spacer * 13;
-    }
 }
 
 .ds-info {

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { SlickCarouselModule } from 'ngx-slick-carousel';
-import { MaterialModule } from '../../../material.module';
+import { MaterialModule } from '../../../../material.module';
 
 @Component({
   selector: 'app-spotlight',
