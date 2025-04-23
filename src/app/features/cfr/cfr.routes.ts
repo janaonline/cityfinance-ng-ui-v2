@@ -1,12 +1,13 @@
 import { Route } from '@angular/router';
-import { CfrHomeComponent } from './cfr-home/cfr-home.component';
-import { ParticipatingStateComponent } from './participating-state/participating-state.component';
-import { TopRankingsComponent } from './top-rankings/top-rankings.component';
-import { UlbDetailsComponent } from './ulb-details/ulb-details.component';
-import { ParticipatingUlbsComponent } from './participating-ulbs/participating-ulbs.component';
 import { AssessmentParameterComponent } from './assessment-parameter/assessment-parameter.component';
-import { MapComponent } from './map/map.component';
+import { CfrHomeComponent } from './cfr-home/cfr-home.component';
 import { MapStateRankComponent } from './map-state-rank/map-state-rank.component';
+import { MapComponent } from './map/map.component';
+import { ParticipatingStateComponent } from './participating-state/participating-state.component';
+import { ParticipatingUlbsComponent } from './participating-ulbs/participating-ulbs.component';
+import { TopRankingsComponent } from './top-rankings/top-rankings.component';
+import { DownloadPdfComponent } from './ulb-details/download-pdf/download-pdf.component';
+import { UlbDetailsComponent } from './ulb-details/ulb-details.component';
 
 export const CFR_ROUTES: Route[] = [
   { path: '', component: CfrHomeComponent },
@@ -17,6 +18,7 @@ export const CFR_ROUTES: Route[] = [
   // { path: "annual-budgets", component: AnnualBudgetsComponent },
   { path: "top-rankings", component: TopRankingsComponent },
   { path: "ulb/:ulbId", component: UlbDetailsComponent },
+  { path: "ulb-donwload/:ulbId", component: DownloadPdfComponent },
   // {
   //     path: "ulb-form/:ulbId",
   //     component: UlbFiscalNewComponent,
