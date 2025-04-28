@@ -59,6 +59,9 @@ export const routes: Routes = [
         path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
       },
       {
+        path: 'data/city/:id', loadComponent: () => import('./features/pages/city-detail/city-detail.component').then((m) => m.CityDetailComponent),
+      },
+      {
         path: "own-revenue-dashboard",
         loadChildren: () =>
           import("./features/pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
