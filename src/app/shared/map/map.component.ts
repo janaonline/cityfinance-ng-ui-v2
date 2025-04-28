@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import * as L from 'leaflet';
-import { allUlbsData } from '../../../../assets/jsonFile/ulbsListLocalStorage';
-import { UserUtility } from '../../../core/util/user/user';
+import { allUlbsData } from '../../../assets/jsonFile/ulbsListLocalStorage';
+import { UserUtility } from '../../core/util/user/user';
 import { GeoJsonFeature, MapConfig, StateGeoJson, ULBDataPoint } from './interfaces';
 import { MapService } from './map.service';
 
@@ -37,6 +37,7 @@ import { MapService } from './map.service';
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() stateCode: string = '';
+
   private readonly DEFAULT_ZOOM_LEVEL = 4.4;
   private ulbsList: ULBDataPoint[] = [];
   private stateLayer: L.GeoJSON | null = null; // To hold current state layer.
@@ -110,6 +111,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ulbsList = this.stateCode ? allUlbsData[`${this.stateCode}`]['ulbs'] : [];
   }
 
+  // TODO: Reset will be done from parent component.
   public resetMap(): void {
     this.stateCode = '';
     this.loadMapData();
