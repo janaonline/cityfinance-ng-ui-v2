@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import * as L from 'leaflet';
-import { allUlbsData } from '../../../assets/jsonFile/ulbsListLocalStorage';
-import { UserUtility } from '../../core/util/user/user';
+import { allUlbsData } from '../../../../assets/jsonFile/ulbsListLocalStorage';
+import { UserUtility } from '../../../core/util/user/user';
 import { GeoJsonFeature, MapConfig, StateGeoJson, ULBDataPoint } from './interfaces';
 import { MapService } from './map.service';
 

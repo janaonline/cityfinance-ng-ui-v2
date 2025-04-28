@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import L from 'leaflet';
 import { Observable, Subject } from 'rxjs';
-import { IStateLayerStyle } from '../../core/util/map/models/mapCreationConfig';
+import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
 import { MapConfig, StateGeoJson, ULBDataPoint } from './interfaces';
 
 @Injectable({

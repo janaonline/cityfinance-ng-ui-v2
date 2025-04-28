@@ -64,7 +64,8 @@ export const routes: Routes = [
   },
   {
     path: 'map',
-    loadComponent: () => import('./shared/map/map.component').then((m) => m.MapComponent),
+    loadComponent: () =>
+      import('./shared/components/map/map.component').then((m) => m.MapComponent),
   },
   {
     path: 'maintenance',
