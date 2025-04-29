@@ -1,10 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import L from 'leaflet';
+import L, { Marker } from 'leaflet';
 import { Observable, Subject } from 'rxjs';
 import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
 import { MapConfig, StateGeoJson, ULBDataPoint } from './interfaces';
-
+declare module 'leaflet' {
+  interface Marker {
+    ulbData?: ULBDataPoint;
+  }
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -30,8 +34,10 @@ export class MapService {
     iconAnchor: [8, 14],
   });
   private selectedMarker: L.Marker | null = null; // Stores selectedMarker (active location icon)
-  private stateCodeClickedSubject = new Subject<string>(); // If a state is clicked emit.
+  private stateCodeClickedSubject = new Subject<string>(); // If a state is clicked - emit value.
   public stateCodeClicked$: Observable<string> = this.stateCodeClickedSubject.asObservable();
+  private ulbCodeClickedSubject = new Subject<string>(); // If a ulb is clicked - emit value.
+  public ulbCodeClicked$: Observable<string> = this.ulbCodeClickedSubject.asObservable();
   private cityMarkersGroup: L.LayerGroup = new L.LayerGroup();
 
   constructor(
@@ -120,14 +126,16 @@ export class MapService {
   }
 
   // Add blue dot - City representation on sate map.
-  addCityMarkersToMap(stateCode: string, ulbsList: ULBDataPoint[]): void {
+  addCityMarkersToMap(stateCode: string, ulbId: string, ulbsList: ULBDataPoint[]): void {
     if (!this.map) {
       console.error('Map instance not initialised');
       return;
     }
 
     this.clearCityMarkers();
+    let newlySelectedMarker: L.Marker | null = null;
 
+    // Iterate over ulbsList to add marker/ icon.
     ulbsList.forEach((ulbDataPoints: ULBDataPoint) => {
       const lat = ulbDataPoints.location.lat;
       const lng = ulbDataPoints.location.lng;
@@ -136,11 +144,7 @@ export class MapService {
         const popup = L.popup({ closeButton: false, autoClose: true }).setContent(
           this.createToolTip(ulbDataPoints.name || ''),
         );
-        const marker = L.marker([+lat, +lng], {
-          icon: this.blueIcon,
-          interactive: true,
-          bubblingMouseEvents: true,
-        }).bindPopup(popup);
+        const marker = this.addMarker(+lat, +lng, ulbDataPoints).bindPopup(popup);
 
         this.cityMarkersGroup.addLayer(marker);
 
@@ -149,10 +153,33 @@ export class MapService {
           mouseout: () => marker.closePopup(),
           click: () => this.handleMarkerClick(marker),
         });
+
+        // If this ulb is the selected one (sent from parent), store its marker
+        if (ulbId && ulbDataPoints._id == ulbId) {
+          newlySelectedMarker = marker;
+        }
       } else console.warn(`Invalid coordinates: ${ulbDataPoints.name} (Lat: ${lat}, Lng: ${lng})`);
     });
 
+    // If ULB is selected mark the ulb with Location icon.
+    if (ulbId) {
+      this.handleMarkerClick(newlySelectedMarker);
+    }
+
     this.cityMarkersGroup.addTo(this.map);
+  }
+
+  addMarker(lat: number, lng: number, ulb: ULBDataPoint): Marker {
+    const marker = L.marker([lat, lng], {
+      icon: this.blueIcon,
+      interactive: true,
+      bubblingMouseEvents: true,
+    });
+
+    // Add ulb data to each layer.
+    marker.ulbData = ulb;
+
+    return marker;
   }
 
   // Remove markers - blue dot.
@@ -161,7 +188,7 @@ export class MapService {
   }
 
   // Display a location icon upon clicking the blue dot corresponding to a ULB or city.
-  handleMarkerClick(marker: L.Marker): void {
+  handleMarkerClick(marker: L.Marker | null): void {
     if (this.selectedMarker) {
       this.selectedMarker.setIcon(this.blueIcon);
     }
@@ -170,6 +197,7 @@ export class MapService {
     if (marker) {
       marker.setIcon(this.selectedIcon);
       this.selectedMarker = marker;
+      this.ulbCodeClickedSubject.next(this.selectedMarker.ulbData?._id || '');
     } else this.selectedMarker = null;
   }
 

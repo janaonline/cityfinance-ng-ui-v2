@@ -36,3 +36,6 @@ export interface GeoJsonFeature {
     ST_CODE: string;
   };
 }
+export interface ResettableMap {
+  resetMap: () => void;
+}
