@@ -1,8 +1,17 @@
-import { AfterViewInit, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+} from '@angular/core';
 import * as L from 'leaflet';
+import { debounceTime, Subject, takeUntil } from 'rxjs';
 import { allUlbsData } from '../../../../assets/jsonFile/ulbsListLocalStorage';
 import { UserUtility } from '../../../core/util/user/user';
-import { GeoJsonFeature, MapConfig, StateGeoJson, ULBDataPoint } from './interfaces';
+import { GeoJsonFeature, MapConfig, ResettableMap, StateGeoJson, ULBDataPoint } from './interfaces';
 import { MapService } from './map.service';
 
 @Component({
@@ -10,8 +19,7 @@ import { MapService } from './map.service';
   standalone: true,
   imports: [],
   providers: [UserUtility],
-  template: ` <button class="btn btn-outline-cfPrimary" (click)="resetMap()">Reset</button>
-    <div id="map" [class.state-highlight]="stateCode"></div>`,
+  template: `<div id="map" [class.state-highlight]="stateCode"></div>`,
   styles: [
     `
       * {
@@ -35,8 +43,10 @@ import { MapService } from './map.service';
     `,
   ],
 })
-export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
-  @Input() stateCode: string = '';
+export class MapComponent implements OnInit, AfterViewInit, OnDestroy, ResettableMap {
+  @Input() stateCode!: string;
+  @Input() ulbId!: string;
+  @Output() ulbIdChange = new EventEmitter<string>();
 
   private readonly DEFAULT_ZOOM_LEVEL = 4.4;
   private ulbsList: ULBDataPoint[] = [];
@@ -47,6 +57,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     minZoom: this.DEFAULT_ZOOM_LEVEL,
     maxZoom: this.DEFAULT_ZOOM_LEVEL + 2,
   };
+  private destroy$ = new Subject<void>();
 
   constructor(private mapService: MapService) {}
 
@@ -60,10 +71,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadMapData();
 
     // If any state is clicked - initiate state map.
-    this.mapService.stateCodeClicked$.subscribe((code) => {
-      if (!this.stateCode) {
-        this.stateCode = code;
-        this.loadMapData();
+    this.mapService.stateCodeClicked$
+      .pipe(takeUntil(this.destroy$), debounceTime(300))
+      .subscribe((code) => {
+        if (!this.stateCode) {
+          this.stateCode = code;
+          this.loadMapData();
+        }
+      });
+
+    // If any ulb is clicked (Emit only if other ulb is clicked).
+    this.mapService.ulbCodeClicked$.pipe(takeUntil(this.destroy$)).subscribe((code) => {
+      if (code && this.ulbId !== code) {
+        this.ulbId = code;
+        this.ulbIdChange.emit(this.ulbId);
       }
     });
   }
@@ -96,7 +117,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.stateCode && geoJson.length) {
           this.mapService.flyToStateBounds(this.stateLayer, [20, 20], 2, 0.5);
           this.getCityCordinates();
-          this.mapService.addCityMarkersToMap(this.stateCode, this.ulbsList);
+          this.mapService.addCityMarkersToMap(this.stateCode, this.ulbId, this.ulbsList);
         } else {
           this.mapService.map?.setView(this.mapConfig.initialView, this.mapConfig.initialZoom); // show the entire country
           this.mapService.clearCityMarkers(); // clear markers when showing the whole country
@@ -120,6 +141,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.mapService.destroyMap();
   }
 }
