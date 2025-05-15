@@ -38,7 +38,8 @@ export class CfrHomeComponent implements OnInit {
   ngOnInit(): void {
     this.loadData();
     if (sessionStorage.getItem('homeVideoAutoOpen') != 'true') {
-      this.videosPopup();
+      // hiding video popup now
+      // this.videosPopup();
       sessionStorage.setItem('homeVideoAutoOpen', 'true');
     }
   }

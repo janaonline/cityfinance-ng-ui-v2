@@ -1,26 +1,38 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
-import { LoaderComponent } from '../../../../shared/components/loader/loader.component';
-import { IndiaMapComponent } from '../../india-map/india-map.component';
 
 @Component({
   selector: 'app-ulb-details-header',
   templateUrl: './ulb-details-header.component.html',
   styleUrls: ['./ulb-details-header.component.scss'],
   standalone: true,
-  imports: [MaterialModule, IndiaMapComponent, LoaderComponent],
+  imports: [MaterialModule],
 })
 export class UlbDetailsHeaderComponent implements OnChanges {
   @Input() data: any;
-  ulb: any;
+  ulbName: string = '';
+  censusCode: string = '';
+  sbCode: string = '';
+  ulbId: string = '';
 
-  constructor() {}
+  constructor() { }
+
+  ngOnInit(): void { }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['data']?.currentValue) this.updateInputDataDependencies();
+    if (changes['data']?.currentValue) {
+      this.ulbName = this.data.ulbName;
+      this.censusCode = this.data.censusCode;
+      this.sbCode = this.data.sbCode;
+      this.ulbId = this.data.ulbId;
+    }
   }
 
-  private updateInputDataDependencies() {
-    this.ulb = this.data?.ulb;
+  public downloadPdf() {
+    if (this.ulbId)
+      window.open(`ulb-donwload/${this.ulbId}`);
+    else
+      throw new Error('Error in downloadPdf(): ulbId not found.');
   }
+
 }

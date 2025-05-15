@@ -32,6 +32,8 @@ export class CommonService {
   private httpUtil = new HttpUtility();
   jsonUtil = new JSONUtility();
 
+  dataForVisualizationCount = new BehaviorSubject<any>("");
+
   private NewULBStructureResponseCache: {
     [datesAsString: string]: IULBResponse;
   } = {};
@@ -42,7 +44,7 @@ export class CommonService {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private snackbar: MatSnackBar,
-  ) {}
+  ) { }
 
   private searchItem: BehaviorSubject<any> = new BehaviorSubject([]);
   castSearchItem = this.searchItem.asObservable();
@@ -56,6 +58,10 @@ export class CommonService {
       `${environment.api.url}recentSearchKeyword/search?type=${type}&state=${state}`,
       body,
     );
+  }
+
+  setDataForVisualizationCount(VisualizationCountObject: any) {
+    this.dataForVisualizationCount.next(VisualizationCountObject)
   }
 
   getFinancialYearBasedOnData() {
@@ -477,7 +483,7 @@ export class CommonService {
       );
   }
 
-  getULBSWithPopulationAndCoordinates(body?: { year: string[]; [key: string]: any }) {
+  getULBSWithPopulationAndCoordinates(body?: { year: string[];[key: string]: any }) {
     return this.http.post<IULBWithPopulationResponse>(`${environment.api.url}ulb-list`, body).pipe(
       map((res: any) => {
         res.data = res.data.sort((ulbA: { name: number }, ulbB: { name: number }) =>
@@ -544,7 +550,7 @@ export class CommonService {
     return this.userType;
   }
   postGlobalSearchData(data: any, type: any, state: any) {
-    let dataString = {
+    const dataString = {
       matchingWord: data,
     };
     let stateData = '';
@@ -615,10 +621,10 @@ export class CommonService {
    * http://localhost:4200/revenuchart?widgetMode=true&startDate=2019-01-01&endDate=2019-01-31&chartType=line&chartTitle=Revenue%20Chart&chartSubtitle=Revenue%20Chart%20Subtitle&chartXAxisTitle=Revenue%20Chart
    */
   createEmbedUrl(paramContent: any, embeddedRoute: string = '') {
-    let queryString = new URLSearchParams(paramContent).toString();
+    const queryString = new URLSearchParams(paramContent).toString();
     // let embeddedRoute = "revenuchart";
     console.log('queryString', queryString);
-    let finalURL = `${window.location.origin}/${embeddedRoute}?widgetMode=true&${queryString}`;
+    const finalURL = `${window.location.origin}/${embeddedRoute}?widgetMode=true&${queryString}`;
     // let finalURL = `${window.location.origin}/${embeddedRoute}?widgetMode=true&data=${btoa(queryString)}`;
     return finalURL;
   }
@@ -633,7 +639,7 @@ export class CommonService {
   copyToClipboard(copyHTMLElement: any, copyMessage: string = '') {
     this.showSnackbarMessage(copyMessage);
 
-    let selBox = document.createElement('textarea');
+    const selBox = document.createElement('textarea');
     selBox.style.position = 'fixed';
     selBox.style.left = '0';
     selBox.style.top = '0';
@@ -648,7 +654,7 @@ export class CommonService {
 
   decodeIframeUrl(dataUrl: any) {
     console.log('decodeIframeUrl', dataUrl);
-    let decodedUrl = atob(dataUrl);
+    const decodedUrl = atob(dataUrl);
     return decodedUrl;
   }
 
@@ -661,10 +667,10 @@ export class CommonService {
    */
   paramsToObject(queryParamContent: any) {
     console.log('queryParamContent', queryParamContent);
-    var paramObject: any = {};
-    var pairs = queryParamContent.split('&');
-    for (let key in pairs) {
-      var split = pairs[key].split('=');
+    const paramObject: any = {};
+    const pairs = queryParamContent.split('&');
+    for (const key in pairs) {
+      const split = pairs[key].split('=');
       paramObject[decodeURIComponent(split[0])] = decodeURIComponent(split[1]);
     }
     console.log('paramObject', paramObject);
@@ -715,13 +721,13 @@ export class CommonService {
   }
 
   createCsv(result: BlobPart, fileName: string) {
-    let blob: Blob = new Blob([result], { type: 'text/csv;charset=utf-8;' });
-    let url: string = URL.createObjectURL(blob);
+    const blob: Blob = new Blob([result], { type: 'text/csv;charset=utf-8;' });
+    const url: string = URL.createObjectURL(blob);
     this.autoDownload(url, fileName);
   }
 
   autoDownload(url: string, file: string) {
-    let element: HTMLAnchorElement = document.createElement('a');
+    const element: HTMLAnchorElement = document.createElement('a');
     element.href = url;
     element.target = '_blank';
     element.download = file;

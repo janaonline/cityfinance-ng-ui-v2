@@ -1,7 +1,8 @@
 <section class="my-5 d-flex flex-column">
   <h3 class="my-4 text-center fw-bold">
-    <span class="text-cfSecondary">Performance in</span
-    ><span class="text-cfPrimary"> {{ populationCategory }} Population Category</span>
+    <span class="text-cfSecondary">Performance in</span>
+    <span class="text-cfPrimary"> {{ populationCategory }} Population Category</span>
+    <span class="text-cfSecondary"> - {{ data?.ulb?.statePartCat }}</span>
   </h3>
 
   <div class="container my-4 row mx-auto">
@@ -10,7 +11,7 @@
         National Rank&#58;
         <span class="text-shadow text-cfPrimary fw-bold huge-font">{{ selectedRank }}</span
         ><span class="text-shadow text-cfPrimary fw-bold"
-          >&#47;&nbsp;{{ data?.populationBucketUlbCount }}&nbsp;ULBs</span
+          >&#47;&nbsp;{{ data?.populationBucketUlbCount }}&nbsp;Participated ULBs</span
         >
       </h4>
       <h4 class="fw-bold">Ranking Category&#58;&nbsp;{{ parameterlabel[parameterkey] }}</h4>

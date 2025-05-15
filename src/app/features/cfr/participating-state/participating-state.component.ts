@@ -3,11 +3,12 @@ import { Component, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { CommonTableComponent } from '../common-table/common-table.component';
 import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
-import { FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
-import { StatewiseMapComponent } from "../statewise-map/statewise-map.component";
+import { Table } from '../services/common-table.interface';
+import { FiscalRankingService, FrFilter } from '../services/fiscal-ranking.service';
+// import { StatewiseMapComponent } from "../statewise-map/statewise-map.component";
+import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
 
 @Component({
   selector: 'app-participating-state',
@@ -17,18 +18,18 @@ import { StatewiseMapComponent } from "../statewise-map/statewise-map.component"
   imports: [
     CommonModule,
     BreadcrumbComponent,
-    CommonTableComponent,
     IndiaMapComponent,
     MatCommonTableComponent,
     PreLoaderComponent,
-    StatewiseMapComponent
+    // StatewiseMapComponent,
+    MapStateRankComponent
   ],
 })
 export class ParticipatingStateComponent implements OnInit {
   stateType: string = 'All';
   ulbParticipation: string = 'All';
   ulbRankingStatus: string = 'All';
-  table: object | any = { response: null };
+  table = {} as Table;
   isLoadingResults: boolean = false;
   skip: number = 0;
   limit: number = 40;
@@ -44,7 +45,7 @@ export class ParticipatingStateComponent implements OnInit {
       url: '/cfr/home',
     },
     {
-      label: 'Participated States and UT ',
+      label: 'Participated and Ranked ULBs across States and UTs',
       url: '/cfr/participated-states-ut',
       class: 'disabled',
     },
@@ -126,7 +127,6 @@ export class ParticipatingStateComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    //  this.getStateWiseForm();
     this.getTableData(this.table, '');
   }
   dropDownValueChanges(e: any) {
@@ -177,11 +177,7 @@ export class ParticipatingStateComponent implements OnInit {
         },
       });
   }
-  // getStateWiseForm() {
-  //   this.fiscalRankingService.getStateWiseForm().subscribe(res => {
-  //     this.colorCoding = res?.data.heatMaps;
-  //   });
-  // }
+
   // reset all filter
   resetFilter() {
     // this.stateType = this.stateTypeFilter[0]?.value;

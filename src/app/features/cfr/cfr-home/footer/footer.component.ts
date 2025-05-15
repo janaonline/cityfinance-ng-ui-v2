@@ -15,7 +15,7 @@ interface Card {
 export class FooterComponent {
   data: Card[] = [];
 
-  constructor() {}
+  constructor() { }
 
   ngOnInit(): void {
     this.data = [

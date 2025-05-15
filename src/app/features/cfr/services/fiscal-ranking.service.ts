@@ -1,15 +1,8 @@
-import { KeyValue } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { FormGroup } from '@angular/forms';
-import { JwtHelperService } from '@auth0/angular-jwt';
-import { Subject } from 'rxjs';
 
 import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
-import { USER_TYPE } from '../../../core/models/user/userType';
-import { UserUtility } from '../../../core/util/user/user';
-import { TableResponse } from './common-table.interface';
 
 export enum StatusType {
   'notStarted' = 1,
@@ -20,12 +13,12 @@ export enum StatusType {
   'ackByPMU' = 11,
 }
 
-export interface Table {
-  id?: string;
-  info?: string;
-  endpoint?: string;
-  response: TableResponse | null;
-}
+// export interface Table {
+//   id?: string;
+//   info?: string;
+//   endpoint?: string;
+//   response: TableResponse;
+// }
 
 export interface MapData {
   _id: string;
@@ -104,7 +97,7 @@ const getValueByPath = (response: any, path: string) => {
 export const tableMapperPipe = (columns: any, tablePath: string = '') => {
   return map((response: any) => {
     const mutable = tablePath ? getValueByPath(response, tablePath) : response;
-    console.log('mutable', mutable);
+    // console.log('mutable', mutable);
     mutable.columns =
       columns ||
       mutable.columns.map((column: any[]) => ({
@@ -119,49 +112,7 @@ export const tableMapperPipe = (columns: any, tablePath: string = '') => {
   providedIn: 'root',
 })
 export class FiscalRankingService {
-  userUtil = new UserUtility();
-
-  public badCredentials: Subject<boolean> = new Subject<boolean>();
-  public helper = new JwtHelperService();
-  loginLogoutCheck = new Subject<any>();
-  constructor(private http: HttpClient) {}
-  getfiscalUlbForm(dYr: any, id: any) {
-    return this.http.get(`${environment.api.url}fiscal-ranking/view?design_year=${dYr}&ulb=${id}`);
-  }
-  // cardApi : any="https://democityfinanceapi.dhwaniris.in/api/v1/FRHomePageContent";
-  // getHeroes() {
-  //   return this.http.get ("https://democityfinanceapi.dhwaniris.in/api/v1/FRHomePageContent")
-  //   }
-  getLandingPageCard() {
-    return this.http.get(
-      // `${environment.api.url}menu?role=ULB&year=606aafb14dff55e6c075d3ae&isUa=false`
-      `${environment.api.url}FRHomePageContent`,
-    );
-  }
-
-  sortPosition(itemA: KeyValue<number, FormGroup>, itemB: KeyValue<number, FormGroup>) {
-    const a = +itemA.value.controls['position']?.value;
-    const b = +itemB.value.controls['position']?.value;
-    return a > b ? 1 : b > a ? -1 : 0;
-  }
-
-  signin(user: any) {
-    return this.http.post(environment.api.url + 'login', user);
-  }
-
-  verifyCaptcha(recaptcha: string) {
-    return this.http.post(`${environment.api.url}captcha_validate`, {
-      recaptcha,
-    });
-  }
-
-  getToken() {
-    return localStorage.getItem('id_token');
-  }
-
-  loggedIn() {
-    return !this.helper.isTokenExpired(this.getToken());
-  }
+  constructor(private http: HttpClient) { }
 
   downloadFile(blob: any, type: string, filename: string): void {
     try {
@@ -198,28 +149,6 @@ export class FiscalRankingService {
       .pipe(tableMapperPipe(columns, tablePath));
   }
 
-  getStateWiseForm(params: any = {}) {
-    if (this.userUtil.getUserType() == USER_TYPE.STATE) {
-      params['state'] = this.userUtil.getLoggedInUserDetails()?.state;
-    }
-    const queryParams = new URLSearchParams(removeFalsy(params)).toString();
-    return this.http.get<{ data: MapData }>(
-      `${environment.api.url}/fiscal-ranking/getStateWiseForm?` + queryParams,
-    );
-  }
-
-  getTrackingHistory(params = {}) {
-    try {
-      const queryParams = new URLSearchParams(removeFalsy(params)).toString();
-      return this.http.get<TrackingHistoryResponse>(
-        `${environment.api.url}/fiscal-ranking/tracking-history?` + queryParams,
-      );
-    } catch (err: any) {
-      console.log('error in getTrackingHistory :: ', err.message);
-      return err;
-    }
-  }
-
   searchUlb(query: string = '') {
     return this.http.get(`${environment.api.url}scoring-fr/autocomplete-ulbs?q=${query}`);
   }
@@ -242,21 +171,22 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/states?limit=40`);
   }
 
-  topRankedUlbs(queryParams: string, columns: any, params: any) {
-    return this.http
-      .get(`${environment.api.url}scoring-fr/top-ranked-ulbs?${queryParams}`, { params })
-      .pipe(tableMapperPipe(columns, 'tableData'));
+  topRankedUlbs(params: any) {
+    return this.http.get(`${environment.api.url}scoring-fr/top-ranked-ulbs`, { params });
+    // .pipe(tableMapperPipe(columns, 'tableData'));
   }
 
   topRankedStates(params: any) {
     return this.http.get(`${environment.api.url}scoring-fr/top-ranked-states`, { params });
   }
 
-  getBarchartData(ulbsString: any, populationBucket: number) {
-    return this.http.get(`${environment.api.url}scoring-fr/search-ulbs?populationBucket=${populationBucket}&${ulbsString}`);
+  getBarchartData(ulbsString: any, populationBucket: number, stateParticipationCategory: string) {
+    return this.http.get(
+      `${environment.api.url}scoring-fr/search-ulbs?stateParticipationCategory=${stateParticipationCategory}&populationBucket=${populationBucket}&${ulbsString}`,
+    );
   }
 
-  getApiResponse(endPoints: string, params: any) {
+  getApiResponse(endPoints: string, params: any = {}) {
     // const params = { ulb };
     return this.http.get(`${environment.api.url}${endPoints}`, { params });
   }
@@ -265,5 +195,9 @@ export class FiscalRankingService {
     return this.http.get(`${environment.api.url}scoring-fr/top-ranked-ulbs-dump`, {
       responseType: 'blob',
     });
+  }
+
+  downloadRankedUlbPdf(ulbId: string, downloadPdf: boolean = true) {
+    return this.http.get(`${environment.api.url}scoring-fr/ulb/${ulbId}?downloadPdf=${downloadPdf}`);
   }
 }

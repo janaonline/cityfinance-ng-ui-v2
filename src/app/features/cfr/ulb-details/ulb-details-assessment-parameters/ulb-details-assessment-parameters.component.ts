@@ -1,18 +1,17 @@
-import { Component, Input, OnInit, SimpleChanges } from '@angular/core';
-import { MaterialModule } from '../../../../material.module';
-import { CommonTableComponent } from '../../common-table/common-table.component';
-import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
+import { Component, Input, OnInit, SimpleChanges, OnChanges } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { MaterialModule } from '../../../../material.module';
+import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
 
 @Component({
   selector: 'app-ulb-details-assessment-parameters',
   templateUrl: './ulb-details-assessment-parameters.component.html',
   styleUrls: ['./ulb-details-assessment-parameters.component.scss'],
   standalone: true,
-  imports: [MaterialModule, CommonTableComponent, MatCommonTableComponent, RouterModule],
+  imports: [MaterialModule, MatCommonTableComponent, RouterModule],
 })
-export class UlbDetailsAssessmentParametersComponent implements OnInit {
+export class UlbDetailsAssessmentParametersComponent implements OnInit, OnChanges {
   @Input() tables: any;
 
   filter: FormGroup;

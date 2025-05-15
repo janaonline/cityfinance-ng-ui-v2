@@ -31,7 +31,7 @@ export class ComparisionFiltersComponent implements OnInit {
     private fiscalRankingService: FiscalRankingService,
     public dialogRef: MatDialogRef<DialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
-  ) { }
+  ) {}
 
   // private searchSubject = new Subject<string>();
   // private readonly debounceTimeMs = 300; // Set the debounce time (in milliseconds)
@@ -52,7 +52,9 @@ export class ComparisionFiltersComponent implements OnInit {
       debounceTime(500),
       distinctUntilChanged(),
       tap(() => (this.isSearching = true)),
-      switchMap((term) => (term ? this.fiscalRankingService.searchUlb(term) : of<any>({ data: this.filteredOptions }))),
+      switchMap((term) =>
+        term ? this.fiscalRankingService.searchUlb(term) : of<any>({ data: this.filteredOptions }),
+      ),
       tap(() => {
         (this.isSearching = false), (this.showSearches = true);
       }),
@@ -60,7 +62,7 @@ export class ComparisionFiltersComponent implements OnInit {
 
     search$.subscribe((resp: any) => {
       this.isSearching = false;
-      if (resp['ulbs'].length > 0) {
+      if (resp['ulbs'] && resp['ulbs'].length > 0) {
         this.noDataFound = false;
       } else {
         this.noDataFound = true;
@@ -74,15 +76,21 @@ export class ComparisionFiltersComponent implements OnInit {
   }
 
   async addUlb(ulb: any) {
-    if (this.data?.ulb?.populationBucket != ulb?.populationBucket) {
+    if (
+      this.data?.ulb?.populationBucket != ulb?.populationBucket ||
+      this.data?.ulb?.stateParticipationCategory != ulb?.stateParticipationCategory
+    ) {
       Swal.fire({
         title: 'Are you sure?',
-        text: `${ulb?.name} does not fall under ${this.data?.bucketShortName} if you still want to compare, please click on apply button.`,
+        html: `<strong>${ulb?.name}</strong> does not fall under <strong>${this.data?.bucketShortName}</strong> or <strong>${this.data?.ulb?.statePartCat}</strong> if you still want to compare, please click on apply button.`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
         confirmButtonText: 'Apply',
+        customClass: {
+          confirmButton: 'btn btn-cfPrimary me-3',
+          cancelButton: 'btn btn-outline-cfPrimary',
+        },
+        buttonsStyling: false,
       }).then((result) => {
         if (result.isConfirmed) {
           this.AddToUlbsArr(ulb);
@@ -96,22 +104,32 @@ export class ComparisionFiltersComponent implements OnInit {
       Swal.fire({
         // title: 'Oops!',
         text: `${ulb?.name ?? 'Serached ULB'} already exists.`,
+        customClass: {
+          confirmButton: 'btn btn-cfPrimary me-3',
+          cancelButton: 'btn btn-outline-cfPrimary',
+        },
+        buttonsStyling: false,
       });
     } else {
-      this.AddToUlbsArr(ulb)
+      this.AddToUlbsArr(ulb);
       // this.ulbs.push(ulb);
     }
     this.searchField.setValue('');
     this.searchResults = [];
   }
 
-  AddToUlbsArr(ulb: any){
+  AddToUlbsArr(ulb: any) {
     if (ulb.currentFormStatus !== 11) {
       // Swal.fire('OOPS!', `${ulb.name} is not ranked.`, 'info');
       Swal.fire({
         // title: 'Oops!',
         text: `${ulb.name} is not ranked.`,
-      })
+        customClass: {
+          confirmButton: 'btn btn-cfPrimary me-3',
+          cancelButton: 'btn btn-outline-cfPrimary',
+        },
+        buttonsStyling: false,
+      });
     } else this.ulbs.push(ulb);
   }
 

@@ -1,0 +1,104 @@
+<!-- <div class="tabs">
+    <app-resources-tabs [data]="tabData">
+    </app-resources-tabs>
+</div> -->
+<div class="row" *ngIf="dataReceived">
+    <p *ngIf="searchedValue !='' && searchedValue">
+        <b>{{ learningCount }}</b> Search results for ‘{{ searchedValue }}’ in Datasets
+    </p>
+</div>
+<div class="col-sm-12 mb-3" *ngIf="noDataa">
+    <img class="rounded mx-auto d-block" src="assets/images/sad.svg" />
+    <p class="noData">
+        Sorry we couldn’t find any matches for ‘{{ searchedValue }}’. Please try searching with another term.
+    </p>
+</div>
+<!-- <div class="container container-cnt" *ngIf="dataReceived">
+    <div class="row" style="margin: 0 auto">
+        <div class="col-sm-12 mb-3">
+            <app-resources-tabs [data]="tabData"> </app-resources-tabs>
+        </div>
+    </div>
+</div> -->
+
+<div class="filter-d mt-3 mb-3" *ngIf="dataReceived" id="top">
+    <app-filter-component (filterFormData)="filterData($event)" (clearEvent)="clearEvent()" [category]="category"
+        [filterInputData]="filterComponent" [downloadValue]="selectedUsersList.length" (download)="download($event)"
+        [filterTabDataSet]="true" [mobileFilterConfig]="mobileFilterConfig"></app-filter-component>
+</div>
+
+<div class="row" *ngIf="dataReceived">
+    <div class="d-name">You can Download Upto 5 files</div>
+    <div class="col-sm-12 col-12 mb-3">
+        <div class="cd-r">
+            <div class="card-body cd-h">
+                <div class="row">
+                    <div class="col-sm-1 col-1">
+                        <!-- <p>{{isChecked}}</p> -->
+                        <mat-checkbox [(ngModel)]="isChecked" (change)="masterToggle($event)"> </mat-checkbox>
+                    </div>
+                    <div class="col-sm-8 col-7">
+                        <span> Document Name</span>
+                    </div>
+                    <div class="col-sm-3 col-4">
+                        <span>Updated on</span>
+                    </div>
+                </div>
+            </div>
+            <div class="empty" *ngIf="balData.length == 0">No Data Found</div>
+            <div *ngIf="balData.length > 0">
+                <ng-container *ngFor="let item of balData; let i = index">
+                    <div class="card-body cd-repeat" *ngIf="item.fileName">
+                        <!-- <p>{{item | json}}</p> -->
+                        <div class="row align-items-md-center pointer" (click)="getReport(item)">
+                            <div class="col-sm-1 col-1">
+                                <mat-checkbox matTooltip="Select to download" (click)="$event.stopPropagation()"
+                                    (change)="toggleRowSelection($event, item, i)" [checked]="item.isSelected"
+                                    [disabled]="item.isDisabled">
+                                </mat-checkbox>
+                            </div>
+                            <div class="col-sm-8 d-name col-8 cursor-pointer" matTooltip="Click to View">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span *ngIf="item?.type == 'pdf'" class="text-danger">
+                                            <img src="../../../../assets/pdf.svg" alt="PDF Icon" class="icon-size">
+                                        </span>
+                                        <span *ngIf="item?.type == 'excel'" class="text-success">
+                                            <img src="../../../../assets/excel.svg" alt="Excel Icon" class="icon-size">
+                                        </span>
+                                    </div>
+                                    <div class="col">
+                                        <span>{{ item?.fileName }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-3 d-date col-3">
+                                <!-- {{i+1}} -->
+                                <span>{{ item?.modifiedAt | date: "yyyy-MM-dd" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 text-center mb-3" *ngIf="loadMoreData">
+        <button class="btn lmBtn" (click)="getData()">
+            <span class="material-icons" style="vertical-align: middle">
+                refresh
+            </span>
+            <span class="ms-1">Load More</span>
+        </button>
+    </div>
+    <div class="backArrow" *ngIf="loadMoreData" [ngClass]="{ 'blinker': isBlinking === true }">
+        <span class="p-2 lmBtn" role="button" (click)="getToTop()">
+            <mat-icon style="vertical-align: middle;">arrow_upward</mat-icon>
+        </span>
+    </div>
+</div>
+<!--
+<div class="row">
+    <div class="col-sm-12">
+        <router-outlet></router-outlet>
+    </div>
+</div> -->

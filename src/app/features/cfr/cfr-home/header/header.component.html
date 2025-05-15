@@ -1,5 +1,5 @@
 <section class="section-background">
-  <div class="container d-flex flex-column justify-content-around" style="min-height: 90vh;">
+  <div class="container d-flex flex-column justify-content-around" style="min-height: 83vh">
     <div class="text-center">
       <h2 class="fw-bold mt-4">City Finance Ranking 2022</h2>
       <p>
@@ -21,10 +21,13 @@
     </div>
 
     <div class="">
-      <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3" [routerLink]="['/cfr/top-rankings']">
+      <button id="view_ranking" type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto mb-3"
+        [routerLink]="['/cfr/top-rankings']"
+        (click)="gaService.trackEvent('View Ranking button clicked', 'CFR Home Page')">
         View Ranking
       </button>
-      <button type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto">
+      <button id="download_report" type="button" class="d-block btn btn-cfPrimary fw-bold mx-auto"
+        (click)="openUserInfoDialog()">
         <i class="bi bi-download me-1"></i>
         Download Report
       </button>
@@ -33,7 +36,7 @@
     <div class="cursor-pointer d-flex justify-content-center">
       <button class="text-center text-cfPrimary btn" (click)="scrollOnePageDown()">
         Explore more <br />
-        <img width="100px" src="./assets/fiscal-rankings/down-arrow.gif" alt="down-arrow">
+        <img width="100px" src="./assets/fiscal-rankings/down-arrow.gif" alt="down-arrow" />
       </button>
     </div>
   </div>

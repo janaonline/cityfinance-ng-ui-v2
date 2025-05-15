@@ -1,18 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, } from '@angular/router';
-import { Filter, FiscalRankingService, FrFilter, Table } from '../services/fiscal-ranking.service';
+import { Filter, FiscalRankingService, FrFilter } from '../services/fiscal-ranking.service';
 
 import Swal from 'sweetalert2';
 import { MaterialModule } from '../../../material.module';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { CommonTableComponent } from '../common-table/common-table.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
+import { Table, TableResponse } from '../services/common-table.interface';
 @Component({
   selector: 'app-participating-ulbs',
   templateUrl: './participating-ulbs.component.html',
   styleUrls: ['./participating-ulbs.component.scss'],
   standalone: true,
-  imports: [CommonTableComponent, MaterialModule, BreadcrumbComponent, MatCommonTableComponent],
+  imports: [MaterialModule, BreadcrumbComponent, MatCommonTableComponent],
 })
 export class ParticipatingUlbsComponent implements OnInit {
   stateId!: string;
@@ -59,13 +59,14 @@ export class ParticipatingUlbsComponent implements OnInit {
   targetExtension: string = 'pdf';
   table: Table = {
     endpoint: 'scoring-fr/ulbs',
-    response: null,
+    response: {} as TableResponse,
     info: "Note: The '-' sign denotes data that has not been submitted on the portal."
   };
 
   isLoadingResults = false;
 
   ngOnInit(): void {
+
     this.selectedStateId = <string>this.route.snapshot.paramMap.get('stateId');
     console.log('this.selectedStateId', this.selectedStateId);
 

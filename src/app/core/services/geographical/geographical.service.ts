@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { FeatureCollection, Geometry } from 'geojson';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import * as topo from 'topojson';
+// import * as topo from 'topojson';
 import { IRawIndiaGEOData } from '../../models/geoDatas/india';
 
 @Injectable({
@@ -21,7 +21,8 @@ export class GeographicalService {
     // if (this.rawIndiaMapCached.value) return this.rawIndiaMapCached;
 
     return this._http
-      .get<IRawIndiaGEOData>("/assets/jsonFile/india_v2.json")
+      // .get<IRawIndiaGEOData>("/assets/jsonFile/india_v2.json")
+      .get<IRawIndiaGEOData>("/assets/jsonFile/state_boundaries_24Jan2024.json")
       .pipe(
         map((response) => {
           this.rawIndiaMapCached.next(response);
@@ -31,11 +32,12 @@ export class GeographicalService {
   }
 
   loadConvertedIndiaGeoData() {
-    return this.loadRawIndiaGeoData().pipe(
-      map((rawData) => {
-        return topo.feature(rawData, rawData.objects.india);
-      })
-    );
+    return this.loadRawIndiaGeoData();
+    // return this.loadRawIndiaGeoData().pipe(
+    //   map((rawData) => {
+    //     return topo.feature(rawData, rawData.objects.india);
+    //   })
+    // );
   }
 
   loadStatesGeoData(): Observable<

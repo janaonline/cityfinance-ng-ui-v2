@@ -29,12 +29,13 @@ export const routes: Routes = [
   //     // Add other protected routes here
   //   ],
   // },
-  {
-    path: '',
-    // redirectTo: 'cfr',
-    // pathMatch: 'full',
-    loadChildren: () => import('./features/cfr/cfr.routes').then((mod) => mod.CFR_ROUTES),
-  },
+
+  // {
+  //   path: '',
+  //   // redirectTo: 'cfr',
+  //   // pathMatch: 'full',
+  //   loadChildren: () => import('./features/cfr/cfr.routes').then((mod) => mod.CFR_ROUTES),
+  // },
   {
     path: 'xvifc-form',
     loadComponent: () =>
@@ -50,6 +51,28 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: '',
+    children: [
+      {
+        path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+      },
+      {
+        path: "own-revenue-dashboard",
+        loadChildren: () =>
+          import("./features/pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
+            (m) => m.OwnRevenueDashboardModule
+          ),
+      },
+      {
+        path: "resources-dashboard",
+        loadChildren: () =>
+          import("./features/pages/resources-dashboard/resources-dashboard.module").then(
+            (m) => m.ResourcesDashboardModule
+          ),
+      },
+    ],
   },
   // {
   //     path: '',
