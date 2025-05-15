@@ -14,7 +14,7 @@ export const tabsJson = {
         key: 'demographicData',
         icon: '',
         formType: 'form1',
-        label: 'Demographic Data test',
+        label: 'Demographic Data',
         id: 's1',
         displayPriority: 1,
         __v: 0,
