@@ -10,6 +10,7 @@
     "dev": "ng serve --configuration=development --port 4300",
     "start": "ng serve",
     "build": "ng build --base-href /fc/",
+    "build1": "ng build",
     "build:stats": "ng build --stats-json",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
