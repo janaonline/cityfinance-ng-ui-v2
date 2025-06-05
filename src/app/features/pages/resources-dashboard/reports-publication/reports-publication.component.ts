@@ -4,11 +4,10 @@ import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import { CommonService } from '../../../../core/services/common.service';
 import { ResourcesDashboardService } from '../resources-dashboard.service';
 @Component({
-  selector: 'app-reports-publication',
-  templateUrl: './reports-publication.component.html',
-  styleUrls: ['./reports-publication.component.css'],
-  standalone: true,
-  imports: [CommonModule, ToStorageUrlPipe]
+    selector: 'app-reports-publication',
+    templateUrl: './reports-publication.component.html',
+    styleUrls: ['./reports-publication.component.css'],
+    imports: [CommonModule, ToStorageUrlPipe]
 })
 export class ReportsPublicationComponent implements OnInit {
   learningCount: any

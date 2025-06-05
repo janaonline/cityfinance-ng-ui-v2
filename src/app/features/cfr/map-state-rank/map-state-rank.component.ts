@@ -20,11 +20,10 @@ export interface Marker {
 }
 
 @Component({
-  selector: 'app-map-state-rank',
-  standalone: true,
-  imports: [],
-  templateUrl: './map-state-rank.component.html',
-  styleUrl: './map-state-rank.component.scss',
+    selector: 'app-map-state-rank',
+    imports: [],
+    templateUrl: './map-state-rank.component.html',
+    styleUrl: './map-state-rank.component.scss'
 })
 export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   @Input() markers: Marker[] = [];

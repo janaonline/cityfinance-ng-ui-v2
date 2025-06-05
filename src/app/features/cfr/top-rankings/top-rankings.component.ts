@@ -17,21 +17,20 @@ import { MapStateRankComponent } from '../map-state-rank/map-state-rank.componen
 import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.component';
 
 @Component({
-  selector: 'app-top-rankings',
-  templateUrl: './top-rankings.component.html',
-  styleUrls: ['./top-rankings.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    MaterialModule,
-    BreadcrumbComponent,
-    AngularMultiSelectModule,
-    MatCommonTableComponent,
-    // StatewiseMapComponent,
-    // PreLoaderComponent,
-    LoaderComponent,
-    MapStateRankComponent,
-  ],
+    selector: 'app-top-rankings',
+    templateUrl: './top-rankings.component.html',
+    styleUrls: ['./top-rankings.component.scss'],
+    imports: [
+        CommonModule,
+        MaterialModule,
+        BreadcrumbComponent,
+        AngularMultiSelectModule,
+        MatCommonTableComponent,
+        // StatewiseMapComponent,
+        // PreLoaderComponent,
+        LoaderComponent,
+        MapStateRankComponent,
+    ]
 })
 export class TopRankingsComponent implements OnInit {
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();

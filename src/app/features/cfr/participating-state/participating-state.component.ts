@@ -11,19 +11,18 @@ import { FiscalRankingService, FrFilter } from '../services/fiscal-ranking.servi
 import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
 
 @Component({
-  selector: 'app-participating-state',
-  templateUrl: './participating-state.component.html',
-  styleUrls: ['./participating-state.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    BreadcrumbComponent,
-    IndiaMapComponent,
-    MatCommonTableComponent,
-    PreLoaderComponent,
-    // StatewiseMapComponent,
-    MapStateRankComponent
-  ],
+    selector: 'app-participating-state',
+    templateUrl: './participating-state.component.html',
+    styleUrls: ['./participating-state.component.scss'],
+    imports: [
+        CommonModule,
+        BreadcrumbComponent,
+        IndiaMapComponent,
+        MatCommonTableComponent,
+        PreLoaderComponent,
+        // StatewiseMapComponent,
+        MapStateRankComponent
+    ]
 })
 export class ParticipatingStateComponent implements OnInit {
   stateType: string = 'All';

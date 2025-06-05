@@ -3,11 +3,10 @@ import { ResourcesDashboardService } from '../../resources-dashboard.service';
 import { MaterialModule } from '../../../../../material.module';
 
 @Component({
-  selector: 'app-municipal-bond-repository',
-  templateUrl: './municipal-bond-repository.component.html',
-  styleUrls: ['./municipal-bond-repository.component.scss'],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: 'app-municipal-bond-repository',
+    templateUrl: './municipal-bond-repository.component.html',
+    styleUrls: ['./municipal-bond-repository.component.scss'],
+    imports: [MaterialModule]
 })
 export class MunicipalBondRepositoryComponent implements OnInit {
   categoryId = null;

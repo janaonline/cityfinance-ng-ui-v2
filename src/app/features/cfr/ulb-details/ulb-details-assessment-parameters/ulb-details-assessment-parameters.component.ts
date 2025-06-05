@@ -5,11 +5,10 @@ import { MaterialModule } from '../../../../material.module';
 import { MatCommonTableComponent } from '../../mat-common-table/mat-common-table.component';
 
 @Component({
-  selector: 'app-ulb-details-assessment-parameters',
-  templateUrl: './ulb-details-assessment-parameters.component.html',
-  styleUrls: ['./ulb-details-assessment-parameters.component.scss'],
-  standalone: true,
-  imports: [MaterialModule, MatCommonTableComponent, RouterModule],
+    selector: 'app-ulb-details-assessment-parameters',
+    templateUrl: './ulb-details-assessment-parameters.component.html',
+    styleUrls: ['./ulb-details-assessment-parameters.component.scss'],
+    imports: [MaterialModule, MatCommonTableComponent, RouterModule]
 })
 export class UlbDetailsAssessmentParametersComponent implements OnInit, OnChanges {
   @Input() tables: any;

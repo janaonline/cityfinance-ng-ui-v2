@@ -9,11 +9,10 @@ export interface BreadcrumbLink {
 }
 
 @Component({
-  selector: 'app-breadcrumb',
-  templateUrl: './breadcrumb.component.html',
-  styleUrls: ['./breadcrumb.component.scss'],
-  standalone: true,
-  imports: [CommonModule, RouterModule],
+    selector: 'app-breadcrumb',
+    templateUrl: './breadcrumb.component.html',
+    styleUrls: ['./breadcrumb.component.scss'],
+    imports: [CommonModule, RouterModule]
 })
 export class BreadcrumbComponent {
 

@@ -5,11 +5,10 @@ import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.componen
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 
 @Component({
-  selector: 'app-statewise-map',
-  standalone: true,
-  imports: [IndiaMapComponent, PreLoaderComponent, CommonModule],
-  templateUrl: './statewise-map.component.html',
-  styleUrl: './statewise-map.component.scss'
+    selector: 'app-statewise-map',
+    imports: [IndiaMapComponent, PreLoaderComponent, CommonModule],
+    templateUrl: './statewise-map.component.html',
+    styleUrl: './statewise-map.component.scss'
 })
 export class StatewiseMapComponent implements OnInit {
 

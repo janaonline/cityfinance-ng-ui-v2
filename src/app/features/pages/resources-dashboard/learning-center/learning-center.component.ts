@@ -5,11 +5,10 @@ import { CommonModule } from "@angular/common";
 import { ResourcesTabsComponent } from "../resources-tabs/resources-tabs.component";
 
 @Component({
-  selector: "app-learning-center",
-  templateUrl: "./learning-center.component.html",
-  styleUrls: ["./learning-center.component.scss"],
-  standalone: true,
-  imports: [CommonModule, RouterModule, ResourcesTabsComponent],
+    selector: "app-learning-center",
+    templateUrl: "./learning-center.component.html",
+    styleUrls: ["./learning-center.component.scss"],
+    imports: [CommonModule, RouterModule, ResourcesTabsComponent]
 })
 export class LearningCenterComponent implements OnInit {
   learningCount: any;

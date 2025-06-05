@@ -2,11 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-ranking-categories',
-  templateUrl: './ranking-categories.component.html',
-  styleUrls: ['./ranking-categories.component.scss'],
-  standalone: true,
-  imports: [CommonModule]
+    selector: 'app-ranking-categories',
+    templateUrl: './ranking-categories.component.html',
+    styleUrls: ['./ranking-categories.component.scss'],
+    imports: [CommonModule]
 })
 export class RankingCategoriesComponent {
 

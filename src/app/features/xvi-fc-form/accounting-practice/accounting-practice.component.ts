@@ -8,11 +8,10 @@ import { RestrictEInputDirective } from '../../../core/directives/restrict-e-inp
 import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
-  selector: 'app-accounting-practice',
-  standalone: true,
-  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, RestrictEInputDirective],
-  templateUrl: './accounting-practice.component.html',
-  styleUrl: './accounting-practice.component.scss',
+    selector: 'app-accounting-practice',
+    imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, RestrictEInputDirective],
+    templateUrl: './accounting-practice.component.html',
+    styleUrl: './accounting-practice.component.scss'
 })
 export class AccountingPracticeComponent {
   @Input() field!: FieldConfig;

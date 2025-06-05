@@ -9,17 +9,16 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 
 @Component({
-  selector: 'app-assessment-parameter',
-  templateUrl: './assessment-parameter.component.html',
-  styleUrls: ['./assessment-parameter.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    BreadcrumbComponent,
-    MatCommonTableComponent,
-    LoaderComponent,
-  ],
+    selector: 'app-assessment-parameter',
+    templateUrl: './assessment-parameter.component.html',
+    styleUrls: ['./assessment-parameter.component.scss'],
+    imports: [
+        CommonModule,
+        FormsModule,
+        BreadcrumbComponent,
+        MatCommonTableComponent,
+        LoaderComponent,
+    ]
 })
 export class AssessmentParameterComponent implements OnInit {
   constructor(

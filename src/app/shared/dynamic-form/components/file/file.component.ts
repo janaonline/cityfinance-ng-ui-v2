@@ -12,11 +12,10 @@ import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-file',
-  standalone: true,
-  imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe],
-  templateUrl: './file.component.html',
-  styleUrl: './file.component.scss',
+    selector: 'app-file',
+    imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe],
+    templateUrl: './file.component.html',
+    styleUrl: './file.component.scss'
 })
 export class FileComponent implements OnInit {
   @Input() field!: FieldConfig;

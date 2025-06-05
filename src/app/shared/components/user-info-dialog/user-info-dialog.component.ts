@@ -13,11 +13,10 @@ import { PreLoaderComponent } from '../pre-loader/pre-loader.component';
 import { DownloadUserInfoService } from './download-user-info.service';
 
 @Component({
-  selector: 'app-user-info-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatInputModule, MatDivider, DynamicFormComponent, InputComponent, PreLoaderComponent],
-  templateUrl: './user-info-dialog.component.html',
-  styleUrl: './user-info-dialog.component.scss'
+    selector: 'app-user-info-dialog',
+    imports: [CommonModule, MatDialogModule, MatInputModule, MatDivider, DynamicFormComponent, InputComponent, PreLoaderComponent],
+    templateUrl: './user-info-dialog.component.html',
+    styleUrl: './user-info-dialog.component.scss'
 })
 export class UserInfoDialogComponent {
   userInfo: FormGroup = new FormGroup({});

@@ -9,11 +9,10 @@ interface Card {
   cardDescription: string;
 }
 @Component({
-  selector: 'app-assessment-parameters',
-  templateUrl: './assessment-parameters.component.html',
-  styleUrls: ['./assessment-parameters.component.scss'],
-  standalone: true,
-  imports: [RouterModule]
+    selector: 'app-assessment-parameters',
+    templateUrl: './assessment-parameters.component.html',
+    styleUrls: ['./assessment-parameters.component.scss'],
+    imports: [RouterModule]
 })
 export class AssessmentParametersComponent {
 

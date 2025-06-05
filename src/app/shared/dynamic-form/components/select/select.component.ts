@@ -3,10 +3,9 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 @Component({
-  selector: 'app-select',
-  standalone: true,
-  imports: [MaterialModule],
-  template: ` <label class="fw-bold" *ngIf="displayLabel && !displayInlineLabel"
+    selector: 'app-select',
+    imports: [MaterialModule],
+    template: ` <label class="fw-bold" *ngIf="displayLabel && !displayInlineLabel"
       >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
       <!-- <span class="text-danger" *ngIf="field.required">*&nbsp;</span> -->
     </label>
@@ -39,7 +38,7 @@ import { MaterialModule } from '../../../../material.module';
     <!-- <mat-form-field class="demo-full-width margin-top" [formGroup]="group.value"><mat-label class="com-style">{{ getValue('label') }}
                                 <span *ngIf="getValue('required')" class="text-danger">*</span><mat-icon style="font-size: 18px" *ngIf="getValue('info')" [matTooltip]="getValue('info')">info_outline
                                 </mat-icon></mat-label><mat-select formControlName="value"><mat-option *ngFor="let opt of getValue('options')" [value]="opt">{{opt}}</mat-option></mat-select></mat-form-field> -->`,
-  styles: [],
+    styles: []
 })
 export class SelectComponent {
   @Input() field!: FieldConfig;

@@ -2,11 +2,10 @@ import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 
 @Component({
-  selector: 'app-ulb-details-header',
-  templateUrl: './ulb-details-header.component.html',
-  styleUrls: ['./ulb-details-header.component.scss'],
-  standalone: true,
-  imports: [MaterialModule],
+    selector: 'app-ulb-details-header',
+    templateUrl: './ulb-details-header.component.html',
+    styleUrls: ['./ulb-details-header.component.scss'],
+    imports: [MaterialModule]
 })
 export class UlbDetailsHeaderComponent implements OnChanges {
   @Input() data: any;

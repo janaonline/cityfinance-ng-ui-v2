@@ -36,24 +36,21 @@ import { FORM_STATUSES } from '../../core/constants/statuses';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
-  selector: 'app-xvi-fc-form',
-  standalone: true,
-  imports: [
-    DynamicFormComponent,
-    MaterialModule,
-
-    // PercentprogressPipe,
-    // AlreadyUpdatedUrlPipe,
-    LoaderComponent,
-
-    YearwiseFilesComponent,
-    AccountingPracticeComponent,
-    ReviewSubmitComponent,
-    RestrictEInputDirective,
-    ReplaceUnderscorePipe,
-  ],
-  templateUrl: './xvi-fc-form.component.html',
-  styleUrl: './xvi-fc-form.component.scss',
+    selector: 'app-xvi-fc-form',
+    imports: [
+        DynamicFormComponent,
+        MaterialModule,
+        // PercentprogressPipe,
+        // AlreadyUpdatedUrlPipe,
+        LoaderComponent,
+        YearwiseFilesComponent,
+        AccountingPracticeComponent,
+        ReviewSubmitComponent,
+        RestrictEInputDirective,
+        ReplaceUnderscorePipe,
+    ],
+    templateUrl: './xvi-fc-form.component.html',
+    styleUrl: './xvi-fc-form.component.scss'
 })
 export class XviFcFormComponent implements OnInit {
   form!: FormGroup;

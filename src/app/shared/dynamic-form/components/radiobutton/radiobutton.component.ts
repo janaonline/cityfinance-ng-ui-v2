@@ -3,10 +3,9 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 @Component({
-  selector: 'app-radiobutton',
-  standalone: true,
-  imports: [MaterialModule],
-  template: ` <div class="demo-full-width margin-top" [formGroup]="group">
+    selector: 'app-radiobutton',
+    imports: [MaterialModule],
+    template: ` <div class="demo-full-width margin-top" [formGroup]="group">
     <div *ngIf="field.label">
       <label class="fw-bold radio-label-padding"
         >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
@@ -22,7 +21,7 @@ import { MaterialModule } from '../../../../material.module';
       </ng-container>
     </mat-radio-group>
   </div>`,
-  styles: ``,
+    styles: ``
 })
 export class RadiobuttonComponent implements OnInit {
   @Input() field!: FieldConfig;

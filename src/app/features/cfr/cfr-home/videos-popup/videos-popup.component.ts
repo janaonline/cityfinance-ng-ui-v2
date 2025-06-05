@@ -4,11 +4,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MaterialModule } from '../../../../material.module';
 
 @Component({
-  selector: 'app-videos-popup',
-  templateUrl: './videos-popup.component.html',
-  styleUrls: ['./videos-popup.component.scss'],
-  standalone: true,
-  imports: [CommonModule, MaterialModule]
+    selector: 'app-videos-popup',
+    templateUrl: './videos-popup.component.html',
+    styleUrls: ['./videos-popup.component.scss'],
+    imports: [CommonModule, MaterialModule]
 })
 export class VideosPopupComponent {
 

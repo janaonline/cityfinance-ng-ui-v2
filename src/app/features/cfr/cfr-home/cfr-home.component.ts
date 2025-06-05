@@ -16,13 +16,12 @@ import { VideosPopupComponent } from './videos-popup/videos-popup.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
-  selector: 'app-cfr-home',
-  standalone: true,
-  imports: [CommonModule, ToStorageUrlPipe, HeaderComponent, UnionMinistorComponent,
-    VideosPopupComponent, ScrollToTopComponent, FooterComponent, RankingCategoriesComponent, AssessmentParametersComponent,
-    UlbsInIndiaComponent, GuidelinesBrochureVideoComponent, PreLoaderComponent],
-  templateUrl: './cfr-home.component.html',
-  styleUrl: './cfr-home.component.scss'
+    selector: 'app-cfr-home',
+    imports: [CommonModule, ToStorageUrlPipe, HeaderComponent, UnionMinistorComponent,
+        VideosPopupComponent, ScrollToTopComponent, FooterComponent, RankingCategoriesComponent, AssessmentParametersComponent,
+        UlbsInIndiaComponent, GuidelinesBrochureVideoComponent, PreLoaderComponent],
+    templateUrl: './cfr-home.component.html',
+    styleUrl: './cfr-home.component.scss'
 })
 export class CfrHomeComponent implements OnInit {
 

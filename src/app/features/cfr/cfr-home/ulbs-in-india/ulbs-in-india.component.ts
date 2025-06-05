@@ -13,18 +13,17 @@ import { MapStateRankComponent } from '../../map-state-rank/map-state-rank.compo
 import { GoogleAnalyticsService } from '../../../../core/services/google-analytics.service';
 
 @Component({
-  selector: 'app-ulbs-in-india',
-  templateUrl: './ulbs-in-india.component.html',
-  styleUrls: ['./ulbs-in-india.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    PreLoaderComponent,
-    IndiaMapComponent,
-    MatCommonTableComponent,
-    RouterModule,
-    MapStateRankComponent,
-  ],
+    selector: 'app-ulbs-in-india',
+    templateUrl: './ulbs-in-india.component.html',
+    styleUrls: ['./ulbs-in-india.component.scss'],
+    imports: [
+        CommonModule,
+        PreLoaderComponent,
+        IndiaMapComponent,
+        MatCommonTableComponent,
+        RouterModule,
+        MapStateRankComponent,
+    ]
 })
 export class UlbsInIndiaComponent implements OnInit, OnChanges {
   @Input() data: any;

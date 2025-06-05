@@ -10,11 +10,10 @@ import { InputComponent } from '../input/input.component';
 import { SelectComponent } from '../select/select.component';
 
 @Component({
-  selector: 'app-child-form',
-  standalone: true,
-  imports: [MaterialModule, InputComponent, ButtonComponent, SelectComponent, DateComponent],
-  templateUrl: './child-form.component.html',
-  styleUrls: ['./child-form.component.css'],
+    selector: 'app-child-form',
+    imports: [MaterialModule, InputComponent, ButtonComponent, SelectComponent, DateComponent],
+    templateUrl: './child-form.component.html',
+    styleUrls: ['./child-form.component.css']
 })
 export class ChildFormComponent {
   @Input() field!: any;

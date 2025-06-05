@@ -13,11 +13,10 @@ import { XviFcService } from '../../../core/services/xvi-fc.service';
  * @title Table retrieving data through HTTP
  */
 @Component({
-  selector: 'table-http-example',
-  templateUrl: './table.component.html',
-  styleUrl: './table.component.scss',
-  standalone: true,
-  imports: [MatProgressSpinnerModule, MatTableModule, MatSortModule, MatPaginatorModule, DatePipe],
+    selector: 'table-http-example',
+    templateUrl: './table.component.html',
+    styleUrl: './table.component.scss',
+    imports: [MatProgressSpinnerModule, MatTableModule, MatSortModule, MatPaginatorModule, DatePipe]
 })
 export class TableComponent implements AfterViewInit {
   displayedColumns: string[] = ['ulbName', 'censusCode'];

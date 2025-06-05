@@ -4,11 +4,10 @@ import { IMapCreationConfig, IStateLayerStyle } from '../../../core/util/map/mod
 import { MapUtil } from '../../../core/util/map/mapUtil';
 import { GeographicalService } from '../../../core/services/geographical/geographical.service';
 @Component({
-  selector: 'app-map',
-  standalone: true,
-  imports: [],
-  templateUrl: './map.component.html',
-  styleUrl: './map.component.scss'
+    selector: 'app-map',
+    imports: [],
+    templateUrl: './map.component.html',
+    styleUrl: './map.component.scss'
 })
 export class MapComponent implements AfterViewInit {
   private map!: L.Map;

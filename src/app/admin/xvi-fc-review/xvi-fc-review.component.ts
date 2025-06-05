@@ -33,21 +33,18 @@ interface Data {
 }
 @Component({
   selector: 'app-xvi-fc-review',
-  standalone: true,
   imports: [
     MaterialModule,
     MatTableModule,
     MatSortModule,
     RouterModule,
     MatProgressSpinnerModule,
-
     MatPaginatorModule,
     ReplaceUnderscorePipe,
     BsDropdownModule,
   ],
-
   templateUrl: './xvi-fc-review.component.html',
-  styleUrl: './xvi-fc-review.component.scss',
+  styleUrl: './xvi-fc-review.component.scss'
 })
 export class XviFcReviewComponent implements AfterViewInit, OnInit {
   stateName: string = '';
@@ -93,7 +90,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     public service: XviFcService,
     private authService: AuthService,
     public approveRejectService: ApproveRejectFormService,
-  ) {}
+  ) { }
   checkUserLoggedIn() {
     this.isLoggedIn = this.authService.loggedIn();
     this.user = this.isLoggedIn ? this.user : null;
@@ -116,16 +113,16 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     this.displayedColumns =
       this.user?.role === USER_TYPE.XVIFC
         ? [
-            'position',
-            'stateName',
-            'ulbName',
-            'censusCode',
-            'ulbCategory',
-            'formStatus',
-            'dataSubmitted',
-            'action',
-            'select',
-          ]
+          'position',
+          'stateName',
+          'ulbName',
+          'censusCode',
+          'ulbCategory',
+          'formStatus',
+          'dataSubmitted',
+          'action',
+          'select',
+        ]
         : ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action', 'select'];
   }
 
@@ -186,7 +183,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
       next: (res: any) => {
         this.stateList = res.data;
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -247,7 +244,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
           const now = new Date();
           const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
           const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-          let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
+          const file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
           const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
 
           FileSaver.saveAs(blob, filename);
@@ -272,10 +269,10 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     this.isAllSelected()
       ? this.selection.clear()
       : this.dataSource?.data.forEach((row) => {
-          if (row.action === 'Review') {
-            this.selection.select(row);
-          }
-        });
+        if (row.action === 'Review') {
+          this.selection.select(row);
+        }
+      });
   }
 
   /**
@@ -284,7 +281,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
    */
   onReview(statusType: string) {
     // let ulbs: string[] = [];
-    let ulbs: string[] = this.selection.selected.map((s) => s.ulbId);
+    const ulbs: string[] = this.selection.selected.map((s) => s.ulbId);
     // console.log('ulbs', ulbs);
     // check if ulb selected
     if (ulbs.length) {
@@ -316,7 +313,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
           const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
           const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
           // let file = this.currentUserRole == 'XVIFC' ? 'XVIFC' : this.userData.name + '_XVIFC';
-          let file =
+          const file =
             this.currentUserRole == 'XVIFC'
               ? 'XVIFC'
               : this.currentUserRole == 'XVIFC_STATE'

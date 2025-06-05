@@ -5,11 +5,10 @@ import { ResourcesDashboardService } from "../resources-dashboard.service";
 import { CommonModule } from "@angular/common";
 
 @Component({
-  selector: "app-resources-tabs",
-  templateUrl: "./resources-tabs.component.html",
-  styleUrls: ["./resources-tabs.component.scss"],
-  standalone: true,
-  imports: [CommonModule, RouterModule]
+    selector: "app-resources-tabs",
+    templateUrl: "./resources-tabs.component.html",
+    styleUrls: ["./resources-tabs.component.scss"],
+    imports: [CommonModule, RouterModule]
 })
 export class ResourcesTabsComponent implements OnInit {
   constructor(

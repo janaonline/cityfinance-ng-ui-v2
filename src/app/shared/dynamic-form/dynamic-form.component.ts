@@ -12,26 +12,24 @@ import { TableComponent } from './components/table/table.component';
 import { MaterialModule } from '../../material.module';
 
 @Component({
-  // exportAs: "dynamicForm",
-  // selector: "dynamic-form",
-  selector: 'app-dynamic-form',
-  standalone: true,
-  templateUrl: './dynamic-form.component.html',
-  imports: [
-    // DynamicFieldDirective,
-    MaterialModule,
-
-    InputComponent,
-    ButtonComponent,
-    SelectComponent,
-    DateComponent,
-    RadiobuttonComponent,
-    CheckboxComponent,
-    ChildFormComponent,
-    TableComponent,
-  ],
-  // styles: []
-  styleUrl: './dynamic-form.component.scss',
+    // exportAs: "dynamicForm",
+    // selector: "dynamic-form",
+    selector: 'app-dynamic-form',
+    templateUrl: './dynamic-form.component.html',
+    imports: [
+        // DynamicFieldDirective,
+        MaterialModule,
+        InputComponent,
+        ButtonComponent,
+        SelectComponent,
+        DateComponent,
+        RadiobuttonComponent,
+        CheckboxComponent,
+        ChildFormComponent,
+        TableComponent,
+    ],
+    // styles: []
+    styleUrl: './dynamic-form.component.scss'
 })
 export class DynamicFormComponent {
   // @Input() field!: FieldConfig;

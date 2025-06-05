@@ -13,11 +13,10 @@ interface Card {
 }
 
 @Component({
-  selector: 'app-guidelines-brochure-video',
-  standalone: true,
-  imports: [CommonModule, MaterialModule],
-  templateUrl: './guidelines-brochure-video.component.html',
-  styleUrl: './guidelines-brochure-video.component.scss',
+    selector: 'app-guidelines-brochure-video',
+    imports: [CommonModule, MaterialModule],
+    templateUrl: './guidelines-brochure-video.component.html',
+    styleUrl: './guidelines-brochure-video.component.scss'
 })
 export class GuidelinesBrochureVideoComponent {
   @Output() onGuidelinesPopup = new EventEmitter();

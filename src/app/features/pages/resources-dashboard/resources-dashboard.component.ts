@@ -8,11 +8,10 @@ import { GlobalLoaderService } from "../../../core/services/loaders/global-loade
 import { ResourcesDashboardService } from "./resources-dashboard.service";
 
 @Component({
-  selector: "app-resources-dashboard",
-  templateUrl: "./resources-dashboard.component.html",
-  styleUrls: ["./resources-dashboard.component.scss"],
-  standalone: true,
-  imports: [],
+    selector: "app-resources-dashboard",
+    templateUrl: "./resources-dashboard.component.html",
+    styleUrls: ["./resources-dashboard.component.scss"],
+    imports: []
 })
 export class ResourcesDashboardComponent implements OnInit, OnDestroy, DoCheck {
   constructor(

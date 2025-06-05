@@ -17,11 +17,10 @@ export enum FileVerifyStatus {
 }
 
 @Component({
-  selector: 'app-yearwise-files',
-  standalone: true,
-  imports: [MaterialModule, FileComponent, ToStorageUrlPipe],
-  templateUrl: './yearwise-files.component.html',
-  styleUrl: './yearwise-files.component.scss',
+    selector: 'app-yearwise-files',
+    imports: [MaterialModule, FileComponent, ToStorageUrlPipe],
+    templateUrl: './yearwise-files.component.html',
+    styleUrl: './yearwise-files.component.scss'
 })
 export class YearwiseFilesComponent {
   @Input() field!: any;

@@ -2,11 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-scroll-to-top',
-  templateUrl: './scroll-to-top.component.html',
-  styleUrls: ['./scroll-to-top.component.scss'],
-  standalone: true,
-  imports: [CommonModule]
+    selector: 'app-scroll-to-top',
+    templateUrl: './scroll-to-top.component.html',
+    styleUrls: ['./scroll-to-top.component.scss'],
+    imports: [CommonModule]
 })
 export class ScrollToTopComponent implements OnInit {
 

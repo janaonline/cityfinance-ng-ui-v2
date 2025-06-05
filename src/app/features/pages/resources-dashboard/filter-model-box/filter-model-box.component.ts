@@ -7,11 +7,10 @@ import { GlobalLoaderService } from '../../../../core/services/loaders/global-lo
 import { MaterialModule } from '../../../../material.module';
 
 @Component({
-  selector: 'app-filter-model-box',
-  templateUrl: './filter-model-box.component.html',
-  styleUrls: ['./filter-model-box.component.scss'],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: 'app-filter-model-box',
+    templateUrl: './filter-model-box.component.html',
+    styleUrls: ['./filter-model-box.component.scss'],
+    imports: [MaterialModule]
 })
 export class FilterModelBoxComponent implements OnInit {
 

@@ -6,12 +6,11 @@ import { NoUpDownDirective } from '../../../../core/directives/no-up-down.direct
 import { DecimalLimitDirective } from '../../../../core/directives/decimal-limit.directive';
 import { RestrictEInputDirective } from '../../../../core/directives/restrict-e-input.directive';
 @Component({
-  selector: 'app-input',
-  standalone: true,
-  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, RestrictEInputDirective],
-  templateUrl: './input.component.html',
-  styles: [
-    `
+    selector: 'app-input',
+    imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, RestrictEInputDirective],
+    templateUrl: './input.component.html',
+    styles: [
+        `
     * {
         font-family: var(--ff-base) !important;
     }
@@ -19,7 +18,7 @@ import { RestrictEInputDirective } from '../../../../core/directives/restrict-e-
         display: block;
         color: orange;
     }`,
-  ],
+    ]
 })
 export class InputComponent {
   className: string = 'box1';
