@@ -1,6 +1,10 @@
-@import "../../../../../node_modules/bootstrap/scss/functions";
-@import "../../../../../node_modules/bootstrap/scss/variables";
-@import "../../../../../node_modules/bootstrap/scss/mixins";
+@import '../../../../../node_modules/bootstrap/scss/functions';
+@import '../../../../../node_modules/bootstrap/scss/variables';
+@import '../../../../../node_modules/bootstrap/scss/mixins';
+
+* {
+  font-family: var(--ff-base);
+}
 
 .text-10px {
   font-size: $font-size-base * 0.625;
@@ -12,10 +16,10 @@
 
 // text sizes
 $text-sizes: (
-  "sm": $font-size-base * 0.75,
-  "rg": $font-size-base,
-  "lg": $font-size-base * 1.25,
-  ) !default;
+  'sm': $font-size-base * 0.75,
+  'rg': $font-size-base,
+  'lg': $font-size-base * 1.25,
+) !default;
 
 @each $size, $value in $text-sizes {
   body.#{$size} {
@@ -24,27 +28,14 @@ $text-sizes: (
 
   .text-#{$size} {
     font-size: $value;
-    @include border-radius($radius: $border-radius-sm,
-      $fallback-border-radius: false
-  );
-  border: $btn-border-width solid #444750;
-  width: 20px;
-  height: 20px;
-  display: inline-flex;
-  vertical-align: middle;
-  line-height: $value;
-  text-align: center;
-  margin-right: $spacer * 0.25;
-  align-items: center;
-  justify-content: center;
-
-  &.active {
-    background: $black;
-    color: $white;
+    width: 1.25rem;
+    height: 1.25rem;
+    line-height: $value;
+    margin-right: $spacer * 0.25;
+    display: inline-flex;
+    vertical-align: middle;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
   }
-}
-}
-
-.textIcon {
-  cursor: pointer;
 }
