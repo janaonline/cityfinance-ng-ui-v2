@@ -1,5 +1,5 @@
 import { CommonModule, ViewportScroller } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+// import {} from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
@@ -14,7 +14,11 @@ import { GtmService } from './core/services/gtm.service';
   imports: [
     CommonModule,
     RouterOutlet,
-    HttpClientModule,
+
+    // TODO: `HttpClientModule` should not be imported into a component directly.
+    // Please refactor the code to add `provideHttpClient()` call to the provider list in the
+    // application bootstrap logic and remove the `HttpClientModule` import from this component.
+    // HttpClientModule,
     FooterComponent,
     HeaderComponent,
   ],
