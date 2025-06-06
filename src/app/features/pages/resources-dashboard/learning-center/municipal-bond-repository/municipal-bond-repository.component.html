@@ -9,15 +9,19 @@
                 <select class="form-select" aria-label="Default select" [(ngModel)]="categoryId"
                   (change)="loadSubCategories(); loadData();">
                   <option [value]="null">Category</option>
-                  <option [value]="category?._id" *ngFor="let category of categories">{{ category?.name }}</option>
+                  @for (category of categories; track category) {
+                    <option [value]="category?._id">{{ category?.name }}</option>
+                  }
                 </select>
               </div>
               <div class="col-lg-2 col-md-2 col-sm-2">
                 <select class="form-select" aria-label="Default select" [(ngModel)]="subCategoryId"
                   (change)="loadData()">
                   <option [value]="null">Sub category</option>
-                  <option [value]="subCategory?._id" *ngFor="let subCategory of subCategories">{{ subCategory?.name }}
-                  </option>
+                  @for (subCategory of subCategories; track subCategory) {
+                    <option [value]="subCategory?._id">{{ subCategory?.name }}
+                    </option>
+                  }
                 </select>
               </div>
               <div class="col-lg-2 col-md-2 col-sm-2">
@@ -45,25 +49,31 @@
 </div>
 
 
-<div class="row" *ngIf="cardData.length > 0">
-  <a href="{{ item?.file.url | toStorageUrl }}" target="_blank" class="col-sm-12 col-md-4 col-lg-3" *ngFor="let item of cardData"
-    style="margin: 1rem 0">
-    <div class="card-body pdf">
-      <div style="position: relative">
-        <pdf-viewer [src]="item?.file?.url | toStorageUrl" [render-text]="false" [show-all]="false"
-          style="display: block; height: 250px" [page]="1" [zoom-scale]="'page-fit'" [original-size]="false">
-        </pdf-viewer>
-      </div>
-      <div class="file-name">{{ item?.file?.name }}</div>
-    </div>
-  </a>
-</div>
-
-<div class="row" *ngIf="cardData.length == 0">
-  <div class="col-sm-12 mb-3">
-    <img class="rounded mx-auto d-block" src="assets/images/sad.svg" />
-    <p class="text-center">
-      No repository found
-    </p>
+@if (cardData.length > 0) {
+  <div class="row">
+    @for (item of cardData; track item) {
+      <a href="{{ item?.file.url | toStorageUrl }}" target="_blank" class="col-sm-12 col-md-4 col-lg-3"
+        style="margin: 1rem 0">
+        <div class="card-body pdf">
+          <div style="position: relative">
+            <pdf-viewer [src]="item?.file?.url | toStorageUrl" [render-text]="false" [show-all]="false"
+              style="display: block; height: 250px" [page]="1" [zoom-scale]="'page-fit'" [original-size]="false">
+            </pdf-viewer>
+          </div>
+          <div class="file-name">{{ item?.file?.name }}</div>
+        </div>
+      </a>
+    }
   </div>
-</div>
+}
+
+@if (cardData.length == 0) {
+  <div class="row">
+    <div class="col-sm-12 mb-3">
+      <img class="rounded mx-auto d-block" src="assets/images/sad.svg" />
+      <p class="text-center">
+        No repository found
+      </p>
+    </div>
+  </div>
+}

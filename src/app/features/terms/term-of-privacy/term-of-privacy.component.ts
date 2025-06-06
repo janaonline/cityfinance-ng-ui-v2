@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
     selector: 'app-term-of-privacy',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './term-of-privacy.component.html',
     styleUrl: './term-of-privacy.component.scss'
 })

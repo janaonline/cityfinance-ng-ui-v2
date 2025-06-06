@@ -1,9 +1,9 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.component';
-import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.component';
+import { ColorDetails } from '../india-map/india-map.component';
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import { Table } from '../services/common-table.interface';
 import { FiscalRankingService, FrFilter } from '../services/fiscal-ranking.service';
@@ -11,18 +11,15 @@ import { FiscalRankingService, FrFilter } from '../services/fiscal-ranking.servi
 import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
 
 @Component({
-    selector: 'app-participating-state',
-    templateUrl: './participating-state.component.html',
-    styleUrls: ['./participating-state.component.scss'],
-    imports: [
-        CommonModule,
-        BreadcrumbComponent,
-        IndiaMapComponent,
-        MatCommonTableComponent,
-        PreLoaderComponent,
-        // StatewiseMapComponent,
-        MapStateRankComponent
-    ]
+  selector: 'app-participating-state',
+  templateUrl: './participating-state.component.html',
+  styleUrls: ['./participating-state.component.scss'],
+  imports: [
+    BreadcrumbComponent,
+    MatCommonTableComponent,
+    PreLoaderComponent,
+    MapStateRankComponent
+  ]
 })
 export class ParticipatingStateComponent implements OnInit {
   stateType: string = 'All';

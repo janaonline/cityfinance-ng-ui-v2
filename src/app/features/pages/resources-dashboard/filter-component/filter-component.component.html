@@ -28,69 +28,80 @@
               <div class="col">
                 <input type="text" class="default-style" placeholder="Search for ULB" matInput formControlName="ulb"
                   [matAutocomplete]="auto">
-                <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-                  <a (click)="filterData('ulb', option)" *ngFor="let option of filteredOptions; let i = index"
-                    style="text-decoration: none">
-                    <mat-option [value]="option?.name">
-                      <span style="font-size: medium"> {{ option?.name }}</span>
-                    </mat-option>
-                  </a>
-                </mat-autocomplete>
-              </div>
+                  <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                    @for (option of filteredOptions; track option; let i = $index) {
+                      <a (click)="filterData('ulb', option)"
+                        style="text-decoration: none">
+                        <mat-option [value]="option?.name">
+                          <span style="font-size: medium"> {{ option?.name }}</span>
+                        </mat-option>
+                      </a>
+                    }
+                  </mat-autocomplete>
+                </div>
 
-              <div class="col" *ngIf="filterInputData?.comp == 'dataSets'">
-                <select name="selectedType" [(ngModel)]="selectedType" (change)="onChangeType($event)"
-                  formControlName="contentType" class="default-style">
-                  <option value="" disabled>File Type</option>
-                  <option *ngFor="let item of cType" [value]="item">
-                    {{ item }}
-                  </option>
-                </select>
-              </div>
+                @if (filterInputData?.comp == 'dataSets') {
+                  <div class="col">
+                    <select name="selectedType" [(ngModel)]="selectedType" (change)="onChangeType($event)"
+                      formControlName="contentType" class="default-style">
+                      <option value="" disabled>File Type</option>
+                      @for (item of cType; track item) {
+                        <option [value]="item">
+                          {{ item }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                }
 
-              <div class="col" *ngIf="
-                filterInputData?.comp == 'bestPractices' ||
-                filterInputData?.comp == 'dataSets' ||
-                filterInputData?.comp == 'report-publications'
-              ">
-                <select name="selectedValue" [(ngModel)]="selectedValue" (change)="onChange($event)"
-                  class="default-style" formControlName="year">
-
-                  <option value="" disabled>Financial Year</option>
-                  <option *ngFor="let item of yearList" [value]="item"> {{ item }} </option>
-                  <!-- <option [value]="item?.code" *ngFor="let item of stateList">{{item?.name}}</option> -->
-                </select>
-              </div>
+                @if (
+                  filterInputData?.comp == 'bestPractices' ||
+                  filterInputData?.comp == 'dataSets' ||
+                  filterInputData?.comp == 'report-publications'
+                  ) {
+                  <div class="col">
+                    <select name="selectedValue" [(ngModel)]="selectedValue" (change)="onChange($event)"
+                      class="default-style" formControlName="year">
+                      <option value="" disabled>Financial Year</option>
+                      @for (item of yearList; track item) {
+                        <option [value]="item"> {{ item }} </option>
+                      }
+                      <!-- <option [value]="item?.code" *ngFor="let item of stateList">{{item?.name}}</option> -->
+                    </select>
+                  </div>
+                }
 
               <div class="col" [ngClass]="{
                               'col-lg-5 col-md-5 col-sm-5':
                                 filterInputData?.comp == 'bestPractices'
                             }">
-                <button (click)="clearAll()" type="button" class="button-custom default-style"
-                  title="Clear selection(s)">
-                  <span class="me-1 d-none d-lg-inline">Clear All</span>
-                  <!-- <i class="bi bi-x-circle fs  -6"></i> -->
-                  <mat-icon>highlight_off</mat-icon>
-                  <!-- <span> Clear All </span>
-                  <span style="padding-left: 6px; width: 12px">
-                    <img src="../../../../assets/new_dashBord_ftr_hdr/cancel.svg" alt="" />
-                  </span> -->
-                </button>
-              </div>
+                  <button (click)="clearAll()" type="button" class="button-custom default-style"
+                    title="Clear selection(s)">
+                    <span class="me-1 d-none d-lg-inline">Clear All</span>
+                    <!-- <i class="bi bi-x-circle fs  -6"></i> -->
+                    <mat-icon>highlight_off</mat-icon>
+                    <!-- <span> Clear All </span>
+                    <span style="padding-left: 6px; width: 12px">
+                      <img src="../../../../assets/new_dashBord_ftr_hdr/cancel.svg" alt="" />
+                    </span> -->
+                  </button>
+                </div>
 
-              <div class="col" *ngIf="downloadValue">
-                <button (click)="initiateDownload()" type="button" class="button-custom default-style"
-                  title="Download reports">
-                  <span class="me-1 d-none d-lg-inline">Download</span>
-                  <!-- <i class="bi bi-download fs-6"></i> -->
-                  <span><mat-icon>save_alt</mat-icon></span>
-                </button>
-              </div>
+                @if (downloadValue) {
+                  <div class="col">
+                    <button (click)="initiateDownload()" type="button" class="button-custom default-style"
+                      title="Download reports">
+                      <span class="me-1 d-none d-lg-inline">Download</span>
+                      <!-- <i class="bi bi-download fs-6"></i> -->
+                      <span><mat-icon>save_alt</mat-icon></span>
+                    </button>
+                  </div>
+                }
 
+              </div>
             </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>

@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { NavigationEnd, Router } from '@angular/router';
 import { CommonService } from '../../../core/services/common.service';
 @Component({
     selector: 'app-footer',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './footer.component.html',
     styleUrl: './footer.component.scss'
 })

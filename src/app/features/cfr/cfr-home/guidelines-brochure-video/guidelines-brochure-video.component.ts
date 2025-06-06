@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, EventEmitter, Output } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 
@@ -14,7 +14,7 @@ interface Card {
 
 @Component({
     selector: 'app-guidelines-brochure-video',
-    imports: [CommonModule, MaterialModule],
+    imports: [MaterialModule],
     templateUrl: './guidelines-brochure-video.component.html',
     styleUrl: './guidelines-brochure-video.component.scss'
 })

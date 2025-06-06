@@ -18,10 +18,10 @@ import { MaterialModule } from "../../../../material.module";
 import { FilterModelBoxComponent } from "../filter-model-box/filter-model-box.component";
 import { ResourcesDashboardService } from "../resources-dashboard.service";
 @Component({
-    selector: "app-filter-component",
-    templateUrl: "./filter-component.component.html",
-    styleUrls: ["./filter-component.component.scss"],
-    imports: [MaterialModule]
+  selector: "app-filter-component",
+  templateUrl: "./filter-component.component.html",
+  styleUrls: ["./filter-component.component.scss"],
+  imports: [MaterialModule]
 })
 export class FilterComponentComponent implements OnInit, OnChanges {
   @Output() filterFormData = new EventEmitter<any>();

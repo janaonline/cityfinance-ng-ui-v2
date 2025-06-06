@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,12 +13,11 @@ import { FiscalRankingService } from '../services/fiscal-ranking.service';
     templateUrl: './assessment-parameter.component.html',
     styleUrls: ['./assessment-parameter.component.scss'],
     imports: [
-        CommonModule,
-        FormsModule,
-        BreadcrumbComponent,
-        MatCommonTableComponent,
-        LoaderComponent,
-    ]
+    FormsModule,
+    BreadcrumbComponent,
+    MatCommonTableComponent,
+    LoaderComponent
+]
 })
 export class AssessmentParameterComponent implements OnInit {
   constructor(

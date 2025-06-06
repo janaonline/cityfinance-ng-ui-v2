@@ -1,14 +1,14 @@
 import { Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { ResourcesDashboardService } from "../resources-dashboard.service";
-import { CommonModule } from "@angular/common";
+
 import { ResourcesTabsComponent } from "../resources-tabs/resources-tabs.component";
 
 @Component({
     selector: "app-learning-center",
     templateUrl: "./learning-center.component.html",
     styleUrls: ["./learning-center.component.scss"],
-    imports: [CommonModule, RouterModule, ResourcesTabsComponent]
+    imports: [RouterModule, ResourcesTabsComponent]
 })
 export class LearningCenterComponent implements OnInit {
   learningCount: any;

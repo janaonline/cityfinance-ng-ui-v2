@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { MaterialModule } from '../../../material.module';
 
@@ -6,7 +6,7 @@ import { MaterialModule } from '../../../material.module';
     selector: 'app-loader',
     templateUrl: './loader.component.html',
     styleUrls: ['./loader.component.scss'],
-    imports: [CommonModule, MaterialModule]
+    imports: [MaterialModule]
 })
 export class LoaderComponent {
   colorSequence = ['success', 'danger', 'warning', 'info'];

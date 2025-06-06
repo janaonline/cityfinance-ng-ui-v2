@@ -1,17 +1,20 @@
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb mt-3">
-    <ng-container *ngFor="let link of links; let lastLink = last">
-      <li *ngIf="!lastLink" title="{{ link.label }}" class="breadcrumb-item text-truncate">
-        <a [routerLink]="link.url">{{ link.label }}</a>
-      </li>
-      <li
-        *ngIf="lastLink"
-        title="{{ link.label }}"
-        class="breadcrumb-item text-secondary text-truncate"
-        aria-current="page"
-      >
-        {{ link.label }}
-      </li>
-    </ng-container>
+    @for (link of links; track link; let lastLink = $last) {
+      @if (!lastLink) {
+        <li title="{{ link.label }}" class="breadcrumb-item text-truncate">
+          <a [routerLink]="link.url">{{ link.label }}</a>
+        </li>
+      }
+      @if (lastLink) {
+        <li
+          title="{{ link.label }}"
+          class="breadcrumb-item text-secondary text-truncate"
+          aria-current="page"
+          >
+          {{ link.label }}
+        </li>
+      }
+    }
   </ol>
 </nav>

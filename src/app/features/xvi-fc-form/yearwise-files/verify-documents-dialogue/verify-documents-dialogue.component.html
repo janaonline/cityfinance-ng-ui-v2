@@ -5,31 +5,32 @@
 </div>
 <mat-dialog-content>
   <div class="border border-secondary-subtle rounded px-4 bg-light">
-    <div
-      class="d-flex align-items-center py-3 border-bottom border-light-subtle"
-      *ngFor="let file of data.field.fileAlreadyOnCf"
-    >
-      <div class="flex-shrink-0">
-        <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i>
-      </div>
-      <div class="flex-grow-1 ms-3">
-        <p class="text-dark">{{ file.name }}</p>
-        <p>
-          <small class="text-secondary">{{ file.size }}</small>
-        </p>
-      </div>
-      <div>
-        <a
-          class="ms-2 primary-btn-2"
-          style="text-decoration: none"
-          [href]="file.url | toStorageUrl"
-          target="_blank"
+    @for (file of data.field.fileAlreadyOnCf; track file) {
+      <div
+        class="d-flex align-items-center py-3 border-bottom border-light-subtle"
         >
-          <i class="bi bi-download text-cfPrimary fs-5"></i>
-          Download
-        </a>
+        <div class="flex-shrink-0">
+          <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i>
+        </div>
+        <div class="flex-grow-1 ms-3">
+          <p class="text-dark">{{ file.name }}</p>
+          <p>
+            <small class="text-secondary">{{ file.size }}</small>
+          </p>
+        </div>
+        <div>
+          <a
+            class="ms-2 primary-btn-2"
+            style="text-decoration: none"
+            [href]="file.url | toStorageUrl"
+            target="_blank"
+            >
+            <i class="bi bi-download text-cfPrimary fs-5"></i>
+            Download
+          </a>
+        </div>
       </div>
-    </div>
+    }
   </div>
   <div class="py-4">
     <ul class="text-dark">
@@ -41,7 +42,7 @@
     </ul>
     <div
       class="d-flex justify-content-center p-2 bg-cfPrimary bg-opacity-10 border border-cfPrimary border-start-0 border-end-0 mb-3"
-    >
+      >
       <app-radiobutton [field]="verifyStatus" [group]="getVerifyFormGroup()"></app-radiobutton>
     </div>
     @if (getVerifyStatus() === 3) {
@@ -91,6 +92,6 @@
     </div>
   </div>
   <!-- <pre>{{getVerifyFormGroup().getRawValue() | json}}</pre>
-    getFormGroup
-    <pre>{{getFormGroup().getRawValue() | json}}</pre> -->
+  getFormGroup
+  <pre>{{getFormGroup().getRawValue() | json}}</pre> -->
 </mat-dialog-content>

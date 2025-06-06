@@ -6,21 +6,29 @@ import { MaterialModule } from '../../../../material.module';
     selector: 'app-radiobutton',
     imports: [MaterialModule],
     template: ` <div class="demo-full-width margin-top" [formGroup]="group">
-    <div *ngIf="field.label">
-      <label class="fw-bold radio-label-padding"
-        >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
-        <!-- <span class="text-danger">*&nbsp;</span> -->
-      </label>
-    </div>
-    <mat-radio-group [formControlName]="field.key">
-      <mat-radio-button *ngFor="let opt of options" [value]="opt.id || opt" color="primary">{{
-        opt.label || opt
-      }}</mat-radio-button>
-      <ng-container *ngFor="let validation of field.validations" ngProjectAs="mat-error">
-        <mat-error *ngIf="hasError(field.key, validation.name)">{{ validation.message }}</mat-error>
-      </ng-container>
-    </mat-radio-group>
-  </div>`,
+      @if (field.label) {
+        <div>
+          <label class="fw-bold radio-label-padding"
+            >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
+            <!-- <span class="text-danger">*&nbsp;</span> -->
+          </label>
+        </div>
+      }
+      <mat-radio-group [formControlName]="field.key">
+        @for (opt of options; track opt) {
+          <mat-radio-button [value]="opt.id || opt" color="primary">{{
+            opt.label || opt
+          }}</mat-radio-button>
+        }
+        @for (validation of field.validations; track validation) {
+          <ng-container ngProjectAs="mat-error">
+            @if (hasError(field.key, validation.name)) {
+              <mat-error>{{ validation.message }}</mat-error>
+            }
+          </ng-container>
+        }
+      </mat-radio-group>
+    </div>`,
     styles: ``
 })
 export class RadiobuttonComponent implements OnInit {

@@ -9,37 +9,41 @@
       </p>
 
       <form>
-        <div *ngFor="let option of types" class="fs-5 mb-3">
-          <input style="height: 1.5rem; width: 1.5rem; vertical-align: middle" class="cursor-pointer me-2" type="radio"
-            name="filterType" [(ngModel)]="type" [id]="option.id + 'chart'" [value]="option.id"
-            (change)="createChart()" />
-          <label class="cursor-pointer" [for]="option.id + 'chart'">
-            {{ option.label }}
-          </label>
+        @for (option of types; track option) {
+          <div class="fs-5 mb-3">
+            <input style="height: 1.5rem; width: 1.5rem; vertical-align: middle" class="cursor-pointer me-2" type="radio"
+              name="filterType" [(ngModel)]="type" [id]="option.id + 'chart'" [value]="option.id"
+              (change)="createChart()" />
+              <label class="cursor-pointer" [for]="option.id + 'chart'">
+                {{ option.label }}
+              </label>
+            </div>
+          }
+        </form>
+
+        <div class="d-flex gap-4 my-5">
+          <button class="primary-btn-1 d-flex" (click)="openFilter()">
+            Filter <i class="material-icons">filter_alt</i>
+          </button>
+          <button class="primary-btn-2" (click)="reset()">Reset</button>
         </div>
-      </form>
-
-      <div class="d-flex gap-4 my-5">
-        <button class="primary-btn-1 d-flex" (click)="openFilter()">
-          Filter <i class="material-icons">filter_alt</i>
-        </button>
-        <button class="primary-btn-2" (click)="reset()">Reset</button>
       </div>
-    </div>
 
-    <!-- Graph -->
-    <div class="col-12 col-md-6">
-      <div class="chart-container">
-        @if (isPreLoader) {
-        <app-pre-loader></app-pre-loader>
-        <app-pre-loader></app-pre-loader>
+      <!-- Graph -->
+      <div class="col-12 col-md-6">
+        <div class="chart-container">
+          @if (isPreLoader) {
+            <app-pre-loader></app-pre-loader>
+            <app-pre-loader></app-pre-loader>
+          }
+          <canvas id="bar-chart-with-line">{{ chart }}</canvas>
+        </div>
+        @if (hasNonBucketUlb) {
+          <p class="text-danger text-end">
+            <small>🔴 The ULB selected does not fall under {{ bucketShortName }} or
+            {{ ulb.statePartCat }}</small>
+          </p>
         }
-        <canvas id="bar-chart-with-line">{{ chart }}</canvas>
       </div>
-      <p class="text-danger text-end" *ngIf="hasNonBucketUlb">
-        <small>🔴 The ULB selected does not fall under {{ bucketShortName }} or
-          {{ ulb.statePartCat }}</small>
-      </p>
     </div>
-  </div>
-</section>
+  </section>

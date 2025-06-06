@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 // import { CommonModule } from '@angular/common';
 // import { tabsJson } from './formJson';
@@ -10,9 +10,9 @@ import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.com
 // import { USER_TYPE } from '../../core/models/user/userType';
 // import { StatusType } from './services/fiscal-ranking.service';
 import { MatStepper } from '@angular/material/stepper';
-import { UserUtility } from '../../core/util/user/user';
-import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
 import Swal from 'sweetalert2';
+import { ReplaceUnderscorePipe } from '../../core/pipes/replace-underscore-pipe';
+import { UserUtility } from '../../core/util/user/user';
 
 // import { Tab, APPROVAL_TYPES } from '../../core/models/models';
 // import { AlreadyUpdatedUrlPipe } from '../../core/pipes/already-updated-url.pipe';
@@ -23,34 +23,32 @@ import Swal from 'sweetalert2';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 // import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
+import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 import { AccountingPracticeComponent } from './accounting-practice/accounting-practice.component';
 import { ReviewSubmitComponent } from './review-submit/review-submit.component';
 import { YearwiseFilesComponent } from './yearwise-files/yearwise-files.component';
-import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 // import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
-import { XviFcService } from '../../core/services/xvi-fc.service';
-import { RestrictEInputDirective } from '../../core/directives/restrict-e-input.directive';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { FORM_STATUSES } from '../../core/constants/statuses';
+import { XviFcService } from '../../core/services/xvi-fc.service';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
-    selector: 'app-xvi-fc-form',
-    imports: [
-        DynamicFormComponent,
-        MaterialModule,
-        // PercentprogressPipe,
-        // AlreadyUpdatedUrlPipe,
-        LoaderComponent,
-        YearwiseFilesComponent,
-        AccountingPracticeComponent,
-        ReviewSubmitComponent,
-        RestrictEInputDirective,
-        ReplaceUnderscorePipe,
-    ],
-    templateUrl: './xvi-fc-form.component.html',
-    styleUrl: './xvi-fc-form.component.scss'
+  selector: 'app-xvi-fc-form',
+  imports: [
+    DynamicFormComponent,
+    MaterialModule,
+    // PercentprogressPipe,
+    // AlreadyUpdatedUrlPipe,
+    LoaderComponent,
+    YearwiseFilesComponent,
+    AccountingPracticeComponent,
+    ReviewSubmitComponent,
+    ReplaceUnderscorePipe,
+  ],
+  templateUrl: './xvi-fc-form.component.html',
+  styleUrl: './xvi-fc-form.component.scss'
 })
 export class XviFcFormComponent implements OnInit {
   form!: FormGroup;

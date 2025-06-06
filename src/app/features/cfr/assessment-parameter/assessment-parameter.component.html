@@ -1,4 +1,6 @@
-<app-loader *ngIf="isLoadingResults"></app-loader>
+@if (isLoadingResults) {
+  <app-loader></app-loader>
+}
 <div class="container bg-img">
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
@@ -8,10 +10,12 @@
       aria-label="assestParametersDropdown"
       [(ngModel)]="pageKey"
       (change)="setPageKey($event)"
-    >
-      <option *ngFor="let item of assestParameters?.data" [value]="item?.key">
-        {{ item?.label }}
-      </option>
+      >
+      @for (item of assestParameters?.data; track item) {
+        <option [value]="item?.key">
+          {{ item?.label }}
+        </option>
+      }
     </select>
   </section>
 
@@ -28,10 +32,12 @@
       <div class="my-4">
         <h6 class="fw-bold fs-3 text-cfSecondary mb-3">{{ parameterData?.scoringInfo?.header }}</h6>
         <div class="row">
-          <div class="col-6 mb-2" *ngFor="let elem of parameterData?.scoringInfo?.items">
-            <p class="fw-bold fs-3">{{ elem?.value }}</p>
-            <p>{{ elem?.title }}</p>
-          </div>
+          @for (elem of parameterData?.scoringInfo?.items; track elem) {
+            <div class="col-6 mb-2">
+              <p class="fw-bold fs-3">{{ elem?.value }}</p>
+              <p>{{ elem?.title }}</p>
+            </div>
+          }
         </div>
       </div>
     </div>

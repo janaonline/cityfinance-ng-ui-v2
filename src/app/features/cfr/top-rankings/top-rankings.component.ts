@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -21,16 +21,13 @@ import { SearchPopupComponent } from '../ulb-details/search-popup/search-popup.c
     templateUrl: './top-rankings.component.html',
     styleUrls: ['./top-rankings.component.scss'],
     imports: [
-        CommonModule,
-        MaterialModule,
-        BreadcrumbComponent,
-        AngularMultiSelectModule,
-        MatCommonTableComponent,
-        // StatewiseMapComponent,
-        // PreLoaderComponent,
-        LoaderComponent,
-        MapStateRankComponent,
-    ]
+    MaterialModule,
+    BreadcrumbComponent,
+    AngularMultiSelectModule,
+    MatCommonTableComponent,
+    LoaderComponent,
+    MapStateRankComponent
+]
 })
 export class TopRankingsComponent implements OnInit {
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();

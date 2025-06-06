@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component } from '@angular/core';
 
 @Component({
     selector: 'app-ranking-categories',
     templateUrl: './ranking-categories.component.html',
     styleUrls: ['./ranking-categories.component.scss'],
-    imports: [CommonModule]
+    imports: []
 })
 export class RankingCategoriesComponent {
 

@@ -1,31 +1,37 @@
 <mat-expansion-panel [expanded]="panelOpenState">
-  <mat-expansion-panel-header *ngIf="field.key !== 'commonPrimaryKey'">
-    <mat-panel-title>
-      {{ field.label }}
-    </mat-panel-title>
-  </mat-expansion-panel-header>
+  @if (field.key !== 'commonPrimaryKey') {
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        {{ field.label }}
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+  }
   <div class="table-responsive" [formGroup]="group">
     <!-- <pre>{{group.getRawValue() |json}}</pre> -->
     <table class="table table-sticky table-hover">
       <tbody>
         <!-- <tr>
-                    <th class="first-col">
-                    </th>
-                    <th *ngFor="let year of yearFields;let j = index;">
-                        FY {{year}}
-                    </th>
-                </tr> -->
-        <tr *ngFor="let row of field.data; let i = index" [ngClass]="row.class">
+        <th class="first-col">
+        </th>
+        <th *ngFor="let year of yearFields;let j = index;">
+          FY {{year}}
+        </th>
+      </tr> -->
+      @for (row of field.data; track row; let i = $index) {
+        <tr [ngClass]="row.class">
           <!-- <td align="right">
-                        {{row.position ? row.position+'.':''}}
-                    </td> -->
-          <td class="first-col" [ngClass]="row.class">
-            <span align="right">{{ row.position ? row.position + '.' : '' }}&nbsp;</span>
-            {{ row.label }}
-            <!-- <span class="text-danger" *ngIf="row.required">*&nbsp;</span> -->
-            <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{ row.info }}"></i>
-          </td>
-          <td *ngFor="let col of row.year; let j = index">
+          {{row.position ? row.position+'.':''}}
+        </td> -->
+        <td class="first-col" [ngClass]="row.class">
+          <span align="right">{{ row.position ? row.position + '.' : '' }}&nbsp;</span>
+          {{ row.label }}
+          <!-- <span class="text-danger" *ngIf="row.required">*&nbsp;</span> -->
+          @if (row.info) {
+            <i class="bi bi-info-circle fs-7 me-1" matTooltip="{{ row.info }}"></i>
+          }
+        </td>
+        @for (col of row.year; track col; let j = $index) {
+          <td>
             <!-- {{row.readonly| json}}------- -->
             @if (['amount', 'number'].includes(col.formFieldType)) {
               <!-- {{row.validations | json}} -->
@@ -46,29 +52,31 @@
               {{ col.label }}
             }
           </td>
-        </tr>
-      </tbody>
-    </table>
-    <!-- <table class="table" [formArrayName]="field.key">
-            <tbody>
-                <tr *ngFor="let row of field.data;let i = index;" [formGroupName]="i" [ngClass]="row.class">
-                    <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
-                            *ngIf="row.required">*&nbsp;</span>
-                        <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
-                    </td>
-                    <td *ngFor="let col of row.year;let j = index;" [formArrayName]="row.key">
-                        @if (['amount', 'number'].includes(col.formFieldType)) {
-                        <app-input [field]="col" [group]="getTableGroup(field.key, i, row.key, j)"
-                            [displayLabel]="false"></app-input>
-                        } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
-                        <app-select [field]="col" [options]="row.options"
-                            [group]="getTableGroup(field.key, i, row.key, j)" [displayLabel]="false"></app-select>
-                        } @else if (col.formFieldType === 'heading') {
-                        {{col.label}}
-                        }
-                    </td>
-                </tr>
-            </tbody>
-        </table> -->
-  </div>
+        }
+      </tr>
+    }
+  </tbody>
+</table>
+<!-- <table class="table" [formArrayName]="field.key">
+<tbody>
+  <tr *ngFor="let row of field.data;let i = index;" [formGroupName]="i" [ngClass]="row.class">
+    <td class="first-col">{{row.position ? row.position+'. ':''}}{{row.label}}<span class="text-danger"
+    *ngIf="row.required">*&nbsp;</span>
+    <i class="bi bi-info-circle fs-7 me-1" *ngIf="row.info" matTooltip="{{row.info}}"></i>
+  </td>
+  <td *ngFor="let col of row.year;let j = index;" [formArrayName]="row.key">
+    @if (['amount', 'number'].includes(col.formFieldType)) {
+      <app-input [field]="col" [group]="getTableGroup(field.key, i, row.key, j)"
+      [displayLabel]="false"></app-input>
+    } @else if (['select', 'dropdown'].includes(col.formFieldType)) {
+      <app-select [field]="col" [options]="row.options"
+      [group]="getTableGroup(field.key, i, row.key, j)" [displayLabel]="false"></app-select>
+    } @else if (col.formFieldType === 'heading') {
+      {{col.label}}
+    }
+  </td>
+</tr>
+</tbody>
+</table> -->
+</div>
 </mat-expansion-panel>

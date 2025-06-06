@@ -2,13 +2,13 @@ import { Component, Input, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { ResourcesServicesService } from "../resDashboard-services/resources-services.service";
 import { ResourcesDashboardService } from "../resources-dashboard.service";
-import { CommonModule } from "@angular/common";
+
 
 @Component({
     selector: "app-resources-tabs",
     templateUrl: "./resources-tabs.component.html",
     styleUrls: ["./resources-tabs.component.scss"],
-    imports: [CommonModule, RouterModule]
+    imports: [RouterModule]
 })
 export class ResourcesTabsComponent implements OnInit {
   constructor(
