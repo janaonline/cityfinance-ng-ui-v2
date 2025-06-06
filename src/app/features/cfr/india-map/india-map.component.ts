@@ -34,10 +34,10 @@ export interface Marker {
 }
 
 @Component({
-    selector: 'app-india-map',
-    templateUrl: './india-map.component.html',
-    styleUrls: ['./india-map.component.scss'],
-    imports: [MaterialModule, NationalHeatMapComponent, PreLoaderComponent]
+  selector: 'app-india-map',
+  templateUrl: './india-map.component.html',
+  styleUrls: ['./india-map.component.scss'],
+  imports: [MaterialModule, PreLoaderComponent]
 })
 export class IndiaMapComponent extends NationalHeatMapComponent implements AfterViewInit {
   @Output() onStateChange = new EventEmitter();
