@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CollapseModule } from 'ngx-bootstrap/collapse';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
@@ -11,6 +18,7 @@ import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
 import { UserUtility } from '../../../core/util/user/user';
+import { UserInfoDialogComponent } from '../user-info-dialog/user-info-dialog.component';
 
 @Component({
   selector: 'app-navbar',
@@ -20,6 +28,56 @@ import { UserUtility } from '../../../core/util/user/user';
   styleUrl: './navbar.component.scss',
 })
 export class NavbarComponent implements OnInit, AfterViewInit {
+  public readonly loginTypes = [
+    { key: '15thFC', type: 'XV FC Grant' },
+    { key: 'XVIFC', type: 'XVI FC Data Collection' },
+    { key: 'ranking', type: 'Rankings 2022' },
+  ];
+  readonly readonlyEmails = ['doe@cityfinance.in', 'cca-mohua@gov.in'];
+  public isNavbarOpen: boolean = false;
+
+  toggleNavbar() {
+    this.isNavbarOpen = !this.isNavbarOpen;
+  }
+
+  homeHeaderService: any;
+  utilityService: any;
+  globalLoaderService: any;
+  dialog: any;
+  isReadonlyUser(): boolean {
+    if (this.user?.email) return !this.readonlyEmails.includes(this.user?.email);
+    return false;
+  }
+
+  public showRequestDemoPopup(): void {
+    // Frontend config flags for handling the module.
+    const moduleInfo = {
+      saveToLocalStorage: false,
+      endPoint: 'request-demo/getDemoForm',
+    };
+    const downloadInfo = { module: 'requestDemo' }; // Info about the file download for backend payload.
+    const dialogRef = this.dialog.open(UserInfoDialogComponent, {
+      data: { downloadInfo, moduleInfo },
+    });
+
+    dialogRef.afterClosed().subscribe((data: unknown) => {
+      if (data) {
+        this.globalLoaderService.showLoader();
+        this.homeHeaderService.submitDemoData(data).subscribe({
+          next: () => {
+            this.utilityService.swalPopup('Sucess!', "We'll get back to you shortly!", 'success');
+            this.globalLoaderService.stopLoader();
+          },
+          error: (error: any) => {
+            this.globalLoaderService.stopLoader();
+            console.error('Error in updating request demo data: ', error);
+            this.utilityService.swalPopup('Failed to submit data!', error?.error?.message, 'error');
+          },
+        });
+      }
+    });
+  }
+
   private accessChecker = new AccessChecker();
   isProd: boolean = false;
   canViewUserList: boolean = false;
@@ -35,12 +93,16 @@ export class NavbarComponent implements OnInit, AfterViewInit {
 
   menus: any = [
     {
-      name: `<img src="./assets/images/city-finance-ranking.png"/>`,
-      class: 'navbar-brand cityLogo',
-      href: `${this.prefixUrl}/cfr/home`,
+      key: 'cfr_logo',
+      name: 'City Finance Rankings',
+      imgUrl: '../../../../assets/images/city-finance-ranking.png',
+      class: '',
+      href: `${this.prefixUrl}/rankings/home`,
     },
     {
+      key: 'dashboards',
       name: 'Dashboard',
+      id: 'dashboardDropdown',
       href: '',
       child: [
         { name: 'National Performance', href: '/dashboard/national/61e150439ed0e8575c881028' },
@@ -50,8 +112,33 @@ export class NavbarComponent implements OnInit, AfterViewInit {
         { name: 'Municipal Budgets', href: '/municipal-budgets' },
       ],
     },
-
-    { name: 'Resources', href: '/resources-dashboard/data-sets/income_statement' },
+    {
+      key: 'resources_section',
+      name: 'Resources',
+      href: '/resources-dashboard/data-sets/income_statement',
+    },
+    {
+      key: 'logins',
+      name: `15th FC Grants`,
+      id: 'loginDropdown',
+      href: '/fc-home-page',
+      child: [
+        { href: '#', name: "Rankings'22 Form" },
+        { href: '/cfr/review-rankings-ulbform', name: "Rankings'22 Dashboard" },
+        { href: '#', name: 'XVIFC Data Collection' },
+        { href: '/admin/xvi-fc-review', name: `Review XVI FC` },
+      ],
+    },
+    // {
+    //   name: 'User Manual',
+    //   href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
+    //   target: '_blank',
+    // },
+    {
+      key: 'users_section',
+      name: 'Users',
+      href: '/user/list/ULB',
+    },
   ];
 
   constructor(
@@ -67,6 +154,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   checkUserLoggedIn() {
     this.isLoggedIn = this.authService.loggedIn();
     this.user = this.isLoggedIn ? this.user : null;
+    this.isLoggedIn = false;
 
     this.initializeAccessChecking();
 
@@ -84,11 +172,13 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     if (!this.user) {
       return;
     }
-    const role = this.user ? this.user.role : '';
+    const role = this.user?.role;
     this.menus = [
-      // ...this.menus,
-      // (role === USER_TYPE.PMU && { name: 'State resources', href: '/mohua-form/state-resource-manager' }),
-      // (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: '15<sup>th</sup> FC Grants', href: '/fc-home-page' }),
+      ...this.menus,
+      this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && {
+        name: '15<sup>th</sup> FC Grants',
+        href: '/fc-home-page',
+      },
       role === USER_TYPE.ULB && { name: `XVI FC Data Collection`, link: '/xvifc-form' },
       role === USER_TYPE.ULB && {
         name: `User Manual`,
@@ -99,8 +189,14 @@ export class NavbarComponent implements OnInit, AfterViewInit {
         name: `Review XVI FC`,
         link: '/admin/xvi-fc-review',
       },
-      // (this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && { name: `Rankings'22 Dashboard`, href: '/cfr/review-rankings-ulbform' }),
-      // (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: 'Users', href: '/user/list/ULB' }),
+      this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && {
+        name: `Rankings'22 Dashboard`,
+        href: '/cfr/review-rankings-ulbform',
+      },
+      this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && {
+        name: 'Users',
+        href: '/user/list/ULB',
+      },
     ];
   }
 
@@ -136,34 +232,32 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     sessionStorage.setItem('sessionID', sessionID || '');
     if (postLoginNavigation) sessionStorage.setItem('postLoginNavigation', postLoginNavigation);
   }
-  @HostListener('window:scroll', ['$event'])
-  handleScroll() {
-    const windowScroll = window.pageYOffset;
-    if (windowScroll >= 50) {
-      this.sticky = true;
-    } else {
-      this.sticky = false;
-    }
-  }
-  scroll() {
-    window.scrollTo({
-      top: 1000,
+  // @HostListener('window:scroll', ['$event'])
+  // handleScroll() {
+  //   const windowScroll = window.pageYOffset;
+  //   if (windowScroll >= 50) {
+  //     this.sticky = true;
+  //   } else {
+  //     this.sticky = false;
+  //   }
+  // }
+  // scroll() {
+  //   window.scrollTo({
+  //     top: 1000,
 
-      behavior: 'smooth',
-    });
-  }
+  //     behavior: 'smooth',
+  //   });
+  // }
 
   loginLogout(type: string) {
     localStorage.setItem('loginType', type);
     if (type == '15thFC') {
       // this._router.navigateByUrl("/fc_grant");
       window.location.href = '/fc_grant';
-    }
-    else if (type == 'XVIFC') {
+    } else if (type == 'XVIFC') {
       // this._router.navigateByUrl("/login/xvi-fc");
       window.location.href = '/login/xvi-fc';
-    }
-    else if (type == 'ranking') {
+    } else if (type == 'ranking') {
       // this._router.navigateByUrl("/rankings/login");
       window.location.href = '/rankings/login';
     } else if (type == 'logout') {
@@ -175,7 +269,6 @@ export class NavbarComponent implements OnInit, AfterViewInit {
       // this._router.navigateByUrl("rankings/home");
       window.location.href = '/';
     }
-
   }
 
   loginLogout_bkp(type: string) {
@@ -207,19 +300,38 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     // }
   }
 
-  isSticky = false;
-  public screenHeight: any;
-  elementPosition!: number;
-  @ViewChild('stickyMenu') menuElement: ElementRef | undefined;
-  ngAfterViewInit() {
-    this.elementPosition = this.menuElement?.nativeElement.offsetTop;
+  get isSmallDesktop(): boolean {
+    const width = window.innerWidth;
+    return width >= 990 && width <= 1200;
   }
-  @HostListener('window:scroll', ['$event'])
-  handleScrollTop() {
-    if (window.scrollY >= this.elementPosition) {
-      this.isSticky = true;
-    } else {
-      this.isSticky = false;
+
+  isSticky = false;
+  private elementPosition = 0;
+  private ticking = false;
+
+  @ViewChild('stickyMenu') menuElement?: ElementRef;
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      if (this.menuElement) {
+        this.elementPosition = this.menuElement.nativeElement.offsetTop;
+      }
+    });
+  }
+
+  @HostListener('window:scroll')
+  onScroll(): void {
+    if (!this.ticking) {
+      window.requestAnimationFrame(() => {
+        this.updateStickyState();
+        this.ticking = false;
+      });
+      this.ticking = true;
     }
+  }
+
+  private updateStickyState(): void {
+    if (!this.menuElement) return;
+    this.isSticky = window.scrollY >= this.elementPosition;
   }
 }

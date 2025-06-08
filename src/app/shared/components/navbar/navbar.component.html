@@ -1,104 +1,191 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-white py-0 shadow-sm p-3 mb-2 bg-body" #stickyMenu
-  [ngClass]="{ 'stiky-tp': isSticky }">
-  <div class="container" style="max-width: 94%">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
-      (click)="isCollapsed = !isCollapsed">
-      <!-- <button
-    class="navbar-toggle collapsed" (click)="isCollapsed = !isCollapsed" aria-expanded="false"
-    > -->
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <!-- <a class="navbar-brand" href="#" [ngClass]="sticky ? 'show' : ''">
-    <span class="city">city</span>
-    <span class="fy">finance.in</span>
-</a> -->
-    <a class="navbar-brand" href="/home" [ngClass]="sticky ? 'show' : ''">
-      <!-- <img src="../../../../assets/M FIGMA/city-finance-ranking.png" alt=""> -->
-      <span class="city" style="font-size: 2rem">city</span>
-      <span class="fy" style="font-size: 2rem; color: #1d5290; font-weight: bold">finance</span>
+<nav class="shadow-lg p-2" #stickyMenu [class.sticky]="isSticky">
+  <div
+    class="px-0 d-flex justify-content-between align-items-center gap-3"
+    [ngClass]="isNavbarOpen ? 'flex-column nav-mobile-view' : 'container flex-lg-row'"
+  >
+    <!-- CF logo -->
+    <a href="/home" class="text-decoration-none">
+      <span class="fw-bold fs-2 text-shadow-custom text-info">city</span>
+      <span class="fw-bold fs-2 text-shadow-custom text-cfSecondary">finance</span>
     </a>
-    <div class="collapse navbar-collapse me-3" [collapse]="isCollapsed">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        @for (menu of menus; track menu.name) {
-        @if (menu.child?.length) {
-        <li class="nav-item dropdown" dropdown>
-          <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" aria-controls="dropdown-basic"
-            dropdownToggle>
-            {{ menu.name }}
+
+    <div
+      class="d-lg-flex align-items-center gap-1"
+      [ngClass]="
+        isNavbarOpen
+          ? 'flex-column d-flex justify-content-start '
+          : 'justify-content-end flex-lg-row d-none'
+      "
+    >
+      @for (item of menus; track $index) {
+        @if (item?.['child']?.length) {
+          <div class="btn-group dropdown" dropdown>
+            <!-- Primary button (main action) -->
+            <a
+              type="button"
+              class="btn btn-link text-decoration-none nav-ele-style"
+              [routerLink]="item['href']"
+              [attr.aria-details]="item['key']"
+            >
+              {{ item['name'] }}
+            </a>
+
+            <!-- Dropdown toggle button -->
+            <button
+              type="button"
+              class="btn btn-link dropdown-toggle dropdown-toggle-split nav-ele-style p-0"
+              dropdownToggle
+              [id]="item['id']"
+              [attr.aria-details]="item['key']"
+              aria-expanded="false"
+              aria-haspopup="true"
+            >
+              <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+
+            <!-- Dropdown menu -->
+            <ul
+              class="dropdown-menu dropdown-menu-end p-1"
+              *dropdownMenu
+              [attr.aria-labelledby]="item['id']"
+            >
+              @for (child of item['child']; track $index) {
+                <li>
+                  <a
+                    class="dropdown-item rounded"
+                    [routerLink]="child['href']"
+                    [attr.aria-details]="item['key']"
+                  >
+                    {{ child['name'] }}
+                  </a>
+                </li>
+                @if ($index !== item['child'].length - 1) {
+                  <li class="dropdown-divider m-0"></li>
+                }
+              }
+            </ul>
+          </div>
+        } @else {
+          <a
+            class="nav-link nav-ele-style"
+            routerLinkActive="active"
+            [routerLink]="item['href']"
+            [target]="item['target']"
+          >
+            @if (item?.['imgUrl']) {
+              <img [src]="item['imgUrl']" alt="{{ item['name'] }}" style="height: 28px" />
+            } @else {
+              {{ item['name'] }}
+            }
           </a>
-          <ul class="dropdown-menu" id="dropdown-basic" *dropdownMenu>
-            <li *ngFor="let childMenu of menu.child">
-              <a class="dropdown-item" [attr.href]="childMenu.href">{{ childMenu.name }}</a>
+        }
+      }
+      <!-- Request Demo -->
+      <button
+        class="btn btn-outline-cfPrimary fw-bold text-truncate m-2"
+        [ngStyle]="{
+          'max-width': isSmallDesktop && !isNavbarOpen ? '4.375rem' : '10.35rem',
+        }"
+        title="Request a Demo"
+        (click)="showRequestDemoPopup()"
+      >
+        Request a Demo
+      </button>
+      <!-- Logged-in/ Logged-out view -->
+      @if (isLoggedIn) {
+        <div class="btn-group dropdown button-2" dropdown>
+          <button
+            class="btn btn-cfPrimary px-2 py-1 dropdown-toggle"
+            id="button-disabled-menu"
+            type="button"
+            role="button"
+            dropdownToggle
+            aria-controls="dropdown-disabled-menu"
+          >
+            <i class="bi bi-person-circle fs-5"></i>
+            <span class="caret"></span>
+          </button>
+
+          <ul
+            id="dropdown-disabled-menu"
+            *dropdownMenu
+            class="dropdown-menu dropdown-menu-end p-2"
+            role="menu"
+            aria-labelledby="button-disabled-menu"
+          >
+            <!-- User Info -->
+            <li role="none" class="px-2 py-1">
+              <p class="text-center mb-0 fw-semibold">{{ user?.name }}</p>
+              <p class="text-center text-muted small mb-0">{{ user?.email }}</p>
+            </li>
+
+            <!-- Divider -->
+            <li class="divider dropdown-divider m-0"></li>
+
+            <!-- Profile -->
+            <li role="none" *ngIf="user?.role !== 'PMU'">
+              <a class="dropdown-item text-center rounded" routerLink="/user/profile/view"
+                >Profile</a
+              >
+            </li>
+
+            <!-- Divider -->
+            <li class="divider dropdown-divider m-0"></li>
+
+            <!-- Logout Button -->
+            <li role="none">
+              <button
+                type="button"
+                class="dropdown-item text-center rounded"
+                (click)="loginLogout('logout')"
+              >
+                Logout
+              </button>
             </li>
           </ul>
-        </li>
-        } @else {
-        <li class="btn-group" [ngClass]="!menu.class ? 'nav-item' : ''">
-          <a class="nav-link" [ngClass]="menu.class" [routerLink]="menu.link" [innerHTML]="menu.name"
-            *ngIf="menu.link"></a>
-          <a class="nav-link" [ngClass]="menu.class" [attr.href]="menu.href" [innerHTML]="menu.name" *ngIf="menu.href"
-            [target]="menu.target"></a>
-        </li>
-        }
-        }
-      </ul>
-    </div>
-    <div class="ms-auto">
-      <div class="dropdown" *ngIf="!isLoggedIn" dropdown>
-        <button class="primary-btn-1 dropdown-toggle fw-bold" type="button" id="loginDrp" role="button"
-          aria-controls="dropdown-basic" dropdownToggle>
-          Login
-        </button>
-        <ul class="dropdown-menu dropdown-menu-login" *dropdownMenu aria-labelledby="loginDrp" style="left: -7px">
-          <li>
-            <a class="dropdown-item" (click)="loginLogout('15thFC')" href="javascript:;">
-              <i class="bi bi-box-arrow-in-right"></i> XV FC Grant
-            </a>
-          </li>
-          <hr class="m-0" />
-          <li>
-            <a class="dropdown-item" (click)="loginLogout('XVIFC')" href="javascript:;">
-              <i class="bi bi-box-arrow-in-right"></i> XVI FC Data Collection
-            </a>
-          </li>
-          <hr class="m-0" />
-          <li>
-            <a class="dropdown-item" (click)="loginLogout('ranking')" href="javascript:;">
-              <i class="bi bi-box-arrow-in-right"></i> Rankings 2022
-            </a>
-          </li>
-        </ul>
-      </div>
-      <div class="btn-group ms-2 dropdown" dropdown *ngIf="isLoggedIn">
-        <button id="button-disabled-menu" dropdownToggle type="button" class="btn btn-login-icon dropdown-toggle"
-          aria-controls="dropdown-disabled-menu">
-          <!-- <span class="material-icons"> account_circle </span> -->
-          <i class="bi bi-person-circle fs-4 text-white"></i>
-          <span class="caret"></span>
-        </button>
+        </div>
+      } @else {
+        <div class="dropdown m-2" dropdown [autoClose]="true">
+          <button
+            class="dropdown-toggle btn btn-cfPrimary fw-bold"
+            id="loginDrp"
+            type="button"
+            dropdownToggle
+            aria-controls="dropdown-basic"
+            aria-expanded="true"
+          >
+            Login
+          </button>
 
-        <ul id="dropdown-disabled-menu" *dropdownMenu class="dropdown-menu" role="menu"
-          aria-labelledby="button-disabled-menu" style="margin-left: -7rem">
-          <li role="menuitem" style="padding: 0 1rem" class="mb-3">
-            <div class="user-avt text-center" style="font-size: 2.5rem">
-              <i class="fa fa-user-circle"></i>
-            </div>
-            <div class="text-center">{{ user?.name }}</div>
-            <div class="mat-card-subtitle text-center" style="font-size: 0.9rem">
-              {{ user?.email }}
-            </div>
-          </li>
-          <li class="divider dropdown-divider"></li>
-          <!-- <li role="menuitem" *ngIf="user?.role !== 'PMU'">
-            <a class="dropdown-item text-center" routerLink="/user/profile/view">Profile</a>
-          </li> -->
-          <li class="divider dropdown-divider"></li>
-          <li role="menuitem">
-            <a class="dropdown-item text-center" (click)="loginLogout('logout')" href="javascript: void()">Logout</a>
-          </li>
-        </ul>
-      </div>
+          <ul class="dropdown-menu dropdown-menu-end p-1" *dropdownMenu aria-labelledby="loginDrp">
+            @for (login of loginTypes; track $index) {
+              <li>
+                <button class="dropdown-item rounded" (click)="loginLogout(login['key'])">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>{{ login['type'] }}
+                </button>
+              </li>
+              <hr class="m-0" />
+            }
+          </ul>
+        </div>
+      }
     </div>
+
+    @if (isNavbarOpen) {
+      <button
+        (click)="toggleNavbar()"
+        class="position-fixed top-0 end-0 m-1 p-1 btn btn-link text-decoration-none text-cfSecondary"
+      >
+        <i class="bi bi-x-lg fs-4 text-cfSecondary"></i>
+      </button>
+    } @else {
+      <!-- Hamburder menu - mobile view -->
+      <button
+        class="d-lg-none px-2 py-1 btn btn-link text-decoration-none text-cfSecondary border border-cfSecondary"
+        (click)="toggleNavbar()"
+      >
+        &#9776;
+      </button>
+    }
   </div>
 </nav>
