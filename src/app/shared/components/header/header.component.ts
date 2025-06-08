@@ -28,7 +28,7 @@ export class HeaderComponent {
   public scrollToMainContent(): void {
     const element = document.getElementById('main-content');
     if (element) {
-      const yOffset = -150;
+      const yOffset = -120;
       const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
 
       window.scrollTo({ top: y, behavior: 'smooth' });
