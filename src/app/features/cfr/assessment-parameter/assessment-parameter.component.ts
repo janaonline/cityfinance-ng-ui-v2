@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,17 +9,15 @@ import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.co
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 
 @Component({
-  selector: 'app-assessment-parameter',
-  templateUrl: './assessment-parameter.component.html',
-  styleUrls: ['./assessment-parameter.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
+    selector: 'app-assessment-parameter',
+    templateUrl: './assessment-parameter.component.html',
+    styleUrls: ['./assessment-parameter.component.scss'],
+    imports: [
     FormsModule,
     BreadcrumbComponent,
     MatCommonTableComponent,
-    LoaderComponent,
-  ],
+    LoaderComponent
+]
 })
 export class AssessmentParameterComponent implements OnInit {
   constructor(

@@ -2,11 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { MaterialModule } from '../../../../../material.module';
 
 @Component({
-  selector: 'app-balance-sheet',
-  templateUrl: './balance-sheet.component.html',
-  styleUrls: ['./balance-sheet.component.scss'],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: 'app-balance-sheet',
+    templateUrl: './balance-sheet.component.html',
+    styleUrls: ['./balance-sheet.component.scss'],
+    imports: [MaterialModule]
 })
 export class BalanceSheetComponent implements OnInit {
 

@@ -1,7 +1,7 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { ScrollToTopComponent } from '../../../shared/components/scroll-to-top/scroll-to-top.component';
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 import { AssessmentParametersComponent } from './assessment-parameters/assessment-parameters.component';
@@ -11,15 +11,11 @@ import { GuidelinesPopupComponent } from './guidelines-popup/guidelines-popup.co
 import { HeaderComponent } from './header/header.component';
 import { RankingCategoriesComponent } from './ranking-categories/ranking-categories.component';
 import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
-import { UnionMinistorComponent } from './union-ministor/union-ministor.component';
 import { VideosPopupComponent } from './videos-popup/videos-popup.component';
-import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
   selector: 'app-cfr-home',
-  standalone: true,
-  imports: [CommonModule, ToStorageUrlPipe, HeaderComponent, UnionMinistorComponent,
-    VideosPopupComponent, ScrollToTopComponent, FooterComponent, RankingCategoriesComponent, AssessmentParametersComponent,
+  imports: [HeaderComponent, ScrollToTopComponent, FooterComponent, RankingCategoriesComponent, AssessmentParametersComponent,
     UlbsInIndiaComponent, GuidelinesBrochureVideoComponent, PreLoaderComponent],
   templateUrl: './cfr-home.component.html',
   styleUrl: './cfr-home.component.scss'

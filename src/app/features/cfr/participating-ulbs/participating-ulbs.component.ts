@@ -8,11 +8,10 @@ import { BreadcrumbComponent, BreadcrumbLink } from '../breadcrumb/breadcrumb.co
 import { MatCommonTableComponent } from '../mat-common-table/mat-common-table.component';
 import { Table, TableResponse } from '../services/common-table.interface';
 @Component({
-  selector: 'app-participating-ulbs',
-  templateUrl: './participating-ulbs.component.html',
-  styleUrls: ['./participating-ulbs.component.scss'],
-  standalone: true,
-  imports: [MaterialModule, BreadcrumbComponent, MatCommonTableComponent],
+    selector: 'app-participating-ulbs',
+    templateUrl: './participating-ulbs.component.html',
+    styleUrls: ['./participating-ulbs.component.scss'],
+    imports: [MaterialModule, BreadcrumbComponent, MatCommonTableComponent]
 })
 export class ParticipatingUlbsComponent implements OnInit {
   stateId!: string;

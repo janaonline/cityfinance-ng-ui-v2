@@ -1,89 +1,123 @@
 <div class="row">
-    <div class="col-sm-12 mt-3">
-        <div class="h">
-            Filters
-        </div>
-        <div class="close">
-            <a (click)="onNoClick()">
-                <img src="../../../../assets/new_dashBord_ftr_hdr/cancel.svg" alt="">
-            </a>
-
-        </div>
+  <div class="col-sm-12 mt-3">
+    <div class="h">
+      Filters
     </div>
-    <div class="col-sm-12 mt-3 mb-3">
-        <form [formGroup]="filterForm">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="row">
-                        <div class="col-sm-12 mb-3" *ngIf="mobileFilterConfig?.isState">
-                            <select class="form-select" id="stateName" aria-label="Default select"
-                                formControlName="stateId" (change)="filterData('state','')">
-                                <option *ngIf="!filterForm.controls.stateId.value" value="" selected hidden>State Name</option>
-                                <option *ngFor="let item of stateList" [value]="item?._id">{{item?.name}}</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 mb-3" *ngIf="mobileFilterConfig?.isUlb">
-                            <input type="text" class="form-control" placeholder="City" matInput formControlName="ulb"
-                                [matAutocomplete]="auto">
-                            <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-                                <a (click)="filterData('ulb',option)" *ngFor="let option of filteredOptions; let i = index;"
-                                    style="text-decoration: none;">
-                                    <mat-option [value]="option?.name">
-                                        <span> {{option?.name}}</span>
-                                    </mat-option>
-                                </a>
-                            </mat-autocomplete>
-                        </div>
-                        <div class="col-sm-12 mb-3" *ngIf="mobileFilterConfig?.isUlbType">
-                            <select formControlName="ulbType" (change)="filterData('ulbType','')" class="form-select">
-                                <option *ngIf="!filterForm.controls.ulbType.value" value="" selected hidden>ULB Type</option>
-                                <option *ngFor="let ulbType of ulbTypeList" [value]="ulbType._id">
-                                    {{ ulbType.name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 mb-3" *ngIf="mobileFilterConfig?.isContentType">
-                            <select formControlName="contentType" (change)="filterData('contentType','')" class="form-select">
-                                <option *ngIf="!filterForm.controls.contentType.value" value="" selected disabled>File Type</option>
-                                <option *ngFor="let item of fileType" [ngValue]="item">{{ item }}</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 mb-3" *ngIf="mobileFilterConfig?.isPopulationCat">
-                            <select (change)="filterData('popCat','')" formControlName="populationCategory"
-                                class="form-select filter">
-                                <option *ngIf="!filterForm.controls.populationCategory.value" value="" selected hidden >ULB Population Category</option>
-                                <option [value]="category" *ngFor="let category of populationCategoryList">
-                                    {{ category }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 mb-3" *ngIf="mobileFilterConfig?.isYear">
-                            <select (change)="filterData('year','')" formControlName="financialYear" class="form-select filter">
-                                <option *ngIf="!filterForm.controls.financialYear.value" value="" selected hidden>Year</option>
-                                <option *ngFor="let year of yearList" [value]="year">
-                                  {{ year }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 mb-3">
-                            <button type="button" class="clearBtn" (click)="clearAll()">
-                                <span style="vertical-align: middle;">
-                                    Clear All
-                                </span>
-                                <span style="padding-left: 6px; width: 12px;">
-                                    <img src="../../../../assets/new_dashBord_ftr_hdr/cancel.svg" alt="">
-                                </span>
+    <div class="close">
+      <a (click)="onNoClick()">
+        <img src="../../../../assets/new_dashBord_ftr_hdr/cancel.svg" alt="">
+      </a>
 
-                            </button>
-                        </div>
-                    </div>
+    </div>
+  </div>
+  <div class="col-sm-12 mt-3 mb-3">
+    <form [formGroup]="filterForm">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="row">
+            @if (mobileFilterConfig?.isState) {
+              <div class="col-sm-12 mb-3">
+                <select class="form-select" id="stateName" aria-label="Default select"
+                  formControlName="stateId" (change)="filterData('state','')">
+                  @if (!filterForm.controls.stateId.value) {
+                    <option value="" selected hidden>State Name</option>
+                  }
+                  @for (item of stateList; track item) {
+                    <option [value]="item?._id">{{item?.name}}</option>
+                  }
+                </select>
+              </div>
+            }
+            @if (mobileFilterConfig?.isUlb) {
+              <div class="col-sm-12 mb-3">
+                <input type="text" class="form-control" placeholder="City" matInput formControlName="ulb"
+                  [matAutocomplete]="auto">
+                  <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                    @for (option of filteredOptions; track option; let i = $index) {
+                      <a (click)="filterData('ulb',option)"
+                        style="text-decoration: none;">
+                        <mat-option [value]="option?.name">
+                          <span> {{option?.name}}</span>
+                        </mat-option>
+                      </a>
+                    }
+                  </mat-autocomplete>
                 </div>
+              }
+              @if (mobileFilterConfig?.isUlbType) {
+                <div class="col-sm-12 mb-3">
+                  <select formControlName="ulbType" (change)="filterData('ulbType','')" class="form-select">
+                    @if (!filterForm.controls.ulbType.value) {
+                      <option value="" selected hidden>ULB Type</option>
+                    }
+                    @for (ulbType of ulbTypeList; track ulbType) {
+                      <option [value]="ulbType._id">
+                        {{ ulbType.name }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              }
+              @if (mobileFilterConfig?.isContentType) {
+                <div class="col-sm-12 mb-3">
+                  <select formControlName="contentType" (change)="filterData('contentType','')" class="form-select">
+                    @if (!filterForm.controls.contentType.value) {
+                      <option value="" selected disabled>File Type</option>
+                    }
+                    @for (item of fileType; track item) {
+                      <option [ngValue]="item">{{ item }}</option>
+                    }
+                  </select>
+                </div>
+              }
+              @if (mobileFilterConfig?.isPopulationCat) {
+                <div class="col-sm-12 mb-3">
+                  <select (change)="filterData('popCat','')" formControlName="populationCategory"
+                    class="form-select filter">
+                    @if (!filterForm.controls.populationCategory.value) {
+                      <option value="" selected hidden >ULB Population Category</option>
+                    }
+                    @for (category of populationCategoryList; track category) {
+                      <option [value]="category">
+                        {{ category }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              }
+              @if (mobileFilterConfig?.isYear) {
+                <div class="col-sm-12 mb-3">
+                  <select (change)="filterData('year','')" formControlName="financialYear" class="form-select filter">
+                    @if (!filterForm.controls.financialYear.value) {
+                      <option value="" selected hidden>Year</option>
+                    }
+                    @for (year of yearList; track year) {
+                      <option [value]="year">
+                        {{ year }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              }
+              <div class="col-sm-12 mb-3">
+                <button type="button" class="clearBtn" (click)="clearAll()">
+                  <span style="vertical-align: middle;">
+                    Clear All
+                  </span>
+                  <span style="padding-left: 6px; width: 12px;">
+                    <img src="../../../../assets/new_dashBord_ftr_hdr/cancel.svg" alt="">
+                  </span>
+
+                </button>
+              </div>
             </div>
-        </form>
+          </div>
+        </div>
+      </form>
     </div>
     <div class="col-sm-12 text-center" style="margin-top: 3rem;">
-        <button class="btn btn-rs" (click)="clearAll()">Reset</button>
-        <button class="btn btn-ap ms-3" (click)="emitFilterData()">Apply</button>
+      <button class="btn btn-rs" (click)="clearAll()">Reset</button>
+      <button class="btn btn-ap ms-3" (click)="emitFilterData()">Apply</button>
     </div>
 
-</div>
+  </div>

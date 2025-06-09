@@ -6,11 +6,10 @@ import { MaterialModule } from '../../../../material.module';
 import { ResourcesDashboardService } from '../resources-dashboard.service';
 
 @Component({
-  selector: 'app-search-bar',
-  standalone: true,
-  imports: [MaterialModule],
-  templateUrl: './search-bar.component.html',
-  styleUrl: './search-bar.component.scss'
+    selector: 'app-search-bar',
+    imports: [MaterialModule],
+    templateUrl: './search-bar.component.html',
+    styleUrl: './search-bar.component.scss'
 })
 export class SearchBarComponent implements OnInit {
 

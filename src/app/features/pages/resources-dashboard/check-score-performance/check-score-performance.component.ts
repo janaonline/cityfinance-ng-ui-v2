@@ -9,11 +9,10 @@ import { CommonService } from '../../../../core/services/common.service';
 import { MaterialModule } from '../../../../material.module';
 
 @Component({
-  selector: "app-check-score-performance",
-  templateUrl: "./check-score-performance.component.html",
-  styleUrls: ["./check-score-performance.component.scss"],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: "app-check-score-performance",
+    templateUrl: "./check-score-performance.component.html",
+    styleUrls: ["./check-score-performance.component.scss"],
+    imports: [MaterialModule]
 })
 export class CheckScorePerformanceComponent implements OnInit {
   constructor(

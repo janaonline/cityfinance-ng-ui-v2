@@ -2,11 +2,10 @@ import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 
 @Component({
-  selector: 'app-performance-four-m',
-  templateUrl: './performance-four-m.component.html',
-  styleUrls: ['./performance-four-m.component.scss'],
-  standalone: true,
-  imports: [MaterialModule],
+    selector: 'app-performance-four-m',
+    templateUrl: './performance-four-m.component.html',
+    styleUrls: ['./performance-four-m.component.scss'],
+    imports: [MaterialModule]
 })
 export class PerformanceFourMComponent implements OnChanges {
   @Input() data: any;

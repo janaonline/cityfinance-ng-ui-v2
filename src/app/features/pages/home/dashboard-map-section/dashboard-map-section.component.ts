@@ -22,11 +22,10 @@ import { ILeafletStateClickEvent } from '../../../../shared/components/re-useabl
 // import { ReUseableHeatMapComponent } from '../../../shared/components/re-useable-heat-map/re-useable-heat-map.component';
 
 @Component({
-  selector: 'app-dashboard-map-section',
-  standalone: true,
-  imports: [MaterialModule, InrCurrencyPipe, PreLoaderComponent],
-  templateUrl: './dashboard-map-section.component.html',
-  styleUrl: './dashboard-map-section.component.scss'
+    selector: 'app-dashboard-map-section',
+    imports: [MaterialModule, InrCurrencyPipe, PreLoaderComponent],
+    templateUrl: './dashboard-map-section.component.html',
+    styleUrl: './dashboard-map-section.component.scss'
 })
 export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   myForm!: FormGroup;

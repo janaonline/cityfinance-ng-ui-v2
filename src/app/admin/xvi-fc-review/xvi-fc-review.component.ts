@@ -33,21 +33,18 @@ interface Data {
 }
 @Component({
   selector: 'app-xvi-fc-review',
-  standalone: true,
   imports: [
     MaterialModule,
     MatTableModule,
     MatSortModule,
     RouterModule,
     MatProgressSpinnerModule,
-
     MatPaginatorModule,
     ReplaceUnderscorePipe,
     BsDropdownModule,
   ],
-
   templateUrl: './xvi-fc-review.component.html',
-  styleUrl: './xvi-fc-review.component.scss',
+  styleUrl: './xvi-fc-review.component.scss'
 })
 export class XviFcReviewComponent implements AfterViewInit, OnInit {
   stateName: string = '';
@@ -95,7 +92,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     private authService: AuthService,
     public approveRejectService: ApproveRejectFormService,
     private utilityService: UtilityService,
-  ) {}
+  ) { }
   checkUserLoggedIn() {
     this.isLoggedIn = this.authService.loggedIn();
     this.user = this.isLoggedIn ? this.user : null;
@@ -118,16 +115,16 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     this.displayedColumns =
       this.user?.role === USER_TYPE.XVIFC
         ? [
-            'position',
-            'stateName',
-            'ulbName',
-            'censusCode',
-            'ulbCategory',
-            'formStatus',
-            'dataSubmitted',
-            'action',
-            'select',
-          ]
+          'position',
+          'stateName',
+          'ulbName',
+          'censusCode',
+          'ulbCategory',
+          'formStatus',
+          'dataSubmitted',
+          'action',
+          'select',
+        ]
         : ['position', 'ulbName', 'censusCode', 'formStatus', 'dataSubmitted', 'action', 'select'];
   }
 
@@ -188,7 +185,7 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
       next: (res: any) => {
         this.stateList = res.data;
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -266,10 +263,10 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
     this.isAllSelected()
       ? this.selection.clear()
       : this.dataSource?.data.forEach((row) => {
-          if (row.action === 'Review') {
-            this.selection.select(row);
-          }
-        });
+        if (row.action === 'Review') {
+          this.selection.select(row);
+        }
+      });
   }
 
   /**

@@ -3,11 +3,10 @@ import { ResourcesDashboardService } from "../../resources-dashboard.service";
 import { MaterialModule } from "../../../../../material.module";
 
 @Component({
-  selector: "app-best-practices",
-  templateUrl: "./best-practices.component.html",
-  styleUrls: ["./best-practices.component.scss"],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: "app-best-practices",
+    templateUrl: "./best-practices.component.html",
+    styleUrls: ["./best-practices.component.scss"],
+    imports: [MaterialModule]
 })
 export class BestPracticesComponent implements OnInit {
   constructor(private resourcesDashboard: ResourcesDashboardService) {

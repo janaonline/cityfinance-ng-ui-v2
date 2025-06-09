@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
@@ -9,11 +9,10 @@ export interface BreadcrumbLink {
 }
 
 @Component({
-  selector: 'app-breadcrumb',
-  templateUrl: './breadcrumb.component.html',
-  styleUrls: ['./breadcrumb.component.scss'],
-  standalone: true,
-  imports: [CommonModule, RouterModule],
+    selector: 'app-breadcrumb',
+    templateUrl: './breadcrumb.component.html',
+    styleUrls: ['./breadcrumb.component.scss'],
+    imports: [RouterModule]
 })
 export class BreadcrumbComponent {
 

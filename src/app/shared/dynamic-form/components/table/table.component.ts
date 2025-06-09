@@ -8,12 +8,11 @@ import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 // import { filter } from 'lodash';
 
 @Component({
-  selector: 'app-table',
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MaterialModule, InputComponent, SelectComponent],
-  templateUrl: './table.component.html',
-  styleUrl: './table.component.scss',
+    selector: 'app-table',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MaterialModule, InputComponent, SelectComponent],
+    templateUrl: './table.component.html',
+    styleUrl: './table.component.scss'
 })
 export class TableComponent {
   @Input() field!: FieldConfig;

@@ -8,11 +8,10 @@ import { CheckScorePerformanceComponent } from "../../check-score-performance/ch
 import { ResourcesServicesService } from "../../resDashboard-services/resources-services.service";
 
 @Component({
-  selector: "app-score-per",
-  templateUrl: "./score-per.component.html",
-  styleUrls: ["./score-per.component.scss"],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: "app-score-per",
+    templateUrl: "./score-per.component.html",
+    styleUrls: ["./score-per.component.scss"],
+    imports: [MaterialModule]
 })
 export class ScorePerComponent implements OnInit, OnChanges {
   stepperScoreDiv = false;

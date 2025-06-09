@@ -16,11 +16,10 @@ import { MaterialModule } from "../../../../material.module";
 import { ReportService } from "../../services/report.service";
 
 @Component({
-  selector: "app-data-sets",
-  templateUrl: "./data-sets.component.html",
-  styleUrls: ["./data-sets.component.css"],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: "app-data-sets",
+    templateUrl: "./data-sets.component.html",
+    styleUrls: ["./data-sets.component.css"],
+    imports: [MaterialModule]
 })
 export class DataSetsComponent implements OnInit {
   learningCount: any;
@@ -515,10 +514,10 @@ export class DataSetsComponent implements OnInit {
 
 // Snackbar Component.
 @Component({
-  selector: 'snack-bar-component',
-  template: `
+    selector: 'snack-bar-component',
+    template: `
     <span>{{data.text}}</span>`,
-  styles: [`
+    styles: [`
     ::ng-deep .mat-snack-bar-container {
         background-color: #fff0e3;
         color: #e87a1c;
@@ -526,6 +525,7 @@ export class DataSetsComponent implements OnInit {
         border-radius: 6px;
         font-family: "Archivo";
     }`],
+    standalone: false
 })
 export class SnackBarComponent {
   constructor(@Inject(MAT_SNACK_BAR_DATA) public data: any) { }  // Inject 'data'

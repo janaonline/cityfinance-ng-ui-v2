@@ -1,5 +1,5 @@
-import { CommonModule, ViewportScroller } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { ViewportScroller } from '@angular/common';
+// import {} from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
@@ -9,17 +9,14 @@ import { HeaderComponent } from './shared/components/header/header.component';
 import { GtmService } from './core/services/gtm.service';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [
-    CommonModule,
+    selector: 'app-root',
+    imports: [
     RouterOutlet,
-    HttpClientModule,
     FooterComponent,
-    HeaderComponent,
-  ],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+    HeaderComponent
+],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
   title = 'Cityfinance';

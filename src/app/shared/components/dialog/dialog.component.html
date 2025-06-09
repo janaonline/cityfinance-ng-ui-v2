@@ -1,43 +1,28 @@
 <p [innerHTML]="data.message"></p>
 
-<button
-  *ngIf="!data.buttons"
-  style="float: right; margin-top: 5px; outline: none"
-  type="button"
-  class="close1 btn btn-primary"
-  (click)="onButtonClick('ok')"
->
+@if (!data.buttons) {
+<button style="float: right; margin-top: 5px; outline: none" type="button" class="close1 btn btn-primary"
+  (click)="onButtonClick('ok')">
   OK
 </button>
+}
 
-<div *ngIf="data.buttons" class="buttonWrapper">
-  <button
-    *ngIf="data.buttons.confirm"
-    style="outline: none"
-    type="button"
-    class="close1 btn btn-primary"
-    (click)="onButtonClick('confirm')"
-  >
-    {{ data.buttons?.confirm?.text }}
+@if (data.buttons) {
+<div class="buttonWrapper">
+  @if (data.buttons.confirm) {
+  <button style="outline: none" type="button" class="close1 btn btn-primary" (click)="onButtonClick('confirm')">
+    {{ data.buttons.confirm.text }}
   </button>
-
-  <button
-    *ngIf="data.buttons.signup"
-    style="outline: none"
-    type="button"
-    class="close1 btn btn-primary"
-    (click)="onButtonClick('signup')"
-  >
-    {{ data.buttons?.['signup']?.text }}
+  }
+  @if (data.buttons['signup']) {
+  <button style="outline: none" type="button" class="close1 btn btn-primary" (click)="onButtonClick('signup')">
+    {{ data.buttons['signup'].text }}
   </button>
-
-  <button
-    *ngIf="data.buttons.cancel"
-    style="outline: none"
-    type="button"
-    class="close1 btn btn-primary"
-    (click)="onButtonClick('cancel')"
-  >
-    {{ data.buttons?.cancel?.text }}
+  }
+  @if (data.buttons.cancel) {
+  <button style="outline: none" type="button" class="close1 btn btn-primary" (click)="onButtonClick('cancel')">
+    {{ data.buttons.cancel.text }}
   </button>
+  }
 </div>
+}

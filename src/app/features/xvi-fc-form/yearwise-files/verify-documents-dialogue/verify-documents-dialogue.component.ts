@@ -17,18 +17,17 @@ export interface DialogData {
 }
 
 @Component({
-  selector: 'app-verify-documents-dialogue',
-  standalone: true,
-  imports: [
-    MaterialModule,
-    FileComponent,
-    InputComponent,
-    RadiobuttonComponent,
-    SelectComponent,
-    ToStorageUrlPipe,
-  ],
-  templateUrl: './verify-documents-dialogue.component.html',
-  styleUrl: './verify-documents-dialogue.component.scss',
+    selector: 'app-verify-documents-dialogue',
+    imports: [
+        MaterialModule,
+        FileComponent,
+        InputComponent,
+        RadiobuttonComponent,
+        SelectComponent,
+        ToStorageUrlPipe,
+    ],
+    templateUrl: './verify-documents-dialogue.component.html',
+    styleUrl: './verify-documents-dialogue.component.scss'
 })
 export class VerifyDocumentsDialogueComponent {
   verifyOptions = [

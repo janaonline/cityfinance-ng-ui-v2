@@ -5,11 +5,10 @@ import { ResourcesServicesService } from '../../resDashboard-services/resources-
 import { ResourcesDashboardService } from '../../resources-dashboard.service';
 
 @Component({
-  selector: "app-dynamic-sub-learning",
-  templateUrl: "./dynamic-sub-learning.component.html",
-  styleUrls: ["./dynamic-sub-learning.component.scss"],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: "app-dynamic-sub-learning",
+    templateUrl: "./dynamic-sub-learning.component.html",
+    styleUrls: ["./dynamic-sub-learning.component.scss"],
+    imports: [MaterialModule]
 })
 export class DynamicSubLearningComponent implements OnInit {
   stateIdsMap: any = JSON.parse(localStorage.getItem("stateIdsMap") || "{}");

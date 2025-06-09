@@ -30,14 +30,15 @@
             aria-label="populationBucket"
             [(ngModel)]="populationBucket"
             (change)="dropDownValueChanges($event.target)"
-          >
-            <option
-              value="{{ item?.value }}"
-              selected
-              *ngFor="let item of populationCategoryFilter"
             >
-              {{ item?.label }}
-            </option>
+            @for (item of populationCategoryFilter; track item) {
+              <option
+                value="{{ item?.value }}"
+                selected
+                >
+                {{ item?.label }}
+              </option>
+            }
           </select>
         </div>
 
@@ -48,10 +49,12 @@
             aria-label="ulbParticipation"
             [(ngModel)]="ulbParticipation"
             (change)="dropDownValueChanges($event.target)"
-          >
-            <option value="{{ item?.value }}" selected *ngFor="let item of ulbParticipationFilter">
-              {{ item?.label }}
-            </option>
+            >
+            @for (item of ulbParticipationFilter; track item) {
+              <option value="{{ item?.value }}" selected>
+                {{ item?.label }}
+              </option>
+            }
           </select>
         </div>
 
@@ -62,10 +65,12 @@
             aria-label="ulbRankingStatusFilter"
             [(ngModel)]="ulbRankingStatus"
             (change)="dropDownValueChanges($event.target)"
-          >
-            <option value="{{ item?.value }}" selected *ngFor="let item of ulbRankingStatusFilter">
-              {{ item?.label }}
-            </option>
+            >
+            @for (item of ulbRankingStatusFilter; track item) {
+              <option value="{{ item?.value }}" selected>
+                {{ item?.label }}
+              </option>
+            }
           </select>
         </div>
       </div>

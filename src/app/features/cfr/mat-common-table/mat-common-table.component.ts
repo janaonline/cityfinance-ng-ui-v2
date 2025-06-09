@@ -11,11 +11,10 @@ import { TableResponse } from '../services/common-table.interface';
 import { isEmpty } from 'lodash-es';
 
 @Component({
-  selector: 'app-mat-common-table',
-  standalone: true,
-  imports: [MatTableModule, MatButtonModule, CommonModule, ToStorageUrlPipe, MaterialModule],
-  templateUrl: './mat-common-table.component.html',
-  styleUrl: './mat-common-table.component.scss',
+    selector: 'app-mat-common-table',
+    imports: [MatTableModule, MatButtonModule, CommonModule, ToStorageUrlPipe, MaterialModule],
+    templateUrl: './mat-common-table.component.html',
+    styleUrl: './mat-common-table.component.scss'
 })
 export class MatCommonTableComponent implements OnChanges {
   @Input() response: TableResponse = {} as TableResponse;

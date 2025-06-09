@@ -3,11 +3,10 @@ import { Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { ResourcesServicesService } from "../../resDashboard-services/resources-services.service";
 @Component({
-  selector: "app-toolkits",
-  templateUrl: "./toolkits.component.html",
-  styleUrls: ["./toolkits.component.scss"],
-  standalone: true,
-  imports: [RouterModule],
+    selector: "app-toolkits",
+    templateUrl: "./toolkits.component.html",
+    styleUrls: ["./toolkits.component.scss"],
+    imports: [RouterModule]
 })
 export class ToolkitsComponent implements OnInit {
   constructor(
