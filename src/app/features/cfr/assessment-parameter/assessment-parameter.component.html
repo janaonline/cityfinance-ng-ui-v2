@@ -1,20 +1,16 @@
 @if (isLoadingResults) {
-  <app-loader></app-loader>
+<app-loader></app-loader>
 }
 <div class="container bg-img">
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
   <section class="d-flex justify-content-end">
-    <select
-      class="p-2 border rounded"
-      aria-label="assestParametersDropdown"
-      [(ngModel)]="pageKey"
-      (change)="setPageKey($event)"
-      >
-      @for (item of assestParameters?.data; track item) {
-        <option [value]="item?.key">
-          {{ item?.label }}
-        </option>
+    <select class="p-2 border rounded" aria-label="assestParametersDropdown" [(ngModel)]="pageKey"
+      (change)="setPageKey($event)">
+      @for (item of assestParameters.data; track item) {
+      <option [value]="item?.key">
+        {{ item?.label }}
+      </option>
       }
     </select>
   </section>
@@ -33,10 +29,10 @@
         <h6 class="fw-bold fs-3 text-cfSecondary mb-3">{{ parameterData?.scoringInfo?.header }}</h6>
         <div class="row">
           @for (elem of parameterData?.scoringInfo?.items; track elem) {
-            <div class="col-6 mb-2">
-              <p class="fw-bold fs-3">{{ elem?.value }}</p>
-              <p>{{ elem?.title }}</p>
-            </div>
+          <div class="col-6 mb-2">
+            <p class="fw-bold fs-3">{{ elem?.value }}</p>
+            <p>{{ elem?.title }}</p>
+          </div>
           }
         </div>
       </div>
@@ -46,9 +42,6 @@
   <section class="mb-5">
     <h4 class="fw-bold fs-4 mb-3">{{ parameterData?.scoringMethodology?.header }}</h4>
     <!-- <p>{{ pageKey }}</p> -->
-    <app-mat-common-table
-      [response]="parameterData.table"
-      [isPagination]="false"
-    ></app-mat-common-table>
+    <app-mat-common-table [response]="parameterData.table" [isPagination]="false"></app-mat-common-table>
   </section>
 </div>
