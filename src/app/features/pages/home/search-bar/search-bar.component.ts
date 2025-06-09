@@ -4,23 +4,59 @@ import { Router } from '@angular/router';
 import { CommonService } from '../../../../core/services/common.service';
 import { MaterialModule } from '../../../../material.module';
 import { ResourcesDashboardService } from '../resources-dashboard.service';
+import { CountUpDirective } from '../../../../core/directives/countup.directive';
+import { debounceTime, distinctUntilChanged, switchMap, of, catchError } from 'rxjs';
 
 @Component({
-    selector: 'app-search-bar',
-    imports: [MaterialModule],
-    templateUrl: './search-bar.component.html',
-    styleUrl: './search-bar.component.scss'
+  selector: 'app-search-bar',
+  // declarations: [],
+  imports: [MaterialModule, CountUpDirective],
+  templateUrl: './search-bar.component.html',
+  styleUrl: './search-bar.component.scss'
 })
 export class SearchBarComponent implements OnInit {
 
   globalFormControl = new FormControl();
   globalOptions = [];
   noDataFound = false;
-  recentSearchArray: any = [];
+  // recentSearchArray: any = [];
   filteredOptions: any = [];
   postBody: any;
   stopNavigation: any
+  coveredUlbCount: number = 0;
 
+  recentSearchArray = [
+    {
+      "isActive": true,
+      "type": "ulb",
+      "__v": 0,
+      "count": 1,
+      "createdAt": "2022-06-18T01:43:12.527Z",
+      "modifiedAt": "2022-06-18T01:43:12.527Z",
+      "name": "Bruhat Bengaluru Mahanagara Palike",
+      "_id": "5f5610b3aab0f778b2d2cac0"
+    },
+    {
+      "isActive": true,
+      "type": "ulb",
+      "__v": 0,
+      "count": 1,
+      "createdAt": "2022-03-30T02:21:07.299Z",
+      "modifiedAt": "2022-03-30T02:21:07.299Z",
+      "name": "Greater Hyderabad Municipal Corporation",
+      "_id": "5eb5844f76a3b61f40ba069a"
+    },
+    {
+      "isActive": true,
+      "type": "ulb",
+      "__v": 0,
+      "count": 1,
+      "createdAt": "2021-12-23T05:30:46.475Z",
+      "modifiedAt": "2021-12-23T05:30:46.475Z",
+      "name": "Greater Mumbai Municipal Corporation",
+      "_id": "5eb5844f76a3b61f40ba0695"
+    }
+  ];
 
   constructor(
     protected _commonService: CommonService,
@@ -42,9 +78,34 @@ export class SearchBarComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadRecentSearchValue();
+    // this.loadRecentSearchValue();
+    this.globaSearch();
 
   }
+
+  globaSearch() {
+    this.globalFormControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((query) => {
+          if (!query || query.trim().length < 2) {
+            this.filteredOptions = [];
+            this.noDataFound = false;
+            return of([]);
+          }
+
+          return this._commonService.postGlobalSearchData(query, "", "")
+            .pipe(catchError(() => of([])));
+        })
+      )
+      .subscribe((res: any) => {
+        console.log('global search data', res.data);
+        this.filteredOptions = res.data || [];
+        this.noDataFound = this.filteredOptions.length === 0;
+      });
+  }
+
   loadRecentSearchValue() {
     this._commonService.getRecentSearchValue().subscribe((res: any) => {
       //  console.log('recent search value', res);

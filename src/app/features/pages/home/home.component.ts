@@ -13,13 +13,13 @@ import { SpotlightComponent } from './spotlight/spotlight.component';
 declare let $: any;
 
 @Component({
-    selector: 'app-home',
-    imports: [CommonModule, RouterModule, DashboardMapSectionComponent,
-        // CountUpDirective, 
-        SlickCarouselModule, MaterialModule,
-        SearchBarComponent, SpotlightComponent],
-    templateUrl: './home.component.html',
-    styleUrl: './home.component.scss'
+  selector: 'app-home',
+  imports: [CommonModule, RouterModule, DashboardMapSectionComponent,
+    // CountUpDirective, 
+    SlickCarouselModule, MaterialModule,
+    SearchBarComponent, SpotlightComponent],
+  templateUrl: './home.component.html',
+  styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
   constructor(
@@ -190,44 +190,44 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
 
 
-    const hUser = $("#countDownUser").data('value');
-    let hUserLess = hUser - 1000;
-    const k = setInterval(function () {
-      if (hUserLess >= hUser) {
-        clearInterval(k);
-      }
-      hUserLess += 10;
-    }, 25);
+    // const hUser = $("#countDownUser").data('value');
+    // let hUserLess = hUser - 1000;
+    // const k = setInterval(function () {
+    //   if (hUserLess >= hUser) {
+    //     clearInterval(k);
+    //   }
+    //   hUserLess += 10;
+    // }, 25);
 
-    this.globalFormControl.valueChanges
-      .subscribe((value) => {
-        if (value.length >= 1) {
-          this._commonService.postGlobalSearchData(value, "", "").subscribe((res: any) => {
-            //    console.log(res?.data);
-            const emptyArr: any = []
-            this.filteredOptions = emptyArr;
-            if (res?.data.length > 0) {
+    // this.globalFormControl.valueChanges
+    //   .subscribe((value) => {
+    //     if (value.length >= 1) {
+    //       this._commonService.postGlobalSearchData(value, "", "").subscribe((res: any) => {
+    //         //    console.log(res?.data);
+    //         const emptyArr: any = []
+    //         this.filteredOptions = emptyArr;
+    //         if (res?.data.length > 0) {
 
-              this.filteredOptions = res?.data;
-              this.noDataFound = false;
-            } else {
+    //           this.filteredOptions = res?.data;
+    //           this.noDataFound = false;
+    //         } else {
 
-              const emptyArr: any = []
-              this.filteredOptions = emptyArr;
-              this.noDataFound = true;
-              const noDataFoundObj = {
-                name: '',
-                id: '',
-                type: '',
-              }
-              //  console.log('no data found')
-            }
-          });
-        }
-        else {
-          return;
-        }
-      })
+    //           const emptyArr: any = []
+    //           this.filteredOptions = emptyArr;
+    //           this.noDataFound = true;
+    //           const noDataFoundObj = {
+    //             name: '',
+    //             id: '',
+    //             type: '',
+    //           }
+    //           //  console.log('no data found')
+    //         }
+    //       });
+    //     }
+    //     else {
+    //       return;
+    //     }
+    //   })
 
 
     this._commonService.dataForVisualizationCount.subscribe((res: any) => {
