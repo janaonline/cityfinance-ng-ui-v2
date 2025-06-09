@@ -3,11 +3,10 @@ import { SlickCarouselModule } from 'ngx-slick-carousel';
 import { MaterialModule } from '../../../../material.module';
 
 @Component({
-  selector: 'app-spotlight',
-  standalone: true,
-  imports: [SlickCarouselModule, MaterialModule],
-  templateUrl: './spotlight.component.html',
-  styleUrl: './spotlight.component.scss'
+    selector: 'app-spotlight',
+    imports: [SlickCarouselModule, MaterialModule],
+    templateUrl: './spotlight.component.html',
+    styleUrl: './spotlight.component.scss'
 })
 export class SpotlightComponent {
 

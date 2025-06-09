@@ -3,11 +3,10 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MaterialModule } from "../../../../../material.module";
 import { ResourcesDashboardService } from "../../resources-dashboard.service";
 @Component({
-  selector: "app-e-learning-module",
-  templateUrl: "./e-learning-module.component.html",
-  styleUrls: ["./e-learning-module.component.scss"],
-  standalone: true,
-  imports: [MaterialModule]
+    selector: "app-e-learning-module",
+    templateUrl: "./e-learning-module.component.html",
+    styleUrls: ["./e-learning-module.component.scss"],
+    imports: [MaterialModule]
 })
 export class ELearningModuleComponent implements OnInit {
   constructor(protected resourcedashboard: ResourcesDashboardService,

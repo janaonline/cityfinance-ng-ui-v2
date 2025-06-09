@@ -25,11 +25,10 @@ interface ChartData {
 // }
 
 @Component({
-  selector: 'app-download-pdf',
-  standalone: true,
-  imports: [MaterialModule, LoaderComponent, PreLoaderComponent],
-  templateUrl: './download-pdf.component.html',
-  styleUrl: './download-pdf.component.scss'
+    selector: 'app-download-pdf',
+    imports: [MaterialModule, LoaderComponent, PreLoaderComponent],
+    templateUrl: './download-pdf.component.html',
+    styleUrl: './download-pdf.component.scss'
 })
 // export class DownloadPdfComponent implements AfterViewInit {
 export class DownloadPdfComponent implements OnInit {

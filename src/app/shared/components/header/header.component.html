@@ -5,18 +5,18 @@
         <div class="col-sm-6 d-flex align-items-center">
           <img src="./assets/images/emblem-of-india.svg" width="16" alt="Emblem of India" srcset=""
             class="indian-emblem me-2" />
-          <span class="text-10px">MINISTRY OF HOUSING AND URBAN AFFAIRS | GOVERNMENT OF INDIA</span>
-        </div>
-        <div class="col-sm-6 text-end">
-          <span class="text-12px me-2"><a (click)="scroll()" href="javascript:void()"
+            <span class="text-10px">MINISTRY OF HOUSING AND URBAN AFFAIRS | GOVERNMENT OF INDIA</span>
+          </div>
+          <div class="col-sm-6 text-end">
+            <span class="text-12px me-2"><a (click)="scroll()" href="javascript:void()"
               class="text-decoration-none text-cfPrimary">Skip
               To Main
-              Content</a>
+            Content</a>
           </span>
-          <ng-container *ngFor="let data of textSize">
+          @for (data of textSize; track data) {
             <span (click)="setFontSize(data)" class="text-{{ data }}
                           textIcon" [ngClass]="currentTextSize === data ? 'active' : ''">A</span>
-          </ng-container>
+          }
         </div>
       </div>
     </div>

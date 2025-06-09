@@ -1,15 +1,14 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input, OnInit } from '@angular/core';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { ColorDetails, IndiaMapComponent } from '../india-map/india-map.component';
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
 
 @Component({
-  selector: 'app-statewise-map',
-  standalone: true,
-  imports: [IndiaMapComponent, PreLoaderComponent, CommonModule],
-  templateUrl: './statewise-map.component.html',
-  styleUrl: './statewise-map.component.scss'
+    selector: 'app-statewise-map',
+    imports: [IndiaMapComponent, PreLoaderComponent],
+    templateUrl: './statewise-map.component.html',
+    styleUrl: './statewise-map.component.scss'
 })
 export class StatewiseMapComponent implements OnInit {
 

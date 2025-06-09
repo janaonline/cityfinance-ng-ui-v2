@@ -9,11 +9,10 @@ import { DialogComponent } from '../../../../shared/components/dialog/dialog.com
 import { FiscalRankingService } from '../../services/fiscal-ranking.service';
 
 @Component({
-  selector: 'app-comparision-filters',
-  templateUrl: './comparision-filters.component.html',
-  styleUrls: ['./comparision-filters.component.scss'],
-  standalone: true,
-  imports: [MaterialModule],
+    selector: 'app-comparision-filters',
+    templateUrl: './comparision-filters.component.html',
+    styleUrls: ['./comparision-filters.component.scss'],
+    imports: [MaterialModule]
 })
 export class ComparisionFiltersComponent implements OnInit {
   @ViewChild(MatMenuTrigger) menuTrigger!: MatMenuTrigger;

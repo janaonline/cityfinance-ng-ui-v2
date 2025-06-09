@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -14,8 +13,7 @@ import { DownloadUserInfoService } from './download-user-info.service';
 
 @Component({
   selector: 'app-user-info-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatInputModule, MatDivider, DynamicFormComponent, InputComponent, PreLoaderComponent],
+  imports: [MatDialogModule, MatInputModule, MatDivider, DynamicFormComponent, InputComponent, PreLoaderComponent],
   templateUrl: './user-info-dialog.component.html',
   styleUrl: './user-info-dialog.component.scss'
 })

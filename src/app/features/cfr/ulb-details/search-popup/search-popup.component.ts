@@ -8,11 +8,10 @@ import { MaterialModule } from '../../../../material.module';
 import { FiscalRankingService } from '../../services/fiscal-ranking.service';
 
 @Component({
-  selector: 'app-search-popup',
-  templateUrl: './search-popup.component.html',
-  styleUrls: ['./search-popup.component.scss'],
-  standalone: true,
-  imports: [MaterialModule],
+    selector: 'app-search-popup',
+    templateUrl: './search-popup.component.html',
+    styleUrls: ['./search-popup.component.scss'],
+    imports: [MaterialModule]
 })
 export class SearchPopupComponent implements OnInit {
 

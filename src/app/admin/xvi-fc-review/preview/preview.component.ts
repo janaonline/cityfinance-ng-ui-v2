@@ -11,11 +11,10 @@ import { FORM_STATUSES } from '../../../core/constants/statuses';
 import { first } from 'rxjs';
 
 @Component({
-  selector: 'app-preview',
-  standalone: true,
-  imports: [MaterialModule, ReviewSubmitComponent, RouterModule],
-  templateUrl: './preview.component.html',
-  styleUrl: './preview.component.scss',
+    selector: 'app-preview',
+    imports: [MaterialModule, ReviewSubmitComponent, RouterModule],
+    templateUrl: './preview.component.html',
+    styleUrl: './preview.component.scss'
 })
 export class PreviewComponent implements OnInit {
   formStatus!: string;

@@ -21,8 +21,7 @@ import { ResourcesDashboardService } from "../resources-dashboard.service";
   selector: "app-filter-component",
   templateUrl: "./filter-component.component.html",
   styleUrls: ["./filter-component.component.scss"],
-  standalone: true,
-  imports: [MaterialModule],
+  imports: [MaterialModule]
 })
 export class FilterComponentComponent implements OnInit, OnChanges {
   @Output() filterFormData = new EventEmitter<any>();

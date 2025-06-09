@@ -1,13 +1,12 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-maintenance',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './maintenance.component.html',
-  styleUrl: './maintenance.component.scss',
+    selector: 'app-maintenance',
+    imports: [],
+    templateUrl: './maintenance.component.html',
+    styleUrl: './maintenance.component.scss'
 })
 export class MaintenanceComponent {
   constructor(private route: ActivatedRoute) {}

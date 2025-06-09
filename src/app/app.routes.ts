@@ -4,6 +4,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
+import { HomeComponent } from './features/pages/home/home.component';
 // import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
@@ -56,7 +57,8 @@ export const routes: Routes = [
     path: '',
     children: [
       {
-        path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+        // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+        path: 'home', component: HomeComponent,
       },
       {
         path: "own-revenue-dashboard",

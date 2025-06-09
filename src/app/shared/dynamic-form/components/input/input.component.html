@@ -6,7 +6,7 @@
       floatLabel="always"
       [formGroup]="group"
       class="mat-form-field-warning"
-    >
+      >
       <!-- <mat-form-field [formGroup]="group"> -->
       <mat-label>{{ field.label }}</mat-label>
       <input
@@ -18,59 +18,75 @@
         [appDecimalLimit]="decimal"
         placeholder=""
         appNoUpDown
-      />
-      <!-- onKeyPress="if(this.value.length==5) return false;"  -->
-      <span matTextPrefix>&#8377;&nbsp;</span>
-      <!-- <span matTextSuffix>.00</span> -->
-      <ng-container *ngFor="let validation of validations" ngProjectAs="mat-error">
-        <mat-error *ngIf="hasError(field.key, validation.name)">{{ validation.message }}</mat-error>
-      </ng-container>
-    </mat-form-field>
-  }
-  @default {
-    <label class="fw-bold" *ngIf="displayLabel && !displayInlineLabel"
-      >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label
-    >
-    <mat-form-field
-      [appearance]="readonly ? 'fill' : 'outline'"
-      class="demo-full-width mt-2"
-      [formGroup]="group"
-    >
-      <mat-label *ngIf="displayInlineLabel" for="field.key"
-        >{{ field.label
-        }}<span *ngIf="field.showAsterisk" class="text-danger"><sup>*</sup></span></mat-label
-      >
-      @if (field.formFieldType === 'number') {
-        <input
-          onwheel="this.blur()"
-          matInput
-          [formControlName]="field.key"
-          [id]="field.key"
-          type="number"
-          [appDecimalLimit]="decimal"
-          [readonly]="readonly"
-          appNoUpDown
         />
-      } @else {
-        <input
-          onwheel="this.blur()"
-          matInput
-          [formControlName]="field.key"
-          [id]="field.key"
-          [type]="field.formFieldType"
-          [readonly]="readonly"
-        />
+        <!-- onKeyPress="if(this.value.length==5) return false;"  -->
+        <span matTextPrefix>&#8377;&nbsp;</span>
+        <!-- <span matTextSuffix>.00</span> -->
+        @for (validation of validations; track validation) {
+          <ng-container ngProjectAs="mat-error">
+            @if (hasError(field.key, validation.name)) {
+              <mat-error>{{ validation.message }}</mat-error>
+            }
+          </ng-container>
+        }
+      </mat-form-field>
+    }
+    @default {
+      @if (displayLabel && !displayInlineLabel) {
+        <label class="fw-bold"
+          >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label
+          >
       }
+      <mat-form-field
+        [appearance]="readonly ? 'fill' : 'outline'"
+        class="demo-full-width mt-2"
+        [formGroup]="group"
+        >
+        @if (displayInlineLabel) {
+          <mat-label for="field.key"
+            >{{ field.label
+            }}@if (field.showAsterisk) {
+            <span class="text-danger"><sup>*</sup></span>
+            }</mat-label
+            >
+          }
+          @if (field.formFieldType === 'number') {
+            <input
+              onwheel="this.blur()"
+              matInput
+              [formControlName]="field.key"
+              [id]="field.key"
+              type="number"
+              [appDecimalLimit]="decimal"
+              [readonly]="readonly"
+              appNoUpDown
+              />
+            } @else {
+              <input
+                onwheel="this.blur()"
+                matInput
+                [formControlName]="field.key"
+                [id]="field.key"
+                [type]="field.formFieldType"
+                [readonly]="readonly"
+                />
+              }
 
-      <!-- <mat-icon matSuffix>warning</mat-icon> -->
-      <ng-container *ngFor="let validation of validations" ngProjectAs="mat-error">
-        <mat-error *ngIf="hasError(field.key, validation.name)">{{ validation.message }}</mat-error>
-      </ng-container>
-      @for (warning of warnings; track $index) {
-        <mat-hint class="warning-hint" *ngIf="hasWarning(field.key, warning)">{{
-          warning.message
-        }}</mat-hint>
-      }
-    </mat-form-field>
-  }
-}
+              <!-- <mat-icon matSuffix>warning</mat-icon> -->
+              @for (validation of validations; track validation) {
+                <ng-container ngProjectAs="mat-error">
+                  @if (hasError(field.key, validation.name)) {
+                    <mat-error>{{ validation.message }}</mat-error>
+                  }
+                </ng-container>
+              }
+              @for (warning of warnings; track $index) {
+                @if (hasWarning(field.key, warning)) {
+                  <mat-hint class="warning-hint">{{
+                    warning.message
+                  }}</mat-hint>
+                }
+              }
+            </mat-form-field>
+          }
+        }

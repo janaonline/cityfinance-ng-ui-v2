@@ -5,11 +5,10 @@ import { MatStepper } from '@angular/material/stepper';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 
 @Component({
-  selector: 'app-review-submit',
-  standalone: true,
-  imports: [MaterialModule, ToStorageUrlPipe],
-  templateUrl: './review-submit.component.html',
-  styleUrl: './review-submit.component.scss',
+    selector: 'app-review-submit',
+    imports: [MaterialModule, ToStorageUrlPipe],
+    templateUrl: './review-submit.component.html',
+    styleUrl: './review-submit.component.scss'
 })
 export class ReviewSubmitComponent {
   @Input() fields!: any[];

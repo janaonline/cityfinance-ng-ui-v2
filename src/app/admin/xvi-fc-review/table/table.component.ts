@@ -13,11 +13,10 @@ import { XviFcService } from '../../../core/services/xvi-fc.service';
  * @title Table retrieving data through HTTP
  */
 @Component({
-  selector: 'table-http-example',
+  selector: 'app-table-http-example',
   templateUrl: './table.component.html',
   styleUrl: './table.component.scss',
-  standalone: true,
-  imports: [MatProgressSpinnerModule, MatTableModule, MatSortModule, MatPaginatorModule, DatePipe],
+  imports: [MatProgressSpinnerModule, MatTableModule, MatSortModule, MatPaginatorModule]
 })
 export class TableComponent implements AfterViewInit {
   displayedColumns: string[] = ['ulbName', 'censusCode'];
@@ -43,7 +42,7 @@ export class TableComponent implements AfterViewInit {
   constructor(
     private _httpClient: HttpClient,
     public service: XviFcService,
-  ) {}
+  ) { }
 
   onLoad() {
     // this.page = 50;
@@ -139,13 +138,12 @@ export interface GithubIssue {
 
 /** An example database that the data source uses to retrieve data for the table. */
 export class ExampleHttpDatabase {
-  constructor(private _httpClient: HttpClient) {}
+  constructor(private _httpClient: HttpClient) { }
 
   getRepoIssues(sort: string, order: SortDirection, page: number): Observable<GithubApi> {
     const href = 'https://api.github.com/search/issues';
-    const requestUrl = `${href}?q=repo:angular/components&sort=${sort}&order=${order}&page=${
-      page + 1
-    }`;
+    const requestUrl = `${href}?q=repo:angular/components&sort=${sort}&order=${order}&page=${page + 1
+      }`;
 
     return this._httpClient.get<GithubApi>(requestUrl);
   }

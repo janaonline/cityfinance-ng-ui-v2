@@ -13,14 +13,13 @@ import { SpotlightComponent } from './spotlight/spotlight.component';
 declare let $: any;
 
 @Component({
-  selector: 'app-home',
-  standalone: true,
-  imports: [CommonModule, RouterModule, DashboardMapSectionComponent,
-    // CountUpDirective, 
-    SlickCarouselModule, MaterialModule,
-    SearchBarComponent, SpotlightComponent],
-  templateUrl: './home.component.html',
-  styleUrl: './home.component.scss',
+    selector: 'app-home',
+    imports: [CommonModule, RouterModule, DashboardMapSectionComponent,
+        // CountUpDirective, 
+        SlickCarouselModule, MaterialModule,
+        SearchBarComponent, SpotlightComponent],
+    templateUrl: './home.component.html',
+    styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
   constructor(
