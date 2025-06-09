@@ -25,7 +25,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - name: Install dependencies
-      run: npm install
+      run: npm install --force
     # - name: Install dependencies
     #   run: npm install --save @types/lodash@4.14.74 --force
     - name: Build Angular project
