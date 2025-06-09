@@ -1,3 +1,8 @@
+@if (isLoader1) {
+<div class="custom-spinner-overlay">
+  <mat-spinner></mat-spinner>
+</div>
+}
 <div class="container-fluid py-2" style="max-width: 94%; min-height: 60vh">
   <h4 class="fw-bold my-4">{{ loggedInUserDetails.stateName }}</h4>
   @if (loggedInUserDetails.role === 'XVIFC') {
@@ -54,193 +59,192 @@
         </button>
         <ul id="dropdown-split" *dropdownMenu class="dropdown-menu mt-1" role="menu" aria-labelledby="button-split">
           <li role="menuitem">
-            <a class="dropdown-item" (click)="download($event)">Progress Report</a>
+            <button class="dropdown-item" (click)="download($event)">Progress Report</button>
           </li>
           <li role="menuitem">
-            <a class="dropdown-item" (click)="downloadDump($event)">Data Dump</a>
+            <button class="dropdown-item" (click)="downloadDump($event)">Data Dump</button>
           </li>
         </ul>
         <!-- } -->
       </div>
-
-      @if (isLoader1) {
-      <div class="example-loading-shade">
+      <<<<<<< HEAD @if (isLoader1) { <div class="example-loading-shade">
         @if (isLoader1) {
         <mat-spinner></mat-spinner>
         }
+    </div>
+    }
+    =======
+    >>>>>>> 9a80bf69d34ba9475087c5df5abcbc8957c5839d
+  </div>
+  <!-- Filter -->
+  <fieldset class="border rounded-3 px-3">
+    <legend class="float-none w-auto px-3">Filter By:</legend>
+    <div class="d-flex gap-3 justify-content-end" id="flex-container">
+      @if (currentUserRole === 'XVIFC') {
+      <mat-form-field appearance="outline">
+        <mat-label>State</mat-label>
+        <mat-select [(ngModel)]="state" panelWidth="300" (selectionChange)="filter()">
+          <mat-option value="">All</mat-option>
+          @for (state of stateList; track $index) {
+          <mat-divider></mat-divider>
+          <mat-option [value]="state.name">{{ state.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>ULB Category</mat-label>
+        <mat-select [(ngModel)]="formId" panelWidth="300" (selectionChange)="filter()">
+          <mat-option value="">All</mat-option>
+          @for (category of ulbCategories; track $index) {
+          <mat-divider></mat-divider>
+          <mat-option [value]="category.id">{{ category.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Form Status</mat-label>
+        <mat-select [(ngModel)]="formStatus" panelWidth="300" (selectionChange)="filter()">
+          <mat-option value="">All</mat-option>
+          @for (option of formStatuses; track $index; let last = $last) {
+          <mat-divider></mat-divider>
+          <mat-option [value]="option.key">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>ULB</mat-label>
+        <mat-icon matPrefix (click)="filter()">search</mat-icon>
+        <input matInput placeholder="Search" [(ngModel)]="ulbName" (keydown.enter)="filter()" />
+        @if (ulbName) {
+        <button matSuffix mat-icon-button aria-label="Clear" (click)="ulbName = ''; filter()">
+          <mat-icon>close</mat-icon>
+        </button>
+        }
+      </mat-form-field>
+
+      <div class="wmx-2 mt-1">
+        <button class="primary-btn-2" (click)="filter(true)">Reset</button>
       </div>
+    </div>
+  </fieldset>
+  <div class="mat-elevation-z8 my-4 pb-2 position-relative">
+    @if (isLoader) {
+    <div class="example-loading-shade">
+      @if (isLoader) {
+      <mat-spinner></mat-spinner>
       }
     </div>
-    <!-- Filter -->
-    <fieldset class="border rounded-3 px-3">
-      <legend class="float-none w-auto px-3">Filter By:</legend>
-      <div class="d-flex gap-3 justify-content-end" id="flex-container">
+    }
+    <div class="example-table-container">
+      <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
+        [matSortActive]="sort.active" [matSortDirection]="sort.direction">
+        <!-- Position Column -->
+        <ng-container matColumnDef="position">
+          <th mat-header-cell *matHeaderCellDef class="text-center">S. No.</th>
+          <td mat-cell *matCellDef="let element; let i = index" class="text-end">
+            {{ i + skip * limit + 1 }}.
+          </td>
+        </ng-container>
+
+        <!-- State Name -->
         @if (currentUserRole === 'XVIFC') {
-        <mat-form-field appearance="outline">
-          <mat-label>State</mat-label>
-          <mat-select [(ngModel)]="state" panelWidth="300" (selectionChange)="filter()">
-            <mat-option value="">All</mat-option>
-            @for (state of stateList; track $index) {
-            <mat-divider></mat-divider>
-            <mat-option [value]="state.name">{{ state.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>ULB Category</mat-label>
-          <mat-select [(ngModel)]="formId" panelWidth="300" (selectionChange)="filter()">
-            <mat-option value="">All</mat-option>
-            @for (category of ulbCategories; track $index) {
-            <mat-divider></mat-divider>
-            <mat-option [value]="category.id">{{ category.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+        <ng-container matColumnDef="stateName">
+          <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="stateName">
+            State Name
+          </th>
+          <td mat-cell *matCellDef="let element">{{ element?.stateName }}</td>
+        </ng-container>
         }
 
-        <mat-form-field appearance="outline">
-          <mat-label>Form Status</mat-label>
-          <mat-select [(ngModel)]="formStatus" panelWidth="300" (selectionChange)="filter()">
-            <mat-option value="">All</mat-option>
-            @for (option of formStatuses; track $index; let last = $last) {
-            <mat-divider></mat-divider>
-            <mat-option [value]="option.key">{{ option.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+        <!-- ULB Name -->
+        <ng-container matColumnDef="ulbName">
+          <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="ulbName">
+            ULB Name
+          </th>
+          <td mat-cell *matCellDef="let element">{{ element?.ulbName | titlecase }}</td>
+        </ng-container>
 
-        <mat-form-field appearance="outline">
-          <mat-label>ULB</mat-label>
-          <mat-icon matPrefix (click)="filter()">search</mat-icon>
-          <input matInput placeholder="Search" [(ngModel)]="ulbName" (keydown.enter)="filter()" />
-          @if (ulbName) {
-          <button matSuffix mat-icon-button aria-label="Clear" (click)="ulbName = ''; filter()">
-            <mat-icon>close</mat-icon>
-          </button>
-          }
-        </mat-form-field>
+        <!-- Census Code -->
+        <ng-container matColumnDef="censusCode">
+          <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="censusCode">
+            Census Code
+          </th>
+          <td mat-cell *matCellDef="let element" class="text-end">{{ element?.censusCode }}</td>
+        </ng-container>
 
-        <div class="wmx-2 mt-1">
-          <button class="primary-btn-2" (click)="filter(true)">Reset</button>
-        </div>
-      </div>
-    </fieldset>
-    <div class="mat-elevation-z8 my-4 pb-2 position-relative">
-      @if (isLoader) {
-      <div class="example-loading-shade">
-        @if (isLoader) {
-        <mat-spinner></mat-spinner>
+        <!-- Category -->
+        @if (currentUserRole === 'XVIFC') {
+        <ng-container matColumnDef="ulbCategory">
+          <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="ulbCategory">
+            Category
+          </th>
+          <td mat-cell *matCellDef="let element">{{ element?.ulbCategory }}</td>
+        </ng-container>
         }
-      </div>
-      }
-      <div class="example-table-container">
-        <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
-          [matSortActive]="sort.active" [matSortDirection]="sort.direction">
-          <!-- Position Column -->
-          <ng-container matColumnDef="position">
-            <th mat-header-cell *matHeaderCellDef class="text-center">S. No.</th>
-            <td mat-cell *matCellDef="let element; let i = index" class="text-end">
-              {{ i + skip * limit + 1 }}.
-            </td>
-          </ng-container>
 
-          <!-- State Name -->
-          @if (currentUserRole === 'XVIFC') {
-          <ng-container matColumnDef="stateName">
-            <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="stateName">
-              State Name
-            </th>
-            <td mat-cell *matCellDef="let element">{{ element?.stateName }}</td>
-          </ng-container>
-          }
+        <!-- Form Status -->
+        <ng-container matColumnDef="formStatus">
+          <th mat-header-cell *matHeaderCellDef>Form Status</th>
+          <td mat-cell *matCellDef="let element" class="text-center" style="white-space: nowrap">
+            <p [ngClass]="getStatusClass(element?.formStatus)" class="form-status alert rounded-pill fw-bold p-1 m-0">
+              {{ element?.formStatus | replaceUnderscore }}
+            </p>
+          </td>
+        </ng-container>
 
-          <!-- ULB Name -->
-          <ng-container matColumnDef="ulbName">
-            <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="ulbName">
-              ULB Name
-            </th>
-            <td mat-cell *matCellDef="let element">{{ element?.ulbName | titlecase }}</td>
-          </ng-container>
+        <!-- Data Submitted -->
+        <ng-container matColumnDef="dataSubmitted">
+          <th mat-header-cell *matHeaderCellDef class="text-center">
+            Data Submitted(%)&nbsp;<i class="bi bi-info-circle fs-7 me-1"
+              matTooltip="Percentage of Data Submitted is calculated as the average of percentage completion of all Individual sections in the form"></i>
+          </th>
+          <td mat-cell *matCellDef="let element" class="text-end">
+            {{ element?.dataSubmitted }}
+          </td>
+        </ng-container>
 
-          <!-- Census Code -->
-          <ng-container matColumnDef="censusCode">
-            <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="censusCode">
-              Census Code
-            </th>
-            <td mat-cell *matCellDef="let element" class="text-end">{{ element?.censusCode }}</td>
-          </ng-container>
+        <!-- Actions -->
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef class="text-center">Actions</th>
+          <td mat-cell *matCellDef="let element" class="text-center">
+            <button class="primary-btn-2" [routerLink]="'/admin/xvi-fc-review/ulb/' + element.ulbId"
+              [disabled]="element?.formStatus === 'NOT_STARTED'">
+              {{ element?.action }}
+            </button>
+          </td>
+        </ng-container>
 
-          <!-- Category -->
-          @if (currentUserRole === 'XVIFC') {
-          <ng-container matColumnDef="ulbCategory">
-            <th mat-header-cell *matHeaderCellDef class="text-center" mat-sort-header="ulbCategory">
-              Category
-            </th>
-            <td mat-cell *matCellDef="let element">{{ element?.ulbCategory }}</td>
-          </ng-container>
-          }
+        <!-- Approve & Reject -->
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox (change)="$event ? masterToggle() : null" [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()">
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox (click)="$event.stopPropagation()" [disabled]="row.action !== 'Review'"
+              (change)="$event ? selection.toggle(row) : null" [checked]="selection.isSelected(row)">
+            </mat-checkbox>
+          </td>
+        </ng-container>
 
-          <!-- Form Status -->
-          <ng-container matColumnDef="formStatus">
-            <th mat-header-cell *matHeaderCellDef>Form Status</th>
-            <td mat-cell *matCellDef="let element" class="text-center" style="white-space: nowrap">
-              <p [ngClass]="getStatusClass(element?.formStatus)" class="form-status alert rounded-pill fw-bold p-1 m-0">
-                {{ element?.formStatus | replaceUnderscore }}
-              </p>
-            </td>
-          </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; let i = index; columns: displayedColumns"></tr>
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell fw-bold p-4 fs-5" align="center" [attr.colspan]="displayedColumns.length">
+            No results found for the applied filter.
+          </td>
+        </tr>
+      </table>
 
-          <!-- Data Submitted -->
-          <ng-container matColumnDef="dataSubmitted">
-            <th mat-header-cell *matHeaderCellDef class="text-center">
-              Data Submitted(%)&nbsp;<i class="bi bi-info-circle fs-7 me-1"
-                matTooltip="Percentage of Data Submitted is calculated as the average of percentage completion of all Individual sections in the form"></i>
-            </th>
-            <td mat-cell *matCellDef="let element" class="text-end">
-              {{ element?.dataSubmitted }}
-            </td>
-          </ng-container>
-
-          <!-- Actions -->
-          <ng-container matColumnDef="action">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Actions</th>
-            <td mat-cell *matCellDef="let element" class="text-center">
-              <button class="primary-btn-2" [routerLink]="'/admin/xvi-fc-review/ulb/' + element.ulbId"
-                [disabled]="element?.formStatus === 'NOT_STARTED'">
-                {{ element?.action }}
-              </button>
-            </td>
-          </ng-container>
-
-          <!-- Approve & Reject -->
-          <ng-container matColumnDef="select">
-            <th mat-header-cell *matHeaderCellDef>
-              <mat-checkbox (change)="$event ? masterToggle() : null"
-                [checked]="selection.hasValue() && isAllSelected()"
-                [indeterminate]="selection.hasValue() && !isAllSelected()">
-              </mat-checkbox>
-            </th>
-            <td mat-cell *matCellDef="let row">
-              <mat-checkbox (click)="$event.stopPropagation()" [disabled]="row.action !== 'Review'"
-                (change)="$event ? selection.toggle(row) : null" [checked]="selection.isSelected(row)">
-              </mat-checkbox>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; let i = index; columns: displayedColumns"></tr>
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell fw-bold p-4 fs-5" align="center" [attr.colspan]="displayedColumns.length">
-              No results found for the applied filter.
-            </td>
-          </tr>
-        </table>
-
-        <mat-paginator (page)="pageChanged($event)" [pageSize]="limit" [pageSizeOptions]="[5, 10, 20, 50]"
-          [pageIndex]="skip" [length]="totalForms" showFirstLastButtons aria-label="Select page of dashboard elements">
-        </mat-paginator>
-      </div>
+      <mat-paginator (page)="pageChanged($event)" [pageSize]="limit" [pageSizeOptions]="[5, 10, 20, 50]"
+        [pageIndex]="skip" [length]="totalForms" showFirstLastButtons aria-label="Select page of dashboard elements">
+      </mat-paginator>
     </div>
   </div>
+</div>
 </div>

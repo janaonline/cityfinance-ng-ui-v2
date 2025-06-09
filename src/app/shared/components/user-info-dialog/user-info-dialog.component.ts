@@ -1,5 +1,4 @@
-
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatDivider } from '@angular/material/divider';
@@ -13,12 +12,12 @@ import { PreLoaderComponent } from '../pre-loader/pre-loader.component';
 import { DownloadUserInfoService } from './download-user-info.service';
 
 @Component({
-    selector: 'app-user-info-dialog',
-    imports: [MatDialogModule, MatInputModule, MatDivider, DynamicFormComponent, InputComponent, PreLoaderComponent],
-    templateUrl: './user-info-dialog.component.html',
-    styleUrl: './user-info-dialog.component.scss'
+  selector: 'app-user-info-dialog',
+  imports: [MatDialogModule, MatInputModule, MatDivider, DynamicFormComponent, InputComponent, PreLoaderComponent],
+  templateUrl: './user-info-dialog.component.html',
+  styleUrl: './user-info-dialog.component.scss'
 })
-export class UserInfoDialogComponent {
+export class UserInfoDialogComponent implements OnInit {
   userInfo: FormGroup = new FormGroup({});
   fields: FieldConfig[] = [];
   isLoading: boolean = false;
@@ -38,7 +37,7 @@ export class UserInfoDialogComponent {
   getFields(): void {
     this.isLoading = true;
     this.downloadUserService.getUserInfoQuestions().subscribe((res: any) => {
-      this.fields = res.data;
+      this.fields = res.data.data;
       this.userInfo = this.dynamicFormService.toFormGroup(this.fields);
       this.isLoading = false;
     });

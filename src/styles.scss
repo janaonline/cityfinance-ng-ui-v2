@@ -151,8 +151,9 @@ button[disabled] {
 }
 
 @media (max-width: 767px) {
+
   .navbar-nav .open .dropdown-menu .dropdown-header,
-  .navbar-nav .open .dropdown-menu > li > a {
+  .navbar-nav .open .dropdown-menu>li>a {
     padding: 10px 15px 10px 35px;
   }
 }
@@ -201,7 +202,7 @@ input::-webkit-inner-spin-button {
 //     -moz-appearance: textfield;
 // }
 
-.btn-check:focus + .btn-outline-primary,
+.btn-check:focus+.btn-outline-primary,
 .btn-outline-primary:focus {
   box-shadow: none !important;
   outline: none !important;
@@ -241,14 +242,17 @@ mat-form-field {
   border: 1px dotted $secondary;
   border-radius: 0.625rem;
 }
+
 .primary-btn-3 {
   background: rgba(54, 160, 4, 1);
 }
+
 .bttn-return {
   color: rgba(255, 0, 0, 1);
   background: none;
   border: 1px solid rgba(255, 0, 0, 1);
 }
+
 // .btn-orange {
 //   $orange: #e67e15;
 //   border-radius: 8px;
@@ -299,6 +303,7 @@ mat-form-field {
 .cursor-pointer {
   cursor: pointer !important;
 }
+
 .cursor-not-allowed {
   cursor: not-allowed !important;
 }
@@ -315,7 +320,7 @@ mat-form-field {
 
 // ----- Add button group ----- //
 // Select the first button
-.custom-btn-check:first-of-type + .btn {
+.custom-btn-check:first-of-type+.btn {
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
   border-top-right-radius: 0px;
@@ -323,7 +328,7 @@ mat-form-field {
 }
 
 // Select the last button
-.custom-btn-check:last-of-type + .btn {
+.custom-btn-check:last-of-type+.btn {
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
   border-top-left-radius: 0px;
@@ -331,7 +336,7 @@ mat-form-field {
 }
 
 // To ensure the buttons in between don't have extra borders
-.custom-btn-check:not(:first-of-type):not(:last-of-type) + .btn {
+.custom-btn-check:not(:first-of-type):not(:last-of-type)+.btn {
   border-radius: 0;
 }
 
@@ -346,4 +351,18 @@ mat-form-field {
 .swal2-popup {
   font-size: small;
   font-family: var(--ff-base);
+}
+
+// Custom spinner overlay.
+.custom-spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
 }
