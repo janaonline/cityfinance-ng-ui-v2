@@ -1,1 +1,23 @@
-<p>city works!</p>
+<div class="container-fluid">
+    @if(ulbDenotifiedMessage) {
+    <div class="row">
+        <div class="col-sm-12 text-center text-danger dmsg">
+            {{ulbDenotifiedMessage}}
+        </div>
+    </div>
+    }
+    <div class="row">
+        <app-front-panel (changeInStateOrCity)="changeInDropDown($event)" style="padding: 0" [mapConfig]="mapData"
+            [cardData]="revenueData" [data]="frontPanelData"></app-front-panel>
+    </div>
+    <div class="row p-4">
+        <label class="m-h text-center">Dashboard</label>
+    </div>
+    @if(dashboardTabData) {
+    <div class="row">
+        <!-- <app-dashboard-tabs [yearListForDropDown]="yearListForDropDown" [mySelectedYears]="currentYear"
+            [DashBoardType]="'city'" [cityId]="cityId" [data]="dashboardTabData" [scrollCords]="cords" [isUA]="isUA"
+            [noDataFound]="noDataFound"></app-dashboard-tabs> -->
+    </div>
+    }
+</div>

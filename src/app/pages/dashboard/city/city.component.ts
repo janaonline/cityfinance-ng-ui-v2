@@ -4,6 +4,7 @@ import { DashboardService } from "../dashboard.service";
 import { AuthService } from "../../../core/services/auth.service";
 import { CommonService } from "../../../core/services/common.service";
 import { GlobalLoaderService } from "../../../core/services/loaders/global-loader.service";
+import { FrontPanelComponent } from "../../../shared/components/front-panel/front-panel.component";
 // import { CommonService } from "src/app/shared/services/common.service";
 // import { GlobalLoaderService } from "src/app/shared/services/loaders/global-loader.service";
 // import { AuthService } from "../../../auth/auth.service";
@@ -11,7 +12,7 @@ import { GlobalLoaderService } from "../../../core/services/loaders/global-loade
 
 @Component({
   selector: 'app-city',
-  imports: [],
+  imports: [FrontPanelComponent],
   templateUrl: './city.component.html',
   styleUrl: './city.component.scss'
 })
@@ -25,8 +26,9 @@ export class CityComponent implements OnInit {
     private _commonService: CommonService,
     public _loaderService: GlobalLoaderService,
   ) {
+    this.cityId = this._activatedRoute.snapshot.params['cityId'];
     this._activatedRoute.queryParams.subscribe((param: any) => {
-      this.cityId = param.cityId;
+      // this.cityId = param.cityId;
       this.stateCode = param.stateCode || this.ulbStateCodeMapping[this.cityId];
       this.mapData.code.city = this.ulbCodeMapping[this.cityId];
       this.mapData.code.state = this.ulbStateCodeMapping[this.cityId];
@@ -283,41 +285,41 @@ const data = {
 const TaxRevenue = {
   type: 2,
   subTitle: "Total Tax Revenue",
-  svg: `../../../../assets/file.svg`,
+  svg: `./assets/file.svg`,
   number: "0 Cr",
 };
 
 const OwnRevenue = {
   type: 2,
   subTitle: "Total Own Revenue",
-  svg: `../../../../assets/file.svg`,
+  svg: `./assets/file.svg`,
   number: "0 Cr",
 };
 
 const Grant = {
   type: 2,
   subTitle: "Total Grant",
-  svg: `../../../../assets/coinCuren.svg`,
+  svg: `./assets/coinCuren.svg`,
   number: "0 Cr",
 };
 
 const Revenue = {
   type: 2,
   subTitle: "Total Revenue",
-  svg: `../../../../assets/coinCuren.svg`,
+  svg: `./assets/coinCuren.svg`,
   number: "0 Cr",
 };
 
 const Expense = {
   type: 2,
   subTitle: "Total Expenditure",
-  svg: `../../../../assets/coinCuren.svg`,
+  svg: `./assets/coinCuren.svg`,
   number: "0 Cr",
 };
 const BalanceSheetSize = {
   type: 2,
   subTitle: "Total Balance Sheet Size",
-  svg: `../../../../assets/Group 15967.svg`,
+  svg: `./assets/Group 15967.svg`,
   number: "0 Cr",
 };
 
