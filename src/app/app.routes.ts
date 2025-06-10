@@ -61,6 +61,11 @@ export const routes: Routes = [
         path: 'home', component: HomeComponent,
       },
       {
+        path: 'dashboard',
+        loadChildren: () =>
+          import('./pages/dashboard/dashboard.routes').then((mod) => mod.DASHBOARD_ROUTES),
+      },
+      {
         path: "own-revenue-dashboard",
         loadChildren: () =>
           import("./pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
