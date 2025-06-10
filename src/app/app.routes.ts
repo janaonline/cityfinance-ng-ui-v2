@@ -4,7 +4,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
-import { HomeComponent } from './features/pages/home/home.component';
+import { HomeComponent } from './pages/home/home.component';
 // import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
@@ -63,14 +63,14 @@ export const routes: Routes = [
       {
         path: "own-revenue-dashboard",
         loadChildren: () =>
-          import("./features/pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
+          import("./pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
             (m) => m.OwnRevenueDashboardModule
           ),
       },
       {
         path: "resources-dashboard",
         loadChildren: () =>
-          import("./features/pages/resources-dashboard/resources-dashboard.module").then(
+          import("./pages/resources-dashboard/resources-dashboard.module").then(
             (m) => m.ResourcesDashboardModule
           ),
       },
