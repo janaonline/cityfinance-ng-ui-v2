@@ -80,6 +80,9 @@ export class SearchBarComponent implements OnInit {
   ngOnInit() {
     // this.loadRecentSearchValue();
     this.globaSearch();
+    this._commonService.dataForVisualizationCount.subscribe((res) => {
+      if (!this.coveredUlbCount) this.coveredUlbCount = res.coveredUlbCount;
+    });
 
   }
 

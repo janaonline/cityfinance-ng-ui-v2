@@ -641,7 +641,9 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
         this.stateselected ? this.stateselected.name : ""
       );
       this.dataForVisualization = { ...res, loading: false };
-      this._commonService.setDataForVisualizationCount(this.dataForVisualization);
+      if (!stateId) {
+        this._commonService.setDataForVisualizationCount(this.dataForVisualization);
+      }
       this.highestYear = null;
       this.highestDataAvailability = null;
       if (this.dataForVisualization?.ulbDataCount?.length > 0) {
