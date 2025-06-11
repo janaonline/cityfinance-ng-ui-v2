@@ -4,11 +4,10 @@ import { MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-download-popup',
-  templateUrl: './download-popup.component.html',
-  styleUrls: ['./download-popup.component.scss'],
-  standalone: true,
-  imports: [CommonModule],
+    selector: 'app-download-popup',
+    templateUrl: './download-popup.component.html',
+    styleUrls: ['./download-popup.component.scss'],
+    imports: [CommonModule]
 })
 export class DownloadPopupComponent implements OnInit {
 

@@ -40,14 +40,17 @@ export class CommonService {
 
   // private states: any = [];
   isEmbedModeEnable: BehaviorSubject<any> = new BehaviorSubject<any>(false);
+
+  private searchItem: BehaviorSubject<any> = new BehaviorSubject([]);
+  castSearchItem = this.searchItem.asObservable();
+  private selectedFinancialYear: BehaviorSubject<any> = new BehaviorSubject([]);
+  getSelectedYear = this.selectedFinancialYear.asObservable();
+
   constructor(
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private snackbar: MatSnackBar,
   ) { }
-
-  private searchItem: BehaviorSubject<any> = new BehaviorSubject([]);
-  castSearchItem = this.searchItem.asObservable();
 
   updateSearchItem(searchItem: any) {
     this.searchItem.next(searchItem);

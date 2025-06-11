@@ -16,11 +16,10 @@ interface Card {
 }
 
 @Component({
-  selector: 'app-header',
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss'],
-  standalone: true,
-  imports: [CommonModule, MaterialModule, RouterModule, MatDialogModule],
+    selector: 'app-header',
+    templateUrl: './header.component.html',
+    styleUrls: ['./header.component.scss'],
+    imports: [CommonModule, MaterialModule, RouterModule, MatDialogModule]
 })
 export class HeaderComponent implements OnInit {
   @Input() rankedUlbCount: number = 0;

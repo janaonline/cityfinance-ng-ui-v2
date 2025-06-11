@@ -40,11 +40,10 @@ import { RupeeConverterPipe } from "../../../../core/pipes/rupee-converter.pipe"
 import { PreLoaderComponent } from "../../pre-loader/pre-loader.component";
 
 @Component({
-  selector: "app-national-heat-map",
-  templateUrl: "./national-heat-map.component.html",
-  styleUrls: ["./national-heat-map.component.scss"],
-  standalone: true,
-  imports: [MaterialModule, RupeeConverterPipe, PreLoaderComponent]
+    selector: "app-national-heat-map",
+    templateUrl: "./national-heat-map.component.html",
+    styleUrls: ["./national-heat-map.component.scss"],
+    imports: [MaterialModule, RupeeConverterPipe, PreLoaderComponent]
 })
 export class NationalHeatMapComponent implements OnChanges, OnDestroy {
   constructor(

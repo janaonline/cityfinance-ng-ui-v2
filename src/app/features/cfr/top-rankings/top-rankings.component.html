@@ -1,4 +1,6 @@
-<app-loader *ngIf="isLoadingResults"></app-loader>
+@if (isLoadingResults) {
+<app-loader></app-loader>
+}
 <div class="container bg-img">
   <app-breadcrumb [links]="breadcrumbLinks"></app-breadcrumb>
 
@@ -73,14 +75,14 @@
       <div class="row">
         <div class="offset-md-3 col-md-7 btn-group my-4 d-flex justify-content-center" role="group"
           aria-label="Basic radio toggle button group">
-          <ng-container *ngFor="let type of types">
-            <input type="radio" class="custom-btn-check btn-check" formControlName="category" [id]="type?.key"
-              [value]="type?.key" />
-            <label class="btn btn-sm btn-outline-cfPrimary font-white text-truncate" matTooltip="{{ type?.label }}"
-              [for]="type?.key">
-              {{ type?.label }}
-            </label>
-          </ng-container>
+          @for (type of types; track type) {
+          <input type="radio" class="custom-btn-check btn-check" formControlName="category" [id]="type?.key"
+            [value]="type?.key" />
+          <label class="btn btn-sm btn-outline-cfPrimary font-white text-truncate" matTooltip="{{ type?.label }}"
+            [for]="type?.key">
+            {{ type?.label }}
+          </label>
+          }
         </div>
       </div>
 
@@ -92,8 +94,10 @@
         </div>
 
         <div class="col-sm-12 col-md-7">
-          <app-mat-common-table *ngIf="table?.response" [skip]="skip" [tableHeight]="70" [response]="table.response"
-            [isPagination]="true" (pageChange)="pageChange($event)"></app-mat-common-table>
+          @if (table.response) {
+          <app-mat-common-table [skip]="skip" [tableHeight]="70" [response]="table.response" [isPagination]="true"
+            (pageChange)="pageChange($event)"></app-mat-common-table>
+          }
         </div>
       </div>
     </form>

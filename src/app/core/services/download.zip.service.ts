@@ -1,12 +1,4 @@
-import {
-    HttpClient,
-    HttpEvent,
-    HttpEventType,
-    HttpHeaderResponse,
-    HttpProgressEvent,
-    HttpResponse,
-    HttpUserEvent
-} from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpEventType, HttpHeaderResponse, HttpProgressEvent, HttpResponse, HttpUserEvent } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { combineLatest, Observable } from 'rxjs';
 import { scan } from 'rxjs/operators';

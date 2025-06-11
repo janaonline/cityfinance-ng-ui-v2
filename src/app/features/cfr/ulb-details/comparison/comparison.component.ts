@@ -9,11 +9,10 @@ import { ComparisionFiltersComponent } from '../comparision-filters/comparision-
 Chart.register(...registerables);
 
 @Component({
-  selector: 'app-comparison',
-  templateUrl: './comparison.component.html',
-  styleUrls: ['./comparison.component.scss'],
-  standalone: true,
-  imports: [MaterialModule, PreLoaderComponent],
+    selector: 'app-comparison',
+    templateUrl: './comparison.component.html',
+    styleUrls: ['./comparison.component.scss'],
+    imports: [MaterialModule, PreLoaderComponent]
 })
 export class ComparisonComponent implements OnChanges {
   public chart: any;

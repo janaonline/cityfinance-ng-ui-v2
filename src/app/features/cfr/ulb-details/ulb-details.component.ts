@@ -22,19 +22,18 @@ interface APIResponse {
 }
 
 @Component({
-  selector: 'app-ulb-details',
-  templateUrl: './ulb-details.component.html',
-  styleUrls: ['./ulb-details.component.scss'],
-  standalone: true,
-  imports: [
-    MaterialModule,
-    BreadcrumbComponent,
-    UlbDetailsHeaderComponent,
-    UlbDetailsAssessmentParametersComponent,
-    PerformanceFourMComponent,
-    ComparisonComponent,
-    PreLoaderComponent,
-  ],
+    selector: 'app-ulb-details',
+    templateUrl: './ulb-details.component.html',
+    styleUrls: ['./ulb-details.component.scss'],
+    imports: [
+        MaterialModule,
+        BreadcrumbComponent,
+        UlbDetailsHeaderComponent,
+        UlbDetailsAssessmentParametersComponent,
+        PerformanceFourMComponent,
+        ComparisonComponent,
+        PreLoaderComponent,
+    ]
 })
 export class UlbDetailsComponent implements OnInit {
 

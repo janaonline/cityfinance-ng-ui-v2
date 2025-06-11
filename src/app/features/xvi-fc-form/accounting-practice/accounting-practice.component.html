@@ -1,80 +1,91 @@
 <!-- {{group.getRawValue() | json}} -->
 
-<mat-expansion-panel
-  [expanded]="panelOpenState"
-  class="mt-3"
-  *ngFor="let field of field.data; index as i"
->
-  <mat-expansion-panel-header>
-    <mat-panel-title>
-      {{ field.label }}
-    </mat-panel-title>
-  </mat-expansion-panel-header>
-  <ng-container *ngFor="let question of field.data">
-    <label class="pt-3 pb-1 fw-bold" for="{{ question.key }}">
-      {{ question.position }}. {{ question.label }}
-      <i
-        class="bi bi-info-circle fs-7 me-1"
-        *ngIf="question.info"
-        matTooltip="{{ question.info }}"
-      ></i>
-    </label>
-    @if (question.formFieldType === 'radio') {
-      <div class="demo-full-width margin-top" [formGroup]="getGroup(i, field.key, question.key)">
-        <mat-radio-group formControlName="value" class="example-radio-group">
-          @for (opt of question.options; track $index) {
-            <mat-radio-button class="example-radio-button" [value]="opt.id || opt" color="primary"
-              >{{ opt.id || opt }}
-              <i
-                class="bi bi-info-circle fs-7 me-1"
-                *ngIf="opt.info"
-                matTooltip="{{ opt.info }}"
-              ></i
-            ></mat-radio-button>
-
-            @if (opt.showInputBox && getGroup(i, field.key, question.key).value.value === opt.id) {
-              <mat-form-field appearance="outline" class="ms-5 col-6">
-                <input matInput formControlName="reason" />
-                <mat-error *ngIf="hasError(i, field.key, question.key, 'required', 'reason')"
-                  >This is a mandatory field.</mat-error
-                >
-              </mat-form-field>
+@for (field of field.data; track field; let i = $index) {
+  <mat-expansion-panel
+    [expanded]="panelOpenState"
+    class="mt-3"
+    >
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        {{ field.label }}
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+    @for (question of field.data; track question) {
+      <label class="pt-3 pb-1 fw-bold" for="{{ question.key }}">
+        {{ question.position }}. {{ question.label }}
+        @if (question.info) {
+          <i
+            class="bi bi-info-circle fs-7 me-1"
+            matTooltip="{{ question.info }}"
+          ></i>
+        }
+      </label>
+      @if (question.formFieldType === 'radio') {
+        <div class="demo-full-width margin-top" [formGroup]="getGroup(i, field.key, question.key)">
+          <mat-radio-group formControlName="value" class="example-radio-group">
+            @for (opt of question.options; track $index) {
+              <mat-radio-button class="example-radio-button" [value]="opt.id || opt" color="primary"
+                >{{ opt.id || opt }}
+                @if (opt.info) {
+                  <i
+                    class="bi bi-info-circle fs-7 me-1"
+                    matTooltip="{{ opt.info }}"
+                    ></i
+                    >
+                  }</mat-radio-button>
+                  @if (opt.showInputBox && getGroup(i, field.key, question.key).value.value === opt.id) {
+                    <mat-form-field appearance="outline" class="ms-5 col-6">
+                      <input matInput formControlName="reason" />
+                      @if (hasError(i, field.key, question.key, 'required', 'reason')) {
+                        <mat-error
+                          >This is a mandatory field.</mat-error
+                          >
+                        }
+                      </mat-form-field>
+                    }
+                  }
+                  @for (validation of question.validations; track validation) {
+                    <ng-container ngProjectAs="mat-error">
+                      @if (hasError(i, field.key, question.key, validation.name)) {
+                        <mat-error>{{
+                          validation.message
+                        }}</mat-error>
+                      }
+                      <!-- <mat-error>{{validation.message}}</mat-error> -->
+                    </ng-container>
+                  }
+                </mat-radio-group>
+              </div>
+            } @else if (question.formFieldType === 'number') {
+              <div class="row">
+                <!-- {{question.validations |json}} -->
+                <mat-form-field
+                  class="ms-4 col-6"
+                  appearance="outline"
+                  floatLabel="always"
+                  [formGroup]="getGroup(i, field.key, question.key)"
+                  >
+                  <input
+                    onwheel="this.blur()"
+                    matInput
+                    formControlName="value"
+                    type="number"
+                    [appDecimalLimit]="field.decimal || 0"
+                    appNoUpDown
+                    />
+                    @for (validation of question.validations; track validation) {
+                      <ng-container ngProjectAs="mat-error">
+                        @if (hasError(i, field.key, question.key, validation.name)) {
+                          <mat-error>{{
+                            validation.message
+                          }}</mat-error>
+                        }
+                        <!-- <mat-error>{{validation.message}}</mat-error> -->
+                      </ng-container>
+                    }
+                  </mat-form-field>
+                </div>
+              }
             }
-          }
-          <ng-container *ngFor="let validation of question.validations" ngProjectAs="mat-error">
-            <mat-error *ngIf="hasError(i, field.key, question.key, validation.name)">{{
-              validation.message
-            }}</mat-error>
-            <!-- <mat-error>{{validation.message}}</mat-error> -->
-          </ng-container>
-        </mat-radio-group>
-      </div>
-    } @else if (question.formFieldType === 'number') {
-      <div class="row">
-        <!-- {{question.validations |json}} -->
-        <mat-form-field
-          class="ms-4 col-6"
-          appearance="outline"
-          floatLabel="always"
-          [formGroup]="getGroup(i, field.key, question.key)"
-        >
-          <input
-            onwheel="this.blur()"
-            matInput
-            formControlName="value"
-            type="number"
-            [appDecimalLimit]="field.decimal || 0"
-            appNoUpDown
-          />
-
-          <ng-container *ngFor="let validation of question.validations" ngProjectAs="mat-error">
-            <mat-error *ngIf="hasError(i, field.key, question.key, validation.name)">{{
-              validation.message
-            }}</mat-error>
-            <!-- <mat-error>{{validation.message}}</mat-error> -->
-          </ng-container>
-        </mat-form-field>
-      </div>
-    }
-  </ng-container>
-</mat-expansion-panel>
+          </mat-expansion-panel>
+        }

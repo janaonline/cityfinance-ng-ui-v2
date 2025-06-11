@@ -1,13 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { NavigationEnd, Router } from '@angular/router';
 import { CommonService } from '../../../core/services/common.service';
 @Component({
-  selector: 'app-footer',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './footer.component.html',
-  styleUrl: './footer.component.scss',
+    selector: 'app-footer',
+    imports: [],
+    templateUrl: './footer.component.html',
+    styleUrl: './footer.component.scss'
 })
 export class FooterComponent implements OnInit {
   totalUsersVisit: number | undefined;
