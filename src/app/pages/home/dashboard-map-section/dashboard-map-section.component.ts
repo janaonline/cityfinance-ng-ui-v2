@@ -4,7 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FeatureCollection, GeoJsonObject, Geometry } from 'geojson';
 import L, { PathOptions, StyleFunction } from 'leaflet';
-import { Observable, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, Observable, of, startWith, Subscription, switchMap } from 'rxjs';
 import { InrCurrencyPipe } from '../../../core/directives/inr-currency.pipe';
 import { ICreditRatingData } from '../../../core/models/creditRating/creditRatingResponse';
 import { IState } from '../../../core/models/state/state';
@@ -52,6 +52,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   stateselected!: IState;
   creditRating: any = {};
   stateList!: IState[];
+  filteredStates: Observable<any[]> = of([]);
   statesLayer!: L.GeoJSON<any>;
   cityData = [];
   cityName = "";
@@ -69,7 +70,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   national: any = { _id: null, name: "India" };
   actStateVl: boolean = true;
 
-  filteredOptions!: Observable<any[]>;
+  filteredUlbs!: Observable<any[]>;
   isProcessingCompleted: any;
   stateLayers: any;
   nationalLevelMap!: L.Map;
@@ -105,7 +106,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       // });
     }, 1000);
     this.initializeform();
-    this.fetchStateList();
+    // this.fetchStateList();
     this.fetchDataForVisualization();
     // this.fetchDataForVisualization();
     this.fetchCreditRatingTotalCount();
@@ -170,6 +171,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
   ngOnInit(): void {
     this.clearDistrictMapContainer();
+    this.fetchStateList()
 
     this._commonService.state_name_data.subscribe((res: any) => {
       //console.log('sub....', res, res.name);
@@ -180,33 +182,83 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.authService.getLastUpdated().subscribe((res: { [x: string]: any; }) => {
       this.date = res["data"];
     });
+    this.searchUlb()
   }
+
+  get stateIdControl(): FormControl {
+    return this.myForm.get('stateId') as FormControl;
+  }
+
+  private _filterStates(value: string): any[] {
+    const filterValue = value.toLowerCase();
+    console.log("filter value", filterValue, this.stateList)
+    return !filterValue ? this.stateList : this.stateList?.filter(option => option.name?.toLowerCase().includes(filterValue))
+  }
+
   noDataFound = true;
-  callAPI(event: { target: { value: any; }; }) {
-    this._commonService
-      .postGlobalSearchData(event.target.value, "ulb", this.selectedStateCode)
-      .subscribe((res: any) => {
-        const emptyArr: any = [];
-        this.filteredOptions = emptyArr;
-        if (res?.data.length > 0) {
-          this.filteredOptions = res?.data;
-          this.noDataFound = false;
-        } else {
-          const emptyArr: any = [];
-          this.filteredOptions = emptyArr;
-          this.noDataFound = true;
-          const noDataFoundObj = {
-            name: "",
-            id: "",
-            type: "",
-          };
-        }
-      });
+
+  searchUlb() {
+    this.myForm.get('ulb')
+      ?.valueChanges
+      ?.pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(value => {
+          if (!value) {
+            this.noDataFound = false;
+            return of([])
+          }
+
+          const stateId = this.stateList.find(
+            (e) => e?.name.toLowerCase() == this.selected_state.toLowerCase()
+          )?._id;
+          return this._commonService.postGlobalSearchData(value, 'ulb', stateId);
+        })
+      )
+      .subscribe({
+        next: (res: any) => {
+          this.filteredUlbs = of(res?.['data']);
+          this.noDataFound = res?.['data']?.length === 0;
+        },
+        error: (error) => { console.error('Error in fetching ulbs: ', error) }
+      })
   }
+
+  // callAPI(event: { target: { value: any; }; }) {
+  // callAPI(event: KeyboardEvent) {
+  //   const input = event.target as HTMLInputElement;
+  //   const value = input.value;
+
+  //   console.log("value = ", value);
+
+  //   if (!event) return;
+  // if (!event.target) return;
+  // this._commonService
+  //   .postGlobalSearchData(event?.target?.value, "ulb", this.selectedStateCode)
+  //   .subscribe((res: any) => {
+  //     const emptyArr: any = [];
+  //     this.filteredUlbs = emptyArr;
+  //     if (res?.data.length > 0) {
+  //       this.filteredUlbs = res?.data;
+  //       this.noDataFound = false;
+  //     } else {
+  //       const emptyArr: any = [];
+  //       this.filteredUlbs = emptyArr;
+  //       this.noDataFound = true;
+  //       const noDataFoundObj = {
+  //         name: "",
+  //         id: "",
+  //         type: "",
+  //       };
+  //     }
+  //   }
+  // );
+  // }
 
   private initializeform() {
     this.myForm = this.fb.group({
       stateId: [""],
+      ulb: [""]
     });
   }
   private fetchMinMaxFinancialYears() {
@@ -503,7 +555,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     });
   }
   onSelectingStateFromDropDown(state: any | null) {
-    console.log({ state });
+    // console.log('on state click = ', state);
     if (this.districtMap) {
       MapUtil.destroy(this.districtMap);
     }
@@ -624,10 +676,15 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   private fetchStateList() {
     this._commonService.fetchStateList().subscribe((res: any) => {
-      // this.stateList = [{ _id: null, name: "India" }].concat(res);
       this.stateList = this._commonService.sortDataSource(res, 'name');
-      // this.stateList = [{ _id: null, name: "India" }].concat(this.stateList);
-      console.log('stateList', this.stateList)
+
+      this.filteredStates = this.stateIdControl.valueChanges
+        .pipe(
+          startWith(''),
+          debounceTime(300),
+          distinctUntilChanged(),
+          map(value => this._filterStates(value || ''))
+        );
     });
   }
 
