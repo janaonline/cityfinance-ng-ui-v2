@@ -92,6 +92,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/cfr/cfr.routes').then((mod) => mod.CFR_ROUTES),
   },
   {
+    path: 'map',
+    loadComponent: () =>
+      import('./shared/components/map/map.component').then((m) => m.MapComponent),
+  },
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },

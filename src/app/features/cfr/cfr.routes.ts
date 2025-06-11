@@ -2,7 +2,6 @@ import { Route } from '@angular/router';
 import { AssessmentParameterComponent } from './assessment-parameter/assessment-parameter.component';
 import { CfrHomeComponent } from './cfr-home/cfr-home.component';
 import { MapStateRankComponent } from './map-state-rank/map-state-rank.component';
-import { MapComponent } from './map/map.component';
 import { ParticipatingStateComponent } from './participating-state/participating-state.component';
 import { ParticipatingUlbsComponent } from './participating-ulbs/participating-ulbs.component';
 import { TopRankingsComponent } from './top-rankings/top-rankings.component';
@@ -16,9 +15,9 @@ export const CFR_ROUTES: Route[] = [
   // { path: "login", component: FiscalLoginComponent },
   // { path: "annual-financial-statements", component: AnnualFinancialStatementsComponent },
   // { path: "annual-budgets", component: AnnualBudgetsComponent },
-  { path: "top-rankings", component: TopRankingsComponent },
-  { path: "ulb/:ulbId", component: UlbDetailsComponent },
-  { path: "ulb-donwload/:ulbId", component: DownloadPdfComponent },
+  { path: 'top-rankings', component: TopRankingsComponent },
+  { path: 'ulb/:ulbId', component: UlbDetailsComponent },
+  { path: 'ulb-donwload/:ulbId', component: DownloadPdfComponent },
   // {
   //     path: "ulb-form/:ulbId",
   //     component: UlbFiscalNewComponent,
@@ -60,15 +59,16 @@ export const CFR_ROUTES: Route[] = [
   //     }
   // },
   {
-    path: 'assesst-parameters/:id', component: AssessmentParameterComponent
+    path: 'assesst-parameters/:id',
+    component: AssessmentParameterComponent,
   },
   {
     path: 'participated-states-ut',
     component: ParticipatingStateComponent,
   },
   {
-    path: 'participated-ulbs/:stateId', component: ParticipatingUlbsComponent
+    path: 'participated-ulbs/:stateId',
+    component: ParticipatingUlbsComponent,
   },
-  { path: 'map', component: MapComponent },
   { path: 'map-rank', component: MapStateRankComponent },
 ];
