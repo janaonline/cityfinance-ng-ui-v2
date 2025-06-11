@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
@@ -34,11 +34,20 @@ export class XviFcService {
     return this.http.get(`${environment.api.url}/state`);
   }
 
-  progressReport() {
-    return this.http.get(`${environment.api.url}xviFc/progressReport`, { responseType: 'blob' });
+  progressReport(stateName: string, formId: number) {
+    const params: { stateName?: string; formId?: number } = {};
+    if (stateName) params['stateName'] = stateName;
+    if (formId) params['formId'] = formId;
+    return this.http.get(`${environment.api.url}xviFc/progressReport`, {
+      params,
+      responseType: 'blob',
+    });
   }
 
-  dataDump() {
-    return this.http.get(`${environment.api.url}xviFc/dataDump`, { responseType: 'blob' });
+  dataDump(stateName: string, formId: number = 0) {
+    const params: { stateName?: string; formId?: number } = {};
+    if (stateName) params['stateName'] = stateName;
+    if (formId) params['formId'] = formId;
+    return this.http.get(`${environment.api.url}xviFc/dataDump`, { params, responseType: 'blob' });
   }
 }
