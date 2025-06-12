@@ -20,7 +20,7 @@ export class MapService {
     fillColor: this.cfSecondary,
     weight: 1,
     opacity: 0.8,
-    color: 'grey',
+    color: 'lightgrey',
     fillOpacity: 1,
   };
   private readonly blueIcon = L.icon({
@@ -43,7 +43,7 @@ export class MapService {
   constructor(
     // private _geoService: GeographicalService,
     private http: HttpClient,
-  ) {}
+  ) { }
 
   initMap(elementId: string, config: MapConfig, options?: L.MapOptions): void {
     this.map?.remove(); // Ensure previous map is removed
@@ -53,9 +53,10 @@ export class MapService {
       fadeAnimation: true,
       zoomControl: false,
       keyboard: false,
-      attributionControl: true,
+      attributionControl: false,
       doubleClickZoom: false,
       dragging: false,
+      zoomSnap: 0.01,
       ...options,
     }).setView(config.initialView, config.initialZoom, { animate: true });
   }

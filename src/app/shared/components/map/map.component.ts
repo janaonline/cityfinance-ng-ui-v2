@@ -7,6 +7,7 @@ import {
   OnInit,
   Output,
 } from '@angular/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as L from 'leaflet';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 import { allUlbsData } from '../../../../assets/jsonFile/ulbsListLocalStorage';
@@ -16,10 +17,25 @@ import { MapService } from './map.service';
 
 @Component({
   selector: 'app-map',
-  standalone: true,
-  imports: [],
+  imports: [MatProgressSpinnerModule],
   providers: [UserUtility],
-  template: `<div id="map" [class.state-highlight]="stateCode"></div>`,
+  template: `
+    <!--
+  <div class="d-flex">
+  <div class="flex-grow-1 position-relative" style="min-height: 500px;">
+  <div id="map-container" [class.state-highlight]="stateCode"></div>
+  </div>
+  </div>
+  -->
+    <div id="map-container" [class.state-highlight]="stateCode"></div>
+
+    <!-- Loader Overlay -->
+    @if (isMapLoading) {
+      <div class="custom-spinner-overlay position-absolute">
+        <mat-spinner></mat-spinner>
+      </div>
+    }
+  `,
   styles: [
     `
       * {
@@ -27,9 +43,13 @@ import { MapService } from './map.service';
       }
     `,
     `
-      #map {
+      #map-container {
         width: 100%;
-        height: 100vh;
+        height: 100%;
+        background-image: url('/assets/images/maps/layer1.png') !important;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-color: transparent !important;
       }
     `,
     `
@@ -48,18 +68,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, Resettabl
   @Input() ulbId!: string;
   @Output() ulbIdChange = new EventEmitter<string>();
 
-  private readonly DEFAULT_ZOOM_LEVEL = 4.4;
+  private readonly DEFAULT_ZOOM_LEVEL = 4.3;
   private ulbsList: ULBDataPoint[] = [];
   private stateLayer: L.GeoJSON | null = null; // To hold current state layer.
   private mapConfig: MapConfig = {
-    initialView: [19.59, 78.96],
+    initialView: [23, 78.96],
     initialZoom: this.DEFAULT_ZOOM_LEVEL,
     minZoom: this.DEFAULT_ZOOM_LEVEL,
     maxZoom: this.DEFAULT_ZOOM_LEVEL + 2,
   };
   private destroy$ = new Subject<void>();
+  public isMapLoading = true;
 
-  constructor(private mapService: MapService) {}
+  constructor(private mapService: MapService) { }
 
   ngOnInit(): void {
     if (this.stateCode) this.loadMapData();
@@ -67,7 +88,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, Resettabl
 
   // Initialize the map after view is ready
   ngAfterViewInit(): void {
-    this.mapService.initMap('map', this.mapConfig);
+    this.mapService.initMap('map-container', this.mapConfig);
     this.loadMapData();
 
     // If any state is clicked - initiate state map.
@@ -102,8 +123,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, Resettabl
         // Fetch the JSON data for the specified state if 'stateCode' is provided; otherwise, fetch the json for all of India.
         const geoJson = this.stateCode
           ? data['features'].filter(
-              (stateObj: GeoJsonFeature) => this.stateCode === stateObj['properties']['ST_CODE'],
-            )
+            (stateObj: GeoJsonFeature) => this.stateCode === stateObj['properties']['ST_CODE'],
+          )
           : data['features'];
 
         const stateGeoJsonData: StateGeoJson = {
@@ -115,7 +136,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, Resettabl
 
         // Send geoJson of state if 'stateCode' is provided; otherwise, send the json for all of India.
         if (this.stateCode && geoJson.length) {
-          this.mapService.flyToStateBounds(this.stateLayer, [20, 20], 2, 0.5);
+          this.mapService.flyToStateBounds(this.stateLayer, [0, 0], 1.5, 0.5);
           this.getCityCordinates();
           this.mapService.addCityMarkersToMap(this.stateCode, this.ulbId, this.ulbsList);
         } else {
@@ -124,6 +145,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, Resettabl
         }
       },
       error: (error) => console.error('Error loading map data in component:', error),
+      complete: () => {
+        this.isMapLoading = false;
+      },
     });
   }
 
@@ -132,7 +156,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, Resettabl
     this.ulbsList = this.stateCode ? allUlbsData[`${this.stateCode}`]['ulbs'] : [];
   }
 
-  // TODO: Reset will be done from parent component.
   public resetMap(): void {
     this.stateCode = '';
     this.loadMapData();

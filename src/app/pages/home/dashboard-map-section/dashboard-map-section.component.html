@@ -2,9 +2,19 @@
   <div class="text-center">
     <div class="expo">Explore</div>
   </div>
+  <!-- <div class="row">
+    <div class="col-sm-12 col-md-12 col-lg-6 d-flex flex-column align-center border border-2 border-danger flex-grow-1">
+      <app-map></app-map>
+      <button class="btn p-0 m-0 border-0 bg-transparent text-cfPrimary fw-bold">Reset Map to India</button> -->
+
   <div class="row">
-    <div class="col-sm-12 col-md-12 col-lg-6 stateMapContainer">
-      @if (!nationalLevelMap) {
+    <div class="col-sm-12 col-md-12 col-lg-6 d-flex flex-column">
+      <div class="flex-grow-1 position-relative" style="min-height: 500px;">
+        <app-map #map></app-map>
+      </div>
+      <button class="btn p-0 m-0 border-0 bg-transparent text-cfPrimary fw-bold" (click)="resetMap()">Reset Map to
+        India</button>
+      <!-- @if (!nationalLevelMap) {
       <div class="skeletonWrapper container-fluid spinner_overlay d-flex justify-content-center align-items-center"
         style="z-index: 1000">
         @if (isLoading) {
@@ -13,12 +23,12 @@
       </div>
       }
       @if (isMapOnMiniMapMode) {
-      <div class="map-reset w-100 text-center mb-3 mt-3" style="z-index: 10000">
-        <!-- <a type="button" style="text-decoration: none" (click)="onSelectingStateFromDropDown(national)">Reset
+      <div class="map-reset w-100 text-center mb-3 mt-3" style="z-index: 10000"> -->
+      <!-- <a type="button" style="text-decoration: none" (click)="onSelectingStateFromDropDown(national)">Reset
           Map To
         India</a> -->
-      </div>
-      }
+      <!-- </div>
+      } -->
 
       <!-- <div class="col-sm-12" id="districtMapContainer" [ngStyle]="{ visibility:  ? 'visible' : 'hidden' }"
     style="height: 100%">

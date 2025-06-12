@@ -1,10 +1,10 @@
-import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FeatureCollection, GeoJsonObject, Geometry } from 'geojson';
 import L, { PathOptions, StyleFunction } from 'leaflet';
-import { debounceTime, distinctUntilChanged, map, Observable, of, startWith, Subscription, switchMap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, Observable, of, startWith, Subscription, switchMap, tap } from 'rxjs';
 import { InrCurrencyPipe } from '../../../core/directives/inr-currency.pipe';
 import { ICreditRatingData } from '../../../core/models/creditRating/creditRatingResponse';
 import { IState } from '../../../core/models/state/state';
@@ -19,41 +19,48 @@ import { UserUtility } from '../../../core/util/user/user';
 import { MaterialModule } from '../../../material.module';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { ILeafletStateClickEvent } from '../../../shared/components/re-useable-heat-map/models/leafletStateClickEvent';
+import { MapComponent } from "../../../shared/components/map/map.component";
 // import { ReUseableHeatMapComponent } from '../../../shared/components/re-useable-heat-map/re-useable-heat-map.component';
 
 @Component({
   selector: 'app-dashboard-map-section',
-  imports: [MaterialModule, InrCurrencyPipe, PreLoaderComponent],
+  imports: [MaterialModule, InrCurrencyPipe, PreLoaderComponent, MapComponent],
   templateUrl: './dashboard-map-section.component.html',
   styleUrl: './dashboard-map-section.component.scss'
 })
 export class DashboardMapSectionComponent implements OnDestroy, OnInit {
+  @ViewChild('map') mapComponent!: MapComponent;
+  resetMap(): void {
+    this.mapComponent?.resetMap();
+    this.myForm.patchValue({ stateId: '' })
+    this.onSelectingStateFromDropDown('');
+  }
   myForm!: FormGroup;
   stateUlbData = JSON.parse(localStorage.getItem("ulbList") || 'null');
-  selectedDistrictCode: any;
+  // selectedDistrictCode: any;
   selectedStateCode!: string | number;
-  @Input()
-  mapConfig = {
-    code: {
-      state: "",
-      city: "",
-    },
-    showStateList: false,
-    showDistrictList: false,
-    stateMapContainerHeight: "23rem",
-    nationalZoomOnMobile: 4, // will fit map in container
-    nationalZoomOnWeb: 4.4, // will fit map in container
-    stateZoomOnMobile: 4, // will fit map in container
-    stateZoomOnWeb: 4, // will fit map in container
-    stateBlockHeight: "23.5rem", // will fit map in container
-  };
+  // @Input()
+  // mapConfig = {
+  //   code: {
+  //     state: "",
+  //     city: "",
+  //   },
+  //   showStateList: false,
+  //   showDistrictList: false,
+  //   stateMapContainerHeight: "23rem",
+  //   nationalZoomOnMobile: 4, // will fit map in container
+  //   nationalZoomOnWeb: 4.4, // will fit map in container
+  //   stateZoomOnMobile: 4, // will fit map in container
+  //   stateZoomOnWeb: 4, // will fit map in container
+  //   stateBlockHeight: "23.5rem", // will fit map in container
+  // };
   yearSelected = [];
   selected_state = "India";
   stateselected!: IState;
   creditRating: any = {};
   stateList!: IState[];
   filteredStates: Observable<any[]> = of([]);
-  statesLayer!: L.GeoJSON<any>;
+  // statesLayer!: L.GeoJSON<any>;
   cityData = [];
   cityName = "";
   dropdownSettings = {
@@ -65,24 +72,24 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     showCheckbox: false,
     classes: "homepage-stateList custom-class",
   };
-  districtMarkerMap: any = {};
+  // districtMarkerMap: any = {};
 
   national: any = { _id: null, name: "India" };
   actStateVl: boolean = true;
 
   filteredUlbs!: Observable<any[]>;
   isProcessingCompleted: any;
-  stateLayers: any;
-  nationalLevelMap!: L.Map;
+  // stateLayers: any;
+  // nationalLevelMap!: L.Map;
   queryParams: any;
   stateData: any;
-  mouseHoverOnState!: null;
-  isMapOnMiniMapMode: any;
+  // mouseHoverOnState!: null;
+  // isMapOnMiniMapMode: any;
   userUtil = new UserUtility();
-  newDashboardstateColorStyle: PathOptions | StyleFunction<any> | undefined;
-  blueIcon: any;
-  mouseHoveredOnULB: any;
-  isNationalMapToDistroctMapInProcess: any;
+  // newDashboardstateColorStyle: PathOptions | StyleFunction<any> | undefined;
+  // blueIcon: any;
+  // mouseHoveredOnULB: any;
+  // isNationalMapToDistroctMapInProcess: any;
   constructor(
     protected _commonService: CommonService,
     protected _snackbar: MatSnackBar,
@@ -122,7 +129,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     ulbDataCount?: any;
     loading: boolean;
   } = { loading: true };
-  previousStateLayer!: ILeafletStateClickEvent["sourceTarget"] | L.Layer;
+  // previousStateLayer!: ILeafletStateClickEvent["sourceTarget"] | L.Layer;
   totalUsersVisit: number = 0;
 
   absCreditInfo: any = {};
@@ -144,18 +151,18 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     min: string;
     max: string;
   };
-  StyleForSelectedState = {
-    weight: 2,
-    color: "black",
-    fillOpacity: 1,
-  };
-  defaultStateLayerColorOption = {
-    fillColor: "#efefef",
-    weight: 1,
-    opacity: 1,
-    color: "#403f3f",
-    fillOpacity: 1,
-  };
+  // StyleForSelectedState = {
+  //   weight: 2,
+  //   color: "black",
+  //   fillOpacity: 1,
+  // };
+  // defaultStateLayerColorOption = {
+  //   fillColor: "#efefef",
+  //   weight: 1,
+  //   opacity: 1,
+  //   color: "#403f3f",
+  //   fillOpacity: 1,
+  // };
   date: any;
   districtMap!: L.Map;
   highestYear: any;
@@ -170,7 +177,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     // };
   }
   ngOnInit(): void {
-    this.clearDistrictMapContainer();
+    // this.clearDistrictMapContainer();
     this.fetchStateList()
 
     this._commonService.state_name_data.subscribe((res: any) => {
@@ -281,243 +288,243 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   dashboardNav(option: any) {
     this.selectCity(option);
   }
-  createNationalLevelMap(
-    geoData: FeatureCollection<
-      Geometry,
-      {
-        [name: string]: any;
-      }
-    >,
-    containerId: string
-  ) {
-    this.isLoading = true;
-    this.isProcessingCompleted.emit(false);
-    let zoom;
-    if (window.innerWidth > 1050) zoom = this.mapConfig.nationalZoomOnWeb;
-    else zoom = this.mapConfig.nationalZoomOnMobile;
-    // let vw = Math.max(document.documentElement.clientWidth);
-    // vw = (vw - 1366) / 1366;
-    // let zoom = 4 + vw;
-    // if (this.userUtil.isUserOnMobile()) {
-    //   zoom = 3.5 + (window.devicePixelRatio - 2) / 10;
-    //   if (window.innerHeight < 600) zoom = 3.6;
-    //   const valueOf1vh = this.calculateVH(1);
-    //   if (valueOf1vh < 5) zoom = 3;
-    //   else if (valueOf1vh < 7) zoom = zoom - 0.2;
-    //   // return zoom;
-    // }
+  // createNationalLevelMap(
+  //   geoData: FeatureCollection<
+  //     Geometry,
+  //     {
+  //       [name: string]: any;
+  //     }
+  //   >,
+  //   containerId: string
+  // ) {
+  //   this.isLoading = true;
+  //   this.isProcessingCompleted.emit(false);
+  //   let zoom;
+  //   if (window.innerWidth > 1050) zoom = this.mapConfig.nationalZoomOnWeb;
+  //   else zoom = this.mapConfig.nationalZoomOnMobile;
+  //   // let vw = Math.max(document.documentElement.clientWidth);
+  //   // vw = (vw - 1366) / 1366;
+  //   // let zoom = 4 + vw;
+  //   // if (this.userUtil.isUserOnMobile()) {
+  //   //   zoom = 3.5 + (window.devicePixelRatio - 2) / 10;
+  //   //   if (window.innerHeight < 600) zoom = 3.6;
+  //   //   const valueOf1vh = this.calculateVH(1);
+  //   //   if (valueOf1vh < 5) zoom = 3;
+  //   //   else if (valueOf1vh < 7) zoom = zoom - 0.2;
+  //   //   // return zoom;
+  //   // }
 
-    const configuration: IMapCreationConfig = {
-      containerId,
-      geoData,
-      options: {
-        zoom,
-        maxZoom: zoom,
-        minZoom: zoom,
-        attributionControl: false,
-        doubleClickZoom: false,
-        dragging: false,
-        // tap: false,
-      },
-    };
-    let map: L.Map;
+  //   const configuration: IMapCreationConfig = {
+  //     containerId,
+  //     geoData,
+  //     options: {
+  //       zoom,
+  //       maxZoom: zoom,
+  //       minZoom: zoom,
+  //       attributionControl: false,
+  //       doubleClickZoom: false,
+  //       dragging: false,
+  //       // tap: false,
+  //     },
+  //   };
+  //   let map: L.Map;
 
-    ({ stateLayers: this.stateLayers, map } =
-      MapUtil.createDefaultNationalMap(configuration));
+  //   ({ stateLayers: this.stateLayers, map } =
+  //     MapUtil.createDefaultNationalMap(configuration));
 
-    this.nationalLevelMap = map;
+  //   this.nationalLevelMap = map;
 
-    // this.createLegendsForNationalLevelMap();
-    // this.createControls(this.nationalLevelMap);
+  //   // this.createLegendsForNationalLevelMap();
+  //   // this.createControls(this.nationalLevelMap);
 
-    // this.initializeNationalLevelMapLayer(this.stateLayers);
+  //   // this.initializeNationalLevelMapLayer(this.stateLayers);
 
-    // // Prepare to auto select state from query Params.
-    // let stateToAutoSelect: IStateULBCovered;
-    // let layerToAutoSelect;
-    // if (this.queryParams.state) {
-    //   const stateFound = this.stateData.find(
-    //     (state: { _id: any; }) => state._id === this.queryParams.state
-    //   );
-    //   // if (stateFound) stateToAutoSelect = stateFound;
-    // }
+  //   // // Prepare to auto select state from query Params.
+  //   // let stateToAutoSelect: IStateULBCovered;
+  //   // let layerToAutoSelect;
+  //   // if (this.queryParams.state) {
+  //   //   const stateFound = this.stateData.find(
+  //   //     (state: { _id: any; }) => state._id === this.queryParams.state
+  //   //   );
+  //   //   // if (stateFound) stateToAutoSelect = stateFound;
+  //   // }
 
-    // this.stateLayers.eachLayer((layer: any) => {
-    //   if (stateToAutoSelect) {
-    //     if (MapUtil.getStateName(layer) === stateToAutoSelect.name) {
-    //       layerToAutoSelect = { sourceTarget: layer };
-    //     }
-    //   }
-    //   (layer as any).bringToBack();
-    //   (layer as any).on({
-    //     mouseover: () => this.createTooltip(layer, this.stateLayers),
-    //     click: (args: ILeafletStateClickEvent) => {
-    //       this.selectedStateCode = args.sourceTarget.feature.properties.ST_CODE;
-    //       this.onStateLayerClick(args, true, false);
-    //     },
-    //     mouseout: () => (this.mouseHoverOnState = null),
-    //   });
-    // });
+  //   // this.stateLayers.eachLayer((layer: any) => {
+  //   //   if (stateToAutoSelect) {
+  //   //     if (MapUtil.getStateName(layer) === stateToAutoSelect.name) {
+  //   //       layerToAutoSelect = { sourceTarget: layer };
+  //   //     }
+  //   //   }
+  //   //   (layer as any).bringToBack();
+  //   //   (layer as any).on({
+  //   //     mouseover: () => this.createTooltip(layer, this.stateLayers),
+  //   //     click: (args: ILeafletStateClickEvent) => {
+  //   //       this.selectedStateCode = args.sourceTarget.feature.properties.ST_CODE;
+  //   //       this.onStateLayerClick(args, true, false);
+  //   //     },
+  //   //     mouseout: () => (this.mouseHoverOnState = null),
+  //   //   });
+  //   // });
 
-    /**
-     * @description If the map is already on mini mode, then it means the state is already selected, and its state map
-     * is in the view.
-     */
+  //   /**
+  //    * @description If the map is already on mini mode, then it means the state is already selected, and its state map
+  //    * is in the view.
+  //    */
 
-    // if (layerToAutoSelect && !this.isMapOnMiniMapMode) {
-    //   this.onStateLayerClick(layerToAutoSelect);
-    //   this.isLoading = false;
-    // }
-    // this.hideMapLegends();
+  //   // if (layerToAutoSelect && !this.isMapOnMiniMapMode) {
+  //   //   this.onStateLayerClick(layerToAutoSelect);
+  //   //   this.isLoading = false;
+  //   // }
+  //   // this.hideMapLegends();
 
-    // if (this.isMapOnMiniMapMode) {
-    //   this.hideMapLegends();
-    //   this.showStateLayerOnlyFor(
-    //     this.nationalLevelMap,
-    //     this.currentStateInView
-    //   );
-    // }
+  //   // if (this.isMapOnMiniMapMode) {
+  //   //   this.hideMapLegends();
+  //   //   this.showStateLayerOnlyFor(
+  //   //     this.nationalLevelMap,
+  //   //     this.currentStateInView
+  //   //   );
+  //   // }
 
-    this.isProcessingCompleted.emit(true);
-  }
+  //   this.isProcessingCompleted.emit(true);
+  // }
 
 
-  showMapLegends() {
-    console.warn("show legends hidden");
-  }
+  // showMapLegends() {
+  //   console.warn("show legends hidden");
+  // }
 
-  clearDistrictMapContainer() {
-    if (this.districtMap) {
-      this.districtMap.off();
-      this.districtMap.remove();
-    }
-    // const height = this.userUtil.isUserOnMobile() ? `100%` : "80vh";
-    const height = this.userUtil.isUserOnMobile() ? `100%` : "inherit";
-    // const height = `100%`;
-    const element = document.getElementById("districtMapContainer");
-    //   (document.getElementById("districtMapContainer") as HTMLElement).innerHTML = `
-    //     <div
-    //   id="districtMapId"
-    //   class="col-sm-12"
-    //   style="background-color: #F8F9FF; background-image: url('../../../../assets/Layer\ 1.png');
-    //   display: inline-block; width: 100%;height: ${height};"
-    // >
-    // </div>`;
-  }
+  // clearDistrictMapContainer() {
+  //   if (this.districtMap) {
+  //     this.districtMap.off();
+  //     this.districtMap.remove();
+  //   }
+  //   // const height = this.userUtil.isUserOnMobile() ? `100%` : "80vh";
+  //   const height = this.userUtil.isUserOnMobile() ? `100%` : "inherit";
+  //   // const height = `100%`;
+  //   const element = document.getElementById("districtMapContainer");
+  //   //   (document.getElementById("districtMapContainer") as HTMLElement).innerHTML = `
+  //   //     <div
+  //   //   id="districtMapId"
+  //   //   class="col-sm-12"
+  //   //   style="background-color: #F8F9FF; background-image: url('../../../../assets/Layer\ 1.png');
+  //   //   display: inline-block; width: 100%;height: ${height};"
+  //   // >
+  //   // </div>`;
+  // }
 
-  createDistrictMap(
-    districtGeoJSON: GeoJsonObject | GeoJsonObject[] | null | undefined,
-    options: {
-      center: ILeafletStateClickEvent["latlng"];
-      dataPoints: {
-        lat: string;
-        lng: string;
-        name: string;
-        area: number;
-        population: number;
-        auditStatus: ULBWithMapData["auditStatus"];
-      }[];
-    }
-  ) {
-    console.log("json", districtGeoJSON);
-    if (this.districtMap) {
-      return;
-    }
-    this.clearDistrictMapContainer();
+  // createDistrictMap(
+  //   districtGeoJSON: GeoJsonObject | GeoJsonObject[] | null | undefined,
+  //   options: {
+  //     center: ILeafletStateClickEvent["latlng"];
+  //     dataPoints: {
+  //       lat: string;
+  //       lng: string;
+  //       name: string;
+  //       area: number;
+  //       population: number;
+  //       auditStatus: ULBWithMapData["auditStatus"];
+  //     }[];
+  //   }
+  // ) {
+  //   console.log("json", districtGeoJSON);
+  //   if (this.districtMap) {
+  //     return;
+  //   }
+  //   // this.clearDistrictMapContainer();
 
-    setTimeout(() => {
-      let vw = Math.max(document.documentElement.clientWidth);
-      vw = (vw - 1366) / 1366;
-      let zoom = 5.5 + vw;
-      if (this.userUtil.isUserOnMobile()) {
-        zoom = 5.5;
-      }
+  //   setTimeout(() => {
+  //     let vw = Math.max(document.documentElement.clientWidth);
+  //     vw = (vw - 1366) / 1366;
+  //     let zoom = 5.5 + vw;
+  //     if (this.userUtil.isUserOnMobile()) {
+  //       zoom = 5.5;
+  //     }
 
-      zoom = 5.5;
+  //     zoom = 5.5;
 
-      const districtMap = L.map("districtMapId", {
-        scrollWheelZoom: false,
-        fadeAnimation: true,
-        minZoom: zoom,
-        maxZoom: zoom + 2,
-        // maxZoom: zoom,
-        zoomControl: false,
-        keyboard: true,
-        attributionControl: true,
-        doubleClickZoom: false,
-        dragging: false,
-        // tap: true,
-      }).setView([options.center.lat, options.center.lng], 4);
-      // districtMap.touchZoom.disable();
-      // districtMap.doubleClickZoom.disable();
-      districtMap.scrollWheelZoom.disable();
-      // districtMap.boxZoom.disable();
-      // districtMap.keyboard.disable();
-      // districtMap.dragging.disable();
+  //     const districtMap = L.map("districtMapId", {
+  //       scrollWheelZoom: false,
+  //       fadeAnimation: true,
+  //       minZoom: zoom,
+  //       maxZoom: zoom + 2,
+  //       // maxZoom: zoom,
+  //       zoomControl: false,
+  //       keyboard: true,
+  //       attributionControl: true,
+  //       doubleClickZoom: false,
+  //       dragging: false,
+  //       // tap: true,
+  //     }).setView([options.center.lat, options.center.lng], 4);
+  //     // districtMap.touchZoom.disable();
+  //     // districtMap.doubleClickZoom.disable();
+  //     districtMap.scrollWheelZoom.disable();
+  //     // districtMap.boxZoom.disable();
+  //     // districtMap.keyboard.disable();
+  //     // districtMap.dragging.disable();
 
-      const districtLayer = L.geoJSON(districtGeoJSON, {
-        style: this.newDashboardstateColorStyle,
-      }).addTo(districtMap);
+  //     const districtLayer = L.geoJSON(districtGeoJSON, {
+  //       style: this.newDashboardstateColorStyle,
+  //     }).addTo(districtMap);
 
-      if (districtLayer) {
-        districtMap.fitBounds(districtLayer.getBounds());
-      }
-      this.districtMap = districtMap;
+  //     if (districtLayer) {
+  //       districtMap.fitBounds(districtLayer.getBounds());
+  //     }
+  //     this.districtMap = districtMap;
 
-      // options.dataPoints.forEach((dataPoint: any) => {
-      //   /* Creating a popup without a close button.
-      //   * available option are {closeOnClick: false, closeButton: true, autoClose: true }
-      //   * if you know other option too please add into this object for future reference
-      //   */
-      //   const popup = L.popup({ closeButton: false, autoClose: true }).setContent(`${this._commonService.createCityTooltip(dataPoint)}`);
-      //   const marker = this.createDistrictMarker({
-      //     ...dataPoint,
-      //     icon: this.blueIcon,
-      //   }).addTo(districtMap)
-      //     .bindPopup(popup);
+  //     // options.dataPoints.forEach((dataPoint: any) => {
+  //     //   /* Creating a popup without a close button.
+  //     //   * available option are {closeOnClick: false, closeButton: true, autoClose: true }
+  //     //   * if you know other option too please add into this object for future reference
+  //     //   */
+  //     //   const popup = L.popup({ closeButton: false, autoClose: true }).setContent(`${this._commonService.createCityTooltip(dataPoint)}`);
+  //     //   const marker = this.createDistrictMarker({
+  //     //     ...dataPoint,
+  //     //     icon: this.blueIcon,
+  //     //   }).addTo(districtMap)
+  //     //     .bindPopup(popup);
 
-      //   /* Adding a mouseover and mouseout event to the marker. */
-      //   marker.on({
-      //     mouseover: () => {
-      //       this.mouseHoveredOnULB = dataPoint;
-      //       marker.openPopup();
-      //     }
-      //   });
-      //   marker.on({
-      //     mouseout: () => {
-      //       this.mouseHoveredOnULB = null;
-      //       marker.closePopup();
-      //     }
-      //   });
+  //     //   /* Adding a mouseover and mouseout event to the marker. */
+  //     //   marker.on({
+  //     //     mouseover: () => {
+  //     //       this.mouseHoveredOnULB = dataPoint;
+  //     //       marker.openPopup();
+  //     //     }
+  //     //   });
+  //     //   marker.on({
+  //     //     mouseout: () => {
+  //     //       this.mouseHoveredOnULB = null;
+  //     //       marker.closePopup();
+  //     //     }
+  //     //   });
 
-      //   /* Setting the mouseHoveredOnULB property of the component to the dataPoint object. */
-      //   // marker.on("mouseover", () => (this.mouseHoveredOnULB = dataPoint));
-      //   // marker.on("mouseout", () => (this.mouseHoveredOnULB = null));
-      //   marker.on("click", (values: LeafletMouseEvent) => {
-      //     let city;
-      //     if (values["latlng"])
-      //       city = this.stateUlbData.data[this.selectedStateCode].ulbs.find(
-      //         (value: { location: { lat: string | number; lng: string | number; }; }) =>
-      //           +value.location.lat === values["latlng"].lat &&
-      //           +value.location.lng === values["latlng"].lng
-      //       );
-      //     if (city) {
-      //       this.selectedDistrictCode = city.code;
-      //       this.selectCity(city.code, false);
-      //     }
-      //     this.onDistrictMarkerClick(<L.LeafletMouseEvent>values, marker);
-      //   });
-      //   this.districtMarkerMap[dataPoint.code] = marker;
-      // });
-    }, 0.5);
+  //     //   /* Setting the mouseHoveredOnULB property of the component to the dataPoint object. */
+  //     //   // marker.on("mouseover", () => (this.mouseHoveredOnULB = dataPoint));
+  //     //   // marker.on("mouseout", () => (this.mouseHoveredOnULB = null));
+  //     //   marker.on("click", (values: LeafletMouseEvent) => {
+  //     //     let city;
+  //     //     if (values["latlng"])
+  //     //       city = this.stateUlbData.data[this.selectedStateCode].ulbs.find(
+  //     //         (value: { location: { lat: string | number; lng: string | number; }; }) =>
+  //     //           +value.location.lat === values["latlng"].lat &&
+  //     //           +value.location.lng === values["latlng"].lng
+  //     //       );
+  //     //     if (city) {
+  //     //       this.selectedDistrictCode = city.code;
+  //     //       this.selectCity(city.code, false);
+  //     //     }
+  //     //     this.onDistrictMarkerClick(<L.LeafletMouseEvent>values, marker);
+  //     //   });
+  //     //   this.districtMarkerMap[dataPoint.code] = marker;
+  //     // });
+  //   }, 0.5);
 
-  }
-  // createDistrictMarker(arg0: any) {
+  // }
+  // // createDistrictMarker(arg0: any) {
+  // //   throw new Error('Method not implemented.');
+  // // }
+  // onDistrictMarkerClick(arg0: L.LeafletMouseEvent, marker: any) {
   //   throw new Error('Method not implemented.');
   // }
-  onDistrictMarkerClick(arg0: L.LeafletMouseEvent, marker: any) {
-    throw new Error('Method not implemented.');
-  }
 
   selectCity(city: any, fireEvent = true) {
     const filterCity: any = this.cityData.find((e: any) => {
@@ -526,7 +533,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.cityName = filterCity.name;
     this.stateDim = true;
     this.cid = filterCity._id;
-    console.log("cityId", this.cid, filterCity, this.districtMarkerMap); //CityId after selecting a city from dropdown
+    // console.log("cityId", this.cid, filterCity, this.districtMarkerMap); //CityId after selecting a city from dropdown
     // if (fireEvent) this.districtMarkerMap[filterCity.code].fireEvent("click");
     console.log("city name", city, filterCity);
     this.authService.getCityData(this.cid).subscribe((res: { [x: string]: any; }) => {
@@ -574,105 +581,105 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     /* Updating the dropdown state selection. */
     this.showCreditInfoByState(this.selected_state);
     if (state._id == null) this.updateDropdownStateSelection(state);
-    if (this.selected_state === "India" && this.isMapOnMiniMapMode) {
-      const element = document.getElementById(this.createdDomMinId) as HTMLElement;
-      element.style.display = "block";
+    // if (this.selected_state === "India" && this.isMapOnMiniMapMode) {
+    //   const element = document.getElementById(this.createdDomMinId) as HTMLElement;
+    //   element.style.display = "block";
 
-      this.resetMapToNationalLevel();
-      // this.initializeNationalLevelMapLayer(this.stateLayers);
-    }
-    this.stateselected = state;
+    //   // this.resetMapToNationalLevel();
+    //   // this.initializeNationalLevelMapLayer(this.stateLayers);
+    // }
+    // this.stateselected = state;
     this.fetchDataForVisualization(state ? state._id : null);
     this.fetchBondIssueAmout(
       // this.stateselected ? this.stateselected._id : null
     );
-    this.selectStateOnMap(state);
+    // this.selectStateOnMap(state);
   }
-  createdDomMinId: any;
-  resetMapToNationalLevel: any;
+  // createdDomMinId: any;
+  // resetMapToNationalLevel: any;
 
-  private selectStateOnMap(state?: IState) {
-    if (this.previousStateLayer) {
-      // this.resetStateLayer(this.previousStateLayer);
-      // this.previousStateLayer = null;
-    }
-    if (!state) {
-      return;
-    }
-    this.stateLayers?.eachLayer((layer: any) => {
-      const layerName = MapUtil.getStateName(layer);
-      if (layerName !== state.name) {
-        return;
-      }
-      this.previousStateLayer = layer;
-      this.higlightClickedState(layer);
-    });
-  }
+  // private selectStateOnMap(state?: IState) {
+  //   if (this.previousStateLayer) {
+  //     // this.resetStateLayer(this.previousStateLayer);
+  //     // this.previousStateLayer = null;
+  //   }
+  //   if (!state) {
+  //     return;
+  //   }
+  //   this.stateLayers?.eachLayer((layer: any) => {
+  //     const layerName = MapUtil.getStateName(layer);
+  //     if (layerName !== state.name) {
+  //       return;
+  //     }
+  //     this.previousStateLayer = layer;
+  //     this.higlightClickedState(layer);
+  //   });
+  // }
 
-  onStateLayerClick(
-    args: ILeafletStateClickEvent,
-    showMiniMap = true,
-    skipOndropDownSelect = true
-  ) {
-    console.log("aggs.", args);
-    this.isProcessingCompleted.emit(false);
-    if (this.isNationalMapToDistroctMapInProcess) {
-      return;
-    }
-    this.isNationalMapToDistroctMapInProcess = setTimeout(() => {
-      try {
-        this.onClickingState(args, showMiniMap, skipOndropDownSelect);
-      } catch (error) {
-        this.mouseHoverOnState = null;
-        /**
-         * This error will generally occur when you change the year (dont close the year dropdown) and then click on the state.
-         */
-        console.error(error);
-      }
-      setTimeout(() => {
-        this.isNationalMapToDistroctMapInProcess = null;
-        this.isProcessingCompleted.emit(true);
-      }, 0);
-    }, 1);
-  }
-  onClickingState(args: ILeafletStateClickEvent, showMiniMap: boolean, skipOndropDownSelect: boolean) {
-    throw new Error('Method not implemented.');
-  }
+  // onStateLayerClick(
+  //   args: ILeafletStateClickEvent,
+  //   showMiniMap = true,
+  //   skipOndropDownSelect = true
+  // ) {
+  //   console.log("aggs.", args);
+  //   this.isProcessingCompleted.emit(false);
+  //   if (this.isNationalMapToDistroctMapInProcess) {
+  //     return;
+  //   }
+  //   this.isNationalMapToDistroctMapInProcess = setTimeout(() => {
+  //     try {
+  //       this.onClickingState(args, showMiniMap, skipOndropDownSelect);
+  //     } catch (error) {
+  //       this.mouseHoverOnState = null;
+  //       /**
+  //        * This error will generally occur when you change the year (dont close the year dropdown) and then click on the state.
+  //        */
+  //       console.error(error);
+  //     }
+  //     setTimeout(() => {
+  //       this.isNationalMapToDistroctMapInProcess = null;
+  //       this.isProcessingCompleted.emit(true);
+  //     }, 0);
+  //   }, 1);
+  // }
+  // onClickingState(args: ILeafletStateClickEvent, showMiniMap: boolean, skipOndropDownSelect: boolean) {
+  //   throw new Error('Method not implemented.');
+  // }
 
-  private higlightClickedState(stateLayer: { setStyle: (arg0: { fillColor: string; fillOpacity: number; }) => void; }) {
-    const currentUrl = window.location.pathname;
-    const obj: any = {
-      containerPoint: {},
-      latlng: {
-        // lat: 23.48789594497792,
-        // lng: 78.2647891998273
-      },
-      layerPoint: {},
-      originalEvent: {},
-      sourceTarget: stateLayer,
-      target: stateLayer,
-      type: "click",
-    };
-    if (currentUrl == "/home") {
-      this.onStateLayerClick(obj);
+  // private higlightClickedState(stateLayer: { setStyle: (arg0: { fillColor: string; fillOpacity: number; }) => void; }) {
+  //   const currentUrl = window.location.pathname;
+  //   const obj: any = {
+  //     containerPoint: {},
+  //     latlng: {
+  //       // lat: 23.48789594497792,
+  //       // lng: 78.2647891998273
+  //     },
+  //     layerPoint: {},
+  //     originalEvent: {},
+  //     sourceTarget: stateLayer,
+  //     target: stateLayer,
+  //     type: "click",
+  //   };
+  //   if (currentUrl == "/home") {
+  //     this.onStateLayerClick(obj);
 
-      stateLayer.setStyle({
-        fillColor: "#3E5DB1",
-        fillOpacity: 1,
-      });
-    }
-    // stateLayer.setStyle(this.StyleForSelectedState);
-    // if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-    //   stateLayer.bringToFront();
-    // }
-  }
-  private resetStateLayer(layer: { setStyle: (arg0: { color: string; weight: number; }) => void; closeTooltip: () => void; }) {
-    layer.setStyle({
-      color: this.defaultStateLayerColorOption.color,
-      weight: this.defaultStateLayerColorOption.weight,
-    });
-    layer.closeTooltip();
-  }
+  //     stateLayer.setStyle({
+  //       fillColor: "#3E5DB1",
+  //       fillOpacity: 1,
+  //     });
+  //   }
+  //   // stateLayer.setStyle(this.StyleForSelectedState);
+  //   // if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+  //   //   stateLayer.bringToFront();
+  //   // }
+  // }
+  // private resetStateLayer(layer: { setStyle: (arg0: { color: string; weight: number; }) => void; closeTooltip: () => void; }) {
+  //   layer.setStyle({
+  //     color: this.defaultStateLayerColorOption.color,
+  //     weight: this.defaultStateLayerColorOption.weight,
+  //   });
+  //   layer.closeTooltip();
+  // }
 
   private fetchStateList() {
     this._commonService.fetchStateList().subscribe((res: any) => {
@@ -723,11 +730,11 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       this.dataForVisualization?.ulbDataCount?.forEach((element: { year: any; ulbs: any; }) => {
         this.dataAvailTooltip = this.dataAvailTooltip + `${element.year} : ${element.ulbs} \n `
       });
-      this._ngZone.runOutsideAngular(() => {
-        setTimeout(() => {
-          this.animateValues(1);
-        });
-      });
+      // this._ngZone.runOutsideAngular(() => {
+      //   setTimeout(() => {
+      //     this.animateValues(1);
+      //   });
+      // });
     });
   }
   setDefaultAbsCreditInfo() {
@@ -763,50 +770,50 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       },
     };
   }
-  public animateValues = (startiongValue?: number) => {
-    const speed = 1000;
-    const interval = this.isMapAtNationalLevel() ? 5 : 1;
+  // public animateValues = (startiongValue?: number) => {
+  //   const speed = 1000;
+  //   const interval = this.isMapAtNationalLevel() ? 5 : 1;
 
-    const animateValues = document.querySelectorAll(
-      "[data-animate-value]"
-    ) as any as Array<HTMLElement>;
+  //   const animateValues = document.querySelectorAll(
+  //     "[data-animate-value]"
+  //   ) as any as Array<HTMLElement>;
 
-    animateValues.forEach((element: HTMLElement) => {
-      const target = Number(element.getAttribute("data-animate-value"));
+  //   animateValues.forEach((element: HTMLElement) => {
+  //     const target = Number(element.getAttribute("data-animate-value"));
 
-      const currentValue = +element.innerText;
-      if (startiongValue !== null && startiongValue !== undefined) {
-        element.innerText = `0`;
-        this._ngZone.runOutsideAngular(() => {
-          setTimeout(() => {
-            setTimeout(this.animateValues, interval);
-          });
-        });
-        return;
-      }
+  //     const currentValue = +element.innerText;
+  //     if (startiongValue !== null && startiongValue !== undefined) {
+  //       element.innerText = `0`;
+  //       this._ngZone.runOutsideAngular(() => {
+  //         setTimeout(() => {
+  //           setTimeout(this.animateValues, interval);
+  //         });
+  //       });
+  //       return;
+  //     }
 
-      if (currentValue >= target) {
-        return;
-      }
+  //     if (currentValue >= target) {
+  //       return;
+  //     }
 
-      let incrementor = +Number(target / speed);
-      incrementor = incrementor === 0 ? target : incrementor;
+  //     let incrementor = +Number(target / speed);
+  //     incrementor = incrementor === 0 ? target : incrementor;
 
-      // NOTE Need to re do it.
-      incrementor = 2;
-      if (currentValue < target) {
-        const newValue = +Number(currentValue + incrementor).toFixed(1);
-        element.innerText = `${newValue > target ? target : newValue}`;
-        this._ngZone.runOutsideAngular(() => {
-          setTimeout(() => {
-            setTimeout(this.animateValues, interval);
-          });
-        });
-      } else {
-        element.innerText = `${target}`;
-      }
-    });
-  };
+  //     // NOTE Need to re do it.
+  //     incrementor = 2;
+  //     if (currentValue < target) {
+  //       const newValue = +Number(currentValue + incrementor).toFixed(1);
+  //       element.innerText = `${newValue > target ? target : newValue}`;
+  //       this._ngZone.runOutsideAngular(() => {
+  //         setTimeout(() => {
+  //           setTimeout(this.animateValues, interval);
+  //         });
+  //       });
+  //     } else {
+  //       element.innerText = `${target}`;
+  //     }
+  //   });
+  // };
   showCreditInfoByState(stateName = "") {
     console.log({ stateName });
     const ulbList = [];
@@ -863,9 +870,9 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     // dataObject["creditRatingUlbs"] = dataObject["creditRatingUlbs"] + 1;
     return dataObject;
   }
-  private isMapAtNationalLevel() {
-    return this.stateselected ? false : true;
-  }
+  // private isMapAtNationalLevel() {
+  //   return this.stateselected ? false : true;
+  // }
   private updateDropdownStateSelection(state: IState) {
     this.stateselected = state;
     this.myForm.controls['stateId'].setValue(state ? [{ ...state }] : []);
