@@ -43,7 +43,7 @@ export class MapService {
   constructor(
     // private _geoService: GeographicalService,
     private http: HttpClient,
-  ) { }
+  ) {}
 
   initMap(elementId: string, config: MapConfig, options?: L.MapOptions): void {
     this.map?.remove(); // Ensure previous map is removed
@@ -79,7 +79,9 @@ export class MapService {
         let hoverTimeout: ReturnType<typeof setTimeout>;
 
         layer.on({
-          click: () => this.stateCodeClickedSubject.next(feature.properties.ST_CODE),
+          click: () => {
+            if (!stateCode) this.stateCodeClickedSubject.next(feature.properties.ST_CODE);
+          },
 
           mouseover: () => {
             if (layer instanceof L.Path && !stateCode) {

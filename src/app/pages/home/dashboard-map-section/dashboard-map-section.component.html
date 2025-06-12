@@ -2,18 +2,16 @@
   <div class="text-center">
     <div class="expo">Explore</div>
   </div>
-  <!-- <div class="row">
-    <div class="col-sm-12 col-md-12 col-lg-6 d-flex flex-column align-center border border-2 border-danger flex-grow-1">
-      <app-map></app-map>
-      <button class="btn p-0 m-0 border-0 bg-transparent text-cfPrimary fw-bold">Reset Map to India</button> -->
-
   <div class="row">
     <div class="col-sm-12 col-md-12 col-lg-6 d-flex flex-column">
       <div class="flex-grow-1 position-relative" style="min-height: 500px;">
-        <app-map #map></app-map>
+        <app-map #map [stateCode]="selectedStateCode" (stateCodeChange)="selectedStateCodeChange($event)"></app-map>
       </div>
+      <!-- {{selectedStateCode}} {{selected_state}} {{cid}} -->
+      @if (selectedStateCode) {
       <button class="btn p-0 m-0 border-0 bg-transparent text-cfPrimary fw-bold" (click)="resetMap()">Reset Map to
         India</button>
+      }
       <!-- @if (!nationalLevelMap) {
       <div class="skeletonWrapper container-fluid spinner_overlay d-flex justify-content-center align-items-center"
         style="z-index: 1000">
@@ -61,7 +59,7 @@
           </div>
         </div>
         <!-- city-dropdown inp-grp -->
-        @if (selected_state !== 'India') {
+        @if (selectedStateCode) {
         <div class="col-md-6 col-sm-12 m-m">
           <form [formGroup]="myForm">
             <input type="text" class="rounded border border-1 border-secondary-subtle bg-body-tertiary p-1 w-100 px-2"
@@ -114,7 +112,7 @@
         }
         <div class="c-n ps-0">
           <span class="pointer" [ngClass]="{ dim: stateDim }" (click)="stateLevelData()">
-            {{ selected_state }}
+            {{ selected_state ? selected_state : 'India' }}
           </span>
         </div>
         <div class="c-n ps-0">
@@ -169,10 +167,10 @@
             <span class="data-point-name num-text my-1">
               Financial Statements for FYs
               <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                {{ financialYearTexts.min || "2015-16" }}
+                {{ financialYearTexts?.min || "2015-16" }}
               </span> to
               <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                {{ financialYearTexts.max || "15-16" }}
+                {{ financialYearTexts?.max || "15-16" }}
               </span>
             </span>
             }
@@ -270,7 +268,7 @@
       <div class="expo-pd py-0">
         <div class="row" style="align-items: baseline">
           <div class="col-sm-8">
-            @if (selected_state === 'India') {
+            @if (!selected_state) {
             <div class="info-drill mt-1">
               <img src="../../../../assets/images/ticks/info_black_18dp.svg" class="info-icon" alt="" />
               Click on
@@ -278,7 +276,7 @@
               use the drop down to drill down to a state or city
             </div>
             }
-            @if (!stateDim && selected_state !== 'India') {
+            @if (!stateDim && selectedStateCode) {
             <button class="btn view-ds-btn" (click)="viewDashboard()">
               View State Dashboard
             </button>

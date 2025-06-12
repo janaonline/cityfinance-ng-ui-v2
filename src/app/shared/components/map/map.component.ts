@@ -3,16 +3,17 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   OnDestroy,
-  OnInit,
   Output,
+  SimpleChanges,
 } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as L from 'leaflet';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 import { allUlbsData } from '../../../../assets/jsonFile/ulbsListLocalStorage';
 import { UserUtility } from '../../../core/util/user/user';
-import { GeoJsonFeature, MapConfig, ResettableMap, StateGeoJson, ULBDataPoint } from './interfaces';
+import { MapConfig, ResettableMap, StateGeoJson, ULBDataPoint } from './interfaces';
 import { MapService } from './map.service';
 
 @Component({
@@ -63,10 +64,11 @@ import { MapService } from './map.service';
     `,
   ],
 })
-export class MapComponent implements OnInit, AfterViewInit, OnDestroy, ResettableMap {
+export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, ResettableMap {
   @Input() stateCode!: string;
   @Input() ulbId!: string;
   @Output() ulbIdChange = new EventEmitter<string>();
+  @Output() stateCodeChange = new EventEmitter<string>();
 
   private readonly DEFAULT_ZOOM_LEVEL = 4.3;
   private ulbsList: ULBDataPoint[] = [];
@@ -79,88 +81,104 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, Resettabl
   };
   private destroy$ = new Subject<void>();
   public isMapLoading = true;
+  private mapInitialized = false;
 
-  constructor(private mapService: MapService) { }
+  constructor(private mapService: MapService) {}
 
-  ngOnInit(): void {
-    if (this.stateCode) this.loadMapData();
+  // ngOnInit(): void {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (
+      changes['stateCode'] &&
+      changes['stateCode']['currentValue'] &&
+      !changes['stateCode'].isFirstChange() &&
+      this.mapInitialized
+    ) {
+      this.loadMapData();
+    }
   }
 
-  // Initialize the map after view is ready
   ngAfterViewInit(): void {
     this.mapService.initMap('map-container', this.mapConfig);
+    this.mapInitialized = true;
     this.loadMapData();
 
-    // If any state is clicked - initiate state map.
+    this.subscribeToMapEvents();
+  }
+
+  private subscribeToMapEvents(): void {
     this.mapService.stateCodeClicked$
       .pipe(takeUntil(this.destroy$), debounceTime(300))
       .subscribe((code) => {
         if (!this.stateCode) {
           this.stateCode = code;
-          this.loadMapData();
+          this.stateCodeChange.emit(code);
+          // this.loadMapData();
         }
       });
 
-    // If any ulb is clicked (Emit only if other ulb is clicked).
     this.mapService.ulbCodeClicked$.pipe(takeUntil(this.destroy$)).subscribe((code) => {
       if (code && this.ulbId !== code) {
         this.ulbId = code;
-        this.ulbIdChange.emit(this.ulbId);
+        this.ulbIdChange.emit(code);
       }
     });
   }
 
-  // Get India/ state json - Structure.
   private loadMapData(): void {
-    // Clear the previous state layer if it exists
+    if (!this.mapInitialized) return;
+
+    this.isMapLoading = true;
+
+    // Remove previous state layer if any
     if (this.stateLayer) {
       this.mapService.map?.removeLayer(this.stateLayer);
       this.stateLayer = null;
     }
 
-    this.mapService.loadAndAddStates().subscribe({
-      next: (data: StateGeoJson) => {
-        // Fetch the JSON data for the specified state if 'stateCode' is provided; otherwise, fetch the json for all of India.
-        const geoJson = this.stateCode
-          ? data['features'].filter(
-            (stateObj: GeoJsonFeature) => this.stateCode === stateObj['properties']['ST_CODE'],
-          )
-          : data['features'];
+    this.mapService
+      .loadAndAddStates()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data: StateGeoJson) => {
+          const features = this.stateCode
+            ? data.features.filter((f) => f.properties['ST_CODE'] === this.stateCode)
+            : data.features;
+          // console.log('state length = ', features.length);
+          const stateGeoJson: StateGeoJson = {
+            type: 'FeatureCollection',
+            features,
+          };
 
-        const stateGeoJsonData: StateGeoJson = {
-          type: 'FeatureCollection',
-          features: geoJson,
-        };
+          this.stateLayer = this.mapService.addGeoJsonLayer(stateGeoJson, this.stateCode);
 
-        this.stateLayer = this.mapService.addGeoJsonLayer(stateGeoJsonData, this.stateCode);
-
-        // Send geoJson of state if 'stateCode' is provided; otherwise, send the json for all of India.
-        if (this.stateCode && geoJson.length) {
-          this.mapService.flyToStateBounds(this.stateLayer, [0, 0], 1.5, 0.5);
-          this.getCityCordinates();
-          this.mapService.addCityMarkersToMap(this.stateCode, this.ulbId, this.ulbsList);
-        } else {
-          this.mapService.map?.setView(this.mapConfig.initialView, this.mapConfig.initialZoom); // show the entire country
-          this.mapService.clearCityMarkers(); // clear markers when showing the whole country
-        }
-      },
-      error: (error) => console.error('Error loading map data in component:', error),
-      complete: () => {
-        this.isMapLoading = false;
-      },
-    });
+          if (this.stateCode && features.length) {
+            this.mapService.flyToStateBounds(this.stateLayer, [0, 0], 1.5, 0.5);
+            this.loadCityCoordinates();
+            this.mapService.addCityMarkersToMap(this.stateCode, this.ulbId, this.ulbsList);
+          } else {
+            this.mapService.map?.setView(this.mapConfig.initialView, this.mapConfig.initialZoom);
+            this.mapService.clearCityMarkers();
+          }
+        },
+        error: (err) => console.error('Error loading map data:', err),
+        complete: () => {
+          this.isMapLoading = false;
+        },
+      });
   }
 
-  // Return ULB details obj - with lat & lng of ULBs for blue dot.
-  private getCityCordinates(): void {
-    this.ulbsList = this.stateCode ? allUlbsData[`${this.stateCode}`]['ulbs'] : [];
+  private loadCityCoordinates(): void {
+    this.ulbsList = this.stateCode ? allUlbsData[this.stateCode]?.ulbs || [] : [];
   }
 
   public resetMap(): void {
     this.stateCode = '';
-    this.loadMapData();
-    this.mapService.map?.setView(this.mapConfig.initialView, this.mapConfig.initialZoom);
+    this.stateLayer?.clearLayers();
+    this.stateLayer = null;
     this.mapService.clearCityMarkers();
+    this.mapService.map?.setView(this.mapConfig.initialView, this.mapConfig.initialZoom);
+    this.loadMapData();
   }
 
   ngOnDestroy(): void {

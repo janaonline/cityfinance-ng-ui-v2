@@ -4,7 +4,17 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FeatureCollection, GeoJsonObject, Geometry } from 'geojson';
 import L, { PathOptions, StyleFunction } from 'leaflet';
-import { debounceTime, distinctUntilChanged, map, Observable, of, startWith, Subscription, switchMap, tap } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  Observable,
+  of,
+  startWith,
+  Subscription,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { InrCurrencyPipe } from '../../../core/directives/inr-currency.pipe';
 import { ICreditRatingData } from '../../../core/models/creditRating/creditRatingResponse';
 import { IState } from '../../../core/models/state/state';
@@ -19,26 +29,31 @@ import { UserUtility } from '../../../core/util/user/user';
 import { MaterialModule } from '../../../material.module';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { ILeafletStateClickEvent } from '../../../shared/components/re-useable-heat-map/models/leafletStateClickEvent';
-import { MapComponent } from "../../../shared/components/map/map.component";
+import { MapComponent } from '../../../shared/components/map/map.component';
 // import { ReUseableHeatMapComponent } from '../../../shared/components/re-useable-heat-map/re-useable-heat-map.component';
 
 @Component({
   selector: 'app-dashboard-map-section',
   imports: [MaterialModule, InrCurrencyPipe, PreLoaderComponent, MapComponent],
   templateUrl: './dashboard-map-section.component.html',
-  styleUrl: './dashboard-map-section.component.scss'
+  styleUrl: './dashboard-map-section.component.scss',
 })
 export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   @ViewChild('map') mapComponent!: MapComponent;
   resetMap(): void {
     this.mapComponent?.resetMap();
-    this.myForm.patchValue({ stateId: '' })
-    this.onSelectingStateFromDropDown('');
+    this.onSelectingStateFromDropDown({ _id: '', name: '' });
+    this.updateDropdownStateSelection({ _id: '', name: '' });
+    this.myForm.get('ulb')?.setValue('');
+
+    // this.selectedStateCode = '';
+    // this.stateIdControl.setValue('');
+    // this.selected_state = '';
   }
   myForm!: FormGroup;
-  stateUlbData = JSON.parse(localStorage.getItem("ulbList") || 'null');
+  stateUlbData = JSON.parse(localStorage.getItem('ulbList') || 'null');
   // selectedDistrictCode: any;
-  selectedStateCode!: string | number;
+  selectedStateCode!: string;
   // @Input()
   // mapConfig = {
   //   code: {
@@ -55,26 +70,26 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   //   stateBlockHeight: "23.5rem", // will fit map in container
   // };
   yearSelected = [];
-  selected_state = "India";
+  selected_state = '';
   stateselected!: IState;
   creditRating: any = {};
   stateList!: IState[];
   filteredStates: Observable<any[]> = of([]);
   // statesLayer!: L.GeoJSON<any>;
   cityData = [];
-  cityName = "";
+  cityName = '';
   dropdownSettings = {
     singleSelection: true,
-    text: "India",
+    text: 'India',
     enableSearchFilter: true,
-    labelKey: "name",
-    primaryKey: "_id",
+    labelKey: 'name',
+    primaryKey: '_id',
     showCheckbox: false,
-    classes: "homepage-stateList custom-class",
+    classes: 'homepage-stateList custom-class',
   };
   // districtMarkerMap: any = {};
 
-  national: any = { _id: null, name: "India" };
+  national: any = { _id: null, name: 'India' };
   actStateVl: boolean = true;
 
   filteredUlbs!: Observable<any[]>;
@@ -99,7 +114,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     private _ngZone: NgZone,
     private assetService: AssetsService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
   ) {
     // super(_commonService, _snackbar, _geoService, _activateRoute);
     setTimeout(() => {
@@ -178,7 +193,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
   ngOnInit(): void {
     // this.clearDistrictMapContainer();
-    this.fetchStateList()
+    this.fetchStateList();
 
     this._commonService.state_name_data.subscribe((res: any) => {
       //console.log('sub....', res, res.name);
@@ -186,10 +201,10 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       this.updateDropdownStateSelection(res);
     });
 
-    this.authService.getLastUpdated().subscribe((res: { [x: string]: any; }) => {
-      this.date = res["data"];
+    this.authService.getLastUpdated().subscribe((res: { [x: string]: any }) => {
+      this.date = res['data'];
     });
-    this.searchUlb()
+    this.searchUlb();
   }
 
   get stateIdControl(): FormControl {
@@ -197,38 +212,42 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
 
   private _filterStates(value: string): any[] {
-    const filterValue = value.toLowerCase();
-    console.log("filter value", filterValue, this.stateList)
-    return !filterValue ? this.stateList : this.stateList?.filter(option => option.name?.toLowerCase().includes(filterValue))
+    // console.log("value = ", value)
+    const filterValue = value?.toLowerCase();
+    return !filterValue
+      ? this.stateList
+      : this.stateList?.filter((option) => option.name?.toLowerCase().includes(filterValue));
   }
 
   noDataFound = true;
 
   searchUlb() {
-    this.myForm.get('ulb')
-      ?.valueChanges
-      ?.pipe(
+    this.myForm
+      .get('ulb')
+      ?.valueChanges?.pipe(
         debounceTime(300),
         distinctUntilChanged(),
-        switchMap(value => {
+        switchMap((value) => {
           if (!value) {
             this.noDataFound = false;
-            return of([])
+            return of([]);
           }
 
           const stateId = this.stateList.find(
-            (e) => e?.name.toLowerCase() == this.selected_state.toLowerCase()
+            (e) => e?.name.toLowerCase() == this.selected_state.toLowerCase(),
           )?._id;
           return this._commonService.postGlobalSearchData(value, 'ulb', stateId);
-        })
+        }),
       )
       .subscribe({
         next: (res: any) => {
           this.filteredUlbs = of(res?.['data']);
           this.noDataFound = res?.['data']?.length === 0;
         },
-        error: (error) => { console.error('Error in fetching ulbs: ', error) }
-      })
+        error: (error) => {
+          console.error('Error in fetching ulbs: ', error);
+        },
+      });
   }
 
   // callAPI(event: { target: { value: any; }; }) {
@@ -264,12 +283,12 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   private initializeform() {
     this.myForm = this.fb.group({
-      stateId: [""],
-      ulb: [""]
+      stateId: [''],
+      ulb: [''],
     });
   }
   private fetchMinMaxFinancialYears() {
-    this._commonService.getFinancialYearBasedOnData().subscribe((res: { data: string | any[]; }) => {
+    this._commonService.getFinancialYearBasedOnData().subscribe((res: { data: string | any[] }) => {
       this.financialYearTexts = {
         min: res.data[0],
         max: res.data[res.data.length - 1].slice(2),
@@ -387,7 +406,6 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   //   this.isProcessingCompleted.emit(true);
   // }
-
 
   // showMapLegends() {
   //   console.warn("show legends hidden");
@@ -535,15 +553,15 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.cid = filterCity._id;
     // console.log("cityId", this.cid, filterCity, this.districtMarkerMap); //CityId after selecting a city from dropdown
     // if (fireEvent) this.districtMarkerMap[filterCity.code].fireEvent("click");
-    console.log("city name", city, filterCity);
-    this.authService.getCityData(this.cid).subscribe((res: { [x: string]: any; }) => {
-      this.cityInfo = res["data"];
+    // console.log("city name", city, filterCity);
+    this.authService.getCityData(this.cid).subscribe((res: { [x: string]: any }) => {
+      this.cityInfo = res['data'];
     });
     // this.onSelectingULBFromDropdown(city);
   }
   viewDashboard() {
     const searchValue = this.stateList.find(
-      (e) => e?.name.toLowerCase() == this.selected_state.toLowerCase()
+      (e) => e?.name.toLowerCase() == this.selected_state.toLowerCase(),
     );
     this.router.navigateByUrl(`/dashboard/state?stateId=${searchValue?._id}`);
   }
@@ -554,30 +572,32 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.isBondIssueAmountInProgress = true;
     this._commonService.getBondIssuerItemAmount(stateId).subscribe((res: any) => {
       try {
-        this.bondIssueAmount = Math.round(res["data"][0]["totalAmount"]);
+        this.bondIssueAmount = Math.round(res['data'][0]['totalAmount']);
       } catch (error) {
         this.bondIssueAmount = 0;
       }
       this.isBondIssueAmountInProgress = false;
     });
   }
+  selectedStateCodeChange(stateCode: string) {
+    const stateData = this.stateList.find((ele) => ele.code === stateCode);
+    this.onSelectingStateFromDropDown(stateData);
+  }
   onSelectingStateFromDropDown(state: any | null) {
-    // console.log('on state click = ', state);
-    if (this.districtMap) {
-      MapUtil.destroy(this.districtMap);
-    }
+    // console.log('on state click = ', state, this.filteredStates);
+    // if (this.districtMap) {
+    //   MapUtil.destroy(this.districtMap);
+    // }
     this.selectedStateCode = state.code;
-    this.cityName = "";
+    this.cityName = '';
     this.cid = undefined;
     this.stateDim = false;
-    this._commonService
-      .getUlbByState(state ? state?.code : null)
-      .subscribe((res: any) => {
-        const ulbsData: any = res;
-        this.cityData = ulbsData?.data?.ulbs;
-        console.log("AllCity", this.cityData);
-      });
-    this.selected_state = state ? state?.name : "India";
+    this._commonService.getUlbByState(state ? state?.code : null).subscribe((res: any) => {
+      const ulbsData: any = res;
+      this.cityData = ulbsData?.data?.ulbs;
+      // console.log("AllCity", this.cityData);
+    });
+    this.selected_state = state ? state?.name : 'India';
     /* Updating the dropdown state selection. */
     this.showCreditInfoByState(this.selected_state);
     if (state._id == null) this.updateDropdownStateSelection(state);
@@ -590,9 +610,10 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     // }
     // this.stateselected = state;
     this.fetchDataForVisualization(state ? state._id : null);
-    this.fetchBondIssueAmout(
+    this
+      .fetchBondIssueAmout
       // this.stateselected ? this.stateselected._id : null
-    );
+      ();
     // this.selectStateOnMap(state);
   }
   // createdDomMinId: any;
@@ -685,88 +706,102 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this._commonService.fetchStateList().subscribe((res: any) => {
       this.stateList = this._commonService.sortDataSource(res, 'name');
 
-      this.filteredStates = this.stateIdControl.valueChanges
-        .pipe(
-          startWith(''),
-          debounceTime(300),
-          distinctUntilChanged(),
-          map(value => this._filterStates(value || ''))
-        );
+      this.filteredStates = this.stateIdControl.valueChanges.pipe(
+        startWith(''),
+        debounceTime(300),
+        distinctUntilChanged(),
+        map((value) => this._filterStates(value || '')),
+      );
     });
   }
 
   private fetchDataForVisualization(stateId?: string) {
     this.dataForVisualization.loading = true;
     this.homePageSubscription?.unsubscribe();
-    this.homePageSubscription = this._commonService.fetchDataForHomepageMap(stateId).subscribe((res: { financialStatements?: number; totalMunicipalBonds?: number; totalULB?: number; coveredUlbCount?: number; ulbDataCount?: any; loading: boolean; }) => {
-      this.setDefaultAbsCreditInfo();
+    this.homePageSubscription = this._commonService
+      .fetchDataForHomepageMap(stateId)
+      .subscribe(
+        (res: {
+          financialStatements?: number;
+          totalMunicipalBonds?: number;
+          totalULB?: number;
+          coveredUlbCount?: number;
+          ulbDataCount?: any;
+          loading: boolean;
+        }) => {
+          this.setDefaultAbsCreditInfo();
 
-      this.showCreditInfoByState(
-        this.stateselected ? this.stateselected.name : ""
-      );
-      this.dataForVisualization = { ...res, loading: false };
-      if (!stateId) {
-        this._commonService.setDataForVisualizationCount(this.dataForVisualization);
-      }
-      this.highestYear = null;
-      this.highestDataAvailability = null;
-      if (this.dataForVisualization?.ulbDataCount?.length > 0) {
-        // +yearA.split("-")[0] - +yearB.split("-")[0]
-        // this.dataForVisualization.ulbDataCount = this.dataForVisualization?.ulbDataCount?.sort((a, b) => parseFloat(b.ulbs) - parseFloat(a.ulbs));
-        this.dataForVisualization.ulbDataCount = this.dataForVisualization?.ulbDataCount?.sort((a: { year: string; }, b: { year: string; }) => +a?.year.split("-")[0] - +b?.year.split("-")[0]);
-        const ublsArray = this.dataForVisualization?.ulbDataCount;
-        let highestData = -1;
-        for (const item of ublsArray) {
-          if (item.ulbs > highestData) {
-            highestData = item?.ulbs;
-            this.highestYear = item?.year;
+          this.showCreditInfoByState(this.stateselected ? this.stateselected.name : '');
+          this.dataForVisualization = { ...res, loading: false };
+          if (!stateId) {
+            this._commonService.setDataForVisualizationCount(this.dataForVisualization);
           }
-        }
-        this.highestDataAvailability = ((+highestData / +Number(this.dataForVisualization?.totalULB)) * 100).toFixed(0);
-        // this.highestYear = this.dataForVisualization?.ulbDataCount[0]?.year;
-        // this.highestDataAvailability = ((this.dataForVisualization?.ulbDataCount[0]?.ulbs / this.dataForVisualization?.totalULB) * 100).toFixed(0);
-      }
-      this.dataAvailTooltip = '';
-      this.dataForVisualization?.ulbDataCount?.forEach((element: { year: any; ulbs: any; }) => {
-        this.dataAvailTooltip = this.dataAvailTooltip + `${element.year} : ${element.ulbs} \n `
-      });
-      // this._ngZone.runOutsideAngular(() => {
-      //   setTimeout(() => {
-      //     this.animateValues(1);
-      //   });
-      // });
-    });
+          this.highestYear = null;
+          this.highestDataAvailability = null;
+          if (this.dataForVisualization?.ulbDataCount?.length > 0) {
+            // +yearA.split("-")[0] - +yearB.split("-")[0]
+            // this.dataForVisualization.ulbDataCount = this.dataForVisualization?.ulbDataCount?.sort((a, b) => parseFloat(b.ulbs) - parseFloat(a.ulbs));
+            this.dataForVisualization.ulbDataCount = this.dataForVisualization?.ulbDataCount?.sort(
+              (a: { year: string }, b: { year: string }) =>
+                +a?.year.split('-')[0] - +b?.year.split('-')[0],
+            );
+            const ublsArray = this.dataForVisualization?.ulbDataCount;
+            let highestData = -1;
+            for (const item of ublsArray) {
+              if (item.ulbs > highestData) {
+                highestData = item?.ulbs;
+                this.highestYear = item?.year;
+              }
+            }
+            this.highestDataAvailability = (
+              (+highestData / +Number(this.dataForVisualization?.totalULB)) *
+              100
+            ).toFixed(0);
+            // this.highestYear = this.dataForVisualization?.ulbDataCount[0]?.year;
+            // this.highestDataAvailability = ((this.dataForVisualization?.ulbDataCount[0]?.ulbs / this.dataForVisualization?.totalULB) * 100).toFixed(0);
+          }
+          this.dataAvailTooltip = '';
+          this.dataForVisualization?.ulbDataCount?.forEach((element: { year: any; ulbs: any }) => {
+            this.dataAvailTooltip = this.dataAvailTooltip + `${element.year} : ${element.ulbs} \n `;
+          });
+          // this._ngZone.runOutsideAngular(() => {
+          //   setTimeout(() => {
+          //     this.animateValues(1);
+          //   });
+          // });
+        },
+      );
   }
   setDefaultAbsCreditInfo() {
     this.absCreditInfo = {
-      title: "",
+      title: '',
       ulbs: 0,
       creditRatingUlbs: 0,
       ratings: {
-        "AAA+": 0,
+        'AAA+': 0,
         AAA: 0,
-        "AAA-": 0,
-        "AA+": 0,
+        'AAA-': 0,
+        'AA+': 0,
         AA: 0,
-        "AA-": 0,
-        "A+": 0,
+        'AA-': 0,
+        'A+': 0,
         A: 0,
-        "A-": 0,
-        "BBB+": 0,
+        'A-': 0,
+        'BBB+': 0,
         BBB: 0,
-        "BBB-": 0,
+        'BBB-': 0,
         BB: 0,
-        "BB+": 0,
-        "BB-": 0,
-        "B+": 0,
+        'BB+': 0,
+        'BB-': 0,
+        'B+': 0,
         B: 0,
-        "B-": 0,
-        "C+": 0,
+        'B-': 0,
+        'C+': 0,
         C: 0,
-        "C-": 0,
-        "D+": 0,
+        'C-': 0,
+        'D+': 0,
         D: 0,
-        "D-": 0,
+        'D-': 0,
       },
     };
   }
@@ -814,15 +849,15 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   //     }
   //   });
   // };
-  showCreditInfoByState(stateName = "") {
-    console.log({ stateName });
+  showCreditInfoByState(stateName = '') {
+    // console.log({ stateName });
     const ulbList = [];
-    if (stateName && stateName != "India") {
+    if (stateName && stateName != 'India') {
       for (let i = 0; i < this.creditRatingList?.length; i++) {
         const ulb = this.creditRatingList[i];
 
         if (ulb.state.toLowerCase() == stateName.toLowerCase()) {
-          ulbList.push(ulb["ulb"]);
+          ulbList.push(ulb['ulb']);
           const rating = ulb.creditrating.trim();
           this.calculateRatings(this.absCreditInfo, rating);
         }
@@ -830,39 +865,39 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     } else {
       for (let i = 0; i < this.creditRatingList?.length; i++) {
         const ulb = this.creditRatingList[i];
-        ulbList.push(ulb["ulb"]);
+        ulbList.push(ulb['ulb']);
         const rating = ulb.creditrating.trim();
         this.calculateRatings(this.absCreditInfo, rating);
       }
     }
     this.creditRatingAboveA =
-      this.absCreditInfo["ratings"]["A"] +
-      this.absCreditInfo["ratings"]["A+"] +
-      this.absCreditInfo["ratings"]["AA"] +
-      this.absCreditInfo["ratings"]["AA+"] +
-      this.absCreditInfo["ratings"]["AA-"] +
-      this.absCreditInfo["ratings"]["AAA"] +
-      this.absCreditInfo["ratings"]["AAA+"] +
-      this.absCreditInfo["ratings"]["AAA-"];
+      this.absCreditInfo['ratings']['A'] +
+      this.absCreditInfo['ratings']['A+'] +
+      this.absCreditInfo['ratings']['AA'] +
+      this.absCreditInfo['ratings']['AA+'] +
+      this.absCreditInfo['ratings']['AA-'] +
+      this.absCreditInfo['ratings']['AAA'] +
+      this.absCreditInfo['ratings']['AAA+'] +
+      this.absCreditInfo['ratings']['AAA-'];
 
     this.creditRatingAboveBBB_Minus =
       this.creditRatingAboveA +
-      this.absCreditInfo["ratings"]["A-"] +
-      this.absCreditInfo["ratings"]["BBB"] +
-      this.absCreditInfo["ratings"]["BBB+"] +
-      this.absCreditInfo["ratings"]["BBB-"];
+      this.absCreditInfo['ratings']['A-'] +
+      this.absCreditInfo['ratings']['BBB'] +
+      this.absCreditInfo['ratings']['BBB+'] +
+      this.absCreditInfo['ratings']['BBB-'];
 
-    this.absCreditInfo["title"] = stateName || "India";
-    this.absCreditInfo["ulbs"] = ulbList;
+    this.absCreditInfo['title'] = stateName || 'India';
+    this.absCreditInfo['ulbs'] = ulbList;
 
-    console.log(
-      "this.creditRatingAboveA",
-      this.creditRatingAboveA,
-      this.creditRatingAboveBBB_Minus
-    );
+    // console.log(
+    //   "this.creditRatingAboveA",
+    //   this.creditRatingAboveA,
+    //   this.creditRatingAboveBBB_Minus
+    // );
   }
 
-  calculateRatings(dataObject: { [x: string]: number; }, ratingValue: string | number) {
+  calculateRatings(dataObject: { [x: string]: number }, ratingValue: string | number) {
     // if (!dataObject["ratings"][ratingValue]) {
     //   dataObject["ratings"][ratingValue] = 0;
     // }
@@ -875,7 +910,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   // }
   private updateDropdownStateSelection(state: IState) {
     this.stateselected = state;
-    this.myForm.controls['stateId'].setValue(state ? [{ ...state }] : []);
+    this.myForm.controls['stateId'].setValue(state ? state.name : '');
   }
   private fetchCreditRatingTotalCount() {
     this.assetService
@@ -893,14 +928,12 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
         computedData[data.state] = 1;
       }
       computedData.total += 1;
-      computedData["India"] += 1;
+      computedData['India'] += 1;
     });
 
     this.creditRating = computedData;
   }
   openStateDashboard(event: any) {
-    this.router.navigateByUrl(
-      `/dashboard/state?stateCode=${this.selectedStateCode}`
-    );
+    this.router.navigateByUrl(`/dashboard/state?stateCode=${this.selectedStateCode}`);
   }
 }
