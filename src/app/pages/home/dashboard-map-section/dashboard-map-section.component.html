@@ -168,10 +168,10 @@
             <span class="data-point-name num-text my-1">
               Financial Statements for FYs
               <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                {{ financialYearTexts?.min || "2015-16" }}
+                {{ financialYearTexts['startYear'] }}
               </span> to
               <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                {{ financialYearTexts?.max || "15-16" }}
+                {{ financialYearTexts['endYear'] }}
               </span>
             </span>
             }
@@ -246,15 +246,13 @@
           <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-4">
             @if (!stateDim) {
             <div class="num-data">
-              {{ dataForVisualization.totalMunicipalBonds || 0 | inrCurrency: { currencyTypeInUser: 0
-              } }}
+              {{ bondIssuances['totalMunicipalBonds'] }}
             </div>
             }
             @if (!stateDim) {
             <div class="num-text my-1">
-              Municipal Bond Issuances Of Rs. {{ bondIssueAmount | inrCurrency: { currencyTypeInUser: 0
-              } }} Cr With
-              Details
+              Municipal Bond Issuances Of Rs. {{ bondIssuances['bondIssueAmount']| inrCurrency: { currencyTypeInUser: 0
+              } }} Cr With Details
             </div>
             }
           </div>
@@ -283,7 +281,7 @@
             </button>
             }
             @if (stateDim) {
-            <button class="btn view-ds-btn" (click)="viewCityDashboard()">
+            <button class="btn btn-cfPrimary" (click)="viewCityDashboard()">
               View City Dashboard
             </button>
             }

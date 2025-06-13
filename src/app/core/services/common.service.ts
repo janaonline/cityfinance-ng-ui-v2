@@ -3,20 +3,24 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
-import { environment } from './../../../environments/environment';
-import { DomSanitizer } from '@angular/platform-browser';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { HttpUtility } from '../util/httpUtil';
-import { JSONUtility } from '../util/jsonUtil';
+import { DomSanitizer } from '@angular/platform-browser';
+import {
+  BondIssuances,
+  LastModifiedAt,
+  States,
+} from '../../pages/home/dashboard-map-section/interfaces';
+import { IBasicLedgerData } from '../models/basicLedgerData.interface';
 import { IULBResponse } from '../models/IULBResponse';
 import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
-import { IULB } from '../models/ulb';
-import { USER_TYPE } from '../models/user/userType';
-import { ULBsStatistics } from '../models/statistics/ulbsStatistics';
-import { IULBWithPopulationResponse } from '../models/ulbsForMapResponse';
 import { IStateULBCoveredResponse } from '../models/stateUlbConvered';
-import { IBasicLedgerData } from '../models/basicLedgerData.interface';
-import { IStateListResponse } from '../models/state/state-response';
+import { ULBsStatistics } from '../models/statistics/ulbsStatistics';
+import { IULB } from '../models/ulb';
+import { IULBWithPopulationResponse } from '../models/ulbsForMapResponse';
+import { USER_TYPE } from '../models/user/userType';
+import { HttpUtility } from '../util/httpUtil';
+import { JSONUtility } from '../util/jsonUtil';
+import { environment } from './../../../environments/environment';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
@@ -32,7 +36,7 @@ export class CommonService {
   private httpUtil = new HttpUtility();
   jsonUtil = new JSONUtility();
 
-  dataForVisualizationCount = new BehaviorSubject<any>("");
+  dataForVisualizationCount = new BehaviorSubject<any>('');
 
   private NewULBStructureResponseCache: {
     [datesAsString: string]: IULBResponse;
@@ -50,7 +54,7 @@ export class CommonService {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private snackbar: MatSnackBar,
-  ) { }
+  ) {}
 
   updateSearchItem(searchItem: any) {
     this.searchItem.next(searchItem);
@@ -64,13 +68,27 @@ export class CommonService {
   }
 
   setDataForVisualizationCount(VisualizationCountObject: any) {
-    this.dataForVisualizationCount.next(VisualizationCountObject)
+    this.dataForVisualizationCount.next(VisualizationCountObject);
   }
 
   getFinancialYearBasedOnData() {
-    return this.http
-      .get(`${environment.api.url}dynamic-financial-year`)
-      .pipe(map((res: any) => ({ ...res, data: this.sortFinancialYears(res['data']) })));
+    return this.http.get<{ data: string[] }>(`${environment.api.url}dynamic-financial-year`);
+  }
+
+  fetchLastUpdatedDate(
+    stateCode: string = '',
+    ulbId: string = '',
+    year: string = '',
+  ): Observable<LastModifiedAt> {
+    let params = new HttpParams();
+
+    if (stateCode) params = params.set('state_code', stateCode);
+    if (ulbId) params = params.set('ulb_id', ulbId);
+    if (year) params = params.set('year', year);
+
+    return this.http.get<LastModifiedAt>(`${environment.api.url}common/get-last-modified-date`, {
+      params,
+    });
   }
   /**
    * @description Sort the Financial Years only.
@@ -100,17 +118,18 @@ export class CommonService {
     });
   }
 
-  public getBondIssuerItemAmount(state: string = '') {
-    const params = this.httpUtil.convertToHttpParams({ state });
-    return this.http.get(`${environment.api.url}BondIssuerItem/amount`, {
-      params,
-    });
+  public getBondIssuerItemAmount(state: string = ''): Observable<BondIssuances> {
+    const url = state
+      ? `${environment.api.url}bond-issuances/municipal-bonds/${state}`
+      : `${environment.api.url}bond-issuances/municipal-bonds`;
+
+    return this.http.get<BondIssuances>(url);
   }
 
   public fetchStateList() {
     return this.http
-      .get<IStateListResponse>(environment.api.url + 'state')
-      .pipe(map((res) => res['data']));
+      .get<{ data: States[] }>(environment.api.url + 'state')
+      .pipe(map((res) => res.data));
   }
 
   public fetchDataForHomepageMap(stateId: string = '') {
@@ -486,7 +505,7 @@ export class CommonService {
       );
   }
 
-  getULBSWithPopulationAndCoordinates(body?: { year: string[];[key: string]: any }) {
+  getULBSWithPopulationAndCoordinates(body?: { year: string[]; [key: string]: any }) {
     return this.http.post<IULBWithPopulationResponse>(`${environment.api.url}ulb-list`, body).pipe(
       map((res: any) => {
         res.data = res.data.sort((ulbA: { name: number }, ulbB: { name: number }) =>
