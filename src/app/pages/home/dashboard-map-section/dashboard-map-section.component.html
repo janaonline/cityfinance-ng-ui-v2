@@ -5,10 +5,10 @@
   <div class="row">
     <div class="col-sm-12 col-md-12 col-lg-6 d-flex flex-column">
       <div class="flex-grow-1 position-relative" style="min-height: 500px;">
-        <app-map #map [stateCode]="selectedStateCode" (stateCodeChange)="selectedStateCodeChange($event)" [ulbId]="cid"
-          (ulbIdChange)="cidChange($event)"></app-map>
+        <app-map #map [stateCode]="selectedStateCode" (stateCodeChange)="selectedStateCodeChange($event)"
+          [ulbId]="selectedCityId" (ulbIdChange)="selectedCityIdChange($event)"></app-map>
       </div>
-      <!-- {{selectedStateCode}} {{selected_state}} {{cid}} -->
+      <!-- {{selectedStateCode}} {{selectedStateName}} {{selectedCityId}} -->
       @if (selectedStateCode) {
       <button class="btn p-0 m-0 border-0 bg-transparent text-cfPrimary fw-bold" (click)="resetMap()">Reset Map To
         India</button>
@@ -46,7 +46,7 @@
         <div class="col-md-6 col-sm-12">
           <div class="input-group">
             <form [formGroup]="myForm" class="w-100">
-              <input type="text" placeholder="Search for State" matInput formControlName="stateId"
+              <input type="text" placeholder="Search for State" matInput formControlName="stateName"
                 [matAutocomplete]="auto"
                 class="rounded border border-1 border-secondary-subtle bg-body-tertiary p-1 w-100 px-2" />
               <mat-autocomplete #auto="matAutocomplete">
@@ -64,12 +64,12 @@
         <div class="col-md-6 col-sm-12 m-m">
           <form [formGroup]="myForm">
             <input type="text" class="rounded border border-1 border-secondary-subtle bg-body-tertiary p-1 w-100 px-2"
-              placeholder="Search for ULBs" matInput formControlName="ulb" [matAutocomplete]="auto" />
+              placeholder="Search for ULBs" matInput formControlName="ulbName" [matAutocomplete]="auto" />
 
             <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
               @if (filteredUlbs) {
               @for (option of filteredUlbs | async; track $index) {
-              <mat-option [value]="option?.name" (onSelectionChange)="dashboardNav(option.code)">
+              <mat-option [value]="option?.name" (onSelectionChange)="onSelectingCityFromDropDown(option.code)">
                 <small>{{ option?.name }}</small>
                 <!-- <small class="text-secondary">
                   |
@@ -95,7 +95,7 @@
 
         <!-- <div class="col-md-6 col-sm-12">
 
-  <div class="input-group inp-grp selected-list" *ngIf="(selected_state != 'India')">
+  <div class="input-group inp-grp selected-list" *ngIf="(selectedStateName != 'India')">
     <select class="c-btn expo-drp-in  border-0" id="inputGroupSelect01"
       (change)="selectCity($event.target.value)">
       <option value="null" selected>{{cityData.length>0 ?  'Select City' : 'Loading...' }}</option>
@@ -108,20 +108,20 @@
 </div> -->
       </div>
       <div class="expo-pd">
-        @if (!cid) {
+        @if (!selectedCityId) {
         <div class="vl ps-1"></div>
         }
         <div class="c-n ps-0">
           <span class="pointer" [ngClass]="{ dim: stateDim }" (click)="stateLevelData()">
-            {{ selected_state ? selected_state : 'India' }}
+            {{ selectedStateName ? selectedStateName : 'India' }}
           </span>
         </div>
         <div class="c-n ps-0">
-          @if (cid) {
+          @if (selectedCityId) {
           <span class="vl ms-3 ps-1">
-            @if (cityName !== '' && selected_state !== 'India') {
+            @if (selectedCityName !== '' && selectedStateName !== 'India') {
             <span (click)="cityLevelData()" class="pointer" [ngClass]="{ dim: !stateDim }">
-              {{ cityName }}</span>
+              {{ selectedCityName }}</span>
             }
           </span>
           }
@@ -182,7 +182,7 @@
           <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-2" style="padding-right: 2rem !important">
             @if (!stateDim) {
             <div class="num-data">
-              <!-- {{ selected_state ? creditRating?.[selected_state]?.['total'] : creditRating['India']['total'] }} -->
+              <!-- {{ selectedStateName ? creditRating?.[selectedStateName]?.['total'] : creditRating['India']['total'] }} -->
               {{ totalCreditRating }}
             </div>
             }
@@ -267,7 +267,7 @@
       <div class="expo-pd py-0">
         <div class="row" style="align-items: baseline">
           <div class="col-sm-8">
-            @if (!selected_state) {
+            @if (!selectedStateName) {
             <div class="info-drill mt-1">
               <img src="../../../../assets/images/ticks/info_black_18dp.svg" class="info-icon" alt="" />
               Click on
@@ -276,20 +276,20 @@
             </div>
             }
             @if (!stateDim && selectedStateCode) {
-            <button class="btn btn-cfPrimary" (click)="viewDashboard()">
+            <button class="btn btn-cfPrimary" (click)="viewDashboard('state')">
               View State Dashboard
             </button>
             }
             @if (stateDim) {
-            <button class="btn btn-cfPrimary" (click)="viewCityDashboard()">
+            <button class="btn btn-cfPrimary" (click)="viewDashboard('city')">
               View City Dashboard
             </button>
             }
-            <!-- <button class="btn view-ds-btn" (click)="openStateDashboard($event.target)" *ngIf="(selected_state != 'India')">View State Dashboard</button> -->
+            <!-- <button class="btn view-ds-btn" (click)="openStateDashboard($event.target)" *ngIf="(selectedStateName != 'India')">View State Dashboard</button> -->
           </div>
           <div class="col-sm-4">
             <div class="up-text pt-4">
-              Last updated on: {{ date | date: "short" }}
+              Last updated on: {{ lastModifiedDate | date: "short" }}
             </div>
           </div>
         </div>

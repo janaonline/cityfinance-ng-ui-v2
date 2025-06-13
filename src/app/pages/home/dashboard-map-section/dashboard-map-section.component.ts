@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import L from 'leaflet';
 import {
   debounceTime,
   distinctUntilChanged,
@@ -9,12 +8,12 @@ import {
   Observable,
   of,
   startWith,
+  Subject,
   Subscription,
   switchMap,
+  takeUntil,
 } from 'rxjs';
 import { InrCurrencyPipe } from '../../../core/directives/inr-currency.pipe';
-// import { ICreditRatingData } from '../../../core/models/creditRating/creditRatingResponse';
-import { IState } from '../../../core/models/state/state';
 import { AssetsService } from '../../../core/services/assets/assets.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CommonService } from '../../../core/services/common.service';
@@ -29,7 +28,6 @@ import {
   States,
   Ulbs,
 } from './interfaces';
-// import { ReUseableHeatMapComponent } from '../../../shared/components/re-useable-heat-map/re-useable-heat-map.component';
 
 @Component({
   selector: 'app-dashboard-map-section',
@@ -40,8 +38,25 @@ import {
 export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   @ViewChild('map') mapComponent!: MapComponent;
 
+  myForm!: FormGroup;
+
+  selectedStateCode: string = '';
+  selectedStateId: string = '';
+  selectedStateName: string = '';
+  stateList!: States[];
+  filteredStates: Observable<any[]> = of([]);
+
+  selectedCityName = '';
+  selectedCityId: string = '';
+  cityData: any = [];
+  filteredUlbs!: Observable<any[]>;
+
+  creditRating: CreditRatingMap = {};
   totalCreditRating: number = 0;
   cr_above_BBB_minus: number = 0;
+
+  lastModifiedDate: string | null = '';
+
   bondIssuances: BondIssuances = {
     bondIssueAmount: 0,
     totalMunicipalBonds: 0,
@@ -65,63 +80,65 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     startYear: '2015-16',
     endYear: '2022-23',
   };
-  myForm!: FormGroup;
-  selectedStateCode: string = '';
-  selected_state: string = '';
-  stateselected!: IState;
-  creditRating: any = {};
-  stateList!: States[];
-  filteredStates: Observable<any[]> = of([]);
-  cityData: any = [];
-  cityName = '';
-  filteredUlbs!: Observable<any[]>;
-  stateData: any;
+  private destroy$ = new Subject<void>();
+
   constructor(
     protected _commonService: CommonService,
     private fb: FormBuilder,
     private assetService: AssetsService,
     private router: Router,
     private authService: AuthService,
-  ) {
-    this.fetchDataForVisualization();
-  }
+  ) {}
 
   ngOnInit(): void {
     this.initializeform();
-    this.fetchBondIssuances();
     this.fetchCreditRatingsData();
-    this.fetchMinMaxFinancialYears();
-    this.fetchStateList();
-    this.fetchLastUpdatedDate();
     this.searchUlb();
+    this.fetchStateList();
+    this.fetchMinMaxFinancialYears();
+    this.loadData();
+  }
+
+  private loadData(): void {
+    this.fetchLastUpdatedDate();
+    this.fetchBondIssuances();
+    this.updateUlbsOfSelectedState();
+    this.updateRatingSummary();
+    this.fetchDataForVisualization();
   }
 
   private initializeform() {
     this.myForm = this.fb.group({
-      stateId: [''],
-      ulb: [''],
+      stateName: [''],
+      ulbName: [''],
     });
   }
 
   // Get municipal bonds data.
-  private fetchBondIssuances(stateId: string = ''): void {
-    this._commonService.getBondIssuerItemAmount(stateId).subscribe({
-      next: (res: BondIssuances) => (this.bondIssuances = { ...res, inProgress: false }),
-      error: (error) => console.error('Error in fetching bonds data: ', error),
-      complete: () => (this.bondIssuances['inProgress'] = false),
-    });
+  private fetchBondIssuances(): void {
+    this._commonService
+      .getBondIssuerItemAmount(this.selectedStateId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: BondIssuances) => (this.bondIssuances = { ...res, inProgress: false }),
+        error: (error) => console.error('Error in fetching bonds data: ', error),
+        complete: () => (this.bondIssuances['inProgress'] = false),
+      });
   }
 
   // Get credit rating data.
   private fetchCreditRatingsData(): void {
-    this.assetService.fetchCreditRatingReport().subscribe({
-      next: (res: CreditRatings[]) => {
-        const computedData = this.computeRatings(res);
-        this.creditRating = computedData;
-        this.updateRatingSummary();
-      },
-      error: (error) => console.error('Error fetching credit rating report:', error),
-    });
+    this.assetService
+      .fetchCreditRatingReport()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: CreditRatings[]) => {
+          const computedData = this.computeRatings(res);
+          this.creditRating = computedData;
+          this.updateRatingSummary();
+        },
+        error: (error) => console.error('Error fetching credit rating report:', error),
+      });
   }
 
   // Compute total, creditRatingAboveBBB_Minus count.
@@ -150,7 +167,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   // Update credit ratings summary.
   private updateRatingSummary(): void {
-    const selected = this.selected_state || 'India';
+    const selected = this.selectedStateName || 'India';
     const ratingData = this.creditRating[selected] || { total: 0, creditRatingAboveBBB_Minus: 0 };
 
     this.totalCreditRating = ratingData['total'];
@@ -159,36 +176,42 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   // Get start and end year - ledgers.
   private fetchMinMaxFinancialYears() {
-    this._commonService.getFinancialYearBasedOnData().subscribe({
-      next: (res: { data: string[] }) => {
-        const years = res?.['data'] || [];
-        if (years.length) {
-          this.financialYearTexts['startYear'] = years[years.length - 1];
-          this.financialYearTexts['endYear'] = years[0];
-        }
-      },
-      error: (error) => console.error('Failed to get years: ', error),
-    });
+    this._commonService
+      .getFinancialYearBasedOnData()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: { data: string[] }) => {
+          const years = res?.['data'] || [];
+          if (years.length) {
+            this.financialYearTexts['startYear'] = years[years.length - 1];
+            this.financialYearTexts['endYear'] = years[0];
+          }
+        },
+        error: (error) => console.error('Failed to get years: ', error),
+      });
   }
 
   get stateIdControl(): FormControl {
-    return this.myForm.get('stateId') as FormControl;
+    return this.myForm.get('stateName') as FormControl;
   }
 
   // Get states list.
   private fetchStateList() {
-    this._commonService.fetchStateList().subscribe({
-      next: (res: States[]) => {
-        this.stateList = res;
+    this._commonService
+      .fetchStateList()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: States[]) => {
+          this.stateList = res;
 
-        this.filteredStates = this.stateIdControl.valueChanges.pipe(
-          startWith(''),
-          debounceTime(300),
-          distinctUntilChanged(),
-          map((value) => this._filterStates(value || '')),
-        );
-      },
-    });
+          this.filteredStates = this.stateIdControl.valueChanges.pipe(
+            startWith(''),
+            debounceTime(300),
+            distinctUntilChanged(),
+            map((value) => this._filterStates(value || '')),
+          );
+        },
+      });
   }
 
   // Helper: To filter states.
@@ -200,18 +223,22 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
 
   // Last modfied date from ledger.
-  private fetchLastUpdatedDate(stateCode: string = '', ulbId: string = '') {
-    this._commonService.fetchLastUpdatedDate(stateCode, ulbId).subscribe({
-      next: (res: LastModifiedAt) => (this.date = res['lastModifiedAt']),
-      error: (error) => console.error('Failed to fetch last modified date', error),
-    });
+  private fetchLastUpdatedDate() {
+    this._commonService
+      .fetchLastUpdatedDate(this.selectedStateCode, this.selectedCityId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: LastModifiedAt) => (this.lastModifiedDate = res['lastModifiedAt']),
+        error: (error) => console.error('Failed to fetch last modified date', error),
+      });
   }
 
   // Global search feature.
   private searchUlb(): void {
     this.myForm
-      .get('ulb')
+      .get('ulbName')
       ?.valueChanges?.pipe(
+        takeUntil(this.destroy$),
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((value) => {
@@ -220,11 +247,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
             return of([]);
           }
 
-          // TODO: use stateId variable.
-          const stateId = this.stateList.find(
-            (e) => e?.name.toLowerCase() == this.selected_state.toLowerCase(),
-          )?._id;
-          return this._commonService.postGlobalSearchData(value, 'ulb', stateId);
+          return this._commonService.postGlobalSearchData(value, 'ulb', this.selectedStateId);
         }),
       )
       .subscribe({
@@ -238,15 +261,101 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       });
   }
 
+  // Get all the ulbs for selected state.
+  updateUlbsOfSelectedState(): void {
+    if (this.selectedStateCode) {
+      this._commonService
+        .getUlbByState(this.selectedStateCode)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res: any) => {
+            const ulbsData = res;
+            this.cityData = ulbsData?.data?.ulbs;
+          },
+          error: (error) => console.error('Failed to fetch ulbs: ', error),
+        });
+    }
+  }
+
+  // Update data when state is changed from map.
+  selectedStateCodeChange(stateCode: string) {
+    const stateData = this.stateList.find((ele) => ele.code === stateCode);
+    if (stateData) {
+      this.onSelectingStateFromDropDown(stateData);
+    }
+  }
+
+  // Action when state is selected from drop down.
+  onSelectingStateFromDropDown(state: any | null) {
+    // console.log('state: ', state);
+    this.selectedStateName = state.name || 'India';
+    this.selectedStateCode = state.code;
+    this.selectedStateId = state._id;
+    this.selectedCityName = '';
+    this.selectedCityId = '';
+    this.stateDim = false;
+    this.myForm?.get('stateName')?.setValue(state.name || '');
+    this.loadData();
+  }
+
+  // Update data when ulb is changed from map.
+  selectedCityIdChange(ulbId: string): void {
+    const ulbData = this.cityData?.find((e: { _id: string }) => e?._id === ulbId);
+    this.myForm.get('ulbName')?.setValue(ulbData?.name);
+    this.onSelectingCityFromDropDown(ulbData?.code || '');
+  }
+
+  // Get ulb data.
+  onSelectingCityFromDropDown(city: string) {
+    const filterCity: Ulbs = this.cityData.find((e: Ulbs) => {
+      return e.code == city;
+    });
+    this.selectedCityId = filterCity._id;
+    this.selectedCityName = filterCity.name;
+    this.stateDim = true;
+    this.fetchUlbData();
+  }
+
+  // When ulb is selected get ULB data.
+  private fetchUlbData(): void {
+    if (this.selectedCityId) {
+      this.authService
+        .getCityData(this.selectedCityId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res: { [x: string]: any }) => {
+            this.cityInfo = res['data'];
+          },
+          error: (error) => console.error('Error in fetching ulbData: ', error),
+        });
+    }
+  }
+
+  // View state/ city dashboard.
+  public viewDashboard(key: string): void {
+    if (key === 'state')
+      this.router.navigateByUrl(`/dashboard/state?stateId=${this.selectedStateId}`);
+    else if (key === 'city')
+      this.router.navigateByUrl(`/dashboard/city?cityId=${this.selectedCityId}`);
+  }
+
   // Reset map to india.
   public resetMap(): void {
     this.mapComponent?.resetMap();
+    this.myForm.get('ulbName')?.setValue('');
     this.onSelectingStateFromDropDown({ _id: '', name: '' });
-    this.updateDropdownStateSelection({ _id: '', name: '' });
-    this.myForm.get('ulb')?.setValue('');
   }
 
-  stateId: string = '';
+  // Unsubscribe.
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ngOnDestroy(): void {
+  //   this.homePageSubscription?.unsubscribe();
+  // }
+  // stateId: string = '';
   dataForVisualization: {
     financialStatements?: number;
     totalMunicipalBonds?: number;
@@ -255,25 +364,11 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     ulbDataCount?: any;
     loading: boolean;
   } = { loading: true };
-  totalUsersVisit: number = 0;
 
-  absCreditInfo: any = {};
-  isLoading: boolean = true;
-  cid: string = '';
-  creditRatingList!: any[];
-  globalFormControl = new FormControl();
-
-  isBondIssueAmountInProgress = false;
-
-  date: any;
-  districtMap!: L.Map;
   highestYear: any;
   highestDataAvailability: any;
   dataAvailTooltip = '';
   private homePageSubscription!: Subscription;
-  ngOnDestroy(): void {
-    this.homePageSubscription?.unsubscribe();
-  }
 
   noDataFound = true;
 
@@ -286,66 +381,11 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.stateDim = true;
   }
 
-  dashboardNav(option: any) {
-    this.selectCity(option);
-  }
-
-  cidChange(ulbId: string): void {
-    const ulbData = this.cityData?.find((e: { _id: string }) => e?._id === ulbId);
-    this.myForm.get('ulb')?.setValue(ulbData?.name);
-    this.selectCity(ulbData?.code || '');
-  }
-
-  selectCity(city: string) {
-    const filterCity: Ulbs = this.cityData.find((e: Ulbs) => {
-      return e.code == city;
-    });
-    this.cityName = filterCity.name;
-    this.stateDim = true;
-    this.cid = filterCity._id;
-    this.authService.getCityData(this.cid).subscribe((res: { [x: string]: any }) => {
-      this.cityInfo = res['data'];
-    });
-  }
-  viewDashboard() {
-    const searchValue = this.stateList.find(
-      (e) => e?.name.toLowerCase() == this.selected_state.toLowerCase(),
-    );
-    this.router.navigateByUrl(`/dashboard/state?stateId=${searchValue?._id}`);
-  }
-  viewCityDashboard() {
-    this.router.navigateByUrl(`/dashboard/city?cityId=${this.cid}`);
-  }
-
-  selectedStateCodeChange(stateCode: string) {
-    const stateData = this.stateList.find((ele) => ele.code === stateCode);
-    if (stateData) {
-      this.updateDropdownStateSelection(stateData);
-      this.onSelectingStateFromDropDown(stateData);
-    }
-  }
-  onSelectingStateFromDropDown(state: any | null) {
-    this.selectedStateCode = state.code;
-    this.cityName = '';
-    this.cid = '';
-    this.stateDim = false;
-    this._commonService.getUlbByState(state ? state?.code : null).subscribe((res: any) => {
-      const ulbsData: any = res;
-      this.cityData = ulbsData?.data?.ulbs;
-    });
-    this.selected_state = state ? state?.name : 'India';
-    if (state._id == null) this.updateDropdownStateSelection(state);
-    this.fetchDataForVisualization(state ? state._id : null);
-    this.fetchBondIssuances(state._id);
-    this.updateRatingSummary();
-    this.fetchLastUpdatedDate(this.selectedStateCode, this.cid);
-  }
-
-  private fetchDataForVisualization(stateId?: string) {
+  private fetchDataForVisualization() {
     this.dataForVisualization.loading = true;
     this.homePageSubscription?.unsubscribe();
     this.homePageSubscription = this._commonService
-      .fetchDataForHomepageMap(stateId)
+      .fetchDataForHomepageMap(this.selectedStateId)
       .subscribe(
         (res: {
           financialStatements?: number;
@@ -356,7 +396,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
           loading: boolean;
         }) => {
           this.dataForVisualization = { ...res, loading: false };
-          if (!stateId) {
+          if (!this.selectedStateId) {
             this._commonService.setDataForVisualizationCount(this.dataForVisualization);
           }
           this.highestYear = null;
@@ -385,14 +425,5 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
           });
         },
       );
-  }
-
-  private updateDropdownStateSelection(state: IState) {
-    this.stateselected = state;
-    this.myForm.controls['stateId'].setValue(state ? state.name : '');
-  }
-
-  openStateDashboard() {
-    this.router.navigateByUrl(`/dashboard/state?stateCode=${this.selectedStateCode}`);
   }
 }
