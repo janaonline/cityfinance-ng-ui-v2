@@ -1,4 +1,4 @@
-import { Component, Input, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, NgZone, OnDestroy, OnInit, ViewChild, OnChanges } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -45,10 +45,6 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.onSelectingStateFromDropDown({ _id: '', name: '' });
     this.updateDropdownStateSelection({ _id: '', name: '' });
     this.myForm.get('ulb')?.setValue('');
-
-    // this.selectedStateCode = '';
-    // this.stateIdControl.setValue('');
-    // this.selected_state = '';
   }
   myForm!: FormGroup;
   stateUlbData = JSON.parse(localStorage.getItem('ulbList') || 'null');
@@ -69,7 +65,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   //   stateZoomOnWeb: 4, // will fit map in container
   //   stateBlockHeight: "23.5rem", // will fit map in container
   // };
-  yearSelected = [];
+  // yearSelected = [];
   selected_state = '';
   stateselected!: IState;
   creditRating: any = {};
@@ -117,16 +113,16 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     private authService: AuthService,
   ) {
     // super(_commonService, _snackbar, _geoService, _activateRoute);
-    setTimeout(() => {
-      // this.ngOnChanges({
-      //   yearSelected: {
-      //     currentValue: ["2016-17"],
-      //     previousValue: null,
-      //     firstChange: true,
-      //     isFirstChange: () => true,
-      //   },
-      // });
-    }, 1000);
+    // setTimeout(() => {
+    // this.ngOnChanges({
+    //   yearSelected: {
+    //     currentValue: ["2016-17"],
+    //     previousValue: null,
+    //     firstChange: true,
+    //     isFirstChange: () => true,
+    //   },
+    // });
+    // }, 1000);
     this.initializeform();
     // this.fetchStateList();
     this.fetchDataForVisualization();
@@ -206,6 +202,9 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     });
     this.searchUlb();
   }
+
+  totalCreditRating: number = 0;
+  cr_above_BBB_minus: number = 0;
 
   get stateIdControl(): FormControl {
     return this.myForm.get('stateId') as FormControl;
@@ -610,7 +609,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     });
     this.selected_state = state ? state?.name : 'India';
     /* Updating the dropdown state selection. */
-    this.showCreditInfoByState(this.selected_state);
+    // this.showCreditInfoByState(this.selected_state);
     if (state._id == null) this.updateDropdownStateSelection(state);
     // if (this.selected_state === "India" && this.isMapOnMiniMapMode) {
     //   const element = document.getElementById(this.createdDomMinId) as HTMLElement;
@@ -625,6 +624,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       .fetchBondIssueAmout
       // this.stateselected ? this.stateselected._id : null
       ();
+    this.getCreditRatings();
     // this.selectStateOnMap(state);
   }
   // createdDomMinId: any;
@@ -740,9 +740,9 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
           ulbDataCount?: any;
           loading: boolean;
         }) => {
-          this.setDefaultAbsCreditInfo();
+          // this.setDefaultAbsCreditInfo();
 
-          this.showCreditInfoByState(this.stateselected ? this.stateselected.name : '');
+          // this.showCreditInfoByState(this.stateselected ? this.stateselected.name : '');
           this.dataForVisualization = { ...res, loading: false };
           if (!stateId) {
             this._commonService.setDataForVisualizationCount(this.dataForVisualization);
@@ -783,39 +783,39 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
         },
       );
   }
-  setDefaultAbsCreditInfo() {
-    this.absCreditInfo = {
-      title: '',
-      ulbs: 0,
-      creditRatingUlbs: 0,
-      ratings: {
-        'AAA+': 0,
-        AAA: 0,
-        'AAA-': 0,
-        'AA+': 0,
-        AA: 0,
-        'AA-': 0,
-        'A+': 0,
-        A: 0,
-        'A-': 0,
-        'BBB+': 0,
-        BBB: 0,
-        'BBB-': 0,
-        BB: 0,
-        'BB+': 0,
-        'BB-': 0,
-        'B+': 0,
-        B: 0,
-        'B-': 0,
-        'C+': 0,
-        C: 0,
-        'C-': 0,
-        'D+': 0,
-        D: 0,
-        'D-': 0,
-      },
-    };
-  }
+  // setDefaultAbsCreditInfo() {
+  //   this.absCreditInfo = {
+  //     title: '',
+  //     ulbs: 0,
+  //     creditRatingUlbs: 0,
+  //     ratings: {
+  //       'AAA+': 0,
+  //       AAA: 0,
+  //       'AAA-': 0,
+  //       'AA+': 0,
+  //       AA: 0,
+  //       'AA-': 0,
+  //       'A+': 0,
+  //       A: 0,
+  //       'A-': 0,
+  //       'BBB+': 0,
+  //       BBB: 0,
+  //       'BBB-': 0,
+  //       BB: 0,
+  //       'BB+': 0,
+  //       'BB-': 0,
+  //       'B+': 0,
+  //       B: 0,
+  //       'B-': 0,
+  //       'C+': 0,
+  //       C: 0,
+  //       'C-': 0,
+  //       'D+': 0,
+  //       D: 0,
+  //       'D-': 0,
+  //     },
+  //   };
+  // }
   // public animateValues = (startiongValue?: number) => {
   //   const speed = 1000;
   //   const interval = this.isMapAtNationalLevel() ? 5 : 1;
@@ -860,65 +860,72 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   //     }
   //   });
   // };
-  showCreditInfoByState(stateName = '') {
-    // console.log({ stateName });
-    const ulbList = [];
-    if (stateName && stateName != 'India') {
-      for (let i = 0; i < this.creditRatingList?.length; i++) {
-        const ulb = this.creditRatingList[i];
+  // showCreditInfoByState(stateName = '') {
+  //   // console.log({ stateName });
+  //   const ulbList = [];
+  //   if (stateName && stateName != 'India') {
+  //     for (let i = 0; i < this.creditRatingList?.length; i++) {
+  //       const ulb = this.creditRatingList[i];
 
-        if (ulb.state.toLowerCase() == stateName.toLowerCase()) {
-          ulbList.push(ulb['ulb']);
-          const rating = ulb.creditrating.trim();
-          this.calculateRatings(this.absCreditInfo, rating);
-        }
-      }
-    } else {
-      for (let i = 0; i < this.creditRatingList?.length; i++) {
-        const ulb = this.creditRatingList[i];
-        ulbList.push(ulb['ulb']);
-        const rating = ulb.creditrating.trim();
-        this.calculateRatings(this.absCreditInfo, rating);
-      }
-    }
-    this.creditRatingAboveA =
-      this.absCreditInfo['ratings']['A'] +
-      this.absCreditInfo['ratings']['A+'] +
-      this.absCreditInfo['ratings']['AA'] +
-      this.absCreditInfo['ratings']['AA+'] +
-      this.absCreditInfo['ratings']['AA-'] +
-      this.absCreditInfo['ratings']['AAA'] +
-      this.absCreditInfo['ratings']['AAA+'] +
-      this.absCreditInfo['ratings']['AAA-'];
+  //       if (ulb.state.toLowerCase() == stateName.toLowerCase()) {
+  //         ulbList.push(ulb['ulb']);
+  //         const rating = ulb.creditrating.trim();
+  //         this.calculateRatings(this.absCreditInfo, rating);
+  //       }
+  //     }
+  //   } else {
+  //     for (let i = 0; i < this.creditRatingList?.length; i++) {
+  //       const ulb = this.creditRatingList[i];
+  //       ulbList.push(ulb['ulb']);
+  //       const rating = ulb.creditrating.trim();
+  //       this.calculateRatings(this.absCreditInfo, rating);
+  //     }
+  //   }
+  //   this.creditRatingAboveA =
+  //     this.absCreditInfo['ratings']['A']+
+  //     this.absCreditInfo['ratings']['A+']+
+  //     this.absCreditInfo['ratings']['AA']+
+  //     this.absCreditInfo['ratings']['AA+']+
+  //     this.absCreditInfo['ratings']['AA-']+
+  //     this.absCreditInfo['ratings']['AAA']+
+  //     this.absCreditInfo['ratings']['AAA+']+
+  //     this.absCreditInfo['ratings']['AAA-'];
 
-    this.creditRatingAboveBBB_Minus =
-      this.creditRatingAboveA +
-      this.absCreditInfo['ratings']['A-'] +
-      this.absCreditInfo['ratings']['BBB'] +
-      this.absCreditInfo['ratings']['BBB+'] +
-      this.absCreditInfo['ratings']['BBB-'];
+  //   this.creditRatingAboveBBB_Minus =
+  //     this.creditRatingAboveA +
+  //     this.absCreditInfo['ratings']['A-']+
+  //     this.absCreditInfo['ratings']['BBB']+
+  //     this.absCreditInfo['ratings']['BBB+']+
+  //     this.absCreditInfo['ratings']['BBB-'];
 
-    this.absCreditInfo['title'] = stateName || 'India';
-    this.absCreditInfo['ulbs'] = ulbList;
+  //   this.absCreditInfo['title'] = stateName || 'India';
+  //   this.absCreditInfo['ulbs'] = ulbList;
 
-    // console.log(
-    //   "this.creditRatingAboveA",
-    //   this.creditRatingAboveA,
-    //   this.creditRatingAboveBBB_Minus
-    // );
-  }
+  //   // console.log(
+  //   //   "this.creditRatingAboveA",
+  //   //   this.creditRatingAboveA,
+  //   //   this.creditRatingAboveBBB_Minus
+  //   // );
+  // }
 
-  calculateRatings(dataObject: { [x: string]: number }, ratingValue: string | number) {
-    // if (!dataObject["ratings"][ratingValue]) {
-    //   dataObject["ratings"][ratingValue] = 0;
-    // }
-    // dataObject["ratings"][ratingValue] = dataObject["ratings"][ratingValue] + 1;
-    // dataObject["creditRatingUlbs"] = dataObject["creditRatingUlbs"] + 1;
-    return dataObject;
-  }
+  // calculateRatings(dataObject: { [x: string]: number }, ratingValue: string | number) {
+  //   // if (!dataObject["ratings"][ratingValue]) {
+  //   //   dataObject["ratings"][ratingValue] = 0;
+  //   // }
+  //   // dataObject["ratings"][ratingValue] = dataObject["ratings"][ratingValue] + 1;
+  //   // dataObject["creditRatingUlbs"] = dataObject["creditRatingUlbs"] + 1;
+  //   return dataObject;
+  // }
   // private isMapAtNationalLevel() {
   //   return this.stateselected ? false : true;
   // }
+
+  getCreditRatings() {
+    this.totalCreditRating = this.creditRating[this.selected_state || 'India']['total'];
+    this.cr_above_BBB_minus =
+      this.creditRating[this.selected_state || 'India']['creditRatingAboveBBB_Minus'];
+  }
+
   private updateDropdownStateSelection(state: IState) {
     this.stateselected = state;
     this.myForm.controls['stateId'].setValue(state ? state.name : '');
@@ -930,19 +937,49 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
   private computeStatesTotalRatings(res: ICreditRatingData[]) {
     this.creditRatingList = res;
+    // console.log('credit rating length: ', res.length);
+    const eligibleRatings = [
+      'A',
+      'A+',
+      'AA',
+      'AA+',
+      'AA-',
+      'AAA',
+      'AAA+',
+      'AAA-',
+      'A-',
+      'BBB',
+      'BBB+',
+      'BBB-',
+    ];
 
-    const computedData: any = { total: 0, India: 0 };
+    const computedData: any = { India: { total: 0, creditRatingAboveBBB_Minus: 0 } };
     res.forEach((data) => {
-      if (computedData[data.state] || computedData[data.state] === 0) {
-        computedData[data.state] += 1;
-      } else {
-        computedData[data.state] = 1;
+      const stateName = data.state;
+      const rating = data.creditrating;
+
+      if (!(stateName in computedData))
+        computedData[stateName] = { total: 0, creditRatingAboveBBB_Minus: 0 };
+
+      computedData[stateName]['total'] += 1;
+      computedData['India']['total'] += 1;
+
+      if (eligibleRatings.includes(rating)) {
+        computedData[stateName]['creditRatingAboveBBB_Minus'] += 1;
+        computedData['India']['creditRatingAboveBBB_Minus'] += 1;
       }
-      computedData.total += 1;
-      computedData['India'] += 1;
+      // if (computedData[data.state] || computedData[data.state] === 0) {
+      //   computedData[data.state] += 1;
+      // } else {
+      //   computedData[data.state] = 1;
+      // }
+      // computedData.total += 1;
+      // computedData['India'] += 1;
     });
 
     this.creditRating = computedData;
+    this.getCreditRatings();
+    // console.log('credit rating', this.creditRating);
   }
   openStateDashboard(event: any) {
     this.router.navigateByUrl(`/dashboard/state?stateCode=${this.selectedStateCode}`);

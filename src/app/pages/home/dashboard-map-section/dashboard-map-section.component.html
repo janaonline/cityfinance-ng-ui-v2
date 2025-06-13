@@ -182,8 +182,8 @@
           <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-2" style="padding-right: 2rem !important">
             @if (!stateDim) {
             <div class="num-data">
-              {{ stateselected && creditRating ? creditRating[stateselected.name] || 0 :
-              creditRating['total'] }}
+              <!-- {{ selected_state ? creditRating?.[selected_state]?.['total'] : creditRating['India']['total'] }} -->
+              {{ totalCreditRating }}
             </div>
             }
             @if (stateDim) {
@@ -204,7 +204,7 @@
           <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-4">
             @if (!stateDim) {
             <div class="num-data">
-              {{ creditRatingAboveBBB_Minus | inrCurrency: { currencyTypeInUser: 0 } }}
+              {{ cr_above_BBB_minus }}
             </div>
             }
             @if (stateDim) {
@@ -278,7 +278,7 @@
             </div>
             }
             @if (!stateDim && selectedStateCode) {
-            <button class="btn view-ds-btn" (click)="viewDashboard()">
+            <button class="btn btn-cfPrimary" (click)="viewDashboard()">
               View State Dashboard
             </button>
             }
