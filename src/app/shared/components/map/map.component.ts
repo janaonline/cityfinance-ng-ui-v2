@@ -88,14 +88,13 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   // ngOnInit(): void {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (
-      changes['stateCode'] &&
-      changes['stateCode']['currentValue'] &&
-      !changes['stateCode'].isFirstChange() &&
-      this.mapInitialized
-    ) {
-      this.loadMapData();
-    }
+    // console.log(changes);
+    const shouldReloadMap = ['stateCode', 'ulbId'].some((key: string) => {
+      const change = changes[key];
+      return change && change.currentValue && !change.isFirstChange() && this.mapInitialized;
+    });
+
+    if (shouldReloadMap) this.loadMapData();
   }
 
   ngAfterViewInit(): void {

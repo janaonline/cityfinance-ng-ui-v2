@@ -2,6 +2,10 @@
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/mixins";
 
+* {
+    font-family: Archivo;
+}
+
 ::ng-deep .tooltip-custom-1 {
     transform: translateY(-4000px);
 }

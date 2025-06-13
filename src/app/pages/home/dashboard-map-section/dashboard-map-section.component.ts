@@ -76,7 +76,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   stateList!: IState[];
   filteredStates: Observable<any[]> = of([]);
   // statesLayer!: L.GeoJSON<any>;
-  cityData = [];
+  cityData: any = [];
   cityName = '';
   dropdownSettings = {
     singleSelection: true,
@@ -149,7 +149,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   absCreditInfo: any = {};
   isLoading: boolean = true;
-  cid: string | undefined;
+  cid: string = '';
   creditRatingList!: any[];
   globalFormControl = new FormControl();
 
@@ -544,7 +544,15 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   //   throw new Error('Method not implemented.');
   // }
 
+  cidChange(ulbId: string): void {
+    // console.log('ulb id from change: ', ulbId);
+    const ulbData = this.cityData?.find((e: { _id: string }) => e?._id === ulbId);
+    this.myForm.get('ulb')?.setValue(ulbData?.name);
+    this.selectCity(ulbData?.code || '');
+  }
+
   selectCity(city: any, fireEvent = true) {
+    // console.log('city from select city: ', city);
     const filterCity: any = this.cityData.find((e: any) => {
       return e.code == city;
     });
@@ -581,7 +589,10 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
   selectedStateCodeChange(stateCode: string) {
     const stateData = this.stateList.find((ele) => ele.code === stateCode);
-    this.onSelectingStateFromDropDown(stateData);
+    if (stateData) {
+      this.updateDropdownStateSelection(stateData);
+      this.onSelectingStateFromDropDown(stateData);
+    }
   }
   onSelectingStateFromDropDown(state: any | null) {
     // console.log('on state click = ', state, this.filteredStates);
@@ -590,7 +601,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     // }
     this.selectedStateCode = state.code;
     this.cityName = '';
-    this.cid = undefined;
+    this.cid = '';
     this.stateDim = false;
     this._commonService.getUlbByState(state ? state?.code : null).subscribe((res: any) => {
       const ulbsData: any = res;
