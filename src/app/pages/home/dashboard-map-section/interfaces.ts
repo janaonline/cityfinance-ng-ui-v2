@@ -41,3 +41,10 @@ export interface LastModifiedAt {
   lastModifiedAt: string | null;
   fromCache: boolean;
 }
+
+export interface ExploreSectionResponse {
+  sequence: number;
+  label: string;
+  value: string;
+  info: string;
+}

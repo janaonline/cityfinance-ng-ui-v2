@@ -375,10 +375,10 @@
     padding-top: 5px;
 }
 
-::ng-deep #mat-option-0,
-::ng-deep .firstCls {
-    border-top: 1px solid lightgray;
-}
+// ::ng-deep #mat-option-0,
+// ::ng-deep .firstCls {
+//     border-top: 1px solid lightgray;
+// }
 
 .custom-panel {
     width: calc(100% + 30px);

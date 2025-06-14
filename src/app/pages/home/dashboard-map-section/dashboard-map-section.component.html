@@ -1,306 +1,143 @@
-<div class="container-fluid">
-  <div class="text-center">
-    <div class="expo">Explore</div>
-  </div>
-  <div class="row">
-    <div class="col-sm-12 col-md-12 col-lg-6 d-flex flex-column">
-      <div class="flex-grow-1 position-relative" style="min-height: 500px;">
-        <app-map #map [stateCode]="selectedStateCode" (stateCodeChange)="selectedStateCodeChange($event)"
-          [ulbId]="selectedCityId" (ulbIdChange)="selectedCityIdChange($event)"></app-map>
-      </div>
-      <!-- {{selectedStateCode}} {{selectedStateName}} {{selectedCityId}} -->
-      @if (selectedStateCode) {
-      <button class="btn p-0 m-0 border-0 bg-transparent text-cfPrimary fw-bold" (click)="resetMap()">Reset Map To
-        India</button>
-      }
-      <!-- @if (!nationalLevelMap) {
-      <div class="skeletonWrapper container-fluid spinner_overlay d-flex justify-content-center align-items-center"
-        style="z-index: 1000">
-        @if (isLoading) {
-        <mat-spinner></mat-spinner>
-        }
-      </div>
-      }
-      @if (isMapOnMiniMapMode) {
-      <div class="map-reset w-100 text-center mb-3 mt-3" style="z-index: 10000"> -->
-      <!-- <a type="button" style="text-decoration: none" (click)="onSelectingStateFromDropDown(national)">Reset
-          Map To
-        India</a> -->
-      <!-- </div>
-      } -->
-
-      <!-- <div class="col-sm-12" id="districtMapContainer" [ngStyle]="{ visibility:  ? 'visible' : 'hidden' }"
-    style="height: 100%">
-
-
-  </div>
-  <div class="stateMap analytics-map" [id]="'mapidd'"
-    style="background-image: url('../../../../assets/Layer\ 1.png') !important;">
-  </div> -->
+<h2 class="fw-bold text-center py-4">
+  <span class="fw-bold border-bottom border-5 border-cfPrimary py-3">Explore</span>
+</h2>
+<section class="row py-3">
+  <!-- Map section -->
+  <div class="col-md-12 col-lg-6 d-flex flex-column">
+    <div class="flex-grow-1 position-relative" style="min-height: 500px">
+      <app-map
+        #map
+        [stateCode]="selectedStateCode"
+        (stateCodeChange)="selectedStateCodeChange($event)"
+        [ulbId]="selectedCityId"
+        (ulbIdChange)="selectedCityIdChange($event)"
+      ></app-map>
     </div>
-    <div class="col-md-12 col-lg-6 col-sm-12">
-      <div class="expo-sub">
-        Select a state or city to know more about its key municipal financial and operational information
-      </div>
-      <div class="row expo-drp expo-pd">
-        <div class="col-md-6 col-sm-12">
-          <div class="input-group">
-            <form [formGroup]="myForm" class="w-100">
-              <input type="text" placeholder="Search for State" matInput formControlName="stateName"
-                [matAutocomplete]="auto"
-                class="rounded border border-1 border-secondary-subtle bg-body-tertiary p-1 w-100 px-2" />
-              <mat-autocomplete #auto="matAutocomplete">
-                @for (option of filteredStates | async; track $index) {
-                <mat-option [value]="option?.name" (onSelectionChange)="onSelectingStateFromDropDown(option)">
-                  <span>{{ option?.name }}</span>
-                </mat-option>
-                }
-              </mat-autocomplete>
-            </form>
-          </div>
-        </div>
-        <!-- city-dropdown inp-grp -->
-        @if (selectedStateCode) {
-        <div class="col-md-6 col-sm-12 m-m">
-          <form [formGroup]="myForm">
-            <input type="text" class="rounded border border-1 border-secondary-subtle bg-body-tertiary p-1 w-100 px-2"
-              placeholder="Search for ULBs" matInput formControlName="ulbName" [matAutocomplete]="auto" />
+    <!-- {{selectedStateCode}} {{selectedStateName}} {{selectedCityId}} -->
+    @if (selectedStateCode) {
+      <button
+        class="btn p-0 m-0 border-0 bg-transparent text-cfPrimary fw-bold"
+        (click)="resetMap()"
+      >
+        Reset Map To India
+      </button>
+    }
+  </div>
 
-            <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-              @if (filteredUlbs) {
+  <!-- Data section -->
+  <div class="col-md-12 col-lg-6 d-flex flex-column p-4 p-lg-2">
+    <small class="text-secondary mb">
+      Select a state or city to know more about its key municipal financial and operational
+      information.
+    </small>
+    <!-- Search options -->
+    <div class="row my-3">
+      <form [formGroup]="myForm" class="col-md-6">
+        <!-- <mat-form-field class=""> -->
+        <!-- <mat-label>Number</mat-label> -->
+        <input
+          type="text"
+          placeholder="Search for State"
+          matInput
+          formControlName="stateName"
+          [matAutocomplete]="auto"
+          class="input-box-style"
+        />
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredStates | async; track $index) {
+            <mat-option
+              [value]="option?.name"
+              (onSelectionChange)="onSelectingStateFromDropDown(option)"
+            >
+              <span>{{ option?.name }}</span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+        <!-- </mat-form-field> -->
+      </form>
+      @if (selectedStateCode) {
+        <form [formGroup]="myForm" class="col-md-6">
+          <input
+            type="text"
+            class="input-box-style"
+            placeholder="Search for ULBs"
+            matInput
+            formControlName="ulbName"
+            [matAutocomplete]="auto"
+          />
+
+          <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+            @if (filteredUlbs) {
               @for (option of filteredUlbs | async; track $index) {
-              <mat-option [value]="option?.name" (onSelectionChange)="onSelectingCityFromDropDown(option.code)">
-                <small>{{ option?.name }}</small>
-                <!-- <small class="text-secondary">
-                  |
-                  {{
-                  option.type === 'ulb'
-                  ? option.ulbType.name
-                  : (option.type | titlecase)
-                  }}
-                </small> -->
-              </mat-option>
+                <mat-option
+                  [value]="option?.name"
+                  (onSelectionChange)="onSelectingCityFromDropDown(option.code)"
+                >
+                  <small>{{ option?.name }}</small>
+                </mat-option>
               }
 
               @if (noDataFound) {
-              <mat-option class="text-muted" disabled>
-                No results found for your search.
-              </mat-option>
+                <mat-option class="text-muted" disabled>
+                  No results found for your search.
+                </mat-option>
               }
-              }
-            </mat-autocomplete>
-          </form>
-        </div>
-        }
-
-        <!-- <div class="col-md-6 col-sm-12">
-
-  <div class="input-group inp-grp selected-list" *ngIf="(selectedStateName != 'India')">
-    <select class="c-btn expo-drp-in  border-0" id="inputGroupSelect01"
-      (change)="selectCity($event.target.value)">
-      <option value="null" selected>{{cityData.length>0 ?  'Select City' : 'Loading...' }}</option>
-
-      <option [selected]="selectedDistrictCode == item.code" value="1" *ngFor="let item of cityData"
-        [value]="item.code">{{item.name}}
-      </option>
-    </select>
-  </div>
-</div> -->
-      </div>
-      <div class="expo-pd">
-        @if (!selectedCityId) {
-        <div class="vl ps-1"></div>
-        }
-        <div class="c-n ps-0">
-          <span class="pointer" [ngClass]="{ dim: stateDim }" (click)="stateLevelData()">
-            {{ selectedStateName ? selectedStateName : 'India' }}
-          </span>
-        </div>
-        <div class="c-n ps-0">
-          @if (selectedCityId) {
-          <span class="vl ms-3 ps-1">
-            @if (selectedCityName !== '' && selectedStateName !== 'India') {
-            <span (click)="cityLevelData()" class="pointer" [ngClass]="{ dim: !stateDim }">
-              {{ selectedCityName }}</span>
             }
-          </span>
-          }
-        </div>
-        @if (!dataForVisualization.loading) {
-        <div class="row mt-4">
-          <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-2">
-            @if (!stateDim) {
-            <div class="num-data">
-              {{ dataForVisualization.coveredUlbCount || 0 | inrCurrency: { currencyTypeInUser: 0 } }}
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-data">
-              {{ cityInfo?.population ? (cityInfo?.population / 1000 | number: "1.0-0") : 0 }}k
-            </div>
-            }
-            @if (!stateDim) {
-            <div class="num-text my-1">
-              <!-- ULBs With Financial Data -->
-              ULBs with atleast 1 Year of Financial Data
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-text my-1">Population</div>
-            }
-          </div>
-          <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-2">
-            @if (!stateDim) {
-            <div class="num-data">
-              {{ dataForVisualization.financialStatements || 0 | inrCurrency: { currencyTypeInUser: 0
-              } }}
-              <span mat-raised-button [matTooltip]="dataAvailTooltip" matTooltipClass="my-tooltip"
-                aria-label="Button that displays a tooltip with a custom message"><img
-                  src="../../../../assets/images/ticks/info_black_18dp.svg" alt="tick"></span>
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-data">
-              {{ cityInfo?.area ? (cityInfo?.area | number: "1.0-0") : 0 }} Sq KM
-            </div>
-            }
-            @if (!stateDim) {
-            <span class="data-point-name num-text my-1">
-              Financial Statements for FYs
-              <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                {{ financialYearTexts['startYear'] }}
-              </span> to
-              <span class="num-text my-1" [ngClass]="{ 'loading-value': !financialYearTexts }">
-                {{ financialYearTexts['endYear'] }}
-              </span>
-            </span>
-            }
-            @if (stateDim) {
-            <div class="num-text my-1">Area</div>
-            }
-          </div>
-          <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-2" style="padding-right: 2rem !important">
-            @if (!stateDim) {
-            <div class="num-data">
-              <!-- {{ selectedStateName ? creditRating?.[selectedStateName]?.['total'] : creditRating['India']['total'] }} -->
-              {{ totalCreditRating }}
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-data">
-              {{ cityInfo?.area > 0 ? (cityInfo?.population / cityInfo?.area | number: "1.0-0") : 0 }}/ Sq
-              KM
-            </div>
-            }
-            @if (!stateDim) {
-            <div class="num-text my-1">
-              ULBs Credit Rating Reports
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-text my-1">Population Density</div>
-            }
-          </div>
-          <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-4">
-            @if (!stateDim) {
-            <div class="num-data">
-              {{ cr_above_BBB_minus }}
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-data">
-              {{ cityInfo?.wards ? cityInfo?.wards : 0 }}
-            </div>
-            }
-            @if (!stateDim) {
-            <div class="num-text my-1">
-              ULBs With Investment Grade Rating
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-text my-1">Wards</div>
-            }
-          </div>
-          <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-4">
-            @if (!stateDim) {
-            <div class="num-data">
-              {{ highestDataAvailability }}%
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-data">
-              {{ cityInfo?.dataAvailable }}
-            </div>
-            }
-            @if (!stateDim) {
-            <div class="num-text my-1">
-              Highest Financial Data Availability is in FY {{highestYear}}
-            </div>
-            }
-            @if (stateDim) {
-            <div class="num-text my-1">
-              Years of Financial Statements
-            </div>
-            }
-          </div>
-          <div class="col-sm-6 col-md-4 col-6 pe-xl-5 mt-4">
-            @if (!stateDim) {
-            <div class="num-data">
-              {{ bondIssuances['totalMunicipalBonds'] }}
-            </div>
-            }
-            @if (!stateDim) {
-            <div class="num-text my-1">
-              Municipal Bond Issuances Of Rs. {{ bondIssuances['bondIssueAmount']| inrCurrency: { currencyTypeInUser: 0
-              } }} Cr With Details
-            </div>
-            }
-          </div>
-        </div>
-        }
-        @if (dataForVisualization.loading) {
-        <div class="preloader-wrapper">
-          <app-pre-loader></app-pre-loader>
-        </div>
-        }
-      </div>
-      <div class="expo-pd py-0">
-        <div class="row" style="align-items: baseline">
-          <div class="col-sm-8">
-            @if (!selectedStateName) {
-            <div class="info-drill mt-1">
-              <img src="../../../../assets/images/ticks/info_black_18dp.svg" class="info-icon" alt="" />
-              Click on
-              the map or
-              use the drop down to drill down to a state or city
-            </div>
-            }
-            @if (!stateDim && selectedStateCode) {
-            <button class="btn btn-cfPrimary" (click)="viewDashboard('state')">
-              View State Dashboard
-            </button>
-            }
-            @if (stateDim) {
-            <button class="btn btn-cfPrimary" (click)="viewDashboard('city')">
-              View City Dashboard
-            </button>
-            }
-            <!-- <button class="btn view-ds-btn" (click)="openStateDashboard($event.target)" *ngIf="(selectedStateName != 'India')">View State Dashboard</button> -->
-          </div>
-          <div class="col-sm-4">
-            <div class="up-text pt-4">
-              Last updated on: {{ lastModifiedDate | date: "short" }}
-            </div>
-          </div>
-        </div>
-      </div>
+          </mat-autocomplete>
+        </form>
+      }
     </div>
-  </div>
-</div>
+    <!-- Selected state and city name -->
+    <div
+      class="fw-bold fs-5 my-3"
+      [ngClass]="!selectedCityName ? 'border-start border-5 border-cfPrimary' : ''"
+    >
+      &nbsp;{{ selectedStateName ? selectedStateName : 'India' }}
 
-<!-- <p
-class="text-center national-map-click-guide"
-*ngIf="!currentStateInView && nationalLevelMap"
->
-Click on any state to view state and ULB related data
-</p> -->
+      <!-- City Name -->
+      <span [ngClass]="selectedCityName ? 'border-start border-5 border-cfPrimary' : ''">
+        &nbsp;{{ selectedCityName ? selectedCityName : '' }}
+      </span>
+    </div>
+    @if (isLoading) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    }
+    <!-- Grid with data -->
+    <div class="flex-grow-1 explore-data-grid my-3">
+      @for (item of exploreData; track $index) {
+        <div class="p-2">
+          <p class="mb-0 fw-bold fs-5">
+            {{ item['value'] }}
+            @if (item['info']) {
+              &nbsp;<i
+                class="bi bi-info-circle"
+                [matTooltip]="item['info']"
+                matTooltipClass="multiline-tooltip"
+              ></i>
+            }
+          </p>
+          <p class="text-secondary" style="font-size: 0.8rem">
+            {{ item['label'] }}
+          </p>
+        </div>
+      }
+    </div>
+    <!-- View Dashboard button -->
+    @if (selectedStateId) {
+      <button class="btn btn-cfPrimary mx-auto" style="max-width: 16rem" (click)="viewDashboard()">
+        {{ selectedCityId ? 'View City Dashboard' : 'View State Dashboard' }}
+      </button>
+    } @else {
+      <p class="text-secondary rounded bg-body-secondary p-1 me-2" style="font-size: 0.75rem">
+        <i class="bi bi-info-circle"></i>
+        Click on the map or use the drop down to drill down to a state or city.
+      </p>
+    }
+    <!-- Last updated date -->
+    <p class="text-secondary text-end mt-3 mb-0" style="font-size: 0.75rem">
+      Last updated on: {{ lastModifiedDate | date: 'short' }}
+    </p>
+  </div>
+</section>

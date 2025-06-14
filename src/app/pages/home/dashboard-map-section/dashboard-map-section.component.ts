@@ -9,21 +9,20 @@ import {
   of,
   startWith,
   Subject,
-  Subscription,
   switchMap,
   takeUntil,
 } from 'rxjs';
-import { InrCurrencyPipe } from '../../../core/directives/inr-currency.pipe';
 import { AssetsService } from '../../../core/services/assets/assets.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { CommonService } from '../../../core/services/common.service';
 import { MaterialModule } from '../../../material.module';
 import { MapComponent } from '../../../shared/components/map/map.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
+import { ExploreSectionService } from './explore-section.service';
 import {
   BondIssuances,
   CreditRatingMap,
   CreditRatings,
+  ExploreSectionResponse,
   LastModifiedAt,
   States,
   Ulbs,
@@ -31,7 +30,7 @@ import {
 
 @Component({
   selector: 'app-dashboard-map-section',
-  imports: [MaterialModule, InrCurrencyPipe, PreLoaderComponent, MapComponent],
+  imports: [MaterialModule, MapComponent, PreLoaderComponent],
   templateUrl: './dashboard-map-section.component.html',
   styleUrl: './dashboard-map-section.component.scss',
 })
@@ -39,12 +38,14 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   @ViewChild('map') mapComponent!: MapComponent;
 
   myForm!: FormGroup;
+  noDataFound: boolean = true;
+  isLoading: boolean = true;
 
   selectedStateCode: string = '';
   selectedStateId: string = '';
   selectedStateName: string = '';
   stateList!: States[];
-  filteredStates: Observable<any[]> = of([]);
+  filteredStates: Observable<States[]> = of([]);
 
   selectedCityName = '';
   selectedCityId: string = '';
@@ -80,6 +81,17 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     startYear: '2015-16',
     endYear: '2022-23',
   };
+  exploreData!: ExploreSectionResponse[];
+
+  // exploreData = [
+  //   { label: 'ULBs with atleast 1 Year of Financial Data', value: '4,309', info: '' },
+  //   { label: 'Financial Statements for FYs 2015-16 to 22-23', value: '15,384', info: 'test' },
+  //   { label: 'ULBs Credit Rating Reports', value: '223', info: '' },
+  //   { label: 'ULBs With Investment Grade Rating', value: '95', info: '' },
+  //   { label: 'Highest Financial Data Availability is in FY 2021-22', value: '77%', info: '' },
+  //   { label: 'Municipal Bond Issuances Of Rs. 6,833 Cr With Details', value: '50', info: '' },
+  // ];
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -87,7 +99,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     private fb: FormBuilder,
     private assetService: AssetsService,
     private router: Router,
-    private authService: AuthService,
+    private _exploreSection: ExploreSectionService,
   ) {}
 
   ngOnInit(): void {
@@ -95,7 +107,6 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.fetchCreditRatingsData();
     this.searchUlb();
     this.fetchStateList();
-    this.fetchMinMaxFinancialYears();
     this.loadData();
   }
 
@@ -104,7 +115,8 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this.fetchBondIssuances();
     this.updateUlbsOfSelectedState();
     this.updateRatingSummary();
-    this.fetchDataForVisualization();
+    this.fetchExploreSectionData();
+    // this.fetchDataForVisualization();
   }
 
   private initializeform() {
@@ -172,23 +184,6 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
     this.totalCreditRating = ratingData['total'];
     this.cr_above_BBB_minus = ratingData['creditRatingAboveBBB_Minus'];
-  }
-
-  // Get start and end year - ledgers.
-  private fetchMinMaxFinancialYears() {
-    this._commonService
-      .getFinancialYearBasedOnData()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res: { data: string[] }) => {
-          const years = res?.['data'] || [];
-          if (years.length) {
-            this.financialYearTexts['startYear'] = years[years.length - 1];
-            this.financialYearTexts['endYear'] = years[0];
-          }
-        },
-        error: (error) => console.error('Failed to get years: ', error),
-      });
   }
 
   get stateIdControl(): FormControl {
@@ -286,14 +281,12 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
 
   // Action when state is selected from drop down.
-  onSelectingStateFromDropDown(state: any | null) {
-    // console.log('state: ', state);
+  onSelectingStateFromDropDown(state: States) {
     this.selectedStateName = state.name || 'India';
     this.selectedStateCode = state.code;
     this.selectedStateId = state._id;
     this.selectedCityName = '';
     this.selectedCityId = '';
-    this.stateDim = false;
     this.myForm?.get('stateName')?.setValue(state.name || '');
     this.loadData();
   }
@@ -312,118 +305,82 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     });
     this.selectedCityId = filterCity._id;
     this.selectedCityName = filterCity.name;
-    this.stateDim = true;
     this.fetchUlbData();
   }
 
   // When ulb is selected get ULB data.
   private fetchUlbData(): void {
     if (this.selectedCityId) {
-      this.authService
+      this.isLoading = true;
+      this._exploreSection
         .getCityData(this.selectedCityId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (res: { [x: string]: any }) => {
-            this.cityInfo = res['data'];
+          next: (res: { gridDetails: ExploreSectionResponse[] }) => {
+            this.exploreData = [];
+            this.exploreData = res.gridDetails;
+            this.isLoading = false;
           },
-          error: (error) => console.error('Error in fetching ulbData: ', error),
+          error: (error: Error) => console.error('Error in fetching ulbData: ', error),
         });
     }
   }
 
   // View state/ city dashboard.
-  public viewDashboard(key: string): void {
-    if (key === 'state')
-      this.router.navigateByUrl(`/dashboard/state?stateId=${this.selectedStateId}`);
-    else if (key === 'city')
+  public viewDashboard(): void {
+    if (this.selectedCityId)
       this.router.navigateByUrl(`/dashboard/city?cityId=${this.selectedCityId}`);
+    else this.router.navigateByUrl(`/dashboard/state?stateId=${this.selectedStateId}`);
+  }
+
+  // Explore section numbers.
+  private fetchExploreSectionData(): void {
+    this.isLoading = true;
+    this._exploreSection.getExploreSectionData(this.selectedStateCode).subscribe({
+      next: (res: { data: ExploreSectionResponse[] }) => {
+        this.exploreData = [];
+        this.exploreData = res.data;
+      },
+      error: (error) => console.error('Error in loading explore section data: ', error),
+      complete: () => {
+        this.exploreData = [
+          ...this.exploreData,
+          {
+            sequence: 3,
+            label: 'ULBs Credit Rating Reports',
+            value: `${this.totalCreditRating}`,
+            info: '',
+          },
+          {
+            sequence: 4,
+            label: 'ULBs With Investment Grade Rating',
+            value: `${this.cr_above_BBB_minus}`,
+            info: '',
+          },
+          {
+            sequence: 6,
+            label: `Municipal Bond Issuances Of Rs. ${this.bondIssuances.bondIssueAmount} Cr With Details`,
+            value: `${this.bondIssuances.totalMunicipalBonds}`,
+            info: '',
+          },
+        ];
+
+        this.exploreData.sort((a, b) => a.sequence - b.sequence);
+        this.isLoading = false;
+      },
+    });
   }
 
   // Reset map to india.
   public resetMap(): void {
     this.mapComponent?.resetMap();
     this.myForm.get('ulbName')?.setValue('');
-    this.onSelectingStateFromDropDown({ _id: '', name: '' });
+    this.onSelectingStateFromDropDown({ _id: '', name: '', code: '' });
   }
 
   // Unsubscribe.
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  // ngOnDestroy(): void {
-  //   this.homePageSubscription?.unsubscribe();
-  // }
-  // stateId: string = '';
-  dataForVisualization: {
-    financialStatements?: number;
-    totalMunicipalBonds?: number;
-    totalULB?: number;
-    coveredUlbCount?: number;
-    ulbDataCount?: any;
-    loading: boolean;
-  } = { loading: true };
-
-  highestYear: any;
-  highestDataAvailability: any;
-  dataAvailTooltip = '';
-  private homePageSubscription!: Subscription;
-
-  noDataFound = true;
-
-  stateDim = false;
-  stateLevelData() {
-    this.stateDim = false;
-  }
-  cityInfo: any;
-  cityLevelData() {
-    this.stateDim = true;
-  }
-
-  private fetchDataForVisualization() {
-    this.dataForVisualization.loading = true;
-    this.homePageSubscription?.unsubscribe();
-    this.homePageSubscription = this._commonService
-      .fetchDataForHomepageMap(this.selectedStateId)
-      .subscribe(
-        (res: {
-          financialStatements?: number;
-          totalMunicipalBonds?: number;
-          totalULB?: number;
-          coveredUlbCount?: number;
-          ulbDataCount?: any;
-          loading: boolean;
-        }) => {
-          this.dataForVisualization = { ...res, loading: false };
-          if (!this.selectedStateId) {
-            this._commonService.setDataForVisualizationCount(this.dataForVisualization);
-          }
-          this.highestYear = null;
-          this.highestDataAvailability = null;
-          if (this.dataForVisualization?.ulbDataCount?.length > 0) {
-            this.dataForVisualization.ulbDataCount = this.dataForVisualization?.ulbDataCount?.sort(
-              (a: { year: string }, b: { year: string }) =>
-                +a?.year.split('-')[0] - +b?.year.split('-')[0],
-            );
-            const ublsArray = this.dataForVisualization?.ulbDataCount;
-            let highestData = -1;
-            for (const item of ublsArray) {
-              if (item.ulbs > highestData) {
-                highestData = item?.ulbs;
-                this.highestYear = item?.year;
-              }
-            }
-            this.highestDataAvailability = (
-              (+highestData / +Number(this.dataForVisualization?.totalULB)) *
-              100
-            ).toFixed(0);
-          }
-          this.dataAvailTooltip = '';
-          this.dataForVisualization?.ulbDataCount?.forEach((element: { year: any; ulbs: any }) => {
-            this.dataAvailTooltip = this.dataAvailTooltip + `${element.year} : ${element.ulbs} \n `;
-          });
-        },
-      );
   }
 }
