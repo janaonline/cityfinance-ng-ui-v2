@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   Component,
   EventEmitter,
+  HostListener,
   Input,
   OnChanges,
   OnDestroy,
@@ -74,16 +75,32 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   private ulbsList: ULBDataPoint[] = [];
   private stateLayer: L.GeoJSON | null = null; // To hold current state layer.
   private mapConfig: MapConfig = {
-    initialView: [23, 78.96],
-    initialZoom: this.DEFAULT_ZOOM_LEVEL,
-    minZoom: this.DEFAULT_ZOOM_LEVEL,
-    maxZoom: this.DEFAULT_ZOOM_LEVEL + 2,
+    initialView: [23, 81],
+    initialZoom: this.getZoomLevel(),
+    minZoom: this.getZoomLevel(),
+    maxZoom: this.getZoomLevel() + 2,
   };
   private destroy$ = new Subject<void>();
   public isMapLoading = true;
   private mapInitialized = false;
 
   constructor(private mapService: MapService) {}
+
+  // Set map zoom based on screen width.
+  private getZoomLevel(): number {
+    const screenWidth = window.innerWidth;
+
+    if (screenWidth < 350) return 3.5;
+    else if (screenWidth < 600) return 4.0;
+    else return this.DEFAULT_ZOOM_LEVEL;
+  }
+
+  // Update map zoom based on screen resize.
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    const newZoom = this.getZoomLevel();
+    this.mapService.map.setZoom(newZoom);
+  }
 
   // ngOnInit(): void {}
 
@@ -126,7 +143,6 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
 
   private loadMapData(): void {
     if (!this.mapInitialized) return;
-
     this.isMapLoading = true;
 
     // Remove previous state layer if any
