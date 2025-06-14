@@ -16,9 +16,11 @@ export class ExploreSectionService {
 
   public getExploreSectionData(
     stateCode: string = '',
+    stateId: string = '',
   ): Observable<{ data: ExploreSectionResponse[] }> {
     let params = new HttpParams();
     if (stateCode) params = params.set('stateCode', stateCode);
+    if (stateId) params = params.set('stateId', stateId);
 
     return this.https.get<{ data: ExploreSectionResponse[] }>(
       `${environment.api.url}dashboard/home-page/get-Data`,

@@ -336,39 +336,41 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   // Explore section numbers.
   private fetchExploreSectionData(): void {
     this.isLoading = true;
-    this._exploreSection.getExploreSectionData(this.selectedStateCode).subscribe({
-      next: (res: { data: ExploreSectionResponse[] }) => {
-        this.exploreData = [];
-        this.exploreData = res.data;
-      },
-      error: (error) => console.error('Error in loading explore section data: ', error),
-      complete: () => {
-        this.exploreData = [
-          ...this.exploreData,
-          {
-            sequence: 3,
-            label: 'ULBs Credit Rating Reports',
-            value: `${this.totalCreditRating}`,
-            info: '',
-          },
-          {
-            sequence: 4,
-            label: 'ULBs With Investment Grade Rating',
-            value: `${this.cr_above_BBB_minus}`,
-            info: '',
-          },
-          {
-            sequence: 6,
-            label: `Municipal Bond Issuances Of Rs. ${this.bondIssuances.bondIssueAmount} Cr With Details`,
-            value: `${this.bondIssuances.totalMunicipalBonds}`,
-            info: '',
-          },
-        ];
+    this._exploreSection
+      .getExploreSectionData(this.selectedStateCode, this.selectedStateId)
+      .subscribe({
+        next: (res: { data: ExploreSectionResponse[] }) => {
+          this.exploreData = [];
+          this.exploreData = res.data;
+        },
+        error: (error) => console.error('Error in loading explore section data: ', error),
+        complete: () => {
+          this.exploreData = [
+            ...this.exploreData,
+            {
+              sequence: 3,
+              label: 'ULBs Credit Rating Reports',
+              value: `${this.totalCreditRating}`,
+              info: '',
+            },
+            {
+              sequence: 4,
+              label: 'ULBs With Investment Grade Rating',
+              value: `${this.cr_above_BBB_minus}`,
+              info: '',
+            },
+            {
+              sequence: 6,
+              label: `Municipal Bond Issuances Of Rs. ${this.bondIssuances.bondIssueAmount} Cr With Details`,
+              value: `${this.bondIssuances.totalMunicipalBonds}`,
+              info: '',
+            },
+          ];
 
-        this.exploreData.sort((a, b) => a.sequence - b.sequence);
-        this.isLoading = false;
-      },
-    });
+          this.exploreData.sort((a, b) => a.sequence - b.sequence);
+          this.isLoading = false;
+        },
+      });
   }
 
   // Reset map to india.
