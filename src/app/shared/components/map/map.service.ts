@@ -4,6 +4,9 @@ import L, { Marker } from 'leaflet';
 import { Observable, Subject } from 'rxjs';
 import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
 import { MapConfig, StateGeoJson, ULBDataPoint } from './interfaces';
+interface LeafletHTMLElement extends HTMLElement {
+  _leaflet_id?: number;
+}
 declare module 'leaflet' {
   interface Marker {
     ulbData?: ULBDataPoint;
@@ -46,7 +49,12 @@ export class MapService {
   ) {}
 
   initMap(elementId: string, config: MapConfig, options?: L.MapOptions): void {
-    this.map?.remove(); // Ensure previous map is removed
+    if (this.map) this.destroyMap();
+
+    const container = document.getElementById('map-container') as LeafletHTMLElement;
+    if (container && container._leaflet_id) {
+      delete container._leaflet_id;
+    }
 
     this.map = L.map(elementId, {
       scrollWheelZoom: false,
@@ -218,7 +226,7 @@ export class MapService {
   destroyMap(): void {
     if (this.map) {
       this.map?.off();
-      this.map?.remove();
+      // this.map?.remove();
     }
   }
 }
