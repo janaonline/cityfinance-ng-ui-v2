@@ -213,29 +213,6 @@
     padding: 2rem 10%;
 }
 
-.new-card {
-    background: #ffffff 0% 0% no-repeat padding-box;
-    box-shadow: 0px 2px 20px #4e4e4e29;
-    border: 1px solid #f4f4f4;
-    border-radius: 12px;
-    opacity: 1;
-    // width: 337px;
-    height: 240px;
-    display: inline-block;
-    padding: 10px;
-    margin-right: 3rem;
-}
-
-.new-card-l {
-    font: normal normal bold #{$font-size-base * 1}/#{$font-size-base * 1.5} "Archivo";
-    letter-spacing: 0px;
-    color: #262831;
-    opacity: 1;
-    padding: 8px 5px 12px 5px;
-    display: block;
-    text-align: center;
-}
-
 .slick-wrapper {
     width: 1000px;
     margin: 20px auto;
@@ -274,70 +251,10 @@
     height: 100%;
 }
 
-.res-h {
-    margin-top: $spacer * 4.375;
-    font: normal normal 800 #{$font-size-base * 1.875}/#{$font-size-base * 2} "Archivo";
-    letter-spacing: 0px;
-    color: #0f1f40;
-    display: inline-block;
-    border-bottom: 5px solid #e67e15;
-    padding-bottom: 10px;
-}
-
-.res-s-h {
-    margin-top: $spacer * 1.25;
-    font: normal normal normal #{$font-size-base * 1.125}/#{$font-size-base * 1.375} "Archivo";
-    letter-spacing: 0px;
-    color: #6e7281;
-}
-
-.card {
-    background: #ffffff 0% 0% no-repeat padding-box;
-    box-shadow: 0px 2px 33px #53525229;
-    border-radius: 12px;
-    width: 325px;
-    min-height: 225px;
-    margin: 1rem;
-    padding: 1rem 2rem;
-}
-
-.card1:hover {
-    // transition: 500ms linear;
-    // transform: translateY(-10px);
-    transform: scale(1.05);
-    transition: all 1s ease-out 0s;
-    background-color: #fff7eb;
-
-    .cd-s-head,
-    .cd-head,
-    .cd-icon {
-        display: none;
-    }
-
-    .hidden-text {
-        display: inline-block;
-    }
-}
-
-.hidden-text {
-    display: none;
-}
-
 // .pd-l-r {
 //     padding: 1.5rem 8rem;
 // }
-.cd-head {
-    font: normal normal bold #{$font-size-base * 1.125}/#{$font-size-base * 1.438} "Archivo";
-    letter-spacing: 0px;
-    color: #0f1f40;
-    padding: 1rem 0.2rem;
-}
 
-.cd-s-head {
-    font: normal normal normal #{$font-size-base * 0.875}/#{$font-size-base * 1.5} "Archivo";
-    letter-spacing: 0px;
-    color: #444750;
-}
 
 .com-logo {
     background-color: #f8f9ff;
@@ -354,19 +271,7 @@
     padding: 0 2rem;
 }
 
-.btn-view {
-    background: #e67e15 0% 0% no-repeat padding-box;
-    box-shadow: 0px 2px 8px #f7c199;
-    border-radius: 8px;
-    padding: 0.8rem 1.5rem;
-    font: normal normal bold #{$font-size-base * 0.875}/#{$font-size-base * 0.938} "Archivo";
-    letter-spacing: 0px;
-    color: #ffffff;
-}
 
-.btn-d {
-    margin-top: 5rem;
-}
 
 .c-i {
     padding: 1rem;

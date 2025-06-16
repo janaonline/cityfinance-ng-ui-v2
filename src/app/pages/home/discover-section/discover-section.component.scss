@@ -1,0 +1,51 @@
+* {
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
+    // font-family: Archivo;
+}
+
+.discover-data-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 2.5rem;
+}
+
+@media (min-width: 600px) {
+    .discover-data-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .discover-data-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.card {
+    position: relative;
+    overflow: hidden;
+    transition: all 1s ease-out;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    background-color: #fff7eb;
+
+    .card-data {
+        display: none;
+    }
+
+    .hidden-button {
+        display: inline-block;
+    }
+}
+
+.hidden-button {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}

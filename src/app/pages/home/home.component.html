@@ -26,7 +26,10 @@
     </div>
   </div>
 
+  <!-- Spotlight section -->
   <app-spotlight></app-spotlight>
+
+  <!-- Factsheet - currently hidden.
   <div class="container-fluid mr-t-b factsheet-bg" style="display: none">
     <div class="h-p2 text-center mb3">
       <h2 class="h-sl">Factsheet</h2>
@@ -52,7 +55,7 @@
               3+ Years
               <span class="small-desc">of aggregating financial information on ULBs of India</span>
             </h3>
-            <!-- <div class="sl-sub-text">One or more financial statement(s) from 4507 ULBs (95%) available for FY 2019-20 to FY 2021-22 </div> -->
+<div class="sl-sub-text">One or more financial statement(s) from 4507 ULBs (95%) available for FY 2019-20 to FY 2021-22 </div>
           </li>
           <li
             [ngClass]="{ active: highlightNo === 2, done: highlightNo > 2 }"
@@ -62,8 +65,7 @@
               10,862
               <span class="small-desc">standardised Financial Statements available</span>
             </h3>
-            <!-- <div class="sl-sub-text">One or more financial statement(s) from 3175 ULBs (67%) available in standardised format for FY 2019-20 to FY 2021-22 </div> -->
-          </li>
+<div class="sl-sub-text">One or more financial statement(s) from 3175 ULBs (67%) available in standardised format for FY 2019-20 to FY 2021-22 </div>         </li>
           <li
             [ngClass]="{ active: highlightNo === 3, done: highlightNo > 3 }"
             (click)="highlightNo = 3"
@@ -72,7 +74,7 @@
               ₹ 65,706 Crore
               <span class="small-desc">XV Finance Commission grants released to 4,600+ ULBs</span>
             </h3>
-            <!-- <div class="sl-sub-text">₹ 1,08,916 Crore grants being administered for 4,700 ULBs through <a href="https://cityfinance.in/">cityfinance.in</a></div> -->
+<div class="sl-sub-text">₹ 1,08,916 Crore grants being administered for 4,700 ULBs through <a href="https://cityfinance.in/">cityfinance.in</a></div>
           </li>
           <li
             [ngClass]="{ active: highlightNo === 3, done: highlightNo > 4 }"
@@ -82,13 +84,14 @@
               ₹ 1,08,916 Crore
               <span class="small-desc">grants being administered for 4,700 ULBs</span>
             </h3>
-            <!-- <div class="sl-sub-text">₹ 1,08,916 Crore grants being administered for 4,700 ULBs through <a href="https://cityfinance.in/">cityfinance.in</a></div> -->
+<div class="sl-sub-text">₹ 1,08,916 Crore grants being administered for 4,700 ULBs through <a href="https://cityfinance.in/">cityfinance.in</a></div>
           </li>
         </ul>
         <div class="text-right mr-2" style="color: #fff">Last updated on: 1/3/24, 2:43 PM</div>
       </div>
     </div>
   </div>
+
   <div class="factsheet" style="display: none">
     <div class="container">
       <h3>Factsheet</h3>
@@ -129,48 +132,21 @@
         </div>
       </div>
     </div>
-  </div>
-  <div class="map-bg">
+  </div> -->
+
+  <!-- Explore section -->
+  <div class="map-bg mt-3">
     <div class="container">
       <app-dashboard-map-section></app-dashboard-map-section>
     </div>
   </div>
-  <div class="container">
-    <div class="row">
-      <div class="col-sm-12 text-center">
-        <div class="res-h">Discover</div>
-        <div class="res-s-h pt-2">
-          Delve into key aspects of municipal data summarized and presented in a user-friendly
-          manner
-        </div>
-        <div class="container">
-          <div class="row mt-3">
-            @for (cardItem of exploreCardData; track cardItem; let i = $index) {
-              <div class="col-lg-4 col-md-6 col-sm-12 text-center">
-                <div class="card card1 mx-auto">
-                  <div class="cd-icon">
-                    <img [src]="cardItem.icon" alt="" />
-                  </div>
-                  <div class="cd-head">
-                    {{ cardItem.label }}
-                  </div>
-                  <div class="cd-s-head">
-                    {{ cardItem.text }}
-                  </div>
-                  <!-- <div class="hidden-text">
-                {{cardItem.hiddenText}}
-              </div> -->
-                  <div class="hidden-text btn-d">
-                    <button [routerLink]="cardItem.link" class="btn btn-view">Know More</button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </div>
+
+  <!-- Discover section -->
+  <div class="container mt-3">
+    <app-discover-section></app-discover-section>
   </div>
+
+  <!-- Partners/ Supported by section -->
   <section class="com-logo">
     <div class="container">
       <div class="row mt-2">
