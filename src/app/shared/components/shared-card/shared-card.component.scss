@@ -1,6 +1,7 @@
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/card';
 
 // @use 'bootstrap/scss/bootstrap' as *;
 
@@ -97,7 +98,7 @@ $font-Montserrat: Montserrat;
   margin-top: 0.5rem;
   height: 45px;
   color: #6e7281;
-  font-size: $font-size-base * 0.75;
+  // font-size: $font-size-base * 0.75;
   font-family: $font-Montserrat;
   font-weight: medium;
 }
