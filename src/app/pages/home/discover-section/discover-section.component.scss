@@ -7,7 +7,7 @@
 .discover-data-grid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 2.5rem;
+    gap: 1.5rem;
 }
 
 @media (min-width: 600px) {
@@ -16,7 +16,7 @@
     }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1000px) {
     .discover-data-grid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -24,6 +24,7 @@
 
 .card {
     position: relative;
+    min-height: 14rem;
     overflow: hidden;
     transition: all 1s ease-out;
 }
