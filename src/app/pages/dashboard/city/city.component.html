@@ -11,13 +11,13 @@
             [cardData]="revenueData" [data]="frontPanelData"></app-front-panel>
     </div>
     <div class="row p-4">
-        <label class="m-h text-center">Dashboard</label>
+        <span class="m-h text-center">Dashboard</span>
     </div>
     @if(dashboardTabData) {
     <div class="row">
-        <!-- <app-dashboard-tabs [yearListForDropDown]="yearListForDropDown" [mySelectedYears]="currentYear"
+        <app-dashboard-tabs [yearListForDropDown]="yearListForDropDown" [mySelectedYears]="currentYear"
             [DashBoardType]="'city'" [cityId]="cityId" [data]="dashboardTabData" [scrollCords]="cords" [isUA]="isUA"
-            [noDataFound]="noDataFound"></app-dashboard-tabs> -->
+            [noDataFound]="noDataFound"></app-dashboard-tabs>
     </div>
     }
 </div>

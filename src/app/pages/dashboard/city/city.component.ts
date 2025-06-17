@@ -5,6 +5,7 @@ import { AuthService } from "../../../core/services/auth.service";
 import { CommonService } from "../../../core/services/common.service";
 import { GlobalLoaderService } from "../../../core/services/loaders/global-loader.service";
 import { FrontPanelComponent } from "../../../shared/components/front-panel/front-panel.component";
+import { DashboardTabsComponent } from "../../../shared/components/dashboard-tabs/dashboard-tabs.component";
 // import { CommonService } from "src/app/shared/services/common.service";
 // import { GlobalLoaderService } from "src/app/shared/services/loaders/global-loader.service";
 // import { AuthService } from "../../../auth/auth.service";
@@ -12,7 +13,7 @@ import { FrontPanelComponent } from "../../../shared/components/front-panel/fron
 
 @Component({
   selector: 'app-city',
-  imports: [FrontPanelComponent],
+  imports: [FrontPanelComponent, DashboardTabsComponent],
   templateUrl: './city.component.html',
   styleUrl: './city.component.scss'
 })
