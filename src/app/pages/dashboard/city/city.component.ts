@@ -6,6 +6,7 @@ import { CommonService } from "../../../core/services/common.service";
 import { GlobalLoaderService } from "../../../core/services/loaders/global-loader.service";
 import { FrontPanelComponent } from "../../../shared/components/front-panel/front-panel.component";
 import { DashboardTabsComponent } from "../../../shared/components/dashboard-tabs/dashboard-tabs.component";
+import {Title ,Meta} from '@angular/platform-browser';
 // import { CommonService } from "src/app/shared/services/common.service";
 // import { GlobalLoaderService } from "src/app/shared/services/loaders/global-loader.service";
 // import { AuthService } from "../../../auth/auth.service";
@@ -19,6 +20,8 @@ import { DashboardTabsComponent } from "../../../shared/components/dashboard-tab
 })
 export class CityComponent implements OnInit {
   constructor(
+    private titleService : Title,
+    private metaService : Meta,
     public dashboardService: DashboardService,
     private _activatedRoute: ActivatedRoute,
     private router: Router,
@@ -59,6 +62,44 @@ export class CityComponent implements OnInit {
   isUA: any;
   noDataFound: boolean = false;
   ngOnInit(): void {
+    // Set meta tags tailored for the City Dashboard
+    this.titleService.setTitle('City Dashboard | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Explore detailed financial data, statistics, and insights for your city on the City Finance dashboard.'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, city dashboard, municipal finance, city statistics, urban finance, city data, city insights'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'City Dashboard | City Finance'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'Access comprehensive financial information and analytics for your city at City Finance.'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/dashboard/city'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
+
     //this.dashboardDataCall();
     this.dashboardCalls(this.cityId);
     // setTimeout(() => {

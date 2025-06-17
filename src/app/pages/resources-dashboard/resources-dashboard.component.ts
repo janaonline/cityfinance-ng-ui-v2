@@ -6,6 +6,7 @@ import { map, startWith } from "rxjs/operators";
 import { CommonService } from "../../../core/services/common.service";
 import { GlobalLoaderService } from "../../../core/services/loaders/global-loader.service";
 import { ResourcesDashboardService } from "./resources-dashboard.service";
+import { Title ,Meta} from '@angular/platform-browser';
 
 @Component({
     selector: "app-resources-dashboard",
@@ -15,6 +16,8 @@ import { ResourcesDashboardService } from "./resources-dashboard.service";
 })
 export class ResourcesDashboardComponent implements OnInit, OnDestroy, DoCheck {
   constructor(
+    private titleService : Title,
+    private metaService : Meta,
     private router: Router,
     protected resourcedashboard: ResourcesDashboardService,
     public globalLoader: GlobalLoaderService,
@@ -33,6 +36,44 @@ export class ResourcesDashboardComponent implements OnInit, OnDestroy, DoCheck {
   cardData = [learningCenter, dataSets, reportsPublications];
   castSubs;
   ngOnInit(): void {
+    // Set meta tags for Reports & Publications page
+    this.titleService.setTitle('Resources - Datasets and Reports | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Download raw and standardized financial statements datasets, access reports, publications and learning resources'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, reports, publications, financial documents, resources, finance reports'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'Resources - Datasets and Reports | City Finance'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'Download raw and standardized financial statements datasets, access reports, publications and learning resources  '
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/resources-dashboard/data-sets/income_statement'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
+
     // this.subscribeValue();
     console.log("======>>>>>", this.cardData);
     this.activeCard(1, this.cardData);

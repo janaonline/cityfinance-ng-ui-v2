@@ -14,6 +14,7 @@ import { DownloadService } from '../../../core/services/download.zip.service';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
 import { MaterialModule } from '../../../material.module';
 import { ReportService } from '../../services/report.service';
+import {Title , Meta} from '@angular/platform-browser'
 
 @Component({
   selector: 'app-data-sets',
@@ -76,6 +77,8 @@ export class DataSetsComponent implements OnInit {
 
 
   constructor(
+    private titleService : Title ,
+    private metaService : Meta,
     private _resourcesDashboardService: ResourcesDashboardService,
     public globalLoaderService: GlobalLoaderService,
     public dialog: MatDialog,
@@ -101,6 +104,44 @@ export class DataSetsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Set meta tags tailored for Data Sets page
+    this.titleService.setTitle('Resources - Datasets and Reports | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Download raw and standardized financial statements datasets, access reports, publications and learning resources.'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, data sets, financial reports, municipal finance, balance sheet, income statement, download data'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'Resources - Datasets and Reports | City Finance'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'Download raw and standardized financial statements datasets, access reports, publications and learning resources'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/data-sets'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
+
     this.filterComponent = {
       comp: 'dataSets',
     };

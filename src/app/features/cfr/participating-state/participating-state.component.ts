@@ -9,6 +9,7 @@ import { Table } from '../services/common-table.interface';
 import { FiscalRankingService, FrFilter } from '../services/fiscal-ranking.service';
 // import { StatewiseMapComponent } from "../statewise-map/statewise-map.component";
 import { MapStateRankComponent } from "../map-state-rank/map-state-rank.component";
+import { Title, Meta } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-participating-state',
@@ -31,7 +32,10 @@ export class ParticipatingStateComponent implements OnInit {
   limit: number = 40;
   colorCoding: any[] = [];
 
-  constructor(private fiscalRankingService: FiscalRankingService) {
+  constructor(
+    private titleService: Title,
+    private metaService: Meta,
+    private fiscalRankingService: FiscalRankingService) {
     this.getFilters();
   }
 
@@ -123,6 +127,42 @@ export class ParticipatingStateComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.titleService.setTitle('Participated and Ranked ULBs - State Wise | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Explore the participation and ranking status of Urban Local Bodies (ULBs) across States and UTs in the City Finance Ranking initiative.'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, ULB participation, state ranking, urban local bodies, finance ranking, state finance'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'Participated and Ranked ULBs - State Wise | City Finance'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'View detailed data on participation and ranking of ULBs across Indian States and Union Territories as part of the City Finance Ranking.'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/fc/cfr/participated-states-ut'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
     this.getTableData(this.table, '');
   }
   dropDownValueChanges(e: any) {

@@ -19,52 +19,52 @@ export class SpotlightComponent {
   whatNewData =
     [
       {
-        "imageUrl": "/assets/images/homepage/spotlight/RBI-report.jpg",
+        "src": "/assets/images/homepage-v2/spotlight/rbi-report.webp",
         "name": "RBI Report on Municipal Finances",
         "downloadUrl": "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/objects/5b1a4e36-ebfb-4311-84c6-8213bee1a284.pdf"
       },
       {
-        "imageUrl": "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/objects/f209358d-8e95-4c26-8a96-27028aba53cd.png",
+        "src": "/assets/images/homepage-v2/spotlight/municipal-finance-blueprint.webp",
         "name": "A Municipal Finance Blueprint For India",
         "downloadUrl": "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/objects/bdd4ab84-20bf-4299-818b-e34273084615.pdf"
       },
       {
-        "imageUrl": "/assets/images/homepage/spotlight/16th-FC-Members-Appointment-1.jpg",
+        "src": "/assets/images/homepage-v2/spotlight/xvi-fc-members-appointment-1.webp",
         "name": "XVI FC Constitution & Terms of Reference",
-        "downloadUrl": "/assets/images/homepage/spotlight/16th-FC-Members-Appointment-1.pdf"
+        "downloadUrl": "/assets/images/homepage-v2/spotlight/xvi-fc-members-appointment-1.pdf"
       },
       {
-        "imageUrl": "/assets/images/homepage/spotlight/CFR-Framework.jpg",
+        "src": "/assets/images/homepage-v2/spotlight/cfr-framework.webp",
         "name": "City Finance Rankings Framework",
-        "downloadUrl": "/assets/images/homepage/spotlight/CFR-Framework.pdf"
+        "downloadUrl": "/assets/images/homepage-v2/spotlight/cfr-framework.pdf"
       },
       {
-        "imageUrl": "/assets/images/homepage/spotlight/ASICS-2023-report.jpg",
+        "src": "/assets/images/homepage-v2/spotlight/asics-2023-report.webp",
         "name": "ASICS Report 2023",
-        "downloadUrl": "/assets/images/homepage/spotlight/ASICS-2023-report.pdf"
+        "downloadUrl": "/assets/images/homepage-v2/spotlight/asics-2023-report.pdf"
       },
       {
-        "imageUrl": "/assets/images/homepage/spotlight/world-bank.jpg",
+        "src": "/assets/images/homepage-v2/spotlight/world-bank.webp",
         "name": "Indian Urban Infrastructure & Services",
         "downloadUrl": "https://documents1.worldbank.org/curated/en/099615110042225105/pdf/P17130200d91fc0da0ac610a1e3e1a664d4.pdf"
       },
       {
-        "imageUrl": "https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com/resource/National_Municipal_Accounts_Manual__Nov_2004_low.jpg",
+        "src": "/assets/images/homepage-v2/spotlight/national-municipal-account-manual-nov-2004-low.webp",
         "name": "National Municipal Accounts Manual",
         "downloadUrl": "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/resource/NMAM_Manual.pdf"
       },
       {
-        "imageUrl": "https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com/resource/Capture.png",
+        "src": "/assets/images/homepage-v2/spotlight/xvfc-main-report-volume-1.webp",
         "name": "XV FC Main Report Volume I",
         "downloadUrl": "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/resource/XVFC_VOL_I_Main_Report_2021-26.pdf"
       },
       {
-        "imageUrl": "https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com/resource/img.png",
+        "src": "/assets/images/homepage-v2/spotlight/xv-fc-operational-guidelines.webp",
         "name": "XV FC Operational Guidelines",
         "downloadUrl": "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/resource/Annexure-I_FC-XV_operational_guidelines_for_Urban_Local_Body_for_2021-26.pdf"
       },
       {
-        "imageUrl": "https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com/resource/Property_Tax.jpg",
+        "src": "/assets/images/homepage-v2/spotlight/property-tax.webp",
         "name": "Property Tax Toolkit",
         "downloadUrl": "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/resource/Property_Tax_Reforms_Toolkit.pdf"
       }
@@ -110,19 +110,19 @@ export class SpotlightComponent {
   //   this.slides.length = this.slides.length - 1;
   // }
 
-  slickInit(e: any) {
-    //console.log('slick initialized');
-  }
+  // slickInit(e: any) {
+  //   console.log('slick initialized', e);
+  // }
 
-  breakpoint(e: any) {
-    //   console.log('breakpoint');
-  }
+  // breakpoint(e: any) {
+  //   console.log('breakpoint', e);
+  // }
 
-  afterChange(e: any) {
-    //  console.log('afterChange');
-  }
+  // afterChange(e: any) {
+  //   console.log('afterChange', e);
+  // }
 
-  beforeChange(e: any) {
-    //  console.log('beforeChange');
-  }
+  // beforeChange(e: any) {
+  //   console.log('beforeChange', e);
+  // }
 }

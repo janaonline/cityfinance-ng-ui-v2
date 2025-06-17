@@ -19,6 +19,7 @@ import { XviFcService } from '../../core/services/xvi-fc.service';
 import { UserUtility } from '../../core/util/user/user';
 import { MaterialModule } from '../../material.module';
 import { ApproveRejectFormService } from './approve-reject-form.service';
+import { Title, Meta } from '@angular/platform-browser';
 
 interface Data {
   position: string;
@@ -88,6 +89,8 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   readonly excelType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
   constructor(
+    private titleService: Title,
+    private metaService: Meta,
     public service: XviFcService,
     private authService: AuthService,
     public approveRejectService: ApproveRejectFormService,
@@ -105,6 +108,44 @@ export class XviFcReviewComponent implements AfterViewInit, OnInit {
   }
 
   ngOnInit() {
+    // Set meta tags tailored for XVI FC Review page
+    this.titleService.setTitle('XVIFC Forms Review | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Review and manage XVI Finance Commission forms, statuses, and progress for City Finance administrators and reviewers.'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, XVI FC, review, finance commission, mohua, grants'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'XVIFC Forms Review | City Finance'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'Access and review XVI Finance Commission forms and progress reports on City Finance.'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/xvi-fc-review'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
+
     this.statuses = FORM_STATUSES;
     this.checkUserLoggedIn();
     if (this.user?.role === USER_TYPE.XVIFC) {

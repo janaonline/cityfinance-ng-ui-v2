@@ -10,6 +10,7 @@ import { SlickCarouselModule } from 'ngx-slick-carousel';
 import { MaterialModule } from '../../material.module';
 import { SearchBarComponent } from './search-bar/search-bar.component';
 import { SpotlightComponent } from './spotlight/spotlight.component';
+import {Title ,Meta} from '@angular/platform-browser';
 import { DiscoverSectionComponent } from './discover-section/discover-section.component';
 import { SponsersPartnersComponent } from './sponsers-partners/sponsers-partners.component';
 declare let $: any;
@@ -33,6 +34,8 @@ declare let $: any;
 })
 export class HomeComponent implements OnInit {
   constructor(
+    private titleService : Title,
+    private meatService : Meta,
     protected _commonService: CommonService,
     private router: Router,
     public resourceDashboard: ResourcesDashboardService,
@@ -135,6 +138,59 @@ export class HomeComponent implements OnInit {
 
   // Adding latest static  spotlight carousel details
 
+  exploreCardData = [
+    {
+      title: '',
+      label: 'Financial Performance Of Cities',
+      text: 'Analyze and compare the financial performance of cities',
+      icon: '../../../assets/images/homepage-v2/icons/financial-performance-of-cities.svg',
+      // hiddenText: 'Key attributes of 42 municipal bond issuances, 400 listed projects, 223 city credit ratings available',
+      link: '/dashboard/national'
+    },
+    {
+      title: '',
+      label: 'Improve Own Revenue',
+      text: 'Explore own revenue sources of municipalities and identify revenue improvement strategies',
+      icon: '../../../assets/images/homepage-v2/icons/own-revenue.svg',
+      // hiddenText: 'Key attributes of 42 municipal bond issuances, 400 listed projects, 223 city credit ratings available',
+      link: '/own-revenue-dashboard'
+    },
+
+    {
+      title: '',
+      label: 'Resources',
+      text: 'Get access to a rich repository of resources to build your knowledge, and implement municipal finance reforms',
+      icon: '../../../assets/images/homepage-v2/icons/resources.png',
+      // hiddenText: 'Key attributes of 42 municipal bond issuances, 400 listed projects, 223 city credit ratings available',
+      link: '/resources-dashboard/learning-center/toolkits'
+    },
+    {
+      title: '',
+      label: 'Service Level Benchmarks',
+      text: 'Track your city’s performance across five themes and 28 key indicators.',
+      icon: '../../../assets/images/homepage-v2/icons/service-level-benchmarks.png',
+      // hiddenText: 'Key attributes of 42 municipal bond issuances, 400 listed projects, 223 city credit ratings available',
+      link: '/dashboard/slb'
+    },
+    {
+      title: '',
+      label: 'XV Finance Commission Grants',
+      text: 'Apply, review, recommend and track XV finance commission grants',
+      icon: '../../../assets/images/homepage-v2/icons/xv-fc-grants.svg',
+      // hiddenText: 'Key attributes of 42 municipal bond issuances, 400 listed projects, 223 city credit ratings available',
+      link: '/login'
+    },
+    {
+      title: '',
+      label: 'Upload Annual Accounts',
+      text: 'Upload Annual Account Forms',
+      icon: '../../../assets/images/homepage-v2/icons/upload-annual-accounts.svg',
+      // hiddenText: 'Key attributes of 42 municipal bond issuances, 400 listed projects, 223 city credit ratings available',
+      link: '/upload-annual-accounts'
+    },
+
+
+  ]
   noDataFound = false;
   recentSearchArray: any = [];
   dummyData: any = [
@@ -144,6 +200,46 @@ export class HomeComponent implements OnInit {
     },
   ];
   ngOnInit() {
+    // Set page title
+    this.titleService.setTitle('City Finance - Financial Data of 4,000+ Indian Cities');
+
+    // Set meta tags tailored for the Home component
+    this.meatService.updateTag({
+      name: 'description',
+      content: 'Explore standardized, credible financial data of over 4,000 Indian urban local bodies. Access municipal budgets, audited statements, financial performance, credit ratings, and dashboards by state and city.'
+    });
+
+    this.meatService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, city financial performance, municipal finance, resources, benchmarks, urban finance, city updates'
+    });
+
+    this.meatService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.meatService.updateTag({
+      property: 'og:title',
+      content: 'City Finance - Financial Data of 4,000+ Indian Cities'
+    });
+
+    this.meatService.updateTag({
+      property: 'og:description',
+      content: 'Explore standardized, credible financial data of over 4,000 Indian urban local bodies. Access municipal budgets, audited statements, financial performance, credit ratings, and dashboards by state and city.'
+    });
+
+    this.meatService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/home'
+    });
+
+    this.meatService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
+
+    
     // const hUser = $("#countDownUser").data('value');
     // let hUserLess = hUser - 1000;
     // const k = setInterval(function () {

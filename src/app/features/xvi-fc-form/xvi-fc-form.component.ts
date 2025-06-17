@@ -32,6 +32,7 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FORM_STATUSES } from '../../core/constants/statuses';
 import { XviFcService } from '../../core/services/xvi-fc.service';
+import {Title , Meta} from '@angular/platform-browser';
 // import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @Component({
@@ -101,6 +102,8 @@ export class XviFcFormComponent implements OnInit {
     return this.form.value;
   }
   constructor(
+    private titleService : Title,
+    private metaService : Meta,
     private fb: FormBuilder,
     public service: XviFcService,
     public formService: DynamicFormService,
@@ -108,6 +111,45 @@ export class XviFcFormComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+
+    this.titleService.setTitle('XVIFC ULB Form | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Fill and submit the XVI Finance Commission form on City Finance. Access guidelines, upload documents, and track your submission status.'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, XVI FC Form, finance commission, form submission, finance, document upload'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'XVIFC ULB Form | City Finance'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'Submit your XVI Finance Commission form online with City Finance. Ensure compliance and stay updated on your application status.'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/fc/xvi-fc-form'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
+
+    
     // this.form.valueChanges.subscribe(x => {
     //   this.submit.emit(x);
     //   // this.childFG.emit(this.form);

@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { CommonService } from '../../../core/services/common.service';
 import { ResourcesDashboardService } from '../resources-dashboard.service';
+import { Title , Meta} from '@angular/platform-browser';
 @Component({
   selector: 'app-reports-publication',
   templateUrl: './reports-publication.component.html',
@@ -17,6 +18,8 @@ export class ReportsPublicationComponent implements OnInit {
   dataReceived: boolean = true
   stateIdsMap: any = JSON.parse(localStorage.getItem("stateIdsMap"))
   constructor(
+    private titleService: Title,
+    private metaService : Meta,
     private _commonService: CommonService, private resourcesDashboard: ResourcesDashboardService
   ) {
     // this._commonService.getPublicFileList().subscribe((res)=>{
@@ -82,7 +85,45 @@ export class ReportsPublicationComponent implements OnInit {
   }
   filterComponent;
   ngOnInit(): void {
-    if (this.searchedValue) {
+     // Set meta tags for Reports & Publications page
+  this.titleService.setTitle('Reports & Publications | City Finance');
+
+  this.metaService.updateTag({
+    name: 'description',
+    content: 'Access reports and publications on City Finance. Find financial documents, publications, and resources for informed decision-making.'
+  });
+
+  this.metaService.updateTag({
+    name: 'keywords',
+    content: 'City Finance, reports, publications, financial documents, resources, finance reports'
+  });
+
+  this.metaService.updateTag({
+    name: 'robots',
+    content: 'index, follow'
+  });
+
+  this.metaService.updateTag({
+    property: 'og:title',
+    content: 'Reports & Publications | City Finance'
+  });
+
+  this.metaService.updateTag({
+    property: 'og:description',
+    content: 'Explore the latest reports and publications from City Finance. Stay informed with our comprehensive financial resources.'
+  });
+
+  this.metaService.updateTag({
+    property: 'og:url',
+    content: 'https://cityfinance.in/report-publications'
+  });
+
+  this.metaService.updateTag({
+    property: 'og:type',
+    content: 'website'
+  });
+
+  if (this.searchedValue) {
       this.pdfInput.globalName = this.searchedValue
     }
     this.getCardData()

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ResourcesDashboardService } from '../../resources-dashboard.service';
 import { MaterialModule } from '../../../../material.module';
+import {Title , Meta} from '@angular/platform-browser';
 
 @Component({
   selector: 'app-best-practices',
@@ -9,7 +10,10 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule]
 })
 export class BestPracticesComponent implements OnInit {
-  constructor(private resourcesDashboard: ResourcesDashboardService) {
+  constructor(
+    private titleService : Title ,
+    private metaService : Meta,
+    private resourcesDashboard: ResourcesDashboardService) {
     this.resourcesDashboard.castCount.subscribe((res: any) => {
       // this.pdfInput.globalName = res?.name
       this.globalName = res?.name
@@ -158,6 +162,44 @@ export class BestPracticesComponent implements OnInit {
 
   }
   ngOnInit(): void {
+    // Set meta tags tailored for Best Practices page
+    this.titleService.setTitle('Best Practices - Learning Center | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Explore best practices in municipal finance, tax collection, and governance at City Finance Learning Center.'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+      content: 'City Finance, best practices, municipal finance, tax collection, governance, learning center'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'Best Practices - Learning Center | City Finance'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'Discover best practices for improving municipal finance and governance at City Finance.'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/learning-center/best-practices'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
+
     console.log('globalName==>', this.globalName)
     if (this.globalName) {
       this.pdfInput.globalName = this.globalName

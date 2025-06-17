@@ -12,6 +12,7 @@ import { HeaderComponent } from './header/header.component';
 import { RankingCategoriesComponent } from './ranking-categories/ranking-categories.component';
 import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
 import { VideosPopupComponent } from './videos-popup/videos-popup.component';
+import { Title, Meta } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-cfr-home',
@@ -27,11 +28,49 @@ export class CfrHomeComponent implements OnInit {
 
 
   constructor(
+    private titleService: Title,
+    private metaService: Meta,
     private fiscalRankingService: FiscalRankingService,
     private matDialog: MatDialog
   ) { }
 
   ngOnInit(): void {
+    this.titleService.setTitle('CFR Home | City Finance');
+
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'City Finance Ranking Home - Explore city fiscal rankings, assessment parameters, and guidelines for urban local bodies in India.'
+    });
+
+    this.metaService.updateTag({
+      name: 'keywords',
+    content: 'City Finance, CFR, fiscal ranking, urban local bodies, city assessment, guidelines, India'
+    });
+
+    this.metaService.updateTag({
+      name: 'robots',
+      content: 'index, follow'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:title',
+      content: 'City Finance | CFR Home'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:description',
+      content: 'Discover city fiscal rankings, assessment parameters, and guidelines for urban local bodies at City Finance CFR Home.'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:url',
+      content: 'https://cityfinance.in/cfr/home'
+    });
+
+    this.metaService.updateTag({
+      property: 'og:type',
+      content: 'website'
+    });
     this.loadData();
     if (sessionStorage.getItem('homeVideoAutoOpen') != 'true') {
       // hiding video popup now

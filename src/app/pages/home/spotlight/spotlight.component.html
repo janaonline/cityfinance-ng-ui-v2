@@ -5,15 +5,11 @@
       class="carousel"
       #slickModal="slick-carousel"
       [config]="slideConfig"
-      (init)="slickInit($event)"
-      (breakpoint)="breakpoint($event)"
-      (afterChange)="afterChange($event)"
-      (beforeChange)="beforeChange($event)"
     >
       @for (item of whatNewData; track item) {
         <div ngxSlickItem class="card-body">
           <div class="card-image">
-            <img [src]="item.imageUrl" alt="carouselImage" />
+            <img [src]="item.src" [alt]="item.name" />
           </div>
           <a class="card-text card-label" [href]="item.downloadUrl" target="_blank">
             {{ item.name }}
