@@ -35,7 +35,7 @@ export class CfrHomeComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.titleService.setTitle('CFR Home | City Finance');
+    this.titleService.setTitle('City Finance Ranking | City Finance');
 
     this.metaService.updateTag({
       name: 'description',
