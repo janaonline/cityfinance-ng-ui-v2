@@ -368,6 +368,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
           ];
 
           this.exploreData.sort((a, b) => a.sequence - b.sequence);
+          this._commonService.setDataForVisualizationCount(this.exploreData[0].value);
           this.isLoading = false;
         },
       });

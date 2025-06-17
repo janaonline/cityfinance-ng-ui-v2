@@ -67,8 +67,11 @@ export class CommonService {
     );
   }
 
-  setDataForVisualizationCount(VisualizationCountObject: any) {
-    this.dataForVisualizationCount.next(VisualizationCountObject);
+  setDataForVisualizationCount(VisualizationCount: string) {
+    if (VisualizationCount) {
+      const count = parseFloat(VisualizationCount.replace(/,/g, ''));
+      this.dataForVisualizationCount.next(count);
+    }
   }
 
   getFinancialYearBasedOnData() {

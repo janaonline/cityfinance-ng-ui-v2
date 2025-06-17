@@ -10,6 +10,12 @@
     padding-left: 0;
 }
 
+* {
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
+    // font-family: Archivo;
+}
+
 .wrap-bg {
     background-image: url("../../../assets/images/homepage/new_dashBord_ftr_hdr/landingBg.png");
     background-repeat: no-repeat;

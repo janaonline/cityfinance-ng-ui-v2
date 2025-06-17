@@ -79,7 +79,7 @@ export class SearchBarComponent implements OnInit {
     // this.loadRecentSearchValue();
     this.globaSearch();
     this._commonService.dataForVisualizationCount.subscribe((res) => {
-      if (!this.coveredUlbCount) this.coveredUlbCount = res.coveredUlbCount;
+      if (!this.coveredUlbCount) this.coveredUlbCount = res;
     });
   }
 

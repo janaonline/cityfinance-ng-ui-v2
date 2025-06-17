@@ -383,3 +383,8 @@ mat-form-field {
 .custom-font-size-7 {
   font-size: var(--fs-7);
 }
+
+// Custom text shadow.
+.custom-text-shadow {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
