@@ -63,6 +63,11 @@ import { MapService } from './map.service';
         stroke-width: 0 !important;
       }
     `,
+    `
+      ::ng-deep .leaflet-interactive:focus {
+        outline: none;
+      }
+    `,
   ],
 })
 export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, ResettableMap {

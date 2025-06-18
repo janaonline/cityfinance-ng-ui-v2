@@ -282,13 +282,15 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   // Action when state is selected from drop down.
   onSelectingStateFromDropDown(state: States) {
-    this.selectedStateName = state.name || 'India';
-    this.selectedStateCode = state.code;
-    this.selectedStateId = state._id;
-    this.selectedCityName = '';
-    this.selectedCityId = '';
-    this.myForm?.get('stateName')?.setValue(state.name || '');
-    this.loadData();
+    if (this.selectedStateName !== state.name) {
+      this.selectedStateName = state.name || 'India';
+      this.selectedStateCode = state.code;
+      this.selectedStateId = state._id;
+      this.selectedCityName = '';
+      this.selectedCityId = '';
+      this.myForm?.get('stateName')?.setValue(state.name || '');
+      this.loadData();
+    }
   }
 
   // Update data when ulb is changed from map.
@@ -303,9 +305,12 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     const filterCity: Ulbs = this.cityData.find((e: Ulbs) => {
       return e.code == city;
     });
-    this.selectedCityId = filterCity._id;
-    this.selectedCityName = filterCity.name;
-    this.fetchUlbData();
+
+    if (this.selectedCityId !== filterCity._id) {
+      this.selectedCityId = filterCity._id;
+      this.selectedCityName = filterCity.name;
+      this.fetchUlbData();
+    }
   }
 
   // When ulb is selected get ULB data.
@@ -341,7 +346,6 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       .getExploreSectionData(this.selectedStateCode, this.selectedStateId)
       .subscribe({
         next: (res: ExploreSectionResponse) => {
-          console.log(res);
           this.exploreData = [];
           this.exploreData = res.gridDetails;
           this.lastModifiedDate = res.lastModifiedAt;

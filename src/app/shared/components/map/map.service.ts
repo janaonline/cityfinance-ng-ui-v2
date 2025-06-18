@@ -75,39 +75,87 @@ export class MapService {
     return this.http.get<StateGeoJson>('/assets/jsonFile/state_boundaries_24Jan2024.json');
   }
 
-  // If a state is clicked emit state code - to intitiate state map.
+  // // If a state is clicked emit state code - to intitiate state map.
+  // addGeoJsonLayer(geoJsonData: StateGeoJson, stateCode: string): L.GeoJSON {
+  //   return L.geoJSON(geoJsonData, {
+  //     style: this.defaultStateLayerStyle,
+  //     // Emit state code.
+  //     onEachFeature: (feature, layer) => {
+  //       const popup = this.createToolTip(feature.properties.ST_NM);
+  //       layer.bindPopup(popup, { closeButton: false, offset: L.point(0, -10) });
+
+  //       let hoverTimeout: ReturnType<typeof setTimeout>;
+
+  //       layer.on({
+  //         click: () => {
+  //           if (!stateCode) this.stateCodeClickedSubject.next(feature.properties.ST_CODE);
+  //         },
+
+  //         mouseover: () => {
+  //           if (layer instanceof L.Path && !stateCode) {
+  //             layer.setStyle({ fillColor: this.cfPrimary });
+  //           }
+
+  //           hoverTimeout = setTimeout(() => {
+  //             // check if still hovered before showing popup
+  //             if (this.map.hasLayer(layer)) layer.openPopup();
+  //           }, 300);
+  //         },
+
+  //         mouseout: () => {
+  //           if (layer instanceof L.Path && !stateCode) {
+  //             layer.setStyle({ fillColor: this.defaultStateLayerStyle.fillColor });
+  //           }
+
+  //           clearTimeout(hoverTimeout);
+  //           layer.closePopup();
+  //         },
+  //       });
+  //     },
+  //   }).addTo(this.map);
+  // }
+
   addGeoJsonLayer(geoJsonData: StateGeoJson, stateCode: string): L.GeoJSON {
     return L.geoJSON(geoJsonData, {
       style: this.defaultStateLayerStyle,
-      // Emit state code.
       onEachFeature: (feature, layer) => {
-        const popup = this.createToolTip(feature.properties.ST_NM);
-        layer.bindPopup(popup, { closeButton: false, offset: L.point(0, -10) });
+        // Create popup and tooltip content
+        // const popup = this.createToolTip(feature.properties.ST_NM);
+        const tooltip = feature.properties.ST_NM;
 
-        let hoverTimeout: ReturnType<typeof setTimeout>;
+        // Bind popup (only if sate map is not selected)
+        if (!stateCode) {
+          // layer.bindPopup(popup, {
+          //   closeButton: false,
+          //   offset: L.point(0, -10),
+          // });
+
+          layer.bindTooltip(tooltip, {
+            direction: 'top',
+            offset: L.point(0, -10),
+            sticky: true,
+            opacity: 0.9,
+          });
+        }
 
         layer.on({
           click: () => {
-            if (!stateCode) this.stateCodeClickedSubject.next(feature.properties.ST_CODE);
+            if (!stateCode) {
+              this.stateCodeClickedSubject.next(feature.properties.ST_CODE);
+              layer.openPopup(); // Only open popup on click
+            }
           },
 
           mouseover: () => {
             if (layer instanceof L.Path && !stateCode) {
               layer.setStyle({ fillColor: this.cfPrimary });
             }
-
-            hoverTimeout = setTimeout(() => {
-              layer.openPopup();
-            }, 300);
           },
 
           mouseout: () => {
             if (layer instanceof L.Path && !stateCode) {
               layer.setStyle({ fillColor: this.defaultStateLayerStyle.fillColor });
             }
-
-            clearTimeout(hoverTimeout);
-            layer.closePopup();
           },
         });
       },
