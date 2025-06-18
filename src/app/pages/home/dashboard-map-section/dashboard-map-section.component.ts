@@ -23,7 +23,7 @@ import {
   CreditRatingMap,
   CreditRatings,
   ExploreSectionResponse,
-  LastModifiedAt,
+  ExploresectionTable,
   States,
   Ulbs,
 } from './interfaces';
@@ -81,7 +81,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     startYear: '2015-16',
     endYear: '2022-23',
   };
-  exploreData!: ExploreSectionResponse[];
+  exploreData!: ExploresectionTable[];
 
   // exploreData = [
   //   { label: 'ULBs with atleast 1 Year of Financial Data', value: '4,309', info: '' },
@@ -111,7 +111,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
 
   private loadData(): void {
-    this.fetchLastUpdatedDate();
+    // this.fetchLastUpdatedDate();
     this.fetchBondIssuances();
     this.updateUlbsOfSelectedState();
     this.updateRatingSummary();
@@ -217,16 +217,16 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       : this.stateList?.filter((option) => option.name?.toLowerCase().includes(filterValue));
   }
 
-  // Last modfied date from ledger.
-  private fetchLastUpdatedDate() {
-    this._commonService
-      .fetchLastUpdatedDate(this.selectedStateCode, this.selectedCityId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res: LastModifiedAt) => (this.lastModifiedDate = res['lastModifiedAt']),
-        error: (error) => console.error('Failed to fetch last modified date', error),
-      });
-  }
+  // // Last modfied date from ledger.
+  // private fetchLastUpdatedDate() {
+  //   this._commonService
+  //     .fetchLastUpdatedDate(this.selectedStateCode, this.selectedCityId)
+  //     .pipe(takeUntil(this.destroy$))
+  //     .subscribe({
+  //       next: (res: LastModifiedAt) => (this.lastModifiedDate = res['lastModifiedAt']),
+  //       error: (error) => console.error('Failed to fetch last modified date', error),
+  //     });
+  // }
 
   // Global search feature.
   private searchUlb(): void {
@@ -316,9 +316,10 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
         .getCityData(this.selectedCityId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (res: { gridDetails: ExploreSectionResponse[] }) => {
+          next: (res: ExploreSectionResponse) => {
             this.exploreData = [];
             this.exploreData = res.gridDetails;
+            this.lastModifiedDate = res.lastModifiedAt;
             this.isLoading = false;
           },
           error: (error: Error) => console.error('Error in fetching ulbData: ', error),
@@ -339,9 +340,11 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     this._exploreSection
       .getExploreSectionData(this.selectedStateCode, this.selectedStateId)
       .subscribe({
-        next: (res: { data: ExploreSectionResponse[] }) => {
+        next: (res: ExploreSectionResponse) => {
+          console.log(res);
           this.exploreData = [];
-          this.exploreData = res.data;
+          this.exploreData = res.gridDetails;
+          this.lastModifiedDate = res.lastModifiedAt;
         },
         error: (error) => console.error('Error in loading explore section data: ', error),
         complete: () => {

@@ -5,11 +5,7 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
-import {
-  BondIssuances,
-  LastModifiedAt,
-  States,
-} from '../../pages/home/dashboard-map-section/interfaces';
+import { BondIssuances, States } from '../../pages/home/dashboard-map-section/interfaces';
 import { IBasicLedgerData } from '../models/basicLedgerData.interface';
 import { IULBResponse } from '../models/IULBResponse';
 import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
@@ -78,21 +74,21 @@ export class CommonService {
     return this.http.get<{ data: string[] }>(`${environment.api.url}dynamic-financial-year`);
   }
 
-  fetchLastUpdatedDate(
-    stateCode: string = '',
-    ulbId: string = '',
-    year: string = '',
-  ): Observable<LastModifiedAt> {
-    let params = new HttpParams();
-
-    if (stateCode) params = params.set('state_code', stateCode);
-    if (ulbId) params = params.set('ulb_id', ulbId);
-    if (year) params = params.set('year', year);
-
-    return this.http.get<LastModifiedAt>(`${environment.api.url}common/get-last-modified-date`, {
-      params,
-    });
-  }
+  // fetchLastUpdatedDate(
+  //   stateCode: string = '',
+  //   ulbId: string = '',
+  //   year: string = '',
+  // ): Observable<LastModifiedAt> {
+  //   let params = new HttpParams();
+  //
+  //   if (stateCode) params = params.set('state_code', stateCode);
+  //   if (ulbId) params = params.set('ulb_id', ulbId);
+  //   if (year) params = params.set('year', year);
+  //
+  //   return this.http.get<LastModifiedAt>(`${environment.api.url}common/get-last-modified-date`, {
+  //     params,
+  //   });
+  // }
   /**
    * @description Sort the Financial Years only.
    *
