@@ -110,13 +110,24 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   // ngOnInit(): void {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    // console.log(changes);
-    const shouldReloadMap = ['stateCode', 'ulbId'].some((key: string) => {
-      const change = changes[key];
-      return change && change.currentValue && !change.isFirstChange() && this.mapInitialized;
-    });
+    const stateChanged =
+      changes['stateCode'] &&
+      !changes['stateCode'].isFirstChange() &&
+      changes['stateCode'].currentValue !== '' &&
+      changes['stateCode'].previousValue !== changes['stateCode'].currentValue;
 
-    if (shouldReloadMap) this.loadMapData();
+    const ulbChanged =
+      changes['ulbId'] &&
+      !changes['ulbId'].isFirstChange() &&
+      changes['ulbId'].previousValue !== changes['ulbId'].currentValue;
+
+    if (stateChanged && this.mapInitialized) {
+      this.loadMapData();
+    }
+
+    if (ulbChanged && this.mapInitialized) {
+      this.mapService.updateSelectedULBMarker(changes['ulbId'].currentValue);
+    }
   }
 
   ngAfterViewInit(): void {

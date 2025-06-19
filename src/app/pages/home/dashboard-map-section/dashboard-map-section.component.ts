@@ -288,7 +288,8 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       this.selectedStateId = state._id;
       this.selectedCityName = '';
       this.selectedCityId = '';
-      this.myForm?.get('stateName')?.setValue(state.name || '');
+      this.myForm.get('stateName')?.setValue(state.name || '');
+      this.myForm.get('ulbName')?.setValue('');
       this.loadData();
     }
   }
@@ -384,7 +385,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   // Reset map to india.
   public resetMap(): void {
     this.mapComponent?.resetMap();
-    this.myForm.get('ulbName')?.setValue('');
+    // this.myForm.get('ulbName')?.setValue('');
     this.onSelectingStateFromDropDown({ _id: '', name: '', code: '' });
   }
 

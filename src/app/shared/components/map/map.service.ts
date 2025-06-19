@@ -75,46 +75,7 @@ export class MapService {
     return this.http.get<StateGeoJson>('/assets/jsonFile/state_boundaries_24Jan2024.json');
   }
 
-  // // If a state is clicked emit state code - to intitiate state map.
-  // addGeoJsonLayer(geoJsonData: StateGeoJson, stateCode: string): L.GeoJSON {
-  //   return L.geoJSON(geoJsonData, {
-  //     style: this.defaultStateLayerStyle,
-  //     // Emit state code.
-  //     onEachFeature: (feature, layer) => {
-  //       const popup = this.createToolTip(feature.properties.ST_NM);
-  //       layer.bindPopup(popup, { closeButton: false, offset: L.point(0, -10) });
-
-  //       let hoverTimeout: ReturnType<typeof setTimeout>;
-
-  //       layer.on({
-  //         click: () => {
-  //           if (!stateCode) this.stateCodeClickedSubject.next(feature.properties.ST_CODE);
-  //         },
-
-  //         mouseover: () => {
-  //           if (layer instanceof L.Path && !stateCode) {
-  //             layer.setStyle({ fillColor: this.cfPrimary });
-  //           }
-
-  //           hoverTimeout = setTimeout(() => {
-  //             // check if still hovered before showing popup
-  //             if (this.map.hasLayer(layer)) layer.openPopup();
-  //           }, 300);
-  //         },
-
-  //         mouseout: () => {
-  //           if (layer instanceof L.Path && !stateCode) {
-  //             layer.setStyle({ fillColor: this.defaultStateLayerStyle.fillColor });
-  //           }
-
-  //           clearTimeout(hoverTimeout);
-  //           layer.closePopup();
-  //         },
-  //       });
-  //     },
-  //   }).addTo(this.map);
-  // }
-
+  // If a state is clicked emit state code - to intitiate state map.
   addGeoJsonLayer(geoJsonData: StateGeoJson, stateCode: string): L.GeoJSON {
     return L.geoJSON(geoJsonData, {
       style: this.defaultStateLayerStyle,
@@ -226,6 +187,25 @@ export class MapService {
     }
 
     this.cityMarkersGroup.addTo(this.map);
+  }
+
+  // If ULB is selected add location icon.
+  updateSelectedULBMarker(ulbId: string): void {
+    if (!this.map || !this.cityMarkersGroup) return;
+
+    let selectedMarker: L.Marker | null = null;
+
+    this.cityMarkersGroup.eachLayer((layer: L.Layer) => {
+      if (layer instanceof L.Marker && (layer as L.Marker).ulbData?._id === ulbId) {
+        selectedMarker = layer as L.Marker;
+      }
+    });
+
+    if (selectedMarker) {
+      this.handleMarkerClick(selectedMarker);
+    } else {
+      console.warn(`ULB with ID ${ulbId} not found in current marker group.`);
+    }
   }
 
   addMarker(lat: number, lng: number, ulb: ULBDataPoint): Marker {
