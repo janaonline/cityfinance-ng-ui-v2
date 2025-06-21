@@ -807,4 +807,19 @@ export class CommonService {
       { params },
     );
   }
+
+  // National/ State data.
+  public getExploreSectionData(
+    stateCode: string = '',
+    stateId: string = '',
+  ): Observable<ExploreSectionResponse> {
+    let params = new HttpParams();
+    if (stateCode) params = params.set('stateCode', stateCode);
+    if (stateId) params = params.set('stateId', stateId);
+
+    return this.http.get<ExploreSectionResponse>(
+      `${environment.api.url}dashboard/home-page/get-Data`,
+      { params },
+    );
+  }
 }

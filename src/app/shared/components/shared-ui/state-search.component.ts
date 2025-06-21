@@ -33,17 +33,14 @@ import { States } from '../../../pages/home/dashboard-map-section/interfaces';
       aria-label="Search for State"
     />
     <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption>
-      <ng-container *ngIf="filteredStates | async as states">
-        <mat-option
-          *ngFor="let option of states; trackBy: trackById"
-          [value]="option.name"
-          (onSelectionChange)="onStateSelection(option)"
-          >{{ option.name }}</mat-option
-        >
-        <mat-option *ngIf="noDataFound()" class="text-muted" disabled
-          >No results found for your search.</mat-option
-        >
-      </ng-container>
+      @for (state of filteredStates | async; track $index) {
+        <mat-option [value]="state.name" (onSelectionChange)="onStateSelection(state)">{{
+          state.name
+        }}</mat-option>
+      }
+      @if (noDataFound()) {
+        <mat-option class="text-muted" disabled>No results found for your search.</mat-option>
+      }
     </mat-autocomplete>
   </form>`,
   styles: [],
@@ -96,11 +93,11 @@ export class StateSearchComponent implements OnInit, OnDestroy {
   readonly syncStateFromParentEffect = effect(() => {
     console.log('State id sent by parent to child: ', this.stateId());
     const id = this.stateId();
-    if (id && this.stateList.length) {
+
+    if (id === '' && !this.isStateReadonly()) this.patchStateName('');
+    else if (id && this.stateList.length) {
       const matched = this.stateList.find((state) => state._id === id);
-      if (matched) {
-        this.patchStateName(matched.name);
-      }
+      if (matched) this.patchStateName(matched.name);
     }
   });
 
@@ -148,11 +145,7 @@ export class StateSearchComponent implements OnInit, OnDestroy {
 
   // Helper to patch state value.
   private patchStateName(name: string): void {
-    this.myForm.patchValue({ stateName: name }, { emitEvent: false });
-  }
-
-  trackById(index: number, state: States): string {
-    return state._id;
+    this.myForm.patchValue({ stateName: name }, { emitEvent: true });
   }
 
   ngOnDestroy(): void {

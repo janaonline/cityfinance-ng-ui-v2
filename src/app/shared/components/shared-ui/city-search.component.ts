@@ -3,7 +3,15 @@ import { Component, effect, inject, input, OnDestroy, OnInit, signal } from '@an
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatOptionModule } from '@angular/material/core';
-import { debounceTime, distinctUntilChanged, of, Subject, switchMap, takeUntil } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  of,
+  Subject,
+  switchMap,
+  takeUntil,
+} from 'rxjs';
 import { CommonService } from '../../../core/services/common.service';
 import { Ulbs } from '../../../pages/home/dashboard-map-section/interfaces';
 
@@ -22,18 +30,16 @@ import { Ulbs } from '../../../pages/home/dashboard-map-section/interfaces';
       id="ulbName"
     />
     <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-      <ng-container *ngIf="filteredUlbs(); else noResults">
-        <mat-option
-          *ngFor="let option of filteredUlbs()"
-          [value]="option.name"
-          (onSelectionChange)="onCitySelection(option)"
-        >
-          <small>{{ option.name }}</small>
-        </mat-option>
-      </ng-container>
-      <ng-template #noResults>
-        <mat-option *ngIf="noDataFound()" class="text-muted" disabled>No results found.</mat-option>
-      </ng-template>
+      <mat-option
+        *ngFor="let option of filteredUlbs()"
+        [value]="option.name"
+        (onSelectionChange)="onCitySelection(option)"
+      >
+        <small>{{ option.name }}</small>
+      </mat-option>
+      @if (noDataFound()) {
+        <mat-option class="text-muted" disabled>No results found.</mat-option>
+      }
     </mat-autocomplete>
   </form>`,
   styleUrls: [],
@@ -67,6 +73,7 @@ export class CitySearchComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
         debounceTime(400),
         distinctUntilChanged(),
+        filter((value) => value.length > 1),
         switchMap((value) => {
           if (!value?.trim()) {
             this.noDataFound.set(false);

@@ -101,11 +101,11 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   }
 
   // Update map zoom based on screen resize.
-  @HostListener('window:resize', ['$event'])
-  onResize() {
-    const newZoom = this.getZoomLevel();
-    this.mapService.map.setZoom(newZoom);
-  }
+  // @HostListener('window:resize', ['$event'])
+  // onResize() {
+  //   const newZoom = this.getZoomLevel();
+  //   this.mapService.map.setZoom(newZoom);
+  // }
 
   // ngOnInit(): void {}
 
