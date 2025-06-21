@@ -28,12 +28,12 @@ export class ExploreSectionService {
     );
   }
 
-  public getCityData(ulbId: string = ''): Observable<ExploreSectionResponse> {
-    if (!ulbId) this._uitlity.swalPopup('Error', 'ULB Id is mandatory!', 'error');
-    const params = { ulbId };
-    return this.https.get<ExploreSectionResponse>(
-      `${environment.api.url}dashboard/city/city-details`,
-      { params },
-    );
-  }
+  // public getCityData(ulbId: string = ''): Observable<ExploreSectionResponse> {
+  //   if (!ulbId) this._uitlity.swalPopup('Error', 'ULB Id is mandatory!', 'error');
+  //   const params = { ulbId };
+  //   return this.https.get<ExploreSectionResponse>(
+  //     `${environment.api.url}dashboard/city/city-details`,
+  //     { params },
+  //   );
+  // }
 }

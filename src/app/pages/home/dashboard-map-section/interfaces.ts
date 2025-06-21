@@ -45,6 +45,7 @@ export interface ExploreSectionResponse {
 export interface ExploresectionTable {
   sequence: number;
   label: string;
-  value: string;
+  value: string | number;
   info: string;
+  src: string;
 }

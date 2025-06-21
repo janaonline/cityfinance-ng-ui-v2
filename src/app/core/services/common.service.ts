@@ -5,7 +5,11 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
-import { BondIssuances, States } from '../../pages/home/dashboard-map-section/interfaces';
+import {
+  BondIssuances,
+  ExploreSectionResponse,
+  States,
+} from '../../pages/home/dashboard-map-section/interfaces';
 import { IBasicLedgerData } from '../models/basicLedgerData.interface';
 import { IULBResponse } from '../models/IULBResponse';
 import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
@@ -17,6 +21,7 @@ import { USER_TYPE } from '../models/user/userType';
 import { HttpUtility } from '../util/httpUtil';
 import { JSONUtility } from '../util/jsonUtil';
 import { environment } from './../../../environments/environment';
+import { UtilityService } from './utility.service';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
@@ -50,6 +55,7 @@ export class CommonService {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private snackbar: MatSnackBar,
+    private _uitlity: UtilityService,
   ) {}
 
   updateSearchItem(searchItem: any) {
@@ -790,5 +796,15 @@ export class CommonService {
     return this.http.get(`${environment.api.url}${endPoints}`, {
       params: queryParam,
     });
+  }
+
+  // Based on Ulb id return population, area, pop density, wards, yrs of data, UA
+  public getCityData(ulbId: string = ''): Observable<ExploreSectionResponse> {
+    if (!ulbId) this._uitlity.swalPopup('Error', 'ULB Id is mandatory!', 'error');
+    const params = { ulbId };
+    return this.http.get<ExploreSectionResponse>(
+      `${environment.api.url}dashboard/city/city-details`,
+      { params },
+    );
   }
 }

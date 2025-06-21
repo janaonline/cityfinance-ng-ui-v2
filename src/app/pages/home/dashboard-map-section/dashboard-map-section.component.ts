@@ -318,7 +318,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   private fetchUlbData(): void {
     if (this.selectedCityId) {
       this.isLoading = true;
-      this._exploreSection
+      this._commonService
         .getCityData(this.selectedCityId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -360,23 +360,26 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
               label: 'ULBs Credit Rating Reports',
               value: `${this.totalCreditRating}`,
               info: '',
+              src: '',
             },
             {
               sequence: 4,
               label: 'ULBs With Investment Grade Rating',
               value: `${this.cr_above_BBB_minus}`,
               info: '',
+              src: '',
             },
             {
               sequence: 6,
               label: `Municipal Bond Issuances Of Rs. ${this.bondIssuances.bondIssueAmount} Cr With Details`,
               value: `${this.bondIssuances.totalMunicipalBonds}`,
               info: '',
+              src: '',
             },
           ];
 
           this.exploreData.sort((a, b) => a.sequence - b.sequence);
-          this._commonService.setDataForVisualizationCount(this.exploreData[0].value);
+          this._commonService.setDataForVisualizationCount(this.exploreData[0].value?.toString());
           this.isLoading = false;
         },
       });

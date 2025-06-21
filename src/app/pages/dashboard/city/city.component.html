@@ -1,23 +1,62 @@
-<div class="container-fluid">
-    @if(ulbDenotifiedMessage) {
-    <div class="row">
-        <div class="col-sm-12 text-center text-danger dmsg">
-            {{ulbDenotifiedMessage}}
+<section class="light-bg py-3">
+  <div class="container">
+    <!-- Go to state dashbard -->
+    <a href="xyz" class="custom-font-size-7">
+      Go To {{ stateName }} {{ selectedStateIdSignal() }} Dashboard
+    </a>
+
+    <!-- Grid data + Map  -->
+    <div class="row my-3">
+      <!-- Left section -->
+      <div class="col-sm-12 col-md-6">
+        <h1 class="fw-bold my-3 fs-2">{{ selectedCityNameSignal() }}</h1>
+        <p class="my-3">
+          This urban local body has been classified as a Municipal Corporation in the 4 Million+
+          population category
+        </p>
+        <!-- Grid -->
+        <app-grid-view [gridData]="exploreData"></app-grid-view>
+      </div>
+
+      <!-- Right Section -->
+      <div class="col-sm-12 col-md-6 my-3">
+        <!-- State and ULB search -->
+        <div class="d-flex justify-content-between justify-content-md-end gap-2 flex-grow-1">
+          <app-state-search
+            [selectState]="onStateSelected"
+            [stateId]="selectedStateIdSignal()"
+            [isStateReadonly]="false"
+          ></app-state-search>
+          @if (selectedStateIdSignal()) {
+            <app-city-search
+              [selectCity]="onUlbSelected"
+              [cityName]="selectedCityNameSignal()"
+              [stateId]="selectedStateIdSignal()"
+            ></app-city-search>
+          }
         </div>
+
+        <!-- State Map -->
+        <div class="position-relative row" style="min-height: 300px">
+          <app-map
+            #map
+            [stateCode]="stateCode"
+            (stateCodeChange)="selectedStateCodeChange($event)"
+            [ulbId]="ulbId"
+            (ulbIdChange)="selectedCityIdChange($event)"
+          ></app-map>
+        </div>
+      </div>
+      <!-- {{ stateCode }} {{ ulbId }} -->
     </div>
-    }
-    <div class="row">
-        <app-front-panel (changeInStateOrCity)="changeInDropDown($event)" style="padding: 0" [mapConfig]="mapData"
-            [cardData]="revenueData" [data]="frontPanelData"></app-front-panel>
-    </div>
-    <div class="row p-4">
-        <span class="m-h text-center">Dashboard</span>
-    </div>
-    @if(dashboardTabData) {
-    <div class="row">
-        <app-dashboard-tabs [yearListForDropDown]="yearListForDropDown" [mySelectedYears]="currentYear"
-            [DashBoardType]="'city'" [cityId]="cityId" [data]="dashboardTabData" [scrollCords]="cords" [isUA]="isUA"
-            [noDataFound]="noDataFound"></app-dashboard-tabs>
-    </div>
-    }
-</div>
+
+    <!-- Money Cards -->
+    <app-info-cards></app-info-cards>
+
+    <!-- Last modified date -->
+    <p class="text-secondary text-end mt-3 mb-0" style="font-size: 0.75rem">
+      <!-- Last updated on: {{ lastModifiedDate | date: 'short' }} -->
+      Last updated on Apr 14, 2023; Source: Financial statements for the year 2021-22
+    </p>
+  </div>
+</section>
