@@ -1,9 +1,7 @@
 <section class="light-bg py-3">
   <div class="container">
     <!-- Go to state dashbard -->
-    <a href="xyz" class="custom-font-size-7">
-      Go To {{ stateName }} {{ selectedStateIdSignal() }} Dashboard
-    </a>
+    <a href="xyz" class="custom-font-size-7"> Go To {{ selectedStateNameSignal() }} Dashboard </a>
 
     <!-- Grid data + Map  -->
     <div class="row my-3">
@@ -11,11 +9,16 @@
       <div class="col-sm-12 col-md-6">
         <h1 class="fw-bold my-3 fs-2">{{ selectedCityNameSignal() }}</h1>
         <p class="my-3">
-          This urban local body has been classified as a Municipal Corporation in the 4 Million+
-          population category
+          This urban local body has been classified as a Municipal Corporation in the
+          {{ popCat }} population category
         </p>
         <!-- Grid -->
-        <app-grid-view [gridData]="exploreData"></app-grid-view>
+        @if (isLoading1) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        } @else {
+          <app-grid-view [gridData]="exploreData"></app-grid-view>
+        }
       </div>
 
       <!-- Right Section -->
@@ -24,10 +27,10 @@
         <div class="d-flex justify-content-between justify-content-md-end gap-2 flex-grow-1">
           <app-state-search
             [selectState]="onStateSelected"
-            [stateId]="selectedStateIdSignal()"
-            [isStateReadonly]="false"
+            [stateName]="selectedStateNameSignal()"
+            [isStateReadonly]="true"
           ></app-state-search>
-          @if (selectedStateIdSignal()) {
+          @if (selectedStateNameSignal()) {
             <app-city-search
               [selectCity]="onUlbSelected"
               [cityName]="selectedCityNameSignal()"
@@ -37,11 +40,10 @@
         </div>
 
         <!-- State Map -->
-        <div class="position-relative row" style="min-height: 300px">
+        <div class="position-relative row" style="min-height: 350px">
           <app-map
             #map
             [stateCode]="stateCode"
-            (stateCodeChange)="selectedStateCodeChange($event)"
             [ulbId]="ulbId"
             (ulbIdChange)="selectedCityIdChange($event)"
           ></app-map>
@@ -55,8 +57,8 @@
 
     <!-- Last modified date -->
     <p class="text-secondary text-end mt-3 mb-0" style="font-size: 0.75rem">
-      <!-- Last updated on: {{ lastModifiedDate | date: 'short' }} -->
-      Last updated on Apr 14, 2023; Source: Financial statements for the year 2021-22
+      Last updated on: {{ lastModifiedAt | date: 'short' }}; Source: Financial statements for the
+      year 2021-22
     </p>
   </div>
 </section>

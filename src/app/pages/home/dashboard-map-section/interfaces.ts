@@ -40,6 +40,10 @@ export interface Ulbs {
 export interface ExploreSectionResponse {
   gridDetails: ExploresectionTable[];
   lastModifiedAt: string | null;
+  popCat: string;
+  state: States;
+  ulbId: string;
+  ulbName: string;
 }
 
 export interface ExploresectionTable {

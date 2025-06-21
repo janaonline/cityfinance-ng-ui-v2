@@ -1,8 +1,9 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, effect, input, OnDestroy, OnInit } from '@angular/core';
+import { AsyncPipe, CommonModule } from '@angular/common';
+import { Component, effect, inject, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import {
+  catchError,
   debounceTime,
   distinctUntilChanged,
   map,
@@ -17,7 +18,8 @@ import { States } from '../../../pages/home/dashboard-map-section/interfaces';
 
 @Component({
   selector: 'app-state-search',
-  imports: [MatAutocompleteModule, ReactiveFormsModule, AsyncPipe],
+  standalone: true,
+  imports: [CommonModule, MatAutocompleteModule, ReactiveFormsModule, AsyncPipe],
   template: ` <form [formGroup]="myForm" class="d-flex gap-2">
     <input
       type="text"
@@ -28,106 +30,130 @@ import { States } from '../../../pages/home/dashboard-map-section/interfaces';
       [matAutocomplete]="auto"
       class="input-box-style"
       [class.custom-readonly-input]="isStateReadonly()"
+      aria-label="Search for State"
     />
-    <mat-autocomplete #auto="matAutocomplete">
-      @for (option of filteredStates | async; track $index) {
-        <mat-option [value]="option?.name" (onSelectionChange)="onStateSelection(option)">
-          <span>{{ option?.name }}</span>
-        </mat-option>
-      }
-      @if (noDataFound) {
-        <mat-option class="text-muted" disabled>No results found for your search.</mat-option>
-      }
+    <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption>
+      <ng-container *ngIf="filteredStates | async as states">
+        <mat-option
+          *ngFor="let option of states; trackBy: trackById"
+          [value]="option.name"
+          (onSelectionChange)="onStateSelection(option)"
+          >{{ option.name }}</mat-option
+        >
+        <mat-option *ngIf="noDataFound()" class="text-muted" disabled
+          >No results found for your search.</mat-option
+        >
+      </ng-container>
     </mat-autocomplete>
   </form>`,
   styles: [],
 })
 export class StateSearchComponent implements OnInit, OnDestroy {
-  constructor(
-    private fb: FormBuilder,
-    private _commonService: CommonService,
-  ) {}
+  private fb = inject(FormBuilder);
+  private commonService = inject(CommonService);
 
-  // Inputs as signals
-  selectState = input<(state: States) => void>();
-  stateId = input<string>();
-  isStateReadonly = input<boolean>(false);
+  readonly selectState = input<(state: States) => void>();
+  readonly stateId = input<string>('');
+  readonly stateName = input<string>('');
+  readonly isStateReadonly = input<boolean>(false);
 
   private destroy$ = new Subject<void>();
-  public myForm: FormGroup = this.fb.group({
+  readonly myForm: FormGroup = this.fb.group({
     stateName: [{ value: '', disabled: false }],
   });
 
-  public noDataFound: boolean = true;
-  public stateList!: States[];
-  public filteredStates: Observable<States[]> = of([]);
-
-  ngOnInit(): void {
-    this.fetchStateList();
-  }
-
-  // Effect to manage formControl - disabled state
-  readonly manageReadonlyStateEffect = effect(() => {
-    if (this.isStateReadonly()) this.stateNameControl.disable();
-    else this.stateNameControl.enable();
-  });
+  readonly noDataFound = signal<boolean>(false);
+  private stateList: States[] = [];
+  filteredStates: Observable<States[]> = of([]);
 
   get stateNameControl(): FormControl {
     return this.myForm.get('stateName') as FormControl;
   }
 
-  // Get states list.
-  private fetchStateList() {
-    this._commonService
-      .fetchStateList()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res: States[]) => {
-          this.stateList = res;
+  ngOnInit(): void {
+    // Fetch the state list only if the state is not read-only (i.e., dropdown is needed)
+    if (!this.isStateReadonly()) {
+      this.loadStatesAndFilter();
+    }
+  }
 
-          this.filteredStates = this.stateNameControl.valueChanges.pipe(
-            takeUntil(this.destroy$),
-            startWith(''),
-            debounceTime(300),
-            distinctUntilChanged(),
-            map((value) => {
-              const result = this._filterStates(value || '');
-              this.noDataFound = result.length === 0;
-              return result;
-            }),
-          );
-        },
+  // Effect to manage formControl - disabled state/ patch value.
+  readonly setupReadonlyEffect = effect(() => {
+    const readonly = this.isStateReadonly();
+    const currentName = this.stateName();
+    if (readonly) {
+      // If state is readony then directy patch value.
+      this.stateNameControl.disable();
+      if (this.stateNameControl.value !== currentName) {
+        this.patchStateName(currentName);
+      }
+    } else {
+      this.stateNameControl.enable();
+    }
+  });
+
+  // Sync value sent by parent.
+  readonly syncStateFromParentEffect = effect(() => {
+    console.log('State id sent by parent to child: ', this.stateId());
+    const id = this.stateId();
+    if (id && this.stateList.length) {
+      const matched = this.stateList.find((state) => state._id === id);
+      if (matched) {
+        this.patchStateName(matched.name);
+      }
+    }
+  });
+
+  // Get states list.
+  private loadStatesAndFilter(): void {
+    this.commonService
+      .fetchStateList()
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((err) => {
+          console.error('Failed to load states', err);
+          return of([]);
+        }),
+      )
+      .subscribe((states: States[]) => {
+        this.stateList = states;
+
+        this.filteredStates = this.stateNameControl.valueChanges.pipe(
+          startWith(this.stateNameControl.value || ''),
+          debounceTime(300),
+          distinctUntilChanged(),
+          map((value) => {
+            const filtered = this.filterStates(value || '');
+            this.noDataFound.set(filtered.length === 0);
+            return filtered;
+          }),
+        );
       });
   }
 
   // Helper: To filter states.
-  private _filterStates(value: string): States[] {
-    const filterValue = value?.toLowerCase();
-    return !filterValue
-      ? this.stateList
-      : this.stateList?.filter((option) => option.name?.toLowerCase().includes(filterValue));
+  private filterStates(value: string): States[] {
+    const searchValue = value.toLowerCase().trim();
+    return this.stateList.filter((state) => state.name.toLowerCase().includes(searchValue));
   }
 
-  // Action when state is selected from drop down.
-  public onStateSelection(state: States): void {
-    // Update parent.
+  // Option selected from child dropdown.
+  onStateSelection(state: States): void {
     const callback = this.selectState();
-    if (callback) callback(state);
-
-    console.log('state clicked; ', state);
+    if (callback) {
+      callback(state);
+    }
+    console.log('State obj sent by child to parent: ', state);
   }
 
-  // Update State From Id Effect
-  readonly updateStateFromIdEffect = effect(() => {
-    console.log('Value of state sent by parent to child: ', this.stateId());
-    const id = this.stateId();
-    if (id && this.stateList?.length) {
-      const matched = this.stateList.find((state) => state._id === id);
-      if (matched) {
-        this.myForm.patchValue({ stateName: matched.name });
-      }
-    }
-  });
+  // Helper to patch state value.
+  private patchStateName(name: string): void {
+    this.myForm.patchValue({ stateName: name }, { emitEvent: false });
+  }
+
+  trackById(index: number, state: States): string {
+    return state._id;
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();

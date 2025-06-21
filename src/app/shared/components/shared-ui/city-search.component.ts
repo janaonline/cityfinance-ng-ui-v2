@@ -1,22 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, Input, input, OnDestroy, OnInit } from '@angular/core';
+import { Component, effect, inject, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatOptionModule } from '@angular/material/core';
-import {
-  debounceTime,
-  distinctUntilChanged,
-  Observable,
-  of,
-  Subject,
-  switchMap,
-  takeUntil,
-} from 'rxjs';
+import { debounceTime, distinctUntilChanged, of, Subject, switchMap, takeUntil } from 'rxjs';
 import { CommonService } from '../../../core/services/common.service';
 import { Ulbs } from '../../../pages/home/dashboard-map-section/interfaces';
 
 @Component({
   selector: 'app-city-search',
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatAutocompleteModule, MatOptionModule],
   template: ` <form [formGroup]="myForm" class="d-flex gap-2">
     <input
@@ -25,91 +18,95 @@ import { Ulbs } from '../../../pages/home/dashboard-map-section/interfaces';
       placeholder="Search for ULBs"
       matInput
       formControlName="ulbName"
-      id="ulbName"
       [matAutocomplete]="auto"
+      id="ulbName"
     />
     <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-      @if (filteredUlbs) {
-        @for (option of filteredUlbs | async; track $index) {
-          <mat-option [value]="option?.name" (onSelectionChange)="onCitySelection(option)">
-            <small>{{ option?.name }}</small>
-          </mat-option>
-        }
-        @if (noDataFound) {
-          <mat-option class="text-muted" disabled>No results found for your search.</mat-option>
-        }
-      }
+      <ng-container *ngIf="filteredUlbs(); else noResults">
+        <mat-option
+          *ngFor="let option of filteredUlbs()"
+          [value]="option.name"
+          (onSelectionChange)="onCitySelection(option)"
+        >
+          <small>{{ option.name }}</small>
+        </mat-option>
+      </ng-container>
+      <ng-template #noResults>
+        <mat-option *ngIf="noDataFound()" class="text-muted" disabled>No results found.</mat-option>
+      </ng-template>
     </mat-autocomplete>
   </form>`,
   styleUrls: [],
 })
 export class CitySearchComponent implements OnInit, OnDestroy {
-  constructor(
-    private fb: FormBuilder,
-    private _commonService: CommonService,
-  ) {}
-
-  selectCity = input<(city: Ulbs) => void>();
-  cityName = input<string>('');
-  stateId = input<string>('');
-  isCityReadonly = input<boolean>(false);
-
+  private fb = inject(FormBuilder);
+  private commonService = inject(CommonService);
   private destroy$ = new Subject<void>();
-  public myForm: FormGroup = this.fb.group({ ulbName: [''], disabled: false });
-  public noDataFound: boolean = true;
-  public filteredUlbs!: Observable<Ulbs[]>;
 
-  ngOnInit(): void {
-    this.searchUlb();
-  }
+  readonly selectCity = input<(city: Ulbs) => void>();
+  readonly cityName = input<string>('');
+  readonly stateId = input<string>('');
+  readonly isCityReadonly = input<boolean>(false);
 
-  readonly manageReadonlyUlbEffect = effect(() => {
-    if (this.isCityReadonly()) this.ulbNameControl.disable();
-    else this.ulbNameControl.enable();
-  });
+  readonly myForm: FormGroup = this.fb.group({ ulbName: [''] });
+  readonly noDataFound = signal<boolean>(false);
+  readonly filteredUlbs = signal<Ulbs[]>([]);
 
-  // Effect to manage formControl - disabled ulb
   get ulbNameControl(): FormControl {
     return this.myForm.get('ulbName') as FormControl;
   }
 
-  // Search ULBs.
-  private searchUlb(): void {
-    this.ulbNameControl?.valueChanges
-      ?.pipe(
+  ngOnInit(): void {
+    this.setupSearchEffect();
+  }
+
+  // When user types in ulb search box.
+  private setupSearchEffect(): void {
+    this.ulbNameControl.valueChanges
+      .pipe(
         takeUntil(this.destroy$),
         debounceTime(400),
         distinctUntilChanged(),
         switchMap((value) => {
-          if (!value) {
-            this.noDataFound = false;
+          if (!value?.trim()) {
+            this.noDataFound.set(false);
             return of([]);
           }
-          console.log('call ulb api:', value, this.stateId());
-          return this._commonService.postGlobalSearchData(value, 'ulb', this.stateId());
+          return this.commonService.postGlobalSearchData(value.trim(), 'ulb', this.stateId());
         }),
       )
       .subscribe({
         next: (res: any) => {
-          this.filteredUlbs = of(res?.['data']);
-          this.noDataFound = res?.['data']?.length === 0;
+          const ulbs = res?.['data'] ?? [];
+          this.filteredUlbs.set(ulbs);
+          this.noDataFound.set(ulbs.length === 0);
         },
-        error: (error) => console.error('Error in fetching ulbs: ', error),
+        error: (err) => {
+          console.error('Error fetching ULBs:', err);
+          this.filteredUlbs.set([]);
+          this.noDataFound.set(true);
+        },
       });
   }
 
-  // Get ulb data.
-  public onCitySelection(cityObj: Ulbs): void {
-    console.log('city clicked; ', cityObj);
-    const callback = this.selectCity();
-    if (callback) callback(cityObj);
-  }
-
-  // update ulb from name effect,
-  readonly updateUlbFromNameEffect = effect(() => {
-    this.myForm.patchValue({ ulbName: this.cityName() });
-    console.log('Value of ULB sent by parent to child: ', this.stateId(), this.cityName());
+  // If parent sends isCityReaonly then disable input box.
+  readonly setupReadonlyEffect = effect(() => {
+    this.isCityReadonly() ? this.ulbNameControl.disable() : this.ulbNameControl.enable();
   });
+
+  // When parent sends ulb name - patch the value.
+  private syncParentValueEffect = effect(() => {
+    const name = this.cityName();
+    this.myForm.patchValue({ ulbName: name }, { emitEvent: false });
+    console.log('ULB name is sent from parent to child: ', this.cityName());
+  });
+
+  // Inform parent when option is selected from dropdown.
+  onCitySelection(city: Ulbs): void {
+    const callback = this.selectCity();
+    if (callback) callback(city);
+    console.log('ULB obj is sent from child to parent: ', city);
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
