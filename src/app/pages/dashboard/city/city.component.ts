@@ -5,12 +5,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { CommonService } from '../../../core/services/common.service';
 import { MapComponent } from '../../../shared/components/map/map.component';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
 import { GridViewComponent } from '../../../shared/components/shared-ui/grid-view.component';
 import { StateSearchComponent } from '../../../shared/components/shared-ui/state-search.component';
 import { ExploresectionTable, States, Ulbs } from '../../home/dashboard-map-section/interfaces';
+import { DashboardService } from '../dashboard.service';
 import { InfoCardsComponent } from '../shared/components/info-cards.component';
-import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
   selector: 'app-city',
@@ -30,16 +31,21 @@ import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-lo
 })
 export class CityComponent implements OnInit {
   // Reactive Signals for stateId and cityName
-  selectedStateIdSignal = signal<string>('5dcf9d7316a06aed41c748ec'); // For city search.
-  selectedStateNameSignal = signal<string>('Karnataka'); // For state search.
-  stateCode: string = 'KA';
+  selectedStateIdSignal = signal<string>(''); // For city search - 5dcf9d7316a06aed41c748ec
+  selectedStateNameSignal = signal<string>(''); // For state search - Karnataka
+  stateCode: string = ''; // KA
 
-  selectedCityNameSignal = signal<string>('Bruhat Bengaluru Mahanagara Palike');
-  ulbId: string = '5f5610b3aab0f778b2d2cac0';
+  selectedCityNameSignal = signal<string>(''); // Bruhat Bengaluru Mahanagara Palike
+  ulbId: string = ''; // 5f5610b3aab0f778b2d2cac0
 
   exploreData!: ExploresectionTable[];
   popCat: string = '';
   lastModifiedAt: string | null = null;
+
+  // Money info cards.
+  moneyInfoSignal = signal<ExploresectionTable[]>([]);
+  yearSignal = signal<string>('2021-22');
+  audit_status: string = '';
 
   isLoading1: boolean = true;
   isLoading2: boolean = true;
@@ -50,6 +56,7 @@ export class CityComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private router: Router,
     private _commonService: CommonService,
+    private _dashboardService: DashboardService,
   ) {}
 
   ngOnInit(): void {
@@ -58,6 +65,7 @@ export class CityComponent implements OnInit {
       if (cityId) {
         this.ulbId = cityId;
         this.getCityDetails();
+        this.getMoneyInfo();
       }
     });
   }
@@ -122,6 +130,22 @@ export class CityComponent implements OnInit {
   // Navigate to other ulb.
   private updateUlbIdAndNavigate(newUlbId: string): void {
     this.router.navigate(['/dashboard/city', newUlbId]);
+  }
+
+  // ----- Get money info -----
+  private getMoneyInfo(): void {
+    this.isLoading2 = true;
+    this._dashboardService
+      .getMoneyInfo(this.yearSignal(), this.selectedStateIdSignal(), this.ulbId)
+      .subscribe({
+        next: (res) => {
+          console.log(res);
+          this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
+          this.moneyInfoSignal.set(res.result);
+          this.isLoading2 = false;
+        },
+        error: (error) => console.error('Error in fetching money info: ', error),
+      });
   }
 
   ngDestroy(): void {
