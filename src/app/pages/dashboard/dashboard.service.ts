@@ -51,6 +51,7 @@ export class DashboardService {
       result: ExploresectionTable[];
       year: string;
       audit_status: string | null;
+      isActive: boolean;
     }>(`${environment.api.url}dashboard/financial-info/get-data`, { params });
   }
 }

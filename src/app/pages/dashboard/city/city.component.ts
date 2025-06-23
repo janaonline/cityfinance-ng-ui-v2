@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, effect, OnInit, signal } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -46,6 +46,8 @@ export class CityComponent implements OnInit {
   moneyInfoSignal = signal<ExploresectionTable[]>([]);
   yearSignal = signal<string>('2021-22');
   audit_status: string = '';
+  isActive: boolean = true;
+  years = ['2022-23', '2021-22', '2020-21', '2019-20', '2018-17'];
 
   isLoading1: boolean = true;
   isLoading2: boolean = true;
@@ -141,12 +143,17 @@ export class CityComponent implements OnInit {
         next: (res) => {
           console.log(res);
           this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
+          this.isActive = res.isActive;
           this.moneyInfoSignal.set(res.result);
           this.isLoading2 = false;
         },
         error: (error) => console.error('Error in fetching money info: ', error),
       });
   }
+
+  readonly moneyInfoYearChange = effect(() => {
+    if (this.yearSignal()) this.getMoneyInfo();
+  });
 
   ngDestroy(): void {
     this.destroy$.next();

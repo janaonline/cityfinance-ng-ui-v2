@@ -1,5 +1,12 @@
 <section class="light-bg py-3">
   <div class="container">
+    <!-- Show message if ULB is denotified. -->
+    @if (this.isActive === false) {
+      <div class="alert alert-danger fw-bold text-center" role="alert">
+        This ULB has been denotified.
+      </div>
+    }
+
     <!-- Go to state dashbard -->
     <a href="xyz" class="custom-font-size-7"> Go To {{ selectedStateNameSignal() }} Dashboard </a>
 
@@ -60,9 +67,21 @@
     }
 
     <!-- Last modified date -->
-    <p class="text-secondary text-end mt-3 mb-0" style="font-size: 0.75rem">
+    <p
+      class="text-secondary text-end mt-3 mb-0 d-flex justify-content-end align-items-center gap-1 flex-wrap"
+      style="font-size: 0.75rem"
+    >
       Last updated on: {{ lastModifiedAt | date: 'short' }}; Source: {{ audit_status }} financial
-      statements for the year {{ yearSignal() }}
+      statements for the year
+      <select
+        class="form-select form-select-sm w-auto d-inline-block"
+        [value]="yearSignal()"
+        (change)="yearSignal.set($any($event.target).value)"
+      >
+        @for (year of years; track $index) {
+          <option [value]="year" [selected]="year === yearSignal()">{{ year }}</option>
+        }
+      </select>
     </p>
   </div>
 </section>

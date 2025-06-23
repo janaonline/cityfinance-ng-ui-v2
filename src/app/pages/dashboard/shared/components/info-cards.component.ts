@@ -5,9 +5,12 @@ import { ExploresectionTable } from '../../../home/dashboard-map-section/interfa
 @Component({
   selector: 'app-info-cards',
   imports: [InrFormatPipe],
-  template: ` <div class="row justify-content-around gap-2 flex-wrap py-3 px-2">
+  template: ` <div class="row justify-content-around gap-3 flex-wrap py-3 px-2">
     @for (item of items(); track $index) {
-      <div class="col border p-3 rounded-3 shadow-sm text-center card" style="min-width: 150px">
+      <div
+        class="col border p-3 rounded-3 shadow-sm text-center card bg-white"
+        style="min-width: 150px"
+      >
         <div class="card-data">
           <img
             class="m-2"
