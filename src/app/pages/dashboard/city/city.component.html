@@ -48,15 +48,17 @@
 
         <!-- State Map -->
         <div class="position-relative row" style="min-height: 350px">
-          <app-map
-            #map
-            [stateCode]="stateCode"
-            [ulbId]="ulbId"
-            (ulbIdChange)="selectedCityIdChange($event)"
-          ></app-map>
+          @if (stateCodeSignal() && ulbId) {
+            <app-map
+              #map
+              [stateCode]="stateCodeSignal()"
+              [ulbId]="ulbId"
+              (ulbIdChange)="selectedCityIdChange($event)"
+            ></app-map>
+          }
         </div>
       </div>
-      <!-- {{ stateCode }} {{ ulbId }} -->
+      <!-- {{ stateCode() }} {{ ulbId }} -->
     </div>
 
     <!-- Money Cards -->
@@ -76,7 +78,7 @@
       <select
         class="form-select form-select-sm w-auto d-inline-block"
         [value]="yearSignal()"
-        (change)="yearSignal.set($any($event.target).value)"
+        (change)="onMoneyInfoYearChange($event)"
       >
         @for (year of years; track $index) {
           <option [value]="year" [selected]="year === yearSignal()">{{ year }}</option>

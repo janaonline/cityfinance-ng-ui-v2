@@ -33,7 +33,7 @@ export class CityComponent implements OnInit {
   // Reactive Signals for stateId and cityName
   selectedStateIdSignal = signal<string>(''); // For city search - 5dcf9d7316a06aed41c748ec
   selectedStateNameSignal = signal<string>(''); // For state search - Karnataka
-  stateCode: string = ''; // KA
+  stateCodeSignal = signal<string>('');
 
   selectedCityNameSignal = signal<string>(''); // Bruhat Bengaluru Mahanagara Palike
   ulbId: string = ''; // 5f5610b3aab0f778b2d2cac0
@@ -67,7 +67,7 @@ export class CityComponent implements OnInit {
       if (cityId) {
         this.ulbId = cityId;
         this.getCityDetails();
-        this.getMoneyInfo();
+        // this.getMoneyInfo();
       }
     });
   }
@@ -90,7 +90,7 @@ export class CityComponent implements OnInit {
   setStateData(name: string, _id: string, code: string): void {
     this.selectedStateNameSignal.set(name);
     this.selectedStateIdSignal.set(_id);
-    this.stateCode = code;
+    this.stateCodeSignal.set(code);
   }
 
   // Helper: Set city/ULB name signal
@@ -137,23 +137,27 @@ export class CityComponent implements OnInit {
   // ----- Get money info -----
   private getMoneyInfo(): void {
     this.isLoading2 = true;
-    this._dashboardService
-      .getMoneyInfo(this.yearSignal(), this.selectedStateIdSignal(), this.ulbId)
-      .subscribe({
-        next: (res) => {
-          console.log(res);
-          this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
-          this.isActive = res.isActive;
-          this.moneyInfoSignal.set(res.result);
-          this.isLoading2 = false;
-        },
-        error: (error) => console.error('Error in fetching money info: ', error),
-      });
+    this._dashboardService.getMoneyInfo(this.yearSignal(), '', this.ulbId).subscribe({
+      next: (res) => {
+        console.log(res);
+        this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
+        this.isActive = res.isActive;
+        this.moneyInfoSignal.set(res.result);
+        this.isLoading2 = false;
+      },
+      error: (error) => console.error('Error in fetching money info: ', error),
+    });
   }
 
   readonly moneyInfoYearChange = effect(() => {
     if (this.yearSignal()) this.getMoneyInfo();
   });
+
+  // Drop down selection.
+  public onMoneyInfoYearChange($event: Event): void {
+    const yearSelected = ($event.target as HTMLSelectElement).value;
+    if (this.yearSignal() !== yearSelected) this.yearSignal.set(yearSelected);
+  }
 
   ngDestroy(): void {
     this.destroy$.next();

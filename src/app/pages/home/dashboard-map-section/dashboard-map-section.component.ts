@@ -39,6 +39,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   myForm!: FormGroup;
   noDataFound: boolean = true;
   isLoading: boolean = true;
+  showMap: boolean = false;
 
   selectedStateCodeSignal = signal<string>('');
   selectedStateIdSignal = signal<string>('');
@@ -259,6 +260,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
           this.exploreData.sort((a, b) => a.sequence - b.sequence);
           this._commonService.setDataForVisualizationCount(this.exploreData[0].value?.toString());
           this.isLoading = false;
+          this.showMap = true;
         },
       });
   }
