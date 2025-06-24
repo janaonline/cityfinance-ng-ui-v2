@@ -1,0 +1,25 @@
+<div class="wrap-card">
+  <h3 class="fw-bold text-white pb-3">In the Spotlight</h3>
+  <div>
+    <ngx-slick-carousel
+      class="carousel"
+      #slickModal="slick-carousel"
+      [config]="slideConfig"
+      (init)="slickInit($event)"
+      (breakpoint)="breakpoint($event)"
+      (afterChange)="afterChange($event)"
+      (beforeChange)="beforeChange($event)"
+    >
+      @for (item of whatNewData; track item) {
+        <div ngxSlickItem class="card-body">
+          <div class="card-image">
+            <img [src]="item.imageUrl" alt="carouselImage" />
+          </div>
+          <a class="card-text card-label" [href]="item.downloadUrl" target="_blank">
+            {{ item.name }}
+          </a>
+        </div>
+      }
+    </ngx-slick-carousel>
+  </div>
+</div>

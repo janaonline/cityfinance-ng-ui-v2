@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-white py-0 shadow-sm p-3 mb-2 bg-body" #stickyMenu
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-0 shadow p-3 bg-body" #stickyMenu
   [ngClass]="{ 'stiky-tp': isSticky }">
   <div class="container" style="max-width: 94%">
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -13,45 +13,44 @@
     <span class="city">city</span>
     <span class="fy">finance.in</span>
   </a> -->
-  <a class="navbar-brand" href="/home" [ngClass]="sticky ? 'show' : ''">
-    <!-- <img src="../../../../assets/M FIGMA/city-finance-ranking.png" alt=""> -->
-    <span class="city" style="font-size: 2rem">city</span>
-    <span class="fy" style="font-size: 2rem; color: #1d5290; font-weight: bold">finance</span>
-  </a>
-  <div class="collapse navbar-collapse me-3" [collapse]="isCollapsed">
-    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-      @for (menu of menus; track menu.name) {
+    <a class="navbar-brand" href="/home" [ngClass]="sticky ? 'show' : ''">
+      <!-- <img src="../../../../assets/M FIGMA/city-finance-ranking.png" alt=""> -->
+      <span class="city" style="font-size: 2rem">city</span>
+      <span class="fy" style="font-size: 2rem; color: #1d5290; font-weight: bold">finance</span>
+    </a>
+    <div class="collapse navbar-collapse me-3" [collapse]="isCollapsed">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        @for (menu of menus; track menu.name) {
         @if (menu.child?.length) {
-          <li class="nav-item dropdown" dropdown>
-            <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" aria-controls="dropdown-basic"
-              dropdownToggle>
-              {{ menu.name }}
-            </a>
-            <ul class="dropdown-menu" id="dropdown-basic" *dropdownMenu>
-              @for (childMenu of menu.child; track childMenu) {
-                <li>
-                  <a class="dropdown-item" [attr.href]="childMenu.href">{{ childMenu.name }}</a>
-                </li>
-              }
-            </ul>
-          </li>
+        <li class="nav-item dropdown" dropdown>
+          <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" aria-controls="dropdown-basic"
+            dropdownToggle>
+            {{ menu.name }}
+          </a>
+          <ul class="dropdown-menu" id="dropdown-basic" *dropdownMenu>
+            @for (childMenu of menu.child; track childMenu) {
+            <li>
+              <a class="dropdown-item" [attr.href]="childMenu.href">{{ childMenu.name }}</a>
+            </li>
+            }
+          </ul>
+        </li>
         } @else {
-          <li class="btn-group" [ngClass]="!menu.class ? 'nav-item' : ''">
-            @if (menu.link) {
-              <a class="nav-link" [ngClass]="menu.class" [routerLink]="menu.link" [innerHTML]="menu.name"
-              ></a>
-            }
-            @if (menu.href) {
-              <a class="nav-link" [ngClass]="menu.class" [attr.href]="menu.href" [innerHTML]="menu.name"
-              [target]="menu.target"></a>
-            }
-          </li>
+        <li class="btn-group" [ngClass]="!menu.class ? 'nav-item' : ''">
+          @if (menu.link) {
+          <a class="nav-link" [ngClass]="menu.class" [routerLink]="menu.link" [innerHTML]="menu.name"></a>
+          }
+          @if (menu.href) {
+          <a class="nav-link" [ngClass]="menu.class" [attr.href]="menu.href" [innerHTML]="menu.name"
+            [target]="menu.target"></a>
+          }
+        </li>
         }
-      }
-    </ul>
-  </div>
-  <div class="ms-auto">
-    @if (!isLoggedIn) {
+        }
+      </ul>
+    </div>
+    <div class="ms-auto">
+      @if (!isLoggedIn) {
       <div class="dropdown" dropdown>
         <button class="primary-btn-1 dropdown-toggle fw-bold" type="button" id="loginDrp" role="button"
           aria-controls="dropdown-basic" dropdownToggle>
@@ -77,8 +76,8 @@
           </li>
         </ul>
       </div>
-    }
-    @if (isLoggedIn) {
+      }
+      @if (isLoggedIn) {
       <div class="btn-group ms-2 dropdown" dropdown>
         <button id="button-disabled-menu" dropdownToggle type="button" class="btn btn-login-icon dropdown-toggle"
           aria-controls="dropdown-disabled-menu">
@@ -101,13 +100,13 @@
           <!-- <li role="menuitem" *ngIf="user?.role !== 'PMU'">
           <a class="dropdown-item text-center" routerLink="/user/profile/view">Profile</a>
         </li> -->
-        <li class="divider dropdown-divider"></li>
-        <li role="menuitem">
-          <a class="dropdown-item text-center" (click)="loginLogout('logout')" href="javascript: void()">Logout</a>
-        </li>
-      </ul>
+          <li class="divider dropdown-divider"></li>
+          <li role="menuitem">
+            <a class="dropdown-item text-center" (click)="loginLogout('logout')" href="javascript: void()">Logout</a>
+          </li>
+        </ul>
+      </div>
+      }
     </div>
-  }
-</div>
-</div>
+  </div>
 </nav>
