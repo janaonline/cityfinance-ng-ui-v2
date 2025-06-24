@@ -10,7 +10,7 @@ import { AuthGuard } from './core/security/auth-guard.service';
 import { AuthService } from './core/services/auth.service';
 import { VersionCheckService } from './core/services/version-check.service';
 // import { APP_BASE_HREF } from '@angular/common';
-import { provideClientHydration } from '@angular/platform-browser';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { customHttpInterceptor } from './core/security/custom-http.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -33,6 +33,6 @@ export const appConfig: ApplicationConfig = {
     // { provide: ErrorHandler, useClass: GlobalErrorHandler},
     AuthService,
     AuthGuard,
-    VersionCheckService,
+    VersionCheckService, provideClientHydration(withEventReplay()),
   ],
 };
