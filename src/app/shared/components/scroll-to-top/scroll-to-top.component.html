@@ -1,3 +1,5 @@
-<div class="scroll-to-top cursor-pointer" (click)="scroll()" *ngIf="showButton">
+@if (showButton) {
+  <div class="scroll-to-top cursor-pointer" (click)="scroll()">
     <img src="assets/fiscal-rankings/scroll-to-top.png" alt="">
-</div>
+  </div>
+}

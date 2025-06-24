@@ -4,6 +4,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
+import { HomeComponent } from './pages/home/home.component';
 // import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
@@ -56,19 +57,25 @@ export const routes: Routes = [
     path: '',
     children: [
       {
-        path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+        // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+        path: 'home', component: HomeComponent,
+      },
+      {
+        path: 'dashboard',
+        loadChildren: () =>
+          import('./pages/dashboard/dashboard.routes').then((mod) => mod.DASHBOARD_ROUTES),
       },
       {
         path: "own-revenue-dashboard",
         loadChildren: () =>
-          import("./features/pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
+          import("./pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
             (m) => m.OwnRevenueDashboardModule
           ),
       },
       {
         path: "resources-dashboard",
         loadChildren: () =>
-          import("./features/pages/resources-dashboard/resources-dashboard.module").then(
+          import("./pages/resources-dashboard/resources-dashboard.module").then(
             (m) => m.ResourcesDashboardModule
           ),
       },
@@ -83,6 +90,11 @@ export const routes: Routes = [
     path: 'cfr',
     // loadComponent: () => import('./features/cfr/cfr-home/cfr-home.component').then((m) => m.CfrHomeComponent),
     loadChildren: () => import('./features/cfr/cfr.routes').then((mod) => mod.CFR_ROUTES),
+  },
+  {
+    path: 'map',
+    loadComponent: () =>
+      import('./shared/components/map/map.component').then((m) => m.MapComponent),
   },
   {
     path: 'maintenance',

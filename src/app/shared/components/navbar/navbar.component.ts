@@ -13,11 +13,10 @@ import { MODULES_NAME } from '../../../core/util/access/modules';
 import { UserUtility } from '../../../core/util/user/user';
 
 @Component({
-  selector: 'app-navbar',
-  standalone: true,
-  imports: [CommonModule, RouterModule, BsDropdownModule, CollapseModule],
-  templateUrl: './navbar.component.html',
-  styleUrl: './navbar.component.scss',
+    selector: 'app-navbar',
+    imports: [CommonModule, RouterModule, BsDropdownModule, CollapseModule],
+    templateUrl: './navbar.component.html',
+    styleUrl: './navbar.component.scss'
 })
 export class NavbarComponent implements OnInit, AfterViewInit {
   private accessChecker = new AccessChecker();

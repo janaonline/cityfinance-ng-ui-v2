@@ -6,49 +6,59 @@
 
   <form (submit)="apply()">
     <div class="mt-4">
-      <div *ngFor="let key of filterKeys()" class="cursor-pointer border-bottom border-light-subtle my-2 p-2">
-        <input class="me-3" type="checkbox" [ngModelOptions]="{ standalone: true }" [id]="key + 'Checkbox'"
-          [(ngModel)]="datasetsFilter[key]" />
-        <label class="form-check-label" [for]="key + 'Checkbox'">
-          {{ key }}
-        </label>
+      @for (key of filterKeys(); track key) {
+        <div class="cursor-pointer border-bottom border-light-subtle my-2 p-2">
+          <input class="me-3" type="checkbox" [ngModelOptions]="{ standalone: true }" [id]="key + 'Checkbox'"
+            [(ngModel)]="datasetsFilter[key]" />
+            <label class="form-check-label" [for]="key + 'Checkbox'">
+              {{ key }}
+            </label>
+          </div>
+        }
       </div>
-    </div>
 
-    <div class="mt-4">
-      <input [ngClass]="{'custom-readonly-input': ulbs.length >= 5}" [readonly]="ulbs.length >= 5"
+      <div class="mt-4">
+        <input [ngClass]="{'custom-readonly-input': ulbs.length >= 5}" [readonly]="ulbs.length >= 5"
         [matTooltip]="ulbs.length >= 5 ? 'Maximum of 5 ULBs can be compared at once.' : ''" matInput
         [formControl]="searchField" [matAutocomplete]="auto" class="form-control" style="height: 3rem" type="text"
         placeholder="Search ULB..." />
-      <!-- {{filteredOptions | json}} -->
+        <!-- {{filteredOptions | json}} -->
 
-      <mat-autocomplete #auto="matAutocomplete">
-        <span *ngFor="let option of filteredOptions; let i = index" style="direction: none">
-          <mat-option (click)="addUlb(option)" [ngClass]="{ firstCls: i === 0 }" [value]="option?.name">
-            <span> {{ option?.name }}</span>
-          </mat-option>
-        </span>
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredOptions; track option; let i = $index) {
+            <span style="direction: none">
+              <mat-option (click)="addUlb(option)" [ngClass]="{ firstCls: i === 0 }" [value]="option?.name">
+                <span> {{ option?.name }}</span>
+              </mat-option>
+            </span>
+          }
 
-        <mat-option *ngIf="noDataFound" class="text-danger firstCls ff">
-          Sorry, we can&#39;t find anything related to your search. Try searching for a city or
-          state.
-        </mat-option>
-      </mat-autocomplete>
-      <div id="emailHelp" class="form-text ff">Maximum of 5 ULBs can be compared at once</div>
-    </div>
-
-    <div class="my-2">
-      <div class="mb-1">
-        <span class="badge rounded-pill text-bg-cfSecondary p-2">{{ data?.ulb?.name }}</span>
+          @if (noDataFound) {
+            <mat-option class="text-danger firstCls ff">
+              Sorry, we can&#39;t find anything related to your search. Try searching for a city or
+              state.
+            </mat-option>
+          }
+        </mat-autocomplete>
+        <div id="emailHelp" class="form-text ff">Maximum of 5 ULBs can be compared at once</div>
       </div>
-      <div class="d-block p-0 m-0" *ngFor="let ulb of ulbs; let i = index">
-        @if (ulb.name !== data?.ulb?.name) {
-        <span class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
-          [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }">{{ ulb?.name }}&nbsp;<i
-            *ngIf="!ulb?.disabled" (click)="removeUlb(i)" class="bi bi-x fs-4 cursor-pointer"></i>
-        </span>
-        }
-      </div>
+
+      <div class="my-2">
+        <div class="mb-1">
+          <span class="badge rounded-pill text-bg-cfSecondary p-2">{{ data?.ulb?.name }}</span>
+        </div>
+        @for (ulb of ulbs; track ulb; let i = $index) {
+          <div class="d-block p-0 m-0">
+            @if (ulb.name !== data?.ulb?.name) {
+              <span class="badge rounded-pill text-bg-cfSecondary p-2 my-1"
+                [ngClass]="{ 'non-bucket': ulb?.populationBucket !== data?.ulb?.populationBucket }">{{ ulb?.name }}&nbsp;@if (!ulb?.disabled) {
+                <i
+                (click)="removeUlb(i)" class="bi bi-x fs-4 cursor-pointer"></i>
+              }
+            </span>
+          }
+        </div>
+      }
     </div>
     <div class="mt-3 text-center">
       <button id="filter-apply" type="submit" class="primary-btn-1 me-3">Apply</button>

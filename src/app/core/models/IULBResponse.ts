@@ -1,7 +1,7 @@
 import { IULB } from './ulb';
 
 export interface IULBResponse {
-  data: { [stateCode: string]: { state: string; ulbs: IULB[] } };
+  data: IULB[];
   msg: string;
   success: boolean;
 }

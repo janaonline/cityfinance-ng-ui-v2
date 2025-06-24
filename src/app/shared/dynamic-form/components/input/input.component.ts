@@ -1,14 +1,12 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 import { NoUpDownDirective } from '../../../../core/directives/no-up-down.directive';
 import { DecimalLimitDirective } from '../../../../core/directives/decimal-limit.directive';
-import { RestrictEInputDirective } from '../../../../core/directives/restrict-e-input.directive';
 @Component({
   selector: 'app-input',
-  standalone: true,
-  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, RestrictEInputDirective],
+  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective],
   templateUrl: './input.component.html',
   styles: [
     `
@@ -19,9 +17,9 @@ import { RestrictEInputDirective } from '../../../../core/directives/restrict-e-
         display: block;
         color: orange;
     }`,
-  ],
+  ]
 })
-export class InputComponent {
+export class InputComponent implements OnInit {
   className: string = 'box1';
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
