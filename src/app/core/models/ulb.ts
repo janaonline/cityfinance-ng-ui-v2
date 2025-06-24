@@ -2,7 +2,7 @@ import { ulbType } from './ulbTypes';
 export interface IULB {
   amrut: 'Yes' | 'No' | undefined;
   _id: string;
-  slug: string;
+  slug?: string;
   area: number;
   code: string;
   name: string;

@@ -7,7 +7,7 @@ let env = 'dev';
 
 if (window.location.hostname.includes('staging')) {
   env = 'staging';
-} else if (window.location.origin === 'https://cityfinance.in') {
+} else if (window.location.origin === 'https://cityfinance.in' || window.location.origin === 'https://www.cityfinance.in') {
   env = 'prod';
   isProduction = true;
   GoogleTagID = 'G-5Z5B41B3G4';
