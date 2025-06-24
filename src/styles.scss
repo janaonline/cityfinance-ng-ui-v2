@@ -33,6 +33,14 @@
   --fw-bold: 700;
   // --fw-extra-bold: 800;
   // --fw-black: 900;
+
+  --fs-1: 3rem;
+  --fs-2: 2.5rem;
+  --fs-3: 2rem;
+  --fs-4: 1.5rem;
+  --fs-5: 1.125rem;
+  --fs-6: 0.8125rem;
+  --fs-7: 0.75rem;
 }
 
 html,
@@ -363,6 +371,20 @@ mat-form-field {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.1);
   z-index: 1000;
+}
+
+// Custom font size.
+.custom-font-size-6 {
+  font-size: var(--fs-6);
+}
+
+.custom-font-size-7 {
+  font-size: var(--fs-7);
+}
+
+// Custom text shadow.
+.custom-text-shadow {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
