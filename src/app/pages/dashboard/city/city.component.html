@@ -73,8 +73,8 @@
       class="text-secondary text-end mt-3 mb-0 d-flex justify-content-end align-items-center gap-1 flex-wrap"
       style="font-size: 0.75rem"
     >
-      Last updated on: {{ lastModifiedAt | date: 'short' }}; Source: {{ audit_status }} financial
-      statements for the year
+      Last updated on: {{ lastModifiedAt | date: 'mediumDate' }}; Source:
+      {{ audit_status }} financial statements for the year
       <select
         class="form-select form-select-sm w-auto d-inline-block"
         [value]="yearSignal()"
