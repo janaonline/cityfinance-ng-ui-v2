@@ -44,10 +44,10 @@ export class CityComponent implements OnInit {
 
   // Money info cards.
   moneyInfoSignal = signal<ExploresectionTable[]>([]);
-  yearSignal = signal<string>('2021-22');
+  yearSignal = signal<string>('');
   audit_status: string = '';
   isActive: boolean = true;
-  years = ['2022-23', '2021-22', '2020-21', '2019-20', '2018-17'];
+  years: string[] = [];
 
   isLoading1: boolean = true;
   isLoading2: boolean = true;
@@ -66,6 +66,7 @@ export class CityComponent implements OnInit {
       const cityId = params.get('cityId') || '';
       if (cityId) {
         this.ulbId = cityId;
+        this.getDistinctYearsList();
         this.getCityDetails();
         // this.getMoneyInfo();
       }
@@ -116,7 +117,7 @@ export class CityComponent implements OnInit {
           console.log(res);
           this.exploreData = res.gridDetails;
           this.popCat = res.popCat;
-          this.lastModifiedAt = res.lastModifiedAt;
+          // this.lastModifiedAt = res.lastModifiedAt;
 
           this.setStateData(res.state.name, res.state._id, res.state.code);
           this.setCityName(res.ulbName);
@@ -143,6 +144,7 @@ export class CityComponent implements OnInit {
         this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
         this.isActive = res.isActive;
         this.moneyInfoSignal.set(res.result);
+        this.lastModifiedAt = res.lastModifiedAt;
         this.isLoading2 = false;
       },
       error: (error) => console.error('Error in fetching money info: ', error),
@@ -157,6 +159,18 @@ export class CityComponent implements OnInit {
   public onMoneyInfoYearChange($event: Event): void {
     const yearSelected = ($event.target as HTMLSelectElement).value;
     if (this.yearSignal() !== yearSelected) this.yearSignal.set(yearSelected);
+  }
+
+  // Get distinct years list.
+  private getDistinctYearsList(): void {
+    this._commonService.getLedgerYears('', this.ulbId).subscribe({
+      next: (res) => {
+        console.log(res.ledgerYears);
+        this.years = res.ledgerYears;
+        this.yearSignal.set(this.years?.[0]);
+      },
+      error: (error) => console.error('Failed to fetch years list: getDistinctYearsList()', error),
+    });
   }
 
   ngDestroy(): void {

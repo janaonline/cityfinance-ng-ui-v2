@@ -79,6 +79,7 @@
         class="form-select form-select-sm w-auto d-inline-block"
         [value]="yearSignal()"
         (change)="onMoneyInfoYearChange($event)"
+        id="years"
       >
         @for (year of years; track $index) {
           <option [value]="year" [selected]="year === yearSignal()">{{ year }}</option>

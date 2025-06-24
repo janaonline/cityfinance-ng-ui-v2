@@ -822,4 +822,17 @@ export class CommonService {
       { params },
     );
   }
+
+  // Get distinct years - ledger/ Standardized data.
+  public getLedgerYears(stateCode: string = '', ulbId: string = '', auditStatus: string = '') {
+    let params = new HttpParams();
+    if (stateCode) params = params.set('stateCode', stateCode);
+    if (ulbId) params = params.set('ulbId', ulbId);
+    if (auditStatus) params = params.set('auditStatus', auditStatus);
+
+    return this.http.get<{ ledgerYears: string[] }>(
+      `${environment.api.url}common/get-latest-standardized-year`,
+      { params },
+    );
+  }
 }
