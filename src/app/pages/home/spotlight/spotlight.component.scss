@@ -56,3 +56,15 @@
 ::ng-deep .slick-next:before {
     color: var(--clr-primary);
 }
+
+::ng-deep .slick-dots li.slick-active button:before {
+    background: rgba(128, 128, 128, 0.2);
+    border-radius: 50%;
+    color: #f2991f;
+    opacity: 1;
+}
+
+::ng-deep .slick-dots li button:before {
+    font-size: 0.75rem;
+    line-height: 22px;
+}

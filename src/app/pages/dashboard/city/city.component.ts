@@ -1,358 +1,166 @@
-import { Component, HostListener, OnInit } from "@angular/core";
-import { ActivatedRoute, Router } from "@angular/router";
-import { DashboardService } from "../dashboard.service";
-import { AuthService } from "../../../core/services/auth.service";
-import { CommonService } from "../../../core/services/common.service";
-import { GlobalLoaderService } from "../../../core/services/loaders/global-loader.service";
-import { FrontPanelComponent } from "../../../shared/components/front-panel/front-panel.component";
-import { DashboardTabsComponent } from "../../../shared/components/dashboard-tabs/dashboard-tabs.component";
-// import { CommonService } from "src/app/shared/services/common.service";
-// import { GlobalLoaderService } from "src/app/shared/services/loaders/global-loader.service";
-// import { AuthService } from "../../../auth/auth.service";
-// import { dashboardService } from "../new-dashboard.service";
+import { CommonModule } from '@angular/common';
+import { Component, effect, OnInit, signal } from '@angular/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { CommonService } from '../../../core/services/common.service';
+import { MapComponent } from '../../../shared/components/map/map.component';
+import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
+import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
+import { GridViewComponent } from '../../../shared/components/shared-ui/grid-view.component';
+import { StateSearchComponent } from '../../../shared/components/shared-ui/state-search.component';
+import { ExploresectionTable, States, Ulbs } from '../../home/dashboard-map-section/interfaces';
+import { DashboardService } from '../dashboard.service';
+import { InfoCardsComponent } from '../shared/components/info-cards.component';
 
 @Component({
   selector: 'app-city',
-  imports: [FrontPanelComponent, DashboardTabsComponent],
+  standalone: true,
+  imports: [
+    CommonModule,
+    StateSearchComponent,
+    MapComponent,
+    MatTooltipModule,
+    InfoCardsComponent,
+    GridViewComponent,
+    CitySearchComponent,
+    PreLoaderComponent,
+  ],
   templateUrl: './city.component.html',
-  styleUrl: './city.component.scss'
+  styleUrl: './city.component.scss',
 })
 export class CityComponent implements OnInit {
-  constructor(
-    public dashboardService: DashboardService,
-    private _activatedRoute: ActivatedRoute,
-    private router: Router,
-    // private cityService: CityService,
-    private authService: AuthService,
-    private _commonService: CommonService,
-    public _loaderService: GlobalLoaderService,
-  ) {
-    this.cityId = this._activatedRoute.snapshot.params['cityId'];
-    this._activatedRoute.queryParams.subscribe((param: any) => {
-      // this.cityId = param.cityId;
-      this.stateCode = param.stateCode || this.ulbStateCodeMapping[this.cityId];
-      this.mapData.code.city = this.ulbCodeMapping[this.cityId];
-      this.mapData.code.state = this.ulbStateCodeMapping[this.cityId];
-    });
-    this.router.routeReuseStrategy.shouldReuseRoute = function () {
-      return false;
-    };
-  }
-  ulbStateCodeMapping = JSON.parse(localStorage.getItem("ulbStateCodeMapping") || '{}');
-  ulbCodeMapping = JSON.parse(localStorage.getItem("ulbCodeMapping") || '{}');
-  cityId!: string | number;
-  stateCode!: string | number;
-  frontPanelData = data;
-  revenueData = [TaxRevenue, OwnRevenue, Grant, Revenue, Expense, BalanceSheetSize];
-  mapData = mapConfig;
-  stateUlbData = JSON.parse(localStorage.getItem("ulbList") || 'null');
-  dashboardTabData!: any[];
-  currentYear = new Date().getFullYear().toString();
-  yearListForDropDown: any;
+  // Reactive Signals for stateId and cityName
+  selectedStateIdSignal = signal<string>(''); // For city search - 5dcf9d7316a06aed41c748ec
+  selectedStateNameSignal = signal<string>(''); // For state search - Karnataka
+  stateCodeSignal = signal<string>('');
 
-  cords: any;
-  ulbDenotifiedMessage: string = '';
-  @HostListener("window:scroll", ["$event"])
-  doSomething(event: any) {
-    this.cords = window.pageYOffset;
-  }
-  isUA: any;
-  noDataFound: boolean = false;
+  selectedCityNameSignal = signal<string>(''); // Bruhat Bengaluru Mahanagara Palike
+  ulbId: string = ''; // 5f5610b3aab0f778b2d2cac0
+
+  exploreData!: ExploresectionTable[];
+  popCat: string = '';
+  lastModifiedAt: string | null = null;
+
+  // Money info cards.
+  moneyInfoSignal = signal<ExploresectionTable[]>([]);
+  yearSignal = signal<string>('2021-22');
+  audit_status: string = '';
+  isActive: boolean = true;
+  years = ['2022-23', '2021-22', '2020-21', '2019-20', '2018-17'];
+
+  isLoading1: boolean = true;
+  isLoading2: boolean = true;
+
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private activatedRoute: ActivatedRoute,
+    private router: Router,
+    private _commonService: CommonService,
+    private _dashboardService: DashboardService,
+  ) {}
+
   ngOnInit(): void {
-    //this.dashboardDataCall();
-    this.dashboardCalls(this.cityId);
-    // setTimeout(() => {
-    //   this.dashboardTabData.forEach((el) => {
-    //     el.ulbName = this.frontPanelData?.name;
-    //   });
-    // }, 500);
-  }
-  setNameInFr() {
-    this.dashboardTabData.forEach((el: { ulbName: string; }) => {
-      el.ulbName = this.frontPanelData?.name;
+    this.activatedRoute.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      const cityId = params.get('cityId') || '';
+      if (cityId) {
+        this.ulbId = cityId;
+        this.getCityDetails();
+        // this.getMoneyInfo();
+      }
     });
   }
-  dashboardDataCall() {
-    this.dashboardService
-      .getDashboardTabData("619cc08a6abe7f5b80e45c67")
-      .subscribe(
-        (res: { [x: string]: any; }) => {
-          console.log(res, "dashboardTabData");
-          this.dashboardTabData = res["data"];
-          // if(this.isUA == "No" || this.isUA == null || this.isUA == undefined){
-          //   this.dashboardTabData = this.dashboardTabData.filter(o => o.name != "Infrastructure Projects")
-          // }
-          this.setNameInFr();
+
+  // ----- Search Section -----
+  // Callback: From child when state is selected
+  onStateSelected = (stateObj: States): void => {
+    console.log('Value of state sent by child to parent', stateObj);
+    this.setCityName('');
+    this.setStateData(stateObj.name, stateObj._id, stateObj.code);
+  };
+
+  // Callback: From child when ULB/city is selected
+  onUlbSelected = (ulbObj: Ulbs): void => {
+    console.log('Value of ULB sent by child to parent:', ulbObj);
+    if (ulbObj._id) this.updateUlbIdAndNavigate(ulbObj._id);
+  };
+
+  // Helper: Set state ID signal
+  setStateData(name: string, _id: string, code: string): void {
+    this.selectedStateNameSignal.set(name);
+    this.selectedStateIdSignal.set(_id);
+    this.stateCodeSignal.set(code);
+  }
+
+  // Helper: Set city/ULB name signal
+  setCityName(ulbName: string): void {
+    this.selectedCityNameSignal.set(ulbName);
+  }
+
+  // ----- Map Section -----
+  public selectedCityIdChange($event: string): void {
+    // this.ulbId = $event;
+    if ($event) this.updateUlbIdAndNavigate($event);
+    console.log('ulbIdChange from map', this.ulbId, $event);
+  }
+
+  // ----- Get necessary data -----
+  private getCityDetails(): void {
+    this.isLoading1 = true;
+    this._commonService
+      .getCityData(this.ulbId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.log(res);
+          this.exploreData = res.gridDetails;
+          this.popCat = res.popCat;
+          this.lastModifiedAt = res.lastModifiedAt;
+
+          this.setStateData(res.state.name, res.state._id, res.state.code);
+          this.setCityName(res.ulbName);
+          this.isLoading1 = false;
         },
-        (error: any) => {
-          console.log(error);
-        }
-      );
-    this.authService
-      .getLastUpdated({ ulb: this.cityId ?? "" })
-      .subscribe((res: { [x: string]: any; }) => {
-        Object.assign(this.frontPanelData, {
-          year: res["year"],
-          date: res["data"],
-        });
+        error: (error) => {
+          this.isLoading2 = false;
+          console.error('Error in fetching city details', error);
+        },
       });
   }
 
-  dashboardCalls(cityId: any) {
-    this.dashboardService.getLatestDataYear(cityId).subscribe(
-      (res: any) => {
+  // Navigate to other ulb.
+  private updateUlbIdAndNavigate(newUlbId: string): void {
+    this.router.navigate(['/dashboard/city', newUlbId]);
+  }
 
-        this.currentYear = res["data"].financialYear;
-        this.callMoneyApi(cityId);
-        let tempData: any = this.frontPanelData.footer.split(" ");
-        tempData = tempData.map((value: string) => {
-          if (value == "finacialYear")
-            value = "FY " + res["data"].financialYear;
-          if (value == "date")
-            value = new Date(res["data"].modifiedAt).toLocaleDateString();
-          return value;
-        });
-        tempData = tempData.join(" ");
-        this.frontPanelData.footer = tempData;
-        this.noDataFound = false;
+  // ----- Get money info -----
+  private getMoneyInfo(): void {
+    this.isLoading2 = true;
+    this._dashboardService.getMoneyInfo(this.yearSignal(), '', this.ulbId).subscribe({
+      next: (res) => {
+        console.log(res);
+        this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
+        this.isActive = res.isActive;
+        this.moneyInfoSignal.set(res.result);
+        this.isLoading2 = false;
       },
-      (error: any) => {
-        this.noDataFound = true;
-        console.log(error);
-
-      }
-    );
-    this.dashboardService.getYearList(this.cityId).subscribe(
-      (res: { [x: string]: any; }) => {
-        this.yearListForDropDown = res["data"];
-      },
-      (error: any) => {
-        console.log(error);
-      }
-    );
-    this.dashboardService
-      .dashboardInformation(true, cityId, "ulb", this.currentYear)
-      .subscribe(
-        (res: any) => {
-          this.isUA = res["data"]["isUA"];
-          this.ulbDenotifiedMessage = res?.message;
-          this.dashboardDataCall();
-          this.frontPanelData.dataIndicators.map((item) => {
-            switch (item.key) {
-              case "population":
-                // let computedNumber = this._commonService.formatNumber(
-                //   res?.data?.population / 1000000
-                // );
-                item.value =
-                  this._commonService.formatNumber(
-                    Math.round(res.data.population / 1000000) || 0
-                  ) + " Million";
-                if (item.value == "0 Million")
-                  item.value =
-                    this._commonService.formatNumber(
-                      Math.round(res.data.population / 1000) || 0
-                    ) + " Thousand";
-                break;
-              case "density":
-                item.value =
-                  this._commonService.formatNumber(res.data.density || '0') +
-                  "/ Sq km";
-                break;
-              case "ward":
-                item.value = res.data.wards || '0';
-                if (item.value == '0') {
-                  item.value = '0'
-                  console.log(item.value)
-                }
-                break;
-              case "area":
-                item.value =
-                  this._commonService.formatNumber(res.data.area || '0') + " Sq km";
-                break;
-              case "amrut":
-                item.value = res.data.amrut || '0';
-                break;
-              case "isUa":
-                item.value = res.data.isUA;
-                if (res?.data?.isUA == "Yes") {
-                  item.value += ` (${res?.data?.UA?.name || '0'})`;
-                }
-                break;
-              case "dataAvailable":
-                item.value = res.data.dataAvailable || '0';
-                break;
-            }
-            return item;
-          });
-          this.frontPanelData.name = res.data.name;
-          this.frontPanelData.desc = createDesc(
-            res.data?.ulbType?.name || "Municipal Corp",
-            getPopulationType(res.data.population)
-          );
-          this.frontPanelData.linkName = `${res.data.state.name} Dashboard`;
-          this.frontPanelData.link = `dashboard/state?stateId=${res.data.state._id}`;
-        },
-        (error: any) => {
-          console.error(error);
-        }
-      );
+      error: (error) => console.error('Error in fetching money info: ', error),
+    });
   }
 
-  callMoneyApi(cityId: any) {
-    this.dashboardService
-      .dashboardInformation(false, cityId, "ulb", this.currentYear)
-      .subscribe(
-        (res: any) => {
-          const obj: any = { TaxRevenue, OwnRevenue, Grant, Expense, BalanceSheetSize, Revenue };
-          for (const key in obj) {
-            const element = obj[key];
+  readonly moneyInfoYearChange = effect(() => {
+    if (this.yearSignal()) this.getMoneyInfo();
+  });
 
-            element.number =
-              "INR " +
-              (res.data.length > 0
-                ? Math.round(
-                  res.data.find((value: { _id: string; }) => value._id == key)?.amount /
-                  10000000
-                )
-                : "0") +
-              " Cr";
-          }
-          this.revenueData = [
-            obj.TaxRevenue,
-            obj.OwnRevenue,
-            obj.Grant,
-            obj.Revenue,
-            obj.Expense,
-            obj.BalanceSheetSize,
-
-          ];
-
-        },
-        (error: any) => {
-          console.error(error);
-        }
-      );
+  // Drop down selection.
+  public onMoneyInfoYearChange($event: Event): void {
+    const yearSelected = ($event.target as HTMLSelectElement).value;
+    if (this.yearSignal() !== yearSelected) this.yearSignal.set(yearSelected);
   }
 
-  changeInDropDown(event: any) {
-    if (!event.fromState) {
-      this.cityId = this.stateUlbData.data[this.stateCode].ulbs.find(
-        (value: any) => value.code === event.value.key
-      )._id;
-      this.dashboardDataCall();
-      this.dashboardCalls(this.cityId);
-    }
+  ngDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
-
-const data = {
-  showMap: true,
-  name: "Municipal Corporation of Greater Mumbai",
-  desc: "This urban local body has been classified as a municipal corporation in the 4M+ population category",
-  link: "",
-  linkName: "Maharashtra Dashboard",
-  dataIndicators: [
-    {
-      value: "12. 1 M",
-      title: "Population",
-      key: "population",
-    },
-    { value: "4335 Sq km", title: "Area", key: "area" },
-    { value: "2857/ Sq km", title: "Population Density", key: "density" },
-    {
-      value: "227",
-      title: "Wards",
-      key: "ward",
-    },
-    {
-      value: "227",
-      title: "Years of financial data",
-      key: "dataAvailable",
-    },
-    // {
-    //   value: "227",
-    //   title: "AMRUT City",
-    //   key: "amrut",
-    // },
-    {
-      value: "227",
-      title: "Part of UA",
-      key: "isUa",
-    },
-  ],
-  footer: `Data shown is from audited/provisional financial statements for finacialYear and data was last updated on date`,
-};
-
-const TaxRevenue = {
-  type: 2,
-  subTitle: "Total Tax Revenue",
-  svg: `./assets/file.svg`,
-  number: "0 Cr",
-};
-
-const OwnRevenue = {
-  type: 2,
-  subTitle: "Total Own Revenue",
-  svg: `./assets/file.svg`,
-  number: "0 Cr",
-};
-
-const Grant = {
-  type: 2,
-  subTitle: "Total Grant",
-  svg: `./assets/coinCuren.svg`,
-  number: "0 Cr",
-};
-
-const Revenue = {
-  type: 2,
-  subTitle: "Total Revenue",
-  svg: `./assets/coinCuren.svg`,
-  number: "0 Cr",
-};
-
-const Expense = {
-  type: 2,
-  subTitle: "Total Expenditure",
-  svg: `./assets/coinCuren.svg`,
-  number: "0 Cr",
-};
-const BalanceSheetSize = {
-  type: 2,
-  subTitle: "Total Balance Sheet Size",
-  svg: `./assets/Group 15967.svg`,
-  number: "0 Cr",
-};
-
-function createDesc(type: string, population = "4M+") {
-  return `This urban local body has been classified as a ${type} in the ${population} population category`;
-}
-
-function getPopulationType(population: any) {
-  if (population < 100000) {
-    return "<100 Thousand";
-  } else if (100000 < population && population < 500000) {
-    return "100 Thousand - 500 Thousand";
-  } else if (500000 < population && population < 1000000) {
-    return "500 Thousand - 1 Million";
-  } else if (1000000 < population && population < 4000000) {
-    return "1 Million - 4 Million";
-  } else {
-    return "4 Million+";
-  }
-}
-
-const mapConfig = {
-  code: {
-    state: "GJ",
-    city: "GJ039",
-  },
-  showStateList: false,
-  showDistrictList: true,
-  stateMapContainerHeight: "23rem",
-  nationalZoomOnMobile: 3.9, // will fit map in container
-  nationalZoomOnWeb: 3.9, // will fit map in container
-  stateZoomOnMobile: 4, // will fit map in container
-  stateZoomOnWeb: 4, // will fit map in container
-  stateBlockHeight: "23.5rem", // will fit map in container
-};

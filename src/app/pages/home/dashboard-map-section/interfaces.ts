@@ -37,14 +37,19 @@ export interface Ulbs {
   state: string;
 }
 
-export interface LastModifiedAt {
+export interface ExploreSectionResponse {
+  gridDetails: ExploresectionTable[];
   lastModifiedAt: string | null;
-  fromCache: boolean;
+  popCat: string;
+  state: States;
+  ulbId: string;
+  ulbName: string;
 }
 
-export interface ExploreSectionResponse {
+export interface ExploresectionTable {
   sequence: number;
   label: string;
-  value: string;
+  value: string | number;
   info: string;
+  src: string;
 }

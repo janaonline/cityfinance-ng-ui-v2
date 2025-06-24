@@ -18,7 +18,7 @@ declare module 'leaflet' {
 export class MapService {
   private readonly cfPrimary = '#e57d15';
   private readonly cfSecondary = '#3e5db1'; // '#183367'
-  public map!: L.Map;
+  public map!: L.Map | null;
   private defaultStateLayerStyle: IStateLayerStyle = {
     fillColor: this.cfSecondary,
     weight: 1,
@@ -76,42 +76,53 @@ export class MapService {
   }
 
   // If a state is clicked emit state code - to intitiate state map.
-  addGeoJsonLayer(geoJsonData: StateGeoJson, stateCode: string): L.GeoJSON {
-    return L.geoJSON(geoJsonData, {
-      style: this.defaultStateLayerStyle,
-      // Emit state code.
-      onEachFeature: (feature, layer) => {
-        const popup = this.createToolTip(feature.properties.ST_NM);
-        layer.bindPopup(popup, { closeButton: false, offset: L.point(0, -10) });
+  addGeoJsonLayer(geoJsonData: StateGeoJson, stateCode: string): L.GeoJSON | null {
+    if (this.map) {
+      return L.geoJSON(geoJsonData, {
+        style: this.defaultStateLayerStyle,
+        onEachFeature: (feature, layer) => {
+          // Create popup and tooltip content
+          // const popup = this.createToolTip(feature.properties.ST_NM);
+          const tooltip = feature.properties.ST_NM;
 
-        let hoverTimeout: ReturnType<typeof setTimeout>;
+          // Bind popup (only if sate map is not selected)
+          if (!stateCode) {
+            // layer.bindPopup(popup, {
+            //   closeButton: false,
+            //   offset: L.point(0, -10),
+            // });
 
-        layer.on({
-          click: () => {
-            if (!stateCode) this.stateCodeClickedSubject.next(feature.properties.ST_CODE);
-          },
+            layer.bindTooltip(tooltip, {
+              direction: 'top',
+              offset: L.point(0, -10),
+              sticky: true,
+              opacity: 0.9,
+            });
+          }
 
-          mouseover: () => {
-            if (layer instanceof L.Path && !stateCode) {
-              layer.setStyle({ fillColor: this.cfPrimary });
-            }
+          layer.on({
+            click: () => {
+              if (!stateCode) {
+                this.stateCodeClickedSubject.next(feature.properties.ST_CODE);
+                layer.openPopup(); // Only open popup on click
+              }
+            },
 
-            hoverTimeout = setTimeout(() => {
-              layer.openPopup();
-            }, 300);
-          },
+            mouseover: () => {
+              if (layer instanceof L.Path && !stateCode) {
+                layer.setStyle({ fillColor: this.cfPrimary });
+              }
+            },
 
-          mouseout: () => {
-            if (layer instanceof L.Path && !stateCode) {
-              layer.setStyle({ fillColor: this.defaultStateLayerStyle.fillColor });
-            }
-
-            clearTimeout(hoverTimeout);
-            layer.closePopup();
-          },
-        });
-      },
-    }).addTo(this.map);
+            mouseout: () => {
+              if (layer instanceof L.Path && !stateCode) {
+                layer.setStyle({ fillColor: this.defaultStateLayerStyle.fillColor });
+              }
+            },
+          });
+        },
+      }).addTo(this.map);
+    } else return null;
   }
 
   // Center the map on the selected state and increase the zoom level.
@@ -128,11 +139,13 @@ export class MapService {
     }
 
     setTimeout(() => {
-      this.map.flyToBounds(layer.getBounds(), {
-        padding: padding,
-        maxZoom: this.map.getZoom() + maxZoomOffset,
-        duration: duration,
-      });
+      if (this.map) {
+        this.map.flyToBounds(layer.getBounds(), {
+          padding: padding,
+          maxZoom: this.map.getZoom() + maxZoomOffset,
+          duration: duration,
+        });
+      }
     }, 400);
   }
 
@@ -180,6 +193,25 @@ export class MapService {
     this.cityMarkersGroup.addTo(this.map);
   }
 
+  // If ULB is selected add location icon.
+  updateSelectedULBMarker(ulbId: string): void {
+    if (!this.map || !this.cityMarkersGroup) return;
+
+    let selectedMarker: L.Marker | null = null;
+
+    this.cityMarkersGroup.eachLayer((layer: L.Layer) => {
+      if (layer instanceof L.Marker && (layer as L.Marker).ulbData?._id === ulbId) {
+        selectedMarker = layer as L.Marker;
+      }
+    });
+
+    if (selectedMarker) {
+      this.handleMarkerClick(selectedMarker);
+    } else {
+      console.warn(`ULB with ID ${ulbId} not found in current marker group.`);
+    }
+  }
+
   addMarker(lat: number, lng: number, ulb: ULBDataPoint): Marker {
     const marker = L.marker([lat, lng], {
       icon: this.blueIcon,
@@ -225,8 +257,9 @@ export class MapService {
 
   destroyMap(): void {
     if (this.map) {
+      this.map.remove();
       this.map?.off();
-      // this.map?.remove();
+      this.map = null;
     }
   }
 }

@@ -7,7 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
 import {
   BondIssuances,
-  LastModifiedAt,
+  ExploreSectionResponse,
   States,
 } from '../../pages/home/dashboard-map-section/interfaces';
 import { IBasicLedgerData } from '../models/basicLedgerData.interface';
@@ -21,6 +21,7 @@ import { USER_TYPE } from '../models/user/userType';
 import { HttpUtility } from '../util/httpUtil';
 import { JSONUtility } from '../util/jsonUtil';
 import { environment } from './../../../environments/environment';
+import { UtilityService } from './utility.service';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
@@ -54,6 +55,7 @@ export class CommonService {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private snackbar: MatSnackBar,
+    private _uitlity: UtilityService,
   ) {}
 
   updateSearchItem(searchItem: any) {
@@ -78,21 +80,21 @@ export class CommonService {
     return this.http.get<{ data: string[] }>(`${environment.api.url}dynamic-financial-year`);
   }
 
-  fetchLastUpdatedDate(
-    stateCode: string = '',
-    ulbId: string = '',
-    year: string = '',
-  ): Observable<LastModifiedAt> {
-    let params = new HttpParams();
-
-    if (stateCode) params = params.set('state_code', stateCode);
-    if (ulbId) params = params.set('ulb_id', ulbId);
-    if (year) params = params.set('year', year);
-
-    return this.http.get<LastModifiedAt>(`${environment.api.url}common/get-last-modified-date`, {
-      params,
-    });
-  }
+  // fetchLastUpdatedDate(
+  //   stateCode: string = '',
+  //   ulbId: string = '',
+  //   year: string = '',
+  // ): Observable<LastModifiedAt> {
+  //   let params = new HttpParams();
+  //
+  //   if (stateCode) params = params.set('state_code', stateCode);
+  //   if (ulbId) params = params.set('ulb_id', ulbId);
+  //   if (year) params = params.set('year', year);
+  //
+  //   return this.http.get<LastModifiedAt>(`${environment.api.url}common/get-last-modified-date`, {
+  //     params,
+  //   });
+  // }
   /**
    * @description Sort the Financial Years only.
    *
@@ -794,5 +796,30 @@ export class CommonService {
     return this.http.get(`${environment.api.url}${endPoints}`, {
       params: queryParam,
     });
+  }
+
+  // Based on Ulb id return population, area, pop density, wards, yrs of data, UA
+  public getCityData(ulbId: string = ''): Observable<ExploreSectionResponse> {
+    if (!ulbId) this._uitlity.swalPopup('Error', 'ULB Id is mandatory!', 'error');
+    const params = { ulbId };
+    return this.http.get<ExploreSectionResponse>(
+      `${environment.api.url}dashboard/city/city-details`,
+      { params },
+    );
+  }
+
+  // National/ State data.
+  public getExploreSectionData(
+    stateCode: string = '',
+    stateId: string = '',
+  ): Observable<ExploreSectionResponse> {
+    let params = new HttpParams();
+    if (stateCode) params = params.set('stateCode', stateCode);
+    if (stateId) params = params.set('stateId', stateId);
+
+    return this.http.get<ExploreSectionResponse>(
+      `${environment.api.url}dashboard/home-page/get-Data`,
+      { params },
+    );
   }
 }
