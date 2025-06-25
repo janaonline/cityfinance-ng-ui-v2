@@ -54,17 +54,13 @@
         (click)="download($event)"><i class="bi bi-download"></i></button>
         } -->
         <!-- @if (currentUserRole == 'XVIFC') { -->
-        <button id="button-split" type="button" dropdownToggle class="primary-btn-2" aria-controls="dropdown-split">
+        <button type="button" class="btn btn-outline-cfPrimary py-2" [matMenuTriggerFor]="downloadMenu">
           <i class="bi bi-download"></i>
         </button>
-        <ul id="dropdown-split" *dropdownMenu class="dropdown-menu mt-1" role="menu" aria-labelledby="button-split">
-          <li role="menuitem">
-            <button class="dropdown-item" (click)="download($event)">Progress Report</button>
-          </li>
-          <li role="menuitem">
-            <button class="dropdown-item" (click)="downloadDump($event)">Data Dump</button>
-          </li>
-        </ul>
+        <mat-menu #downloadMenu="matMenu">
+          <button mat-menu-item (click)="download($event)">Progress Report</button>
+          <button mat-menu-item (click)="downloadDump($event)">Data Dump</button>
+        </mat-menu>
         <!-- } -->
       </div>
       @if (isLoader1) { <div class="example-loading-shade">

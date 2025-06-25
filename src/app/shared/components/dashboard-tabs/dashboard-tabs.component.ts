@@ -12,7 +12,6 @@ import {
 // import { NewCityCreditRatingComponent } from "./new-city-credit-rating/new-city-credit-rating.component";
 // import { StateFilterDataComponent } from "../state-filter-data/state-filter-data.component";
 // import { SlbChartsComponent } from "../slb-charts/slb-charts.component";
-// import { ButtonsModule } from 'ngx-bootstrap/buttons';
 import { FilterDataComponent } from "../filter-data/filter-data.component";
 
 
