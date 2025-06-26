@@ -36,7 +36,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   menus: any = [
     {
       name: `<img src="./assets/images/city-finance-ranking.png"/>`,
-      class: '',
+      class: 'cfr-img-logo',
       href: `${this.prefixUrl}/cfr/home`,
     },
     {
