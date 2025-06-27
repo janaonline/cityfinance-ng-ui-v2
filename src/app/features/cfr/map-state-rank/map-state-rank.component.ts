@@ -1,10 +1,13 @@
-import { AfterViewInit, Component, HostListener, Input, OnDestroy } from '@angular/core';
-import * as L from 'leaflet';
+import { AfterViewInit, Component, HostListener, Inject, Input, OnDestroy, PLATFORM_ID } from '@angular/core';
+// import * as L from 'leaflet';
 import { forkJoin, Subscription } from 'rxjs';
 import { GeographicalService } from '../../../core/services/geographical/geographical.service';
 import { IStateLayerStyle } from '../../../core/util/map/models/mapCreationConfig';
 import { FiscalRankingService } from '../services/fiscal-ranking.service';
-import { MapUtil } from '../../../core/util/map/mapUtil';
+// import { MapUtil } from '../../../core/util/map/mapUtil';
+import { isPlatformBrowser } from '@angular/common';
+
+// let L;
 
 export interface ColorDetails {
   color: string;
@@ -20,10 +23,10 @@ export interface Marker {
 }
 
 @Component({
-    selector: 'app-map-state-rank',
-    imports: [],
-    templateUrl: './map-state-rank.component.html',
-    styleUrl: './map-state-rank.component.scss'
+  selector: 'app-map-state-rank',
+  imports: [],
+  templateUrl: './map-state-rank.component.html',
+  styleUrl: './map-state-rank.component.scss'
 })
 export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   @Input() markers: Marker[] = [];
@@ -47,11 +50,11 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
     color: string;
     text: string;
   }[] = [
-    { color: '#0B8CC3', text: 'High Participation' }, // (>75% of ULBs participated from state)
-    { color: '#52b788', text: 'Low Participation' }, // (<75% of ULBs participated from state)
-    { color: '#d69f7e', text: 'Hilly/ North Eastern State' },
-    { color: '#E5E5E5', text: 'Not Participated' },
-  ];
+      { color: '#0B8CC3', text: 'High Participation' }, // (>75% of ULBs participated from state)
+      { color: '#52b788', text: 'Low Participation' }, // (<75% of ULBs participated from state)
+      { color: '#d69f7e', text: 'Hilly/ North Eastern State' },
+      { color: '#E5E5E5', text: 'Not Participated' },
+    ];
   // colorDetails: ColorDetails[] = [
   //   { color: '#06668F', text: '76%-100%', min: 75.51, max: 100 },
   //   { color: '#0B8CC3', text: '51%-75%', min: 50.51, max: 75.5 },
@@ -60,23 +63,28 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   //   { color: '#E5E5E5', text: '0%', min: 0, max: 0 },
   // ];
   label: any = '% of Participated';
+  L: any;
 
   constructor(
     protected _geoService: GeographicalService,
     private fiscalRankingService: FiscalRankingService,
-  ) {}
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) { }
 
   // Initialize the map after view is ready
   ngAfterViewInit(): void {
-    this.initMap();
-    this.createNationalMapJson();
-    this.createLegends();
-    this.addMarkers();
-    this.adjustZoom();
+    if (isPlatformBrowser(this.platformId)) {
+      this.initMap();
+      this.createNationalMapJson();
+      this.createLegends();
+      this.addMarkers();
+      this.adjustZoom();
+    }
     // console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
   }
 
-  private initMap(): void {
+  private async initMap() {
+    this.L = await import('leaflet');
     const options = {
       scrollWheelZoom: false,
       fadeAnimation: true,
@@ -91,7 +99,7 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
       maxZoom: 4.2, // Prevent zooming in beyond level x
     };
 
-    this.map = L.map('map', options).setView([22, 85], 0.1);
+    this.map = this.L.map('map', options).setView([22, 85], 0.1);
     this.map.touchZoom.disable();
     this.map.doubleClickZoom.disable();
     this.map.scrollWheelZoom.disable();
@@ -113,7 +121,7 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
       // console.log('this.StatesJSONForMapCreation', this.StatesJSONForMapCreation);
 
       // Add GeoJSON data to the map
-      const layers = L.geoJSON(this.StatesJSONForMapCreation, {
+      const layers = this.L.geoJSON(this.StatesJSONForMapCreation, {
         style: this.getStateStyle.bind(this, colorCoding),
         // style: this.defaultStateLayerStyle,
         onEachFeature: this.onEachFeature.bind(this, colorCoding),
@@ -140,7 +148,7 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
 
       // Add a popup on hover (mouseover)
       layer.on('mouseover', (event) => {
-        const popup = L.popup()
+        const popup = this.L.popup()
           .setLatLng(event.latlng) // Use the latitude and longitude of the event
           .setContent(popupContent)
           .openOn(this.map); // Open the popup on the map
@@ -154,13 +162,13 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   }
 
   createLegends() {
-    const legend = new L.Control({ position: 'bottomleft' });
+    const legend = new this.L.Control({ position: 'bottomleft' });
     const labels: any[] = [
       // `<span style="width: 100%; display: block; font-size: 12px" class="text-center">${this.label}</span>`,
     ];
     const colorDetails = this.colorDetails;
-    legend.onAdd = (map) => {
-      const div = L.DomUtil.create('div', 'map-legend');
+    legend.onAdd = (map: any) => {
+      const div = this.L.DomUtil.create('div', 'map-legend');
       div.id = 'legendContainer';
       // div.style.width = "100%";
       colorDetails?.forEach((value) => {
@@ -204,8 +212,8 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   addMarkers() {
     // console.log("from map maper: ", this.markers)
     this.markers.forEach((marker) => {
-      L.marker([marker.lat, marker.lng], {
-        icon: new L.Icon({
+      this.L.marker([marker.lat, marker.lng], {
+        icon: new this.L.Icon({
           // iconUrl: 'assets/images/maps/map-marker.png',
           iconUrl: 'assets/images/maps/location_on.svg',
           iconSize: [20, 20],
@@ -214,8 +222,8 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
       })
         .addTo(this.map)
         // .bindPopup(`${marker.ulbName}`)
-        .on('mouseover', (event) => {
-          L.popup()
+        .on('mouseover', (event: any) => {
+          this.L.popup()
             .setLatLng(event.latlng) // Use the latitude and longitude of the event
             .setContent(`${marker.ulbName}`)
             .openOn(this.map); // Open the popup on the map
@@ -243,8 +251,10 @@ export class MapStateRankComponent implements AfterViewInit, OnDestroy {
   }
   @HostListener('window:resize', [])
   onResize(): void {
-    // Adjust zoom whenever the window is resized
-    this.adjustZoom();
+    if (isPlatformBrowser(this.platformId)) {
+      // Adjust zoom whenever the window is resized
+      this.adjustZoom();
+    }
   }
 
   ngOnDestroy(): void {

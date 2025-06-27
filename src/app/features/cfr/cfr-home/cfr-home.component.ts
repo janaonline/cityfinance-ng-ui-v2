@@ -10,13 +10,13 @@ import { GuidelinesBrochureVideoComponent } from './guidelines-brochure-video/gu
 import { GuidelinesPopupComponent } from './guidelines-popup/guidelines-popup.component';
 import { HeaderComponent } from './header/header.component';
 import { RankingCategoriesComponent } from './ranking-categories/ranking-categories.component';
-// import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
+import { UlbsInIndiaComponent } from './ulbs-in-india/ulbs-in-india.component';
 import { VideosPopupComponent } from './videos-popup/videos-popup.component';
 
 @Component({
   selector: 'app-cfr-home',
   imports: [HeaderComponent, ScrollToTopComponent, FooterComponent, RankingCategoriesComponent, AssessmentParametersComponent,
-    // UlbsInIndiaComponent,
+    UlbsInIndiaComponent,
     GuidelinesBrochureVideoComponent, PreLoaderComponent],
   templateUrl: './cfr-home.component.html',
   styleUrl: './cfr-home.component.scss'

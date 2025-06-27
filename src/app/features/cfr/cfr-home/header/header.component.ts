@@ -16,10 +16,10 @@ interface Card {
 }
 
 @Component({
-    selector: 'app-header',
-    templateUrl: './header.component.html',
-    styleUrls: ['./header.component.scss'],
-    imports: [CommonModule, MaterialModule, RouterModule, MatDialogModule]
+  selector: 'app-header',
+  templateUrl: './header.component.html',
+  styleUrls: ['./header.component.scss'],
+  imports: [CommonModule, MaterialModule, RouterModule, MatDialogModule]
 })
 export class HeaderComponent implements OnInit {
   @Input() rankedUlbCount: number = 0;
@@ -60,8 +60,8 @@ export class HeaderComponent implements OnInit {
   }
 
   public scrollOnePageDown(): void {
-    const viewportHeight = window.innerHeight;
-    window.scrollBy(0, viewportHeight - 150);
+    // const viewportHeight = window.innerHeight;
+    // window.scrollBy(0, viewportHeight - 150);
   }
 
   public openUserInfoDialog(): void {
