@@ -6,10 +6,10 @@ import { DashboardMapSectionComponent } from './dashboard-map-section/dashboard-
 import { FormControl } from '@angular/forms';
 import { CommonService } from '../../core/services/common.service';
 import { ResourcesDashboardService } from './resources-dashboard.service';
-import { SlickCarouselModule } from 'ngx-slick-carousel';
+// import { SlickCarouselModule } from 'ngx-slick-carousel';
 import { MaterialModule } from '../../material.module';
 import { SearchBarComponent } from './search-bar/search-bar.component';
-import { SpotlightComponent } from './spotlight/spotlight.component';
+// import { SpotlightComponent } from './spotlight/spotlight.component';
 import { DiscoverSectionComponent } from './discover-section/discover-section.component';
 import { SponsersPartnersComponent } from './sponsers-partners/sponsers-partners.component';
 declare let $: any;
@@ -21,10 +21,10 @@ declare let $: any;
     RouterModule,
     DashboardMapSectionComponent,
     // CountUpDirective,
-    SlickCarouselModule,
+    // SlickCarouselModule,
     MaterialModule,
     SearchBarComponent,
-    SpotlightComponent,
+    // SpotlightComponent,
     DiscoverSectionComponent,
     SponsersPartnersComponent,
   ],
