@@ -6,13 +6,13 @@
   <div class="col-md-12 col-lg-6 d-flex flex-column">
     <div class="position-relative" style="min-height: 500px">
       @if (showMap) {
-        <!-- <app-map
+        <app-map
           #map
           [stateCode]="selectedStateCodeSignal()"
           (stateCodeChange)="selectedStateCodeChange($event)"
           [ulbId]="selectedCityIdSignal()"
           (ulbIdChange)="selectedCityIdChange($event)"
-        ></app-map> -->
+        ></app-map>
       }
     </div>
     <!-- {{ selectedStateCodeSignal() }} {{ selectedStateNameSignal() }} {{ selectedCityIdSignal() }} -->

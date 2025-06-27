@@ -1,15 +1,18 @@
+import { isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   Component,
   EventEmitter,
+  Inject,
   Input,
   OnChanges,
   OnDestroy,
   Output,
+  PLATFORM_ID,
   SimpleChanges,
 } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import * as L from 'leaflet';
+// import * as L from 'leaflet';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 import { allUlbsData } from '../../../../assets/jsonFile/ulbsListLocalStorage';
 import { UserUtility } from '../../../core/util/user/user';
@@ -89,15 +92,20 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   public isMapLoading = true;
   private mapInitialized = false;
 
-  constructor(private mapService: MapService) {}
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: object,
+    private mapService: MapService
+  ) { }
 
   // Set map zoom based on screen width.
   private getZoomLevel(): number {
-    const screenWidth = window.innerWidth;
+    if (isPlatformBrowser(this.platformId)) {
+      const screenWidth = window.innerWidth;
 
-    if (screenWidth < 350) return 3.5;
-    else if (screenWidth < 600) return 4.0;
-    else return this.DEFAULT_ZOOM_LEVEL;
+      if (screenWidth < 350) return 3.5;
+      else if (screenWidth < 600) return 4.0;
+    }
+    return this.DEFAULT_ZOOM_LEVEL;
   }
 
   // Update map zoom based on screen resize.
@@ -131,6 +139,8 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   }
 
   ngAfterViewInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.mapService.destroyMap();
     const container = document.getElementById('map-container');
 
@@ -212,6 +222,8 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   }
 
   public resetMap(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.stateCode = '';
     this.stateLayer?.clearLayers();
     this.stateLayer = null;

@@ -19,6 +19,7 @@ import {
   States,
   Ulbs,
 } from './interfaces';
+import { MapComponent } from "../../../shared/components/map/map.component";
 
 @Component({
   selector: 'app-dashboard-map-section',
@@ -29,12 +30,13 @@ import {
     GridViewComponent,
     StateSearchComponent,
     CitySearchComponent,
+    MapComponent
   ],
   templateUrl: './dashboard-map-section.component.html',
   styleUrl: './dashboard-map-section.component.scss',
 })
 export class DashboardMapSectionComponent implements OnDestroy, OnInit {
-  // @ViewChild('map') mapComponent!: MapComponent;
+  @ViewChild('map') mapComponent!: MapComponent;
 
   myForm!: FormGroup;
   noDataFound: boolean = true;
@@ -270,6 +272,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   public onStateSelected = (stateObj: States) => {
     // console.log('State obj sent by child to parent', stateObj);
     this.setStateData(stateObj.code, stateObj._id, stateObj.name);
+    this.setUlbData();
   };
 
   // Helper: Update signal values with latest state data.
@@ -314,7 +317,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   // Reset map to india.
   public resetMap(): void {
-    // this.mapComponent?.resetMap();
+    this.mapComponent?.resetMap();
     this.setStateData();
     this.setUlbData();
   }

@@ -59,7 +59,7 @@ export class CityComponent implements OnInit {
     private router: Router,
     private _commonService: CommonService,
     private _dashboardService: DashboardService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.activatedRoute.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -113,7 +113,7 @@ export class CityComponent implements OnInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          console.log(res);
+          // console.log(res);
           this.exploreData = res.gridDetails;
           this.popCat = res.popCat;
           this.lastModifiedAt = res.lastModifiedAt;
@@ -139,7 +139,7 @@ export class CityComponent implements OnInit {
     this.isLoading2 = true;
     this._dashboardService.getMoneyInfo(this.yearSignal(), '', this.ulbId).subscribe({
       next: (res) => {
-        console.log(res);
+        // console.log(res);
         this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
         this.isActive = res.isActive;
         this.moneyInfoSignal.set(res.result);
