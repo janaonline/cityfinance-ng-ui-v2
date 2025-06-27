@@ -9,7 +9,7 @@
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 999999999999999999999999999;
+  z-index: 999;
 }
 
 a {
@@ -103,7 +103,7 @@ a {
     padding-block: 0.25rem;
   }
 
-  nav > div {
+  nav>div {
     padding-block: 0.35rem;
   }
 }
