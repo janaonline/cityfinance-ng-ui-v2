@@ -1,8 +1,11 @@
+import { isPlatformBrowser } from '@angular/common';
 import {
     Directive,
     ElementRef,
+    Inject,
     Input,
     OnChanges,
+    PLATFORM_ID,
     SimpleChanges,
     inject,
 } from '@angular/core';
@@ -23,6 +26,8 @@ export class CountUpDirective implements OnChanges {
     private el = inject(ElementRef);
     private startTime: number | null = null;
 
+    constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
+
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['start'] || changes['end'] || changes['duration']) {
             this.startAnimation();
@@ -34,6 +39,7 @@ export class CountUpDirective implements OnChanges {
     }
 
     private startAnimation() {
+        if (!isPlatformBrowser(this.platformId)) return;
         const totalChange = this.end - this.start;
         const isSmartEasing =
             this.useEasing && Math.abs(totalChange) > this.smartEasingThreshold;

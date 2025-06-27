@@ -9,12 +9,14 @@ import { inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { catchError, filter, Observable, Subject, throwError } from 'rxjs';
 import { Login_Logout } from '../util/logout.util';
+import { LocalStorageService } from '../services/local-storage.service';
 
 export const customHttpInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn
 ): Observable<HttpEvent<any>> => {
   const router = inject(Router);
+  const localStorageService = inject(LocalStorageService);
   const routerNavigationSuccess = new Subject<any>();
 
   initializeRequestCancelProcess(router, routerNavigationSuccess);
@@ -23,17 +25,18 @@ export const customHttpInterceptor: HttpInterceptorFn = (
     return next(req);
   }
 
-  const id_token = localStorage.getItem('id_token');
+  // const id_token = localStorage.getItem('id_token');
+  const id_token = localStorageService.getItem('id_token');
   const token = id_token ? JSON.parse(id_token) : '';
-  const sessionID = sessionStorage.getItem('sessionID');
+  // const sessionID = sessionStorage.getItem('sessionID');
 
   let headers = req.headers;
   if (!req.headers.has('Accept')) {
     headers = headers.set('Content-Type', 'application/json');
   }
-  if (sessionID) {
-    headers = headers.set('sessionId', sessionID);
-  }
+  // if (sessionID) {
+  //   headers = headers.set('sessionId', sessionID);
+  // }
   if (token) {
     headers = headers.set('x-access-token', token);
   }

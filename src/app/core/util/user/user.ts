@@ -1,7 +1,8 @@
-import { OnDestroy, Injectable } from '@angular/core';
+import { OnDestroy, Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { USER_TYPE } from '../../models/user/userType';
 import { IUserLoggedInDetails } from '../../models/login/userLoggedInDetails';
+import { LocalStorageService } from '../../services/local-storage.service';
 
 @Injectable()
 export class UserUtility implements OnDestroy {
@@ -13,12 +14,16 @@ export class UserUtility implements OnDestroy {
     return UserUtility.loggedInDetails;
   }
 
+  localStorageService = inject(LocalStorageService);
+  userData: IUserLoggedInDetails = {} as IUserLoggedInDetails;
+
   constructor() {
-    let data = localStorage.getItem('userData') as any;
-    data = (data ? JSON.parse(data) : null) as IUserLoggedInDetails;
-    if (data) {
-    }
-    UserUtility.loggedInDetails.next(data);
+    // let data = localStorage.getItem('userData') as any;
+    this.userData = JSON.parse(this.localStorageService.getItem('userData') || '{}') as IUserLoggedInDetails;
+    // userData = (userData ? JSON.parse(userData) : null) as IUserLoggedInDetails;
+    // if (data) {
+    // }
+    UserUtility.loggedInDetails.next(this.userData);
   }
   ngOnDestroy(): void {
     UserUtility.loggedInDetails.complete();
@@ -36,23 +41,27 @@ export class UserUtility implements OnDestroy {
     const currentValue = (UserUtility.loggedInDetails.getValue() || {}) as IUserLoggedInDetails;
     const newValue = { ...currentValue, ...newValues };
     UserUtility.loggedInDetails.next(newValue);
-    localStorage.setItem('userData', JSON.stringify(newValue));
+    // localStorage.setItem('userData', JSON.stringify(newValue));
+    this.localStorageService.setItem('userData', JSON.stringify(newValue));
   }
 
   getLoggedInUserDetails() {
     try {
-      return JSON.parse(localStorage.getItem('userData') || '{}');
+      // return this.userData as IUserLoggedInDetails;
+      return JSON.parse(this.localStorageService.getItem('userData') || '{}');
+      // return JSON.parse(localStorage.getItem('userData') || '{}');
     } catch (error) {
       return null;
     }
   }
 
   getUserType(): USER_TYPE | null {
-    let userData = localStorage.getItem('userData') as any;
-    if (!userData) {
-      return null;
-    }
-    userData = JSON.parse(userData) as IUserLoggedInDetails;
+    // let userData = localStorage.getItem('userData') as any;
+    // if (!userData) {
+    //   return null;
+    // }
+    // userData = JSON.parse(userData) as IUserLoggedInDetails;
+    const userData = this.userData;
 
     return userData['role'] ? userData['role'] : null;
   }

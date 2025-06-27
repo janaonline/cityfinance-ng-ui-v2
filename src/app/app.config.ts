@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
 // import { CustomHttpInterceptor } from './core/security/custom-http.interceptor';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 // import { GlobalErrorHandler } from './core/services/global-error-handler.service';
 import { AuthGuard } from './core/security/auth-guard.service';
 import { AuthService } from './core/services/auth.service';
@@ -22,7 +22,8 @@ export const appConfig: ApplicationConfig = {
     // importProvidersFrom(HttpClientModule),
     // CustomHttpInterceptor,
     provideHttpClient(
-      withInterceptors([customHttpInterceptor])
+      withInterceptors([customHttpInterceptor]),
+      withFetch()
     ),
     // {
     //   provide: HTTP_INTERCEPTORS,

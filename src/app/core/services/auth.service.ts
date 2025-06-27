@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { LocalStorageService } from './local-storage.service';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,9 @@ export class AuthService {
   // public expirationDate = this.helper.getTokenExpirationDate(myRawToken);
   // public isExpired = this.helper.isTokenExpired(myRawToken);
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient,
+    private localStorageService: LocalStorageService,
+  ) { }
 
   loginLogoutCheck = new Subject<any>();
   authenticateUser(user: any) {
@@ -23,7 +26,7 @@ export class AuthService {
   getLastUpdated(params?: any) {
     return this.http.get(
       environment.api.url +
-        `ledger/lastUpdated?ulb=${params?.ulb ?? ''}&state=${params?.state ?? ''}`,
+      `ledger/lastUpdated?ulb=${params?.ulb ?? ''}&state=${params?.state ?? ''}`,
     );
   }
 
@@ -45,7 +48,8 @@ export class AuthService {
   }
 
   getToken(): string {
-    return localStorage.getItem('id_token') || '';
+    // return localStorage.getItem('id_token') || '';
+    return this.localStorageService.getItem('id_token') || '';
   }
 
   /**
