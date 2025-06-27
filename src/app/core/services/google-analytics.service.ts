@@ -1,9 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserUtility } from '../util/user/user';
 import { GtmService } from './gtm.service';
+import { isPlatformBrowser } from '@angular/common';
 
 declare let gtag: (command: string, eventName: string | Date, params?: Record<string, any>) => void;
 
@@ -14,9 +15,14 @@ export class GoogleAnalyticsService {
 
   loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
 
-  constructor(private router: Router, private gtmService: GtmService) { }
+  constructor(private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object, private gtmService: GtmService) { }
 
   init() {
+    // Ensure this runs only in the browser
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     this.appendScript();
     this.onPageView();
   }

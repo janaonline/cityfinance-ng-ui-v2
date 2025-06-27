@@ -9,14 +9,14 @@ import { HeaderComponent } from './shared/components/header/header.component';
 import { GtmService } from './core/services/gtm.service';
 
 @Component({
-    selector: 'app-root',
-    imports: [
+  selector: 'app-root',
+  imports: [
     RouterOutlet,
     FooterComponent,
     HeaderComponent
-],
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.scss'
+  ],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
   title = 'Cityfinance';
@@ -59,9 +59,9 @@ export class AppComponent implements OnInit {
   getQueryParams(): void {
     this.route.queryParams.subscribe((params) => {
       // console.log('params', params);
-      if (params['token']) {
-        localStorage.setItem('id_token', JSON.stringify(params['token']));
-      }
+      // if (params['token']) {
+      //   localStorage.setItem('id_token', JSON.stringify(params['token']));
+      // }
       if (params['ulb']) {
         // console.log('params---',params);
 
