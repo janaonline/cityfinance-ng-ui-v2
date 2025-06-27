@@ -5,7 +5,7 @@ import { Observable, of, Subject, takeUntil } from 'rxjs';
 import { AssetsService } from '../../../core/services/assets/assets.service';
 import { CommonService } from '../../../core/services/common.service';
 import { MaterialModule } from '../../../material.module';
-import { MapComponent } from '../../../shared/components/map/map.component';
+// import { MapComponent } from '../../../shared/components/map/map.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
 import { GridViewComponent } from '../../../shared/components/shared-ui/grid-view.component';
@@ -24,7 +24,7 @@ import {
   selector: 'app-dashboard-map-section',
   imports: [
     MaterialModule,
-    MapComponent,
+    // MapComponent,
     PreLoaderComponent,
     GridViewComponent,
     StateSearchComponent,
@@ -34,7 +34,7 @@ import {
   styleUrl: './dashboard-map-section.component.scss',
 })
 export class DashboardMapSectionComponent implements OnDestroy, OnInit {
-  @ViewChild('map') mapComponent!: MapComponent;
+  // @ViewChild('map') mapComponent!: MapComponent;
 
   myForm!: FormGroup;
   noDataFound: boolean = true;
@@ -99,7 +99,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
     protected _commonService: CommonService,
     private assetService: AssetsService,
     private router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.fetchCreditRatingsData();
@@ -314,7 +314,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   // Reset map to india.
   public resetMap(): void {
-    this.mapComponent?.resetMap();
+    // this.mapComponent?.resetMap();
     this.setStateData();
     this.setUlbData();
   }

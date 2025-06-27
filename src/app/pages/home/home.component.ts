@@ -2,17 +2,15 @@ import { Component, ElementRef, HostListener, OnInit, Renderer2, ViewChild } fro
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { DashboardMapSectionComponent } from './dashboard-map-section/dashboard-map-section.component';
-// import { CountUpDirective } from '../../core/directives/count-up/count-up.directive';
 import { FormControl } from '@angular/forms';
 import { CommonService } from '../../core/services/common.service';
 import { ResourcesDashboardService } from './resources-dashboard.service';
-// import { SlickCarouselModule } from 'ngx-slick-carousel';
 import { MaterialModule } from '../../material.module';
 import { SearchBarComponent } from './search-bar/search-bar.component';
 // import { SpotlightComponent } from './spotlight/spotlight.component';
 import { DiscoverSectionComponent } from './discover-section/discover-section.component';
 import { SponsersPartnersComponent } from './sponsers-partners/sponsers-partners.component';
-declare let $: any;
+// declare let $: any;
 
 @Component({
   selector: 'app-home',
@@ -20,8 +18,6 @@ declare let $: any;
     CommonModule,
     RouterModule,
     DashboardMapSectionComponent,
-    // CountUpDirective,
-    // SlickCarouselModule,
     MaterialModule,
     SearchBarComponent,
     // SpotlightComponent,

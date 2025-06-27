@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
-import { SlickCarouselModule } from 'ngx-slick-carousel';
+// import { SlickCarouselModule } from 'ngx-slick-carousel';
 import { MaterialModule } from '../../../material.module';
 
 @Component({
   selector: 'app-spotlight',
-  imports: [SlickCarouselModule, MaterialModule],
+  imports: [
+    // SlickCarouselModule, 
+    MaterialModule],
   templateUrl: './spotlight.component.html',
   styleUrl: './spotlight.component.scss'
 })
