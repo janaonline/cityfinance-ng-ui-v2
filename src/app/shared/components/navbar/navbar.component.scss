@@ -1,135 +1,109 @@
-@import "../../../../../node_modules/bootstrap/scss/functions";
-@import "../../../../../node_modules/bootstrap/scss/variables";
-@import "../../../../../node_modules/bootstrap/scss/mixins";
-
 * {
-  font-family: "Segoe UI", Arial, sans-serif;
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
 }
 
-.btn-login {
-  background: $secondary;
-  color: $white;
-  border-color: $secondary;
-  box-shadow: 0px 2px 6px #f7c199;
-  font-size: $font-size-base * 1;
-  padding-top: $spacer * 0.625;
-  padding-bottom: $spacer * 0.625;
-  padding-left: $spacer * 1;
-  padding-right: $spacer * 1;
-  letter-spacing: 1px;
-
-  &:hover {
-    background: lighten($secondary, 10%);
-    color: $white;
-    border-color: lighten($secondary, 10%);
-  }
-
-  @include media-breakpoint-down(sm) {
-    font-size: $font-size-base * 0.625;
-    padding-top: $spacer * 0.4375;
-    padding-bottom: $spacer * 0.4375;
-    padding-left: $spacer * 0.5;
-    padding-right: $spacer * 0.5;
-  }
-}
-
-.btn-l-fc {
-  background: #ddd5d5 !important;
-  color: #000 !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-}
-
-.btn-login-icon {
-  background: var(--clr-primary);
-  color: $white;
-  border-color: var(--clr-primary);
-  box-shadow: 0px 2px 6px #f7c199;
-}
-
-.nav-item {
-  padding-top: $spacer * 0.125;
-
-  .nav-link {
-    padding-top: $spacer * 1.5;
-    padding-bottom: $spacer * 1.5;
-    border-bottom: 2px solid transparent;
-    // color: var(--clr-secondary);
-    color: #1d5290;
-    font-weight: bold;
-    font-size: $font-size-base * 1;
-
-    &:hover,
-    &.active {
-      color: var(--clr-primary);
-      border-bottom: 2px solid;
-    }
-  }
-}
-
-a.disabled {
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
-.btmBdr {
-  border-bottom: $border-width solid $gray-100;
-}
-
-.navbar-toggler[aria-expanded="true"] {
-  visibility: hidden;
-}
-
-.dropdown-toggle::after {
-  display: inline-block;
-  margin-left: 0.6em;
-  vertical-align: middle;
-  content: "";
-  border-top: 0.5em solid;
-  border-right: 0.5em solid transparent;
-  border-bottom: 0;
-  border-left: 0.5em solid transparent;
-}
-
-.navbar-brand {
-  visibility: visible;
-  opacity: 1;
-  display: inline-block;
-
-  ::ng-deep img {
-    height: 28px !important;
-  }
-}
-
-.stiky-tp {
+.sticky {
   position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   width: 100%;
-  z-index: 999;
+  z-index: 999999999999999999999999999;
 }
 
-.cityLogo {
-  margin-top: 10%;
+a {
+  text-decoration: none;
 }
 
-.navbar-nav {
-  align-items: baseline;
+.mobile-nav-ham,
+.mobile-nav-cancel {
+  display: none;
 }
 
-.navbar-expand-lg .navbar-nav .dropdown-menu {
-  border-top: none !important;
+.primary-navigation {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  align-items: center;
+
+  background: hsla(0, 0%, 100%, 1);
 }
 
-.dropdown-item {
-  padding: 0.5rem 1rem;
+@supports (backdrop-filter: blur(4rem)) {
+  .primary-navigation {
+    background: hsla(0, 0%, 100%, 0.1);
+    backdrop-filter: blur(4rem);
+  }
 }
 
-.dropdown-item:active {
-  color: $white;
-  background-color: var(--clr-secondary);
+.nav-link {
+  padding-block: 1rem;
+  border-bottom: 2px solid transparent;
+  color: var(--clr-secondary);
+  font-weight: var(--fw-bold);
+
+  &:not(.cfr-img-logo):hover,
+  &:not(.cfr-img-logo).active {
+    color: var(--clr-primary);
+    border-bottom: 2px solid var(--clr-primary);
+  }
 }
-.dropdown-menu-login.show{
-  left: auto !important;
-  right: 0 !important;
-  min-width: 14rem;
+
+.cfr-img-logo {
+  height: 2rem;
+  padding: 0;
+  display: block;
+}
+
+.mobile-nav-ham {
+  aspect-ratio: 1;
+  top: 0.5rem;
+  left: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--clr-secondary);
+}
+
+@media (max-width: 61em) {
+  .primary-navigation {
+    position: fixed;
+    z-index: 1000;
+    inset: 0 20% 0 0;
+
+    flex-direction: column;
+    align-items: start;
+    padding: min(15vh, 10rem) 2em;
+
+    transform: translateX(-100%);
+    transition: transform 350ms ease-in;
+  }
+
+  .primary-navigation-data-visible {
+    transform: translateX(0%);
+  }
+
+  .mobile-nav-ham {
+    display: block;
+  }
+
+  .mobile-nav-cancel {
+    display: block;
+    position: fixed;
+    z-index: 9999;
+    aspect-ratio: 1;
+    top: 0.5rem;
+    right: 0.5rem;
+    border: 0;
+    background: transparent;
+    color: var(--clr-secondary);
+  }
+
+  .nav-link {
+    padding-block: 0.25rem;
+  }
+
+  nav > div {
+    padding-block: 0.35rem;
+  }
 }
