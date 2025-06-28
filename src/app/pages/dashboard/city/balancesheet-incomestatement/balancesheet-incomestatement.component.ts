@@ -1,11 +1,407 @@
+import { registerLocaleData } from '@angular/common';
+import localeIn from '@angular/common/locales/en-IN';
 import { Component } from '@angular/core';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
+
+registerLocaleData(localeIn);
+const HEADERS = [
+  { key: 'code', value: 'Account Code', class: 'text-center' },
+  { key: 'lineItem', value: 'Major Group/Minor Group', class: '' },
+  { key: '202223', value: '2022-23', class: 'text-end', number: true },
+  { key: '202122', value: '2021-22', class: 'text-end', number: true },
+  { key: '202021', value: '2020-21', class: 'text-end', number: true },
+  { key: '201920', value: '2019-20', class: 'text-end', number: true },
+  { key: '201819', value: '2018-19', class: 'text-end', number: true },
+  { key: '201718', value: '2017-18', class: 'text-end', number: true },
+];
+const ELEMENTDATA = [
+  {
+    code: null,
+    lineItem: 'A.Income',
+    202223: null,
+    202122: null,
+    202021: null,
+    201920: null,
+    201819: null,
+    201718: null,
+    class: 'fw-bold',
+  },
+  {
+    code: 110,
+    lineItem: 'Tax Revenue',
+    202223: -18259654000,
+    202122: -1744485400,
+    202021: -17017214000,
+    201920: -15975330000,
+    201819: -13110641000,
+    201718: -11293299000,
+  },
+  {
+    code: 120,
+    reportType: 'summary',
+    lineItem: 'Assigned Revenues & Compensation',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 130,
+    reportType: 'summary',
+    lineItem: 'Rental Income from Municipal Properties',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 140,
+    reportType: 'summary',
+    lineItem: 'Fee & User Charges',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 150,
+    reportType: 'summary',
+    lineItem: 'Sale & Hire charges',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: '120-150',
+    reportType: 'detailed',
+    lineItem: 'Non-Tax Revenue',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 160,
+    lineItem: 'Revenue Grants, Contributions & Subsidies',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 170,
+    reportType: 'summary',
+    lineItem: 'Income from Investment',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 171,
+    reportType: 'summary',
+    lineItem: 'Interest earned',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 180,
+    reportType: 'summary',
+    lineItem: 'Other Income',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: '170-180',
+    reportType: 'detailed',
+    lineItem: 'Other Income',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 100,
+    lineItem: 'Others',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+
+  {
+    code: null,
+    lineItem: 'Total Income (A)',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+    info: 'Calculation: (110 + 120 + 130 + 140 + 150 + 160 + 170 + 171 + 180 + 100)',
+    class: 'fw-bold',
+  },
+
+  {
+    code: null,
+    lineItem: 'B.Expenditure',
+    202223: null,
+    202122: null,
+    202021: null,
+    201920: null,
+    201819: null,
+    201718: null,
+    class: 'fw-bold',
+  },
+  {
+    code: 210,
+    lineItem: 'Establishment Expenses',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 220,
+    lineItem: 'Administrative Expenses',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 230,
+    lineItem: 'Operation & Maintenance',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 240,
+    lineItem: 'Interest & Finance Charges',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 250,
+    reportType: 'summary',
+    lineItem: 'Programme Expenses',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 260,
+    lineItem: 'Revenue Grants, Contributions & Subsidies (Exp)',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 270,
+    reportType: 'summary',
+    lineItem: 'Provisions and Write Off',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 271,
+    lineItem: 'Miscellaneous Expenses',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 272,
+    reportType: 'summary',
+    lineItem: 'Depreciation on Fixed Assets',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: '250, 270-272',
+    reportType: 'detailed',
+    lineItem: 'Other Income',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+  {
+    code: 200,
+    lineItem: 'Others',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+
+  {
+    code: null,
+    lineItem: 'Total Expenditure(B)',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+    info: 'Calculation: (210 + 220 + 230 + 240 + 250 + 260 + 270 + 271 + 272 + 200)',
+    class: 'fw-bold',
+  },
+
+  {
+    code: null,
+    lineItem:
+      'Gross Surplus/(Deficit) of Income over Expenditure before Prior Period Items (C) (A-B)',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+    class: 'fw-bold',
+  },
+
+  {
+    code: 280,
+    lineItem: 'Prior Period items',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+
+  {
+    code: null,
+    lineItem:
+      'Gross Surplus/(Deficit) of Income over Expenditure after Prior Period Items item(D) (C+280)',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+    class: 'fw-bold',
+  },
+
+  {
+    code: 290,
+    lineItem: 'Transfer to Reserve Funds',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+  },
+
+  {
+    code: null,
+    lineItem: 'Net Surplus/(Deficit) carried over (E) (D+290)',
+    202223: 12345678,
+    202122: 12345678,
+    202021: 12345678,
+    201920: 12345678,
+    201819: 12345678,
+    201718: 234567789,
+    class: 'fw-bold',
+  },
+];
 
 @Component({
   selector: 'app-balancesheet-incomestatement',
-  imports: [],
+  imports: [MatTableModule, MatTooltipModule, InrFormatPipe],
   templateUrl: './balancesheet-incomestatement.component.html',
-  styleUrl: './balancesheet-incomestatement.component.scss'
+  styleUrl: './balancesheet-incomestatement.component.scss',
 })
 export class BalancesheetIncomestatementComponent {
+  headers = HEADERS;
+  displayedColumns: string[] = HEADERS.map((ele) => ele.key);
+  reportType = 'detailed';
+  dataSource = this.getTableData();
+  currencyFormat: 'cr' | 'lakh' | 'k' | 'inr' = 'inr';
+  currencyOptions = { showSymbol: false, showUnit: false };
+  calculatePerCapita: boolean = false;
+  population: number = 1234;
 
+  public changeReportType(reportType: string): void {
+    this.reportType = reportType;
+    this.dataSource = ELEMENTDATA.filter((ele) => ele.reportType !== this.reportType);
+  }
+
+  private getTableData() {
+    return ELEMENTDATA.filter((ele) => ele.reportType !== this.reportType);
+  }
+
+  public getFormattedValue(value: number): number {
+    if (!this.calculatePerCapita) return value;
+
+    return value / this.population;
+  }
+
+  // Notes:
+  // 1. When calculatePerCapita is true set currencyFormat to inr and disable the dropdown
 }
