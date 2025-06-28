@@ -1,19 +1,59 @@
-<button class="btn btn-outline-cfSecondary" (click)="changeReportType('detailed')">Detailed</button>
-<button class="btn btn-outline-cfSecondary" (click)="changeReportType('summary')">Summary</button>
-<p>Report type: {{ reportType }}</p>
+<!-- {{ selectedBtn }}
+{{ reportForm.get('reportType')?.value }}
+{{ reportForm.get('valueType')?.value }}
+{{ reportForm.get('currencyFormat')?.value }} -->
+<section class="my-4">
+  <!-- Buttons -->
+  <div class="d-flex gap-2 my-4 flex-wrap">
+    @for (btn of buttons; track $index) {
+      <button
+        role="button"
+        class="btn rounded-5 me-2"
+        [ngClass]="selectedBtn === btn.key ? 'btn-cfPrimary' : 'btn-outline-cfPrimary'"
+        (click)="selectedBtn = btn.key"
+      >
+        {{ btn.label }}
+      </button>
+    }
+  </div>
 
-<button class="btn btn-outline-cfSecondary" (click)="currencyFormat = 'inr'">inr</button>
-<button class="btn btn-outline-cfSecondary" (click)="currencyFormat = 'k'">inr thousand</button>
-<button class="btn btn-outline-cfSecondary" (click)="currencyFormat = 'lakh'">inr lakh</button>
-<button class="btn btn-outline-cfSecondary" (click)="currencyFormat = 'cr'">inr cr</button>
-<p>curreny type: {{ currencyFormat }}</p>
+  <!-- Filter -->
+  <form
+    [formGroup]="reportForm"
+    class="border rounded bg-light p-4 d-flex gap-2 flex-wrap justify-content-md-around align-items-center"
+  >
+    <!-- Report Type & Value Format -->
+    @for (group of radioOptions; track $index) {
+      <div>
+        <p class="fw-bold mb-2">{{ group.title }}</p>
+        <div>
+          @for (option of group.options; track option.key) {
+            <input
+              type="radio"
+              [id]="option.key"
+              [value]="option.key"
+              [formControlName]="group.controlName"
+              class="me-1"
+            />
+            <label [for]="option.key" class="me-3">{{ option.label }}</label>
+          }
+        </div>
+      </div>
+    }
 
-<button class="btn btn-outline-cfSecondary" (click)="calculatePerCapita = !calculatePerCapita">
-  calculate per capita
-</button>
-<p>percapita: {{ calculatePerCapita }}</p>
+    <!-- Currency Format Dropdown -->
+    <div>
+      <label for="currencyFormat" class="d-block fw-bold mb-2">Display Numbers In</label>
+      <select id="currencyFormat" formControlName="currencyFormat" class="form-select w-100">
+        @for (format of currencyFormats; track format.key) {
+          <option [value]="format.key">{{ format.label }}</option>
+        }
+      </select>
+    </div>
+  </form>
+</section>
 
-<table mat-table [dataSource]="dataSource" class="mat-elevation-z8 border rounded">
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z8 border rounded my-4">
   @for (item of headers; track $index) {
     <ng-container [matColumnDef]="item.key">
       <th mat-header-cell *matHeaderCellDef class="text-center fw-bold bg-cfSecondary text-white">

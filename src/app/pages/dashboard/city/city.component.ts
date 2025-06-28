@@ -15,9 +15,9 @@ import { ExploresectionTable, States, Ulbs } from '../../home/dashboard-map-sect
 import { DashboardService } from '../dashboard.service';
 import { InfoCardsComponent } from '../shared/components/info-cards.component';
 import { BalancesheetIncomestatementComponent } from './balancesheet-incomestatement/balancesheet-incomestatement.component';
-import { BorrowingCreditRatingComponent } from "./borrowing-credit-rating/borrowing-credit-rating.component";
-import { FinancialIndicatorComponent } from "./financial-indicator/financial-indicator.component";
-import { SlbComponent } from "./slb/slb.component";
+import { BorrowingCreditRatingComponent } from './borrowing-credit-rating/borrowing-credit-rating.component';
+import { FinancialIndicatorComponent } from './financial-indicator/financial-indicator.component';
+import { SlbComponent } from './slb/slb.component';
 Chart.register(...registerables);
 @Component({
   selector: 'app-city',
@@ -35,7 +35,7 @@ Chart.register(...registerables);
     BorrowingCreditRatingComponent,
     SlbComponent,
     BalancesheetIncomestatementComponent,
-    FinancialIndicatorComponent
+    FinancialIndicatorComponent,
   ],
   templateUrl: './city.component.html',
   styleUrl: './city.component.scss',
@@ -64,6 +64,8 @@ export class CityComponent implements OnInit {
   isLoading1: boolean = true;
   isLoading2: boolean = true;
 
+  loadedTabs: boolean[] = [true, false, false, false];
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -71,7 +73,7 @@ export class CityComponent implements OnInit {
     private router: Router,
     private _commonService: CommonService,
     private _dashboardService: DashboardService,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.activatedRoute.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -183,6 +185,11 @@ export class CityComponent implements OnInit {
       },
       error: (error) => console.error('Failed to fetch years list: getDistinctYearsList()', error),
     });
+  }
+
+  // On tab changes call the chid components.
+  public onTabChange(idx: number): void {
+    this.loadedTabs[idx] = true;
   }
 
   // // Chart.js Sample.
@@ -349,4 +356,3 @@ export class CityComponent implements OnInit {
 //     }
 //   }
 // });
-

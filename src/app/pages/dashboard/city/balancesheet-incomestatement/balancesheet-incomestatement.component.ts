@@ -1,11 +1,11 @@
-import { registerLocaleData } from '@angular/common';
-import localeIn from '@angular/common/locales/en-IN';
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Subscription } from 'rxjs';
 import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
 
-registerLocaleData(localeIn);
 const HEADERS = [
   { key: 'code', value: 'Account Code', class: 'text-center' },
   { key: 'lineItem', value: 'Major Group/Minor Group', class: '' },
@@ -373,35 +373,101 @@ const ELEMENTDATA = [
 
 @Component({
   selector: 'app-balancesheet-incomestatement',
-  imports: [MatTableModule, MatTooltipModule, InrFormatPipe],
+  imports: [MatTableModule, MatTooltipModule, InrFormatPipe, CommonModule, ReactiveFormsModule],
   templateUrl: './balancesheet-incomestatement.component.html',
   styleUrl: './balancesheet-incomestatement.component.scss',
 })
-export class BalancesheetIncomestatementComponent {
-  headers = HEADERS;
-  displayedColumns: string[] = HEADERS.map((ele) => ele.key);
-  reportType = 'detailed';
-  dataSource = this.getTableData();
-  currencyFormat: 'cr' | 'lakh' | 'k' | 'inr' = 'inr';
-  currencyOptions = { showSymbol: false, showUnit: false };
-  calculatePerCapita: boolean = false;
-  population: number = 1234;
+export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
+  readonly buttons = [
+    { key: 'balanceSheet', label: 'Balance Sheet' },
+    { key: 'incomeStatement', label: 'Income Statement' },
+  ];
+  readonly radioOptions = [
+    {
+      title: 'Report Type',
+      controlName: 'reportType',
+      options: [
+        { key: 'summary', label: 'Summary' },
+        { key: 'detailed', label: 'Detailed' },
+      ],
+    },
+    {
+      title: 'Value Format',
+      controlName: 'valueType',
+      options: [
+        { key: 'absolute', label: 'Absolute' },
+        { key: 'perCapita', label: 'Per Capita' },
+      ],
+    },
+  ];
+  readonly currencyFormats = [
+    { key: 'inr', label: 'INR' },
+    { key: 'k', label: 'INR Thousands' },
+    { key: 'lakh', label: 'INR Lakhs' },
+    { key: 'cr', label: 'INR Crore' },
+  ];
+  readonly currencyOptions = { showSymbol: false, showUnit: false };
+  selectedBtn = 'incomeStatement';
+  reportForm!: FormGroup;
+  private subscriptions: Subscription[] = [];
+  readonly headers = HEADERS;
+  displayedColumns: string[] = HEADERS.map((h) => h.key);
+  dataSource: unknown[] = [];
+  private population = 1234;
 
-  public changeReportType(reportType: string): void {
-    this.reportType = reportType;
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.initializeForm();
+    this.updateTableData();
+    // console.log('form initiated');
+  }
+
+  private initializeForm(): void {
+    this.reportForm = this.fb.group({
+      reportType: ['summary'],
+      valueType: ['absolute'],
+      currencyFormat: ['inr'],
+    });
+
+    // Handle valueType changes (enable/disable currencyFormat)
+    this.subscriptions.push(
+      this.reportForm.get('valueType')!.valueChanges.subscribe((value) => {
+        const currencyControl = this.reportForm.get('currencyFormat')!;
+        if (value === 'perCapita') {
+          currencyControl.setValue('inr');
+          currencyControl.disable();
+        } else currencyControl.enable();
+      }),
+    );
+
+    // Update table when reportType changes
+    this.subscriptions.push(
+      this.reportForm.get('reportType')!.valueChanges.subscribe(() => this.updateTableData()),
+    );
+  }
+
+  get reportType(): string {
+    return this.reportForm.get('reportType')?.value ?? 'summary';
+  }
+
+  get valueType(): string {
+    return this.reportForm.get('valueType')?.value ?? 'absolute';
+  }
+
+  get currencyFormat(): 'inr' | 'k' | 'lakh' | 'cr' {
+    return this.reportForm.get('currencyFormat')?.value ?? 'inr';
+  }
+
+  private updateTableData(): void {
     this.dataSource = ELEMENTDATA.filter((ele) => ele.reportType !== this.reportType);
   }
 
-  private getTableData() {
-    return ELEMENTDATA.filter((ele) => ele.reportType !== this.reportType);
+  getFormattedValue(value: number): number {
+    return this.valueType === 'perCapita' ? value / this.population : value;
   }
 
-  public getFormattedValue(value: number): number {
-    if (!this.calculatePerCapita) return value;
-
-    return value / this.population;
+  ngOnDestroy(): void {
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
-
-  // Notes:
-  // 1. When calculatePerCapita is true set currencyFormat to inr and disable the dropdown
 }
