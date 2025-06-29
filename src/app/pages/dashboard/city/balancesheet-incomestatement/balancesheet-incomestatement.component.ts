@@ -8,7 +8,7 @@ import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
 
 const HEADERS = [
   { key: 'code', value: 'Account Code', class: 'text-center' },
-  { key: 'lineItem', value: 'Major Group/Minor Group', class: '' },
+  { key: 'lineItem', value: 'Major Group/Minor Group', },
   { key: '202223', value: '2022-23', class: 'text-end', number: true },
   { key: '202122', value: '2021-22', class: 'text-end', number: true },
   { key: '202021', value: '2020-21', class: 'text-end', number: true },
@@ -370,6 +370,35 @@ const ELEMENTDATA = [
     class: 'fw-bold',
   },
 ];
+const DOWNLOAD_REPORTS_HEADERS = [
+  { key: 'type', value: 'Download Report' },
+  { key: '202223', value: '2022-23', class: 'text-center' },
+  { key: '202122', value: '2021-22', class: 'text-center' },
+  { key: '202021', value: '2020-21', class: 'text-center' },
+  { key: '201920', value: '2019-20', class: 'text-center' },
+  { key: '201819', value: '2018-19', class: 'text-center' },
+  { key: '201718', value: '2017-18', class: 'text-center' },
+];
+const DOWNLOAD_REPORTS_ELEMENT_DATA = [
+  {
+    type: 'Raw PDF',
+    202223: 'pdf',
+    202122: 'pdf',
+    202021: 'pdf',
+    201920: 'pdf',
+    201819: 'pdf',
+    201718: 'pdf',
+  },
+  {
+    type: 'Raw Excel',
+    202223: 'excel',
+    202122: 'excel',
+    202021: 'excel',
+    201920: 'excel',
+    201819: 'excel',
+    201718: 'excel',
+  },
+];
 
 @Component({
   selector: 'app-balancesheet-incomestatement',
@@ -378,6 +407,7 @@ const ELEMENTDATA = [
   styleUrl: './balancesheet-incomestatement.component.scss',
 })
 export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
+  readonly fileLink = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/GlobalFiles/STANDARDIZATION_PROCESS_OF_ANNUAL_FINANCIAL_STATEMENT_OF_ULBS_f6e6b60b-2245-4104-803f-0fe01e33ae90.pdf';
   readonly buttons = [
     { key: 'balanceSheet', label: 'Balance Sheet' },
     { key: 'incomeStatement', label: 'Income Statement' },
@@ -415,7 +445,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   dataSource: unknown[] = [];
   private population = 1234;
 
-  constructor(private fb: FormBuilder) {}
+  readonly downloadReportsHeaders = DOWNLOAD_REPORTS_HEADERS;
+  downloadReportsDisplayedColumns: string[] = DOWNLOAD_REPORTS_HEADERS.map((h) => h.key);
+  downloadReportsDataSource = DOWNLOAD_REPORTS_ELEMENT_DATA;
+
+  constructor(private fb: FormBuilder) { }
 
   ngOnInit(): void {
     this.initializeForm();
@@ -465,6 +499,10 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   getFormattedValue(value: number): number {
     return this.valueType === 'perCapita' ? value / this.population : value;
+  }
+
+  onFileClick(year: string, fileType: string): void {
+    console.log("File clicked: ", year, fileType)
   }
 
   ngOnDestroy(): void {
