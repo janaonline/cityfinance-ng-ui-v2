@@ -54,18 +54,18 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     { key: 'cr', label: 'INR Crore' },
   ];
   readonly currencyOptions = { showSymbol: false, showUnit: false };
-  selectedBtn = 'incomeStatement';
+  selectedBtn = 'balanceSheet';
   reportForm!: FormGroup;
   private subscriptions: Subscription[] = [];
 
   readonly headers = [
-    { key: 'code', value: 'Account Code', class: 'text-center', number: false },
-    { key: 'lineItem', value: 'Major Group/Minor Group', number: false },
+    { key: 'code', value: 'Account Code', class: 'text-center', number: false, },
+    { key: 'lineItem', value: 'Major Group/Minor Group', number: false, },
   ];
   displayedColumns!: string[];
   dataSource: object[] = [];
   ledgerData!: BsIsData[];
-  private population = 1234;
+  private population!: number;
 
   readonly downloadReportsHeaders = [{ key: 'type', value: 'Download Report', class: '' }];
   downloadReportsDisplayedColumns!: string[];
@@ -88,8 +88,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   private getBsIsData(): void {
-    this.dashboardService.getBsIsData(this.ulbId).subscribe({
-      next: (res) => (this.ledgerData = res['data']),
+    this.dashboardService.getBsIsData(this.ulbId, this.selectedBtn).subscribe({
+      next: (res) => {
+        this.ledgerData = res['data'];
+        this.population = res['population'];
+      },
       error: (error) => console.error('Failed to get data: getBsIsData()', error),
       complete: () => this.updateTableData(),
     });
@@ -132,6 +135,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   private updateTableData(): void {
+    // console.log(this.ledgerData)
     this.dataSource = (this.ledgerData as { reportType?: string }[]).filter(
       (ele) => !ele.reportType || ele.reportType === this.reportType,
     );
@@ -175,6 +179,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   onFileClick(year: string, fileType: string): void {
     console.log('File clicked: ', year, fileType);
+  }
+
+  buttonClick(buttonKey: string): void {
+    this.selectedBtn = buttonKey;
+    this.getBsIsData();
   }
 
   ngOnDestroy(): void {

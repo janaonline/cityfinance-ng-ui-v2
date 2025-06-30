@@ -10,7 +10,7 @@
         role="button"
         class="btn rounded-5 m-2 text-nowrap"
         [ngClass]="selectedBtn === btn.key ? 'btn-cfPrimary' : 'btn-outline-cfPrimary'"
-        (click)="selectedBtn = btn.key"
+        (click)="buttonClick(btn.key)"
       >
         {{ btn.label }}
       </button>
@@ -62,7 +62,7 @@
           {{ item.value }}
         </th>
         <td mat-cell *matCellDef="let element" [class]="item.class + ' ' + element.class">
-          @if (item.number && element['code'] !== null) {
+          @if (item.number && !element['isHeader']) {
             {{ getFormattedValue(element[item.key]) | inrFormat: currencyFormat : currencyOptions }}
           } @else {
             {{ element[item.key] }}

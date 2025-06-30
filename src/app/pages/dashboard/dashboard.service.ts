@@ -7,7 +7,7 @@ import { BsIsData, ExploresectionTable } from '../../core/models/interfaces';
   providedIn: 'root',
 })
 export class DashboardService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
   dashboardInformation(ifPeople = true, ulbOrStateid: any, type: string | string[], year: string) {
     let headers = new HttpHeaders();
     headers = headers.append('type', type);
@@ -56,11 +56,12 @@ export class DashboardService {
     }>(`${environment.api.url}dashboard/financial-info/get-data`, { params });
   }
 
-  getBsIsData(ulbId: string) {
+  getBsIsData(ulbId: string, btnKey: string = 'incomeStatement') {
     let params = new HttpParams();
     if (ulbId) params = params.set('ulbId', ulbId);
+    params = params.set('btnKey', btnKey)
 
-    return this.http.get<{ data: BsIsData[] }>(`${environment.api.url}dashboard/city/bs-is`, {
+    return this.http.get<{ data: BsIsData[], population: number }>(`${environment.api.url}dashboard/city/bs-is`, {
       params,
     });
   }
