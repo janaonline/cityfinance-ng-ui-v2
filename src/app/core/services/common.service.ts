@@ -5,11 +5,7 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
-import {
-  BondIssuances,
-  ExploreSectionResponse,
-  States,
-} from '../../pages/home/dashboard-map-section/interfaces';
+import { BondIssuances, ExploreSectionResponse } from '../models/interfaces';
 import { IBasicLedgerData } from '../models/basicLedgerData.interface';
 import { IULBResponse } from '../models/IULBResponse';
 import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
@@ -22,6 +18,7 @@ import { HttpUtility } from '../util/httpUtil';
 import { JSONUtility } from '../util/jsonUtil';
 import { environment } from './../../../environments/environment';
 import { UtilityService } from './utility.service';
+import { IState } from '../models/state/state';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
@@ -133,7 +130,7 @@ export class CommonService {
 
   public fetchStateList() {
     return this.http
-      .get<{ data: States[] }>(environment.api.url + 'state')
+      .get<{ data: IState[] }>(environment.api.url + 'state')
       .pipe(map((res) => res.data));
   }
 

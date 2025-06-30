@@ -12,6 +12,10 @@
   z-index: 999;
 }
 
+.shadow-bottom {
+  box-shadow: 0 5px 7px -1px rgba(0, 0, 0, 0.3);
+}
+
 a {
   text-decoration: none;
 }

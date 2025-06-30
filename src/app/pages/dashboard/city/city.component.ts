@@ -5,13 +5,15 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
 import { Subject, takeUntil } from 'rxjs';
+import { ExploresectionTable } from '../../../core/models/interfaces';
+import { IState } from '../../../core/models/state/state';
+import { IULB } from '../../../core/models/ulb';
 import { CommonService } from '../../../core/services/common.service';
 import { MapComponent } from '../../../shared/components/map/map.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
 import { GridViewComponent } from '../../../shared/components/shared-ui/grid-view.component';
 import { StateSearchComponent } from '../../../shared/components/shared-ui/state-search.component';
-import { ExploresectionTable, States, Ulbs } from '../../home/dashboard-map-section/interfaces';
 import { DashboardService } from '../dashboard.service';
 import { InfoCardsComponent } from '../shared/components/info-cards.component';
 import { BalancesheetIncomestatementComponent } from './balancesheet-incomestatement/balancesheet-incomestatement.component';
@@ -89,20 +91,20 @@ export class CityComponent implements OnInit {
 
   // ----- Search Section -----
   // Callback: From child when state is selected
-  onStateSelected = (stateObj: States): void => {
+  onStateSelected = (stateObj: IState): void => {
     console.log('Value of state sent by child to parent', stateObj);
     this.setCityName('');
     this.setStateData(stateObj.name, stateObj._id, stateObj.code);
   };
 
   // Callback: From child when ULB/city is selected
-  onUlbSelected = (ulbObj: Ulbs): void => {
+  onUlbSelected = (ulbObj: IULB): void => {
     console.log('Value of ULB sent by child to parent:', ulbObj);
     if (ulbObj._id) this.updateUlbIdAndNavigate(ulbObj._id);
   };
 
   // Helper: Set state ID signal
-  setStateData(name: string, _id: string, code: string): void {
+  setStateData(name: string = '', _id: string = '', code: string = ''): void {
     this.selectedStateNameSignal.set(name);
     this.selectedStateIdSignal.set(_id);
     this.stateCodeSignal.set(code);
@@ -128,12 +130,12 @@ export class CityComponent implements OnInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          console.log(res);
+          // console.log(res);
           this.exploreData = res.gridDetails;
           this.popCat = res.popCat;
           // this.lastModifiedAt = res.lastModifiedAt;
 
-          this.setStateData(res.state.name, res.state._id, res.state.code);
+          this.setStateData(res.state.name, res.state._id, res.state.code || '');
           this.setCityName(res.ulbName);
           this.isLoading1 = false;
         },

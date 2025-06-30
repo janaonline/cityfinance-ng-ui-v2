@@ -100,7 +100,10 @@
     </mat-tab>
     <mat-tab label="Balance Sheet & Income Statement">
       @if (loadedTabs[1]) {
-        <app-balancesheet-incomestatement></app-balancesheet-incomestatement>
+        <app-balancesheet-incomestatement
+          [years]="years"
+          [ulbId]="ulbId"
+        ></app-balancesheet-incomestatement>
       }
     </mat-tab>
     <mat-tab label="Service Level BenchMark">

@@ -1,404 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
+import { BsIsData } from '../../../../core/models/interfaces';
 import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
-
-const HEADERS = [
-  { key: 'code', value: 'Account Code', class: 'text-center' },
-  { key: 'lineItem', value: 'Major Group/Minor Group', },
-  { key: '202223', value: '2022-23', class: 'text-end', number: true },
-  { key: '202122', value: '2021-22', class: 'text-end', number: true },
-  { key: '202021', value: '2020-21', class: 'text-end', number: true },
-  { key: '201920', value: '2019-20', class: 'text-end', number: true },
-  { key: '201819', value: '2018-19', class: 'text-end', number: true },
-  { key: '201718', value: '2017-18', class: 'text-end', number: true },
-];
-const ELEMENTDATA = [
-  {
-    code: null,
-    lineItem: 'A.Income',
-    202223: null,
-    202122: null,
-    202021: null,
-    201920: null,
-    201819: null,
-    201718: null,
-    class: 'fw-bold',
-  },
-  {
-    code: 110,
-    lineItem: 'Tax Revenue',
-    202223: -18259654000,
-    202122: -1744485400,
-    202021: -17017214000,
-    201920: -15975330000,
-    201819: -13110641000,
-    201718: -11293299000,
-  },
-  {
-    code: 120,
-    reportType: 'summary',
-    lineItem: 'Assigned Revenues & Compensation',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 130,
-    reportType: 'summary',
-    lineItem: 'Rental Income from Municipal Properties',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 140,
-    reportType: 'summary',
-    lineItem: 'Fee & User Charges',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 150,
-    reportType: 'summary',
-    lineItem: 'Sale & Hire charges',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: '120-150',
-    reportType: 'detailed',
-    lineItem: 'Non-Tax Revenue',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 160,
-    lineItem: 'Revenue Grants, Contributions & Subsidies',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 170,
-    reportType: 'summary',
-    lineItem: 'Income from Investment',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 171,
-    reportType: 'summary',
-    lineItem: 'Interest earned',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 180,
-    reportType: 'summary',
-    lineItem: 'Other Income',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: '170-180',
-    reportType: 'detailed',
-    lineItem: 'Other Income',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 100,
-    lineItem: 'Others',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-
-  {
-    code: null,
-    lineItem: 'Total Income (A)',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-    info: 'Calculation: (110 + 120 + 130 + 140 + 150 + 160 + 170 + 171 + 180 + 100)',
-    class: 'fw-bold',
-  },
-
-  {
-    code: null,
-    lineItem: 'B.Expenditure',
-    202223: null,
-    202122: null,
-    202021: null,
-    201920: null,
-    201819: null,
-    201718: null,
-    class: 'fw-bold',
-  },
-  {
-    code: 210,
-    lineItem: 'Establishment Expenses',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 220,
-    lineItem: 'Administrative Expenses',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 230,
-    lineItem: 'Operation & Maintenance',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 240,
-    lineItem: 'Interest & Finance Charges',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 250,
-    reportType: 'summary',
-    lineItem: 'Programme Expenses',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 260,
-    lineItem: 'Revenue Grants, Contributions & Subsidies (Exp)',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 270,
-    reportType: 'summary',
-    lineItem: 'Provisions and Write Off',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 271,
-    lineItem: 'Miscellaneous Expenses',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 272,
-    reportType: 'summary',
-    lineItem: 'Depreciation on Fixed Assets',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: '250, 270-272',
-    reportType: 'detailed',
-    lineItem: 'Other Income',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-  {
-    code: 200,
-    lineItem: 'Others',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-
-  {
-    code: null,
-    lineItem: 'Total Expenditure(B)',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-    info: 'Calculation: (210 + 220 + 230 + 240 + 250 + 260 + 270 + 271 + 272 + 200)',
-    class: 'fw-bold',
-  },
-
-  {
-    code: null,
-    lineItem:
-      'Gross Surplus/(Deficit) of Income over Expenditure before Prior Period Items (C) (A-B)',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-    class: 'fw-bold',
-  },
-
-  {
-    code: 280,
-    lineItem: 'Prior Period items',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-
-  {
-    code: null,
-    lineItem:
-      'Gross Surplus/(Deficit) of Income over Expenditure after Prior Period Items item(D) (C+280)',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-    class: 'fw-bold',
-  },
-
-  {
-    code: 290,
-    lineItem: 'Transfer to Reserve Funds',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-  },
-
-  {
-    code: null,
-    lineItem: 'Net Surplus/(Deficit) carried over (E) (D+290)',
-    202223: 12345678,
-    202122: 12345678,
-    202021: 12345678,
-    201920: 12345678,
-    201819: 12345678,
-    201718: 234567789,
-    class: 'fw-bold',
-  },
-];
-const DOWNLOAD_REPORTS_HEADERS = [
-  { key: 'type', value: 'Download Report' },
-  { key: '202223', value: '2022-23', class: 'text-center' },
-  { key: '202122', value: '2021-22', class: 'text-center' },
-  { key: '202021', value: '2020-21', class: 'text-center' },
-  { key: '201920', value: '2019-20', class: 'text-center' },
-  { key: '201819', value: '2018-19', class: 'text-center' },
-  { key: '201718', value: '2017-18', class: 'text-center' },
-];
-const DOWNLOAD_REPORTS_ELEMENT_DATA = [
-  {
-    type: 'Raw PDF',
-    202223: 'pdf',
-    202122: 'pdf',
-    202021: 'pdf',
-    201920: 'pdf',
-    201819: 'pdf',
-    201718: 'pdf',
-  },
-  {
-    type: 'Raw Excel',
-    202223: 'excel',
-    202122: 'excel',
-    202021: 'excel',
-    201920: 'excel',
-    201819: 'excel',
-    201718: 'excel',
-  },
-];
+import { DashboardService } from '../../dashboard.service';
+type DownloadReportElement = {
+  type: string;
+  key: string;
+  [year: string]: string;
+};
 
 @Component({
   selector: 'app-balancesheet-incomestatement',
@@ -407,7 +21,10 @@ const DOWNLOAD_REPORTS_ELEMENT_DATA = [
   styleUrl: './balancesheet-incomestatement.component.scss',
 })
 export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
-  readonly fileLink = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com/GlobalFiles/STANDARDIZATION_PROCESS_OF_ANNUAL_FINANCIAL_STATEMENT_OF_ULBS_f6e6b60b-2245-4104-803f-0fe01e33ae90.pdf';
+  @Input() years!: string[];
+  @Input() ulbId!: string;
+
+  readonly fileLink = `${environment.STORAGE_BASEURL}/GlobalFiles/STANDARDIZATION_PROCESS_OF_ANNUAL_FINANCIAL_STATEMENT_OF_ULBS_f6e6b60b-2245-4104-803f-0fe01e33ae90.pdf`;
   readonly buttons = [
     { key: 'balanceSheet', label: 'Balance Sheet' },
     { key: 'incomeStatement', label: 'Income Statement' },
@@ -440,21 +57,42 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   selectedBtn = 'incomeStatement';
   reportForm!: FormGroup;
   private subscriptions: Subscription[] = [];
-  readonly headers = HEADERS;
-  displayedColumns: string[] = HEADERS.map((h) => h.key);
-  dataSource: unknown[] = [];
+
+  readonly headers = [
+    { key: 'code', value: 'Account Code', class: 'text-center', number: false },
+    { key: 'lineItem', value: 'Major Group/Minor Group', number: false },
+  ];
+  displayedColumns!: string[];
+  dataSource: object[] = [];
+  ledgerData!: BsIsData[];
   private population = 1234;
 
-  readonly downloadReportsHeaders = DOWNLOAD_REPORTS_HEADERS;
-  downloadReportsDisplayedColumns: string[] = DOWNLOAD_REPORTS_HEADERS.map((h) => h.key);
-  downloadReportsDataSource = DOWNLOAD_REPORTS_ELEMENT_DATA;
+  readonly downloadReportsHeaders = [{ key: 'type', value: 'Download Report', class: '' }];
+  downloadReportsDisplayedColumns!: string[];
+  downloadReportsDataSource: DownloadReportElement[] = [
+    { type: 'Raw PDF', key: 'pdf' },
+    { type: 'Raw Excel', key: 'excel' },
+  ];
 
-  constructor(private fb: FormBuilder) { }
+  constructor(
+    private fb: FormBuilder,
+    private dashboardService: DashboardService,
+  ) { }
 
   ngOnInit(): void {
+    this.getBsIsData();
+    this.createHeaders();
     this.initializeForm();
-    this.updateTableData();
-    // console.log('form initiated');
+    // this.updateTableData();
+    // console.log('form initiated', this.ulbId);
+  }
+
+  private getBsIsData(): void {
+    this.dashboardService.getBsIsData(this.ulbId).subscribe({
+      next: (res) => (this.ledgerData = res['data']),
+      error: (error) => console.error('Failed to get data: getBsIsData()', error),
+      complete: () => this.updateTableData(),
+    });
   }
 
   private initializeForm(): void {
@@ -494,15 +132,49 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   private updateTableData(): void {
-    this.dataSource = ELEMENTDATA.filter((ele) => ele.reportType !== this.reportType);
+    this.dataSource = (this.ledgerData as { reportType?: string }[]).filter(
+      (ele) => !ele.reportType || ele.reportType === this.reportType,
+    );
   }
 
   getFormattedValue(value: number): number {
     return this.valueType === 'perCapita' ? value / this.population : value;
   }
 
+  // Create headers based on years [].
+  createHeaders(): void {
+    // Generate headers
+    this.years.forEach((year) => {
+      const yearKey = year.replace('-', '');
+      this.downloadReportsHeaders.push({
+        key: yearKey,
+        value: year,
+        class: 'text-center',
+      });
+
+      this.headers.push({
+        key: yearKey,
+        value: year,
+        class: 'text-end',
+        number: true,
+      });
+    });
+
+    // Update data source with new year keys
+    this.downloadReportsDataSource.forEach((row) => {
+      this.years.forEach((year) => {
+        const yearKey = year.replace('-', '');
+        row[yearKey] = row.key;
+      });
+    });
+
+    // Generate displayed columns
+    this.displayedColumns = this.headers.map((e) => e.key);
+    this.downloadReportsDisplayedColumns = this.downloadReportsHeaders.map((e) => e.key);
+  }
+
   onFileClick(year: string, fileType: string): void {
-    console.log("File clicked: ", year, fileType)
+    console.log('File clicked: ', year, fileType);
   }
 
   ngOnDestroy(): void {
