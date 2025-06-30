@@ -49,7 +49,7 @@
             </li>
             <mat-menu #DashboardMenu="matMenu">
               @for (childMenu of menu.child; track childMenu) {
-                <a mat-menu-item [href]="childMenu.href" class="nav-link" routerLinkActive="active">
+                <a mat-menu-item [href]="childMenu.href" class="" routerLinkActive="active">
                   {{ childMenu.name }}
                 </a>
               }
