@@ -832,4 +832,11 @@ export class CommonService {
       { params },
     );
   }
+
+  // Annual accounts popup - Show BS, BSS, IS, ISE, CF, AR in one popup.
+  getReports(ulbId: string, financialYear: string, auditType: string = '') {
+    return this.http.get(
+      `${environment.api.url}ledger/ulb-financial-data/files/${ulbId}?financialYear=${financialYear}&auditType=${auditType}`,
+    );
+  }
 }

@@ -24,3 +24,7 @@
   --mat-tab-label-text-line-height: 36px;
   --mat-tab-label-text-weight: 500;
 }
+
+.mat-mdc-menu-item-text {
+  --mat-menu-item-label-text-font: var(--ff-base);
+}

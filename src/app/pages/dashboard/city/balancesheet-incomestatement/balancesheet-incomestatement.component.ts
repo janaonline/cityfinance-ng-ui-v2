@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { BsIsData } from '../../../../core/models/interfaces';
 import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
+import { CommonService } from '../../../../core/services/common.service';
 import { DashboardService } from '../../dashboard.service';
 type DownloadReportElement = {
   type: string;
@@ -59,8 +61,8 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
 
   readonly headers = [
-    { key: 'code', value: 'Account Code', class: 'text-center', number: false, },
-    { key: 'lineItem', value: 'Major Group/Minor Group', number: false, },
+    { key: 'code', value: 'Account Code', class: 'text-center', number: false },
+    { key: 'lineItem', value: 'Major Group/Minor Group', number: false },
   ];
   displayedColumns!: string[];
   dataSource: object[] = [];
@@ -77,7 +79,9 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private dashboardService: DashboardService,
-  ) { }
+    private commonService: CommonService,
+    private dialog: MatDialog,
+  ) {}
 
   ngOnInit(): void {
     this.getBsIsData();
@@ -177,9 +181,59 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     this.downloadReportsDisplayedColumns = this.downloadReportsHeaders.map((e) => e.key);
   }
 
-  onFileClick(year: string, fileType: string): void {
-    console.log('File clicked: ', year, fileType);
+  onFileClick(selectedYear: string, fileType: string): void {
+    // TODO: Add loader.
+    console.log('File clicked: ', selectedYear, fileType);
+
+    const yearSplit = Number(selectedYear.split('-')[0]);
+    if (yearSplit < 2019) {
+      // this.getReportsBefore2019(selectedYear, fileType);
+      return;
+    }
+
+    this.commonService.getReports(this.ulbId, selectedYear).subscribe({
+      next: (res: any) => {
+        let type = 'notFound';
+        console.log('getReports', res);
+        if (res && res['success']) {
+          type = res['data'][fileType].length ? fileType : 'notFound';
+          this.openDialog(res['data'], type);
+        }
+      },
+      error: (error: Error) => console.error('Failed to get file: onFileClick()', error),
+    });
   }
+
+  openDialog(data: any, fileType: string) {
+    // console.log('openDialog', data);
+    // const dialogRef = this.dialog.open(BalanceTabledialogComponent, {
+    //   data: { reportList: data, fileType: fileType },
+    //   width: '500px',
+    // });
+    // dialogRef.afterClosed().subscribe((result) => {
+    //   console.log('The dialog was closed');
+    // });
+  }
+
+  // getReportsBefore2019(selectedYear: string, fileType: string) {
+  //   let category;
+  //   if (this.reportGroup == 'Balance Sheet') {
+  //     category = 'balance';
+  //   } else if (this.reportGroup == 'Income & Expenditure Statement') {
+  //     category = 'income';
+  //   }
+  //   this._resourcesDashboardService
+  //     .getDataSets(selectedYear, fileType, category, '', this.ulbName, '')
+  //     .subscribe((res) => {
+  //       console.log(res['data']);
+  //       if (res['data'].length == 0) {
+  //         this.openDialog(res['data'], 'notFound');
+  //       } else {
+  //         const target_file_url = environment.STORAGE_BASEURL + res['data'][0]['fileUrl'];
+  //         window.open(target_file_url);
+  //       }
+  //     });
+  // }
 
   buttonClick(buttonKey: string): void {
     this.selectedBtn = buttonKey;
@@ -190,3 +244,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 }
+
+/**
+ * isHeader: Boolean - Indicates whether the item is a header. Used by the front-end to skip rendering a dash ("-") in the table.
+ * reportType: 'detailed' | 'summary' - Specifies the type of report. Helps the front-end filter content based on the selected report type.
+ * calculation: Boolean - Flags whether the item requires back-end calculation based on grouped line items.
+ * formula: { add: [], sub: [] } - Defines the calculation logic using lists of line item keys to add and subtract.
+ * info: Used on front-end to add info icon.
+ */
