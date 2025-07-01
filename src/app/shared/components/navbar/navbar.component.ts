@@ -34,11 +34,11 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   prefixUrl = environment.prefixUrl;
 
   menus: any = [
-    {
-      name: `<img src="./assets/images/city-finance-ranking.png"/>`,
-      class: 'cfr-img-logo',
-      href: `${this.prefixUrl}/cfr/home`,
-    },
+    // {
+    //   name: `<img src="./assets/images/city-finance-ranking.png"/>`,
+    //   class: 'cfr-img-logo',
+    //   href: `${this.prefixUrl}/cfr/home`,
+    // },
     {
       name: 'Dashboard',
       href: '',

@@ -1,0 +1,24 @@
+tr {
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
+}
+
+tr:hover {
+    background-color: rgb(240, 238, 238);
+}
+
+// input[type="radio"] {
+//     accent-color: var(--clr-secondary);
+// }
+
+.table-container {
+    max-height: 95vh;
+    overflow: auto
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}

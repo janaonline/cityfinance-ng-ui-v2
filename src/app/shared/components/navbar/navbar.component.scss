@@ -12,6 +12,10 @@
   z-index: 999;
 }
 
+.shadow-bottom {
+  box-shadow: 0 5px 7px -1px rgba(0, 0, 0, 0.3);
+}
+
 a {
   text-decoration: none;
 }
@@ -38,7 +42,7 @@ a {
 }
 
 .nav-link {
-  padding-block: 1rem;
+  padding-block: 1.25rem;
   border-bottom: 2px solid transparent;
   color: var(--clr-secondary);
   font-weight: var(--fw-bold);

@@ -5,11 +5,7 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
-import {
-  BondIssuances,
-  ExploreSectionResponse,
-  States,
-} from '../../pages/home/dashboard-map-section/interfaces';
+import { BondIssuances, ExploreSectionResponse } from '../models/interfaces';
 import { IBasicLedgerData } from '../models/basicLedgerData.interface';
 import { IULBResponse } from '../models/IULBResponse';
 import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
@@ -22,6 +18,7 @@ import { HttpUtility } from '../util/httpUtil';
 import { JSONUtility } from '../util/jsonUtil';
 import { environment } from './../../../environments/environment';
 import { UtilityService } from './utility.service';
+import { IState } from '../models/state/state';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
@@ -133,7 +130,7 @@ export class CommonService {
 
   public fetchStateList() {
     return this.http
-      .get<{ data: States[] }>(environment.api.url + 'state')
+      .get<{ data: IState[] }>(environment.api.url + 'state')
       .pipe(map((res) => res.data));
   }
 
@@ -820,6 +817,26 @@ export class CommonService {
     return this.http.get<ExploreSectionResponse>(
       `${environment.api.url}dashboard/home-page/get-Data`,
       { params },
+    );
+  }
+
+  // Get distinct years - ledger/ Standardized data.
+  public getLedgerYears(stateCode: string = '', ulbId: string = '', auditStatus: string = '') {
+    let params = new HttpParams();
+    if (stateCode) params = params.set('stateCode', stateCode);
+    if (ulbId) params = params.set('ulbId', ulbId);
+    if (auditStatus) params = params.set('auditStatus', auditStatus);
+
+    return this.http.get<{ ledgerYears: string[] }>(
+      `${environment.api.url}common/get-latest-standardized-year`,
+      { params },
+    );
+  }
+
+  // Annual accounts popup - Show BS, BSS, IS, ISE, CF, AR in one popup.
+  getReports(ulbId: string, financialYear: string, auditType: string = '') {
+    return this.http.get(
+      `${environment.api.url}ledger/ulb-financial-data/files/${ulbId}?financialYear=${financialYear}&auditType=${auditType}`,
     );
   }
 }

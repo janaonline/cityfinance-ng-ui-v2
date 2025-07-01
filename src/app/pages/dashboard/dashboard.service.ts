@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { ExploresectionTable } from '../home/dashboard-map-section/interfaces';
+import { BsIsData, ExploresectionTable } from '../../core/models/interfaces';
 
 @Injectable({
   providedIn: 'root',
@@ -52,6 +52,20 @@ export class DashboardService {
       year: string;
       audit_status: string | null;
       isActive: boolean;
+      lastModifiedAt: string | null;
     }>(`${environment.api.url}dashboard/financial-info/get-data`, { params });
+  }
+
+  getBsIsData(ulbId: string, btnKey: string = 'incomeStatement') {
+    let params = new HttpParams();
+    if (ulbId) params = params.set('ulbId', ulbId);
+    params = params.set('btnKey', btnKey);
+
+    return this.http.get<{ data: BsIsData[]; population: number }>(
+      `${environment.api.url}dashboard/city/bs-is`,
+      {
+        params,
+      },
+    );
   }
 }
