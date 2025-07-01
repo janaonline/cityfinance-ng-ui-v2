@@ -73,12 +73,13 @@
       class="text-secondary text-end mt-3 mb-0 d-flex justify-content-end align-items-center gap-1 flex-wrap"
       style="font-size: 0.75rem"
     >
-      Last updated on: {{ lastModifiedAt | date: 'short' }}; Source: {{ audit_status }} financial
-      statements for the year
+      Last updated on: {{ lastModifiedAt | date: 'mediumDate' }}; Source:
+      {{ audit_status }} financial statements for the year
       <select
         class="form-select form-select-sm w-auto d-inline-block"
         [value]="yearSignal()"
         (change)="onMoneyInfoYearChange($event)"
+        id="years"
       >
         @for (year of years; track $index) {
           <option [value]="year" [selected]="year === yearSignal()">{{ year }}</option>
@@ -87,3 +88,48 @@
     </p>
   </div>
 </section>
+
+<section class="container matTabGroup">
+  <h3 class="fw-bold p-2 my-4 text-center">Dashboard</h3>
+
+  <mat-tab-group fitInkBarToContent (selectedIndexChange)="onTabChange($event)">
+    <mat-tab label="Financial Indicators">
+      @if (loadedTabs[0]) {
+        <app-financial-indicator></app-financial-indicator>
+      }
+    </mat-tab>
+    <mat-tab label="Balance Sheet & Income Statement">
+      @if (loadedTabs[1]) {
+        <app-balancesheet-incomestatement
+          [years]="years"
+          [ulbId]="ulbId"
+        ></app-balancesheet-incomestatement>
+      }
+    </mat-tab>
+    <mat-tab label="Service Level BenchMark">
+      @if (loadedTabs[2]) {
+        <app-slb></app-slb>
+      }
+    </mat-tab>
+    <mat-tab label="Borrowing & Credit Rating">
+      @if (loadedTabs[3]) {
+        <app-borrowing-credit-rating></app-borrowing-credit-rating>
+      }
+    </mat-tab>
+  </mat-tab-group>
+</section>
+
+<!-- chart.html -->
+<!-- <div class="chart-container p-4">
+  <h2>Bar Chart</h2>
+  <canvas #barCanvas></canvas>
+
+  <h2>Line Chart</h2>
+  <canvas #lineCanvas></canvas>
+
+  <h2>Pie Chart</h2>
+  <canvas #pieCanvas></canvas>
+
+  <h2>Mixed Chart</h2>
+  <canvas #mixedChartCanvas></canvas>
+</div> -->

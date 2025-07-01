@@ -2,6 +2,14 @@ import { Component, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, of, Subject, takeUntil } from 'rxjs';
+import { CreditRatingMap, ICreditRatingData } from '../../../core/models/creditRating/creditRatingResponse';
+import {
+  BondIssuances,
+  ExploreSectionResponse,
+  ExploresectionTable,
+} from '../../../core/models/interfaces';
+import { IState } from '../../../core/models/state/state';
+import { IULB } from '../../../core/models/ulb';
 import { AssetsService } from '../../../core/services/assets/assets.service';
 import { CommonService } from '../../../core/services/common.service';
 import { MaterialModule } from '../../../material.module';
@@ -10,15 +18,6 @@ import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-lo
 import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
 import { GridViewComponent } from '../../../shared/components/shared-ui/grid-view.component';
 import { StateSearchComponent } from '../../../shared/components/shared-ui/state-search.component';
-import {
-  BondIssuances,
-  CreditRatingMap,
-  CreditRatings,
-  ExploreSectionResponse,
-  ExploresectionTable,
-  States,
-  Ulbs,
-} from './interfaces';
 import { MapComponent } from "../../../shared/components/map/map.component";
 
 @Component({
@@ -47,8 +46,8 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   selectedStateIdSignal = signal<string>('');
   selectedStateNameSignal = signal<string>('');
 
-  stateList!: States[];
-  filteredStates: Observable<States[]> = of([]);
+  stateList!: IState[];
+  filteredStates: Observable<IState[]> = of([]);
 
   selectedCityNameSignal = signal<string>('');
   selectedCityIdSignal = signal<string>('');
@@ -134,7 +133,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       .fetchCreditRatingReport()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res: CreditRatings[]) => {
+        next: (res: ICreditRatingData[]) => {
           const computedData = this.computeRatings(res);
           this.creditRating = computedData;
           this.updateRatingSummary();
@@ -144,7 +143,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
 
   // Compute total, creditRatingAboveBBB_Minus count.
-  private computeRatings(res: CreditRatings[]): CreditRatingMap {
+  private computeRatings(res: ICreditRatingData[]): CreditRatingMap {
     const computedData: CreditRatingMap = { India: { total: 0, creditRatingAboveBBB_Minus: 0 } };
 
     for (const data of res) {
@@ -182,7 +181,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
       .fetchStateList()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res: States[]) => (this.stateList = res),
+        next: (res: IState[]) => (this.stateList = res),
       });
   }
 
@@ -269,7 +268,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
 
   // ----- Search section -----
   // State object sent by child - Drop down selection.
-  public onStateSelected = (stateObj: States) => {
+  public onStateSelected = (stateObj: IState) => {
     // console.log('State obj sent by child to parent', stateObj);
     this.setStateData(stateObj.code, stateObj._id, stateObj.name);
     this.setUlbData();
@@ -286,7 +285,7 @@ export class DashboardMapSectionComponent implements OnDestroy, OnInit {
   }
 
   // ulb object sent by child - Drop down selection.
-  public onUlbSelected = (ulbObj: Ulbs) => {
+  public onUlbSelected = (ulbObj: IULB) => {
     // console.log('Ulb obj received from child to parent', ulbObj);
     this.setUlbData(ulbObj._id, ulbObj.name);
   };

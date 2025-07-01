@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
-import { ExploresectionTable } from '../../../home/dashboard-map-section/interfaces';
+import { ExploresectionTable } from '../../../../core/models/interfaces';
 
 @Component({
   selector: 'app-info-cards',
