@@ -1,0 +1,28 @@
+<span class="row my-4" style="color:#337ab7"> <b>Users</b></span>
+<div style="margin-bottom: 2pc;">
+    <div class="container">
+        <div class="row" style="width: 100%">
+            <div class="col-sm-3">
+                <button class="btn user" id="ulb" (click)="userTypeSelected.emit(USER_TYPE.ULB)">
+                    <mat-icon class="cursor-pointer" aria-hidden="true"> person </mat-icon> ULB
+                </button>
+            </div>
+            <div class="col-sm-3">
+                <button class="btn user" id="state" (click)="userTypeSelected.emit(USER_TYPE.USER)">
+                    <mat-icon class="cursor-pointer" aria-hidden="true"> person </mat-icon> STATE
+                </button>
+            </div>
+            <div class="col-sm-3">
+                <button class="btn user" id="mohua" (click)="userTypeSelected.emit(USER_TYPE.USER)">
+                    <mat-icon class="cursor-pointer" aria-hidden="true"> person </mat-icon>
+                    MoHUA
+                </button>
+            </div>
+            <div class="col-sm-3">
+                <button class="btn user" id="doe" (click)="userTypeSelected.emit(USER_TYPE.USER)">
+                    <mat-icon class="cursor-pointer" aria-hidden="true"> person </mat-icon> DoE
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

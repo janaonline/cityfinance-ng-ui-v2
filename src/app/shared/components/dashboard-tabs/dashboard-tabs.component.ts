@@ -209,7 +209,8 @@ export class DashboardTabsComponent implements OnChanges {
   sticky = false;
   tabDesc = ''
   // stateMap = json.parse(localStorage.getItem(stateIdsMap))
-  stateMap = JSON.parse(localStorage.getItem("stateIdsMap") || "{}");
+  // stateMap = JSON.parse(localStorage.getItem("stateIdsMap") || "{}");
+  stateMap: any = {};
   @Input() isUA: string = 'No';
   @Input() noDataFound: boolean = false;
   changeTab(event: { name?: string; subHeaders?: { mainContent: { static: { indicators: { desc: { links: { label: string; url: string; }[]; text: string; }[]; name: string; }[]; }; btnLabels: never[]; about: string; aggregateInfo: string; }[]; name: string; }[]; target?: any; }, fromInner = false) {

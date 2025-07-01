@@ -89,7 +89,7 @@ export class FrontPanelComponent implements OnInit, OnChanges {
     private router: Router,
     public activatedRoute: ActivatedRoute
   ) {
-    this.ulbList = JSON.parse(localStorage.getItem("ulbList") || "{}");
+    // this.ulbList = JSON.parse(localStorage.getItem("ulbList") || "{}");
   }
   ngOnInit(): void {
     console.log("this.data====>", this.data, this.componentName);

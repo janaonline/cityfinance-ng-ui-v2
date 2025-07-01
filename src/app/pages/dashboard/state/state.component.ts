@@ -46,7 +46,8 @@ export class StateComponent implements OnInit, OnChanges {
     this.cords = window.pageYOffset;
   }
 
-  stateUlbData = JSON.parse(localStorage.getItem("ulbList") || '{}');
+  // stateUlbData = JSON.parse(localStorage.getItem("ulbList") || '{}');
+  stateUlbData: any = {};
   mapData = mapConfig;
   dashboardTabData: any;
   date: any;

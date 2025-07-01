@@ -2,28 +2,50 @@
   <div class="container py-5 h-100">
     <div class="row d-flex align-items-center justify-content-center h-100">
       <div class="col-md-8 col-lg-7 col-xl-6">
-        <img
-          src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg"
-          class="img-fluid"
-          alt="Phone image"
-        />
+        <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg" class="img-fluid"
+          alt="Phone image" />
       </div>
       <div class="col-md-7 col-lg-5 col-xl-5 offset-xl-1">
-        <form>
-          <!-- Email input -->
+        <app-user-type></app-user-type>
+        <div class="login-container">
+          <mat-card>
+            <mat-card-title>Login</mat-card-title>
+            <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+              <mat-form-field appearance="fill">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" required />
+                <mat-error *ngIf="loginForm.get('email')?.hasError('required')">
+                  Email is required
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="fill">
+                <mat-label>Password</mat-label>
+                <input matInput formControlName="password" type="password" required />
+                <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+                  Password is required
+                </mat-error>
+              </mat-form-field>
+
+              <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid">
+                Login
+              </button>
+            </form>
+          </mat-card>
+        </div>
+
+        <!-- <form>
           <div data-mdb-input-init class="form-outline mb-4">
             <input type="email" id="form1Example13" class="form-control form-control-lg" />
             <label class="form-label" for="form1Example13">Email address</label>
           </div>
 
-          <!-- Password input -->
           <div data-mdb-input-init class="form-outline mb-4">
             <input type="password" id="form1Example23" class="form-control form-control-lg" />
             <label class="form-label" for="form1Example23">Password</label>
           </div>
 
           <div class="d-flex justify-content-around align-items-center mb-4">
-            <!-- Checkbox -->
             <div class="form-check">
               <input class="form-check-input" type="checkbox" value="" id="form1Example3" checked />
               <label class="form-check-label" for="form1Example3"> Remember me </label>
@@ -31,7 +53,6 @@
             <a href="#!">Forgot password?</a>
           </div>
 
-          <!-- Submit button -->
           <button
             type="submit"
             data-mdb-button-init
@@ -40,7 +61,7 @@
           >
             Sign in
           </button>
-        </form>
+        </form> -->
       </div>
     </div>
   </div>
