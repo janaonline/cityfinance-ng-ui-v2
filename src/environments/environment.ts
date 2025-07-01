@@ -1,13 +1,13 @@
-const baseUrl = window.location.origin;
+const baseUrl = 'https://www.cityfinance.in';
 //let baseUrl = 'http://localhost:8080';
 let GoogleTagID = 'G-803HPPLFMM';
 let isProduction: boolean = false;
 let STORAGE_BASEURL = 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com';
 let env = 'dev';
 
-if (window.location.hostname.includes('staging')) {
+if (baseUrl.includes('staging')) {
   env = 'staging';
-} else if (window.location.origin === 'https://cityfinance.in' || window.location.origin === 'https://www.cityfinance.in') {
+} else if (['https://cityfinance.in', 'https://www.cityfinance.in'].includes(baseUrl)) {
   env = 'prod';
   isProduction = true;
   GoogleTagID = 'G-5Z5B41B3G4';

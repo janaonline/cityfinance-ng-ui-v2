@@ -10,15 +10,16 @@ import { SearchBarComponent } from './search-bar/search-bar.component';
 // import { SpotlightComponent } from './spotlight/spotlight.component';
 import { DiscoverSectionComponent } from './discover-section/discover-section.component';
 import { SponsersPartnersComponent } from './sponsers-partners/sponsers-partners.component';
+import { SeoService } from '../../core/services/seo/seo.service';
 // declare let $: any;
 
 @Component({
   selector: 'app-home',
   imports: [
-    CommonModule,
-    RouterModule,
+    // CommonModule,
+    // RouterModule,
     DashboardMapSectionComponent,
-    MaterialModule,
+    // MaterialModule,
     SearchBarComponent,
     // SpotlightComponent,
     DiscoverSectionComponent,
@@ -28,86 +29,53 @@ import { SponsersPartnersComponent } from './sponsers-partners/sponsers-partners
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
+
   constructor(
     protected _commonService: CommonService,
-    private router: Router,
+    // private router: Router,
     public resourceDashboard: ResourcesDashboardService,
-    private renderer: Renderer2,
+    private seoService: SeoService,
   ) {
-    this.resourceDashboard.getPdfData(this.pdfInput).subscribe(
-      (res: any) => {
-        const response = res?.data.map((elem: any) => {
-          elem.createdAt = elem.createdAt.split('T')[0];
-          return elem;
-        });
-        //  console.log("response", response)
-        // Commented for updating the order
-        // this.whatNewData = response
-      },
-      (err: any) => {
-        // this.whatNewData = []
-      },
-    );
+
+    // this.resourceDashboard.getPdfData(this.pdfInput).subscribe(
+    //   (res: any) => {
+    //     const response = res?.data.map((elem: any) => {
+    //       elem.createdAt = elem.createdAt.split('T')[0];
+    //       return elem;
+    //     });
+    //     //  console.log("response", response)
+    //     // Commented for updating the order
+    //     // this.whatNewData = response
+    //   },
+    //   (err: any) => {
+    //     // this.whatNewData = []
+    //   },
+    // );
   }
 
-  @ViewChild('highlightContainer', { static: false })
-  private highlightContainer!: ElementRef<HTMLDivElement>;
-  isHighlightContainerScrolledIntoView!: boolean;
-  highlightNo: number = 0;
-  interval: any;
-  @HostListener('window:scroll', ['$event'])
-  isScrolledIntoView() {
-    if (this.highlightContainer) {
-      const rect = this.highlightContainer.nativeElement.getBoundingClientRect();
-      const topShown = rect.top >= 0;
-      const bottomShown = rect.bottom <= window.innerHeight;
-      this.isHighlightContainerScrolledIntoView = topShown && bottomShown;
+  // globalFormControl = new FormControl();
+  // globalOptions = [];
+  // filteredOptions: any = [];
+  // cardData = [];
+  // dataForVisualization: any;
+  // pdfInput: any = {
+  //   toolKitVisible: '',
+  //   type: 'PDF',
+  //   header: 'reports_%26_publications',
+  //   subHeader: '',
+  //   globalName: '',
+  //   state: '',
+  //   ulb: '',
+  //   year: '',
+  // };
 
-      if (this.isHighlightContainerScrolledIntoView) {
-        if (this.highlightNo == 0) {
-          this.highlightNo++;
-          this.interval = setInterval(() => {
-            if (this.highlightNo < 4) this.highlightNo++;
-          }, 5 * 1000);
-        }
-      } else {
-        if (this.interval) clearInterval(this.interval);
-        this.highlightNo = 0;
-      }
-    }
-  }
-  globalFormControl = new FormControl();
-  globalOptions = [];
-  filteredOptions: any = [];
-  cardData = [];
-  dataForVisualization: any;
-  pdfInput: any = {
-    toolKitVisible: '',
-    type: 'PDF',
-    header: 'reports_%26_publications',
-    subHeader: '',
-    globalName: '',
-    state: '',
-    ulb: '',
-    year: '',
-  };
-
-  myInterval = 2000;
-  activeSlideIndex = false;
-  p_indi = true;
-  m_indi = false;
-  itemsPerSlide = 1;
-  singleSlideOffset = false;
-  noWrap = false;
-
-  counters = [
-    {
-      id: '002',
-      label: 'Customers served ',
-      number: '5321',
-      duration: '0.1',
-    },
-  ];
+  // myInterval = 2000;
+  // activeSlideIndex = false;
+  // p_indi = true;
+  // m_indi = false;
+  // itemsPerSlide = 1;
+  // singleSlideOffset = false;
+  // noWrap = false;
 
   slides = [
     {
@@ -129,69 +97,39 @@ export class HomeComponent implements OnInit {
     },
   ];
 
-  // Adding latest static  spotlight carousel details
 
-  noDataFound = false;
-  recentSearchArray: any = [];
-  dummyData: any = [
-    {
-      name: 'newDataSet',
-      type: 'new',
-    },
-  ];
   ngOnInit() {
-    // const hUser = $("#countDownUser").data('value');
-    // let hUserLess = hUser - 1000;
-    // const k = setInterval(function () {
-    //   if (hUserLess >= hUser) {
-    //     clearInterval(k);
-    //   }
-    //   hUserLess += 10;
-    // }, 25);
+    this.setSeo();
+    // this._commonService.dataForVisualizationCount.subscribe((res: any) => {
+    //   this.dataForVisualization = res;
+    // });
+  }
 
-    // this.globalFormControl.valueChanges
-    //   .subscribe((value) => {
-    //     if (value.length >= 1) {
-    //       this._commonService.postGlobalSearchData(value, "", "").subscribe((res: any) => {
-    //         //    console.log(res?.data);
-    //         const emptyArr: any = []
-    //         this.filteredOptions = emptyArr;
-    //         if (res?.data.length > 0) {
+  setSeo() {
+    this.seoService.updateTitle('Home Page | Your Site');
 
-    //           this.filteredOptions = res?.data;
-    //           this.noDataFound = false;
-    //         } else {
+    this.seoService.updateMetaTags([
+      { name: 'description', content: 'Homepage of Your Site' },
+      { name: 'keywords', content: 'angular 20, seo, json-ld' },
+      { property: 'og:title', content: 'Home | Your Site' }
+    ]);
 
-    //           const emptyArr: any = []
-    //           this.filteredOptions = emptyArr;
-    //           this.noDataFound = true;
-    //           const noDataFoundObj = {
-    //             name: '',
-    //             id: '',
-    //             type: '',
-    //           }
-    //           //  console.log('no data found')
-    //         }
-    //       });
-    //     }
-    //     else {
-    //       return;
-    //     }
-    //   })
-
-    this._commonService.dataForVisualizationCount.subscribe((res: any) => {
-      this.dataForVisualization = res;
+    this.seoService.setJsonLd({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Your Site",
+      "url": "https://yoursite.com"
     });
   }
 
-  carouselClass(e: any) {
-    if (e == 0) {
-      this.p_indi = true;
-      this.m_indi = false;
-    }
-    if (e == 1) {
-      this.m_indi = true;
-      this.p_indi = false;
-    }
-  }
+  // carouselClass(e: any) {
+  //   if (e == 0) {
+  //     this.p_indi = true;
+  //     this.m_indi = false;
+  //   }
+  //   if (e == 1) {
+  //     this.m_indi = true;
+  //     this.p_indi = false;
+  //   }
+  // }
 }
