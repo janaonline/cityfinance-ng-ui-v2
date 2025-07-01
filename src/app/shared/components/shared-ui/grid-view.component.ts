@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ExploresectionTable } from '../../../pages/home/dashboard-map-section/interfaces';
+import { ExploresectionTable } from '../../../core/models/interfaces';
 
 @Component({
   selector: 'app-grid-view',

@@ -14,7 +14,7 @@ import {
   takeUntil,
 } from 'rxjs';
 import { CommonService } from '../../../core/services/common.service';
-import { States } from '../../../pages/home/dashboard-map-section/interfaces';
+import { IState } from '../../../core/models/state/state';
 
 @Component({
   selector: 'app-state-search',
@@ -49,7 +49,7 @@ export class StateSearchComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private commonService = inject(CommonService);
 
-  readonly selectState = input<(state: States) => void>();
+  readonly selectState = input<(state: IState) => void>();
   readonly stateId = input<string>('');
   readonly stateName = input<string>('');
   readonly isStateReadonly = input<boolean>(false);
@@ -60,8 +60,8 @@ export class StateSearchComponent implements OnInit, OnDestroy {
   });
 
   readonly noDataFound = signal<boolean>(false);
-  private stateList: States[] = [];
-  filteredStates: Observable<States[]> = of([]);
+  private stateList: IState[] = [];
+  filteredStates: Observable<IState[]> = of([]);
 
   get stateNameControl(): FormControl {
     return this.myForm.get('stateName') as FormControl;
@@ -112,7 +112,7 @@ export class StateSearchComponent implements OnInit, OnDestroy {
           return of([]);
         }),
       )
-      .subscribe((states: States[]) => {
+      .subscribe((states: IState[]) => {
         this.stateList = states;
 
         this.filteredStates = this.stateNameControl.valueChanges.pipe(
@@ -129,13 +129,13 @@ export class StateSearchComponent implements OnInit, OnDestroy {
   }
 
   // Helper: To filter states.
-  private filterStates(value: string): States[] {
+  private filterStates(value: string): IState[] {
     const searchValue = value.toLowerCase().trim();
     return this.stateList.filter((state) => state.name.toLowerCase().includes(searchValue));
   }
 
   // Option selected from child dropdown.
-  onStateSelection(state: States): void {
+  onStateSelection(state: IState): void {
     const callback = this.selectState();
     if (callback) {
       callback(state);

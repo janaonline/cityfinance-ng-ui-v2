@@ -12,8 +12,8 @@ import {
   switchMap,
   takeUntil,
 } from 'rxjs';
+import { IULB } from '../../../core/models/ulb';
 import { CommonService } from '../../../core/services/common.service';
-import { Ulbs } from '../../../pages/home/dashboard-map-section/interfaces';
 
 @Component({
   selector: 'app-city-search',
@@ -49,14 +49,14 @@ export class CitySearchComponent implements OnInit, OnDestroy {
   private commonService = inject(CommonService);
   private destroy$ = new Subject<void>();
 
-  readonly selectCity = input<(city: Ulbs) => void>();
+  readonly selectCity = input<(city: IULB) => void>();
   readonly cityName = input<string>('');
   readonly stateId = input<string>('');
   readonly isCityReadonly = input<boolean>(false);
 
   readonly myForm: FormGroup = this.fb.group({ ulbName: [''] });
   readonly noDataFound = signal<boolean>(false);
-  readonly filteredUlbs = signal<Ulbs[]>([]);
+  readonly filteredUlbs = signal<IULB[]>([]);
 
   get ulbNameControl(): FormControl {
     return this.myForm.get('ulbName') as FormControl;
@@ -109,7 +109,7 @@ export class CitySearchComponent implements OnInit, OnDestroy {
   });
 
   // Inform parent when option is selected from dropdown.
-  onCitySelection(city: Ulbs): void {
+  onCitySelection(city: IULB): void {
     const callback = this.selectCity();
     if (callback) callback(city);
     console.log('ULB obj is sent from child to parent: ', city);

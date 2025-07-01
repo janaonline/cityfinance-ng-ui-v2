@@ -9,7 +9,11 @@
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 999999999999999999999999999;
+  z-index: 999;
+}
+
+.shadow-bottom {
+  box-shadow: 0 5px 7px -1px rgba(0, 0, 0, 0.3);
 }
 
 a {
@@ -38,7 +42,7 @@ a {
 }
 
 .nav-link {
-  padding-block: 1rem;
+  padding-block: 1.25rem;
   border-bottom: 2px solid transparent;
   color: var(--clr-secondary);
   font-weight: var(--fw-bold);
@@ -103,7 +107,7 @@ a {
     padding-block: 0.25rem;
   }
 
-  nav > div {
+  nav>div {
     padding-block: 0.35rem;
   }
 }
