@@ -1,0 +1,182 @@
+table {
+  width: 100%;
+}
+.table-section {
+  margin-bottom: 60px; 
+  margin-top: 10px;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table-title {
+  background-color: #e9edf5;
+  padding: 12px;
+  font-weight: bold;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.custom-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    vertical-align: top;
+    text-align: left;
+  }
+
+  th {
+    background-color: #eef1f8;
+    width: 20%;
+    font-weight: 600;
+  }
+}
+
+
+
+.summary-table {
+  border-collapse: collapse;
+  width: 100%;
+
+  th, td {
+    border: 1px solid #d3d3d3;
+    padding: 10px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f6f8fc;
+    font-weight: bold;
+    width: 25%;
+  }
+}
+
+.issue-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 12px;
+
+  th, td {
+    border: 1px solid #d3d3d3;
+    padding: 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background-color: #f6f8fc;
+    font-weight: bold;
+    width: 25%;
+  }
+}
+
+.rating-table, .objective-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 12px;
+
+  th, td {
+    border: 1px solid #d3d3d3;
+    padding: 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background-color: #f6f8fc;
+    font-weight: bold;
+    width: 25%;
+  }
+}
+.subscriber-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 12px;
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    vertical-align: top;
+    text-align: left;
+  }
+
+  th {
+    width: 20%;
+    background-color: #f2f5fc;
+    font-weight: bold;
+  }
+}
+.toggle-buttons {
+  margin-bottom: 20px;
+  margin-top: 20px;
+
+  button {
+    padding: 8px 16px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #e0e0e0;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  button.active {
+    background-color: #3f51b5; // blue
+    color: white;
+  }
+
+  button:hover {
+    background-color: #c5c5c5;
+  }
+}
+
+.pagination-controls {
+  text-align: right; /* <-- This aligns buttons to the right */
+
+  .btn {
+    margin: 0 3px;
+    border-radius: 0;
+    background: #f0f4ff;
+    color: #000;
+  }
+
+  .btn.active {
+    background-color: #2c6ed5;
+    color: white;
+    font-weight: bold;
+  }
+}
+@media screen and (max-width: 768px) {
+  .responsive-scroll-container {
+    overflow-x: auto;
+    -ms-overflow-style: none;  // IE 10+
+    scrollbar-width: none;     // Firefox
+
+    &::-webkit-scrollbar {     // Chrome, Safari, Edge
+      display: none;
+    }
+  }
+  .responsive-table {
+    min-width: 600px; // Adjust based on content
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .responsive-table th:first-child,
+  .responsive-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background-color: #eef1f8; // Same as your th background
+  }
+
+  .responsive-table th:first-child {
+    z-index: 2; // Higher so header stays above td
+  }
+}

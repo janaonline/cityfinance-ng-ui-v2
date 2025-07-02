@@ -1,1 +1,273 @@
-<p>borrowing-credit-rating works!</p>
+<div class="toggle-buttons">
+
+  <button
+    [ngClass]="{ active: selectedTab === 'borrowing' }"
+    (click)="selectedTab = 'borrowing'"
+  >
+    Borrowing
+  </button>
+  <button
+    [ngClass]="{ active: selectedTab === 'creditRating' }"
+    (click)="selectedTab = 'creditRating'"
+  >
+    Credit Rating
+  </button>
+</div>
+
+<h4>Below are the details of municipal bond issuances undertaken by the ULB</h4>
+<!-- Pagination Controls -->
+<div class="pagination-controls ">
+  <button class="btn btn-link" [disabled]="currentInstrumentPage === 0"
+    (click)="decrementPage()">« Previous</button>
+
+  <span *ngFor="let page of [].constructor(totalInstrumentPages); let i = index">
+    <button
+      class="btn"
+      [class.active]="i === currentInstrumentPage"
+      (click)="currentInstrumentPage = i"
+    >
+      {{ i + 1 }}
+    </button>
+  </span>
+
+  <button class="btn btn-link" [disabled]="currentInstrumentPage >= totalInstrumentPages - 1"
+    (click)="incrementPage()">Next »</button>
+</div>
+
+
+<div *ngIf="selectedTab === 'borrowing'">
+<div class="table-section">
+<!-- Summary Table -->
+<h3 class="table-title">Details Of Instrument Summary: 2020-2021</h3>
+<table class="summary-table " style="width: 100%;">
+  <tr>
+    <th>Number Of Instrument</th>
+    <td>{{ summary.numberOfInstruments }}</td>
+  </tr>
+  <tr>
+    <th>Issue Size</th>
+    <td>{{ summary.issueSize }}</td>
+  </tr>
+  <tr>
+    <th>Bids Received</th>
+    <td>{{ summary.bidsReceived }}</td>
+  </tr>
+</table>
+
+<br />
+
+<!-- Instrument Details Table -->
+<h3 class="table-title">Details Of Instrument</h3>
+<div class="responsive-scroll-container">
+<table class="table table-bordered responsive-table" style="width: 100%; border-collapse: collapse;">
+  <thead style="background-color: #f0f4ff;">
+    <tr>
+      <th style="padding: 10px; font-weight: bold;">Type Of Instruments</th>
+      <td *ngFor="let item of paginatedInstrumentData" style="padding: 10px;">{{ item.type }}</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th style="padding: 10px; font-weight: bold;">Term</th>
+      <td *ngFor="let item of paginatedInstrumentData" style="padding: 10px;">{{ item.term }}</td>
+    </tr>
+    <tr>
+      <th style="padding: 10px; font-weight: bold;">Coupon Rate</th>
+      <td *ngFor="let item of paginatedInstrumentData" style="padding: 10px;">{{ item.couponRate }}</td>
+    </tr>
+    <tr>
+      <th style="padding: 10px; font-weight: bold;">Interest Payment</th>
+      <td *ngFor="let item of paginatedInstrumentData" style="padding: 10px;">{{ item.interestPayment }}</td>
+    </tr>
+    <tr>
+      <th style="padding: 10px; font-weight: bold;">Tax Treatment</th>
+      <td *ngFor="let item of paginatedInstrumentData" style="padding: 10px;">{{ item.taxTreatment }}</td>
+    </tr>
+    <tr>
+      <th style="padding: 10px; font-weight: bold;">Repayment</th>
+      <td *ngFor="let item of paginatedInstrumentData" style="padding: 10px;">{{ item.repayment }}</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+<br />
+<h3 class="table-title">Details Of Issue</h3>
+<div class="responsive-scroll-container">
+<table class="issue-table responsive-table" style="width: 100%;">
+  <tr>
+    <th>Date Of Issue</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.dateOfIssue }}</td>
+  </tr>
+  <tr>
+    <th>Maturity Date</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.maturityDate }}</td>
+  </tr>
+  <tr>
+    <th>Platform</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.platform }}</td>
+  </tr>
+  <tr>
+    <th>Type</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.type }}</td>
+  </tr>
+  <tr>
+    <th>Issue Size</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.issueSize }}</td>
+  </tr>
+  <tr>
+    <th>Bids Received</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.bidsReceived }}</td>
+  </tr>
+  <tr>
+    <th>Amount Accepted</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.amountAccepted }}</td>
+  </tr>
+  <tr>
+    <th>Green Shoe Option</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.greenShoeOption }}</td>
+  </tr>
+  <tr>
+    <th>Green Show Option Amount</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.greenShoeOptionAmount }}</td>
+  </tr>
+  <tr>
+    <th>Guaranteed By State Government</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.guaranteedByStateGovt }}</td>
+  </tr>
+  <tr>
+    <th>Guarantee Mechanism</th>
+    <td *ngFor="let row of paginatedIssueData">{{ row.guaranteeMechanism }}</td>
+  </tr>
+</table>
+</div>
+<!-- Rating Table -->
+<br />
+<h3 class="table-title">Rating</h3>
+<div class="responsive-scroll-container">
+<table class="rating-table responsive-table" style="width: 100%;">
+  <tr>
+    <th>CRISIL</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.crisil }}</td>
+  </tr>
+  <tr>
+    <th>CARE</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.care }}</td>
+  </tr>
+  <tr>
+    <th>ICRA</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.icra }}</td>
+  </tr>
+  <tr>
+    <th>Brickwork</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.brickwork }}</td>
+  </tr>
+  <tr>
+    <th>Aucite / SMERA</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.auciteSmera }}</td>
+  </tr>
+  <tr>
+    <th>India Ratings & Research</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.indiaRatings }}</td>
+  </tr>
+  <tr>
+    <th>Other Rating Agencies</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.otherAgencies }}</td>
+  </tr>
+  <tr>
+    <th>Links To Reports</th>
+    <td *ngFor="let rating of paginatedRatingData">{{ rating.linksToReports }}</td>
+  </tr>
+</table>
+</div>
+
+<!-- Objective Of Issue Table -->
+<br />
+<h3 class="table-title">Objective Of Issue</h3>
+<div class="responsive-scroll-container">
+<table class="objective-table responsive-table" style="width: 100%;">
+  <tr>
+    <th>Object Of Issue</th>
+    <td *ngFor="let obj of paginatedObjectiveData">{{ obj.objectOfIssue }}</td>
+  </tr>
+</table>
+</div>
+
+<!-- Subscriber Table -->
+<br />
+<h3 class="table-title">Subscriber</h3>
+<div class="responsive-scroll-container">
+<table class="subscriber-table responsive-table" style="width: 100%;">
+  <tr>
+    <th>Who Can Invest</th>
+    <td *ngFor="let sub of paginatedSubscriberData">{{ sub.whoCanInvest }}</td>
+  </tr>
+  <tr>
+    <th>Details Of Subscribers</th>
+    <td *ngFor="let sub of paginatedSubscriberData">{{ sub.detailsOfSubscribers }}</td>
+  </tr>
+</table>
+</div>
+
+<br />
+<h3 class="table-title">Advisors</h3>
+<div class="responsive-scroll-container">
+<table class="custom-table responsive-table" style="width: 100%;">
+  <tr>
+    <th>Transaction Advisors</th>
+    <td *ngFor="let a of paginatedAdvisorData">{{ a.transactionAdvisors }}</td>
+  </tr>
+  <tr>
+    <th>Trustee For The Bond</th>
+    <td *ngFor="let a of paginatedAdvisorData">{{ a.trustee }}</td>
+  </tr>
+  <tr>
+    <th>Registrar Of The Issue</th>
+    <td *ngFor="let a of paginatedAdvisorData">{{ a.registrar }}</td>
+  </tr>
+  <tr>
+    <th>Auditor Of Issue</th>
+    <td *ngFor="let a of paginatedAdvisorData">{{ a.auditor }}</td>
+  </tr>
+  <tr>
+    <th>Legal Counsel</th>
+    <td *ngFor="let a of paginatedAdvisorData">{{ a.legalCounsel }}</td>
+  </tr>
+  <tr>
+    <th>Escrow Banker</th>
+    <td *ngFor="let a of paginatedAdvisorData">{{ a.escrowBanker }}</td>
+  </tr>
+  <tr>
+    <th>Arranger</th>
+    <td *ngFor="let a of paginatedAdvisorData">{{ a.arranger }}</td>
+  </tr>
+</table>
+</div>
+
+<br />
+<h3 class="table-title">Documents Available</h3>
+<div class="responsive-scroll-container">
+<table class="custom-table responsive-table" style="width: 100%;">
+  <tr>
+    <th>Draft Information Memorandum</th>
+    <td *ngFor="let doc of paginatedDocumentsData">{{ doc.draftMemorandum || 'Not available' }}</td>
+  </tr>
+  <tr>
+    <th>Notices From Platforms</th>
+    <td *ngFor="let doc of paginatedDocumentsData">{{ doc.noticesFromPlatforms || 'Not available' }}</td>
+  </tr>
+  <tr>
+    <th>Others</th>
+    <td *ngFor="let doc of paginatedDocumentsData">{{ doc.others || 'Not available' }}</td>
+  </tr>
+</table>
+</div>
+</div>
+</div>
+
+<!-- CREDIT RATING SECTION -->
+<div *ngIf="selectedTab === 'creditRating'">
+  <p> Cre dit Rating </p>
+</div>
+
