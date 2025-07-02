@@ -48,11 +48,11 @@
 
         <!-- State Map -->
         <div class="position-relative row" style="min-height: 350px">
-          @if (stateCodeSignal() && ulbId) {
+          @if (stateCodeSignal() && ulbIdSignal()) {
             <app-map
               #map
               [stateCode]="stateCodeSignal()"
-              [ulbId]="ulbId"
+              [ulbId]="ulbIdSignal()"
               (ulbIdChange)="selectedCityIdChange($event)"
             ></app-map>
           }
@@ -81,7 +81,7 @@
         (change)="onMoneyInfoYearChange($event)"
         id="years"
       >
-        @for (year of years; track $index) {
+        @for (year of yearsSignal(); track $index) {
           <option [value]="year" [selected]="year === yearSignal()">{{ year }}</option>
         }
       </select>
@@ -101,8 +101,8 @@
     <mat-tab label="Balance Sheet & Income Statement">
       @if (loadedTabs[1]) {
         <app-balancesheet-incomestatement
-          [years]="years"
-          [ulbId]="ulbId"
+          [yearsSignal]="yearsSignal()"
+          [ulbIdSignal]="ulbIdSignal()"
         ></app-balancesheet-incomestatement>
       }
     </mat-tab>

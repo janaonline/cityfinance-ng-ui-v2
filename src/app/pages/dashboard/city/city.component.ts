@@ -50,7 +50,7 @@ export class CityComponent implements OnInit {
   stateCodeSignal = signal<string>('');
 
   selectedCityNameSignal = signal<string>(''); // Bruhat Bengaluru Mahanagara Palike
-  ulbId: string = ''; // 5f5610b3aab0f778b2d2cac0
+  ulbIdSignal = signal<string>(''); // 5f5610b3aab0f778b2d2cac0
 
   exploreData!: ExploresectionTable[];
   popCat: string = '';
@@ -61,7 +61,8 @@ export class CityComponent implements OnInit {
   yearSignal = signal<string>('');
   audit_status: string = '';
   isActive: boolean = true;
-  years: string[] = [];
+  // years: string[] = [];
+  yearsSignal = signal<string[]>([]);
 
   isLoading1: boolean = true;
   isLoading2: boolean = true;
@@ -80,8 +81,10 @@ export class CityComponent implements OnInit {
   ngOnInit(): void {
     this.activatedRoute.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       const cityId = params.get('cityId') || '';
+      this.yearSignal.set('');
       if (cityId) {
-        this.ulbId = cityId;
+        // this.ulbId = cityId;
+        this.ulbIdSignal.set(cityId);
         this.getDistinctYearsList();
         this.getCityDetails();
         // this.getMoneyInfo();
@@ -119,14 +122,14 @@ export class CityComponent implements OnInit {
   public selectedCityIdChange($event: string): void {
     // this.ulbId = $event;
     if ($event) this.updateUlbIdAndNavigate($event);
-    console.log('ulbIdChange from map', this.ulbId, $event);
+    console.log('ulbIdChange from map', this.ulbIdSignal(), $event);
   }
 
   // ----- Get necessary data -----
   private getCityDetails(): void {
     this.isLoading1 = true;
     this._commonService
-      .getCityData(this.ulbId)
+      .getCityData(this.ulbIdSignal())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
@@ -154,9 +157,9 @@ export class CityComponent implements OnInit {
   // ----- Get money info -----
   private getMoneyInfo(): void {
     this.isLoading2 = true;
-    this._dashboardService.getMoneyInfo(this.yearSignal(), '', this.ulbId).subscribe({
+    this._dashboardService.getMoneyInfo(this.yearSignal(), '', this.ulbIdSignal()).subscribe({
       next: (res) => {
-        console.log(res);
+        console.log('Money info cards: ', res);
         this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
         this.isActive = res.isActive;
         this.moneyInfoSignal.set(res.result);
@@ -179,11 +182,11 @@ export class CityComponent implements OnInit {
 
   // Get distinct years list.
   private getDistinctYearsList(): void {
-    this._commonService.getLedgerYears('', this.ulbId).subscribe({
+    this._commonService.getLedgerYears('', this.ulbIdSignal()).subscribe({
       next: (res) => {
-        console.log(res.ledgerYears);
-        this.years = res.ledgerYears;
-        this.yearSignal.set(this.years?.[0]);
+        console.log('Ledger years: ', res.ledgerYears);
+        this.yearsSignal.set(res.ledgerYears);
+        this.yearSignal.set(this.yearsSignal()?.[0]);
       },
       error: (error) => console.error('Failed to fetch years list: getDistinctYearsList()', error),
     });

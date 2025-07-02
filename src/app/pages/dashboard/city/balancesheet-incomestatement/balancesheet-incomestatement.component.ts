@@ -1,20 +1,30 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, effect, input, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription, takeUntil } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { BsIsData } from '../../../../core/models/interfaces';
+import { AfsPopupData, BsIsData } from '../../../../core/models/interfaces';
 import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
 import { CommonService } from '../../../../core/services/common.service';
+import { UtilityService } from '../../../../core/services/utility.service';
+import { AfsPdfsDialogComponent } from '../../../../shared/components/afs-pdfs-dialog/afs-pdfs-dialog.component';
 import { DashboardService } from '../../dashboard.service';
+import { cloneDeep } from 'lodash';
 type DownloadReportElement = {
   type: string;
   key: string;
   [year: string]: string;
 };
+
+interface TableColumns {
+  key: string;
+  value: string;
+  class?: string;
+  number?: boolean;
+}
 
 @Component({
   selector: 'app-balancesheet-incomestatement',
@@ -23,8 +33,11 @@ type DownloadReportElement = {
   styleUrl: './balancesheet-incomestatement.component.scss',
 })
 export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
-  @Input() years!: string[];
-  @Input() ulbId!: string;
+  // @Input() years!: string[];
+  // @Input() ulbId!: string;
+  readonly yearsSignal = input<string[]>([]);
+  readonly ulbIdSignal = input<string>('');
+  private destroy$ = new Subject<void>();
 
   readonly fileLink = `${environment.STORAGE_BASEURL}/GlobalFiles/STANDARDIZATION_PROCESS_OF_ANNUAL_FINANCIAL_STATEMENT_OF_ULBS_f6e6b60b-2245-4104-803f-0fe01e33ae90.pdf`;
   readonly buttons = [
@@ -60,16 +73,20 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   reportForm!: FormGroup;
   private subscriptions: Subscription[] = [];
 
-  readonly headers = [
+  readonly HEADERS_STRUCTURE: TableColumns[] = [
     { key: 'code', value: 'Account Code', class: 'text-center', number: false },
-    { key: 'lineItem', value: 'Major Group/Minor Group', number: false },
+    { key: 'lineItem', value: 'Major Group/Minor Group', class: '', number: false },
   ];
+  headers!: TableColumns[];
   displayedColumns!: string[];
   dataSource: object[] = [];
   ledgerData!: BsIsData[];
   private population!: number;
 
-  readonly downloadReportsHeaders = [{ key: 'type', value: 'Download Report', class: '' }];
+  readonly DOWNLOAD_REPORTS_HEADERS_STRUCTURE: TableColumns[] = [
+    { key: 'type', value: 'Download Report', class: '' },
+  ];
+  downloadReportsHeaders!: TableColumns[];
   downloadReportsDisplayedColumns!: string[];
   downloadReportsDataSource: DownloadReportElement[] = [
     { type: 'Raw PDF', key: 'pdf' },
@@ -80,27 +97,41 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private dashboardService: DashboardService,
     private commonService: CommonService,
+    private utilityService: UtilityService,
     private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
-    this.getBsIsData();
-    this.createHeaders();
+    // this.getBsIsData();
+    // this.createHeaders();
     this.initializeForm();
     // this.updateTableData();
-    // console.log('form initiated', this.ulbId);
+    // console.log('form initiated', this.ulbIdSignal());
   }
 
   private getBsIsData(): void {
-    this.dashboardService.getBsIsData(this.ulbId, this.selectedBtn).subscribe({
-      next: (res) => {
-        this.ledgerData = res['data'];
-        this.population = res['population'];
-      },
-      error: (error) => console.error('Failed to get data: getBsIsData()', error),
-      complete: () => this.updateTableData(),
-    });
+    console.log('getBsIsData() called');
+
+    this.dashboardService
+      .getBsIsData(this.ulbIdSignal(), this.selectedBtn)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.ledgerData = res['data'];
+          this.population = res['population'];
+        },
+        error: (error) => console.error('Failed to get data: getBsIsData()', error),
+        complete: () => this.updateTableData(),
+      });
   }
+
+  readonly ulbChange = effect(() => {
+    if (this.ulbIdSignal()) this.getBsIsData();
+  });
+
+  readonly yearsChange = effect(() => {
+    if (this.yearsSignal()) this.createHeaders();
+  });
 
   private initializeForm(): void {
     this.reportForm = this.fb.group({
@@ -151,9 +182,18 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   // Create headers based on years [].
   createHeaders(): void {
+    console.log('createHeaders() called');
+
+    // Create deep copy.
+    // this.headers = JSON.parse(JSON.stringify(this.HEADERS_STRUCTURE));
+    // this.downloadReportsHeaders = JSON.parse(JSON.stringify(this.DOWNLOAD_REPORTS_HEADERS_STRUCTURE));
+    this.headers = cloneDeep(this.HEADERS_STRUCTURE);
+    this.downloadReportsHeaders = cloneDeep(this.DOWNLOAD_REPORTS_HEADERS_STRUCTURE);
+
     // Generate headers
-    this.years.forEach((year) => {
+    this.yearsSignal().forEach((year) => {
       const yearKey = year.replace('-', '');
+      // console.log('headers', this.headers);
       this.downloadReportsHeaders.push({
         key: yearKey,
         value: year,
@@ -170,7 +210,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
     // Update data source with new year keys
     this.downloadReportsDataSource.forEach((row) => {
-      this.years.forEach((year) => {
+      this.yearsSignal().forEach((year) => {
         const yearKey = year.replace('-', '');
         row[yearKey] = row.key;
       });
@@ -181,59 +221,70 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     this.downloadReportsDisplayedColumns = this.downloadReportsHeaders.map((e) => e.key);
   }
 
-  onFileClick(selectedYear: string, fileType: string): void {
+  // ----- On selecting file icon from download report table ----
+  onFileClick(fileType: 'pdf' | 'excel', selectedYear: string): void {
     // TODO: Add loader.
     console.log('File clicked: ', selectedYear, fileType);
 
+    // Open file - 2015 to 2019.
     const yearSplit = Number(selectedYear.split('-')[0]);
     if (yearSplit < 2019) {
-      // this.getReportsBefore2019(selectedYear, fileType);
+      this.getReportsBefore2019(selectedYear, fileType);
       return;
     }
 
-    this.commonService.getReports(this.ulbId, selectedYear).subscribe({
-      next: (res: any) => {
-        let type = 'notFound';
-        console.log('getReports', res);
-        if (res && res['success']) {
-          type = res['data'][fileType].length ? fileType : 'notFound';
-          this.openDialog(res['data'], type);
-        }
-      },
-      error: (error: Error) => console.error('Failed to get file: onFileClick()', error),
-    });
+    // Open dialog box with AFS data - 2019 onwards.
+    this.commonService
+      .getReports(this.ulbIdSignal(), selectedYear)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.log('getReports', res);
+          if (res && res['success']) {
+            const type = res['data'][fileType].length ? fileType : 'notFound';
+            this.openDialog(res['data'], type);
+          }
+        },
+        error: (error: Error) => console.error('Failed to get file: onFileClick()', error),
+      });
   }
 
-  openDialog(data: any, fileType: string) {
+  private openDialog(data: AfsPopupData | null, fileType: string) {
     // console.log('openDialog', data);
-    // const dialogRef = this.dialog.open(BalanceTabledialogComponent, {
-    //   data: { reportList: data, fileType: fileType },
-    //   width: '500px',
-    // });
-    // dialogRef.afterClosed().subscribe((result) => {
-    //   console.log('The dialog was closed');
-    // });
+    const dialogRef = this.dialog.open(AfsPdfsDialogComponent, {
+      data: { reportList: data, fileType: fileType },
+      width: '500px',
+    });
+    dialogRef
+      .afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => console.log('The dialog was closed'));
   }
 
-  // getReportsBefore2019(selectedYear: string, fileType: string) {
-  //   let category;
-  //   if (this.reportGroup == 'Balance Sheet') {
-  //     category = 'balance';
-  //   } else if (this.reportGroup == 'Income & Expenditure Statement') {
-  //     category = 'income';
-  //   }
-  //   this._resourcesDashboardService
-  //     .getDataSets(selectedYear, fileType, category, '', this.ulbName, '')
-  //     .subscribe((res) => {
-  //       console.log(res['data']);
-  //       if (res['data'].length == 0) {
-  //         this.openDialog(res['data'], 'notFound');
-  //       } else {
-  //         const target_file_url = environment.STORAGE_BASEURL + res['data'][0]['fileUrl'];
-  //         window.open(target_file_url);
-  //       }
-  //     });
-  // }
+  private getReportsBefore2019(selectedYear: string, fileType: string) {
+    let category = 'balanceSheet';
+    if (this.selectedBtn === 'balanceSheet') category = 'balance';
+    else if (this.selectedBtn === 'incomeStatement') category = 'income';
+
+    this.commonService
+      .getDataSets(selectedYear, fileType, category, '', '', this.ulbIdSignal())
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.log(res);
+          if (res['data'].length == 0) this.openDialog(null, 'notFound');
+          else {
+            const target_file_url = environment.STORAGE_BASEURL + res['data'][0]['fileUrl'];
+            const target_file_name = res['data'][0]['fileName'];
+
+            if (fileType === 'pdf') window.open(target_file_url, '_blank');
+            else if (fileType === 'excel')
+              this.utilityService.fetchFile(target_file_url, target_file_name);
+          }
+        },
+        error: (error) => console.error('Failed to get data getDataSets(): ', error),
+      });
+  }
 
   buttonClick(buttonKey: string): void {
     this.selectedBtn = buttonKey;
@@ -242,6 +293,8 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
 

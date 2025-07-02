@@ -1,4 +1,4 @@
-import { IState } from "./state/state";
+import { IState } from './state/state';
 
 export interface BondIssuances {
   bondIssueAmount: number;
@@ -66,4 +66,27 @@ export interface BsIsDataBase {
 
 export interface BsIsData extends BsIsDataBase {
   [year: `${number}`]: number | string | null;
+}
+
+export interface AfsPopupData {
+  excel: FileData[];
+  pdf: FileData[];
+  type: string;
+}
+
+export interface FileData {
+  name: string;
+  url: string;
+}
+
+export interface FileMetadata {
+  fileName: string;
+  fileUrl: string;
+  modifiedAt: string;
+  state: string;
+  type: string;
+  ulbId: string;
+  ulbName: string;
+  year: string;
+  _id: string;
 }
