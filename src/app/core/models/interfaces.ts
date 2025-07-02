@@ -90,3 +90,8 @@ export interface FileMetadata {
   year: string;
   _id: string;
 }
+
+export interface ButtonObj {
+  label: string;
+  key: string;
+}

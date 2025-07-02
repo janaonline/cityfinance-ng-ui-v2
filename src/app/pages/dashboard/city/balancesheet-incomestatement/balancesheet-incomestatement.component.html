@@ -1,26 +1,18 @@
-<!-- {{ selectedBtn }}
+<!-- {{ selectedBtn() }}
 {{ reportForm.get('reportType')?.value }}
 {{ reportForm.get('valueType')?.value }}
 {{ reportForm.get('currencyFormat')?.value }} -->
-<section class="my-4">
+<section class="">
   <!-- Buttons -->
-  <div class="d-flex my-4 overflow-x-auto">
-    @for (btn of buttons; track $index) {
-      <button
-        role="button"
-        class="btn rounded-5 m-2 text-nowrap"
-        [ngClass]="selectedBtn === btn.key ? 'btn-cfPrimary' : 'btn-outline-cfPrimary'"
-        (click)="buttonClick(btn.key)"
-      >
-        {{ btn.label }}
-      </button>
-    }
-  </div>
+  <app-tab-buttons
+    [buttons]="buttons"
+    (selectedButtonKeyChange)="onSelectedButtonChange($event)"
+  ></app-tab-buttons>
 
   <!-- Filter -->
   <form
     [formGroup]="reportForm"
-    class="border rounded bg-light p-4 d-flex gap-2 flex-wrap justify-content-md-around align-items-center"
+    class="border rounded bg-light p-4 d-flex gap-2 flex-wrap justify-content-md-around align-items-center my-4"
   >
     <!-- Report Type & Value Format -->
     @for (group of radioOptions; track $index) {

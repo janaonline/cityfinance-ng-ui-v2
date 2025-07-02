@@ -1,18 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, input, OnDestroy, OnInit } from '@angular/core';
+import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { cloneDeep } from 'lodash';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { AfsPopupData, BsIsData } from '../../../../core/models/interfaces';
+import { AfsPopupData, BsIsData, ButtonObj } from '../../../../core/models/interfaces';
 import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
 import { CommonService } from '../../../../core/services/common.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsPdfsDialogComponent } from '../../../../shared/components/afs-pdfs-dialog/afs-pdfs-dialog.component';
+import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
 import { DashboardService } from '../../dashboard.service';
-import { cloneDeep } from 'lodash';
 type DownloadReportElement = {
   type: string;
   key: string;
@@ -28,7 +29,14 @@ interface TableColumns {
 
 @Component({
   selector: 'app-balancesheet-incomestatement',
-  imports: [MatTableModule, MatTooltipModule, InrFormatPipe, CommonModule, ReactiveFormsModule],
+  imports: [
+    MatTableModule,
+    MatTooltipModule,
+    InrFormatPipe,
+    CommonModule,
+    ReactiveFormsModule,
+    TabButtonsComponent,
+  ],
   templateUrl: './balancesheet-incomestatement.component.html',
   styleUrl: './balancesheet-incomestatement.component.scss',
 })
@@ -40,7 +48,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   readonly fileLink = `${environment.STORAGE_BASEURL}/GlobalFiles/STANDARDIZATION_PROCESS_OF_ANNUAL_FINANCIAL_STATEMENT_OF_ULBS_f6e6b60b-2245-4104-803f-0fe01e33ae90.pdf`;
-  readonly buttons = [
+  readonly buttons: ButtonObj[] = [
     { key: 'balanceSheet', label: 'Balance Sheet' },
     { key: 'incomeStatement', label: 'Income Statement' },
   ];
@@ -69,7 +77,8 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     { key: 'cr', label: 'INR Crore' },
   ];
   readonly currencyOptions = { showSymbol: false, showUnit: false };
-  selectedBtn = 'balanceSheet';
+  // selectedBtn = 'balanceSheet';
+  selectedBtn = signal<string>('');
   reportForm!: FormGroup;
   private subscriptions: Subscription[] = [];
 
@@ -110,13 +119,14 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   private getBsIsData(): void {
-    console.log('getBsIsData() called');
+    if (!this.ulbIdSignal() || !this.selectedBtn()) return;
 
     this.dashboardService
-      .getBsIsData(this.ulbIdSignal(), this.selectedBtn)
+      .getBsIsData(this.ulbIdSignal(), this.selectedBtn())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
+          console.log('getBsIsData() called');
           this.ledgerData = res['data'];
           this.population = res['population'];
         },
@@ -263,8 +273,8 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   private getReportsBefore2019(selectedYear: string, fileType: string) {
     let category = 'balanceSheet';
-    if (this.selectedBtn === 'balanceSheet') category = 'balance';
-    else if (this.selectedBtn === 'incomeStatement') category = 'income';
+    if (this.selectedBtn() === 'balanceSheet') category = 'balance';
+    else if (this.selectedBtn() === 'incomeStatement') category = 'income';
 
     this.commonService
       .getDataSets(selectedYear, fileType, category, '', '', this.ulbIdSignal())
@@ -286,9 +296,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
       });
   }
 
-  buttonClick(buttonKey: string): void {
-    this.selectedBtn = buttonKey;
-    this.getBsIsData();
+  // Output emitted by child to parent
+  onSelectedButtonChange(key: string): void {
+    console.log('Button key sent from child to parent:', key);
+    this.selectedBtn.set(key);
+    // this.getBsIsData();
   }
 
   ngOnDestroy(): void {

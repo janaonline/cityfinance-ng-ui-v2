@@ -1,1 +1,11 @@
-<p>slb works!</p>
+<!-- {{ currentSelectedButtonKey() }} -->
+
+<section class="my-4">
+  <!-- Buttons -->
+  <app-tab-buttons
+    [buttons]="buttons"
+    (selectedButtonKeyChange)="onSelectedButtonChange($event)"
+  ></app-tab-buttons>
+
+  <!-- Filter -->
+</section>

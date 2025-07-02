@@ -92,7 +92,7 @@
 <section class="container matTabGroup">
   <h3 class="fw-bold p-2 my-4 text-center">Dashboard</h3>
 
-  <mat-tab-group fitInkBarToContent (selectedIndexChange)="onTabChange($event)">
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)">
     <mat-tab label="Financial Indicators">
       @if (loadedTabs[0]) {
         <app-financial-indicator></app-financial-indicator>
