@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatTableModule } from '@angular/material/table';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { cloneDeep } from 'lodash';
 import { Subject, Subscription, takeUntil } from 'rxjs';
@@ -25,17 +27,20 @@ interface TableColumns {
   value: string;
   class?: string;
   number?: boolean;
+  width?: string;
 }
 
 @Component({
   selector: 'app-balancesheet-incomestatement',
   imports: [
+    MatInputModule,
     MatTableModule,
     MatTooltipModule,
     InrFormatPipe,
     CommonModule,
     ReactiveFormsModule,
     TabButtonsComponent,
+    MatProgressSpinner,
   ],
   templateUrl: './balancesheet-incomestatement.component.html',
   styleUrl: './balancesheet-incomestatement.component.scss',
@@ -80,15 +85,17 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   // selectedBtn = 'balanceSheet';
   selectedBtn = signal<string>('');
   reportForm!: FormGroup;
+  isLoading: boolean = true;
   private subscriptions: Subscription[] = [];
 
   readonly HEADERS_STRUCTURE: TableColumns[] = [
     { key: 'code', value: 'Account Code', class: 'text-center', number: false },
-    { key: 'lineItem', value: 'Major Group/Minor Group', class: '', number: false },
+    { key: 'lineItem', value: 'Major Group/Minor Group', class: '', number: false, width: '500px' },
   ];
   headers!: TableColumns[];
   displayedColumns!: string[];
   dataSource: object[] = [];
+  filteredDataSource = new MatTableDataSource<object>();
   ledgerData!: BsIsData[];
   private population!: number;
 
@@ -120,6 +127,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   private getBsIsData(): void {
     if (!this.ulbIdSignal() || !this.selectedBtn()) return;
+    this.isLoading = true;
 
     this.dashboardService
       .getBsIsData(this.ulbIdSignal(), this.selectedBtn())
@@ -129,8 +137,12 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
           console.log('getBsIsData() called');
           this.ledgerData = res['data'];
           this.population = res['population'];
+          this.isLoading = false;
         },
-        error: (error) => console.error('Failed to get data: getBsIsData()', error),
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Failed to get data: getBsIsData()', error);
+        },
         complete: () => this.updateTableData(),
       });
   }
@@ -184,6 +196,8 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     this.dataSource = (this.ledgerData as { reportType?: string }[]).filter(
       (ele) => !ele.reportType || ele.reportType === this.reportType,
     );
+
+    this.filteredDataSource = new MatTableDataSource(this.dataSource);
   }
 
   getFormattedValue(value: number): number {
@@ -231,9 +245,14 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     this.downloadReportsDisplayedColumns = this.downloadReportsHeaders.map((e) => e.key);
   }
 
+  // Search feature will filter the content based on search term.
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.filteredDataSource.filter = filterValue.trim().toLowerCase();
+  }
+
   // ----- On selecting file icon from download report table ----
   onFileClick(fileType: 'pdf' | 'excel', selectedYear: string): void {
-    // TODO: Add loader.
     console.log('File clicked: ', selectedYear, fileType);
 
     // Open file - 2015 to 2019.

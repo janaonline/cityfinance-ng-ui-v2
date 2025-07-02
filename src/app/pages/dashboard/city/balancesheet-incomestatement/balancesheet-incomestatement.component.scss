@@ -4,7 +4,7 @@ tr {
 }
 
 tr:hover {
-    background-color: rgb(240, 238, 238);
+    background-color: #f8f9fa;
 }
 
 // input[type="radio"] {
@@ -21,4 +21,12 @@ tr:hover {
     border: none;
     padding: 0;
     cursor: pointer;
+}
+
+.mat-column-lineItem {
+    min-width: 200px !important;
+}
+
+.min-width {
+    min-width: 220px;
 }
