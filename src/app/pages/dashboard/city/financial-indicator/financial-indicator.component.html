@@ -1,1 +1,5 @@
-<p>financial-indicator works!</p>
+@if (this.yearsSignal().length === 0) {
+  <app-no-data-found></app-no-data-found>
+} @else {
+  <p>financial-indicator works!</p>
+}

@@ -838,6 +838,17 @@ export class CommonService {
     );
   }
 
+  // Get distinct years - SLBs data.
+  slbYears(ulb: string) {
+    let params = new HttpParams();
+    if (ulb) params = params.set('ulb', ulb);
+
+    return this.http.get<{ slbYears: string[] }>(
+      `${environment.api.url}common/get-latest-slbs-year`,
+      { params },
+    );
+  }
+
   // Annual accounts popup - Show BS, BSS, IS, ISE, CF, AR in one popup.
   getReports(ulbId: string, financialYear: string, auditType: string = '') {
     return this.http.get<{ data: AfsPopupData; success: boolean }>(

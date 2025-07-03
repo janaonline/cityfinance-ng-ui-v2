@@ -4,10 +4,11 @@ import { environment } from '../../../../environments/environment';
 import { AfsPopupData } from '../../../core/models/interfaces';
 import { UtilityService } from '../../../core/services/utility.service';
 import { DownloadUserInfoService } from '../user-info-dialog/download-user-info.service';
+import { NoDataFoundComponent } from '../shared-ui/no-data-found.component';
 
 @Component({
   selector: 'app-afs-pdfs-dialog',
-  imports: [],
+  imports: [NoDataFoundComponent],
   templateUrl: './afs-pdfs-dialog.component.html',
   styleUrl: './afs-pdfs-dialog.component.scss',
 })

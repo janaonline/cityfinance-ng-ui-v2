@@ -16,6 +16,7 @@ import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsPdfsDialogComponent } from '../../../../shared/components/afs-pdfs-dialog/afs-pdfs-dialog.component';
 import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
 import { DashboardService } from '../../dashboard.service';
+import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 type DownloadReportElement = {
   type: string;
   key: string;
@@ -41,6 +42,7 @@ interface TableColumns {
     ReactiveFormsModule,
     TabButtonsComponent,
     MatProgressSpinner,
+    NoDataFoundComponent,
   ],
   templateUrl: './balancesheet-incomestatement.component.html',
   styleUrl: './balancesheet-incomestatement.component.scss',

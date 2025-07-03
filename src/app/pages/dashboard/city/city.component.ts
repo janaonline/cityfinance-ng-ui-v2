@@ -58,16 +58,20 @@ export class CityComponent implements OnInit {
 
   // Money info cards.
   moneyInfoSignal = signal<ExploresectionTable[]>([]);
-  yearSignal = signal<string>('');
   audit_status: string = '';
   isActive: boolean = true;
-  // years: string[] = [];
-  yearsSignal = signal<string[]>([]);
+  selectedLedgerYear = signal<string>('');
+  ledgerYears = signal<string[]>([]);
+
+  // selectedSlbYear = signal<string>('');
+  slbYears = signal<string[]>([]);
 
   isLoading1: boolean = true;
   isLoading2: boolean = true;
 
   loadedTabs: boolean[] = [true, false, false, false];
+  isSlbDisabled: boolean = true;
+  isLedgerDisabled: boolean = true;
 
   private destroy$ = new Subject<void>();
 
@@ -81,7 +85,7 @@ export class CityComponent implements OnInit {
   ngOnInit(): void {
     this.activatedRoute.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       const cityId = params.get('cityId') || '';
-      this.yearSignal.set('');
+      this.selectedLedgerYear.set('');
       if (cityId) {
         // this.ulbId = cityId;
         this.ulbIdSignal.set(cityId);
@@ -157,38 +161,59 @@ export class CityComponent implements OnInit {
   // ----- Get money info -----
   private getMoneyInfo(): void {
     this.isLoading2 = true;
-    this._dashboardService.getMoneyInfo(this.yearSignal(), '', this.ulbIdSignal()).subscribe({
-      next: (res) => {
-        console.log('Money info cards: ', res);
-        this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
-        this.isActive = res.isActive;
-        this.moneyInfoSignal.set(res.result);
-        this.lastModifiedAt = res.lastModifiedAt;
-        this.isLoading2 = false;
-      },
-      error: (error) => console.error('Error in fetching money info: ', error),
-    });
+    this._dashboardService
+      .getMoneyInfo(this.selectedLedgerYear(), '', this.ulbIdSignal())
+      .subscribe({
+        next: (res) => {
+          console.log('Money info cards: ', res);
+          this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
+          this.isActive = res.isActive;
+          this.moneyInfoSignal.set(res.result);
+          this.lastModifiedAt = res.lastModifiedAt;
+          this.isLoading2 = false;
+        },
+        error: (error) => console.error('Error in fetching money info: ', error),
+      });
   }
 
   readonly moneyInfoYearChange = effect(() => {
-    if (this.yearSignal()) this.getMoneyInfo();
+    if (this.selectedLedgerYear()) this.getMoneyInfo();
   });
 
   // Drop down selection.
   public onMoneyInfoYearChange($event: Event): void {
     const yearSelected = ($event.target as HTMLSelectElement).value;
-    if (this.yearSignal() !== yearSelected) this.yearSignal.set(yearSelected);
+    if (this.selectedLedgerYear() !== yearSelected) this.selectedLedgerYear.set(yearSelected);
   }
 
   // Get distinct years list.
   private getDistinctYearsList(): void {
+    // Distinct ledger years.
     this._commonService.getLedgerYears('', this.ulbIdSignal()).subscribe({
       next: (res) => {
-        console.log('Ledger years: ', res.ledgerYears);
-        this.yearsSignal.set(res.ledgerYears);
-        this.yearSignal.set(this.yearsSignal()?.[0]);
+        if (res.ledgerYears.length) this.isLedgerDisabled = false;
+        this.ledgerYears.set(res.ledgerYears);
+        this.selectedLedgerYear.set(this.ledgerYears()?.[0]);
+
+        console.log(
+          'Ledger years: ',
+          res.ledgerYears,
+          res.ledgerYears.length,
+          this.isLedgerDisabled,
+        );
       },
       error: (error) => console.error('Failed to fetch years list: getDistinctYearsList()', error),
+    });
+
+    // Distinct slb years.
+    this._commonService.slbYears(this.ulbIdSignal()).subscribe({
+      next: (res) => {
+        if (res.slbYears.length) this.isSlbDisabled = false;
+        this.slbYears.set(res.slbYears);
+
+        console.log('slb years: ', res.slbYears, res.slbYears.length, this.isSlbDisabled);
+      },
+      error: (error) => console.log('Failed to get slbYears: ', error),
     });
   }
 

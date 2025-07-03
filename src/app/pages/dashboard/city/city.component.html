@@ -77,12 +77,12 @@
       {{ audit_status }} financial statements for the year
       <select
         class="form-select form-select-sm w-auto d-inline-block"
-        [value]="yearSignal()"
+        [value]="selectedLedgerYear()"
         (change)="onMoneyInfoYearChange($event)"
         id="years"
       >
-        @for (year of yearsSignal(); track $index) {
-          <option [value]="year" [selected]="year === yearSignal()">{{ year }}</option>
+        @for (year of ledgerYears(); track $index) {
+          <option [value]="year" [selected]="year === selectedLedgerYear()">{{ year }}</option>
         }
       </select>
     </p>
@@ -93,22 +93,22 @@
   <h3 class="fw-bold p-2 my-4 text-center">Dashboard</h3>
 
   <mat-tab-group (selectedIndexChange)="onTabChange($event)">
-    <mat-tab label="Financial Indicators">
+    <mat-tab label="Financial Indicators" [disabled]="isLedgerDisabled">
       @if (loadedTabs[0]) {
-        <app-financial-indicator></app-financial-indicator>
+        <app-financial-indicator [yearsSignal]="ledgerYears()"></app-financial-indicator>
       }
     </mat-tab>
-    <mat-tab label="Balance Sheet & Income Statement">
+    <mat-tab label="Balance Sheet & Income Statement" [disabled]="isLedgerDisabled">
       @if (loadedTabs[1]) {
         <app-balancesheet-incomestatement
-          [yearsSignal]="yearsSignal()"
+          [yearsSignal]="ledgerYears()"
           [ulbIdSignal]="ulbIdSignal()"
         ></app-balancesheet-incomestatement>
       }
     </mat-tab>
-    <mat-tab label="Service Level BenchMark">
+    <mat-tab label="Service Level BenchMark" [disabled]="isSlbDisabled">
       @if (loadedTabs[2]) {
-        <app-slb></app-slb>
+        <app-slb [years]="slbYears()" [ulbId]="ulbIdSignal()"></app-slb>
       }
     </mat-tab>
     <mat-tab label="Borrowing & Credit Rating">

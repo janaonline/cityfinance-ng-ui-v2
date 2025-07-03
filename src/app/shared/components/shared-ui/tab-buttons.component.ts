@@ -10,15 +10,21 @@ import { ButtonObj } from '../../../core/models/interfaces';
     @for (btn of buttons(); track $index) {
       <button
         role="button"
-        class="btn rounded-5 m-2 text-nowrap"
-        [ngClass]="selectedBtnKey() === btn.key ? 'btn-cfPrimary' : 'btn-outline-cfPrimary'"
+        class="btn rounded-3 m-2 text-nowrap font-bold p-1"
+        [ngClass]="selectedBtnKey() === btn.key ? 'btn-cfSecondary' : 'btn-outline-cfSecondary'"
         (click)="buttonClick(btn.key)"
       >
         {{ btn.label }}
       </button>
     }
   </div>`,
-  styles: [],
+  styles: [
+    `
+      .font-bold {
+        font-weight: var(--fw-semi-bold);
+      }
+    `,
+  ],
 })
 export class TabButtonsComponent implements OnInit {
   // Input signal to receive the array of buttons from the parent.
