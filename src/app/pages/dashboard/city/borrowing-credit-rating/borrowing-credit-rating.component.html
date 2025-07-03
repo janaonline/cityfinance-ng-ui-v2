@@ -1,1 +1,15 @@
-<p>borrowing-credit-rating works!</p>
+<section class="my-4 container">
+  @if (this.borrowingYears().length === 0) {
+    <app-no-data-found></app-no-data-found>
+  } @else {
+    <!-- Buttons -->
+    <app-tab-buttons
+      [buttons]="buttons"
+      (selectedButtonKeyChange)="onSelectedButtonChange($event)"
+    ></app-tab-buttons>
+  }
+
+  @if (currentSelectedButtonKey() === 'borrowing') {
+    <p>Below are the details of Municipal Bond Issuances undertaken by the ULB</p>
+  }
+</section>

@@ -839,12 +839,24 @@ export class CommonService {
   }
 
   // Get distinct years - SLBs data.
-  slbYears(ulb: string) {
+  slbYears(ulbId: string) {
     let params = new HttpParams();
-    if (ulb) params = params.set('ulb', ulb);
+    if (ulbId) params = params.set('ulb', ulbId);
 
     return this.http.get<{ slbYears: string[] }>(
       `${environment.api.url}common/get-latest-slbs-year`,
+      { params },
+    );
+  }
+
+  // Get distinct years - Bonds/ Borrowings data.
+  borrowingYears(ulbId: string = '', stateId: string = '') {
+    let params = new HttpParams();
+    if (ulbId) params = params.set('ulbId', ulbId);
+    if (stateId) params = params.set('stateId', stateId);
+
+    return this.http.get<{ borrowingYears: string[] }>(
+      `${environment.api.url}common/get-latest-borrowings-year`,
       { params },
     );
   }

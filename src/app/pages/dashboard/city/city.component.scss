@@ -19,19 +19,3 @@
     --mat-tab-active-hover-indicator-color: var(--clr-secondary);
     --mat-tab-active-indicator-color: var(--clr-secondary);
 }
-
-/* chart.css */
-.chart-container {
-    width: 90%;
-    margin: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-}
-
-canvas {
-    width: 100%;
-    max-width: 600px;
-    height: 400px;
-    margin: auto;
-}

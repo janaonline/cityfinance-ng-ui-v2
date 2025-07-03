@@ -10,7 +10,7 @@ import { ButtonObj } from '../../../core/models/interfaces';
     @for (btn of buttons(); track $index) {
       <button
         role="button"
-        class="btn rounded-3 m-2 text-nowrap font-bold p-1"
+        class="btn rounded-3 m-2 text-nowrap font-bold py-1 px-2"
         [ngClass]="selectedBtnKey() === btn.key ? 'btn-cfSecondary' : 'btn-outline-cfSecondary'"
         (click)="buttonClick(btn.key)"
       >
