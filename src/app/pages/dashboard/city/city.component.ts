@@ -73,7 +73,7 @@ export class CityComponent implements OnInit {
   isSlbDisabled: boolean = true;
   isLedgerDisabled: boolean = true;
   isBorrowingDisabled: boolean = true;
-  isCreditDisabled: boolean = true;
+  isCreditDisabled: boolean = false;
 
   private destroy$ = new Subject<void>();
 

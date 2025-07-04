@@ -1,21 +1,31 @@
-import { JsonPipe } from '@angular/common';
-import { Component, effect, input, OnDestroy, signal } from '@angular/core';
+import { CommonModule, JsonPipe } from '@angular/common';
+import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { cloneDeep } from 'lodash';
+import { Subject, Subscription, takeUntil } from 'rxjs';
+import { ICreditRatingData } from '../../../../core/models/creditRating/creditRatingResponse';
 import { BorrowingsData, BorrowingsKeys } from '../../../../core/models/interfaces';
 import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
 import { DashboardService } from '../../dashboard.service';
 import { TABLE_STRUCTURE } from './constants';
-import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-borrowing-credit-rating',
-  imports: [NoDataFoundComponent, TabButtonsComponent, MatTableModule, JsonPipe],
+  imports: [
+    NoDataFoundComponent,
+    TabButtonsComponent,
+    MatTableModule,
+    JsonPipe,
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+  ],
   templateUrl: './borrowing-credit-rating.component.html',
   styleUrl: './borrowing-credit-rating.component.scss',
 })
-export class BorrowingCreditRatingComponent implements OnDestroy {
+export class BorrowingCreditRatingComponent implements OnDestroy, OnInit {
   readonly buttons = [
     { key: 'borrowing', label: 'Borrowing' },
     { key: 'creditRating', label: 'Credit Rating' },
@@ -48,11 +58,15 @@ export class BorrowingCreditRatingComponent implements OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(
+    private dashboardService: DashboardService,
+    private fb: FormBuilder,
+  ) {}
 
-  // ngOnInit() {
-  // this.getBorrowingsData();
-  // }
+  ngOnInit() {
+    // this.getBorrowingsData();
+    this.getCreditRatingsData();
+  }
 
   onSelectedButtonChange(key: string): void {
     this.currentSelectedButtonKey.set(key);
@@ -169,9 +183,135 @@ export class BorrowingCreditRatingComponent implements OnDestroy {
     this.goToPage(this.currentPage + 1);
   }
 
-  ngOnDestroy() {
+  // ----- Credit ratings -----
+  // readonly creditRatingYears = input.required<string[]>();
+  // TODO: add year and ulb id in credit rating data.
+  readonly ulbName = input.required<string>();
+
+  creditRatingYears: string[] = [];
+  filteredCreditRating: ICreditRatingData[] = [];
+  creditRatingData: ICreditRatingData[] = [];
+
+  private subscriptions: Subscription[] = [];
+  isCreditRatingDisabled = true;
+  myForm!: FormGroup;
+
+  // Watch ULB changes
+  readonly ulbNameEffect = effect(() => {
+    const ulbName = this.ulbName();
+
+    if (!ulbName) return;
+
+    // Reset state when ULB changes
+    this.creditRatingYears = [];
+    this.filteredCreditRating = [];
+    this.isCreditRatingDisabled = true;
+
+    if (this.creditRatingData.length) {
+      this.processCreditRatingData();
+    } else {
+      this.getCreditRatingsData();
+    }
+  });
+
+  // Fetch credit rating data from service
+  private getCreditRatingsData(): void {
+    console.log('Fetching credit rating data...');
+    this.dashboardService.getCreditRatingsData().subscribe({
+      next: (res) => {
+        this.creditRatingData = res || [];
+      },
+      error: (err) => {
+        console.error('Failed to fetch credit rating data', err);
+        this.creditRatingData = [];
+      },
+      complete: () => {
+        this.processCreditRatingData();
+      },
+    });
+  }
+
+  // Handle post-fetch data processing
+  private processCreditRatingData(): void {
+    this.extractDistinctYears();
+    if (this.creditRatingYears.length > 0) {
+      this.initializeForm(this.creditRatingYears[0]);
+    } else {
+      this.isCreditRatingDisabled = true;
+    }
+  }
+
+  // Extract years for current ULB
+  private extractDistinctYears(): void {
+    const ulbName = this.ulbName();
+    const yearSet = new Set<string>();
+
+    for (const item of this.creditRatingData) {
+      if (item?.ulb === ulbName && item?.date?.includes('/')) {
+        const year = this.extractYear(item.date);
+        if (year) yearSet.add(year);
+      }
+    }
+
+    this.creditRatingYears = Array.from(yearSet).sort((a, b) => b.localeCompare(a));
+    this.isCreditRatingDisabled = this.creditRatingYears.length === 0;
+  }
+
+  // Build the form and set up listeners
+  private initializeForm(defaultYear: string = ''): void {
+    if (!this.creditRatingYears.length) return;
+
+    if (this.myForm) {
+      this.subscriptions.forEach((s) => s.unsubscribe());
+      this.subscriptions = [];
+    }
+
+    this.myForm = this.fb.group({
+      year: [defaultYear],
+    });
+
+    this.filterCreditRatings();
+
+    const sub = this.myForm.get('year')?.valueChanges.subscribe(() => {
+      this.filterCreditRatings();
+    });
+
+    if (sub) this.subscriptions.push(sub);
+  }
+
+  // Filter data by selected year and ULB
+  private filterCreditRatings(): void {
+    const selectedYear = this.selectedYear;
+    const ulbName = this.ulbName();
+
+    if (!selectedYear || !ulbName) {
+      this.filteredCreditRating = [];
+      return;
+    }
+
+    this.filteredCreditRating = this.creditRatingData.filter(
+      (item) => item.ulb === ulbName && this.extractYear(item.date) === selectedYear,
+      // (item) => this.extractYear(item.date) === selectedYear,
+    );
+
+    console.log('Filtered data:', this.filteredCreditRating);
+  }
+
+  // Extract year from date string
+  private extractYear(date: string): string | null {
+    return date?.split('/')?.[2] ?? null;
+  }
+
+  get selectedYear(): string | null {
+    return this.myForm?.get('year')?.value ?? null;
+  }
+
+  // Cleanup
+  ngOnDestroy(): void {
+    this.subscriptions.forEach((s) => s.unsubscribe());
+    this.subscriptions = [];
+
     this.destroy$.next();
     this.destroy$.complete();
-    if (this.ulbIdChange) this.ulbIdChange;
   }
 }

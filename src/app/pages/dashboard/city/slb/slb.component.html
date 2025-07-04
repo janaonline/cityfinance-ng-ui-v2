@@ -19,8 +19,8 @@
 
       <!-- Filter: Years Dropdown -->
       <form [formGroup]="myForm" class="col-sm-12 col-md-3">
-        <label for="years" class="d-block fw-bold mb-2">Financial years</label>
-        <select id="years" formControlName="year" class="form-select w-100">
+        <label for="slbYears" class="d-block fw-bold mb-2">Financial years</label>
+        <select id="slbYears" formControlName="year" class="form-select w-100">
           @for (year of years(); track year) {
             <option [value]="year">{{ year }}</option>
           }

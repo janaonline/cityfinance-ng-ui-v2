@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { BorrowingsKeys, BsIsData, ExploresectionTable } from '../../core/models/interfaces';
+import { ICreditRatingData } from '../../core/models/creditRating/creditRatingResponse';
 
 @Injectable({
   providedIn: 'root',
@@ -77,5 +78,9 @@ export class DashboardService {
     return this.http.get<{ data: BorrowingsKeys[] }>(`${environment.api.url}/BondIssuerItem`, {
       params,
     });
+  }
+
+  getCreditRatingsData() {
+    return this.http.get<ICreditRatingData[]>(`/assets/files/credit-rating-new.json`);
   }
 }
