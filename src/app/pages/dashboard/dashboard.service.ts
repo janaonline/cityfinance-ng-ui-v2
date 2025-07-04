@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { BsIsData, ExploresectionTable } from '../../core/models/interfaces';
+import { BorrowingsKeys, BsIsData, ExploresectionTable } from '../../core/models/interfaces';
 
 @Injectable({
   providedIn: 'root',
@@ -67,5 +67,15 @@ export class DashboardService {
         params,
       },
     );
+  }
+
+  getBorrowingsData(ulbId: string = '', stateId: string = '') {
+    let params = new HttpParams();
+    if (ulbId) params = params.set('ulbId', ulbId);
+    if (stateId) params = params.set('stateId', stateId);
+
+    return this.http.get<{ data: BorrowingsKeys[] }>(`${environment.api.url}/BondIssuerItem`, {
+      params,
+    });
   }
 }

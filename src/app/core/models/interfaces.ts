@@ -6,6 +6,17 @@ export interface BondIssuances {
   inProgress: boolean;
 }
 
+export interface BorrowingsData extends BorrowingsKeys {
+  table: string;
+  key: string;
+  header: string;
+  label: string;
+}
+
+export interface BorrowingsKeys {
+  [key: string]: string | null;
+}
+
 // export interface CreditRatings {
 //   ulb: string;
 //   state: string;
