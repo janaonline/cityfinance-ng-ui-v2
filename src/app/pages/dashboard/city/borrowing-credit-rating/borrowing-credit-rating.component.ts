@@ -2,7 +2,7 @@ import { CommonModule, JsonPipe } from '@angular/common';
 import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash-es/cloneDeep';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { ICreditRatingData } from '../../../../core/models/creditRating/creditRatingResponse';
 import { BorrowingsData, BorrowingsKeys } from '../../../../core/models/interfaces';
@@ -61,7 +61,7 @@ export class BorrowingCreditRatingComponent implements OnDestroy, OnInit {
   constructor(
     private dashboardService: DashboardService,
     private fb: FormBuilder,
-  ) {}
+  ) { }
 
   ngOnInit() {
     // this.getBorrowingsData();

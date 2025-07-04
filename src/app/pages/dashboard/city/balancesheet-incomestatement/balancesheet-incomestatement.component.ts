@@ -6,7 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash-es/cloneDeep';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AfsPopupData, BsIsData, ButtonObj } from '../../../../core/models/interfaces';
@@ -117,7 +117,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     private commonService: CommonService,
     private utilityService: UtilityService,
     private dialog: MatDialog,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // this.getBsIsData();
