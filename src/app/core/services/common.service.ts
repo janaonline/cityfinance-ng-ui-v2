@@ -5,10 +5,16 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
-import { BondIssuances, ExploreSectionResponse } from '../models/interfaces';
 import { IBasicLedgerData } from '../models/basicLedgerData.interface';
+import {
+  AfsPopupData,
+  BondIssuances,
+  ExploreSectionResponse,
+  FileMetadata,
+} from '../models/interfaces';
 import { IULBResponse } from '../models/IULBResponse';
 import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
+import { IState } from '../models/state/state';
 import { IStateULBCoveredResponse } from '../models/stateUlbConvered';
 import { ULBsStatistics } from '../models/statistics/ulbsStatistics';
 import { IULB } from '../models/ulb';
@@ -18,7 +24,6 @@ import { HttpUtility } from '../util/httpUtil';
 import { JSONUtility } from '../util/jsonUtil';
 import { environment } from './../../../environments/environment';
 import { UtilityService } from './utility.service';
-import { IState } from '../models/state/state';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
@@ -833,10 +838,48 @@ export class CommonService {
     );
   }
 
+  // Get distinct years - SLBs data.
+  slbYears(ulbId: string) {
+    let params = new HttpParams();
+    if (ulbId) params = params.set('ulb', ulbId);
+
+    return this.http.get<{ slbYears: string[] }>(
+      `${environment.api.url}common/get-latest-slbs-year`,
+      { params },
+    );
+  }
+
+  // Get distinct years - Bonds/ Borrowings data.
+  borrowingYears(ulbId: string = '', stateId: string = '') {
+    let params = new HttpParams();
+    if (ulbId) params = params.set('ulbId', ulbId);
+    if (stateId) params = params.set('stateId', stateId);
+
+    return this.http.get<{ borrowingYears: string[] }>(
+      `${environment.api.url}common/get-latest-borrowings-year`,
+      { params },
+    );
+  }
+
   // Annual accounts popup - Show BS, BSS, IS, ISE, CF, AR in one popup.
   getReports(ulbId: string, financialYear: string, auditType: string = '') {
-    return this.http.get(
+    return this.http.get<{ data: AfsPopupData; success: boolean }>(
       `${environment.api.url}ledger/ulb-financial-data/files/${ulbId}?financialYear=${financialYear}&auditType=${auditType}`,
+    );
+  }
+
+  getDataSets(
+    year: string,
+    type: string,
+    category: string,
+    state: string,
+    ulb: string,
+    ulbId = '',
+    globalName = '',
+    skip: number = 0,
+  ) {
+    return this.http.get<{ data: FileMetadata[] }>(
+      `${environment.api.url}annual-accounts/datasets?year=${year}&type=${type}&category=${category}&state=${state}&ulb=${ulb}&ulbId=${ulbId}&globalName=${globalName}&skip=${skip}`,
     );
   }
 }

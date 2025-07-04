@@ -3,12 +3,12 @@ import { Component, effect, OnInit, signal } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Chart, registerables } from 'chart.js';
 import { Subject, takeUntil } from 'rxjs';
 import { ExploresectionTable } from '../../../core/models/interfaces';
 import { IState } from '../../../core/models/state/state';
 import { IULB } from '../../../core/models/ulb';
 import { CommonService } from '../../../core/services/common.service';
+import { ChartConfig, ChartsComponent } from '../../../shared/components/charts/charts.component';
 import { MapComponent } from '../../../shared/components/map/map.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
@@ -20,7 +20,7 @@ import { BalancesheetIncomestatementComponent } from './balancesheet-incomestate
 import { BorrowingCreditRatingComponent } from './borrowing-credit-rating/borrowing-credit-rating.component';
 import { FinancialIndicatorComponent } from './financial-indicator/financial-indicator.component';
 import { SlbComponent } from './slb/slb.component';
-Chart.register(...registerables);
+
 @Component({
   selector: 'app-city',
   standalone: true,
@@ -38,6 +38,7 @@ Chart.register(...registerables);
     SlbComponent,
     BalancesheetIncomestatementComponent,
     FinancialIndicatorComponent,
+    ChartsComponent,
   ],
   templateUrl: './city.component.html',
   styleUrl: './city.component.scss',
@@ -50,7 +51,7 @@ export class CityComponent implements OnInit {
   stateCodeSignal = signal<string>('');
 
   selectedCityNameSignal = signal<string>(''); // Bruhat Bengaluru Mahanagara Palike
-  ulbId: string = ''; // 5f5610b3aab0f778b2d2cac0
+  ulbIdSignal = signal<string>(''); // 5f5610b3aab0f778b2d2cac0
 
   exploreData!: ExploresectionTable[];
   popCat: string = '';
@@ -58,15 +59,21 @@ export class CityComponent implements OnInit {
 
   // Money info cards.
   moneyInfoSignal = signal<ExploresectionTable[]>([]);
-  yearSignal = signal<string>('');
   audit_status: string = '';
   isActive: boolean = true;
-  years: string[] = [];
+  selectedLedgerYear = signal<string>('');
+  ledgerYears = signal<string[]>([]);
+  slbYears = signal<string[]>([]);
+  borrowingYears = signal<string[]>([]);
 
   isLoading1: boolean = true;
   isLoading2: boolean = true;
 
   loadedTabs: boolean[] = [true, false, false, false];
+  isSlbDisabled: boolean = true;
+  isLedgerDisabled: boolean = true;
+  isBorrowingDisabled: boolean = true;
+  isCreditDisabled: boolean = false;
 
   private destroy$ = new Subject<void>();
 
@@ -80,8 +87,10 @@ export class CityComponent implements OnInit {
   ngOnInit(): void {
     this.activatedRoute.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       const cityId = params.get('cityId') || '';
+      this.selectedLedgerYear.set('');
       if (cityId) {
-        this.ulbId = cityId;
+        // this.ulbId = cityId;
+        this.ulbIdSignal.set(cityId);
         this.getDistinctYearsList();
         this.getCityDetails();
         // this.getMoneyInfo();
@@ -119,14 +128,14 @@ export class CityComponent implements OnInit {
   public selectedCityIdChange($event: string): void {
     // this.ulbId = $event;
     if ($event) this.updateUlbIdAndNavigate($event);
-    console.log('ulbIdChange from map', this.ulbId, $event);
+    console.log('ulbIdChange from map', this.ulbIdSignal(), $event);
   }
 
   // ----- Get necessary data -----
   private getCityDetails(): void {
     this.isLoading1 = true;
     this._commonService
-      .getCityData(this.ulbId)
+      .getCityData(this.ulbIdSignal())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
@@ -154,38 +163,78 @@ export class CityComponent implements OnInit {
   // ----- Get money info -----
   private getMoneyInfo(): void {
     this.isLoading2 = true;
-    this._dashboardService.getMoneyInfo(this.yearSignal(), '', this.ulbId).subscribe({
-      next: (res) => {
-        // console.log(res);
-        this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
-        this.isActive = res.isActive;
-        this.moneyInfoSignal.set(res.result);
-        this.lastModifiedAt = res.lastModifiedAt;
-        this.isLoading2 = false;
-      },
-      error: (error) => console.error('Error in fetching money info: ', error),
-    });
+    this._dashboardService
+      .getMoneyInfo(this.selectedLedgerYear(), '', this.ulbIdSignal())
+      .subscribe({
+        next: (res) => {
+          console.log('Money info cards: ', res);
+          this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
+          this.isActive = res.isActive;
+          this.moneyInfoSignal.set(res.result);
+          this.lastModifiedAt = res.lastModifiedAt;
+          this.isLoading2 = false;
+        },
+        error: (error) => console.error('Error in fetching money info: ', error),
+      });
   }
 
   readonly moneyInfoYearChange = effect(() => {
-    if (this.yearSignal()) this.getMoneyInfo();
+    if (this.selectedLedgerYear()) this.getMoneyInfo();
   });
 
   // Drop down selection.
   public onMoneyInfoYearChange($event: Event): void {
     const yearSelected = ($event.target as HTMLSelectElement).value;
-    if (this.yearSignal() !== yearSelected) this.yearSignal.set(yearSelected);
+    if (this.selectedLedgerYear() !== yearSelected) this.selectedLedgerYear.set(yearSelected);
   }
 
   // Get distinct years list.
   private getDistinctYearsList(): void {
-    this._commonService.getLedgerYears('', this.ulbId).subscribe({
+    // Distinct ledger years.
+    this._commonService.getLedgerYears('', this.ulbIdSignal()).subscribe({
       next: (res) => {
-        console.log(res.ledgerYears);
-        this.years = res.ledgerYears;
-        this.yearSignal.set(this.years?.[0]);
+        this.isLedgerDisabled = false;
+        if (res.ledgerYears.length === 0) this.isLedgerDisabled = true;
+        this.ledgerYears.set(res.ledgerYears);
+        this.selectedLedgerYear.set(this.ledgerYears()?.[0]);
+
+        console.log(
+          'Ledger years: ',
+          res.ledgerYears,
+          res.ledgerYears.length,
+          this.isLedgerDisabled,
+        );
       },
       error: (error) => console.error('Failed to fetch years list: getDistinctYearsList()', error),
+    });
+
+    // Distinct slb years.
+    this._commonService.slbYears(this.ulbIdSignal()).subscribe({
+      next: (res) => {
+        this.isSlbDisabled = false;
+        if (res.slbYears.length === 0) this.isSlbDisabled = true;
+        this.slbYears.set(res.slbYears);
+
+        console.log('slb years: ', res.slbYears, res.slbYears.length, this.isSlbDisabled);
+      },
+      error: (error) => console.log('Failed to get slbYears: ', error),
+    });
+
+    // Distinct bonds years.
+    this._commonService.borrowingYears(this.ulbIdSignal(), this.selectedStateIdSignal()).subscribe({
+      next: (res) => {
+        this.isBorrowingDisabled = false;
+        if (res.borrowingYears.length === 0) this.isBorrowingDisabled = true;
+        this.borrowingYears.set(res.borrowingYears);
+
+        console.log(
+          'bonds years: ',
+          res.borrowingYears,
+          res.borrowingYears.length,
+          this.isBorrowingDisabled,
+        );
+      },
+      error: (error) => console.log('Failed to get borrowingYears: ', error),
     });
   }
 
@@ -194,167 +243,77 @@ export class CityComponent implements OnInit {
     this.loadedTabs[idx] = true;
   }
 
-  // // Chart.js Sample.
-  // @ViewChild('barCanvas') barCanvas!: ElementRef;
-  // @ViewChild('lineCanvas') lineCanvas!: ElementRef;
-  // @ViewChild('pieCanvas') pieCanvas!: ElementRef;
-  // @ViewChild('mixedChartCanvas') mixedChartCanvas!: ElementRef;
-
-  // ngAfterViewInit(): void {
-  //   // Bar Chart
-  //   new Chart(this.barCanvas.nativeElement, {
-  //     type: 'bar',
-  //     data: {
-  //       labels: ['Own Source Revenue', 'Grants', 'Assigned Revenue'],
-  //       datasets: [{
-  //         label: '2023-24',
-  //         data: [12, 19, 3],
-  //         backgroundColor: ['#65D2F3'],
-  //         borderRadius: 5,
-  //       },
-  //       {
-  //         label: '2022-23',
-  //         data: [10, 8, 6],
-  //         backgroundColor: ['#1596E6'],
-  //         borderRadius: 5,
-  //       },
-  //       {
-  //         label: '2021-22',
-  //         data: [12, 10, 14],
-  //         backgroundColor: ['#245ABF'],
-  //         borderRadius: 5,
-  //       }]
-  //     },
-  //     options: baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Years', 'Amt in ₹ Cr')
-  //   });
-
-  //   // Mixed Chart
-  //   new Chart(this.mixedChartCanvas.nativeElement, {
-  //     type: 'bar',
-  //     data: {
-  //       labels: ['Own Source Revenue', 'Grants', 'Assigned Revenue'],
-  //       datasets: [
-  //         {
-  //           type: 'line',
-  //           label: 'Y-o-Y Growth',
-  //           data: [25, 45, 35, 55],
-  //           borderWidth: 2,
-  //           borderColor: '#f43f5e',
-  //           pointBackgroundColor: '#f43f5e',
-  //           fill: false,
-  //           tension: 0.3,
-  //         },
-  //         {
-  //           type: 'bar',
-  //           label: 'ULB Name',
-  //           data: [30, 50, 40, 60],
-  //           backgroundColor: ['#1596E6'],
-  //           borderRadius: 5,
-  //         },
-  //         {
-  //           type: 'bar',
-  //           label: 'State Avg',
-  //           data: [12, 10, 14],
-  //           backgroundColor: ['#245ABF'],
-  //           borderRadius: 5,
-  //         },
-  //       ]
-  //     },
-  //     options: baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Revenue', 'Amt in ₹ Cr')
-  //   });
-
-  //   // Line Chart
-  //   new Chart(this.lineCanvas.nativeElement, {
-  //     type: 'line',
-  //     data: {
-  //       labels: ['Jan', 'Feb', 'Mar'],
-  //       datasets: [{
-  //         label: 'Dataset Label',
-  //         data: [10, 15, 30],
-  //         borderWidth: 2,
-  //         borderColor: '#FF6384',
-  //         pointBackgroundColor: '#FF6384',
-  //         fill: false,
-  //         tension: 0.3,
-  //       }],
-  //     },
-  //     options: baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Months', 'Amt in ₹ Cr')
-  //   });
-
-  //   // Pie Chart
-  //   new Chart(this.pieCanvas.nativeElement, {
-  //     type: 'doughnut',
-  //     data: {
-  //       labels: ['Own Source Revenue', 'Grants', 'Assigned Revenue'],
-  //       datasets: [{
-  //         label: 'Pie Dataset',
-  //         data: [30, 50, 20],
-  //         backgroundColor: ['#65D2F3', '#1596E6', '#245ABF'],
-  //         borderRadius: 5,
-  //         borderWidth: 1,
-  //       }]
-  //     },
-  //     options: baseChartOptions(DEFAULT_FONT_FAMILY, false, '', '')
-  //   });
-  // }
   ngDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  chartData: ChartConfig = {
+    chartId: 'barChart',
+    chartType: 'barChart',
+    labels: ['2020-21', '2021-22', '2022-23'],
+    datasets: [
+      {
+        label: '2023-24',
+        data: [12, 19, 3],
+        backgroundColor: ['#65D2F3'],
+        borderRadius: 5,
+      },
+      {
+        label: '2022-23',
+        data: [10, 8, 6],
+        backgroundColor: ['#1596E6'],
+        borderRadius: 5,
+      },
+      {
+        label: '2021-22',
+        data: [12, 10, 14],
+        backgroundColor: ['#245ABF'],
+        borderRadius: 5,
+      },
+    ],
+  };
+
+  // // Half Donut
+  // chartData: ChartConfig = {
+  //   chartId: 'slb',
+  //   chartType: 'gaugeChart',
+  //   labels: ['Own Source Revenue'],
+  //   datasets: [
+  //     {
+  //       label: 'Own source revenue',
+  //       data: [80, 20],
+  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
+  //       borderWidth: 1,
+  //       borderRadius: 5,
+  //     },
+  //     {
+  //       label: 'label 2',
+  //       data: [40, 60],
+  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
+  //       borderWidth: 1,
+  //       borderRadius: 5,
+  //     },
+  //     {
+  //       label: 'label 3',
+  //       data: [70, 30],
+  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
+  //       borderWidth: 1,
+  //       borderRadius: 5,
+  //     },
+  //   ],
+  //   options: gaugeChartOptions,
+  // };
 }
 
-// // chart-config.ts
-// export const DEFAULT_FONT_FAMILY = 'Montserrat';
-// const TEXT_LIGHT = '#374151';
-// const DEFAULT_FONT_SIZE = 11;
-// export const baseChartOptions = (
-//   fontFamily = 'Montserrat',
-//   showAxes = true,
-//   xAxisLabel = 'X Axis',
-//   yAxisLabel = 'Y Axis'
-// ): ChartOptions => ({
-//   // responsive: true,
-//   font: { family: fontFamily, size: 11 },
-//   interaction: {
-//     mode: 'index',
-//     intersect: false
-//   },
+// const gaugeChartOptions: ChartOptions<'doughnut'> = {
+//   circumference: 180,
+//   rotation: 270,
+//   cutout: '65%',
 //   plugins: {
-//     legend: { labels: { font: { family: fontFamily, size: 12 } } },
+//     legend: { display: false },
 //     tooltip: {
-//       titleFont: { family: fontFamily },
-//       bodyFont: { family: fontFamily }
-//     }
-//   },
-//   layout: { padding: 5 },
-//   scales: {
-//     x: {
-//       display: showAxes,
-//       ticks: { font: { family: fontFamily } },
-//       title: {
-//         display: showAxes,
-//         text: xAxisLabel,
-//         font: {
-//           family: fontFamily,
-//           size: DEFAULT_FONT_SIZE,
-//           weight: 'bold'
-//         },
-//         color: TEXT_LIGHT
-//       }
+//       filter: (tooltipItem) => tooltipItem.dataIndex === 0,
 //     },
-//     y: {
-//       display: showAxes,
-//       ticks: { font: { family: fontFamily } },
-//       title: {
-//         display: showAxes,
-//         text: yAxisLabel,
-//         font: {
-//           family: fontFamily,
-//           size: DEFAULT_FONT_SIZE,
-//           weight: 'bold'
-//         },
-//         color: TEXT_LIGHT
-//       }
-//     }
-//   }
-// });
+//   },
+// };

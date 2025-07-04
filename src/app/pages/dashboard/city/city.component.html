@@ -1,4 +1,4 @@
-<section class="light-bg py-3">
+<section class="bg-light-primary py-3">
   <div class="container">
     <!-- Show message if ULB is denotified. -->
     @if (this.isActive === false) {
@@ -48,11 +48,11 @@
 
         <!-- State Map -->
         <div class="position-relative row" style="min-height: 350px">
-          @if (stateCodeSignal() && ulbId) {
+          @if (stateCodeSignal() && ulbIdSignal()) {
             <app-map
               #map
               [stateCode]="stateCodeSignal()"
-              [ulbId]="ulbId"
+              [ulbId]="ulbIdSignal()"
               (ulbIdChange)="selectedCityIdChange($event)"
             ></app-map>
           }
@@ -77,12 +77,12 @@
       {{ audit_status }} financial statements for the year
       <select
         class="form-select form-select-sm w-auto d-inline-block"
-        [value]="yearSignal()"
+        [value]="selectedLedgerYear()"
         (change)="onMoneyInfoYearChange($event)"
         id="years"
       >
-        @for (year of years; track $index) {
-          <option [value]="year" [selected]="year === yearSignal()">{{ year }}</option>
+        @for (year of ledgerYears(); track $index) {
+          <option [value]="year" [selected]="year === selectedLedgerYear()">{{ year }}</option>
         }
       </select>
     </p>
@@ -92,44 +92,41 @@
 <section class="container matTabGroup">
   <h3 class="fw-bold p-2 my-4 text-center">Dashboard</h3>
 
-  <mat-tab-group fitInkBarToContent (selectedIndexChange)="onTabChange($event)">
-    <mat-tab label="Financial Indicators">
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)">
+    <mat-tab label="Financial Indicators" [disabled]="isLedgerDisabled">
       @if (loadedTabs[0]) {
-        <app-financial-indicator></app-financial-indicator>
+        <app-financial-indicator [yearsSignal]="ledgerYears()"></app-financial-indicator>
       }
     </mat-tab>
-    <mat-tab label="Balance Sheet & Income Statement">
+    <mat-tab label="Balance Sheet & Income Statement" [disabled]="isLedgerDisabled">
       @if (loadedTabs[1]) {
         <app-balancesheet-incomestatement
-          [years]="years"
-          [ulbId]="ulbId"
+          [yearsSignal]="ledgerYears()"
+          [ulbIdSignal]="ulbIdSignal()"
         ></app-balancesheet-incomestatement>
       }
     </mat-tab>
-    <mat-tab label="Service Level BenchMark">
+    <mat-tab label="Service Level BenchMark" [disabled]="isSlbDisabled">
       @if (loadedTabs[2]) {
-        <app-slb></app-slb>
+        <app-slb [years]="slbYears()" [ulbId]="ulbIdSignal()"></app-slb>
       }
     </mat-tab>
-    <mat-tab label="Borrowing & Credit Rating">
+    <mat-tab label="Borrowing & Credit Rating" [disabled]="isBorrowingDisabled && isCreditDisabled">
       @if (loadedTabs[3]) {
-        <app-borrowing-credit-rating></app-borrowing-credit-rating>
+        <app-borrowing-credit-rating
+          [borrowingYears]="borrowingYears()"
+          [ulbIdSignal]="ulbIdSignal()"
+          [ulbName]="selectedCityNameSignal()"
+        ></app-borrowing-credit-rating>
       }
     </mat-tab>
   </mat-tab-group>
 </section>
 
-<!-- chart.html -->
-<!-- <div class="chart-container p-4">
-  <h2>Bar Chart</h2>
-  <canvas #barCanvas></canvas>
-
-  <h2>Line Chart</h2>
-  <canvas #lineCanvas></canvas>
-
-  <h2>Pie Chart</h2>
-  <canvas #pieCanvas></canvas>
-
-  <h2>Mixed Chart</h2>
-  <canvas #mixedChartCanvas></canvas>
+<!-- <app-charts [chartConfig]="chartData"></app-charts> -->
+<!-- <div class="container d-flex gap-2">
+  <div class="flex-grow-1 px-3 border border-2 border-success">
+    <app-charts [chartConfig]="chartData"></app-charts>
+  </div>
+  <div class="border border-2 border-info d-none d-md-block" style="width: 200px">Test</div>
 </div> -->

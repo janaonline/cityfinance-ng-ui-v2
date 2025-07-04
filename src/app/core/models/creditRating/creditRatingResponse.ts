@@ -5,6 +5,12 @@ export interface ICreditRatingData {
   creditrating: string;
   status: string;
   date: string;
+
+  creditRating: string;
+  outlook: string;
+  type: string;
+  amount: string | number;
+  link: string;
 }
 
 export interface CreditRatingData {

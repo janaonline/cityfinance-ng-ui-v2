@@ -1,1 +1,31 @@
-<p>slb works!</p>
+<!-- {{ currentSelectedButtonKey() }} -->
+
+<section class="my-4 container">
+  @if (this.years().length === 0) {
+    <app-no-data-found></app-no-data-found>
+  } @else {
+    <!-- Buttons -->
+    <app-tab-buttons
+      [buttons]="buttons"
+      (selectedButtonKeyChange)="onSelectedButtonChange($event)"
+    ></app-tab-buttons>
+
+    <div class="border rounded bg-light p-4 my-4 row justify-content-between">
+      <p class="col-sm-12 col-md-8">
+        This dashboard aims to measure performance of 28 service level indicators across 4 key
+        themes against service level benchmarks as prescribed by MoHUA. Click on compare ULB's
+        performance with one other comparable ULB.
+      </p>
+
+      <!-- Filter: Years Dropdown -->
+      <form [formGroup]="myForm" class="col-sm-12 col-md-3">
+        <label for="slbYears" class="d-block fw-bold mb-2">Financial years</label>
+        <select id="slbYears" formControlName="year" class="form-select w-100">
+          @for (year of years(); track year) {
+            <option [value]="year">{{ year }}</option>
+          }
+        </select>
+      </form>
+    </div>
+  }
+</section>
