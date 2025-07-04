@@ -14,7 +14,9 @@
   </button>
 </div>
 
-<h4>Below are the details of municipal bond issuances undertaken by the ULB</h4>
+
+<div *ngIf="selectedTab === 'borrowing'">
+  <h4>Below are the details of municipal bond issuances undertaken by the ULB</h4>
 <!-- Pagination Controls -->
 <div class="pagination-controls ">
   <button class="btn btn-link" [disabled]="currentInstrumentPage === 0"
@@ -33,7 +35,7 @@
   <button class="btn btn-link" [disabled]="currentInstrumentPage >= totalInstrumentPages - 1"
     (click)="incrementPage()">Next »</button>
 </div>
-
+</div>
 
 <div *ngIf="selectedTab === 'borrowing'">
 <div class="table-section">
@@ -266,8 +268,39 @@
 </div>
 </div>
 
-<!-- CREDIT RATING SECTION -->
-<div *ngIf="selectedTab === 'creditRating'">
-  <p> Cre dit Rating </p>
+<!-- CREDIT RATING TAB -->
+<div *ngIf="selectedTab === 'creditRating'" class="credit-rating-tab">
+  <div class="dropdown-wrapper">
+    <label for="yearSelect" class="visually-hidden">Select Year</label>
+    <select id="yearSelect" [(ngModel)]="selectedYear" (change)="filterCreditRatingByYear()">
+      <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+    </select>
+  </div>
+
+  <div class="credit-rating-box" [ngClass]="{ 'no-data-background': filteredCreditRating.length === 0 }">
+  <ng-container *ngIf="filteredCreditRating.length > 0; else noData">
+    <h3 class="credit-rating-title">Credit Rating</h3>
+    <table class="credit-rating-table">
+      <tbody>
+        <tr *ngFor="let row of filteredCreditRating">
+          <td class="agency">{{ row.agency }}</td>
+          <td class="rating">{{ row.creditRating }}</td>
+          <td class="link">
+            <a [href]="row.link" target="_blank">View Full Report</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+
+  <ng-template #noData>
+    <div class="no-data-wrapper">
+      <img src="../../../../assets/images/sad.svg" alt="No Data" />
+      <p>No Data Found for chosen options</p>
+    </div>
+  </ng-template>
 </div>
+
+</div>
+
 

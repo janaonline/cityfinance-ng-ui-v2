@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
 
 export interface IssueDetail {
   dateOfIssue: string;
@@ -72,7 +74,63 @@ export interface InstrumentDetail {
   taxTreatment: string;
   repayment: string;
 }
+export interface CreditRating {
+  agency: string;
+  creditRating: string;
+  outlook: string;
+  type: string;
+  amount: string | number;
+  date: string;
+  link: string;
+}
 
+const CREDIT_RATING_DATA: CreditRating[] = [
+  {
+    agency: "CRISIL",
+    creditRating: "AA (Upgraded)",
+    outlook: "Stable",
+    type: "Corporate Credit Rating",
+    amount: "Not applicable",
+    date: "02/06/2017",
+    link: "https://www.crisil.com/mnt/winshare/Ratings/RatingList/RatingDocs/Ahmedabad_Municipal_Corporation_February_06_2017_RR.html"
+  },
+  {
+    agency: "CRISIL",
+    creditRating: "AA- (Affirmed)",
+    outlook: "Stable",
+    type: "Corporate Credit Rating",
+    amount: "Not applicable",
+    date: "01/27/2016",
+    link: "https://www.crisil.com/mnt/winshare/Ratings/RatingList/RatingDocs/Ahmedabad_Municipal_Corporation_January_27_2016_RR.html"
+  },
+  {
+    agency: "CRISIL",
+    creditRating: "AA-",
+    outlook: "Not available",
+    type: "Corporate Credit Rating",
+    amount: "Not applicable",
+    date: "09/05/2017",
+    link: "https://www.crisil.com/mnt/winshare/Ratings/RatingList/RatingDocs/Ahmedabad_Municipal_Corporation_September_05_2017_RR.html"
+  },
+  {
+    agency: "IRR",
+    creditRating: "AA+",
+    outlook: "Stable",
+    type: "Proposed Bonds",
+    amount: 200,
+    date: "12/31/2018",
+    link: "https://www.indiaratings.co.in/PressRelease?pressReleaseID=35380&title=India-Ratings-Assigns-Ahmedabad-Municipal-Corp%E2%80%99s-Additional-Bonds-%E2%80%98Provisional-IND-AA%2B%28SO%29%E2%80%99%2FStable%3B-Withdraws-Existing-Rating"
+  },
+  {
+    agency: "IRR",
+    creditRating: "Withdrawn",
+    outlook: "Not applicable",
+    type: "Proposed Non-Convertible Debentures",
+    amount: 200,
+    date: "12/31/2018",
+    link: "https://www.indiaratings.co.in/PressRelease?pressReleaseID=35380&title=India-Ratings-Assigns-Ahmedabad-Municipal-Corp%E2%80%99s-Additional-Bonds-%E2%80%98Provisional-IND-AA%2B%28SO%29%E2%80%99%2FStable%3B-Withdraws-Existing-Rating"
+  }
+];
 const ELEMENT_DATA: InstrumentDetail[]= [
   {
     type: 'Unsecure, Listed Taxable, Non Convertible, Redeemable bonds in the nature of debentures',
@@ -264,14 +322,15 @@ const DOCUMENTS_DATA: DocumentAvailable[] = [
   
 ];
 
+
 @Component({
   selector: 'app-borrowing-credit-rating',
   standalone: true,
-  imports: [MatTableModule , CommonModule],
+  imports: [MatTableModule , CommonModule , FormsModule],
   templateUrl: './borrowing-credit-rating.component.html',
   styleUrls: ['./borrowing-credit-rating.component.scss']
 })
-export class BorrowingCreditRatingComponent {
+export class BorrowingCreditRatingComponent implements OnInit {
   selectedTab: 'borrowing' | 'creditRating' = 'borrowing'; 
   displayedColumns: string[] = [
     'type',
@@ -290,6 +349,23 @@ export class BorrowingCreditRatingComponent {
   subscriberData = SUBSCRIBER_DATA;
   advisorData = ADVISOR_DATA;
   documentsData = DOCUMENTS_DATA;
+  creditRatingTable = CREDIT_RATING_DATA;
+  years = ['2021', '2020', '2019', '2018', '2017'];
+  selectedYear = '2017'; // default
+
+filteredCreditRating: CreditRating[] = [];
+
+ngOnInit() {
+  this.filterCreditRatingByYear();  // initialize
+}
+
+filterCreditRatingByYear() {
+  this.filteredCreditRating = this.creditRatingTable.filter(item => {
+    const year = item.date.split('/')[2]; // Extract year from dd/mm/yyyy
+    return year === this.selectedYear;
+  });
+}
+
   
 currentInstrumentPage = 0;
 columnsPerPage = 3; // Adjust as needed
