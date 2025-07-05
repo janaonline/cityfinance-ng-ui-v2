@@ -32,10 +32,8 @@ export class SlbComponent implements OnInit, OnDestroy {
   constructor(private fb: FormBuilder) {}
 
   ngOnInit() {
-    // this.myForm = this.fb.group({ year: [''] });
     this.initializeForm();
-
-    console.log('slb yeas in child: ', this.years());
+    // console.log('slb yeas in child: ', this.years());
   }
 
   private initializeForm(): void {
@@ -48,7 +46,7 @@ export class SlbComponent implements OnInit, OnDestroy {
 
   // Output emitted by child to parent
   onSelectedButtonChange(key: string): void {
-    console.log('Button key sent from child to parent:', key);
+    // console.log('Button key sent from child to parent:', key);
     this.currentSelectedButtonKey.set(key);
   }
 
@@ -57,7 +55,7 @@ export class SlbComponent implements OnInit, OnDestroy {
   }
 
   private getSlbData(): void {
-    console.log('Get slb data', this.year);
+    // console.log('Get slb data', this.year);
   }
 
   ngOnDestroy(): void {
