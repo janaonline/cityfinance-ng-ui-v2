@@ -247,6 +247,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   // ----- On selecting file icon from download report table ----
+  // TODO: add loader.
   onFileClick(fileType: 'pdf' | 'excel', selectedYear: string): void {
     // console.log('File clicked: ', selectedYear, fileType);
 
@@ -274,8 +275,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   private openDialog(data: AfsPopupData | null, fileType: string) {
-    // console.log('openDialog', data);
+    console.log('openDialog', data, fileType);
+    // TODO: make this simple
+    // const ulbInfo = { fileName: 'abc', type: 'pdf', module: 'cityPage' };
     const dialogRef = this.dialog.open(AfsPdfsDialogComponent, {
+      // data: { reportList: data, fileType: fileType, ulbDetails: ulbInfo },
       data: { reportList: data, fileType: fileType },
       width: '500px',
     });

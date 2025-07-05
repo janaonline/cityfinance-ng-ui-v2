@@ -3,9 +3,10 @@ import { FormGroup } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatDivider } from '@angular/material/divider';
 import { MatInputModule } from '@angular/material/input';
+import { Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../core/services/utility.service';
-import { InputComponent } from "../../dynamic-form/components/input/input.component";
-import { DynamicFormComponent } from "../../dynamic-form/dynamic-form.component";
+import { InputComponent } from '../../dynamic-form/components/input/input.component';
+import { DynamicFormComponent } from '../../dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../dynamic-form/dynamic-form.service';
 import { FieldConfig } from '../../dynamic-form/field.interface';
 import { PreLoaderComponent } from '../pre-loader/pre-loader.component';
@@ -13,47 +14,80 @@ import { DownloadUserInfoService } from './download-user-info.service';
 
 @Component({
   selector: 'app-user-info-dialog',
-  imports: [MatDialogModule, MatInputModule, MatDivider, DynamicFormComponent, InputComponent, PreLoaderComponent],
+  imports: [
+    MatDialogModule,
+    MatInputModule,
+    MatDivider,
+    DynamicFormComponent,
+    InputComponent,
+    PreLoaderComponent,
+  ],
   templateUrl: './user-info-dialog.component.html',
-  styleUrl: './user-info-dialog.component.scss'
+  styleUrl: './user-info-dialog.component.scss',
 })
 export class UserInfoDialogComponent implements OnInit {
-  userInfo: FormGroup = new FormGroup({});
-  fields: FieldConfig[] = [];
+  title: string = 'Download';
+  desc: string = 'Please enter your information below to download the file(s).';
   isLoading: boolean = false;
+  fields: FieldConfig[] = [];
+  userInfo: FormGroup = new FormGroup({});
+  private destroy$ = new Subject<void>();
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public matDialogData: any,
-    public dialogRef: MatDialogRef<UserInfoDialogComponent>,
-    private dynamicFormService: DynamicFormService,
     private downloadUserService: DownloadUserInfoService,
-    private utilityService: UtilityService
-  ) { }
+    public dialogRef: MatDialogRef<UserInfoDialogComponent>,
+    private utilityService: UtilityService,
+    private dynamicFormService: DynamicFormService,
+  ) {}
 
   ngOnInit(): void {
     this.getFields();
   }
 
-  getFields(): void {
+  private getFields(): void {
     this.isLoading = true;
-    this.downloadUserService.getUserInfoQuestions().subscribe((res: any) => {
-      this.fields = res.data.data;
-      this.userInfo = this.dynamicFormService.toFormGroup(this.fields);
-      this.isLoading = false;
-    });
+    this.downloadUserService
+      .getUserInfoQuestions(this.matDialogData?.moduleInfo?.endPoint)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((res: any) => {
+        this.fields = res.data.data;
+        this.title = res.data.title || this.title;
+        this.desc = res.data.desc || this.desc;
+        this.userInfo = this.dynamicFormService.toFormGroup(this.fields);
+        this.isLoading = false;
+      });
   }
 
-  submitUserInfo(): void {
-
+  public submitUserInfo(): void {
     if (this.userInfo.valid) {
-      localStorage.setItem('userInfo', JSON.stringify(this.userInfo.value));
-      const payload = { ...this.userInfo.value, ...this.matDialogData.downloadInfo };
+      let payload = { ...this.userInfo.value };
+
+      // If saveToLocalStorage is true then store data in localStorage.
+      if (this.matDialogData?.moduleInfo?.saveToLocalStorage) {
+        localStorage.setItem('userInfo', JSON.stringify(this.userInfo.value));
+
+        payload = {
+          ...this.userInfo.value,
+          ...this.matDialogData.downloadInfo,
+        };
+      }
+
       this.dialogRef.close(payload);
     } else {
       this.utilityService.swalPopup('Validation Failed!', 'Failed to download file!', 'error');
-      console.error("Invalid user info.");
+      console.error('Invalid user info.');
     }
-
   }
 
+  // submitUserInfo(): void {
+  //   if (this.userInfo.valid) {
+  //     localStorage.setItem('userInfo', JSON.stringify(this.userInfo.value));
+  //     const payload = { ...this.userInfo.value, ...this.matDialogData.downloadInfo };
+  //     this.dialogRef.close(payload);
+  //   } else {
+  //     this.utilityService.swalPopup('Validation Failed!', 'Failed to download file!', 'error');
+  //     console.error('Invalid user info.');
+  //   }
+  // }
 }

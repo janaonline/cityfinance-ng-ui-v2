@@ -79,6 +79,17 @@ export interface BsIsData extends BsIsDataBase {
   [year: `${number}`]: number | string | null;
 }
 
+export interface UserInfoUlbDetails {
+  fileName: string;
+  type: 'pdf' | 'excel';
+  module: 'resources' | 'cfr' | 'cityPage';
+}
+
+export interface UserInfoData {
+  reportList: AfsPopupData;
+  fileType: string;
+  ulbDetails: UserInfoUlbDetails;
+}
 export interface AfsPopupData {
   excel: FileData[];
   pdf: FileData[];
