@@ -1,12 +1,4 @@
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  input,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { AfterViewInit, Component, ElementRef, input, OnDestroy, ViewChild } from '@angular/core';
 import { Chart, ChartOptions, registerables } from 'chart.js';
 Chart.register(...registerables);
 
@@ -52,15 +44,15 @@ export interface slbData {
   templateUrl: './charts.component.html',
   styleUrl: './charts.component.scss',
 })
-export class ChartsComponent implements AfterViewInit, OnInit, OnDestroy {
+export class ChartsComponent implements AfterViewInit, OnDestroy {
   @ViewChild('chartCanvas', { static: false }) chartCanvas!: ElementRef<HTMLCanvasElement>;
 
   chartConfig = input.required<ChartConfig>();
   chartInstance: Chart | undefined;
 
-  ngOnInit(): void {
-    console.log('Chart called: ', this.chartConfig());
-  }
+  // ngOnInit(): void {
+  // console.log('Chart called: ', this.chartConfig());
+  // }
 
   ngAfterViewInit(): void {
     setTimeout(() => {
@@ -69,7 +61,7 @@ export class ChartsComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   private createChart(): void {
-    console.log('Canvas element:', this.chartCanvas);
+    // console.log('Canvas element:', this.chartCanvas);
 
     if (!this.chartCanvas) {
       console.error('Canvas element not found for chart:', this.chartConfig().chartId);

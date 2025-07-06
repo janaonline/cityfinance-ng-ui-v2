@@ -117,3 +117,14 @@ export interface ButtonObj {
   label: string;
   key: string;
 }
+
+export interface ISlb {
+  value: number;
+  ulbName: string;
+  year: string;
+  unitType: string;
+  benchMarkValue: number;
+  name: string;
+  type: string;
+  nationalValue: number;
+}

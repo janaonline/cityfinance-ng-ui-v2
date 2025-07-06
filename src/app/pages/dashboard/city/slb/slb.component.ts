@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ChartOptions } from 'chart.js';
-import { Subject, Subscription } from 'rxjs';
-import { ButtonObj } from '../../../../core/models/interfaces';
+import { Subject, Subscription, takeUntil } from 'rxjs';
+import { ButtonObj, ISlb } from '../../../../core/models/interfaces';
 import { MaterialModule } from '../../../../material.module';
 import {
   ChartConfig,
@@ -11,7 +11,8 @@ import {
 } from '../../../../shared/components/charts/charts.component';
 import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
-import { res } from './res-structure';
+import { DashboardService } from '../../dashboard.service';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
   selector: 'app-slb',
@@ -23,35 +24,69 @@ import { res } from './res-structure';
     NoDataFoundComponent,
     ChartsComponent,
     MaterialModule,
+    PreLoaderComponent,
   ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
 })
 export class SlbComponent implements OnInit, OnDestroy {
+  readonly disabledColor = '#e9ecef';
   // Input from parent.
   readonly ulbId = input.required<string>();
   readonly years = input.required<string[]>();
 
+  // Use keys that match API.
   readonly buttons: ButtonObj[] = [
-    { key: 'waterSupply', label: 'Water Supply' },
-    { key: 'wasteWaterManagement', label: 'Waste Water Management' },
-    { key: 'solidWasteManagement', label: 'Solid Waste Management' },
-    { key: 'stormWaterDrainage', label: 'Storm Water Drainage' },
+    {
+      // key: 'waterSupply',
+      key: 'Water Supply',
+      label: 'Water Supply',
+    },
+
+    {
+      // key: 'wasteWaterManagement',
+      key: 'sanitation',
+      label: 'Waste Water Management',
+    },
+
+    {
+      // key: 'solidWasteManagement',
+      key: 'solid waste',
+      label: 'Solid Waste Management',
+    },
+
+    {
+      // key: 'stormWaterDrainage',
+      key: 'storm water',
+      label: 'Storm Water Drainage',
+    },
   ];
   currentSelectedButtonKey = signal<string>('');
   myForm!: FormGroup;
   private subscriptions: Subscription[] = [];
   private destroy$ = new Subject<void>();
 
+  slbData!: ISlb[];
   chartData!: ChartConfig[];
 
-  constructor(private fb: FormBuilder) {}
+  isLoading: boolean = true;
+
+  constructor(
+    private fb: FormBuilder,
+    private dashboardService: DashboardService,
+  ) {}
 
   ngOnInit() {
     this.initializeForm();
-    this.getSlbData();
+    // this.getSlbData();
     // console.log('slb yeas in child: ', this.years());
   }
+
+  readonly ulbIdEffect = effect(() => {
+    if (this.ulbId()) {
+      this.getSlbData();
+    }
+  });
 
   private initializeForm(): void {
     this.myForm = this.fb.group({ year: [this.years()[0]] });
@@ -65,6 +100,7 @@ export class SlbComponent implements OnInit, OnDestroy {
   onSelectedButtonChange(key: string): void {
     // console.log('Button key sent from child to parent:', key);
     this.currentSelectedButtonKey.set(key);
+    // this.getSlbData('buttonselect');
   }
 
   get year() {
@@ -72,7 +108,29 @@ export class SlbComponent implements OnInit, OnDestroy {
   }
 
   private getSlbData(): void {
-    this.chartData = res.data.map((indicatorObj, idx) => {
+    // console.log('button = ', agc);
+    if (this.currentSelectedButtonKey()) {
+      this.isLoading = true;
+      this.dashboardService
+        .fetchCitySlbChartData(this.currentSelectedButtonKey(), '', this.ulbId(), this.year)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            // console.log('28 slb data: ', res);
+            this.slbData = [];
+            this.slbData = res.data;
+          },
+          error: (error) => console.error('Failed to fetch data', error),
+          complete: () => {
+            this.createChartRes();
+          },
+        });
+      // console.log('data = ', this.chartData);
+    }
+  }
+
+  private createChartRes(): void {
+    this.chartData = this.slbData.map((indicatorObj, idx) => {
       const value = Math.round(indicatorObj.value);
       const benchMarkValue = Math.round(indicatorObj.benchMarkValue);
       const nationalValue = Math.round(indicatorObj.nationalValue);
@@ -82,29 +140,33 @@ export class SlbComponent implements OnInit, OnDestroy {
         {
           label: 'Benchmark Value',
           data: [benchMarkValue, maxValue - benchMarkValue],
-          backgroundColor: ['#1b4965', '#f8f9fa'],
+          backgroundColor: ['#1b4965', this.disabledColor],
           borderWidth: 1,
           borderRadius: 5,
         },
         {
           label: 'National Average',
           data: [nationalValue, maxValue - nationalValue],
-          backgroundColor: ['#62b6cb', '#f8f9fa'],
+          backgroundColor: ['#62b6cb', this.disabledColor],
           borderWidth: 1,
           borderRadius: 5,
         },
         {
           label: indicatorObj.ulbName,
           data: [value, maxValue - value],
-          backgroundColor: ['#bee9e8', '#f8f9fa'],
+          backgroundColor: ['#bee9e8', this.disabledColor],
           borderWidth: 1,
           borderRadius: 5,
         },
       ];
 
-      let unit = '%';
+      let unit = '';
       if (indicatorObj.unitType === 'litres per capita per day (lpcd)') unit = 'LCPD';
       else if (indicatorObj.unitType === 'Incidents') unit = 'Incidents';
+      else if (indicatorObj.unitType === 'Percent') unit = '%';
+      else if (indicatorObj.unitType === 'Hours per day') unit = 'Hr(s)';
+      else if (indicatorObj.unitType === 'Nos. per year') unit = 'Incidents';
+      else unit = indicatorObj.unitType;
 
       const chartConfig: ChartConfig = {
         chartId: `slb${idx}`,
@@ -123,7 +185,7 @@ export class SlbComponent implements OnInit, OnDestroy {
       return chartConfig;
     });
 
-    // console.log('data = ', this.chartData);
+    this.isLoading = false;
   }
 
   showThumbUp(item: ChartConfig): 'text-success' | 'text-light' {
@@ -137,6 +199,7 @@ export class SlbComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.destroy$.next();
     this.destroy$.complete();
+    this.ulbIdEffect?.destroy();
   }
 }
 
