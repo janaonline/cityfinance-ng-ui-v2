@@ -27,9 +27,23 @@ export interface ChartDataSet {
 export interface ChartConfig {
   chartType: 'barChart' | 'lineChart' | 'pieChart' | 'mixedChart' | 'gaugeChart' | 'doughnut';
   chartId: string;
-  labels: string[];
+  labels?: string[];
   datasets: ChartDataSet[];
   options?: ChartOptions;
+
+  additionalInfo?: slbData;
+
+  // Todo: create another interface
+  // idx: number;
+  // indicatorType: string;
+  // value: number;
+}
+
+export interface slbData {
+  indicatorName: string;
+  value: number;
+  nationalAvg: number;
+  unit: string;
 }
 
 @Component({
