@@ -127,4 +127,5 @@ export interface ISlb {
   name: string;
   type: string;
   nationalValue: number;
+  compPercentage: number;
 }

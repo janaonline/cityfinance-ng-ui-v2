@@ -3,6 +3,7 @@ import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/co
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { ButtonObj, ISlb } from '../../../../core/models/interfaces';
+import { IULB } from '../../../../core/models/ulb';
 import { MaterialModule } from '../../../../material.module';
 import {
   ChartConfig,
@@ -10,6 +11,7 @@ import {
 } from '../../../../shared/components/charts/charts.component';
 import { gaugeChartOptions } from '../../../../shared/components/charts/constants';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { CitySearchComponent } from '../../../../shared/components/shared-ui/city-search.component';
 import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
 import { DashboardService } from '../../dashboard.service';
@@ -25,6 +27,7 @@ import { DashboardService } from '../../dashboard.service';
     ChartsComponent,
     MaterialModule,
     PreLoaderComponent,
+    CitySearchComponent,
   ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
@@ -40,6 +43,8 @@ export class SlbComponent implements OnInit, OnDestroy {
   readonly years = input.required<string[]>();
 
   ulbName: string = '';
+  compareUlbObj!: IULB;
+  compareUlbName = signal<string>('');
 
   // Use keys that match API.
   readonly buttons: ButtonObj[] = [
@@ -74,6 +79,7 @@ export class SlbComponent implements OnInit, OnDestroy {
 
   slbData!: ISlb[];
   chartData!: ChartConfig[];
+  isCompareUlb: boolean = false;
 
   isLoading: boolean = true;
 
@@ -109,16 +115,42 @@ export class SlbComponent implements OnInit, OnDestroy {
     // this.getSlbData('buttonselect');
   }
 
+  // Callback: From child when ULB/city is selected
+  onUlbSelected = (ulbObj: IULB): void => {
+    // console.log('Value of ULB sent by child to parent:', ulbObj);
+    if (ulbObj._id) {
+      this.compareUlbObj = ulbObj;
+
+      if (this.compareUlbObj._id !== this.ulbId()) this.isCompareUlb = true;
+      else this.isCompareUlb = false;
+
+      this.getSlbData();
+    }
+  };
   get year() {
     return this.myForm.get('year')?.value;
   }
 
+  resetSearch(): void {
+    if (this.isCompareUlb) {
+      this.isCompareUlb = false;
+      this.compareUlbName.set('');
+      this.getSlbData();
+    }
+  }
+
   private getSlbData(): void {
-    // console.log('button = ', agc);
+    const compareUlbId = this.isCompareUlb ? this.compareUlbObj._id : '';
+
     if (this.currentSelectedButtonKey()) {
       this.isLoading = true;
       this.dashboardService
-        .fetchCitySlbChartData(this.currentSelectedButtonKey(), '', this.ulbId(), this.year)
+        .fetchCitySlbChartData(
+          this.currentSelectedButtonKey(),
+          compareUlbId,
+          this.ulbId(),
+          this.year,
+        )
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
@@ -127,7 +159,10 @@ export class SlbComponent implements OnInit, OnDestroy {
             this.slbData = res.data;
             this.ulbName = this.slbData[0].ulbName;
           },
-          error: (error) => console.error('Failed to fetch data', error),
+          error: (error) => {
+            console.error('Failed to fetch data', error);
+            this.isCompareUlb = false;
+          },
           complete: () => {
             this.createChartRes();
           },
@@ -139,14 +174,16 @@ export class SlbComponent implements OnInit, OnDestroy {
   private createChartRes(): void {
     this.chartData = this.slbData.map((indicatorObj, idx) => {
       const value = Math.round(indicatorObj.value);
-      const benchMarkValue = Math.round(indicatorObj.benchMarkValue);
+      const primaryValue = this.isCompareUlb
+        ? Math.round(indicatorObj.compPercentage)
+        : Math.round(indicatorObj.benchMarkValue);
       const nationalValue = Math.round(indicatorObj.nationalValue);
-      const maxValue = Math.max(value, benchMarkValue, nationalValue);
+      const maxValue = Math.max(value, primaryValue, nationalValue);
 
       const datasets = [
         {
-          label: 'Benchmark Value',
-          data: [benchMarkValue, maxValue - benchMarkValue],
+          label: this.isCompareUlb ? this.compareUlbObj.name : 'Benchmark',
+          data: [primaryValue, maxValue - primaryValue],
           backgroundColor: [this.primaryColor, this.disabledColor],
           borderWidth: 1,
           borderRadius: 5,

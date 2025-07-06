@@ -105,7 +105,7 @@ export class CitySearchComponent implements OnInit, OnDestroy {
   private syncParentValueEffect = effect(() => {
     const name = this.cityName();
     this.myForm.patchValue({ ulbName: name }, { emitEvent: false });
-    // console.log('ULB name is sent from parent to child: ', this.cityName());
+    console.log('ULB name is sent from parent to child: ', this.cityName());
   });
 
   // Inform parent when option is selected from dropdown.
@@ -118,5 +118,7 @@ export class CitySearchComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.setupReadonlyEffect?.destroy();
+    this.syncParentValueEffect?.destroy();
   }
 }
