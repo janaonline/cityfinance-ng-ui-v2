@@ -76,7 +76,7 @@ export class ChartsComponent implements AfterViewInit, OnDestroy {
 
     // Destroy existing chart instance if any (for updates later)
     if (this.chartInstance) {
-      this.chartInstance.destroy();
+      // this.chartInstance.destroy();
     }
 
     const config = this.chartConfig();
@@ -89,8 +89,8 @@ export class ChartsComponent implements AfterViewInit, OnDestroy {
             labels: config.labels,
             datasets: config.datasets,
           },
-          options:
-            config.options || baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Years', 'Amt in ₹ Cr'),
+          options: config.options,
+          // config.options || baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Years', 'Amt in ₹ Cr'),
         });
         break;
       case 'lineChart':
@@ -100,8 +100,8 @@ export class ChartsComponent implements AfterViewInit, OnDestroy {
             labels: config.labels,
             datasets: config.datasets,
           },
-          options:
-            config.options || baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Months', 'Amt in ₹ Cr'),
+          options: config.options,
+          // config.options || baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Months', 'Amt in ₹ Cr'),
         });
         break;
       case 'pieChart':
@@ -111,7 +111,8 @@ export class ChartsComponent implements AfterViewInit, OnDestroy {
             labels: config.labels,
             datasets: config.datasets,
           },
-          options: config.options || baseChartOptions(DEFAULT_FONT_FAMILY, false, '', ''),
+          options: config.options,
+          // options: config.options || baseChartOptions(DEFAULT_FONT_FAMILY, false, '', ''),
         });
         break;
       case 'mixedChart':
@@ -121,8 +122,8 @@ export class ChartsComponent implements AfterViewInit, OnDestroy {
             labels: config.labels,
             datasets: config.datasets,
           },
-          options:
-            config.options || baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Revenue', 'Amt in ₹ Cr'),
+          options: config.options,
+          // config.options || baseChartOptions(DEFAULT_FONT_FAMILY, true, 'Revenue', 'Amt in ₹ Cr'),
         });
         break;
       case 'gaugeChart':
@@ -147,62 +148,3 @@ export class ChartsComponent implements AfterViewInit, OnDestroy {
     }
   }
 }
-
-// chart-config.ts
-// TODO: Add this to constants.js and use from there.
-export const DEFAULT_FONT_FAMILY = 'Montserrat';
-const TEXT_LIGHT = '#374151';
-const DEFAULT_FONT_SIZE = 11;
-export const baseChartOptions = (
-  fontFamily = 'Montserrat',
-  showAxes = true,
-  xAxisLabel = 'X Axis',
-  yAxisLabel = 'Y Axis',
-): ChartOptions => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  // aspectRatio: 1,
-  font: { family: fontFamily, size: 11 },
-  interaction: {
-    mode: 'index',
-    intersect: false,
-  },
-  plugins: {
-    legend: { labels: { font: { family: fontFamily, size: 12 } } },
-    tooltip: {
-      titleFont: { family: fontFamily },
-      bodyFont: { family: fontFamily },
-    },
-  },
-  layout: { padding: 5 },
-  scales: {
-    x: {
-      display: showAxes,
-      ticks: { font: { family: fontFamily } },
-      title: {
-        display: showAxes,
-        text: xAxisLabel,
-        font: {
-          family: fontFamily,
-          size: DEFAULT_FONT_SIZE,
-          weight: 'bold',
-        },
-        color: TEXT_LIGHT,
-      },
-    },
-    y: {
-      display: showAxes,
-      ticks: { font: { family: fontFamily } },
-      title: {
-        display: showAxes,
-        text: yAxisLabel,
-        font: {
-          family: fontFamily,
-          size: DEFAULT_FONT_SIZE,
-          weight: 'bold',
-        },
-        color: TEXT_LIGHT,
-      },
-    },
-  },
-});

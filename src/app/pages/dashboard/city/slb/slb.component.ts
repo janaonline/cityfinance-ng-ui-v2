@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ChartOptions } from 'chart.js';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { ButtonObj, ISlb } from '../../../../core/models/interfaces';
 import { MaterialModule } from '../../../../material.module';
@@ -9,10 +8,11 @@ import {
   ChartConfig,
   ChartsComponent,
 } from '../../../../shared/components/charts/charts.component';
+import { gaugeChartOptions } from '../../../../shared/components/charts/constants';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
 import { DashboardService } from '../../dashboard.service';
-import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 
 @Component({
   selector: 'app-slb',
@@ -31,9 +31,15 @@ import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre
 })
 export class SlbComponent implements OnInit, OnDestroy {
   readonly disabledColor = '#e9ecef';
+  readonly primaryColor = '#1b4965';
+  readonly secondaryColor = '#62b6cb';
+  readonly accentColor = '#bee9e8';
+
   // Input from parent.
   readonly ulbId = input.required<string>();
   readonly years = input.required<string[]>();
+
+  ulbName: string = '';
 
   // Use keys that match API.
   readonly buttons: ButtonObj[] = [
@@ -119,6 +125,7 @@ export class SlbComponent implements OnInit, OnDestroy {
             // console.log('28 slb data: ', res);
             this.slbData = [];
             this.slbData = res.data;
+            this.ulbName = this.slbData[0].ulbName;
           },
           error: (error) => console.error('Failed to fetch data', error),
           complete: () => {
@@ -140,21 +147,21 @@ export class SlbComponent implements OnInit, OnDestroy {
         {
           label: 'Benchmark Value',
           data: [benchMarkValue, maxValue - benchMarkValue],
-          backgroundColor: ['#1b4965', this.disabledColor],
+          backgroundColor: [this.primaryColor, this.disabledColor],
           borderWidth: 1,
           borderRadius: 5,
         },
         {
           label: 'National Average',
           data: [nationalValue, maxValue - nationalValue],
-          backgroundColor: ['#62b6cb', this.disabledColor],
+          backgroundColor: [this.secondaryColor, this.disabledColor],
           borderWidth: 1,
           borderRadius: 5,
         },
         {
           label: indicatorObj.ulbName,
           data: [value, maxValue - value],
-          backgroundColor: ['#bee9e8', this.disabledColor],
+          backgroundColor: [this.accentColor, this.disabledColor],
           borderWidth: 1,
           borderRadius: 5,
         },
@@ -202,21 +209,6 @@ export class SlbComponent implements OnInit, OnDestroy {
     this.ulbIdEffect?.destroy();
   }
 }
-
-const gaugeChartOptions: ChartOptions<'doughnut'> = {
-  responsive: true,
-  maintainAspectRatio: true,
-  aspectRatio: 1,
-  circumference: 180,
-  rotation: 270,
-  cutout: '55%',
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      filter: (tooltipItem) => tooltipItem.dataIndex === 0,
-    },
-  },
-};
 
 // chartData: ChartConfig = {
 //   chartId: 'barChart',
