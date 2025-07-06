@@ -8,7 +8,6 @@ import { ExploresectionTable } from '../../../core/models/interfaces';
 import { IState } from '../../../core/models/state/state';
 import { IULB } from '../../../core/models/ulb';
 import { CommonService } from '../../../core/services/common.service';
-import { ChartConfig, ChartsComponent } from '../../../shared/components/charts/charts.component';
 import { MapComponent } from '../../../shared/components/map/map.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
@@ -38,7 +37,6 @@ import { SlbComponent } from './slb/slb.component';
     SlbComponent,
     BalancesheetIncomestatementComponent,
     FinancialIndicatorComponent,
-    ChartsComponent,
   ],
   templateUrl: './city.component.html',
   styleUrl: './city.component.scss',
@@ -82,7 +80,7 @@ export class CityComponent implements OnInit {
     private router: Router,
     private _commonService: CommonService,
     private _dashboardService: DashboardService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.activatedRoute.paramMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -235,73 +233,4 @@ export class CityComponent implements OnInit {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  chartData: ChartConfig = {
-    chartId: 'barChart',
-    chartType: 'barChart',
-    labels: ['2020-21', '2021-22', '2022-23'],
-    datasets: [
-      {
-        label: '2023-24',
-        data: [12, 19, 3],
-        backgroundColor: ['#65D2F3'],
-        borderRadius: 5,
-      },
-      {
-        label: '2022-23',
-        data: [10, 8, 6],
-        backgroundColor: ['#1596E6'],
-        borderRadius: 5,
-      },
-      {
-        label: '2021-22',
-        data: [12, 10, 14],
-        backgroundColor: ['#245ABF'],
-        borderRadius: 5,
-      },
-    ],
-  };
-
-  // // Half Donut
-  // chartData: ChartConfig = {
-  //   chartId: 'slb',
-  //   chartType: 'gaugeChart',
-  //   labels: ['Own Source Revenue'],
-  //   datasets: [
-  //     {
-  //       label: 'Own source revenue',
-  //       data: [80, 20],
-  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
-  //       borderWidth: 1,
-  //       borderRadius: 5,
-  //     },
-  //     {
-  //       label: 'label 2',
-  //       data: [40, 60],
-  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
-  //       borderWidth: 1,
-  //       borderRadius: 5,
-  //     },
-  //     {
-  //       label: 'label 3',
-  //       data: [70, 30],
-  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
-  //       borderWidth: 1,
-  //       borderRadius: 5,
-  //     },
-  //   ],
-  //   options: gaugeChartOptions,
-  // };
 }
-
-// const gaugeChartOptions: ChartOptions<'doughnut'> = {
-//   circumference: 180,
-//   rotation: 270,
-//   cutout: '65%',
-//   plugins: {
-//     legend: { display: false },
-//     tooltip: {
-//       filter: (tooltipItem) => tooltipItem.dataIndex === 0,
-//     },
-//   },
-// };
