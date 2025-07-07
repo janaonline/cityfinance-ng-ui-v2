@@ -5,11 +5,9 @@ import { Subject, Subscription, takeUntil } from 'rxjs';
 import { ButtonObj, ISlb } from '../../../../core/models/interfaces';
 import { IULB } from '../../../../core/models/ulb';
 import { MaterialModule } from '../../../../material.module';
-import {
-  ChartConfig,
-  ChartsComponent,
-} from '../../../../shared/components/charts/charts.component';
+import { ChartsComponent } from '../../../../shared/components/charts/charts.component';
 import { gaugeChartOptions } from '../../../../shared/components/charts/constants';
+import { ChartConfig } from '../../../../shared/components/charts/chart-interfaces';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { CitySearchComponent } from '../../../../shared/components/shared-ui/city-search.component';
 import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
@@ -251,29 +249,3 @@ export class SlbComponent implements OnInit, OnDestroy {
     this.ulbIdEffect?.destroy();
   }
 }
-
-// chartData: ChartConfig = {
-//   chartId: 'barChart',
-//   chartType: 'barChart',
-//   labels: ['2020-21', '2021-22', '2022-23'],
-//   datasets: [
-//     {
-//       label: '2023-24',
-//       data: [12, 19, 3],
-//       backgroundColor: ['#65D2F3'],
-//       borderRadius: 5,
-//     },
-//     {
-//       label: '2022-23',
-//       data: [10, 8, 6],
-//       backgroundColor: ['#1596E6'],
-//       borderRadius: 5,
-//     },
-//     {
-//       label: '2021-22',
-//       data: [12, 10, 14],
-//       backgroundColor: ['#245ABF'],
-//       borderRadius: 5,
-//     },
-//   ],
-// };

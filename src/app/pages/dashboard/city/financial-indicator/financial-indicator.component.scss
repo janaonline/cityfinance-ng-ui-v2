@@ -1,0 +1,29 @@
+.chart-container {
+    min-height: 510px;
+    min-width: 510px;
+    // min-height: min(510px, 50vw);
+    // min-width: min(510px, 50vw);
+
+    border: 1px solid green;
+    // width: 90%;
+    // margin: auto;
+    // display: flex;
+    // flex-direction: column;
+    // gap: 40px;
+    // height: min(350px, 60vh);
+    // overflow-x: scroll;
+}
+
+.mat-custom-style {
+    --mat-expansion-header-text-font: var(--ff-base);
+
+    p {
+        font-family: var(--ff-base);
+        font-weight: var(--fw-medium);
+    }
+}
+
+.accordion {
+    overflow-y: auto;
+    max-height: 510px
+}

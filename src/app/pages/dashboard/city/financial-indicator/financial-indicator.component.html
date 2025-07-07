@@ -1,5 +1,119 @@
-@if (this.yearsSignal().length === 0) {
-  <app-no-data-found></app-no-data-found>
-} @else {
-  <p>financial-indicator works!</p>
-}
+<section class="container my-4">
+  @if (this.yearsSignal().length === 0) {
+    <app-no-data-found></app-no-data-found>
+  } @else {
+    <p>financial-indicator works!</p>
+
+    <div class="row justify-content-between">
+      <!-- Left side: Chart -->
+      <div
+        class="rounded bg-light d-flex flex-column col-sm-12 col-md-7 p-3 border border-2 border-info"
+      >
+        <p>
+          Greater Hyderabad Municipal Corporation Total Revenue vs State Municipal Corporation
+          Weighted Average
+        </p>
+        <p>expand download share/embed</p>
+        <p>expand download share/embed</p>
+
+        <div class="chart-container flex-grow-1">
+          <app-charts [chartConfig]="chartData"></app-charts>
+        </div>
+      </div>
+      <!-- Rigth side: Fyi -->
+      <div class="col-sm-12 col-md-5 px-4 py-3 border border-2 border-cfPrimary rounded">
+        <!-- Info -->
+        <div
+          class="alert alert-success custom-font-size-7 d-flex align-items-start p-2"
+          role="alert"
+        >
+          <span class="mt-1">
+            <mat-icon class="custom-font-size-7" style="height: 15px; width: 15px">
+              brightness_1
+            </mat-icon>
+          </span>
+          CAGR of 10% between 2020-21 and 2022-23 years (ULB Total Revenue for FY' 2020-21 is
+          Rs.2937 Cr. ULB Total Revenue for FY' 2022-23 is Rs. 3883 Cr.)
+        </div>
+        <!-- Accordion -->
+        <div class="accordion">
+          <!-- <div class="">
+            <button class="btn btn-sm btn-outline-cfSecondary" (click)="accordion().openAll()">
+              Expand All
+            </button>
+            <button class="btn btn-sm btn-outline-cfSecondary" (click)="accordion().closeAll()">
+              Collapse All
+            </button>
+          </div> -->
+          <mat-accordion class="mat-custom-style" multi>
+            <!-- Panel 1 -->
+            <mat-expansion-panel class="bg-light">
+              <mat-expansion-panel-header>
+                <mat-panel-title class="fw-bold">About this Indicator</mat-panel-title>
+                <!-- <mat-panel-description>
+                Type the country name
+                <mat-icon>map</mat-icon>
+              </mat-panel-description> -->
+              </mat-expansion-panel-header>
+
+              <p>
+                Sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c)
+                grants-in-aid, (d) loans and (e) other receipts.
+              </p>
+              <p>
+                Tax revenue includes Property Tax, Professional Tax, Entertainment Tax among others
+                Non-tax revenue includes user charges (including for water supply, sewerage etc),
+                fees, rentals from municipal property, among others Know more...
+              </p>
+              <p>
+                Sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c)
+                grants-in-aid, (d) loans and (e) other receipts. Tax revenue includes Property Tax,
+                Professional Tax, Entertainment Tax among others Non-tax revenue includes user
+                charges (including for water supply, sewerage etc), fees, rentals from municipal
+                property, among others
+              </p>
+            </mat-expansion-panel>
+
+            <!-- Panel 2 -->
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title> Personal data </mat-panel-title>
+                <!-- <mat-panel-description>
+                Type your name and age
+                <mat-icon>account_circle</mat-icon>
+              </mat-panel-description> -->
+              </mat-expansion-panel-header>
+
+              <mat-form-field>
+                <mat-label>First name</mat-label>
+                <input matInput />
+              </mat-form-field>
+
+              <mat-form-field>
+                <mat-label>Age</mat-label>
+                <input matInput type="number" min="1" />
+              </mat-form-field>
+            </mat-expansion-panel>
+
+            <!-- Panel 3 -->
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title> Day of the trip </mat-panel-title>
+                <!-- <mat-panel-description>
+                Inform the date you wish to travel
+                <mat-icon>date_range</mat-icon>
+              </mat-panel-description> -->
+              </mat-expansion-panel-header>
+
+              <mat-form-field>
+                <mat-label>Date</mat-label>
+                <input matInput [matDatepicker]="picker" (focus)="picker.open()" readonly />
+              </mat-form-field>
+              <mat-datepicker #picker></mat-datepicker>
+            </mat-expansion-panel>
+          </mat-accordion>
+        </div>
+      </div>
+    </div>
+  }
+</section>
