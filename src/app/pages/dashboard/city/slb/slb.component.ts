@@ -121,8 +121,10 @@ export class SlbComponent implements OnInit, OnDestroy {
     if (ulbObj._id) {
       this.compareUlbObj = ulbObj;
 
-      if (this.compareUlbObj._id !== this.ulbId()) this.isCompareUlb = true;
-      else this.isCompareUlb = false;
+      if (this.compareUlbObj._id !== this.ulbId()) {
+        this.isCompareUlb = true;
+        this.compareUlbName.set(this.compareUlbObj.name);
+      } else this.isCompareUlb = false;
 
       this.getSlbData();
     }
@@ -132,6 +134,7 @@ export class SlbComponent implements OnInit, OnDestroy {
   }
 
   resetSearch(): void {
+    // console.log('isCompareUlb', this.isCompareUlb);
     if (this.isCompareUlb) {
       this.isCompareUlb = false;
       this.compareUlbName.set('');
@@ -167,18 +170,20 @@ export class SlbComponent implements OnInit, OnDestroy {
             this.createChartRes();
           },
         });
-      // console.log('data = ', this.chartData);
     }
   }
 
   private createChartRes(): void {
     this.chartData = this.slbData.map((indicatorObj, idx) => {
       const value = Math.round(indicatorObj.value);
-      const primaryValue = this.isCompareUlb
+      let primaryValue = this.isCompareUlb
         ? Math.round(indicatorObj.compPercentage)
         : Math.round(indicatorObj.benchMarkValue);
+      if (isNaN(primaryValue)) primaryValue = 0;
       const nationalValue = Math.round(indicatorObj.nationalValue);
       const maxValue = Math.max(value, primaryValue, nationalValue);
+
+      // console.log('value =', [primaryValue, maxValue - primaryValue], maxValue);
 
       const datasets = [
         {
