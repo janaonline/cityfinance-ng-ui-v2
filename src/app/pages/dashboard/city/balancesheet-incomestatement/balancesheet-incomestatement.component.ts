@@ -14,9 +14,9 @@ import { InrFormatPipe } from '../../../../core/pipes/inr-format.pipe';
 import { CommonService } from '../../../../core/services/common.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsPdfsDialogComponent } from '../../../../shared/components/afs-pdfs-dialog/afs-pdfs-dialog.component';
+import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
 import { DashboardService } from '../../dashboard.service';
-import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 type DownloadReportElement = {
   type: string;
   key: string;
@@ -117,14 +117,10 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
     private commonService: CommonService,
     private utilityService: UtilityService,
     private dialog: MatDialog,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
-    // this.getBsIsData();
-    // this.createHeaders();
     this.initializeForm();
-    // this.updateTableData();
-    // console.log('form initiated', this.ulbIdSignal());
   }
 
   private getBsIsData(): void {
@@ -136,7 +132,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          console.log('getBsIsData() called');
+          // console.log('getBsIsData() called');
           this.ledgerData = res['data'];
           this.population = res['population'];
           this.isLoading = false;
@@ -149,11 +145,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
       });
   }
 
-  readonly ulbChange = effect(() => {
+  readonly ulbChangeEffect = effect(() => {
     if (this.ulbIdSignal()) this.getBsIsData();
   });
 
-  readonly yearsChange = effect(() => {
+  readonly yearsChangeEffect = effect(() => {
     if (this.yearsSignal()) this.createHeaders();
   });
 
@@ -208,11 +204,8 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   // Create headers based on years [].
   createHeaders(): void {
-    console.log('createHeaders() called');
-
+    // console.log('createHeaders() called');
     // Create deep copy.
-    // this.headers = JSON.parse(JSON.stringify(this.HEADERS_STRUCTURE));
-    // this.downloadReportsHeaders = JSON.parse(JSON.stringify(this.DOWNLOAD_REPORTS_HEADERS_STRUCTURE));
     this.headers = cloneDeep(this.HEADERS_STRUCTURE);
     this.downloadReportsHeaders = cloneDeep(this.DOWNLOAD_REPORTS_HEADERS_STRUCTURE);
 
@@ -254,8 +247,9 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   // ----- On selecting file icon from download report table ----
+  // TODO: add loader.
   onFileClick(fileType: 'pdf' | 'excel', selectedYear: string): void {
-    console.log('File clicked: ', selectedYear, fileType);
+    // console.log('File clicked: ', selectedYear, fileType);
 
     // Open file - 2015 to 2019.
     const yearSplit = Number(selectedYear.split('-')[0]);
@@ -270,7 +264,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          console.log('getReports', res);
+          // console.log('getReports', res);
           if (res && res['success']) {
             const type = res['data'][fileType].length ? fileType : 'notFound';
             this.openDialog(res['data'], type);
@@ -281,8 +275,11 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
   }
 
   private openDialog(data: AfsPopupData | null, fileType: string) {
-    // console.log('openDialog', data);
+    console.log('openDialog', data, fileType);
+    // TODO: make this simple
+    // const ulbInfo = { fileName: 'abc', type: 'pdf', module: 'cityPage' };
     const dialogRef = this.dialog.open(AfsPdfsDialogComponent, {
+      // data: { reportList: data, fileType: fileType, ulbDetails: ulbInfo },
       data: { reportList: data, fileType: fileType },
       width: '500px',
     });
@@ -302,7 +299,7 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          console.log(res);
+          // console.log(res);
           if (res['data'].length == 0) this.openDialog(null, 'notFound');
           else {
             const target_file_url = environment.STORAGE_BASEURL + res['data'][0]['fileUrl'];
@@ -319,15 +316,16 @@ export class BalancesheetIncomestatementComponent implements OnInit, OnDestroy {
 
   // Output emitted by child to parent
   onSelectedButtonChange(key: string): void {
-    console.log('Button key sent from child to parent:', key);
+    // console.log('Button key sent from child to parent:', key);
     this.selectedBtn.set(key);
-    // this.getBsIsData();
   }
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.destroy$.next();
     this.destroy$.complete();
+    this.ulbChangeEffect?.destroy();
+    this.yearsChangeEffect?.destroy();
   }
 }
 

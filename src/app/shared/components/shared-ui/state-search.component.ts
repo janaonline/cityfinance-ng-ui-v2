@@ -91,7 +91,7 @@ export class StateSearchComponent implements OnInit, OnDestroy {
 
   // Sync value sent by parent.
   readonly syncStateFromParentEffect = effect(() => {
-    console.log('State id sent by parent to child: ', this.stateId());
+    // console.log('State id sent by parent to child: ', this.stateId());
     const id = this.stateId();
 
     if (id === '' && !this.isStateReadonly()) this.patchStateName('');
@@ -140,7 +140,7 @@ export class StateSearchComponent implements OnInit, OnDestroy {
     if (callback) {
       callback(state);
     }
-    console.log('State obj sent by child to parent: ', state);
+    // console.log('State obj sent by child to parent: ', state);
   }
 
   // Helper to patch state value.
@@ -151,5 +151,6 @@ export class StateSearchComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.setupReadonlyEffect?.destroy();
   }
 }

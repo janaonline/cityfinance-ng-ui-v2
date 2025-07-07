@@ -39,7 +39,7 @@ export class TabButtonsComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    console.log('buttons sent from parent to child: ', this.buttons());
+    // console.log('buttons sent from parent to child: ', this.buttons());
     if (this.buttons().length > 0) {
       this.selectedBtnKey.set(this.buttons()[0].key);
       this.selectedButtonKeyChange.emit(this.buttons()[0].key);

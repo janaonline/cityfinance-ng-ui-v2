@@ -5,7 +5,7 @@
   ></app-tab-buttons>
 
   @if (currentSelectedButtonKey() === 'borrowing') {
-    @if (this.borrowingYears().length === 0) {
+    @if (isBorrowingDisabled) {
       <app-no-data-found></app-no-data-found>
     } @else {
       <p>Below are the details of Municipal Bond Issuances undertaken by the ULB</p>
@@ -41,7 +41,7 @@
         <div class="table-container">
           <table mat-table [dataSource]="source" class="border">
             @for (item of displayedColumns; track $index) {
-              <p>{{ item | json }}</p>
+              <!-- <p>{{ item | json }}</p> -->
               <ng-container [matColumnDef]="item" [sticky]="$index === 0">
                 <th mat-header-cell *matHeaderCellDef>{{ item }}</th>
                 <td

@@ -1,11 +1,12 @@
-import { CommonModule, JsonPipe } from '@angular/common';
-import { Component, effect, input, OnDestroy, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, effect, input, OnDestroy, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import cloneDeep from 'lodash-es/cloneDeep';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { ICreditRatingData } from '../../../../core/models/creditRating/creditRatingResponse';
 import { BorrowingsData, BorrowingsKeys } from '../../../../core/models/interfaces';
+import { CommonService } from '../../../../core/services/common.service';
 import { NoDataFoundComponent } from '../../../../shared/components/shared-ui/no-data-found.component';
 import { TabButtonsComponent } from '../../../../shared/components/shared-ui/tab-buttons.component';
 import { DashboardService } from '../../dashboard.service';
@@ -17,7 +18,6 @@ import { TABLE_STRUCTURE } from './constants';
     NoDataFoundComponent,
     TabButtonsComponent,
     MatTableModule,
-    JsonPipe,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -25,15 +25,17 @@ import { TABLE_STRUCTURE } from './constants';
   templateUrl: './borrowing-credit-rating.component.html',
   styleUrl: './borrowing-credit-rating.component.scss',
 })
-export class BorrowingCreditRatingComponent implements OnDestroy, OnInit {
+export class BorrowingCreditRatingComponent implements OnDestroy {
   readonly buttons = [
     { key: 'borrowing', label: 'Borrowing' },
     { key: 'creditRating', label: 'Credit Rating' },
   ];
   readonly displayedColumnsStructure: string[] = ['header'];
   currentSelectedButtonKey = signal<string>('');
-  readonly borrowingYears = input.required<string[]>();
   readonly ulbIdSignal = input.required<string>();
+  // readonly borrowingYears = input.required<string[]>();
+  borrowingYears = signal<string[]>([]);
+  isBorrowingDisabled: boolean = true;
 
   private readonly COLS_PER_PAGE = 3;
   currentPage = 0;
@@ -60,21 +62,42 @@ export class BorrowingCreditRatingComponent implements OnDestroy, OnInit {
 
   constructor(
     private dashboardService: DashboardService,
+    private _commonService: CommonService,
     private fb: FormBuilder,
-  ) { }
+  ) {}
 
-  ngOnInit() {
-    // this.getBorrowingsData();
-    this.getCreditRatingsData();
-  }
+  // ngOnInit() {
+  // this.getBorrowingsData();
+  // this.getCreditRatingsData();
+  // this.getBorrowingsYears();
+  // }
 
   onSelectedButtonChange(key: string): void {
     this.currentSelectedButtonKey.set(key);
+    // if (this.currentSelectedButtonKey() === this.buttons[1].key) this.getCreditRatingsData('onbuttonchange');
   }
 
-  readonly ulbIdChange = effect(() => {
+  // Distinct bonds years.
+  private getBorrowingsYears() {
+    this._commonService.borrowingYears(this.ulbIdSignal()).subscribe({
+      next: (res) => {
+        this.isBorrowingDisabled = false;
+        if (res.borrowingYears.length === 0) this.isBorrowingDisabled = true;
+        this.borrowingYears.set(res.borrowingYears);
+
+        // console.log('bonds years: ', res.borrowingYears, this.isBorrowingDisabled);
+      },
+      error: (error) => console.error('Failed to get borrowingYears: ', error),
+      complete: () => this.getBorrowingsData(),
+    });
+  }
+
+  readonly ulbIdChangeEffect = effect(() => {
     const ulbId = this.ulbIdSignal();
-    if (ulbId) this.getBorrowingsData();
+    if (ulbId && this.currentSelectedButtonKey() === this.buttons[0].key) {
+      this.getBorrowingsYears();
+      // this.getBorrowingsData();
+    }
   });
 
   private getBorrowingsData(): void {
@@ -201,22 +224,23 @@ export class BorrowingCreditRatingComponent implements OnDestroy, OnInit {
     const ulbName = this.ulbName();
 
     if (!ulbName) return;
+    if (this.currentSelectedButtonKey() === this.buttons[1].key) {
+      // Reset state when ULB changes
+      this.creditRatingYears = [];
+      this.filteredCreditRating = [];
+      this.isCreditRatingDisabled = true;
 
-    // Reset state when ULB changes
-    this.creditRatingYears = [];
-    this.filteredCreditRating = [];
-    this.isCreditRatingDisabled = true;
-
-    if (this.creditRatingData.length) {
-      this.processCreditRatingData();
-    } else {
-      this.getCreditRatingsData();
+      if (this.creditRatingData.length) {
+        this.processCreditRatingData();
+      } else {
+        this.getCreditRatingsData();
+      }
     }
   });
 
   // Fetch credit rating data from service
   private getCreditRatingsData(): void {
-    console.log('Fetching credit rating data...');
+    // console.log('Fetching credit rating data...', abc);
     this.dashboardService.getCreditRatingsData().subscribe({
       next: (res) => {
         this.creditRatingData = res || [];
@@ -294,7 +318,7 @@ export class BorrowingCreditRatingComponent implements OnDestroy, OnInit {
       // (item) => this.extractYear(item.date) === selectedYear,
     );
 
-    console.log('Filtered data:', this.filteredCreditRating);
+    // console.log('Filtered data:', this.filteredCreditRating);
   }
 
   // Extract year from date string
@@ -310,6 +334,9 @@ export class BorrowingCreditRatingComponent implements OnDestroy, OnInit {
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.subscriptions = [];
+
+    this.ulbIdChangeEffect?.destroy();
+    this.ulbNameEffect?.destroy();
 
     this.destroy$.next();
     this.destroy$.complete();

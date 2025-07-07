@@ -8,7 +8,6 @@ import { ExploresectionTable } from '../../../core/models/interfaces';
 import { IState } from '../../../core/models/state/state';
 import { IULB } from '../../../core/models/ulb';
 import { CommonService } from '../../../core/services/common.service';
-import { ChartConfig, ChartsComponent } from '../../../shared/components/charts/charts.component';
 import { MapComponent } from '../../../shared/components/map/map.component';
 import { PreLoaderComponent } from '../../../shared/components/pre-loader/pre-loader.component';
 import { CitySearchComponent } from '../../../shared/components/shared-ui/city-search.component';
@@ -38,7 +37,6 @@ import { SlbComponent } from './slb/slb.component';
     SlbComponent,
     BalancesheetIncomestatementComponent,
     FinancialIndicatorComponent,
-    ChartsComponent,
   ],
   templateUrl: './city.component.html',
   styleUrl: './city.component.scss',
@@ -64,7 +62,7 @@ export class CityComponent implements OnInit {
   selectedLedgerYear = signal<string>('');
   ledgerYears = signal<string[]>([]);
   slbYears = signal<string[]>([]);
-  borrowingYears = signal<string[]>([]);
+  // borrowingYears = signal<string[]>([]);
 
   isLoading1: boolean = true;
   isLoading2: boolean = true;
@@ -72,8 +70,8 @@ export class CityComponent implements OnInit {
   loadedTabs: boolean[] = [true, false, false, false];
   isSlbDisabled: boolean = true;
   isLedgerDisabled: boolean = true;
-  isBorrowingDisabled: boolean = true;
-  isCreditDisabled: boolean = false;
+  // isBorrowingDisabled: boolean = true;
+  // isCreditDisabled: boolean = false;
 
   private destroy$ = new Subject<void>();
 
@@ -101,14 +99,14 @@ export class CityComponent implements OnInit {
   // ----- Search Section -----
   // Callback: From child when state is selected
   onStateSelected = (stateObj: IState): void => {
-    console.log('Value of state sent by child to parent', stateObj);
+    // console.log('Value of state sent by child to parent', stateObj);
     this.setCityName('');
     this.setStateData(stateObj.name, stateObj._id, stateObj.code);
   };
 
   // Callback: From child when ULB/city is selected
   onUlbSelected = (ulbObj: IULB): void => {
-    console.log('Value of ULB sent by child to parent:', ulbObj);
+    // console.log('Value of ULB sent by child to parent:', ulbObj);
     if (ulbObj._id) this.updateUlbIdAndNavigate(ulbObj._id);
   };
 
@@ -126,9 +124,8 @@ export class CityComponent implements OnInit {
 
   // ----- Map Section -----
   public selectedCityIdChange($event: string): void {
-    // this.ulbId = $event;
     if ($event) this.updateUlbIdAndNavigate($event);
-    console.log('ulbIdChange from map', this.ulbIdSignal(), $event);
+    // console.log('ulbIdChange from map', this.ulbIdSignal(), $event);
   }
 
   // ----- Get necessary data -----
@@ -167,7 +164,7 @@ export class CityComponent implements OnInit {
       .getMoneyInfo(this.selectedLedgerYear(), '', this.ulbIdSignal())
       .subscribe({
         next: (res) => {
-          console.log('Money info cards: ', res);
+          // console.log('Money info cards: ', res);
           this.audit_status = res.audit_status === 'Audited' ? 'Audited' : 'Provisional';
           this.isActive = res.isActive;
           this.moneyInfoSignal.set(res.result);
@@ -198,12 +195,7 @@ export class CityComponent implements OnInit {
         this.ledgerYears.set(res.ledgerYears);
         this.selectedLedgerYear.set(this.ledgerYears()?.[0]);
 
-        console.log(
-          'Ledger years: ',
-          res.ledgerYears,
-          res.ledgerYears.length,
-          this.isLedgerDisabled,
-        );
+        // console.log('Ledger years: ', res.ledgerYears, this.isLedgerDisabled);
       },
       error: (error) => console.error('Failed to fetch years list: getDistinctYearsList()', error),
     });
@@ -215,27 +207,21 @@ export class CityComponent implements OnInit {
         if (res.slbYears.length === 0) this.isSlbDisabled = true;
         this.slbYears.set(res.slbYears);
 
-        console.log('slb years: ', res.slbYears, res.slbYears.length, this.isSlbDisabled);
+        // console.log('slb years: ', res.slbYears, this.isSlbDisabled);
       },
-      error: (error) => console.log('Failed to get slbYears: ', error),
+      error: (error) => console.error('Failed to get slbYears: ', error),
     });
 
-    // Distinct bonds years.
-    this._commonService.borrowingYears(this.ulbIdSignal(), this.selectedStateIdSignal()).subscribe({
-      next: (res) => {
-        this.isBorrowingDisabled = false;
-        if (res.borrowingYears.length === 0) this.isBorrowingDisabled = true;
-        this.borrowingYears.set(res.borrowingYears);
-
-        console.log(
-          'bonds years: ',
-          res.borrowingYears,
-          res.borrowingYears.length,
-          this.isBorrowingDisabled,
-        );
-      },
-      error: (error) => console.log('Failed to get borrowingYears: ', error),
-    });
+    // // Distinct bonds years.
+    // this._commonService.borrowingYears(this.ulbIdSignal(), this.selectedStateIdSignal()).subscribe({
+    //   next: (res) => {
+    //     this.isBorrowingDisabled = false;
+    //     if (res.borrowingYears.length === 0) this.isBorrowingDisabled = true;
+    //     this.borrowingYears.set(res.borrowingYears);
+    //     console.log('bonds years: ', res.borrowingYears, this.isBorrowingDisabled);
+    //   },
+    //   error: (error) => console.log('Failed to get borrowingYears: ', error),
+    // });
   }
 
   // On tab changes call the chid components.
@@ -247,73 +233,4 @@ export class CityComponent implements OnInit {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  chartData: ChartConfig = {
-    chartId: 'barChart',
-    chartType: 'barChart',
-    labels: ['2020-21', '2021-22', '2022-23'],
-    datasets: [
-      {
-        label: '2023-24',
-        data: [12, 19, 3],
-        backgroundColor: ['#65D2F3'],
-        borderRadius: 5,
-      },
-      {
-        label: '2022-23',
-        data: [10, 8, 6],
-        backgroundColor: ['#1596E6'],
-        borderRadius: 5,
-      },
-      {
-        label: '2021-22',
-        data: [12, 10, 14],
-        backgroundColor: ['#245ABF'],
-        borderRadius: 5,
-      },
-    ],
-  };
-
-  // // Half Donut
-  // chartData: ChartConfig = {
-  //   chartId: 'slb',
-  //   chartType: 'gaugeChart',
-  //   labels: ['Own Source Revenue'],
-  //   datasets: [
-  //     {
-  //       label: 'Own source revenue',
-  //       data: [80, 20],
-  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
-  //       borderWidth: 1,
-  //       borderRadius: 5,
-  //     },
-  //     {
-  //       label: 'label 2',
-  //       data: [40, 60],
-  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
-  //       borderWidth: 1,
-  //       borderRadius: 5,
-  //     },
-  //     {
-  //       label: 'label 3',
-  //       data: [70, 30],
-  //       backgroundColor: ['#65D2F3', '#f8f9fa'],
-  //       borderWidth: 1,
-  //       borderRadius: 5,
-  //     },
-  //   ],
-  //   options: gaugeChartOptions,
-  // };
 }
-
-// const gaugeChartOptions: ChartOptions<'doughnut'> = {
-//   circumference: 180,
-//   rotation: 270,
-//   cutout: '65%',
-//   plugins: {
-//     legend: { display: false },
-//     tooltip: {
-//       filter: (tooltipItem) => tooltipItem.dataIndex === 0,
-//     },
-//   },
-// };

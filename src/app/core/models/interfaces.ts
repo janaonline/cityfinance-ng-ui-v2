@@ -79,6 +79,17 @@ export interface BsIsData extends BsIsDataBase {
   [year: `${number}`]: number | string | null;
 }
 
+export interface UserInfoUlbDetails {
+  fileName: string;
+  type: 'pdf' | 'excel';
+  module: 'resources' | 'cfr' | 'cityPage';
+}
+
+export interface UserInfoData {
+  reportList: AfsPopupData;
+  fileType: string;
+  ulbDetails: UserInfoUlbDetails;
+}
 export interface AfsPopupData {
   excel: FileData[];
   pdf: FileData[];
@@ -105,4 +116,16 @@ export interface FileMetadata {
 export interface ButtonObj {
   label: string;
   key: string;
+}
+
+export interface ISlb {
+  value: number;
+  ulbName: string;
+  year: string;
+  unitType: string;
+  benchMarkValue: number;
+  name: string;
+  type: string;
+  nationalValue: number;
+  compPercentage: number;
 }
