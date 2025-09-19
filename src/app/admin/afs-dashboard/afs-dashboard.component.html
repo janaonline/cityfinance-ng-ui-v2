@@ -302,16 +302,19 @@
                                             <div class="digitize-status-wrapper"
                                                 style="margin-top: 20px; margin-right: 12px;"
                                                 [ngClass]="{'single-block': !file.uploadedAt}">
-                                                <div class="digitize-block ulb-block" *ngIf="file.ulbSubmit">
+                                                @if(file.ulbSubmit){
+                                                <div class="digitize-block ulb-block">
                                                     {{ file.ulbSubmit | date:'short' }}
                                                 </div>
-                                                <div class="digitize-block ulb-block" *ngIf="!file.ulbSubmit">
+                                                }
+                                                @if(!file.ulbSubmit) { <div class="digitize-block ulb-block">
                                                     Not Submitted
                                                 </div>
+                                                }
 
-                                                <div class="digitize-block afs-block" *ngIf="file.uploadedAt">
+                                                @if(file.uploadedAt) {<div class="digitize-block afs-block">
                                                     {{ file.uploadedAt | date:'short' }}
-                                                </div>
+                                                </div>}
                                             </div>
                                         </td>
 
@@ -352,18 +355,19 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div *ngIf="selectedFilesCount > 0" class="selection-summary">
+                        @if(selectedFilesCount > 0) { <div class="selection-summary">
                             <strong>{{ totalSelectedPages }} pages</strong> from
                             <strong>{{ selectedFilesCount }} PDF file(s)</strong> selected to digitize
 
                         </div>
+                        }
 
                         <div>
 
                             <button class="digitize-btn" (click)="openDigitizePopup()">Digitize & Download</button>
                         </div>
                         <!-- Digitize Popup -->
-                        <div class="popup-overlay" *ngIf="showDigitizePopup">
+                        @if(showDigitizePopup){<div class="popup-overlay">
                             <div class="popup-box">
                                 <h3>Confirm Digitization</h3>
                                 <p>
@@ -371,17 +375,18 @@
                                     containing <strong>{{ totalSelectedPages }}</strong> pages.
                                 </p>
 
-                                <div *ngIf="digitizeStatus === ''">
+                                @if(digitizeStatus === ''){<div>
                                     <button class="proceed-btn" (click)="proceedDigitization()">Proceed</button>
                                     <button class="cancel-btn" (click)="closeDigitizePopup()">Cancel</button>
-                                </div>
+                                </div>}
 
-                                <div *ngIf="digitizeStatus === 'done'">
+                                @if(digitizeStatus === 'done') {<div>
                                     <p style="color: green; font-weight: bold;"> Done</p>
                                     <button (click)="closeDigitizePopup()">Close</button>
-                                </div>
+                                </div>}
                             </div>
                         </div>
+                        }
                     </div>
                     }
 
