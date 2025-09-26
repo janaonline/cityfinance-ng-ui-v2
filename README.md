@@ -1,4 +1,4 @@
-# CityfinanceNgUiV2 - 1 - 1
+# CityfinanceNgUiV2
 trigger 1
 [![codecov](https://codecov.io/gh/janaonline/cityfinance-ng-ui-v2/graph/badge.svg?token=3UNOUB3NL3)](https://codecov.io/gh/janaonline/cityfinance-ng-ui-v2)
 
