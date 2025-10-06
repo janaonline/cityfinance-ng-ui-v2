@@ -424,10 +424,12 @@
 
 
                     <td>
-                      <button style="margin-bottom: 30px;" mat-button color="primary"
+                      <button mat-button color="primary" style="margin-bottom: 30px; pointer-events: auto;"
                         (click)="openLogs(file.excelFiles?.[0]?.requestId || '')">
                         View Logs
                       </button>
+
+
                     </td>
                   </tr>
                   }
@@ -473,7 +475,7 @@
       </div>
     </div>
   </div>
-    <div *ngIf="logsData" class="log-overlay">
+  <div *ngIf="logsData" class="log-overlay">
     <div id="logCard" class="card shadow-lg border-0 rounded-3">
 
 
