@@ -1438,3 +1438,27 @@ mat-form-field {
   font-weight: 500;
   padding: 2px 8px;
 }
+
+/* --- Fix for View Logs button only in dashboard --- */
+::ng-deep td button[mat-button] {
+  background-color: #4b8fd4 !important; /* primary blue */
+  color: #fff !important;
+  border-radius: 2px;
+ 
+}
+
+/* Allow clicks but no blocking by label */
+::ng-deep td button[mat-button] .mdc-button__label {
+  pointer-events: none !important;
+}
+
+/* Remove white transparent overlay on hover/focus */
+::ng-deep td button[mat-button]::before,
+::ng-deep td button[mat-button]::after {
+  background: transparent !important;
+}
+
+/* Optional: add hover effect for clarity */
+::ng-deep td button[mat-button]:hover {
+  background-color: #1565c0 !important; /* darker shade on hover */
+}
