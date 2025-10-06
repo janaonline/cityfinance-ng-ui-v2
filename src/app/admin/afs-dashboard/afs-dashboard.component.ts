@@ -20,8 +20,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { IState } from '../../core/models/state/state';
 import { IULB } from '../../core/models/ulb';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
- interface Years {
+
+interface Years {
   name: string;
   _id: string;
 }
@@ -29,7 +33,7 @@ import { IULB } from '../../core/models/ulb';
 @Component({
   standalone: true,
   selector: 'app-afs-dashboard',
-  imports: [CommonModule, HttpClientModule , FormsModule,MatFormFieldModule,
+  imports: [CommonModule, HttpClientModule, FormsModule, MatFormFieldModule,
     MatInputModule,
     MatDatepickerModule,
     MatNativeDateModule,
@@ -42,11 +46,11 @@ import { IULB } from '../../core/models/ulb';
 })
 
 export class AfsDashboardComponent implements OnInit {
-  username = localStorage.getItem('loggedInUser') || 'User';
-  fullName = localStorage.getItem('userFullName') || '';
-  email = localStorage.getItem('userEmail') || '';
-  role = localStorage.getItem('userRole') || '';
-  lastLoginTime = localStorage.getItem('lastLoginTime') || '';
+  // username = localStorage.getItem('loggedInUser') || 'User';
+  // fullName = localStorage.getItem('userFullName') || '';
+  // email = localStorage.getItem('userEmail') || '';
+  // role = localStorage.getItem('userRole') || '';
+  // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
 
 
   showPopup = false;
@@ -62,7 +66,7 @@ export class AfsDashboardComponent implements OnInit {
     states: [] as IState[],
     populationCategories: [] as string[],
     allCities: [] as any[],
-    
+
     cities: [] as any[],
     years: [] as Years[],
     // documentTypes: [] as { key: string, name: string }[]
@@ -210,13 +214,13 @@ export class AfsDashboardComponent implements OnInit {
 
 
   ngOnInit(): void {
-    const token = localStorage.getItem('token');
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    // const token = localStorage.getItem('token');
+    // const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
-    if (!token || !isLoggedIn) {
-      this.router.navigate(['/login']);
-      return;
-    }
+    // if (!token || !isLoggedIn) {
+    //   this.router.navigate(['/login']);
+    //   return;
+    // }
     this.getAFSMetrics();
     this.loadFilters();
 
@@ -273,8 +277,8 @@ export class AfsDashboardComponent implements OnInit {
     pageCount?: number;
     selected?: boolean;
     docType?: string;
-    extraFiles?: { fileName: string; fileUrl: string; pageCount?: number }[];
-    excelFiles?: { _id: string; s3Key: string; fileUrl: string; uploadedAt: string; uploadedBy: string; }[];
+    extraFiles?: { fileName: string; fileUrl: string; pageCount?: number; previewUrl?: string; originalFile?: File }[];
+    excelFiles?: { _id: string; s3Key: string; fileUrl: string;  requestId: string; uploadedAt: string; uploadedBy: string; }[];
 
   }[] = [];
 
@@ -425,8 +429,9 @@ export class AfsDashboardComponent implements OnInit {
 
 
 
-  storageBaseUrl = environment.STORAGE_BASEURL;
+  // storageBaseUrl = environment.STORAGE_BASEURL;
 
+storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
 
 
   //for loading cities based on state
@@ -603,7 +608,14 @@ export class AfsDashboardComponent implements OnInit {
             statusText,
             ulbSubmit,
             extraFiles: [] as any[],
-            excelFiles: excel?.fileGroup?.files || []
+            excelFiles: (excel?.fileGroup?.files || []).map((f: any) => ({
+              _id: f._id,
+              s3Key: f.s3Key,
+              fileUrl: f.fileUrl,
+              requestId: f.requestId,   // 👈 add requestId
+              uploadedAt: f.uploadedAt,
+              uploadedBy: f.uploadedBy
+            }))
           }));
 
           if (afs?.success && afs.file?.fileUrl) {
@@ -902,11 +914,81 @@ export class AfsDashboardComponent implements OnInit {
     });
   }
 
-  downloadExcel() {
+ downloadExcel() {
+    const STORAGE_BASEURL = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
 
-    console.log('Download button clicked');
-    alert('Download feature coming soon! Will export filtered data as Excel.');
+    const exportData: any[] = this.filteredFiles.map(file => {
+      const excelFile = file.excelFiles?.[0];
+
+      return {
+        State: file.stateName,
+        City: file.cityName,
+        'ULB Code': file.ulbCode,
+        Year: this.selectedYear || 'N/A',   // ✅ Added Year column
+        'PDF Document': file.fileName,      // clickable later
+        'Form Status': file.statusText,
+        'Digitize Status': this.hasExcelFile(file, 'ULB') ? 'DIGITIZED' : 'NOT DIGITIZED', // clickable later
+        'Form Uploaded On': file.ulbSubmit ? new Date(file.ulbSubmit).toLocaleString() : 'Not Submitted',
+        'Form Digitized On': excelFile?.uploadedAt ? new Date(excelFile.uploadedAt).toLocaleString() : 'N/A',
+        'Request ID': excelFile?.requestId || 'N/A',
+        'Page Count': file.pageCount || 'N/A'
+      };
+    });
+
+    // Convert to worksheet
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Find column indexes dynamically
+    const headers = Object.keys(exportData[0] || {});
+    const pdfCol = headers.indexOf('PDF Document') + 1;       // e.g. 5
+    const digitizeCol = headers.indexOf('Digitize Status') + 1; // e.g. 7
+
+    // Inject HYPERLINK formulas into "PDF Document" and "Digitize Status"
+    exportData.forEach((row, rowIndex) => {
+      const excelRow = rowIndex + 2; // row 1 = headers
+      const file = this.filteredFiles[rowIndex];
+
+      // PDF Document hyperlink
+      if (file.fileUrl) {
+        const pdfUrl = `${STORAGE_BASEURL}${file.fileUrl.startsWith('/') ? '' : '/'}${file.fileUrl}`;
+        const pdfColLetter = XLSX.utils.encode_col(pdfCol - 1);
+        ws[`${pdfColLetter}${excelRow}`] = {
+          t: 's',
+          f: `HYPERLINK("${pdfUrl}", "${row['PDF Document']}")`
+        };
+      }
+
+      // Digitize Status hyperlink
+      const excelFile = file.excelFiles?.[0];
+      const digitizeColLetter = XLSX.utils.encode_col(digitizeCol - 1);
+      if (excelFile?.fileUrl) {
+        ws[`${digitizeColLetter}${excelRow}`] = {
+          t: 's',
+          f: `HYPERLINK("${excelFile.fileUrl}", "DIGITIZED")`
+        };
+      } else {
+        ws[`${digitizeColLetter}${excelRow}`] = { t: 's', v: 'NOT DIGITIZED' };
+      }
+    });
+
+    // Auto column widths
+    const colWidths = headers.map(key => ({
+      wch: Math.max(key.length, ...exportData.map(r => String(r[key] || '').length)) + 2
+    }));
+    ws['!cols'] = colWidths;
+
+    // Create workbook
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Files');
+
+    // Export
+    const excelBuffer: any = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const data: Blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+    });
+    saveAs(data, `AvailableFiles_${new Date().toISOString().split('T')[0]}.xlsx`);
   }
+
 
   selectAll = false;
   selectedFilesCount = 0;
@@ -965,46 +1047,278 @@ export class AfsDashboardComponent implements OnInit {
     this.digitizeStatus = '';
   }
 
-  proceedDigitization() {
-    // Here you can later call backend digitization API
-    console.log("Proceeding with digitization for", this.selectedFilesCount, "files");
-
-    // Simulate success
-    setTimeout(() => {
-      this.digitizeStatus = 'done';
-    }, 500);
+  
+private async fetchPdfAsBlob(url: string): Promise<Blob> {
+    const response = await fetch(this.storageBaseUrl + url);
+    return await response.blob();
   }
 
 
 
-  // For storing logs
-  logs: string[] = [];
-  showLogsBox = false;
-  selectedUlbId: string | null = null;
 
-  // Fetch logs API
-  viewLogs(ulbId: string) {
-    this.selectedUlbId = ulbId;
+  private async fetchExcelAsBlob(url: string): Promise<Blob> {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch Excel: ${response.status}`);
+    return await response.blob();
+  }
 
-    this.http.get<{ success: boolean; data: string[] }>(`{{url}}afs-digitization/view-logs/${ulbId}`)
-      .subscribe({
-        next: (res) => {
-          this.logs = res?.success ? res.data : [];
-          this.showLogsBox = true;
-        },
-        error: () => {
-          this.logs = [];
-          this.showLogsBox = true;
+
+//   async proceedDigitization() {
+//   if (this.selectedFilesCount === 0) return;
+
+//   this.digitizeStatus = 'processing';
+
+//   for (const fileRow of this.filteredFiles.filter(f => f.selected)) {
+//     try {
+//       const excelLinks: any[] = [];
+
+//       // loop over ULB + AFS pdfs if exist
+//       const pdfFiles = [fileRow, ...(fileRow.extraFiles || [])];
+
+//       for (const pdf of pdfFiles) {
+//         if (!pdf.fileUrl && !pdf.previewUrl && !pdf.originalFile) continue;
+
+//         const formData = new FormData();
+
+//         if (pdf.originalFile) {
+//           // Case 1: user uploaded, you already have a File
+//           formData.append("file", pdf.originalFile, pdf.originalFile.name);
+//         } else {
+//           // Case 2: only have a URL → fetch as blob and give filename
+//           const blob = await this.fetchPdfAsBlob(pdf.fileUrl || pdf.previewUrl || '');
+//           formData.append("file", blob, "document.pdf");
+//         }
+
+//         const docTypeName =
+//           this.filters.documentTypes
+//             .flatMap(group => group.items)
+//             .find(doc => doc.key === this.selectedDocType)?.name || '';
+
+//         formData.append("Document_type_ID", fileRow.docType || "bal_sheet");
+
+//         const digitizeResp: any = await this.http.post(
+//           "http://3.109.105.81/AFS_Digitization",
+//           formData
+//         ).toPromise();
+
+//         if (digitizeResp?.S3_Excel_Storage_Link) {
+//           // ✅ Push object instead of raw string
+//           excelLinks.push({
+//             url: digitizeResp.S3_Excel_Storage_Link,
+//             requestId: digitizeResp.request_id
+//           });
+//         }
+//       }
+
+//       // Now upload collected excel links to your backend
+//       if (excelLinks.length > 0) {
+//         console.log("Excel links found:", excelLinks);
+//         const backendForm = new FormData();
+//         backendForm.append('ulbId', fileRow['ulbId']);
+//         backendForm.append('financialYear', this.selectedYear);
+//         backendForm.append('auditType', this.isAudited ?? '');
+
+//         const docTypeName =
+//           this.filters.documentTypes
+//             .flatMap(group => group.items)
+//             .find(doc => doc.key === this.selectedDocType)?.name || '';
+
+//         backendForm.append('docType', docTypeName);
+
+//         // ✅ stringify each link before appending
+//         for (let i = 0; i < excelLinks.length; i++) {
+//           backendForm.append('excelLinks', JSON.stringify(excelLinks[i]));
+//         }
+
+//         console.log("Ready to hit backend API...");
+//         console.log("Uploading to backend with formData:", {
+//           ulbId: fileRow['ulbId'],
+//           financialYear: this.selectedYear,
+//           auditType: this.isAudited,
+//           docType: docTypeName,
+//           excelFiles: excelLinks
+//         });
+
+//         try {
+//           const resp = await this.http.post(
+//             'http://localhost:8080/api/v1/afs-digitization/afs-excel-file',
+//             backendForm
+//           ).toPromise();
+//           console.log("Backend upload response:", resp);
+//         } catch (e) {
+//           console.error("Backend upload failed:", e);
+//         }
+//       }
+
+//       console.log('Row processed successfully:', fileRow['ulbId']);
+
+//     } catch (err) {
+//       console.error('Error digitizing row', fileRow['ulbId'], err);
+//     }
+//   }
+
+//   this.digitizeStatus = 'done';
+//   if (this.digitizeStatus === 'done') {
+//     this.applyFilters();
+//   }
+// }
+
+  async proceedDigitization() {
+    if (this.selectedFilesCount === 0) return;
+
+    this.digitizeStatus = 'processing';
+
+    for (const fileRow of this.filteredFiles.filter(f => f.selected)) {
+      try {
+        const excelLinks: any[] = [];
+        const requestIds: any[] = [];
+
+        // loop over ULB + AFS pdfs if exist
+        const pdfFiles = [fileRow, ...(fileRow.extraFiles || [])];
+
+        for (const pdf of pdfFiles) {
+          if (!pdf.fileUrl && !pdf.previewUrl && !pdf.originalFile) continue;
+
+          const formData = new FormData();
+
+          if (pdf.originalFile) {
+            formData.append("file", pdf.originalFile, pdf.originalFile.name);
+          } else {
+            const blob = await this.fetchPdfAsBlob(pdf.fileUrl || pdf.previewUrl || '');
+            formData.append("file", blob, "document.pdf");
+          }
+
+          const docTypeName =
+            this.filters.documentTypes
+              .flatMap(group => group.items)
+              .find(doc => doc.key === this.selectedDocType)?.name || '';
+
+          formData.append("Document_type_ID", fileRow.docType || "bal_sheet");
+
+          const digitizeResp: any = await this.http.post(
+            "http://3.109.105.81/AFS_Digitization",
+            formData
+          ).toPromise();
+
+          if (digitizeResp?.message) {
+            alert(digitizeResp.message);
+          }
+
+          // ✅ CASE 1: Excel file generated
+          if (digitizeResp?.S3_Excel_Storage_Link) {
+            excelLinks.push({
+              url: digitizeResp.S3_Excel_Storage_Link,
+              requestId: digitizeResp.request_id
+            });
+          }
+          // ✅ CASE 2: Only requestId generated (no Excel)
+          else if (digitizeResp?.request_id) {
+            requestIds.push(digitizeResp.request_id);
+          }
         }
-      });
+
+        // ✅ If Excel files exist, upload them
+        if (excelLinks.length > 0) {
+          const backendForm = new FormData();
+          backendForm.append('ulbId', fileRow['ulbId']);
+          backendForm.append('financialYear', this.selectedYear);
+          backendForm.append('auditType', this.isAudited ?? '');
+
+          const docTypeName =
+            this.filters.documentTypes
+              .flatMap(group => group.items)
+              .find(doc => doc.key === this.selectedDocType)?.name || '';
+
+          backendForm.append('docType', docTypeName);
+
+          for (let i = 0; i < excelLinks.length; i++) {
+            backendForm.append('excelLinks', JSON.stringify(excelLinks[i]));
+          }
+
+          await this.http.post(
+            'http://localhost:8080/api/v1/afs-digitization/afs-excel-file',
+            backendForm
+          ).toPromise();
+
+          console.log("✅ Uploaded Excel file info for:", fileRow['ulbId']);
+        }
+
+        // ✅ If NO Excel files but we have requestIds — upload only metadata
+        else if (requestIds.length > 0) {
+          const metaBody = {
+            ulbId: fileRow['ulbId'],
+            financialYear: this.selectedYear,
+            auditType: this.isAudited ?? '',
+            docType: this.filters.documentTypes
+              .flatMap(group => group.items)
+              .find(doc => doc.key === this.selectedDocType)?.name || '',
+            requestIds: requestIds
+          };
+
+          await this.http.post(
+            'http://localhost:8080/api/v1/afs-digitization/save-request-only',
+            metaBody
+          ).toPromise();
+
+          console.log("✅ Uploaded request IDs only for:", fileRow['ulbId']);
+        }
+
+        console.log('Row processed successfully:', fileRow['ulbId']);
+      } catch (err) {
+        console.error('❌ Error digitizing row', fileRow['ulbId'], err);
+      }
+    }
+
+    this.digitizeStatus = 'done';
+    if (this.digitizeStatus === 'done') {
+       this.applyFilters();
+    }
   }
 
-  // Close logs popup
-  closeLogs() {
-    this.showLogsBox = false;
-    this.logs = [];
-    this.selectedUlbId = null;
+
+showLogsPopup = false;
+selectedRequestId: string | null = null;
+logsData: any = null;
+
+openLogs(requestId: string) {
+
+
+  //  if (this.showLogsPopup && this.selectedRequestId === requestId) {
+  //   this.closeLogs();
+  //   return;
+  // }
+  this.showLogsPopup = true;
+  this.selectedRequestId = requestId;
+  this.logsData = null; // reset while loading
+
+   if (!requestId) {
+    // No requestId → show empty logs card
+    this.logsData = { Message: "No logs available for this file" };
+    return;
   }
+
+const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${requestId}`;
+this.http.get<any>(url).subscribe({
+  next: (res) => {
+    if (res.success && res.logs.length > 0) {
+      this.logsData = res.logs[0];
+    } else {
+      this.logsData = { Message: "No logs found" };
+    }
+  },
+  error: (err) => {
+    console.error("Failed to fetch logs:", err);
+    this.logsData = { Message: "Error fetching logs" };
+  }
+});
+
+}
+
+closeLogs() {
+  this.showLogsPopup = false;
+  this.selectedRequestId = null;
+  this.logsData = null;
+}
 
 
 }
