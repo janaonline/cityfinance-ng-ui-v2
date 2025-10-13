@@ -176,32 +176,79 @@
                       </span>
                     </th>
                     <th>PDF DOCUMENT</th>
+
                     <th>Form Status</th>
-                    <th>Digitize Status</th>
-                    <th>Form Uploaded On
-                      <button class="calendar-btn" (click)="toggleUploadedDatePopup($event)">📅</button>
+                    <th>
+                      Digitize Status
+                      <div class="status-filter">
+                        <select [(ngModel)]="selectedDigitizeStatus" (change)="filterByDigitizeStatus()">
+                          <option value="">All</option>
+                          <option value="DIGITIZED">DIGITIZED</option>
+                          <option value="FAILED">FAILED</option>
+                          <option value="NOT DIGITIZED">NOT DIGITIZED</option>
 
-                      <!-- Uploaded On Date Range Popup -->
-                      <!-- Uploaded On Date Range Popup -->
-                      <div *ngIf="showUploadedDatePopup" class="uploaded-popup-overlay">
-                        <div class="uploaded-popup-content">
-                          <h3>Select Uploaded Date Range</h3>
+                        </select>
+                      </div>
+                    </th>
 
-                          <label>Start Date:</label>
-                          <input type="date" [(ngModel)]="uploadedStartDate" />
+                    <th>
+                      Form Uploaded On
 
-                          <label>End Date:</label>
-                          <input type="date" [(ngModel)]="uploadedEndDate" />
+                      <div class="date-filter">
+                        <button class="calendar-btn" (click)="openUploadedDatePopup()">
+                          📅
+                        </button>
 
-                          <div class="uploaded-popup-buttons">
-                            <button class="uploaded-apply-btn" (click)="applyUploadedDateRange()">Apply</button>
-                            <button class="uploaded-cancel-btn" (click)="showUploadedDatePopup = false">Cancel</button>
-                            <button class="uploaded-reset-btn" (click)="resetuploadedonDateRange()">Reset</button>
+                        <!-- Date Range Popup -->
+                        <div class="popup-overlay" *ngIf="showUploadedDatePopup">
+                          <div class="popup-box">
+                            <h3>Select Date Range</h3>
+
+                            <!-- Inline Date Fields -->
+                            <div class="date-fields">
+                              <!-- Start Date -->
+                              <mat-form-field appearance="outline">
+                                <mat-label>Start Date</mat-label>
+                                <input matInput [matDatepicker]="uploadedStartPicker" [(ngModel)]="uploadedStartDate"
+                                  [matDatepickerFilter]="disableFutureDates" [max]="today"
+                                  placeholder="Choose start date" />
+                                <mat-datepicker-toggle matSuffix [for]="uploadedStartPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #uploadedStartPicker></mat-datepicker>
+                              </mat-form-field>
+
+                              <!-- End Date -->
+                              <mat-form-field appearance="outline">
+                                <mat-label>End Date</mat-label>
+                                <input matInput [matDatepicker]="uploadedEndPicker" [(ngModel)]="uploadedEndDate"
+                                  [matDatepickerFilter]="disableFutureDates" [min]="uploadedStartDate" [max]="today"
+                                  placeholder="Choose end date" />
+                                <mat-datepicker-toggle matSuffix [for]="uploadedEndPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #uploadedEndPicker></mat-datepicker>
+                              </mat-form-field>
+                            </div>
+
+                            <!-- Validation error -->
+                            <div *ngIf="uploadedStartDate && uploadedEndDate && !isUploadedDateRangeValid()"
+                              class="error">
+                              Start date cannot be after End date
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="popup-actions">
+                              <button class="ok-btn"
+                                [disabled]="!uploadedStartDate || !uploadedEndDate || !isUploadedDateRangeValid()"
+                                (click)="applyUploadedDateRange()">OK</button>
+                              <button class="reset-btn" (click)="resetUploadedDateRange()">Reset</button>
+                              <button class="close-btn" (click)="closeUploadedDatePopup()">Close</button>
+                            </div>
                           </div>
                         </div>
+
+                        <!-- Show chosen range -->
+                        <div *ngIf="uploadedStartDate && uploadedEndDate" class="date-display">
+                          {{ uploadedStartDate | date:'dd-MM-yyyy' }} to {{ uploadedEndDate | date:'dd-MM-yyyy' }}
+                        </div>
                       </div>
-
-
                     </th>
                     <th>
                       Form Digitized On
@@ -354,49 +401,62 @@
                     </td>
 
                     <td>
-                      <div class="digitize-status-wrapper">
+                      <div class="digitize-status-wrapper" style="margin-top: 30px;">
                         <div class="digitize-block ulb-block">
-                          @if(hasExcelFile(file, 'ULB')){
-                          DIGITIZED
-                          @for(excel of getExcelFiles(file, 'ULB'); track $index){
-                          <a [href]="excel.fileUrl" target="_blank">excelfile.xlsx</a>
-                          }
-                          } @else {
-                          NOT DIGITIZED
-                          }
+                          <!-- ULB Slot -->
+                          <div *ngIf="hasExcelFile(file, 'ULB'); else ulbCheckFailed">
+                            DIGITIZED
+                            <a *ngFor="let excel of getExcelFiles(file, 'ULB')" [href]="excel.fileUrl" target="_blank">
+                              excelfile.xlsx
+                            </a>
+                          </div>
+                          <ng-template #ulbCheckFailed>
+                            <div *ngIf="hasFailedExcelFile(file, 'ULB'); else noUlb" style="color: red;">
+                              FAILED
+                            </div>
+                            <ng-template #noUlb>
+                              NOT DIGITIZED
+                            </ng-template>
+                          </ng-template>
                         </div>
 
-                        @if(file.extraFiles && file.extraFiles.length > 0){
-                        <div class="digitize-block afs-block">
-                          @if(hasExcelFile(file, 'AFS')){
-                          DIGITIZED
-                          @for(excel of getExcelFiles(file, 'AFS'); track $index){
-                          <a [href]="excel.fileUrl" target="_blank">excelfile.xlsx</a>
-                          }
-                          } @else {
-                          NOT DIGITIZED
-                          }
+                        <div class="spacingup-2">
+                          <div class="digitize-block afs-block" *ngIf="file.extraFiles && file.extraFiles.length > 0">
+                            <div *ngIf="hasExcelFile(file, 'AFS'); else afsCheckFailed">
+                              DIGITIZED
+                              <a *ngFor="let excel of getExcelFiles(file, 'AFS')" [href]="excel.fileUrl"
+                                target="_blank">
+                                excelfile.xlsx
+                              </a>
+                            </div>
+                            <ng-template #afsCheckFailed>
+                              <div *ngIf="hasFailedExcelFile(file, 'AFS'); else noAfs" style="color: red;">
+                                FAILED
+                              </div>
+                              <ng-template #noAfs>
+                                NOT DIGITIZED
+                              </ng-template>
+                            </ng-template>
+                          </div>
                         </div>
-                        }
                       </div>
                     </td>
+
+
 
                     <td>
                       <div class="digitize-status-wrapper" style="margin-top: 20px; margin-right: 12px;"
                         [ngClass]="{'single-block': !file.uploadedAt}">
-                        @if(file.ulbSubmit){
-                        <div class="digitize-block ulb-block">
-                          {{ file.ulbSubmit | date:'short' }}
+                        <div class="digitize-block ulb-block" *ngIf="file.ulbSubmit">
+                          {{ file.ulbSubmit | date: 'd/M/yyyy, h:mm a' }}
                         </div>
-                        }
-                        @if(!file.ulbSubmit) { <div class="digitize-block ulb-block">
-                          Not Submitted
+                        <div class="digitize-block ulb-block" *ngIf="!file.ulbSubmit">
+                          N/A
                         </div>
-                        }
 
-                        @if(file.uploadedAt) {<div class="digitize-block afs-block">
-                          {{ file.uploadedAt | date:'short' }}
-                        </div>}
+                        <div class="digitize-block afs-block" *ngIf="file.uploadedAt">
+                          {{ file.uploadedAt | date: 'd/M/yyyy, h:mm a' }}
+                        </div>
                       </div>
                     </td>
 
@@ -407,8 +467,11 @@
                         *ngIf="file.excelFiles && file.excelFiles.length > 0; else noFiles">
                         <div class="timestamp-block" *ngFor="let excel of file.excelFiles">
                           <span>
-                            {{ excel && excel.uploadedAt ? (excel.uploadedAt |
-                            date:'d/M/yyyy, h:mm a') : 'N/A' }}
+                            {{
+                            excel && excel.digitizedAt
+                            ? (excel.digitizedAt | date: 'd/M/yyyy, h:mm a')
+                            : 'N/A'
+                            }}
                           </span>
                         </div>
                       </div>
@@ -422,14 +485,28 @@
 
 
 
-
+                    <!--                 
                     <td>
-                      <button mat-button color="primary" style="margin-bottom: 30px; pointer-events: auto;"
+                      <button style="margin-bottom: 30px;" mat-button color="primary"
                         (click)="openLogs(file.excelFiles?.[0]?.requestId || '')">
                         View Logs
                       </button>
+                    </td> -->
+                    <td>
+                      <div *ngIf="(file.excelFiles?.length ?? 0) > 0" class="log-buttons-container">
+                        <ng-container *ngFor="let excel of file.excelFiles">
+                          <button mat-raised-button class="log-btn" [ngStyle]="{
+          'background-color': excel.uploadedBy === 'AFS' ? '#28a745' : '#1976d2',
+          color: 'white'
+        }" (click)="openLogs(excel.requestId)">
+                            View Logs ({{ excel.uploadedBy || 'Unknown' }})
+                          </button>
+                        </ng-container>
+                      </div>
 
-
+                      <div *ngIf="!file.excelFiles || file.excelFiles.length === 0">
+                        <span class="text-muted">No logs</span>
+                      </div>
                     </td>
                   </tr>
                   }
@@ -445,22 +522,22 @@
 
             <div>
 
-              <button class="digitize-btn" (click)="openDigitizePopup()">Digitize & Download</button>
+              <button class="digitize-btn" (click)="openDigitizePopup()">Digitize</button>
             </div>
             <!-- Digitize Popup -->
             @if(showDigitizePopup){<div class="popup-overlay">
               <div class="popup-box">
                 <h3>Confirm Digitization</h3>
-                <p>
-                  You have selected <strong>{{ selectedFilesCount }}</strong> file(s)
-                  containing <strong>{{ totalSelectedPages }}</strong> pages.
-                </p>
+                <p [innerHTML]="digitizePopupMessage"></p>
 
                 @if(digitizeStatus === ''){<div>
                   <button class="proceed-btn" (click)="proceedDigitization()">Proceed</button>
                   <button class="cancel-btn" (click)="closeDigitizePopup()">Cancel</button>
                 </div>}
-
+                <div *ngIf="digitizeStatus === 'processing'" class="loader-container">
+                  <div class="spinner"></div>
+                  <p style="margin-top: 10px; font-weight: bold;">Digitization in progress...</p>
+                </div>
                 @if(digitizeStatus === 'done') {<div>
                   <p style="color: green; font-weight: bold;"> Done</p>
                   <button (click)="closeDigitizePopup()">Close</button>
@@ -516,7 +593,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#pdfUpload">
+                data-bs-target="#pdfUpload" [ngClass]="{'text-danger': logsData.PDFUpload_StatusCode !== 200}">
                 📤 PDF Upload
               </button>
             </h2>
@@ -533,7 +610,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#pdfQuality">
+                data-bs-target="#pdfQuality" [ngClass]="{'text-danger': logsData.PDFQualityCheck_StatusCode !== 200}">
                 🧐 PDF Quality Check
               </button>
             </h2>
@@ -552,7 +629,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#pdfEnhance">
+                data-bs-target="#pdfEnhance" [ngClass]="{'text-danger': logsData.PDFEnhancement_StatusCode !== 200}">
                 ✨ PDF Enhancement
               </button>
             </h2>
@@ -570,7 +647,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#s3Upload">
+                data-bs-target="#s3Upload" [ngClass]="{'text-danger': logsData.S3Upload_StatusCode !== 200}">
                 ☁️ S3 Upload
               </button>
             </h2>
@@ -587,7 +664,8 @@
           <!-- OCR -->
           <div class="accordion-item">
             <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ocr">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ocr"
+                [ngClass]="{'text-danger': logsData.OCR_StatusCode !== 200}">
                 🔎 OCR
               </button>
             </h2>
@@ -604,7 +682,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#llmPost">
+                data-bs-target="#llmPost" [ngClass]="{'text-danger': logsData.LLM_Postprocessing_StatusCode !== 200}">
                 🛠️ LLM Postprocessing
               </button>
             </h2>
@@ -622,7 +700,8 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#llmConfidence">
+                data-bs-target="#llmConfidence"
+                [ngClass]="{'text-danger': logsData.LLM_ConfidenceScoring_StatusCode !== 200}">
                 📊 LLM Confidence Scoring
               </button>
             </h2>
@@ -640,7 +719,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#llmValidation">
+                data-bs-target="#llmValidation" [ngClass]="{'text-danger': logsData.LLM_Validation_StatusCode !== 200}">
                 🤖 LLM Validation
               </button>
             </h2>
@@ -658,7 +737,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#excelGen">
+                data-bs-target="#excelGen" [ngClass]="{'text-danger': logsData.ExcelGeneration_StatusCode !== 200}">
                 📑 Excel Generation
               </button>
             </h2>
@@ -676,7 +755,7 @@
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#excelStorage">
+                data-bs-target="#excelStorage" [ngClass]="{'text-danger': logsData.ExcelStorage_StatusCode !== 200}">
                 💾 Excel Storage
               </button>
             </h2>
@@ -697,11 +776,11 @@
         <div class="mt-3">
           <p><b>Total Processing Time:</b> {{ (logsData.TotalProcessingTimeMs)/1000 | number:'1.2-2' }}
             seconds</p>
-          <p><b>Processing Mode:</b> {{ logsData.ProcessingMode }}</p>
+
           <p><b>Retry Count:</b> {{ logsData.RetryCount }}</p>
           <p *ngIf="logsData.ErrorCode && logsData.ErrorCode !== 'N/A'"><b>Error Code:</b> {{
             logsData.ErrorCode }}</p>
-          <p *ngIf="logsData.ErrorMessage && logsData.ErrorMessage !== 'N/A'"><b>Error Message:</b> {{
+          <p *ngIf="logsData.ErrorMessage && logsData.ErrorMessage !== 'N/A'"><b> Message:</b> {{
             logsData.ErrorMessage }}</p>
           <p *ngIf="logsData.ErrorResolution && logsData.ErrorResolution !== 'N/A'"><b>Error Resolution:</b>
             {{ logsData.ErrorResolution }}</p>

@@ -1462,3 +1462,44 @@ mat-form-field {
 ::ng-deep td button[mat-button]:hover {
   background-color: #1565c0 !important; /* darker shade on hover */
 }
+
+
+
+.text-danger {
+  font-weight: 600;
+  color: #d32f2f !important;
+}
+
+.failed-text {
+  color: red;
+  font-weight: bold;
+}
+
+.log-buttons-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  gap: 48px; /* adds proper spacing between buttons */
+  align-items: flex-start;
+}
+
+.log-btn {
+  width: 120px;           /* consistent width */
+  text-align: center;
+  border-radius: 6px;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+.status-filter {
+  margin-top: 4px;
+}
+
+.status-filter select {
+  width: 120px;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+}

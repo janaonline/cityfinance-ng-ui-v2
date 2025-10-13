@@ -94,32 +94,45 @@ export class AfsDashboardComponent implements OnInit {
   digitizedEndDate: Date | null = null;
   today = new Date();
 
-  showUploadedDatePopup = false;
-  uploadedStartDate: string | null = null;
-  uploadedEndDate: string | null = null;
+  
+ 
 
-  toggleUploadedDatePopup(event: Event) {
-    event.stopPropagation();
-    this.showUploadedDatePopup = !this.showUploadedDatePopup;
+ 
+
+  selectedDigitizeStatus: string = '';
+filterByDigitizeStatus(): void {
+  if (!this.selectedDigitizeStatus) {
+    this.filteredFiles = [...this.allFilteredFiles];
+    return;
   }
 
-  applyUploadedDateRange() {
-    if (!this.uploadedStartDate || !this.uploadedEndDate) return;
+  this.filteredFiles = this.allFilteredFiles.filter(file => {
+    const hasUlbExcel = file.excelFiles?.some((f: any) =>
+      f.uploadedBy === 'ULB' && f.fileUrl && !f.fileUrl.includes('placeholder-link.com')
+    );
+    const hasUlbFailed = file.excelFiles?.some((f: any) =>
+      f.uploadedBy === 'ULB' && f.fileUrl && f.fileUrl.includes('placeholder-link.com')
+    );
 
-    const start = new Date(this.uploadedStartDate);
-    const end = new Date(this.uploadedEndDate);
-    end.setHours(23, 59, 59, 999);
+    const hasAfsExcel = file.excelFiles?.some((f: any) =>
+      f.uploadedBy === 'AFS' && f.fileUrl && !f.fileUrl.includes('placeholder-link.com')
+    );
+    const hasAfsFailed = file.excelFiles?.some((f: any) =>
+      f.uploadedBy === 'AFS' && f.fileUrl && f.fileUrl.includes('placeholder-link.com')
+    );
 
-    this.filteredFiles = this.allFilteredFiles.filter(file => {
-      if (!file.timestamp) return false;
-      const uploaded = new Date(file.timestamp);
-      return uploaded >= start && uploaded <= end;
-    });
+    let status = 'NOT DIGITIZED';
+    if (hasUlbExcel || hasAfsExcel) {
+      status = 'DIGITIZED';
+    } else if (hasUlbFailed || hasAfsFailed) {
+      status = 'FAILED';
+    } else if (!file.excelFiles || file.excelFiles.length === 0) {
+      status = 'NOT DIGITIZED';
+    }
 
-    this.showUploadedDatePopup = false; // close popup
-  }
-
-
+    return status === this.selectedDigitizeStatus;
+  });
+}
 
   openDatePopup() {
     this.showDatePopup = true;
@@ -179,13 +192,7 @@ export class AfsDashboardComponent implements OnInit {
     this.filteredFiles = [...this.allFilteredFiles];
   }
 
-  resetuploadedonDateRange(): void {
-    this.showUploadedDatePopup = false;
-    this.uploadedStartDate = null;
-    this.uploadedEndDate = null;
-
-
-  }
+ 
 
   // Disable selecting future dates
   disableFutureDates = (d: Date | null): boolean => {
@@ -199,7 +206,55 @@ export class AfsDashboardComponent implements OnInit {
     return this.digitizedStartDate <= this.digitizedEndDate;
   }
 
+  // Variables for Uploaded Date picker
+uploadedStartDate: Date | null = null;
+uploadedEndDate: Date | null = null;
+showUploadedDatePopup = false;
 
+// Open/Close popup
+openUploadedDatePopup() { this.showUploadedDatePopup = true; }
+closeUploadedDatePopup() { this.showUploadedDatePopup = false; }
+
+// Validate uploaded date range
+isUploadedDateRangeValid(): boolean {
+  if (!this.uploadedStartDate || !this.uploadedEndDate) return true;
+  return this.uploadedStartDate <= this.uploadedEndDate;
+}
+
+// Apply date filter
+applyUploadedDateRange(): void {
+  if (!this.uploadedStartDate || !this.uploadedEndDate) return;
+  if (!this.isUploadedDateRangeValid()) {
+    alert("⚠️ Start date cannot be after End date");
+    return;
+  }
+
+  const start = new Date(this.uploadedStartDate);
+  const end = new Date(this.uploadedEndDate);
+  end.setHours(23, 59, 59, 999);
+
+  // Filter based on ulbSubmit or uploadedAt
+  this.filteredFiles = this.allFilteredFiles.filter(file => {
+    const ulbDate = file.ulbSubmit ? new Date(file.ulbSubmit) : null;
+    const afsDate = file.uploadedAt ? new Date(file.uploadedAt) : null;
+
+    return (
+      (ulbDate && ulbDate >= start && ulbDate <= end) ||
+      (afsDate && afsDate >= start && afsDate <= end)
+    );
+  });
+
+  this.showUploadedDatePopup = false;
+}
+
+
+// Reset date filter
+resetUploadedDateRange(): void {
+  this.uploadedStartDate = null;
+  this.uploadedEndDate = null;
+  this.filteredFiles = [...this.allFilteredFiles];
+  this.showUploadedDatePopup = false;
+}
 
   @HostListener('document:click', ['$event'])
   handleClickOutside(event: Event) {
@@ -277,18 +332,41 @@ export class AfsDashboardComponent implements OnInit {
     pageCount?: number;
     selected?: boolean;
     docType?: string;
-    extraFiles?: { fileName: string; fileUrl: string; pageCount?: number; previewUrl?: string; originalFile?: File }[];
-    excelFiles?: { _id: string; s3Key: string; fileUrl: string;  requestId: string; uploadedAt: string; uploadedBy: string; }[];
+     extraFiles?: { fileName: string; fileUrl: string; docType?: string; pageCount?: number; previewUrl?: string; originalFile?: File; uploadedAt?: string }[];
+    excelFiles?: { _id: string; s3Key: string; fileUrl: string; requestId: string; uploadedAt: string; uploadedBy: string; digitizedAt?: string; }[];
 
   }[] = [];
 
   hasExcelFile(file: any, uploadedBy: string): boolean {
-    return !!file.excelFiles?.some((f: any) => f.uploadedBy === uploadedBy);
-  }
+  return !!file.excelFiles?.some(
+    (f: any) =>
+      f.uploadedBy === uploadedBy &&
+      f.fileUrl &&
+      !f.fileUrl.includes('placeholder-link.com')
+  );
+}
+
+hasFailedExcelFile(file: any, uploadedBy: string): boolean {
+  return !!file.excelFiles?.some(
+    (f: any) =>
+      f.uploadedBy === uploadedBy &&
+      f.fileUrl &&
+      f.fileUrl.includes('placeholder-link.com')
+  );
+}
+
 
   getExcelFiles(file: any, uploadedBy: string) {
-    return file.excelFiles?.filter((f: any) => f.uploadedBy === uploadedBy) || [];
+    return (
+      file.excelFiles?.filter(
+        (f: any) =>
+          f.uploadedBy === uploadedBy &&
+          f.fileUrl &&
+          !f.fileUrl.includes('placeholder-link.com')
+      ) || []
+    );
   }
+
 
 
   private updateFileName(originalName: string, suffix: string): string {
@@ -323,8 +401,6 @@ export class AfsDashboardComponent implements OnInit {
   //   // Extract page count from local file
   //   const arrayBuffer = await selectedFile.arrayBuffer();
   //   const pdfDoc = await PDFDocument.load(arrayBuffer);
-  //   file.pageCount = pdfDoc.getPageCount();
-  // }
   async handleFileUpload(event: Event, file: any) {
     const input = event.target as HTMLInputElement;
     const selectedFile = input?.files?.[0];
@@ -334,15 +410,15 @@ export class AfsDashboardComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true; //  start loader
+    this.isLoading = true;
 
     try {
-      // extract page count
+      // Extract page count
       const arrayBuffer = await selectedFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const pageCount = pdfDoc.getPageCount();
 
-      // build formData
+      // Build formData
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('ulbId', file.ulbId);
@@ -361,27 +437,33 @@ export class AfsDashboardComponent implements OnInit {
       if (response.success && response.file?.fileUrl) {
         console.log('File uploaded successfully:', response);
 
+        // === overwrite or insert file entry ===
         file.extraFiles = file.extraFiles || [];
 
-        // Replace existing docType entry if found
         const existingIndex = file.extraFiles.findIndex(
-          (ef: any) => ef.docType === docTypeName
+          (ef: any) =>
+            ef.docType?.trim().toLowerCase() ===
+            (response.file.docType || docTypeName).trim().toLowerCase()
         );
 
         const newEntry = {
-          docType: docTypeName,
+          docType: response.file.docType || docTypeName,
           fileName: this.updateFileName(selectedFile.name, 'AFS_UPLOADED'),
           fileUrl: response.file.fileUrl,
+          uploadedAt: response.file.uploadedAt,
           pageCount
         };
 
         if (existingIndex >= 0) {
-          file.extraFiles[existingIndex] = newEntry; // overwrite
+          file.extraFiles[existingIndex] = newEntry;
         } else {
-          file.extraFiles.push(newEntry); // first-time upload
+          file.extraFiles.push(newEntry);
         }
 
-        file.hasAFS = true; // mark as uploaded
+        file.hasAFS = true;
+
+        // ✅ Auto-refresh that ULB’s file info
+        await this.refreshULBRow(file.ulbId);
       } else {
         alert('Upload failed: ' + (response.message || 'Unknown error'));
       }
@@ -389,7 +471,42 @@ export class AfsDashboardComponent implements OnInit {
       console.error('Error uploading file:', err);
       alert('Upload failed. Please try again.');
     } finally {
-      this.isLoading = false; // 👈 stop loader
+      this.isLoading = false;
+    }
+  }
+
+  async refreshULBRow(ulbId: string) {
+    try {
+      const financialYear = this.selectedYear;
+      const auditType = this.isAudited ? 'audited' : 'unAudited';
+
+      const docTypeName =
+        this.filters.documentTypes
+          .flatMap(group => group.items)
+          .find(doc => doc.key === this.selectedDocType)?.name || '';
+
+      const afsUrl = `http://localhost:8080/api/v1/afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
+
+      const afsResponse: any = await this.http.get(afsUrl).toPromise();
+
+      const target = this.filteredFiles.find(f => f['ulbId'] === ulbId);
+      if (afsResponse.success && afsResponse.file?.fileUrl && target) {
+        const afsFile = afsResponse.file;
+        const fullUrl = afsFile.fileUrl;
+        const pageCount = await this.getPdfPageCount(fullUrl);
+
+        target.extraFiles = [
+          {
+            docType: afsFile.docType,
+            fileName: this.updateFileName(afsFile.docType, 'AFS_UPLOADED'),
+            fileUrl: afsFile.fileUrl,
+            uploadedAt: afsFile.uploadedAt,
+            pageCount
+          }
+        ];
+      }
+    } catch (error) {
+      console.error('Error refreshing ULB row:', error);
     }
   }
 
@@ -543,7 +660,10 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
     this.filteredFiles = [];
     this.isLoading = true;   // 👈 start loader
 
-
+    this.selectedFilesCount = 0;
+    this.totalSelectedPages = 0;
+    this.selectAll = false;
+    this.selectedDigitizeStatus = '';
 
     const baseUrl = 'http://localhost:8080/api/v1/ledger/ulb-financial-data/files';
     const statusUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-form-status-by-ulb';
@@ -634,10 +754,11 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
       );
     });
 
-    forkJoin(requests).subscribe({
-      next: (results: any[]) => {
+     forkJoin(requests).subscribe({
+      next: async (results: any[]) => {
         let mergedFiles = results.flat()
           .filter((file: any) => file.fileName !== 'No data available' && file.fileName !== 'Error loading data');
+        mergedFiles = await this.fetchDigitizedTimestamps(mergedFiles);
         this.allFilteredFiles = mergedFiles;   // backup copy
         this.filteredFiles = [...mergedFiles]; // working copy for display
 
@@ -914,60 +1035,128 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
     });
   }
 
- downloadExcel() {
+  downloadExcel() {
     const STORAGE_BASEURL = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
+    const PLACEHOLDER_URL = 'https://placeholder-link.com/none';
 
     const exportData: any[] = this.filteredFiles.map(file => {
-      const excelFile = file.excelFiles?.[0];
+      const ulbFile = file.excelFiles?.find((f: any) => f.uploadedBy === 'ULB');
+      const afsFile = file.excelFiles?.find((f: any) => f.uploadedBy === 'AFS');
+
+      // 🔹 AFS uploaded PDF (from extraFiles)
+      const afsUploadedPdf = (file.extraFiles && file.extraFiles.length > 0)
+        ? file.extraFiles.find((f: any) => f.fileUrl)?.fileUrl
+        : null;
+
+      // --- Determine digitization status (skip placeholders) ---
+      const ulbStatus = ulbFile
+        ? (ulbFile.fileUrl && ulbFile.fileUrl !== PLACEHOLDER_URL ? 'DIGITIZED' : 'FAILED')
+        : 'NOT DIGITIZED';
+
+      const afsStatus = afsFile
+        ? (afsFile.fileUrl && afsFile.fileUrl !== PLACEHOLDER_URL ? 'DIGITIZED' : 'FAILED')
+        : 'NOT DIGITIZED';
+
+      // --- Handle timestamps safely ---
+      const ulbDigitizedOn =
+        ulbFile && ulbFile.fileUrl && ulbFile.fileUrl !== PLACEHOLDER_URL
+          ? new Date(ulbFile.uploadedAt).toLocaleString()
+          : 'N/A';
+
+      const afsDigitizedOn =
+        afsFile && afsFile.fileUrl && afsFile.fileUrl !== PLACEHOLDER_URL
+          ? new Date(afsFile.uploadedAt).toLocaleString()
+          : 'N/A';
+      const auditStatus = String(this.isAudited).toLowerCase() === 'audited'
+        ? 'Audited'
+        : 'UnAudited';
 
       return {
         State: file.stateName,
         City: file.cityName,
         'ULB Code': file.ulbCode,
-        Year: this.selectedYear || 'N/A',   // ✅ Added Year column
-        'PDF Document': file.fileName,      // clickable later
-        'Form Status': file.statusText,
-        'Digitize Status': this.hasExcelFile(file, 'ULB') ? 'DIGITIZED' : 'NOT DIGITIZED', // clickable later
+        Year: this.selectedYear || 'N/A',
+        AuditStatus: auditStatus,
+
+
+        'PDF Document ulb uploaded':
+          file.fileUrl && file.fileUrl !== PLACEHOLDER_URL
+            ? `${STORAGE_BASEURL}${file.fileUrl.startsWith('/') ? '' : '/'}${file.fileUrl}`
+            : 'N/A',
+        'PDF Document afs uploaded': afsUploadedPdf || 'N/A',
+
+        // --- ULB details ---
         'Form Uploaded On': file.ulbSubmit ? new Date(file.ulbSubmit).toLocaleString() : 'Not Submitted',
-        'Form Digitized On': excelFile?.uploadedAt ? new Date(excelFile.uploadedAt).toLocaleString() : 'N/A',
-        'Request ID': excelFile?.requestId || 'N/A',
-        'Page Count': file.pageCount || 'N/A'
+        'ULB Digitize Status': ulbStatus,
+        'ULB Excel Link': ulbFile?.fileUrl && ulbFile.fileUrl !== PLACEHOLDER_URL ? ulbFile.fileUrl : 'N/A',
+        'ULB Digitized On': ulbDigitizedOn,
+        'ULB Request ID': ulbFile?.requestId || 'N/A',
+
+        // --- AFS details ---
+        'AFS Digitize Status': afsStatus,
+        'AFS Excel Link': afsFile?.fileUrl && afsFile.fileUrl !== PLACEHOLDER_URL ? afsFile.fileUrl : 'N/A',
+        'AFS Digitized On': afsDigitizedOn,
+        'AFS Request ID': afsFile?.requestId || 'N/A',
+
+        // 'Page Count': file.pageCount || 'N/A',
+        // _afsUploadedUrl: afsUploadedPdf,
       };
     });
 
-    // Convert to worksheet
+    // ✅ Generate Excel
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
-
-    // Find column indexes dynamically
     const headers = Object.keys(exportData[0] || {});
-    const pdfCol = headers.indexOf('PDF Document') + 1;       // e.g. 5
-    const digitizeCol = headers.indexOf('Digitize Status') + 1; // e.g. 7
+    const ulbPdfCol = headers.indexOf('PDF Document ulb uploaded') + 1;
+    const afsPdfCol = headers.indexOf('PDF Document afs uploaded') + 1;
+    const ulbCol = headers.indexOf('ULB Digitize Status') + 1;
+    const afsCol = headers.indexOf('AFS Digitize Status') + 1;
 
-    // Inject HYPERLINK formulas into "PDF Document" and "Digitize Status"
     exportData.forEach((row, rowIndex) => {
-      const excelRow = rowIndex + 2; // row 1 = headers
+      const excelRow = rowIndex + 2;
       const file = this.filteredFiles[rowIndex];
 
-      // PDF Document hyperlink
+      // 🔹 ULB PDF hyperlink
       if (file.fileUrl) {
-        const pdfUrl = `${STORAGE_BASEURL}${file.fileUrl.startsWith('/') ? '' : '/'}${file.fileUrl}`;
-        const pdfColLetter = XLSX.utils.encode_col(pdfCol - 1);
+        const pdfUrl = file.fileUrl.startsWith('http')
+          ? file.fileUrl
+          : `${STORAGE_BASEURL}${file.fileUrl.startsWith('/') ? '' : '/'}${file.fileUrl}`;
+        const pdfColLetter = XLSX.utils.encode_col(ulbPdfCol - 1);
         ws[`${pdfColLetter}${excelRow}`] = {
           t: 's',
-          f: `HYPERLINK("${pdfUrl}", "${row['PDF Document']}")`
+          f: `HYPERLINK("${pdfUrl}", "${row['PDF Document ulb uploaded']}")`
         };
       }
 
-      // Digitize Status hyperlink
-      const excelFile = file.excelFiles?.[0];
-      const digitizeColLetter = XLSX.utils.encode_col(digitizeCol - 1);
-      if (excelFile?.fileUrl) {
-        ws[`${digitizeColLetter}${excelRow}`] = {
+      // 🔹 AFS PDF hyperlink
+      if (row._afsUploadedUrl) {
+        const afsUrl = row._afsUploadedUrl.startsWith('http')
+          ? row._afsUploadedUrl
+          : `${STORAGE_BASEURL}${row._afsUploadedUrl.startsWith('/') ? '' : '/'}${row._afsUploadedUrl}`;
+        const afsPdfColLetter = XLSX.utils.encode_col(afsPdfCol - 1);
+        ws[`${afsPdfColLetter}${excelRow}`] = {
           t: 's',
-          f: `HYPERLINK("${excelFile.fileUrl}", "DIGITIZED")`
+          f: `HYPERLINK("${afsUrl}", "${row['PDF Document afs uploaded']}")`
         };
-      } else {
-        ws[`${digitizeColLetter}${excelRow}`] = { t: 's', v: 'NOT DIGITIZED' };
+      }
+
+      // 🔹 ULB Excel hyperlink (only if valid)
+      const ulbFile = file.excelFiles?.find((f: any) => f.uploadedBy === 'ULB');
+      if (ulbFile?.fileUrl && ulbFile.fileUrl !== PLACEHOLDER_URL) {
+        const colLetter = XLSX.utils.encode_col(ulbCol - 1);
+        ws[`${colLetter}${excelRow}`] = {
+          t: 's',
+          f: `HYPERLINK("${ulbFile.fileUrl}", "DIGITIZED")`
+        };
+      }
+
+      // 🔹 AFS Excel hyperlink (only if valid)
+      const afsFile = file.excelFiles?.find((f: any) => f.uploadedBy === 'AFS');
+      if (afsFile?.fileUrl && afsFile.fileUrl !== PLACEHOLDER_URL) {
+        const colLetter = XLSX.utils.encode_col(afsCol - 1);
+        ws[`${colLetter}${excelRow}`] = {
+          t: 's',
+          f: `HYPERLINK("${afsFile.fileUrl}", "DIGITIZED")`
+        };
       }
     });
 
@@ -977,11 +1166,9 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
     }));
     ws['!cols'] = colWidths;
 
-    // Create workbook
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Files');
 
-    // Export
     const excelBuffer: any = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data: Blob = new Blob([excelBuffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
@@ -1036,11 +1223,45 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
 
   showDigitizePopup = false;
   digitizeStatus: string = '';
-
+   digitizePopupMessage: string = '';
+   
   openDigitizePopup() {
     this.showDigitizePopup = true;
     this.digitizeStatus = '';
+
+    const PLACEHOLDER_URL = 'https://placeholder-link.com/none';
+    let alreadyDigitizedFiles = 0;
+    let alreadyDigitizedPages = 0;
+
+    for (const f of this.filteredFiles.filter(f => f.selected)) {
+      // filter out placeholder excel files
+      const validExcelFiles = (f.excelFiles || []).filter(
+        (ef: any) => ef.fileUrl && ef.fileUrl !== PLACEHOLDER_URL
+      );
+
+      if (validExcelFiles.length > 0) {
+        alreadyDigitizedFiles += validExcelFiles.length;
+
+        // sum up page counts from the main file
+        if (f.pageCount) alreadyDigitizedPages += f.pageCount;
+
+        // and from extra files (AFS PDFs etc.)
+        if (f.extraFiles?.length) {
+          for (const ef of f.extraFiles) {
+            if (ef.pageCount) alreadyDigitizedPages += ef.pageCount;
+          }
+        }
+      }
+    }
+
+    // --- build message ---
+    if (alreadyDigitizedFiles > 0) {
+      this.digitizePopupMessage = `Are you sure to digitize the selected ${this.totalSelectedPages} pages from ${this.selectedFilesCount} PDF files along with ${alreadyDigitizedFiles} already digitized PDFs with ${alreadyDigitizedPages} pages?`;
+    } else {
+      this.digitizePopupMessage = `You have selected ${this.totalSelectedPages} pages from ${this.selectedFilesCount} PDF files to digitize.`;
+    }
   }
+
 
   closeDigitizePopup() {
     this.showDigitizePopup = false;
@@ -1048,11 +1269,32 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
   }
 
   
-private async fetchPdfAsBlob(url: string): Promise<Blob> {
-    const response = await fetch(this.storageBaseUrl + url);
+  private async fetchPdfAsBlob(url: string): Promise<Blob> {
+    if (!url) {
+      throw new Error("Invalid file URL");
+    }
+
+    let fullUrl = url.trim();
+
+    //  Fix malformed URLs like "https//"
+    if (fullUrl.startsWith("https//")) {
+      fullUrl = fullUrl.replace("https//", "https://");
+    }
+
+    //  Only prefix storageBaseUrl if the URL is relative (starts with "/")
+    if (fullUrl.startsWith("/")) {
+      fullUrl = this.storageBaseUrl + fullUrl;
+    }
+
+    console.log(" Fetching PDF from:", fullUrl);
+
+    const response = await fetch(fullUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+    }
+
     return await response.blob();
   }
-
 
 
 
@@ -1063,228 +1305,123 @@ private async fetchPdfAsBlob(url: string): Promise<Blob> {
   }
 
 
-//   async proceedDigitization() {
-//   if (this.selectedFilesCount === 0) return;
 
-//   this.digitizeStatus = 'processing';
 
-//   for (const fileRow of this.filteredFiles.filter(f => f.selected)) {
-//     try {
-//       const excelLinks: any[] = [];
-
-//       // loop over ULB + AFS pdfs if exist
-//       const pdfFiles = [fileRow, ...(fileRow.extraFiles || [])];
-
-//       for (const pdf of pdfFiles) {
-//         if (!pdf.fileUrl && !pdf.previewUrl && !pdf.originalFile) continue;
-
-//         const formData = new FormData();
-
-//         if (pdf.originalFile) {
-//           // Case 1: user uploaded, you already have a File
-//           formData.append("file", pdf.originalFile, pdf.originalFile.name);
-//         } else {
-//           // Case 2: only have a URL → fetch as blob and give filename
-//           const blob = await this.fetchPdfAsBlob(pdf.fileUrl || pdf.previewUrl || '');
-//           formData.append("file", blob, "document.pdf");
-//         }
-
-//         const docTypeName =
-//           this.filters.documentTypes
-//             .flatMap(group => group.items)
-//             .find(doc => doc.key === this.selectedDocType)?.name || '';
-
-//         formData.append("Document_type_ID", fileRow.docType || "bal_sheet");
-
-//         const digitizeResp: any = await this.http.post(
-//           "http://3.109.105.81/AFS_Digitization",
-//           formData
-//         ).toPromise();
-
-//         if (digitizeResp?.S3_Excel_Storage_Link) {
-//           // ✅ Push object instead of raw string
-//           excelLinks.push({
-//             url: digitizeResp.S3_Excel_Storage_Link,
-//             requestId: digitizeResp.request_id
-//           });
-//         }
-//       }
-
-//       // Now upload collected excel links to your backend
-//       if (excelLinks.length > 0) {
-//         console.log("Excel links found:", excelLinks);
-//         const backendForm = new FormData();
-//         backendForm.append('ulbId', fileRow['ulbId']);
-//         backendForm.append('financialYear', this.selectedYear);
-//         backendForm.append('auditType', this.isAudited ?? '');
-
-//         const docTypeName =
-//           this.filters.documentTypes
-//             .flatMap(group => group.items)
-//             .find(doc => doc.key === this.selectedDocType)?.name || '';
-
-//         backendForm.append('docType', docTypeName);
-
-//         // ✅ stringify each link before appending
-//         for (let i = 0; i < excelLinks.length; i++) {
-//           backendForm.append('excelLinks', JSON.stringify(excelLinks[i]));
-//         }
-
-//         console.log("Ready to hit backend API...");
-//         console.log("Uploading to backend with formData:", {
-//           ulbId: fileRow['ulbId'],
-//           financialYear: this.selectedYear,
-//           auditType: this.isAudited,
-//           docType: docTypeName,
-//           excelFiles: excelLinks
-//         });
-
-//         try {
-//           const resp = await this.http.post(
-//             'http://localhost:8080/api/v1/afs-digitization/afs-excel-file',
-//             backendForm
-//           ).toPromise();
-//           console.log("Backend upload response:", resp);
-//         } catch (e) {
-//           console.error("Backend upload failed:", e);
-//         }
-//       }
-
-//       console.log('Row processed successfully:', fileRow['ulbId']);
-
-//     } catch (err) {
-//       console.error('Error digitizing row', fileRow['ulbId'], err);
-//     }
-//   }
-
-//   this.digitizeStatus = 'done';
-//   if (this.digitizeStatus === 'done') {
-//     this.applyFilters();
-//   }
-// }
-
+ 
  async proceedDigitization() {
-  if (this.selectedFilesCount === 0) return;
+    if (this.selectedFilesCount === 0) return;
 
-  this.digitizeStatus = 'processing';
+    this.digitizeStatus = 'processing';
 
-  for (const fileRow of this.filteredFiles.filter(f => f.selected)) {
-    try {
-      const excelLinks: any[] = [];
-      const requestIds: any[] = [];
+    for (const fileRow of this.filteredFiles.filter(f => f.selected)) {
+      try {
+        const excelLinks: any[] = [];
 
-      // loop over ULB + AFS pdfs if exist
-      const pdfFiles = [fileRow, ...(fileRow.extraFiles || [])];
+        // Combine ULB + AFS PDFs
+        const pdfFiles = [fileRow, ...(fileRow.extraFiles || [])];
 
-      for (const pdf of pdfFiles) {
-        if (!pdf.fileUrl && !pdf.previewUrl && !pdf.originalFile) continue;
+        for (const pdf of pdfFiles) {
+          if (!pdf.fileUrl && !pdf.previewUrl && !pdf.originalFile) continue;
 
-        const formData = new FormData();
+          const formData = new FormData();
 
-        if (pdf.originalFile) {
-          formData.append("file", pdf.originalFile, pdf.originalFile.name);
-        } else {
-          const blob = await this.fetchPdfAsBlob(pdf.fileUrl || pdf.previewUrl || '');
-          formData.append("file", blob, "document.pdf");
+          // Prepare file blob
+          if (pdf.originalFile) {
+            formData.append("file", pdf.originalFile, pdf.originalFile.name);
+          } else {
+            const blob = await this.fetchPdfAsBlob(pdf.fileUrl || pdf.previewUrl || '');
+            formData.append("file", blob, "document.pdf");
+          }
+
+          const sourceType = pdf === fileRow ? 'ULB' : 'AFS';
+          formData.append("Document_type_ID", fileRow.docType || "bal_sheet");
+
+          let digitizeResp: any;
+          try {
+            digitizeResp = await this.http.post(
+              "http://3.109.105.81/AFS_Digitization",
+              formData
+            ).toPromise();
+          } catch (error: any) {
+            digitizeResp = error?.error || {};
+            console.warn(`⚠️ ${sourceType} Digitization failed:`, digitizeResp);
+          }
+
+          console.log(`📄 ${sourceType} Digitization API Response:`, digitizeResp);
+           if (digitizeResp?.message) {
+            alert(digitizeResp.message); 
+           }
+          // === CASE 1: Excel successfully generated ===
+          if (digitizeResp?.S3_Excel_Storage_Link) {
+
+            excelLinks.push({
+              url: digitizeResp.S3_Excel_Storage_Link,
+              requestId: digitizeResp.request_id,
+              source: sourceType
+            });
+          }
+
+          // === CASE 2: Failed but has requestId — save request only ===
+          else if (digitizeResp?.request_id) {
+            const metaBody = {
+              ulbId: fileRow['ulbId'],
+              financialYear: this.selectedYear,
+              auditType: this.isAudited ?? '',
+              docType: this.filters.documentTypes
+                .flatMap(group => group.items)
+                .find(doc => doc.key === this.selectedDocType)?.name || '',
+              requestIds: [digitizeResp.request_id],
+              failedSource: sourceType
+            };
+
+            console.log(`💾 Saving failed ${sourceType} requestId:`, metaBody);
+
+            await this.http.post(
+              'http://localhost:8080/api/v1/afs-digitization/save-request-only',
+              metaBody
+            ).toPromise();
+
+            console.log(`✅ Saved failed ${sourceType} requestId for ${fileRow['ulbId']}`);
+          }
         }
 
-        // Add document type
-        formData.append("Document_type_ID", fileRow.docType || "bal_sheet");
+        // === Upload successful Excel(s) (if any) ===
+        if (excelLinks.length > 0) {
+          const backendForm = new FormData();
+          backendForm.append('ulbId', fileRow['ulbId']);
+          backendForm.append('financialYear', this.selectedYear);
+          backendForm.append('auditType', this.isAudited ?? '');
 
-        //  Capture both success & error responses (400 will not break flow)
-        let digitizeResp: any;
-        try {
-          digitizeResp = await this.http.post(
-            "http://3.109.105.81/AFS_Digitization",
-            formData
+          const docTypeName =
+            this.filters.documentTypes
+              .flatMap(group => group.items)
+              .find(doc => doc.key === this.selectedDocType)?.name || '';
+          backendForm.append('docType', docTypeName);
+
+          for (const excel of excelLinks) {
+            backendForm.append('excelLinks', JSON.stringify(excel));
+          }
+
+          await this.http.post(
+            'http://localhost:8080/api/v1/afs-digitization/afs-excel-file',
+            backendForm
           ).toPromise();
-        } catch (error: any) {
-          digitizeResp = error?.error || {};
-          console.warn(" Digitize API returned error response:", digitizeResp);
+
+          console.log(`✅ Uploaded ${excelLinks.length} Excel(s) for ${fileRow['ulbId']}`);
         }
 
-        console.log(" Digitize API response for", fileRow['ulbId'], digitizeResp);
-
-        if (digitizeResp?.message) {
-          alert(digitizeResp.message);
-        }
-
-        //  CASE 1: Excel file generated
-        if (digitizeResp?.S3_Excel_Storage_Link) {
-          excelLinks.push({
-            url: digitizeResp.S3_Excel_Storage_Link,
-            requestId: digitizeResp.request_id
-          });
-        }
-        //  CASE 2: Only requestId generated (even on error)
-        else if (digitizeResp?.request_id) {
-          requestIds.push(digitizeResp.request_id);
-        }
-
-        console.log("📦 Collected requestIds so far:", requestIds);
+        console.log('Row processed successfully:', fileRow['ulbId']);
+      } catch (err) {
+        console.error('❌ Error digitizing row', fileRow['ulbId'], err);
       }
+    }
 
-      //  If Excel files exist, upload them
-      if (excelLinks.length > 0) {
-        const backendForm = new FormData();
-        backendForm.append('ulbId', fileRow['ulbId']);
-        backendForm.append('financialYear', this.selectedYear);
-        backendForm.append('auditType', this.isAudited ?? '');
-
-        const docTypeName =
-          this.filters.documentTypes
-            .flatMap(group => group.items)
-            .find(doc => doc.key === this.selectedDocType)?.name || '';
-
-        backendForm.append('docType', docTypeName);
-
-        for (let i = 0; i < excelLinks.length; i++) {
-          backendForm.append('excelLinks', JSON.stringify(excelLinks[i]));
-        }
-
-        await this.http.post(
-          'http://localhost:8080/api/v1/afs-digitization/afs-excel-file',
-          backendForm
-        ).toPromise();
-
-        console.log(" Uploaded Excel file info for:", fileRow['ulbId']);
-      }
-
-      //  If NO Excel files but requestIds exist — upload only metadata
-      if (requestIds.length > 0 && excelLinks.length === 0) {
-        console.log(" Request IDs found for upload:", requestIds);
-
-        const metaBody = {
-          ulbId: fileRow['ulbId'],
-          financialYear: this.selectedYear,
-          auditType: this.isAudited ?? '',
-          docType: this.filters.documentTypes
-            .flatMap(group => group.items)
-            .find(doc => doc.key === this.selectedDocType)?.name || '',
-          requestIds: requestIds
-        };
-
-        console.log(" Uploading to save-request-only:", metaBody);
-
-        await this.http.post(
-          'http://localhost:8080/api/v1/afs-digitization/save-request-only',
-          metaBody
-        ).toPromise();
-
-        console.log(" Uploaded request IDs only for:", fileRow['ulbId']);
-      }
-
-      console.log('Row processed successfully:', fileRow['ulbId']);
-    } catch (err) {
-      console.error(' Error digitizing row', fileRow['ulbId'], err);
+    this.digitizeStatus = 'done';
+    if (this.digitizeStatus === 'done') {
+      this.applyFilters();
     }
   }
 
-  this.digitizeStatus = 'done';
-  if (this.digitizeStatus === 'done') {
-    this.applyFilters();
-  }
-}
 
 
 
@@ -1292,45 +1429,81 @@ showLogsPopup = false;
 selectedRequestId: string | null = null;
 logsData: any = null;
 
-openLogs(requestId: string) {
+ openLogs(requestId: string) {
+    this.showLogsPopup = true;
+    this.selectedRequestId = requestId;
+    this.logsData = null; // reset while loading
 
-
-  //  if (this.showLogsPopup && this.selectedRequestId === requestId) {
-  //   this.closeLogs();
-  //   return;
-  // }
-  this.showLogsPopup = true;
-  this.selectedRequestId = requestId;
-  this.logsData = null; // reset while loading
-
-   if (!requestId) {
-    // No requestId → show empty logs card
-    this.logsData = { Message: "No logs available for this file" };
-    return;
-  }
-
-const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${requestId}`;
-this.http.get<any>(url).subscribe({
-  next: (res) => {
-    if (res.success && res.logs.length > 0) {
-      this.logsData = res.logs[0];
-    } else {
-      this.logsData = { Message: "No logs found" };
+    if (!requestId) {
+      this.logsData = { Message: "No logs available for this file" };
+      return;
     }
-  },
-  error: (err) => {
-    console.error("Failed to fetch logs:", err);
-    this.logsData = { Message: "Error fetching logs" };
+
+    const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${requestId}`;
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        if (res.success && res.logs.length > 0) {
+          this.logsData = res.logs[0];
+
+          // ✅ Update the matching Excel file’s digitizedAt time
+          const file = this.filteredFiles.find(f =>
+            f.excelFiles?.some((ef: any) => ef.requestId === requestId)
+          );
+
+          const excel = file?.excelFiles?.find((ef: any) => ef.requestId === requestId);
+          if (excel && this.logsData?.Timestamp) {
+            excel.digitizedAt = this.logsData.Timestamp;
+          }
+        } else {
+          this.logsData = { Message: "No logs found" };
+        }
+      },
+      error: (err) => {
+        console.error("Failed to fetch logs:", err);
+        this.logsData = { Message: "Error fetching logs" };
+      }
+    });
   }
-});
 
-}
 
-closeLogs() {
-  this.showLogsPopup = false;
-  this.selectedRequestId = null;
-  this.logsData = null;
-}
+  closeLogs() {
+    this.showLogsPopup = false;
+    this.selectedRequestId = null;
+    this.logsData = null;
+  }
 
+async fetchDigitizedTimestamps(files: any[]) {
+    const updatedFiles = await Promise.all(
+      files.map(async (file) => {
+        if (file.excelFiles?.length) {
+          // Fetch logs for each excel file
+          const updatedExcelFiles = await Promise.all(
+            file.excelFiles.map(async (excel: any) => {
+              try {
+                if (!excel.requestId) return excel;
+
+                const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${excel.requestId}`;
+                const res: any = await this.http.get(url).toPromise();
+
+                if (res.success && res.logs?.length > 0) {
+                  const log = res.logs[0];
+                  return { ...excel, digitizedAt: log.Timestamp };
+                } else {
+                  return { ...excel, digitizedAt: null };
+                }
+              } catch (err) {
+                console.error('Failed to fetch log for', excel.requestId, err);
+                return { ...excel, digitizedAt: null };
+              }
+            })
+          );
+          file.excelFiles = updatedExcelFiles;
+        }
+        return file;
+      })
+    );
+
+    return updatedFiles;
+  }
 
 }
