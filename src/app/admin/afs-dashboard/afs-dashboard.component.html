@@ -113,19 +113,23 @@
       </div>
 
       <!-- Profile Popup -->
-      @if(showPopup){
-      <div class="profile-popup">
-        <div class="close-btn" (click)="togglePopup()"> × </div>
-        <!-- <div class="popup-content">
-                    <div class="avatar-large">👤</div>
-                    <div><strong>Name:</strong> {{ fullName }}</div>
-                    <div><strong>Email:</strong> {{ email }}</div>
-                    <div><strong>Role:</strong> {{ role }}</div>
-                    <div><strong>Last Login:</strong> {{ lastLoginTime | date:'short' }}</div>
-                    <button class="logout-btn" (click)="logout()">Logout</button>
-                </div> -->
-      </div>
-      }
+      <!-- Profile Popup -->
+@if (showPopup) {
+  <div class="profile-popup">
+    <div class="close-btn" (click)="togglePopup()">×</div>
+    <div class="popup-content">
+      <div class="avatar-large">👤</div>
+      <div><strong>Name:</strong> {{ fullName }}</div>
+      <div><strong>Email:</strong> {{ email }}</div>
+      <div><strong>Role:</strong> {{ role }}</div>
+      <div><strong>Designation:</strong> {{ designation }}</div>
+      <div><strong>Mobile:</strong> {{ mobile }}</div>
+      <div><strong>Address:</strong> {{ address }}</div>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </div>
+}
+
 
       <div class="table-wrapper">
         <div class="main-content">

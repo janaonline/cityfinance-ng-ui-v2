@@ -52,7 +52,13 @@ export class AfsDashboardComponent implements OnInit {
   // role = localStorage.getItem('userRole') || '';
   // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
 
-
+   
+  fullName = '';
+  email = '';
+  role = '';
+  designation = '';
+  mobile = '';
+  address = '';
   showPopup = false;
   showMetricsPopup = false;
   showDatePopup = false;
@@ -105,6 +111,14 @@ filterByDigitizeStatus(): void {
     this.filteredFiles = [...this.allFilteredFiles];
     return;
   }
+  this.digitizedStartDate = null;
+    this.digitizedEndDate = null;
+    this.showDatePopup = false;
+
+    this.uploadedStartDate = null;
+    this.uploadedEndDate = null;
+    this.showUploadedDatePopup = false;
+
 
   this.filteredFiles = this.allFilteredFiles.filter(file => {
     const hasUlbExcel = file.excelFiles?.some((f: any) =>
@@ -157,7 +171,12 @@ filterByDigitizeStatus(): void {
       alert("⚠️ Start date cannot be after End date");
       return;
     }
+     this. selectedDigitizeStatus = '';
 
+
+    this.uploadedStartDate = null;
+    this.uploadedEndDate = null;
+    this.showUploadedDatePopup = false;
     this.showCalendar = false;
     this.showDatePopup = false;
 
@@ -229,6 +248,15 @@ applyUploadedDateRange(): void {
     return;
   }
 
+   this. selectedDigitizeStatus = '';
+
+
+  
+
+  this.digitizedStartDate = null;
+  this.digitizedEndDate = null;
+  this.showDatePopup = false;
+
   const start = new Date(this.uploadedStartDate);
   const end = new Date(this.uploadedEndDate);
   end.setHours(23, 59, 59, 999);
@@ -278,9 +306,32 @@ resetUploadedDateRange(): void {
     // }
     this.getAFSMetrics();
     this.loadFilters();
+    this.loadGlobalMetrics();
 
+     this.fullName = localStorage.getItem('userFullName') || '';
+    this.email = localStorage.getItem('loggedInUser') || '';
+    this.role = localStorage.getItem('userRole') || '';
+    this.designation = localStorage.getItem('userDesignation') || '';
+    this.mobile = localStorage.getItem('userMobile') || '';
+    this.address = localStorage.getItem('userAddress') || '';
 
+   
     // Load filters when component initializes
+  }
+
+
+  async loadGlobalMetrics() {
+    try {
+      const resp: any = await this.http
+        .get('http://localhost:8080/api/v1/afs-digitization/afs-metrics')
+        .toPromise();
+
+      if (resp.success) {
+        this.globalMetrics = resp.global;
+      }
+    } catch (err) {
+      console.error('Failed to load global metrics:', err);
+    }
   }
   activeRow: any = null;
 
@@ -659,6 +710,7 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
     this.filtersApplied = true;
     this.filteredFiles = [];
     this.isLoading = true;   // 👈 start loader
+    this.loadGlobalMetrics();
 
     this.selectedFilesCount = 0;
     this.totalSelectedPages = 0;
@@ -1000,12 +1052,9 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
     return Math.round((this.globalMetrics.digitizedFiles / total) * 100);
   }
 
-
-  logout() {
+logout() {
     localStorage.clear();
-    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-      this.router.navigate(['/login']);
-    });
+    this.router.navigate(['/login']);
   }
 
   onDocTypeChange(selectedKey: string) {
@@ -1305,7 +1354,17 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
   }
 
 
-
+private normalizePdfUrl(rawUrl: string): string {
+    if (!rawUrl) return '';
+    let fullUrl = rawUrl.trim();
+    if (fullUrl.startsWith('https//')) {
+      fullUrl = fullUrl.replace('https//', 'https://');
+    }
+    if (fullUrl.startsWith('/')) {
+      fullUrl = this.storageBaseUrl + fullUrl;
+    }
+    return fullUrl;
+  }
 
  
  async proceedDigitization() {
@@ -1382,6 +1441,25 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
             ).toPromise();
 
             console.log(`✅ Saved failed ${sourceType} requestId for ${fileRow['ulbId']}`);
+          }
+           if (digitizeResp?.S3_Excel_Storage_Link) {
+            // ✅ Successful file
+
+            const fullPdfUrl = this.normalizePdfUrl(pdf.fileUrl || pdf.previewUrl || '');
+            const pagesCount = await this.getPdfPageCount(fullPdfUrl);
+
+            await this.http.get(
+              `http://localhost:8080/api/v1/afs-digitization/afs-metrics?update=true&success=true&pages=${pagesCount}`
+            ).toPromise();
+          } else {
+            // ❌ Failed file
+            const fullPdfUrl = this.normalizePdfUrl(pdf.fileUrl || pdf.previewUrl || '');
+
+            const pagesCount = await this.getPdfPageCount(fullPdfUrl);
+
+            await this.http.get(
+              `http://localhost:8080/api/v1/afs-digitization/afs-metrics?update=true&success=false&pages=${pagesCount}`
+            ).toPromise();
           }
         }
 
@@ -1505,5 +1583,9 @@ async fetchDigitizedTimestamps(files: any[]) {
 
     return updatedFiles;
   }
+
+
+  
+  
 
 }
