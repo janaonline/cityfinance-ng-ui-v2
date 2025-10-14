@@ -2,27 +2,29 @@
   --mat-snackbar-container-color: green;
   --mat-mdc-snack-bar-button-color: white;
 }
-.mdc-button .mdc-button__label{
-    color: #fff;
+
+.mdc-button .mdc-button__label {
+  color: #fff;
 }
-.mat-mdc-form-field-hint-wrapper, .mat-mdc-form-field-error-wrapper{
+
+.mat-mdc-form-field-hint-wrapper,
+.mat-mdc-form-field-error-wrapper {
   padding: 0 5px !important;
 }
+
 .mat-mdc-form-field-hint-wrapper {
   position: relative !important;
   top: -20px !important;
 }
-// .custom-snackbar-success {
-// 	background-color: #4caf50; /* Green */
-// 	color: white;
-//   }
-  
-//   .custom-snackbar-error {
-// 	background-color: #f44336; /* Red */
-// 	color: white;
-//   }
-  
-//   .custom-snackbar-info {
-// 	background-color: #2196f3; /* Blue */
-// 	color: white;
-//   }
+
+.mat-mdc-tab-header {
+  --mat-tab-label-text-font: var(--ff-base);
+  --mat-tab-label-text-size: 14px;
+  --mat-tab-label-text-tracking: 0.0892857143em;
+  --mat-tab-label-text-line-height: 36px;
+  --mat-tab-label-text-weight: 500;
+}
+
+.mat-mdc-menu-item-text {
+  --mat-menu-item-label-text-font: var(--ff-base);
+}

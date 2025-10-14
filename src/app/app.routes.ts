@@ -1,11 +1,8 @@
 import { Routes } from '@angular/router';
-// import { HomeComponent } from './features/home/home.component';
 import { authGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
-import { HomeComponent } from './pages/home/home.component';
-// import { PdfContentComponent } from './pdf-content/pdf-content.component';
 
 export const routes: Routes = [
   // {
@@ -56,29 +53,11 @@ export const routes: Routes = [
   {
     path: '',
     children: [
-      {
-        // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
-        path: 'home', component: HomeComponent,
-      },
-      {
-        path: 'dashboard',
-        loadChildren: () =>
-          import('./pages/dashboard/dashboard.routes').then((mod) => mod.DASHBOARD_ROUTES),
-      },
-      {
-        path: "own-revenue-dashboard",
-        loadChildren: () =>
-          import("./pages/own-revenue-dashboard/own-revenue-dashboard.module").then(
-            (m) => m.OwnRevenueDashboardModule
-          ),
-      },
-      {
-        path: "resources-dashboard",
-        loadChildren: () =>
-          import("./pages/resources-dashboard/resources-dashboard.module").then(
-            (m) => m.ResourcesDashboardModule
-          ),
-      },
+      // {
+      //   // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
+      //   path: 'home', component: HomeComponent,
+      // },      
+
     ],
   },
   // {

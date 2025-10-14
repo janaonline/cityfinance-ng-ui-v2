@@ -1,8 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { CollapseModule } from 'ngx-bootstrap/collapse';
-import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { environment } from '../../../../environments/environment';
 import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../../core/models/user/userType';
@@ -11,12 +9,15 @@ import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
 import { UserUtility } from '../../../core/util/user/user';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-    selector: 'app-navbar',
-    imports: [CommonModule, RouterModule, BsDropdownModule, CollapseModule],
-    templateUrl: './navbar.component.html',
-    styleUrl: './navbar.component.scss'
+  selector: 'app-navbar',
+  imports: [CommonModule, RouterModule, MatButtonModule, MatMenuModule],
+  templateUrl: './navbar.component.html',
+  styleUrl: './navbar.component.scss',
+  standalone: true,
 })
 export class NavbarComponent implements OnInit, AfterViewInit {
   private accessChecker = new AccessChecker();
@@ -33,11 +34,11 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   prefixUrl = environment.prefixUrl;
 
   menus: any = [
-    {
-      name: `<img src="./assets/images/city-finance-ranking.png"/>`,
-      class: 'navbar-brand cityLogo',
-      href: `${this.prefixUrl}/cfr/home`,
-    },
+    // {
+    //   name: `<img src="./assets/images/city-finance-ranking.png"/>`,
+    //   class: 'cfr-img-logo',
+    //   href: `${this.prefixUrl}/cfr/home`,
+    // },
     {
       name: 'Dashboard',
       href: '',
@@ -52,6 +53,8 @@ export class NavbarComponent implements OnInit, AfterViewInit {
 
     { name: 'Resources', href: '/resources-dashboard/data-sets/income_statement' },
   ];
+
+  showMobileNav: boolean = false;
 
   constructor(
     public _router: Router,
@@ -135,22 +138,22 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     sessionStorage.setItem('sessionID', sessionID || '');
     if (postLoginNavigation) sessionStorage.setItem('postLoginNavigation', postLoginNavigation);
   }
-  @HostListener('window:scroll', ['$event'])
-  handleScroll() {
-    const windowScroll = window.pageYOffset;
-    if (windowScroll >= 50) {
-      this.sticky = true;
-    } else {
-      this.sticky = false;
-    }
-  }
-  scroll() {
-    window.scrollTo({
-      top: 1000,
+  // @HostListener('window:scroll', ['$event'])
+  // handleScroll() {
+  //   const windowScroll = window.pageYOffset;
+  //   if (windowScroll >= 50) {
+  //     this.sticky = true;
+  //   } else {
+  //     this.sticky = false;
+  //   }
+  // }
+  // scroll() {
+  //   window.scrollTo({
+  //     top: 1000,
 
-      behavior: 'smooth',
-    });
-  }
+  //     behavior: 'smooth',
+  //   });
+  // }
 
   loginLogout(type: string) {
     localStorage.setItem('loginType', type);
@@ -206,19 +209,49 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     // }
   }
 
-  isSticky = false;
+  // isSticky = false;
   public screenHeight: any;
-  elementPosition!: number;
-  @ViewChild('stickyMenu') menuElement: ElementRef | undefined;
-  ngAfterViewInit() {
-    this.elementPosition = this.menuElement?.nativeElement.offsetTop;
+  // elementPosition!: number;
+  // @ViewChild('stickyMenu') menuElement: ElementRef | undefined;
+  // ngAfterViewInit() {
+  //   this.elementPosition = this.menuElement?.nativeElement.offsetTop;
+  // }
+  // @HostListener('window:scroll', ['$event'])
+  // handleScrollTop() {
+  //   if (window.scrollY >= this.elementPosition) {
+  //     this.isSticky = true;
+  //   } else {
+  //     this.isSticky = false;
+  //   }
+  // }
+
+  isSticky = false;
+  private elementPosition = 0;
+  private ticking = false;
+
+  @ViewChild('stickyMenu') menuElement?: ElementRef;
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      if (this.menuElement) {
+        this.elementPosition = this.menuElement.nativeElement.offsetTop;
+      }
+    });
   }
-  @HostListener('window:scroll', ['$event'])
-  handleScrollTop() {
-    if (window.scrollY >= this.elementPosition) {
-      this.isSticky = true;
-    } else {
-      this.isSticky = false;
+
+  @HostListener('window:scroll')
+  onScroll(): void {
+    if (!this.ticking) {
+      window.requestAnimationFrame(() => {
+        this.updateStickyState();
+        this.ticking = false;
+      });
+      this.ticking = true;
     }
+  }
+
+  private updateStickyState(): void {
+    if (!this.menuElement) return;
+    this.isSticky = window.scrollY >= this.elementPosition;
   }
 }

@@ -5,14 +5,16 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer } from '@angular/platform-browser';
-import {
-  BondIssuances,
-  LastModifiedAt,
-  States,
-} from '../../pages/home/dashboard-map-section/interfaces';
 import { IBasicLedgerData } from '../models/basicLedgerData.interface';
+import {
+  AfsPopupData,
+  BondIssuances,
+  ExploreSectionResponse,
+  FileMetadata,
+} from '../models/interfaces';
 import { IULBResponse } from '../models/IULBResponse';
 import { NewULBStructure, NewULBStructureResponse } from '../models/newULBStructure';
+import { IState } from '../models/state/state';
 import { IStateULBCoveredResponse } from '../models/stateUlbConvered';
 import { ULBsStatistics } from '../models/statistics/ulbsStatistics';
 import { IULB } from '../models/ulb';
@@ -21,6 +23,7 @@ import { USER_TYPE } from '../models/user/userType';
 import { HttpUtility } from '../util/httpUtil';
 import { JSONUtility } from '../util/jsonUtil';
 import { environment } from './../../../environments/environment';
+import { UtilityService } from './utility.service';
 // import * as fileSaver from "file-saver";
 
 @Injectable({
@@ -54,6 +57,7 @@ export class CommonService {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private snackbar: MatSnackBar,
+    private _uitlity: UtilityService,
   ) {}
 
   updateSearchItem(searchItem: any) {
@@ -78,21 +82,21 @@ export class CommonService {
     return this.http.get<{ data: string[] }>(`${environment.api.url}dynamic-financial-year`);
   }
 
-  fetchLastUpdatedDate(
-    stateCode: string = '',
-    ulbId: string = '',
-    year: string = '',
-  ): Observable<LastModifiedAt> {
-    let params = new HttpParams();
-
-    if (stateCode) params = params.set('state_code', stateCode);
-    if (ulbId) params = params.set('ulb_id', ulbId);
-    if (year) params = params.set('year', year);
-
-    return this.http.get<LastModifiedAt>(`${environment.api.url}common/get-last-modified-date`, {
-      params,
-    });
-  }
+  // fetchLastUpdatedDate(
+  //   stateCode: string = '',
+  //   ulbId: string = '',
+  //   year: string = '',
+  // ): Observable<LastModifiedAt> {
+  //   let params = new HttpParams();
+  //
+  //   if (stateCode) params = params.set('state_code', stateCode);
+  //   if (ulbId) params = params.set('ulb_id', ulbId);
+  //   if (year) params = params.set('year', year);
+  //
+  //   return this.http.get<LastModifiedAt>(`${environment.api.url}common/get-last-modified-date`, {
+  //     params,
+  //   });
+  // }
   /**
    * @description Sort the Financial Years only.
    *
@@ -131,7 +135,7 @@ export class CommonService {
 
   public fetchStateList() {
     return this.http
-      .get<{ data: States[] }>(environment.api.url + 'state')
+      .get<{ data: IState[] }>(environment.api.url + 'state')
       .pipe(map((res) => res.data));
   }
 
@@ -794,5 +798,88 @@ export class CommonService {
     return this.http.get(`${environment.api.url}${endPoints}`, {
       params: queryParam,
     });
+  }
+
+  // Based on Ulb id return population, area, pop density, wards, yrs of data, UA
+  public getCityData(ulbId: string = ''): Observable<ExploreSectionResponse> {
+    if (!ulbId) this._uitlity.swalPopup('Error', 'ULB Id is mandatory!', 'error');
+    const params = { ulbId };
+    return this.http.get<ExploreSectionResponse>(
+      `${environment.api.url}dashboard/city/city-details`,
+      { params },
+    );
+  }
+
+  // National/ State data.
+  public getExploreSectionData(
+    stateCode: string = '',
+    stateId: string = '',
+  ): Observable<ExploreSectionResponse> {
+    let params = new HttpParams();
+    if (stateCode) params = params.set('stateCode', stateCode);
+    if (stateId) params = params.set('stateId', stateId);
+
+    return this.http.get<ExploreSectionResponse>(
+      `${environment.api.url}dashboard/home-page/get-Data`,
+      { params },
+    );
+  }
+
+  // Get distinct years - ledger/ Standardized data.
+  public getLedgerYears(stateCode: string = '', ulbId: string = '', auditStatus: string = '') {
+    let params = new HttpParams();
+    if (stateCode) params = params.set('stateCode', stateCode);
+    if (ulbId) params = params.set('ulbId', ulbId);
+    if (auditStatus) params = params.set('auditStatus', auditStatus);
+
+    return this.http.get<{ ledgerYears: string[] }>(
+      `${environment.api.url}common/get-latest-standardized-year`,
+      { params },
+    );
+  }
+
+  // Get distinct years - SLBs data.
+  slbYears(ulbId: string) {
+    let params = new HttpParams();
+    if (ulbId) params = params.set('ulb', ulbId);
+
+    return this.http.get<{ slbYears: string[] }>(
+      `${environment.api.url}common/get-latest-slbs-year`,
+      { params },
+    );
+  }
+
+  // Get distinct years - Bonds/ Borrowings data.
+  borrowingYears(ulbId: string = '', stateId: string = '') {
+    let params = new HttpParams();
+    if (ulbId) params = params.set('ulbId', ulbId);
+    if (stateId) params = params.set('stateId', stateId);
+
+    return this.http.get<{ borrowingYears: string[] }>(
+      `${environment.api.url}common/get-latest-borrowings-year`,
+      { params },
+    );
+  }
+
+  // Annual accounts popup - Show BS, BSS, IS, ISE, CF, AR in one popup.
+  getReports(ulbId: string, financialYear: string, auditType: string = '') {
+    return this.http.get<{ data: AfsPopupData; success: boolean }>(
+      `${environment.api.url}ledger/ulb-financial-data/files/${ulbId}?financialYear=${financialYear}&auditType=${auditType}`,
+    );
+  }
+
+  getDataSets(
+    year: string,
+    type: string,
+    category: string,
+    state: string,
+    ulb: string,
+    ulbId = '',
+    globalName = '',
+    skip: number = 0,
+  ) {
+    return this.http.get<{ data: FileMetadata[] }>(
+      `${environment.api.url}annual-accounts/datasets?year=${year}&type=${type}&category=${category}&state=${state}&ulb=${ulb}&ulbId=${ulbId}&globalName=${globalName}&skip=${skip}`,
+    );
   }
 }
