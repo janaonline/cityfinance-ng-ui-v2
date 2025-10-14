@@ -2,7 +2,6 @@ import {
   AfterViewInit,
   Component,
   EventEmitter,
-  HostListener,
   Input,
   OnChanges,
   OnDestroy,
@@ -63,15 +62,21 @@ import { MapService } from './map.service';
         stroke-width: 0 !important;
       }
     `,
+    `
+      ::ng-deep .leaflet-interactive:focus {
+        outline: none;
+      }
+    `,
   ],
 })
 export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, ResettableMap {
+  // Note: Ensure the map component is initialized only after the parent component has fully loaded and rendered.
   @Input() stateCode!: string;
   @Input() ulbId!: string;
   @Output() ulbIdChange = new EventEmitter<string>();
   @Output() stateCodeChange = new EventEmitter<string>();
 
-  private readonly DEFAULT_ZOOM_LEVEL = 4.3;
+  private readonly DEFAULT_ZOOM_LEVEL = 4.2;
   private ulbsList: ULBDataPoint[] = [];
   private stateLayer: L.GeoJSON | null = null; // To hold current state layer.
   private mapConfig: MapConfig = {
@@ -96,25 +101,44 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
   }
 
   // Update map zoom based on screen resize.
-  @HostListener('window:resize', ['$event'])
-  onResize() {
-    const newZoom = this.getZoomLevel();
-    this.mapService.map.setZoom(newZoom);
-  }
+  // @HostListener('window:resize', ['$event'])
+  // onResize() {
+  //   const newZoom = this.getZoomLevel();
+  //   this.mapService.map.setZoom(newZoom);
+  // }
 
   // ngOnInit(): void {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    // console.log(changes);
-    const shouldReloadMap = ['stateCode', 'ulbId'].some((key: string) => {
-      const change = changes[key];
-      return change && change.currentValue && !change.isFirstChange() && this.mapInitialized;
-    });
+    const stateChanged =
+      changes['stateCode'] &&
+      !changes['stateCode'].isFirstChange() &&
+      changes['stateCode'].currentValue !== '' &&
+      changes['stateCode'].previousValue !== changes['stateCode'].currentValue;
 
-    if (shouldReloadMap) this.loadMapData();
+    const ulbChanged =
+      changes['ulbId'] &&
+      !changes['ulbId'].isFirstChange() &&
+      changes['ulbId'].previousValue !== changes['ulbId'].currentValue;
+
+    if (stateChanged && this.mapInitialized) {
+      this.loadMapData();
+    }
+
+    if (ulbChanged && this.mapInitialized) {
+      this.mapService.updateSelectedULBMarker(changes['ulbId'].currentValue);
+    }
   }
 
   ngAfterViewInit(): void {
+    this.mapService.destroyMap();
+    const container = document.getElementById('map-container');
+
+    if (!container) {
+      console.warn('Map container not found');
+      return;
+    }
+
     this.mapService.initMap('map-container', this.mapConfig);
     this.mapInitialized = true;
     this.loadMapData();
@@ -167,7 +191,7 @@ export class MapComponent implements OnChanges, AfterViewInit, OnDestroy, Resett
 
           this.stateLayer = this.mapService.addGeoJsonLayer(stateGeoJson, this.stateCode);
 
-          if (this.stateCode && features.length) {
+          if (this.stateCode && features.length && this.stateLayer) {
             this.mapService.flyToStateBounds(this.stateLayer, [0, 0], 1.5, 0.5);
             this.loadCityCoordinates();
             this.mapService.addCityMarkersToMap(this.stateCode, this.ulbId, this.ulbsList);

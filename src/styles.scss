@@ -321,7 +321,7 @@ mat-form-field {
 }
 
 .custom-readonly-input {
-  background-color: lightgrey !important;
+  background-color: rgba(211, 211, 211, 0.503) !important;
   border: 1px solid gray !important;
   cursor: not-allowed !important;
 }
@@ -387,4 +387,38 @@ mat-form-field {
 // Custom text shadow.
 .custom-text-shadow {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+// light blue background on portal.
+.bg-light-primary {
+  background-color: #f1f8ff;
+}
+
+.bg-table-header {
+  background-color: #e9edf5 !important;
+}
+
+// Common search box.
+.input-box-style {
+  border: none;
+  padding: 0.5rem 1rem;
+  background: #f8f9ff;
+  border-radius: 0.25rem;
+  border: 1px solid #dee2e6;
+  // box-shadow: 0 .125rem .25rem rgba(0, 0, 0, 0.075);
+  width: 100%;
+  font-weight: 600;
+  // margin-bottom: 0.5rem;
+}
+
+// Grid view.
+.explore-data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 767px) {
+  .explore-data-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

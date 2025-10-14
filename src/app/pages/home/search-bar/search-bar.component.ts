@@ -191,7 +191,7 @@ export class SearchBarComponent implements OnInit {
     }
 
     if (option.type == 'ulb') {
-      this.router.navigateByUrl(`/dashboard/city?cityId=${option._id}`);
+      this.router.navigateByUrl(`/dashboard/city/${option._id}`);
     }
 
     if (option.type == 'searchKeyword') {
