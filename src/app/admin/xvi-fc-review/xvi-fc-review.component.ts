@@ -6,7 +6,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { RouterModule } from '@angular/router';
 import * as FileSaver from 'file-saver';
-import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+// import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { first } from 'rxjs';
 import Swal from 'sweetalert2';
 import { FORM_STATUSES } from '../../core/constants/statuses';
@@ -41,7 +41,6 @@ interface Data {
     MatProgressSpinnerModule,
     MatPaginatorModule,
     ReplaceUnderscorePipe,
-    BsDropdownModule,
   ],
   templateUrl: './xvi-fc-review.component.html',
   styleUrl: './xvi-fc-review.component.scss'
