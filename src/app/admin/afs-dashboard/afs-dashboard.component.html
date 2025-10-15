@@ -31,7 +31,9 @@
       <label class="filter-label">City</label>
       <input type="text" [(ngModel)]="citySearchText" placeholder="Search city..." class="city-search-box" />
 
-      <div *ngIf="selectedState && selectedPopulation">
+      @if(selectedState && selectedPopulation)
+      {
+      <div>
         <div class="city-checkboxes scroll-box">
           <label *ngFor="let c of filteredCities" class="checkbox-item">
             <input type="checkbox" [value]="c.name" [checked]="selectedCities.includes(c.name)"
@@ -40,6 +42,7 @@
           </label>
         </div>
       </div>
+      }
 
       <label>Year</label>
       <select [(ngModel)]="selectedYear">
@@ -113,22 +116,19 @@
       </div>
 
       <!-- Profile Popup -->
-      <!-- Profile Popup -->
-@if (showPopup) {
-  <div class="profile-popup">
-    <div class="close-btn" (click)="togglePopup()">×</div>
-    <div class="popup-content">
-      <div class="avatar-large">👤</div>
-      <div><strong>Name:</strong> {{ fullName }}</div>
-      <div><strong>Email:</strong> {{ email }}</div>
-      <div><strong>Role:</strong> {{ role }}</div>
-      <div><strong>Designation:</strong> {{ designation }}</div>
-      <div><strong>Mobile:</strong> {{ mobile }}</div>
-      <div><strong>Address:</strong> {{ address }}</div>
-      <button class="logout-btn" (click)="logout()">Logout</button>
-    </div>
-  </div>
-}
+      @if (showPopup) {
+      <div class="profile-popup">
+        <div class="close-btn" (click)="togglePopup()">×</div>
+        <div class="popup-content">
+          <div class="avatar-large">👤</div>
+          <div><strong>Name:</strong> {{ fullName }}</div>
+          <div><strong>Email:</strong> {{ email }}</div>
+          <div><strong>Role:</strong> {{ role }}</div>
+          <div><strong>Designation:</strong> {{ designation }}</div>
+          <button class="logout-btn" (click)="logout()">Logout</button>
+        </div>
+      </div>
+      }
 
 
       <div class="table-wrapper">
@@ -204,7 +204,7 @@
                         </button>
 
                         <!-- Date Range Popup -->
-                        <div class="popup-overlay" *ngIf="showUploadedDatePopup">
+                        @if(showUploadedDatePopup){ <div class="popup-overlay">
                           <div class="popup-box">
                             <h3>Select Date Range</h3>
 
@@ -232,10 +232,11 @@
                             </div>
 
                             <!-- Validation error -->
-                            <div *ngIf="uploadedStartDate && uploadedEndDate && !isUploadedDateRangeValid()"
-                              class="error">
+                            @if(uploadedStartDate && uploadedEndDate && !isUploadedDateRangeValid()){
+                            <div class="error">
                               Start date cannot be after End date
                             </div>
+                            }
 
                             <!-- Actions -->
                             <div class="popup-actions">
@@ -247,11 +248,13 @@
                             </div>
                           </div>
                         </div>
+                        }
 
                         <!-- Show chosen range -->
-                        <div *ngIf="uploadedStartDate && uploadedEndDate" class="date-display">
+                        @if(uploadedStartDate && uploadedEndDate){ <div class="date-display">
                           {{ uploadedStartDate | date:'dd-MM-yyyy' }} to {{ uploadedEndDate | date:'dd-MM-yyyy' }}
                         </div>
+                        }
                       </div>
                     </th>
                     <th>
@@ -266,7 +269,7 @@
 
                         <!-- Date Range Popup -->
                         <!-- Date Range Popup -->
-                        <div class="popup-overlay" *ngIf="showDatePopup">
+                        @if(showDatePopup){ <div class="popup-overlay">
                           <div class="popup-box">
                             <h3>Select Date Range</h3>
 
@@ -294,9 +297,11 @@
                             </div>
 
                             <!-- Validation error -->
-                            <div *ngIf="digitizedStartDate && digitizedEndDate && !isDateRangeValid()" class="error">
+                            @if(digitizedStartDate && digitizedEndDate && !isDateRangeValid())
+                            { <div class="error">
                               Start date cannot be after End date
                             </div>
+                            }
 
                             <!-- Actions -->
                             <div class="popup-actions">
@@ -308,14 +313,16 @@
                             </div>
                           </div>
                         </div>
+                        }
 
 
 
                         <!-- Show chosen range -->
-                        <div *ngIf="digitizedStartDate && digitizedEndDate" class="date-display">
+                        @if(digitizedStartDate && digitizedEndDate){<div class="date-display">
                           {{ digitizedStartDate | date:'dd-MM-yyyy' }} to {{ digitizedEndDate
                           | date:'dd-MM-yyyy' }}
                         </div>
+                        }
                       </div>
 
 
@@ -408,40 +415,52 @@
                       <div class="digitize-status-wrapper" style="margin-top: 30px;">
                         <div class="digitize-block ulb-block">
                           <!-- ULB Slot -->
-                          <div *ngIf="hasExcelFile(file, 'ULB'); else ulbCheckFailed">
-                            DIGITIZED
-                            <a *ngFor="let excel of getExcelFiles(file, 'ULB')" [href]="excel.fileUrl" target="_blank">
-                              excelfile.xlsx
-                            </a>
+                          @if (hasExcelFile(file, 'ULB')) {
+                          DIGITIZED
+                          @for (excel of getExcelFiles(file, 'ULB'); track excel) {
+                          <a [href]="excel.fileUrl" target="_blank">
+                            excelfile.xlsx
+                          </a>
+                          }
+                          } @else {
+                          @if (hasFailedExcelFile(file, 'ULB')) {
+                          <div style="color: red;">
+                            FAILED
                           </div>
-                          <ng-template #ulbCheckFailed>
-                            <div *ngIf="hasFailedExcelFile(file, 'ULB'); else noUlb" style="color: red;">
-                              FAILED
-                            </div>
-                            <ng-template #noUlb>
-                              NOT DIGITIZED
-                            </ng-template>
-                          </ng-template>
+                          } @else {
+                          <div>
+                            NOT DIGITIZED
+                          </div>
+                          }
+                          }
                         </div>
 
+
                         <div class="spacingup-2">
-                          <div class="digitize-block afs-block" *ngIf="file.extraFiles && file.extraFiles.length > 0">
-                            <div *ngIf="hasExcelFile(file, 'AFS'); else afsCheckFailed">
-                              DIGITIZED
-                              <a *ngFor="let excel of getExcelFiles(file, 'AFS')" [href]="excel.fileUrl"
-                                target="_blank">
-                                excelfile.xlsx
-                              </a>
+                          @if(file.extraFiles && file.extraFiles.length > 0)
+                          {
+                          <div class="digitize-block afs-block">
+                            @if (hasExcelFile(file, 'AFS')) {
+                            DIGITIZED
+                            @for (excel of getExcelFiles(file, 'AFS'); track excel) {
+                            <a [href]="excel.fileUrl" target="_blank">
+                              excelfile.xlsx
+                            </a>
+                            }
+                            } @else {
+                            @if (hasFailedExcelFile(file, 'AFS')) {
+                            <div style="color: red;">
+                              FAILED
                             </div>
-                            <ng-template #afsCheckFailed>
-                              <div *ngIf="hasFailedExcelFile(file, 'AFS'); else noAfs" style="color: red;">
-                                FAILED
-                              </div>
-                              <ng-template #noAfs>
-                                NOT DIGITIZED
-                              </ng-template>
-                            </ng-template>
+                            } @else {
+                            <div>
+                              NOT DIGITIZED
+                            </div>
+                            }
+                            }
                           </div>
+
+                          }
                         </div>
                       </div>
                     </td>
@@ -451,25 +470,29 @@
                     <td>
                       <div class="digitize-status-wrapper" style="margin-top: 20px; margin-right: 12px;"
                         [ngClass]="{'single-block': !file.uploadedAt}">
-                        <div class="digitize-block ulb-block" *ngIf="file.ulbSubmit">
+                        @if(file.ulbSubmit){ <div class="digitize-block ulb-block">
                           {{ file.ulbSubmit | date: 'd/M/yyyy, h:mm a' }}
                         </div>
-                        <div class="digitize-block ulb-block" *ngIf="!file.ulbSubmit">
+                        }
+                        @if(!file.ulbSubmit){<div class="digitize-block ulb-block">
                           N/A
                         </div>
+                        }
 
-                        <div class="digitize-block afs-block" *ngIf="file.uploadedAt">
+                        @if(file.uploadedAt){ <div class="digitize-block afs-block">
                           {{ file.uploadedAt | date: 'd/M/yyyy, h:mm a' }}
                         </div>
+                        }
                       </div>
                     </td>
 
 
 
                     <td>
-                      <div class="timestamp-wrapper" style="margin-top: 20px; margin-right: 15px;"
-                        *ngIf="file.excelFiles && file.excelFiles.length > 0; else noFiles">
-                        <div class="timestamp-block" *ngFor="let excel of file.excelFiles">
+                      @if (file.excelFiles && file.excelFiles.length > 0) {
+                      <div class="timestamp-wrapper" style="margin-top: 20px; margin-right: 15px;">
+                        @for (excel of file.excelFiles; track excel) {
+                        <div class="timestamp-block">
                           <span>
                             {{
                             excel && excel.digitizedAt
@@ -478,14 +501,15 @@
                             }}
                           </span>
                         </div>
+                        }
                       </div>
-
-                      <ng-template #noFiles>
-                        <div class="digitize-status-wrapper single-block" style="margin-top: 30px;">
-                          <div class="digitize-block ulb-block">N/A</div>
-                        </div>
-                      </ng-template>
+                      } @else {
+                      <div class="digitize-status-wrapper single-block" style="margin-top: 30px;">
+                        <div class="digitize-block ulb-block">N/A</div>
+                      </div>
+                      }
                     </td>
+
 
 
 
@@ -497,7 +521,7 @@
                       </button>
                     </td> -->
                     <td>
-                      <div *ngIf="(file.excelFiles?.length ?? 0) > 0" class="log-buttons-container">
+                      @if((file.excelFiles?.length ?? 0) > 0){ <div class="log-buttons-container">
                         <ng-container *ngFor="let excel of file.excelFiles">
                           <button mat-raised-button class="log-btn" [ngStyle]="{
           'background-color': excel.uploadedBy === 'AFS' ? '#28a745' : '#1976d2',
@@ -507,10 +531,12 @@
                           </button>
                         </ng-container>
                       </div>
+                      }
 
-                      <div *ngIf="!file.excelFiles || file.excelFiles.length === 0">
+                      @if(!file.excelFiles || file.excelFiles.length === 0){ <div>
                         <span class="text-muted">No logs</span>
                       </div>
+                      }
                     </td>
                   </tr>
                   }
@@ -538,10 +564,11 @@
                   <button class="proceed-btn" (click)="proceedDigitization()">Proceed</button>
                   <button class="cancel-btn" (click)="closeDigitizePopup()">Cancel</button>
                 </div>}
-                <div *ngIf="digitizeStatus === 'processing'" class="loader-container">
+                @if(digitizeStatus === 'processing'){<div class="loader-container">
                   <div class="spinner"></div>
                   <p style="margin-top: 10px; font-weight: bold;">Digitization in progress...</p>
                 </div>
+                }
                 @if(digitizeStatus === 'done') {<div>
                   <p style="color: green; font-weight: bold;"> Done</p>
                   <button (click)="closeDigitizePopup()">Close</button>
@@ -556,7 +583,7 @@
       </div>
     </div>
   </div>
-  <div *ngIf="logsData" class="log-overlay">
+  @if(logsData){<div class="log-overlay">
     <div id="logCard" class="card shadow-lg border-0 rounded-3">
 
 
@@ -576,8 +603,7 @@
         <h6 class="fw-bold mb-2">Basic Info</h6>
         <ul class="list-group mb-3">
           <li class="list-group-item"><b>Request ID:</b> {{ logsData.RequestId }}</li>
-          <li class="list-group-item"><b>Timestamp:</b> {{ logsData.Timestamp | date:'dd MMMM yyyy,
-            hh:mm:ssa'}}</li>
+          <li class="list-group-item"><b>Timestamp:</b> {{ logsData.Timestamp | date:'dd MMMM yyyy, hh:mm:ssa'}}</li>
 
           <li class="list-group-item"><b>Message:</b> {{ logsData.Message }}</li>
           <li class="list-group-item"><b>File Name:</b> {{ logsData.PDFUpload_FileName }}</li>
@@ -591,189 +617,108 @@
 
         <!-- Processing Stages -->
         <h6 class="fw-bold mb-2">Processing Stages</h6>
-        <div class="accordion" id="logAccordion">
 
-          <!-- PDF Upload -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#pdfUpload" [ngClass]="{'text-danger': logsData.PDFUpload_StatusCode !== 200}">
-                📤 PDF Upload
-              </button>
-            </h2>
-            <div id="pdfUpload" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.PDFUpload_Status }} <br>
-                <b>Code:</b> {{ logsData.PDFUpload_StatusCode }} <br>
-                <b>File Size:</b> {{ logsData.PDFUpload_FileSize_In_Bytes/ (1024*1024) | number:'1.2-2' }} MB
-              </div>
-            </div>
-          </div>
 
-          <!-- PDF Quality Check -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#pdfQuality" [ngClass]="{'text-danger': logsData.PDFQualityCheck_StatusCode !== 200}">
-                🧐 PDF Quality Check
-              </button>
-            </h2>
-            <div id="pdfQuality" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.PDFQualityCheck_Status }} <br>
-                <b>Code:</b> {{ logsData.PDFQualityCheck_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.PDFQualityCheck_ProcessingTimeMs / 1000) | number:'1.2-2'
-                }} seconds <br>
-                <b>Blur Score:</b> {{ logsData.PDFQualityCheck_BlurScore | number:'1.0-2' }}
-              </div>
-            </div>
-          </div>
-
-          <!-- PDF Enhancement -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#pdfEnhance" [ngClass]="{'text-danger': logsData.PDFEnhancement_StatusCode !== 200}">
-                ✨ PDF Enhancement
-              </button>
-            </h2>
-            <div id="pdfEnhance" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.PDFEnhancement_Status }} <br>
-                <b>Code:</b> {{ logsData.PDFEnhancement_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.PDFEnhancement_ProcessingTimeMs)/1000 |number:'1.2-2' }}
-                seconds
-              </div>
-            </div>
-          </div>
-
-          <!-- S3 Upload -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#s3Upload" [ngClass]="{'text-danger': logsData.S3Upload_StatusCode !== 200}">
-                ☁️ S3 Upload
-              </button>
-            </h2>
-            <div id="s3Upload" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.S3Upload_Status }} <br>
-                <b>Code:</b> {{ logsData.S3Upload_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.S3Upload_ProcessingTimeMs)/1000 |number:'1.2-2' }}
-                seconds
-              </div>
-            </div>
-          </div>
-
-          <!-- OCR -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ocr"
-                [ngClass]="{'text-danger': logsData.OCR_StatusCode !== 200}">
-                🔎 OCR
-              </button>
-            </h2>
-            <div id="ocr" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.OCR_Status }} <br>
-                <b>Code:</b> {{ logsData.OCR_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.OCR_ProcessingTimeMs)/1000 |number:'1.2-2' }} seconds
-              </div>
-            </div>
-          </div>
-
-          <!-- LLM Postprocessing -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#llmPost" [ngClass]="{'text-danger': logsData.LLM_Postprocessing_StatusCode !== 200}">
-                🛠️ LLM Postprocessing
-              </button>
-            </h2>
-            <div id="llmPost" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.LLM_Postprocessing_Status }} <br>
-                <b>Code:</b> {{ logsData.LLM_Postprocessing_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.LLM_Postprocessing_ProcessingTimeMs)/1000 |
-                number:'1.2-2' }} seconds
-              </div>
-            </div>
-          </div>
-
-          <!-- LLM Confidence Scoring -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#llmConfidence"
-                [ngClass]="{'text-danger': logsData.LLM_ConfidenceScoring_StatusCode !== 200}">
-                📊 LLM Confidence Scoring
-              </button>
-            </h2>
-            <div id="llmConfidence" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.LLM_ConfidenceScoring_Status }} <br>
-                <b>Code:</b> {{ logsData.LLM_ConfidenceScoring_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.LLM_ConfidenceScoring_ProcessingTimeMs)/1000 |
-                number:'1.2-2' }} seconds
-              </div>
-            </div>
-          </div>
-
-          <!-- LLM Validation -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#llmValidation" [ngClass]="{'text-danger': logsData.LLM_Validation_StatusCode !== 200}">
-                🤖 LLM Validation
-              </button>
-            </h2>
-            <div id="llmValidation" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.LLM_Validation_Status }} <br>
-                <b>Code:</b> {{ logsData.LLM_Validation_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.LLM_Validation_ProcessingTimeMs)/1000 | number:'1.2-2'}}
-                seconds
-              </div>
-            </div>
-          </div>
-
-          <!-- Excel Generation -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#excelGen" [ngClass]="{'text-danger': logsData.ExcelGeneration_StatusCode !== 200}">
-                📑 Excel Generation
-              </button>
-            </h2>
-            <div id="excelGen" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.ExcelGeneration_Status }} <br>
-                <b>Code:</b> {{ logsData.ExcelGeneration_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.ExcelGeneration_ProcessingTimeMs)/1000 | number:'1.2-2'
-                }} seconds
-              </div>
-            </div>
-          </div>
-
-          <!-- Excel Storage -->
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#excelStorage" [ngClass]="{'text-danger': logsData.ExcelStorage_StatusCode !== 200}">
-                💾 Excel Storage
-              </button>
-            </h2>
-            <div id="excelStorage" class="accordion-collapse collapse" data-bs-parent="#logAccordion">
-              <div class="accordion-body">
-                <b>Status:</b> {{ logsData.ExcelStorage_Status }} <br>
-                <b>Code:</b> {{ logsData.ExcelStorage_StatusCode }} <br>
-                <b>Processing Time:</b> {{ (logsData.ExcelStorage_ProcessingTimeMs)/1000 | number:'1.2-2' }}
-                seconds
-              </div>
-            </div>
-          </div>
-
+        <!-- PDF Upload -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.PDFUpload_StatusCode !== 200, 'border-success': logsData.PDFUpload_StatusCode  === 200}">
+          <h6>📤 PDF Upload</h6>
+          <b>Status:</b> {{ logsData.PDFUpload_Status }} <br>
+          <b>Code:</b> {{ logsData.PDFUpload_StatusCode }} <br>
+          <b>File Size:</b> {{ logsData.PDFUpload_FileSize_In_Bytes / (1024*1024) | number:'1.2-2' }} MB
         </div>
+
+        <!-- PDF Quality Check -->
+        <!-- PDF Quality Check -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.PDFQualityCheck_StatusCode !== 200, 'border-success': logsData.PDFQualityCheck_StatusCode  === 200}">
+          <h6>🧐 PDF Quality Check</h6>
+          <b>Status:</b> {{ logsData.PDFQualityCheck_Status }} <br>
+          <b>Code:</b> {{ logsData.PDFQualityCheck_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.PDFQualityCheck_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds <br>
+          <b>Blur Score:</b> {{ logsData.PDFQualityCheck_BlurScore | number:'1.0-2' }}
+        </div>
+
+
+        <!-- PDF Enhancement -->
+        <!-- PDF Enhancement -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.PDFEnhancement_StatusCode !== 200,'border-success': logsData.PDFEnhancement_StatusCode  === 200}">
+          <h6>✨ PDF Enhancement</h6>
+          <b>Status:</b> {{ logsData.PDFEnhancement_Status }} <br>
+          <b>Code:</b> {{ logsData.PDFEnhancement_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.PDFEnhancement_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+        <!-- S3 Upload -->
+        <!-- S3 Upload -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.S3Upload_StatusCode !== 200,'border-success': logsData.S3Upload_StatusCode === 200}">
+          <h6>☁️ S3 Upload</h6>
+          <b>Status:</b> {{ logsData.S3Upload_Status }} <br>
+          <b>Code:</b> {{ logsData.S3Upload_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.S3Upload_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+        <!-- OCR -->
+        <!-- OCR -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.OCR_StatusCode !== 200,'border-success': logsData.OCR_StatusCode === 200}">
+          <h6>🔎 OCR</h6>
+          <b>Status:</b> {{ logsData.OCR_Status }} <br>
+          <b>Code:</b> {{ logsData.OCR_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.OCR_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+        <!-- LLM Postprocessing -->
+        <!-- LLM Postprocessing -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.LLM_Postprocessing_StatusCode !== 200, 'border-success': logsData.LLM_Postprocessing_StatusCode === 200}">
+          <h6>🛠️ LLM Postprocessing</h6>
+          <b>Status:</b> {{ logsData.LLM_Postprocessing_Status }} <br>
+          <b>Code:</b> {{ logsData.LLM_Postprocessing_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.LLM_Postprocessing_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+        <!-- LLM Confidence Scoring -->
+        <!-- LLM Confidence Scoring -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.LLM_ConfidenceScoring_StatusCode !== 200, 'border-success': logsData.LLM_ConfidenceScoring_StatusCode === 200}">
+          <h6>📊 LLM Confidence Scoring</h6>
+          <b>Status:</b> {{ logsData.LLM_ConfidenceScoring_Status }} <br>
+          <b>Code:</b> {{ logsData.LLM_ConfidenceScoring_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.LLM_ConfidenceScoring_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+        <!-- LLM Validation -->
+        <!-- LLM Validation -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.LLM_Validation_StatusCode !== 200, 'border-success': logsData.LLM_Validation_StatusCode === 200}">
+          <h6>🤖 LLM Validation</h6>
+          <b>Status:</b> {{ logsData.LLM_Validation_Status }} <br>
+          <b>Code:</b> {{ logsData.LLM_Validation_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.LLM_Validation_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+        <!-- Excel Generation -->
+        <!-- Excel Generation -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.ExcelGeneration_StatusCode !== 200, 'border-success': logsData.ExcelGeneration_StatusCode === 200}">
+          <h6>📑 Excel Generation</h6>
+          <b>Status:</b> {{ logsData.ExcelGeneration_Status }} <br>
+          <b>Code:</b> {{ logsData.ExcelGeneration_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.ExcelGeneration_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+        <!-- Excel Storage -->
+        <!-- Excel Storage -->
+        <div class="card mb-2 p-3" [ngClass]="{'border-danger': logsData.ExcelStorage_StatusCode !== 200, 'border-success': logsData.ExcelStorage_StatusCode === 200}">
+          <h6>💾 Excel Storage</h6>
+          <b>Status:</b> {{ logsData.ExcelStorage_Status }} <br>
+          <b>Code:</b> {{ logsData.ExcelStorage_StatusCode }} <br>
+          <b>Processing Time:</b> {{ logsData.ExcelStorage_ProcessingTimeMs / 1000 | number:'1.2-2' }} seconds
+        </div>
+
+
+
 
 
         <!-- Extra Info -->
@@ -782,16 +727,23 @@
             seconds</p>
 
           <p><b>Retry Count:</b> {{ logsData.RetryCount }}</p>
-          <p *ngIf="logsData.ErrorCode && logsData.ErrorCode !== 'N/A'"><b>Error Code:</b> {{
+          @if(logsData.ErrorCode && logsData.ErrorCode !== 'N/A')
+          {<p><b>Error Code:</b> {{
             logsData.ErrorCode }}</p>
-          <p *ngIf="logsData.ErrorMessage && logsData.ErrorMessage !== 'N/A'"><b> Message:</b> {{
+          }
+          @if(logsData.ErrorMessage && logsData.ErrorMessage !== 'N/A'){<p><b> Message:</b> {{
             logsData.ErrorMessage }}</p>
-          <p *ngIf="logsData.ErrorResolution && logsData.ErrorResolution !== 'N/A'"><b>Error Resolution:</b>
+          }
+          @if(logsData.ErrorResolution && logsData.ErrorResolution !== 'N/A'){<p><b>Error Resolution:</b>
             {{ logsData.ErrorResolution }}</p>
-          <p *ngIf="logsData.OriginalErrorMessage && logsData.OriginalErrorMessage !== ''"><b>Original
+          }
+          @if(logsData.OriginalErrorMessage && logsData.OriginalErrorMessage !== ''){ <p><b>Original
               Error:</b> {{ logsData.OriginalErrorMessage }}</p>
+          }
         </div>
       </div>
     </div>
   </div>
+  }
+
 </div>

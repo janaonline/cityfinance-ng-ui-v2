@@ -52,13 +52,12 @@ export class AfsDashboardComponent implements OnInit {
   // role = localStorage.getItem('userRole') || '';
   // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
 
-   
   fullName = '';
   email = '';
   role = '';
   designation = '';
-  mobile = '';
-  address = '';
+  lastLoginTime: string | null = null;
+  
   showPopup = false;
   showMetricsPopup = false;
   showDatePopup = false;
@@ -308,12 +307,15 @@ resetUploadedDateRange(): void {
     this.loadFilters();
     this.loadGlobalMetrics();
 
-     this.fullName = localStorage.getItem('userFullName') || '';
-    this.email = localStorage.getItem('loggedInUser') || '';
-    this.role = localStorage.getItem('userRole') || '';
-    this.designation = localStorage.getItem('userDesignation') || '';
-    this.mobile = localStorage.getItem('userMobile') || '';
-    this.address = localStorage.getItem('userAddress') || '';
+   const userData = localStorage.getItem('userData');
+    if (userData) {
+      const user = JSON.parse(userData);
+      this.fullName = user.name || 'N/A';
+      this.email = user.email || 'N/A';
+      this.role = user.role || 'N/A';
+      this.designation = user.designation || 'N/A';
+      this.lastLoginTime = user.updatedAt || user.lastLoginTime || null;
+    }
 
    
     // Load filters when component initializes
@@ -323,8 +325,8 @@ resetUploadedDateRange(): void {
   async loadGlobalMetrics() {
     try {
       const resp: any = await this.http
-        .get('http://localhost:8080/api/v1/afs-digitization/afs-metrics')
-        .toPromise();
+        .get(environment.api.url + 'afs-digitization/afs-metrics')
+        .subscribe();
 
       if (resp.success) {
         this.globalMetrics = resp.global;
@@ -342,7 +344,9 @@ resetUploadedDateRange(): void {
 
 
   loadFilters() {
-    const url = `http://localhost:8080/api/v1/afs-digitization/afs-filters`;
+    // const url = `http://localhost:8080/api/v1/afs-digitization/afs-filters`;
+    const url = `${environment.api.url}afs-digitization/afs-filters`;
+
     this.http.get<any>(url).subscribe({
       next: (res) => {
         if (res.success) {
@@ -482,7 +486,8 @@ hasFailedExcelFile(file: any, uploadedBy: string): boolean {
           .find(doc => doc.key === this.selectedDocType)?.name || '';
       formData.append('docType', docTypeName);
 
-      const url = `http://localhost:8080/api/v1/afs-digitization/afs-file`;
+      // const url = `http://localhost:8080/api/v1/afs-digitization/afs-file`;
+      const url = `${environment.api.url}afs-digitization/afs-file`;
       const response: any = await this.http.post(url, formData).toPromise();
 
       if (response.success && response.file?.fileUrl) {
@@ -536,8 +541,8 @@ hasFailedExcelFile(file: any, uploadedBy: string): boolean {
           .flatMap(group => group.items)
           .find(doc => doc.key === this.selectedDocType)?.name || '';
 
-      const afsUrl = `http://localhost:8080/api/v1/afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
-
+      // const afsUrl = `http://localhost:8080/api/v1/afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
+      const afsUrl = `${environment.api.url}afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
       const afsResponse: any = await this.http.get(afsUrl).toPromise();
 
       const target = this.filteredFiles.find(f => f['ulbId'] === ulbId);
@@ -717,10 +722,15 @@ storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
     this.selectAll = false;
     this.selectedDigitizeStatus = '';
 
-    const baseUrl = 'http://localhost:8080/api/v1/ledger/ulb-financial-data/files';
-    const statusUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-form-status-by-ulb';
-    const afsUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-file';
-    const excelUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-excel-file';
+    // const baseUrl = 'http://localhost:8080/api/v1/ledger/ulb-financial-data/files';
+    // const statusUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-form-status-by-ulb';
+    // const afsUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-file';
+    // const excelUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-excel-file';
+
+    const baseUrl = environment.api.url +'ledger/ulb-financial-data/files';
+    const statusUrlBase = environment.api.url +'afs-digitization/afs-form-status-by-ulb';
+    const afsUrlBase = environment.api.url +'afs-digitization/afs-file';
+    const excelUrlBase = environment.api.url +'afs-digitization/afs-excel-file';
 
     const financialYear = this.selectedYear;
     const auditType = this.isAudited;
@@ -1070,7 +1080,8 @@ logout() {
 
 
   getAFSMetrics() {
-    const url = `http://localhost:8080/api/v1/afs-digitization/afs-metrics`;
+    // const url = `http://localhost:8080/api/v1/afs-digitization/afs-metrics`;
+    const url = `${environment.api.url}afs-digitization/afs-metrics`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
         if (res.success) {
@@ -1436,7 +1447,7 @@ private normalizePdfUrl(rawUrl: string): string {
             console.log(`💾 Saving failed ${sourceType} requestId:`, metaBody);
 
             await this.http.post(
-              'http://localhost:8080/api/v1/afs-digitization/save-request-only',
+              environment.api.url +'afs-digitization/save-request-only',
               metaBody
             ).toPromise();
 
@@ -1448,8 +1459,11 @@ private normalizePdfUrl(rawUrl: string): string {
             const fullPdfUrl = this.normalizePdfUrl(pdf.fileUrl || pdf.previewUrl || '');
             const pagesCount = await this.getPdfPageCount(fullPdfUrl);
 
-            await this.http.get(
-              `http://localhost:8080/api/v1/afs-digitization/afs-metrics?update=true&success=true&pages=${pagesCount}`
+            // await this.http.get(
+            //   `http://localhost:8080/api/v1/afs-digitization/afs-metrics?update=true&success=true&pages=${pagesCount}`
+            // ).toPromise();
+             await this.http.get(
+              `${environment.api.url}afs-digitization/afs-metrics?update=true&success=true&pages=${pagesCount}`
             ).toPromise();
           } else {
             // ❌ Failed file
@@ -1457,8 +1471,11 @@ private normalizePdfUrl(rawUrl: string): string {
 
             const pagesCount = await this.getPdfPageCount(fullPdfUrl);
 
+            // await this.http.get(
+            //   `http://localhost:8080/api/v1/afs-digitization/afs-metrics?update=true&success=false&pages=${pagesCount}`
+            // ).toPromise();
             await this.http.get(
-              `http://localhost:8080/api/v1/afs-digitization/afs-metrics?update=true&success=false&pages=${pagesCount}`
+              `${environment.api.url}afs-digitization/afs-metrics?update=true&success=false&pages=${pagesCount}`
             ).toPromise();
           }
         }
@@ -1479,9 +1496,12 @@ private normalizePdfUrl(rawUrl: string): string {
           for (const excel of excelLinks) {
             backendForm.append('excelLinks', JSON.stringify(excel));
           }
-
+          //  await this.http.post(
+          //   'http://localhost:8080/api/v1/afs-digitization/afs-excel-file',
+          //   backendForm
+          // ).toPromise();
           await this.http.post(
-            'http://localhost:8080/api/v1/afs-digitization/afs-excel-file',
+            environment.api.url +'afs-digitization/afs-excel-file',
             backendForm
           ).toPromise();
 
@@ -1517,7 +1537,8 @@ logsData: any = null;
       return;
     }
 
-    const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${requestId}`;
+    const url = `${environment.api.url}afs-digitization/fetchRequestLogs?requestId=${requestId}`;
+    // const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${requestId}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
         if (res.success && res.logs.length > 0) {
@@ -1560,7 +1581,8 @@ async fetchDigitizedTimestamps(files: any[]) {
               try {
                 if (!excel.requestId) return excel;
 
-                const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${excel.requestId}`;
+                const url = `${environment.api.url}afs-digitization/fetchRequestLogs?requestId=${excel.requestId}`;
+                // const url = `http://localhost:8080/api/v1/afs-digitization/fetchRequestLogs?requestId=${excel.requestId}`;
                 const res: any = await this.http.get(url).toPromise();
 
                 if (res.success && res.logs?.length > 0) {

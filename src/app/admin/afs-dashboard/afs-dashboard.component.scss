@@ -1417,36 +1417,116 @@ mat-form-field {
 
 
 /* Overlay background */
+/* Overlay background */
 .log-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 3000; /* keep above table */
+  z-index: 3000;
+  backdrop-filter: blur(3px);
 }
 
-/* Log card modal */
+/* Main log card */
 #logCard {
   background: #fff;
-  border-radius: 12px;
-  max-width: 1000px;
-  width: 90%;
+  border-radius: 14px;
+  max-width: 1200px; /* Increased width */
+  width: 95%;
   max-height: 95vh;
   overflow-y: auto;
-  box-shadow: 0px 6px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   position: relative;
+  padding: 1rem 1.8rem; /* Adds breathing space inside */
+  border: 1px solid #dee2e6;
+}
+
+/* Card header */
+#logCard .card-header {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #dee2e6;
 }
 
 /* Close button */
 #logCard .close-btn {
   font-weight: 500;
-  padding: 2px 8px;
+  padding: 3px 10px;
+  border-radius: 6px;
 }
+
+/* Section titles */
+#logCard h6 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+/* List group items for basic info */
+#logCard .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+/* Processing stage cards */
+#logCard .card {
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #fafafa;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Stage header emojis larger */
+#logCard .card h6 {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+/* Status colors */
+.success-card {
+  border-color: #198754;
+  background: #e6f4ea;
+}
+
+.inprogress-card {
+  border-color: #ffc107;
+  background: #fff8e1;
+}
+
+.error-card {
+  border-color: #dc3545 !important;
+  background: #fdecea;
+}
+
+/* Better spacing for card content */
+#logCard .card b {
+  color: #212529;
+}
+
+#logCard p, #logCard li {
+  line-height: 1.5;
+}
+
+/* Scrollbar customization */
+#logCard::-webkit-scrollbar {
+  width: 8px;
+}
+#logCard::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 10px;
+}
+#logCard::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
 
 /* --- Fix for View Logs button only in dashboard --- */
 ::ng-deep td button[mat-button] {
@@ -1511,4 +1591,11 @@ mat-form-field {
   border: 1px solid #ccc;
   border-radius: 4px;
   outline: none;
+}
+
+.border-danger {
+  border: 2px solid #dc3545 !important; /* Bootstrap danger color */
+}
+.border-success {
+  border: 2px solid #198754 !important; /* Bootstrap success green */
 }
