@@ -605,11 +605,11 @@ hasFailedExcelFile(file: any, uploadedBy: string): boolean {
   // storageBaseUrl = environment.STORAGE_BASEURL;
 
 storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
-AWS_STORAGE_URL_STG= "https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com"
+
 
 
 getFullExcelUrl(excel: any): string {
-  return `${this.AWS_STORAGE_URL_STG}${excel.fileUrl}`;
+  return `${environment.STORAGE_BASEURL}${excel.fileUrl}`;
 }
 
 
@@ -1156,13 +1156,13 @@ logout() {
         // --- ULB details ---
         'Form Uploaded On': file.ulbSubmit ? new Date(file.ulbSubmit).toLocaleString() : 'Not Submitted',
         'ULB Digitize Status': ulbStatus,
-        'ULB Excel Link': ulbFile?.fileUrl && ulbFile.fileUrl !== PLACEHOLDER_URL ? `${this.AWS_STORAGE_URL_STG}/${ulbFile.fileUrl}` : 'N/A',
+        'ULB Excel Link': ulbFile?.fileUrl && ulbFile.fileUrl !== PLACEHOLDER_URL ? `${environment.STORAGE_BASEURL}/${ulbFile.fileUrl}` : 'N/A',
         'ULB Digitized On': ulbDigitizedOn,
         'ULB Request ID': ulbFile?.requestId || 'N/A',
 
         // --- AFS details ---
         'AFS Digitize Status': afsStatus,
-        'AFS Excel Link': afsFile?.fileUrl && afsFile.fileUrl !== PLACEHOLDER_URL ? `${this.AWS_STORAGE_URL_STG}/${afsFile.fileUrl}` : 'N/A',
+        'AFS Excel Link': afsFile?.fileUrl && afsFile.fileUrl !== PLACEHOLDER_URL ? `${environment.STORAGE_BASEURL}/${afsFile.fileUrl}` : 'N/A',
         'AFS Digitized On': afsDigitizedOn,
         'AFS Request ID': afsFile?.requestId || 'N/A',
 
