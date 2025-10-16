@@ -418,7 +418,7 @@
                           @if (hasExcelFile(file, 'ULB')) {
                           DIGITIZED
                           @for (excel of getExcelFiles(file, 'ULB'); track excel) {
-                          <a [href]="excel.fileUrl" target="_blank">
+                          <a [href]="getFullExcelUrl(excel)" target="_blank">
                             excelfile.xlsx
                           </a>
                           }
@@ -443,7 +443,7 @@
                             @if (hasExcelFile(file, 'AFS')) {
                             DIGITIZED
                             @for (excel of getExcelFiles(file, 'AFS'); track excel) {
-                            <a [href]="excel.fileUrl" target="_blank">
+                            <a [href]="getFullExcelUrl(excel)" target="_blank">
                               excelfile.xlsx
                             </a>
                             }
