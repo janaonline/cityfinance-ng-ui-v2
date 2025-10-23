@@ -1416,8 +1416,12 @@ private normalizePdfUrl(rawUrl: string): string {
 
           let digitizeResp: any;
           try {
+            // digitizeResp = await this.http.post(
+            //   "http://3.109.105.81/AFS_Digitization",
+            //   formData
+            // ).toPromise();
             digitizeResp = await this.http.post(
-              "http://3.109.105.81/AFS_Digitization",
+              environment.api.url3 + "digitization/AFS_Digitization",
               formData
             ).toPromise();
           } catch (error: any) {
