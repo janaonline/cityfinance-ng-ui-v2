@@ -1,6 +1,8 @@
 export const environment = {
   api: {
     url: 'https://staging.cityfinance.in/api/v1/',
+    url2: 'https://staging.cityfinance.in/api/v2/',
+    url3: 'https://staging.cityfinance.in/api/v3/',
   },
   prefixUrl: '',
   environment: 'staging_local',
