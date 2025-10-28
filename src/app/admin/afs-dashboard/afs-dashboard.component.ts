@@ -787,6 +787,7 @@ getFullExcelUrl(excel: any): string {
           }
 
           const rows = matchedPdfs.map((file: any) => ({
+            docType: this.selectedDocType,
             stateName,
             cityName: city.name,
             ulbCode: city.code || '',
