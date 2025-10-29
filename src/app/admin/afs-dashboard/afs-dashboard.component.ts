@@ -1440,7 +1440,8 @@ private normalizePdfUrl(rawUrl: string): string {
             excelLinks.push({
               url: digitizeResp.S3_Excel_Storage_Link,
               requestId: digitizeResp.request_id,
-              source: sourceType
+              source: sourceType,
+              confidenceScore: digitizeResp?.overall_confidence_score || null,
             });
           }
 
@@ -1454,7 +1455,8 @@ private normalizePdfUrl(rawUrl: string): string {
                 .flatMap(group => group.items)
                 .find(doc => doc.key === this.selectedDocType)?.name || '',
               requestIds: [digitizeResp.request_id],
-              failedSource: sourceType
+              failedSource: sourceType,
+              confidenceScore: digitizeResp?.overall_confidence_score || null,
             };
 
             console.log(`💾 Saving failed ${sourceType} requestId:`, metaBody);
