@@ -1033,7 +1033,6 @@ export class AfsDashboardComponent implements OnInit {
     } else {
       this.populationCategories = this.filters.populationCategories;
     }
-    console.log('Population Categories after state selection:', this.populationCategories);
     this.onPopulationOrStateChange();
     this.stateDropdownOpen = false;
 
