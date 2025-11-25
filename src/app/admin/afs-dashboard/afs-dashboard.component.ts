@@ -57,12 +57,13 @@ export class AfsDashboardComponent implements OnInit {
   role = '';
   designation = '';
   lastLoginTime: string | null = null;
-  
+
   showPopup = false;
   showMetricsPopup = false;
   showDatePopup = false;
   //userMetrics = { digitizedFiles: 0, digitizedPages: 0, failedFiles: 0 ,updatedAt: '' };
   globalMetrics = { digitizedFiles: 0, digitizedPages: 0, failedFiles: 0, updatedAt: '' };
+  populationCategories: string[] = [];
 
 
   constructor(private router: Router, private http: HttpClient,) { }
@@ -99,18 +100,18 @@ export class AfsDashboardComponent implements OnInit {
   digitizedEndDate: Date | null = null;
   today = new Date();
 
-  
- 
 
- 
+
+
+
 
   selectedDigitizeStatus: string = '';
-filterByDigitizeStatus(): void {
-  if (!this.selectedDigitizeStatus) {
-    this.filteredFiles = [...this.allFilteredFiles];
-    return;
-  }
-  this.digitizedStartDate = null;
+  filterByDigitizeStatus(): void {
+    if (!this.selectedDigitizeStatus) {
+      this.filteredFiles = [...this.allFilteredFiles];
+      return;
+    }
+    this.digitizedStartDate = null;
     this.digitizedEndDate = null;
     this.showDatePopup = false;
 
@@ -119,33 +120,33 @@ filterByDigitizeStatus(): void {
     this.showUploadedDatePopup = false;
 
 
-  this.filteredFiles = this.allFilteredFiles.filter(file => {
-    const hasUlbExcel = file.excelFiles?.some((f: any) =>
-      f.uploadedBy === 'ULB' && f.fileUrl && !f.fileUrl.includes('placeholder-link.com')
-    );
-    const hasUlbFailed = file.excelFiles?.some((f: any) =>
-      f.uploadedBy === 'ULB' && f.fileUrl && f.fileUrl.includes('placeholder-link.com')
-    );
+    this.filteredFiles = this.allFilteredFiles.filter(file => {
+      const hasUlbExcel = file.excelFiles?.some((f: any) =>
+        f.uploadedBy === 'ULB' && f.fileUrl && !f.fileUrl.includes('placeholder-link.com')
+      );
+      const hasUlbFailed = file.excelFiles?.some((f: any) =>
+        f.uploadedBy === 'ULB' && f.fileUrl && f.fileUrl.includes('placeholder-link.com')
+      );
 
-    const hasAfsExcel = file.excelFiles?.some((f: any) =>
-      f.uploadedBy === 'AFS' && f.fileUrl && !f.fileUrl.includes('placeholder-link.com')
-    );
-    const hasAfsFailed = file.excelFiles?.some((f: any) =>
-      f.uploadedBy === 'AFS' && f.fileUrl && f.fileUrl.includes('placeholder-link.com')
-    );
+      const hasAfsExcel = file.excelFiles?.some((f: any) =>
+        f.uploadedBy === 'AFS' && f.fileUrl && !f.fileUrl.includes('placeholder-link.com')
+      );
+      const hasAfsFailed = file.excelFiles?.some((f: any) =>
+        f.uploadedBy === 'AFS' && f.fileUrl && f.fileUrl.includes('placeholder-link.com')
+      );
 
-    let status = 'NOT DIGITIZED';
-    if (hasUlbExcel || hasAfsExcel) {
-      status = 'DIGITIZED';
-    } else if (hasUlbFailed || hasAfsFailed) {
-      status = 'FAILED';
-    } else if (!file.excelFiles || file.excelFiles.length === 0) {
-      status = 'NOT DIGITIZED';
-    }
+      let status = 'NOT DIGITIZED';
+      if (hasUlbExcel || hasAfsExcel) {
+        status = 'DIGITIZED';
+      } else if (hasUlbFailed || hasAfsFailed) {
+        status = 'FAILED';
+      } else if (!file.excelFiles || file.excelFiles.length === 0) {
+        status = 'NOT DIGITIZED';
+      }
 
-    return status === this.selectedDigitizeStatus;
-  });
-}
+      return status === this.selectedDigitizeStatus;
+    });
+  }
 
   openDatePopup() {
     this.showDatePopup = true;
@@ -170,7 +171,7 @@ filterByDigitizeStatus(): void {
       alert("⚠️ Start date cannot be after End date");
       return;
     }
-     this. selectedDigitizeStatus = '';
+    this.selectedDigitizeStatus = '';
 
 
     this.uploadedStartDate = null;
@@ -210,7 +211,7 @@ filterByDigitizeStatus(): void {
     this.filteredFiles = [...this.allFilteredFiles];
   }
 
- 
+
 
   // Disable selecting future dates
   disableFutureDates = (d: Date | null): boolean => {
@@ -225,63 +226,63 @@ filterByDigitizeStatus(): void {
   }
 
   // Variables for Uploaded Date picker
-uploadedStartDate: Date | null = null;
-uploadedEndDate: Date | null = null;
-showUploadedDatePopup = false;
+  uploadedStartDate: Date | null = null;
+  uploadedEndDate: Date | null = null;
+  showUploadedDatePopup = false;
 
-// Open/Close popup
-openUploadedDatePopup() { this.showUploadedDatePopup = true; }
-closeUploadedDatePopup() { this.showUploadedDatePopup = false; }
+  // Open/Close popup
+  openUploadedDatePopup() { this.showUploadedDatePopup = true; }
+  closeUploadedDatePopup() { this.showUploadedDatePopup = false; }
 
-// Validate uploaded date range
-isUploadedDateRangeValid(): boolean {
-  if (!this.uploadedStartDate || !this.uploadedEndDate) return true;
-  return this.uploadedStartDate <= this.uploadedEndDate;
-}
-
-// Apply date filter
-applyUploadedDateRange(): void {
-  if (!this.uploadedStartDate || !this.uploadedEndDate) return;
-  if (!this.isUploadedDateRangeValid()) {
-    alert("⚠️ Start date cannot be after End date");
-    return;
+  // Validate uploaded date range
+  isUploadedDateRangeValid(): boolean {
+    if (!this.uploadedStartDate || !this.uploadedEndDate) return true;
+    return this.uploadedStartDate <= this.uploadedEndDate;
   }
 
-   this. selectedDigitizeStatus = '';
+  // Apply date filter
+  applyUploadedDateRange(): void {
+    if (!this.uploadedStartDate || !this.uploadedEndDate) return;
+    if (!this.isUploadedDateRangeValid()) {
+      alert("⚠️ Start date cannot be after End date");
+      return;
+    }
+
+    this.selectedDigitizeStatus = '';
 
 
-  
-
-  this.digitizedStartDate = null;
-  this.digitizedEndDate = null;
-  this.showDatePopup = false;
-
-  const start = new Date(this.uploadedStartDate);
-  const end = new Date(this.uploadedEndDate);
-  end.setHours(23, 59, 59, 999);
-
-  // Filter based on ulbSubmit or uploadedAt
-  this.filteredFiles = this.allFilteredFiles.filter(file => {
-    const ulbDate = file.ulbSubmit ? new Date(file.ulbSubmit) : null;
-    const afsDate = file.uploadedAt ? new Date(file.uploadedAt) : null;
-
-    return (
-      (ulbDate && ulbDate >= start && ulbDate <= end) ||
-      (afsDate && afsDate >= start && afsDate <= end)
-    );
-  });
-
-  this.showUploadedDatePopup = false;
-}
 
 
-// Reset date filter
-resetUploadedDateRange(): void {
-  this.uploadedStartDate = null;
-  this.uploadedEndDate = null;
-  this.filteredFiles = [...this.allFilteredFiles];
-  this.showUploadedDatePopup = false;
-}
+    this.digitizedStartDate = null;
+    this.digitizedEndDate = null;
+    this.showDatePopup = false;
+
+    const start = new Date(this.uploadedStartDate);
+    const end = new Date(this.uploadedEndDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Filter based on ulbSubmit or uploadedAt
+    this.filteredFiles = this.allFilteredFiles.filter(file => {
+      const ulbDate = file.ulbSubmit ? new Date(file.ulbSubmit) : null;
+      const afsDate = file.uploadedAt ? new Date(file.uploadedAt) : null;
+
+      return (
+        (ulbDate && ulbDate >= start && ulbDate <= end) ||
+        (afsDate && afsDate >= start && afsDate <= end)
+      );
+    });
+
+    this.showUploadedDatePopup = false;
+  }
+
+
+  // Reset date filter
+  resetUploadedDateRange(): void {
+    this.uploadedStartDate = null;
+    this.uploadedEndDate = null;
+    this.filteredFiles = [...this.allFilteredFiles];
+    this.showUploadedDatePopup = false;
+  }
 
   @HostListener('document:click', ['$event'])
   handleClickOutside(event: Event) {
@@ -307,7 +308,7 @@ resetUploadedDateRange(): void {
     this.loadFilters();
     this.loadGlobalMetrics();
 
-   const userData = localStorage.getItem('userData');
+    const userData = localStorage.getItem('userData');
     if (userData) {
       const user = JSON.parse(userData);
       this.fullName = user.name || 'N/A';
@@ -317,7 +318,7 @@ resetUploadedDateRange(): void {
       this.lastLoginTime = user.updatedAt || user.lastLoginTime || null;
     }
 
-   
+
     // Load filters when component initializes
   }
 
@@ -387,28 +388,28 @@ resetUploadedDateRange(): void {
     pageCount?: number;
     selected?: boolean;
     docType?: string;
-     extraFiles?: { fileName: string; fileUrl: string; docType?: string; pageCount?: number; previewUrl?: string; originalFile?: File; uploadedAt?: string }[];
+    extraFiles?: { fileName: string; fileUrl: string; docType?: string; pageCount?: number; previewUrl?: string; originalFile?: File; uploadedAt?: string }[];
     excelFiles?: { _id: string; s3Key: string; fileUrl: string; requestId: string; uploadedAt: string; uploadedBy: string; digitizedAt?: string; }[];
 
   }[] = [];
 
   hasExcelFile(file: any, uploadedBy: string): boolean {
-  return !!file.excelFiles?.some(
-    (f: any) =>
-      f.uploadedBy === uploadedBy &&
-      f.fileUrl &&
-      !f.fileUrl.includes('placeholder-link.com')
-  );
-}
+    return !!file.excelFiles?.some(
+      (f: any) =>
+        f.uploadedBy === uploadedBy &&
+        f.fileUrl &&
+        !f.fileUrl.includes('placeholder-link.com')
+    );
+  }
 
-hasFailedExcelFile(file: any, uploadedBy: string): boolean {
-  return !!file.excelFiles?.some(
-    (f: any) =>
-      f.uploadedBy === uploadedBy &&
-      f.fileUrl &&
-      f.fileUrl.includes('placeholder-link.com')
-  );
-}
+  hasFailedExcelFile(file: any, uploadedBy: string): boolean {
+    return !!file.excelFiles?.some(
+      (f: any) =>
+        f.uploadedBy === uploadedBy &&
+        f.fileUrl &&
+        f.fileUrl.includes('placeholder-link.com')
+    );
+  }
 
 
   getExcelFiles(file: any, uploadedBy: string) {
@@ -604,13 +605,13 @@ hasFailedExcelFile(file: any, uploadedBy: string): boolean {
 
   // storageBaseUrl = environment.STORAGE_BASEURL;
 
-storageBaseUrl =  'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
+  storageBaseUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com'
 
 
 
-getFullExcelUrl(excel: any): string {
-  return `${environment.STORAGE_BASEURL}${excel.fileUrl}`;
-}
+  getFullExcelUrl(excel: any): string {
+    return `${environment.STORAGE_BASEURL}${excel.fileUrl}`;
+  }
 
 
 
@@ -734,10 +735,10 @@ getFullExcelUrl(excel: any): string {
     // const afsUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-file';
     // const excelUrlBase = 'http://localhost:8080/api/v1/afs-digitization/afs-excel-file';
 
-    const baseUrl = environment.api.url +'ledger/ulb-financial-data/files';
-    const statusUrlBase = environment.api.url +'afs-digitization/afs-form-status-by-ulb';
-    const afsUrlBase = environment.api.url +'afs-digitization/afs-file';
-    const excelUrlBase = environment.api.url +'afs-digitization/afs-excel-file';
+    const baseUrl = environment.api.url + 'ledger/ulb-financial-data/files';
+    const statusUrlBase = environment.api.url + 'afs-digitization/afs-form-status-by-ulb';
+    const afsUrlBase = environment.api.url + 'afs-digitization/afs-file';
+    const excelUrlBase = environment.api.url + 'afs-digitization/afs-excel-file';
 
     const financialYear = this.selectedYear;
     const auditType = this.isAudited;
@@ -824,7 +825,7 @@ getFullExcelUrl(excel: any): string {
       );
     });
 
-     forkJoin(requests).subscribe({
+    forkJoin(requests).subscribe({
       next: async (results: any[]) => {
         let mergedFiles = results.flat()
           .filter((file: any) => file.fileName !== 'No data available' && file.fileName !== 'Error loading data');
@@ -949,7 +950,7 @@ getFullExcelUrl(excel: any): string {
 
     // Filter all cities of the selected state
     const stateCities = this.filters.allCities.filter(city =>
-      !selectedState || city.stateId === selectedState
+      selectedState === 'all' || city.stateId === selectedState
     );
 
     // Cities that match both state and population category
@@ -1013,18 +1014,26 @@ getFullExcelUrl(excel: any): string {
   stateDropdownOpen = false;
 
   get filteredStates() {
+    const allElement = { _id: 'all', name: 'All' };
     if (!this.stateSearchText.trim()) {
-      return this.filters.states;
+      return [allElement, ...this.filters.states];
     }
 
     const search = this.stateSearchText.toLowerCase();
-    return this.filters.states.filter(state =>
+    const searchedList = this.filters.states.filter(state =>
       state.name.toLowerCase().includes(search)
     );
+    return [allElement, ...searchedList];
   }
   selectState(state: any) {
     this.selectedState = state._id;
     this.stateSearchText = state.name; // display selected name
+    if (this.selectedState === 'all') {
+      this.populationCategories = this.filters.populationCategories.filter((ele) => ele !== 'All');
+    } else {
+      this.populationCategories = this.filters.populationCategories;
+    }
+    console.log('Population Categories after state selection:', this.populationCategories);
     this.onPopulationOrStateChange();
     this.stateDropdownOpen = false;
 
@@ -1070,7 +1079,7 @@ getFullExcelUrl(excel: any): string {
     return Math.round((this.globalMetrics.digitizedFiles / total) * 100);
   }
 
-logout() {
+  logout() {
     localStorage.clear();
     this.router.navigate(['/login']);
   }
@@ -1106,7 +1115,7 @@ logout() {
   downloadExcel() {
     const STORAGE_BASEURL = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
     const PLACEHOLDER_URL = 'https://placeholder-link.com/none';
-    
+
 
     const exportData: any[] = this.filteredFiles.map(file => {
       const ulbFile = file.excelFiles?.find((f: any) => f.uploadedBy === 'ULB');
@@ -1292,8 +1301,8 @@ logout() {
 
   showDigitizePopup = false;
   digitizeStatus: string = '';
-   digitizePopupMessage: string = '';
-   
+  digitizePopupMessage: string = '';
+
   openDigitizePopup() {
     this.showDigitizePopup = true;
     this.digitizeStatus = '';
@@ -1337,7 +1346,7 @@ logout() {
     this.digitizeStatus = '';
   }
 
-  
+
   private async fetchPdfAsBlob(url: string): Promise<Blob> {
     if (!url) {
       throw new Error("Invalid file URL");
@@ -1374,7 +1383,7 @@ logout() {
   }
 
 
-private normalizePdfUrl(rawUrl: string): string {
+  private normalizePdfUrl(rawUrl: string): string {
     if (!rawUrl) return '';
     let fullUrl = rawUrl.trim();
     if (fullUrl.startsWith('https//')) {
@@ -1386,8 +1395,8 @@ private normalizePdfUrl(rawUrl: string): string {
     return fullUrl;
   }
 
- 
- async proceedDigitization() {
+
+  async proceedDigitization() {
     if (this.selectedFilesCount === 0) return;
 
     this.digitizeStatus = 'processing';
@@ -1431,9 +1440,9 @@ private normalizePdfUrl(rawUrl: string): string {
           }
 
           console.log(`📄 ${sourceType} Digitization API Response:`, digitizeResp);
-           if (digitizeResp?.message) {
-            alert(digitizeResp.message); 
-           }
+          if (digitizeResp?.message) {
+            alert(digitizeResp.message);
+          }
           // === CASE 1: Excel successfully generated ===
           if (digitizeResp?.S3_Excel_Storage_Link) {
 
@@ -1462,13 +1471,13 @@ private normalizePdfUrl(rawUrl: string): string {
             console.log(`💾 Saving failed ${sourceType} requestId:`, metaBody);
 
             await this.http.post(
-              environment.api.url +'afs-digitization/save-request-only',
+              environment.api.url + 'afs-digitization/save-request-only',
               metaBody
             ).toPromise();
 
             console.log(`✅ Saved failed ${sourceType} requestId for ${fileRow['ulbId']}`);
           }
-           if (digitizeResp?.S3_Excel_Storage_Link) {
+          if (digitizeResp?.S3_Excel_Storage_Link) {
             // ✅ Successful file
 
             const fullPdfUrl = this.normalizePdfUrl(pdf.fileUrl || pdf.previewUrl || '');
@@ -1477,7 +1486,7 @@ private normalizePdfUrl(rawUrl: string): string {
             // await this.http.get(
             //   `http://localhost:8080/api/v1/afs-digitization/afs-metrics?update=true&success=true&pages=${pagesCount}`
             // ).toPromise();
-             await this.http.get(
+            await this.http.get(
               `${environment.api.url}afs-digitization/afs-metrics?update=true&success=true&pages=${pagesCount}`
             ).toPromise();
           } else {
@@ -1516,7 +1525,7 @@ private normalizePdfUrl(rawUrl: string): string {
           //   backendForm
           // ).toPromise();
           await this.http.post(
-            environment.api.url +'afs-digitization/afs-excel-file',
+            environment.api.url + 'afs-digitization/afs-excel-file',
             backendForm
           ).toPromise();
 
@@ -1538,11 +1547,11 @@ private normalizePdfUrl(rawUrl: string): string {
 
 
 
-showLogsPopup = false;
-selectedRequestId: string | null = null;
-logsData: any = null;
+  showLogsPopup = false;
+  selectedRequestId: string | null = null;
+  logsData: any = null;
 
- openLogs(requestId: string) {
+  openLogs(requestId: string) {
     this.showLogsPopup = true;
     this.selectedRequestId = requestId;
     this.logsData = null; // reset while loading
@@ -1586,7 +1595,7 @@ logsData: any = null;
     this.logsData = null;
   }
 
-async fetchDigitizedTimestamps(files: any[]) {
+  async fetchDigitizedTimestamps(files: any[]) {
     const updatedFiles = await Promise.all(
       files.map(async (file) => {
         if (file.excelFiles?.length) {
@@ -1622,7 +1631,7 @@ async fetchDigitizedTimestamps(files: any[]) {
   }
 
 
-  
-  
+
+
 
 }
