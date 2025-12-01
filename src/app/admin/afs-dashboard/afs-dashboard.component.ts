@@ -4,7 +4,7 @@ import { Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { ElementRef, QueryList, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PDFDocument } from 'pdf-lib';
@@ -13,15 +13,24 @@ import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../../src/environments/environment';
 
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from "@angular/material/card";
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { IState } from '../../core/models/state/state';
-import { IULB } from '../../core/models/ulb';
-import * as XLSX from 'xlsx';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSortModule } from '@angular/material/sort';
+import { MatTableModule } from '@angular/material/table';
 import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
+import { IState } from '../../core/models/state/state';
+import { AfsFilterComponent, FilterValues } from './afs-filter/afs-filter.component';
+import { AfsTableComponent } from "./afs-table/afs-table.component";
+import { AfsService } from './afs.service';
+
 const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
 
@@ -30,27 +39,125 @@ interface Years {
   _id: string;
 }
 
+
+// interface State {
+//   _id: string;
+//   name: string;
+// }
+
+// interface City {
+//   name: string;
+//   stateId: string;
+//   populationCategory: string;
+// }
+
+// interface RawRow {
+//   position: number;
+//   city: string;
+//   stateId: string;
+//   stateName: string;
+//   populationCategory: string;
+//   year: string;
+//   docType: string;
+//   docTypeLabel: string;
+//   isAudited: 'audited' | 'unAudited';
+// }
 @Component({
   standalone: true,
   selector: 'app-afs-dashboard',
-  imports: [CommonModule, HttpClientModule, FormsModule, MatFormFieldModule,
+  imports: [CommonModule, FormsModule, MatFormFieldModule,
     MatInputModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatButtonModule,
     MatIconModule,
-
-  ],
+    MatCheckboxModule,
+    MatCardModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatProgressSpinnerModule,
+    // PopulationPipe,
+    AfsFilterComponent, AfsTableComponent],
   templateUrl: './afs-dashboard.component.html',
   styleUrl: './afs-dashboard.component.scss'
 })
-
 export class AfsDashboardComponent implements OnInit {
   // username = localStorage.getItem('loggedInUser') || 'User';
   // fullName = localStorage.getItem('userFullName') || '';
   // email = localStorage.getItem('userEmail') || '';
   // role = localStorage.getItem('userRole') || '';
   // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
+
+
+
+  onFiltersChanged(filters: FilterValues): void {
+    // this.filters = {
+    //   // stateId: this.selectedState,
+    //   // populationCategory: this.selectedPopulation,
+    //   // ulbId: this.selectedCities,
+    //   yearId: '606aadac4dff55e6c075c507',
+    //   docType: 'bal_sheet_schedules',
+    //   auditType: 'audited'
+    // };
+    // const {
+    //   stateId,
+    //   populationCategory,
+    //   ulbId,
+    //   yearId,
+    //   docType,
+    //   isAudited
+    // } = filters;
+
+    // const filtered = this.allRows.filter((row) => {
+    //   if (stateId && row.stateId !== stateId) return false;
+    //   if (
+    //     populationCategory &&
+    //     populationCategory !== 'All ULBs' &&
+    //     row.populationCategory !== populationCategory
+    //   ) {
+    //     return false;
+    //   }
+    //   if (cities && cities.length > 0 && !cities.includes(row.city)) {
+    //     return false;
+    //   }
+    //   if (year && row.year !== year) return false;
+    //   if (docType && row.docType !== docType) return false;
+    //   if (docType !== '16th_fc' && isAudited && row.isAudited !== isAudited) {
+    //     return false;
+    //   }
+    //   return true;
+    // });
+
+    // this.dataSource.data = filtered;
+    // this.activeFilterSummary = this.buildFilterSummary(filters);
+    console.log('Appllied filters:', filters);
+    // this.getAfsList();
+
+  }
+
+
+
+  // private buildFilterSummary(filters: FilterValues): string {
+  //   const parts: string[] = [];
+
+  //   if (filters.stateName) parts.push(`State: ${filters.stateName}`);
+  //   if (filters.populationCategory)
+  //     parts.push(`Population: ${filters.populationCategory}`);
+  //   if (filters.cities?.length)
+  //     parts.push(`Cities: ${filters.cities.join(', ')}`);
+  //   if (filters.yearId) parts.push(`Year: ${filters.yearId}`);
+  //   if (filters.docType) parts.push(`Doc Type: ${filters.docType}`);
+  //   if (filters.docType !== '16th_fc' && filters.isAudited) {
+  //     parts.push(
+  //       `Audit: ${filters.isAudited === 'audited' ? 'Audited' : 'UnAudited'}`
+  //     );
+  //   }
+
+  //   return parts.length ? parts.join(' | ') : '';
+  // }
+
+
 
   fullName = '';
   email = '';
@@ -66,9 +173,16 @@ export class AfsDashboardComponent implements OnInit {
   populationCategories: string[] = [];
 
 
-  constructor(private router: Router, private http: HttpClient,) { }
+  constructor(private router: Router, private http: HttpClient,
+    private afsService: AfsService,
+  ) { }
 
   filters = {
+    docType: 'bal_sheet_schedules',
+    yearId: '606aadac4dff55e6c075c507',
+    auditType: 'audited',
+
+
     states: [] as IState[],
     populationCategories: [] as string[],
     allCities: [] as any[],
@@ -82,6 +196,16 @@ export class AfsDashboardComponent implements OnInit {
     }[]
 
   };
+
+  onFiltersChanged1(event: any) {
+    this.selectedState = event.stateId;
+    this.selectedPopulation = event.populationCategory;
+    this.selectedCities = event.cities;
+    this.selectedYear = event.year;
+    this.selectedDocType = event.docType;
+    this.isAudited = event.isAudited;
+    this.applyFilters();
+  }
 
   selectedState = '';
   selectedPopulation = '';
@@ -304,6 +428,7 @@ export class AfsDashboardComponent implements OnInit {
     //   this.router.navigate(['/login']);
     //   return;
     // }
+    // this.getAfsList();
     this.getAFSMetrics();
     this.loadFilters();
     this.loadGlobalMetrics();

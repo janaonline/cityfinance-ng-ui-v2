@@ -1,0 +1,33 @@
+.table-wrapper {
+    padding-bottom: 1rem;
+}
+
+.table-container {
+    max-height: calc(100vh - 220px);
+    overflow: auto;
+}
+
+mat-card {
+    width: 100%;
+}
+
+.table-container {
+    position: relative;
+    max-height: calc(100vh - 220px);
+    overflow: auto;
+}
+
+.table-loader-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.7); // or rgba(0,0,0,0.05) for subtle
+    pointer-events: none; // table still non-clickable visually but avoids weird hover
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}

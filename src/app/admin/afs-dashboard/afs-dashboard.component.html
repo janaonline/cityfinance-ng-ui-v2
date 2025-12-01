@@ -1,3 +1,28 @@
+<div class="container-fluid mt-3">
+  <div class="row">
+    <!-- LEFT: Filter Sidebar -->
+    <div class="col-12 mb-3" style="width: 20%">
+      <div class="filter-sidebar p-3 bg-white shadow-sm h-100">
+        <app-afs-filter (filtersChanged)="onFiltersChanged($event)"></app-afs-filter>
+        <!-- <app-afs-filter
+          [states]="states"
+          [cities]="cities"
+          [filters]="filtersConfig"
+          (filtersChanged)="onFiltersChanged($event)"
+        ></app-afs-filter> -->
+        <!-- <app-afs-filter (filtersChanged)="onFiltersChanged($event)"></app-afs-filter> -->
+      </div>
+    </div>
+
+    <!-- RIGHT: Table -->
+    <div class="col-12" style="width: 80%">
+      <!-- <div class="table-panel p-3 bg-white shadow-sm"> -->
+      <app-afs-table> </app-afs-table>
+      <!-- </div> -->
+    </div>
+  </div>
+</div>
+
 <div class="dashboard-page font-base">
   <div class="dashboard-layout">
     <!-- Filters -->
