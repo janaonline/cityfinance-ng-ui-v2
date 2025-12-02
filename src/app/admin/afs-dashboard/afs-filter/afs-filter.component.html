@@ -5,27 +5,6 @@
     </div>
     <!-- Reset -->
 
-    <!-- <mat-form-field>
-    <mat-label>State</mat-label>
-    <mat-select [(ngModel)]="stateSearchText" multiple>
-      @for (state of filteredStates; track state) {
-        <mat-option [value]="state">{{ state.name }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field> -->
-    <!-- <div class="d-flex justify-content-between align-items-center mb-1 mt-2">
-      <span class="filter-label">State</span>
-
-      <div class="btn-group-sm">
-        <button type="button" class="btn btn-sm btn-link" (click)="selectStateStatus()">
-          Select all
-        </button>
-        |
-        <button type="button" class="btn btn-sm btn-link" (click)="selectStateStatus()">
-          Deselect all
-        </button>
-      </div>
-    </div> -->
     <mat-form-field appearance="outline" class="w-100 mt-3">
       <mat-label>State</mat-label>
 
@@ -60,32 +39,6 @@
       </mat-select>
     </mat-form-field>
 
-    <!-- State -->
-    <!-- <label>State</label> -->
-    <!-- <mat-form-field appearance="outline" class="full-width mt-3">
-      <mat-label>State</mat-label>
-      <input
-        matInput
-        type="text"
-        placeholder="Search state..."
-        [(ngModel)]="stateSearchText"
-        (input)="selectedState = []; stateDropdownOpen = true"
-        (focus)="stateDropdownOpen = true"
-        [matAutocomplete]="stateAuto"
-        class="state-search-box"
-      />
-      <mat-autocomplete
-        #stateAuto="matAutocomplete"
-        (optionSelected)="selectState($event.option.value)"
-      >
-        @for (s of filteredStates; track s._id) {
-          <mat-option [value]="s" [class.selected]="selectedState.includes(s._id)">
-            {{ s.name }}
-          </mat-option>
-        }
-      </mat-autocomplete>
-    </mat-form-field> -->
-
     <!-- Population Category -->
     <!-- <label>Population Category</label> -->
     <mat-form-field appearance="outline" class="full-width">
@@ -103,41 +56,51 @@
     </mat-form-field>
 
     <!-- City search -->
-    <label class="filter-label">City</label>
-    <mat-form-field appearance="outline" class="mat-small w-100">
+    <!-- <label class="filter-label">City</label> -->
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>City</mat-label>
+
       <input
         matInput
-        type="text"
-        formControlName="ulbId"
-        placeholder="Search city..."
-        class="city-search-box"
+        formControlName="citySearch"
+        [matAutocomplete]="cityAuto"
+        placeholder="Type to search..."
       />
-    </mat-form-field>
 
-    <!-- City multi-select (shown only when state + population selected) -->
-    @if (selectedState && selectedPopulation && false) {
-      <div>
-        <mat-selection-list class="city-checkboxes scroll-box">
-          @for (c of filteredCities; track $index) {
-            <mat-list-option
-              [value]="c.name"
-              [selected]="selectedCities.includes(c.name)"
-              (selectionChange)="toggleCitySelection(c)"
+      <!-- Clear all selected cities -->
+      @if (selectedCityIds.length) {
+        <button mat-icon-button matSuffix type="button" (click)="clearCities()">
+          <mat-icon>clear</mat-icon>
+        </button>
+      }
+      <mat-autocomplete
+        #cityAuto="matAutocomplete"
+        autoActiveFirstOption="false"
+        (optionSelected)="$event.option.deselect()"
+      >
+        @for (c of filteredCities; track c) {
+          <mat-option [value]="c.name" (click)="$event.stopPropagation(); toggleCity(c)">
+            <mat-checkbox
+              [checked]="isSelected(c)"
+              (click)="$event.stopPropagation()"
+              (change)="toggleCity(c)"
             >
               {{ c.name }}
-            </mat-list-option>
-          }
-        </mat-selection-list>
-      </div>
-    }
+            </mat-checkbox>
+          </mat-option>
+        }
+      </mat-autocomplete>
+      <mat-hint>{{ selectedCityIds.length }} cities selected</mat-hint>
+    </mat-form-field>
 
     <!-- Year -->
-    <label>Year</label>
+    <!-- <label>Year</label> -->
     <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Year</mat-label>
       <mat-select placeholder="Select Year" formControlName="yearId">
         <mat-option [value]="''">Select Year</mat-option>
         @for (y of years; track $index) {
-          <mat-option [value]="y.key">{{ y.value }}</mat-option>
+          <mat-option [value]="y._id">{{ y.value }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -159,15 +122,12 @@
     </div>
 
     <label>Audit Type</label>
-    <!-- Audited / UnAudited (hide for 16th_fc) -->
-    @if (selectedDocType !== '16th_fc') {
-      <div class="audited-radio-container radio-options">
-        <mat-radio-group formControlName="auditType">
-          <mat-radio-button value="audited">Audited</mat-radio-button>
-          <mat-radio-button value="unAudited">UnAudited</mat-radio-button>
-        </mat-radio-group>
-      </div>
-    }
+    <div class="audited-radio-container radio-options">
+      <mat-radio-group formControlName="auditType">
+        <mat-radio-button value="audited">Audited</mat-radio-button>
+        <mat-radio-button value="unAudited">UnAudited</mat-radio-button>
+      </mat-radio-group>
+    </div>
 
     <!-- Apply button -->
     <button mat-raised-button color="primary" class="apply-btn" (click)="applyFilters()">

@@ -1,5 +1,5 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { Component, ViewChild, AfterViewInit, OnInit } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, OnInit, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -14,6 +14,8 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { AfsService } from '../afs.service';
 import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
 import { DatePipe, NgClass } from '@angular/common';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 
 interface Years {
   name: string;
@@ -59,6 +61,7 @@ interface RawRow {
     MatPaginatorModule,
     MatSortModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     ToStorageUrlPipe,
     DatePipe,
     NgClass,
@@ -68,22 +71,14 @@ interface RawRow {
 })
 export class AfsTableComponent implements AfterViewInit, OnInit {
 
+  readonly dialog = inject(MatDialog);
+  readonly afsService = inject(AfsService);
+
   filters = {
     docType: 'bal_sheet_schedules',
-    yearId: '606aadac4dff55e6c075c507',
+    yearId: '606aaf854dff55e6c075d219',
     auditType: 'audited',
-    states: [] as State[],
-    populationCategories: [] as string[],
-    allCities: [] as any[],
-
-    cities: [] as any[],
-    years: [] as Years[],
-    // documentTypes: [] as { key: string, name: string }[]
-    documentTypes: [] as {
-      heading: string;
-      items: { key: string; name: string }[];
-    }[]
-
+    populationCategory: '1M–4M'
   };
 
   MASTER_FORM_STATUS: { [key: number]: string } = {
@@ -100,16 +95,6 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     10: 'Returned by PMU',
     11: 'Submission Acknowledged by PMU',
   };
-  states: State[] = [
-    { _id: 'assam', name: 'Assam' },
-    { _id: 'karnataka', name: 'Karnataka' }
-  ];
-
-  cities: City[] = [
-    { name: 'Guwahati', stateId: 'assam', populationCategory: '1 Million - 4 Million' },
-    { name: 'Silchar', stateId: 'assam', populationCategory: '100 Thousand - 500 Thousand' },
-    { name: 'Bengaluru', stateId: 'karnataka', populationCategory: '4 Million+' }
-  ];
 
 
 
@@ -138,7 +123,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
   selection = new SelectionModel<RawRow>(true, []);
 
   isTableLoading: boolean = false;
-  constructor(private afsService: AfsService,) { }
+  // constructor(private afsService: AfsService,) { }
 
   ngOnInit(): void {
     this.getAfsList();
@@ -206,8 +191,8 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     'formStatus',
     'digitizeStatus',
     // 'populationCategory',
-    'year',
-    'docType',
+    // 'year',
+    // 'docType',
     // 'auditStatus'
     'formUploadedOn',
     'digitizedOn',
@@ -222,5 +207,16 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
   ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+  }
+
+  openLogDialog(requestId: string): void {
+    // Implement dialog opening logic here
+    // console.log('Open log dialog for Request ID:', requestId);
+    const dialogRef = this.dialog.open(AfsLogModalComponent, { data: { requestId }, panelClass: 'col-8' });
+
+    dialogRef.afterClosed().subscribe(result => {
+      // console.log(`Dialog result: ${result}`);
+    });
+
   }
 }
