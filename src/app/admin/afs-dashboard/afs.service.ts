@@ -28,4 +28,45 @@ export class AfsService {
     const url = `${environment.api.url2}afs-digitization/afs-list`;
     return this.http.get<any>(url, { params });
   }
+  // to be migrate to api
+
+  uploadAfsFile(formData: FormData) {
+    const url = `${environment.api.url}afs-digitization/afs-file`;
+    // const response: any = await this.http.post(url, formData).toPromise();
+    // const url = `${environment.api.url2}afs-digitization/upload-afs-file`;
+    return this.http.post<any>(url, formData);
+  }
+
+  getAfsFile(params: { ulbId: string; financialYear: string; auditType: string; docType: string }) {
+    const url = `${environment.api.url}afs-digitization/afs-file`;
+    return this.http.get<any>(url, { params });
+  }
+
+  digitizeFile(formData: any) {
+    for (const [key, value] of formData.entries()) {
+      console.log(key, value, value instanceof Blob ? '(Blob/File)' : '');
+    }
+    return this.http.post(
+      environment.api.url3 + "digitization/AFS_Digitization",
+      formData
+    );
+  }
+
+  saveDigitizeReq(metaBody: any) {
+    return this.http.post(
+      environment.api.url + 'afs-digitization/save-request-only',
+      metaBody
+    )
+  }
+
+  getMetrics(params: any) {
+    this.http.get(`${environment.api.url}afs-digitization/afs-metrics`, { params })
+  }
+
+  afsExcelFile(backendForm: any) {
+    this.http.post(
+      environment.api.url + 'afs-digitization/afs-excel-file',
+      backendForm
+    )
+  }
 }

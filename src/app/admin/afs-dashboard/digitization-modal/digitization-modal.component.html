@@ -1,0 +1,41 @@
+<!-- <div class="popup-box">
+  <h3>Confirm Digitization</h3>
+  <p [innerHTML]="digitizePopupMessage"></p> -->
+
+<!-- @if (digitizeStatus === '') {
+    <div>
+      <button class="proceed-btn" (click)="proceedDigitization()">Proceed</button>
+      <button class="cancel-btn" (click)="closeDigitizePopup()">Cancel</button>
+    </div>
+  }
+  @if (digitizeStatus === 'processing') {
+    <div class="loader-container">
+      <div class="spinner"></div>
+      <p style="margin-top: 10px; font-weight: bold">Digitization in progress...</p>
+    </div>
+  }
+  @if (digitizeStatus === 'done') {
+    <div>
+      <p style="color: green; font-weight: bold">Done</p>
+      <button (click)="closeDigitizePopup()">Close</button>
+    </div>
+  } -->
+<!-- </div> -->
+<h2 mat-dialog-title>Confirm Digitization</h2>
+<mat-dialog-content>
+  <p>{{ digitizePopupMessage }}</p>
+  <!-- @if (digitizeStatus === 'processing') { -->
+  <div class="loader-container justify-content-center">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p style="margin-top: 10px; font-weight: bold">Digitization in progress...</p>
+  </div>
+  <!-- } -->
+</mat-dialog-content>
+@if (!digitizeStatus) {
+  <mat-dialog-actions align="center">
+    <button mat-raised-button color="accent" mat-dialog-close (click)="cancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="proceedDigitization()" cdkFocusInitial>
+      Confirm
+    </button>
+  </mat-dialog-actions>
+}

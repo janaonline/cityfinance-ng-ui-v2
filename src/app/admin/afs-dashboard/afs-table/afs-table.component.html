@@ -1,3 +1,66 @@
+<div class="container py-5">
+  <div class="row row-cols-1 row-cols-md-6 g-4">
+    <div class="col">
+      <div class="card h-60 text-center shadow">
+        <div class="card-body">
+          <div class="display-6 text-primary mb-2">
+            <i class="bi bi-people"></i>
+          </div>
+          <h3 class="card-title mb-3">1,234</h3>
+          <p class="card-text text-muted">Active Users</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-80 text-center shadow">
+        <div class="card-body">
+          <div class="display-6 text-success mb-2">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <h3 class="card-title mb-3">56%</h3>
+          <p class="card-text text-muted">Growth Rate</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-80 text-center shadow">
+        <div class="card-body">
+          <div class="display-6 text-warning mb-2">
+            <i class="bi bi-star"></i>
+          </div>
+          <h3 class="card-title mb-3">4.8</h3>
+          <p class="card-text text-muted">Average Rating</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-80 text-center shadow">
+        <div class="card-body">
+          <div class="display-6 text-danger mb-2">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <h3 class="card-title mb-3">98.3%</h3>
+          <p class="card-text text-muted">Uptime</p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card h-80 text-center shadow">
+        <div class="card-body">
+          <div class="display-6 text-danger mb-2">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <h3 class="card-title mb-3">98.3%</h3>
+          <p class="card-text text-muted">Uptime</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="table-wrapper">
   <mat-card>
     <mat-card-title class="mx-3 mt-3">City Documents</mat-card-title>
@@ -52,34 +115,95 @@
 
         <!-- City -->
         <ng-container matColumnDef="ulbUploadedPdf">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Ulb Uploaded</th>
+          <th mat-header-cell *matHeaderCellDef style="width: 180px">Ulb Uploaded</th>
           <td mat-cell *matCellDef="let row">
             @if (row[`${filters.docType}`]) {
-              <a [href]="row[`${filters.docType}`].url | toStorageUrl" target="_blank">
-                {{ row[`${filters.docType}`].name}}</a
+              ULB :
+              <a
+                [href]="row[`${filters.docType}`].url | toStorageUrl"
+                target="_blank"
+                [matTooltip]="row[`${filters.docType}`].name"
               >
+                <!-- {{ row[`${filters.docType}`].name}} -->
+                <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
+                <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
+              </a>
+              <strong
+                >{{ row[`${filters.docType}`].url| toStorageUrl | pdfPageCount | async }}</strong
+              >
+              pages
             }
+            <br />
+            @if (row.afsfiles) {
+              <div class="mt-5">
+                AFS :
+                <a [href]="'/' + row.afsfiles.s3Key | toStorageUrl" target="_blank">
+                  <!-- {{ row[`${filters.docType}`].name}} -->
+                  <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
+                  <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
+                </a>
+                <strong>
+                  {{ '/' + row.afsfiles.s3Key | toStorageUrl | pdfPageCount | async }}</strong
+                >
+                pages
+              </div>
+            }
+            <div [ngClass]="!row.afsfiles ? 'mt-5' : ''">
+              <button
+                class="btn btn-sm btn-primary upload-btn shadow"
+                style="margin-bottom: 4px"
+                (click)="setActiveRow(row); triggerFileInput(row)"
+              >
+                {{ row.afsfiles ? 'Re-upload' : 'Upload' }}
+              </button>
+              <input
+                type="file"
+                accept="application/pdf"
+                style="display: none"
+                (change)="handleFileUpload($event, row)"
+                #fileInput
+                [attr.data-id]="row.cityName + row.ulbCode"
+              />
+            </div>
           </td>
         </ng-container>
         <ng-container matColumnDef="formStatus">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Form Status</th>
           <td mat-cell *matCellDef="let row">
             {{ MASTER_FORM_STATUS[row.currentFormStatus] || 'Unknown' }}
+            <br />
+            <div class="mt-5">N/A</div>
           </td>
         </ng-container>
         <ng-container matColumnDef="digitizeStatus">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Digitized Status</th>
           <td mat-cell *matCellDef="let row">
-            @let statusText = getStatusText(row);
+            @let statusText = getStatusText(row, 0);
             <!-- <span class="badge badge-primary" [ngClass]="">{{ getStatusText(row) }}</span> -->
             <small
-              class="badge rounded-pill text-bg-secondary px-2 py-1"
+              class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
               [ngClass]="{
                 'text-bg-success': statusText === 'Digitized',
                 'text-bg-danger': statusText === 'Failed',
               }"
               >{{ statusText }}
             </small>
+            <br />
+            <div class="mt-5">
+              @if (row.afsfiles) {
+                @let statusText = getStatusText(row, 0);
+                <small
+                  class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
+                  [ngClass]="{
+                    'text-bg-success': statusText === 'Digitized',
+                    'text-bg-danger': statusText === 'Failed',
+                  }"
+                  >{{ statusText }}
+                </small>
+              } @else {
+                N/A
+              }
+            </div>
           </td>
         </ng-container>
 
@@ -92,16 +216,16 @@
               </ng-container> -->
 
         <!-- Year -->
-        <ng-container matColumnDef="year">
+        <!-- <ng-container matColumnDef="year">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Year</th>
           <td mat-cell *matCellDef="let row">{{ row.yearLabel }}</td>
-        </ng-container>
+        </ng-container> -->
 
         <!-- Doc Type -->
-        <ng-container matColumnDef="docType">
+        <!-- <ng-container matColumnDef="docType">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Document Type</th>
           <td mat-cell *matCellDef="let row">{{ row.doctType }}</td>
-        </ng-container>
+        </ng-container> -->
 
         <!-- Audit Status -->
         <!-- <ng-container matColumnDef="auditStatus">
@@ -114,25 +238,59 @@
         <ng-container matColumnDef="formUploadedOn">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Form Uploaded On</th>
           <td mat-cell *matCellDef="let row">
-            {{ row.ulbSubmit | date: 'yyyy-MM-dd HH:mm:ss' }}
+            {{ row.ulbSubmit | date: 'd/M/yyyy, h:mm a' }}
+            <br />
+            <div class="mt-5">
+              @if (row.afsfiles) {
+                {{ row.afsfiles.uploadedAt | date: 'd/M/yyyy, h:mm a' }}
+              } @else {
+                N/A
+              }
+            </div>
           </td>
         </ng-container>
         <ng-container matColumnDef="digitizedOn">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Digitized On</th>
           <td mat-cell *matCellDef="let row">
-            {{ row.afsexcelfiles?.files[0]?.uploadedAt | date: 'yyyy-MM-dd HH:mm:ss' }}
+            {{
+              row.afsexcelfiles
+                ? (row.afsexcelfiles?.files[0]?.uploadedAt | date: 'd/M/yyyy, h:mm a')
+                : 'N/A'
+            }}
+            <br />
+            <div class="mt-5">
+              @if (row.afsfiles && row.afsexcelfiles && row.afsexcelfiles.files.length === 2) {
+                {{ row.afsexcelfiles?.files[1]?.uploadedAt | date: 'd/M/yyyy, h:mm a' }}
+              } @else {
+                N/A
+              }
+            </div>
           </td>
         </ng-container>
         <ng-container matColumnDef="requestIdLog">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>RequestId / Log</th>
           <td mat-cell *matCellDef="let row">
-            <button
-              mat-button
-              color="primary"
-              (click)="openLogDialog(row.afsexcelfiles?.files[0]?.requestId)"
-            >
-              View Log (ULB)
-            </button>
+            @if (row.afsexcelfiles) {
+              <button
+                class="btn btn-primary btn-sm shadow"
+                (click)="openLogDialog(row.afsexcelfiles?.files[0]?.requestId)"
+              >
+                <i class="bi bi-eye"></i>
+                Log(ULB)
+              </button>
+            }
+            <br />
+            <div class="mt-5">
+              @if (row.afsfiles && row.afsexcelfiles && row.afsexcelfiles.files.length === 2) {
+                <button
+                  class="btn btn-success btn-sm shadow"
+                  (click)="openLogDialog(row.afsexcelfiles?.files[1]?.requestId)"
+                >
+                  <i class="bi bi-eye"></i>
+                  Log(AFS)
+                </button>
+              }
+            </div>
             <!-- {{ row.afsexcelfiles?.files[0]?.requestId }} -->
           </td>
         </ng-container>
@@ -155,5 +313,13 @@
       [pageSizeOptions]="[5, 10, 25, 50]"
       showFirstLastButtons
     ></mat-paginator>
+    <button
+      mat-raised-button
+      color="primary"
+      class="btn-sm col-md-2 m-3"
+      (click)="digitizeSelected()"
+    >
+      Digitize Selected
+    </button>
   </mat-card>
 </div>
