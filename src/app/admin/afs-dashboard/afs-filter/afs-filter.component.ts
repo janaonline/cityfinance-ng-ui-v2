@@ -63,15 +63,12 @@ export interface FilterValues {
   styleUrl: './afs-filter.component.scss'
 })
 export class AfsFilterComponent implements OnInit {
-  // ---------- Inputs (data from parent) ----------
-  // @Input() states: State[] = [];
-  // @Input() cities: City[] = [];
-
   states: IState[] = [];
 
   cities: City[] = [];
 
   filteredCities: City[] = [];
+  filteredStates: IState[] = [];
   statePopFilteredCities: City[] = [];
 
   filters: FiltersConfig = {
@@ -109,50 +106,72 @@ export class AfsFilterComponent implements OnInit {
   // selectedPopulation: string = 'all';
   selectedCities: string[] = [];
 
-  // selectedYear: string | '' = '';
-  // selectedDocType: string | '' = '';
-
-  // audited status; default to 'audited' if you like
-  isAudited: 'audited' | 'unAudited' | '' = 'audited';
-
   // reactive form
   filterForm: FormGroup;
   toggleAllStateSelected: boolean = false;
 
   constructor(private afsService: AfsService, private fb: FormBuilder) {
     this.filterForm = this.fb.group({
-      stateId: [[] as string[]],                // mat-select multi (State objects)
+      stateId: [[] as string[]],
       populationCategory: [''],
+      stateSearch: [''],
       citySearch: [''],
-      ulbId: [[] as string[]],              // mat-selection-list values
+      ulbId: [[] as string[]],
       yearId: [''],
       docType: ['bal_sheet_schedules'],
       auditType: ['audited']
     });
 
-    // // update filtered cities when these change
+    // update filtered cities when these change
     this.filterForm.get('stateId')!.valueChanges.subscribe((value) => this.updateOnStateChange(value));
 
     this.filterForm.get('populationCategory')!.valueChanges.subscribe(() => this.updateOnPopulationChange());
-
-    this.filterForm.get('citySearch')!.valueChanges.subscribe((text) => {
+    // on state search
+    this.filterForm.get('stateSearch')!.valueChanges.subscribe((text) => {
       const search = (text || '').toLowerCase().trim();
 
+      this.filteredStates = this.states
+        .filter(c =>
+          !search ? true : c.name.toLowerCase().includes(search)
+        );
+    });
+    // on city search
+    this.filterForm.get('citySearch')!.valueChanges.subscribe((text) => {
+      const search = (text || '').toLowerCase().trim();
       this.filteredCities = this.statePopFilteredCities
-        // .filter(c =>
-        //   this.filterForm.get('stateId')!.value.length === 0 ||
-        //   this.filterForm.get('stateId')!.value.includes(c.stateId)
-        // )
         .filter(c =>
           !search ? true : c.name.toLowerCase().includes(search)
         )
         .slice(0, 100); // limit to 100 if you want
     });
-    // this.filterForm.get('citySearch')!.valueChanges.subscribe(() => this.updateFilteredCities());
+
+  }
+
+  ngOnInit(): void {
+    this.loadFilters();
+  }
+
+  loadFilters() {
+    this.afsService.getFilters().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.filteredStates = this.states = res.filters.states;
+          this.populationCategories = res.filters.populationCategories;
+          // this.allCities = res.filters.cities; // Store full list
+          this.cities = res.filters.cities;     // Default: show all
+          // this.filteredCities = this.cities.slice(0, 100);
+          this.filters.years = res.filters.years;
+          this.filters.documentTypes = res.filters.documentTypes[0]?.items;
+
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load filters:', err);
+      }
+    });
   }
 
   updateOnStateChange(selectedStateId: string[]): void {
-    // console.log('State changed to:', value);
     // Clear city selection when state changes
     if (selectedStateId.length === this.states.length) {
       // this.filterForm.patchValue({ stateId: [] });
@@ -162,9 +181,7 @@ export class AfsFilterComponent implements OnInit {
       return selectedStateId.length === 0 || selectedStateId.includes(c.stateId);
     }
     ); //.slice(0, 100);
-    // console.log('Filtered cities after state change:', this.filteredCities);
     this.filterForm.patchValue({ ulbId: [], citySearch: '', populationCategory: '' });
-    // this.selectedCities = [];
   }
 
   updateOnPopulationChange(): void {
@@ -175,16 +192,11 @@ export class AfsFilterComponent implements OnInit {
       (selectedStateIds.length === 0 || selectedStateIds.includes(c.stateId))
     );
     this.filterForm.patchValue({ ulbId: [], citySearch: '' });
-    // this.selectedCities = [];
   }
 
-  ngOnInit(): void {
-    this.loadFilters();
+  clearInput(key: string) {
+    this.filterForm.patchValue({ [key]: '' });
   }
-
-  // compareWith so Angular can match objects by _id
-  // compareStates = (a: State | null, b: State | null): boolean =>
-  //   !!a && !!b && a._id === b._id;
 
   // Select all currently visible states
   selectAllStates(selectAll: boolean): void {
@@ -192,14 +204,19 @@ export class AfsFilterComponent implements OnInit {
     this.filterForm.patchValue({ stateId: selected });
   }
 
-  // Filtered states based on text box
-  get filteredStates(): IState[] {
-    return this.states;
+  // Select all currently visible cities
+  selectAllCities(selectAll: boolean): void {
+    const selected = selectAll ? this.filteredCities.map(s => s._id) : [];
+    // this.filterForm.patchValue({ stateId: selected });
+    this.filterForm.patchValue({ ulbId: selected, citySearch: '' });
   }
 
   /** Handy getter */
   get selectedCityIds(): string[] {
     return this.filterForm.get('ulbId')!.value;
+  }
+  get selectedStateIds(): string[] {
+    return this.filterForm.get('stateId')!.value;
   }
 
   isSelected(city: City): boolean {
@@ -217,57 +234,18 @@ export class AfsFilterComponent implements OnInit {
     }
   }
 
-  clearCities(): void {
-    this.filterForm.patchValue({ ulbId: [], citySearch: '' });
-    this.filteredCities = this.cities.slice(0, 100);
+  isStateSelected(state: IState): boolean {
+    return this.selectedStateIds.includes(state._id);
   }
 
-  loadFilters() {
-    this.afsService.getFilters().subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.states = res.filters.states;
-          this.populationCategories = res.filters.populationCategories;
-          // this.allCities = res.filters.cities; // Store full list
-          this.cities = res.filters.cities;     // Default: show all
-          // this.filteredCities = this.cities.slice(0, 100);
-          this.filters.years = res.filters.years;
-          this.filters.documentTypes = res.filters.documentTypes[0]?.items;
-
-        }
-      },
-      error: (err) => {
-        console.error('Failed to load filters:', err);
-      }
-    });
-  }
-  // ---------- Handlers ----------
-
-  // selectState(state: IState): void {
-  //   this.selectedState.push(state._id);
-  //   this.stateSearchText = state?.name ?? '';
-  //   this.stateDropdownOpen = false;
-
-  //   // Reset city selection when state changes
-  //   this.selectedCities = [];
-  //   this.citySearchText = '';
-  // }
-
-  onPopulationOrStateChange(): void {
-    // Clear city selection when population category or state changes
-    this.selectedCities = [];
-  }
-
-  toggleCitySelection(city: City, checked: boolean = false): void {
-    const cityName = city.name;
-    if (checked) {
-      if (!this.selectedCities.includes(cityName)) {
-        this.selectedCities.push(cityName);
-      }
-    } else {
-      this.selectedCities = this.selectedCities.filter(
-        (c) => c !== cityName
+  toggleState(state: IState): void {
+    const current = this.selectedStateIds;
+    if (this.isStateSelected(state)) {
+      this.filterForm.get('stateId')!.setValue(
+        current.filter(id => id !== state._id)
       );
+    } else {
+      this.filterForm.get('stateId')!.setValue([...current, state._id]);
     }
   }
 
@@ -275,6 +253,7 @@ export class AfsFilterComponent implements OnInit {
     this.filterForm.reset({
       stateId: [] as string[],
       populationCategory: '',
+      stateSearch: '',
       citySearch: '',
       ulbId: [] as string[],
       yearId: '',

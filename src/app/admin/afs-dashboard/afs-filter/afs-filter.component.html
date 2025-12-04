@@ -7,11 +7,25 @@
 
     <mat-form-field appearance="outline" class="w-100 mt-3">
       <mat-label>State</mat-label>
+      <input
+        matInput
+        formControlName="stateSearch"
+        [matAutocomplete]="stateAuto"
+        placeholder="Type to search..."
+      />
 
-      <!-- <mat-select formControlName="stateId" multiple [compareWith]="compareStates"> -->
-      <mat-select formControlName="stateId" multiple>
-        <!-- Header row inside the panel -->
-        <div class="select-actions">
+      <!-- Clear all selected states -->
+      @if (filterForm.get('stateSearch')?.value) {
+        <button mat-icon-button matSuffix type="button" (click)="clearInput('stateSearch')">
+          <mat-icon>clear</mat-icon>
+        </button>
+      }
+      <mat-autocomplete
+        #stateAuto="matAutocomplete"
+        autoActiveFirstOption="false"
+        (optionSelected)="$event.option.deselect()"
+      >
+        <div class="d-flex justify-content-between px-2">
           <button
             matButton="elevated"
             color="primary"
@@ -29,25 +43,26 @@
             Clear
           </button>
         </div>
-
-        <!-- Actual options -->
         @for (state of filteredStates; track state) {
-          <mat-option [value]="state._id">
-            {{ state.name }}
+          <mat-option [value]="state._id" (click)="$event.stopPropagation(); toggleState(state)">
+            <mat-checkbox
+              [checked]="isStateSelected(state)"
+              (click)="$event.stopPropagation()"
+              (change)="toggleState(state)"
+            >
+              {{ state.name }}
+            </mat-checkbox>
           </mat-option>
         }
-      </mat-select>
+      </mat-autocomplete>
+      <mat-hint>{{ selectedStateIds.length }} States selected</mat-hint>
     </mat-form-field>
 
     <!-- Population Category -->
     <!-- <label>Population Category</label> -->
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Population Category</mat-label>
-      <mat-select
-        placeholder="Select population category"
-        formControlName="populationCategory"
-        (selectionChange)="onPopulationOrStateChange()"
-      >
+      <mat-select placeholder="Select population category" formControlName="populationCategory">
         <mat-option [value]="''">Select population category</mat-option>
         @for (p of populationCategories; track $index) {
           <mat-option [value]="p">{{ p }}</mat-option>
@@ -67,9 +82,8 @@
         placeholder="Type to search..."
       />
 
-      <!-- Clear all selected cities -->
-      @if (selectedCityIds.length) {
-        <button mat-icon-button matSuffix type="button" (click)="clearCities()">
+      @if (filterForm.get('citySearch')?.value) {
+        <button mat-icon-button matSuffix type="button" (click)="clearInput('citySearch')">
           <mat-icon>clear</mat-icon>
         </button>
       }
@@ -78,6 +92,26 @@
         autoActiveFirstOption="false"
         (optionSelected)="$event.option.deselect()"
       >
+        <!-- <mat-option [value]="" (click)="$event.stopPropagation()"> -->
+        <div class="d-flex justify-content-between px-2">
+          <button
+            matButton="elevated"
+            color="primary"
+            type="button"
+            (click)="selectAllCities(true); $event.stopPropagation()"
+          >
+            All
+          </button>
+          <button
+            matButton="elevated"
+            color="accent"
+            type="button"
+            (click)="selectAllCities(false); $event.stopPropagation()"
+          >
+            Clear
+          </button>
+        </div>
+        <!-- </mat-option> -->
         @for (c of filteredCities; track c) {
           <mat-option [value]="c.name" (click)="$event.stopPropagation(); toggleCity(c)">
             <mat-checkbox
