@@ -27,7 +27,7 @@ import { MatTableModule } from '@angular/material/table';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { IState } from '../../core/models/state/state';
-import { AfsFilterComponent, FiltersConfig, FilterValues } from './afs-filter/afs-filter.component';
+import { AfsFilterComponent, FilterValues } from './afs-filter/afs-filter.component';
 import { AfsTableComponent } from "./afs-table/afs-table.component";
 import { AfsService } from './afs.service';
 
@@ -139,8 +139,8 @@ export class AfsDashboardComponent implements OnInit {
     // this.dataSource.data = filtered;
     // this.activeFilterSummary = this.buildFilterSummary(filters);
 
-    // TODO: remove citySearch what is citySearch?
     if ('citySearch' in filters) delete filters.citySearch;
+    if ('stateSearch' in filters) delete filters.stateSearch;
     this.filtersObj.set(filters)
     this.showSideBar.set(false);
     // this.getAfsList();
