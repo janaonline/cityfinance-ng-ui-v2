@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit, signal } from '@angular/core';
 // import { RouterModule } from '@angular/router';
 
 import { Router } from '@angular/router';
@@ -27,7 +27,7 @@ import { MatTableModule } from '@angular/material/table';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { IState } from '../../core/models/state/state';
-import { AfsFilterComponent, FilterValues } from './afs-filter/afs-filter.component';
+import { AfsFilterComponent, FiltersConfig, FilterValues } from './afs-filter/afs-filter.component';
 import { AfsTableComponent } from "./afs-table/afs-table.component";
 import { AfsService } from './afs.service';
 
@@ -89,7 +89,14 @@ export class AfsDashboardComponent implements OnInit {
   // role = localStorage.getItem('userRole') || '';
   // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
 
-
+  filtersObj = signal<FilterValues>({
+    docType: 'bal_sheet',
+    yearId: '606aadac4dff55e6c075c507',
+    auditType: 'audited',
+    populationCategory: '1M-4M',
+    stateId: [],
+    ulbId: [],
+  });
 
   onFiltersChanged(filters: FilterValues): void {
     // this.filters = {
@@ -131,7 +138,11 @@ export class AfsDashboardComponent implements OnInit {
 
     // this.dataSource.data = filtered;
     // this.activeFilterSummary = this.buildFilterSummary(filters);
-    console.log('Appllied filters:', filters);
+
+    // TODO: remove citySearch what is citySearch?
+    if ('citySearch' in filters) delete filters.citySearch;
+    this.filtersObj.set(filters)
+    this.showSideBar.set(false);
     // this.getAfsList();
 
   }
@@ -1754,8 +1765,9 @@ export class AfsDashboardComponent implements OnInit {
     return updatedFiles;
   }
 
-
-
-
+  showSideBar = signal<boolean>(true);
+  toggleSideBar(toggleStatus: boolean = !this.showSideBar()) {
+    this.showSideBar.set(toggleStatus);
+  }
 
 }

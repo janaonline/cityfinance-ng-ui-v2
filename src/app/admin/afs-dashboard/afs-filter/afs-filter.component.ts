@@ -76,10 +76,31 @@ export class AfsFilterComponent implements OnInit {
 
   filters: FiltersConfig = {
     years: [],
-    documentTypes: []
+    documentTypes: [
+      {
+        "key": "bal_sheet",
+        "name": "Balance Sheet"
+      },
+      {
+        "key": "bal_sheet_schedules",
+        "name": "Schedules To Balance Sheet"
+      },
+      {
+        "key": "inc_exp",
+        "name": "Income And Expenditure"
+      },
+      {
+        "key": "inc_exp_schedules",
+        "name": "Schedules To Income And Expenditure"
+      },
+      {
+        "key": "cash_flow",
+        "name": "Cash Flow Statement"
+      }
+    ]
   };
 
-  populationCategories: string[] = [];
+  populationCategories: string[] = ['All', '100K-500K', '1M-4M', '4M+', '500K-1M', '<100K'];
 
   years = [
     { _id: '63735a4bd44534713673bfbf', value: '2017-18' },
@@ -122,11 +143,11 @@ export class AfsFilterComponent implements OnInit {
   constructor(private afsService: AfsService, private fb: FormBuilder) {
     this.filterForm = this.fb.group({
       stateId: [[] as string[]],                // mat-select multi (State objects)
-      populationCategory: [''],
+      populationCategory: ['1M-4M'],
       citySearch: [''],
       ulbId: [[] as string[]],              // mat-selection-list values
-      yearId: [''],
-      docType: ['bal_sheet_schedules'],
+      yearId: ['606aadac4dff55e6c075c507'],
+      docType: ['bal_sheet'],
       auditType: ['audited']
     });
 
@@ -233,7 +254,6 @@ export class AfsFilterComponent implements OnInit {
           // this.filteredCities = this.cities.slice(0, 100);
           this.filters.years = res.filters.years;
           this.filters.documentTypes = res.filters.documentTypes[0]?.items;
-
         }
       },
       error: (err) => {
@@ -274,14 +294,14 @@ export class AfsFilterComponent implements OnInit {
   resetFilters(): void {
     this.filterForm.reset({
       stateId: [] as string[],
-      populationCategory: '',
+      populationCategory: '1M-4M',
       citySearch: '',
       ulbId: [] as string[],
-      yearId: '',
-      docType: '',
+      yearId: '606aadac4dff55e6c075c507',
+      docType: 'bal_sheet',
       auditType: 'audited'
     });
-    // this.filtersChanged.emit(this.filterForm.value);
+    this.filtersChanged.emit(this.filterForm.value);
   }
 
   applyFilters(): void {

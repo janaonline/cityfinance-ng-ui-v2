@@ -1,5 +1,5 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { Component, ViewChild, AfterViewInit, OnInit, inject, ViewChildren, ElementRef, QueryList } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, inject, ViewChildren, ElementRef, QueryList, input, effect, Output, EventEmitter } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -21,6 +21,8 @@ import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
 import { PDFDocument } from 'pdf-lib';
 import { environment } from '../../../../environments/environment';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
+import { FilterValues } from '../afs-filter/afs-filter.component';
+
 
 interface Years {
   name: string;
@@ -90,18 +92,12 @@ export interface RawRow {
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
 })
-export class AfsTableComponent implements AfterViewInit, OnInit {
+export class AfsTableComponent implements AfterViewInit {
 
   readonly dialog = inject(MatDialog);
   readonly afsService = inject(AfsService);
 
-  filters = {
-    docType: 'bal_sheet_schedules',
-    // yearId: '606aaf854dff55e6c075d219',
-    yearId: '606aadac4dff55e6c075c507',
-    auditType: 'audited',
-    populationCategory: '1M–4M'
-  };
+  filters = input.required<FilterValues>({});
 
   MASTER_FORM_STATUS: { [key: number]: string } = {
     [-1]: 'No Status',
@@ -134,13 +130,19 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
   activeRow: any;
   // constructor(private afsService: AfsService,) { }
 
-  ngOnInit(): void {
+  // ngOnInit(): void {
+  // this.getAfsList();
+  // }
+
+  // TODO: rename
+  abc = effect(() => {
+    // This effect runs initially and whenever this.quantity() changes
     this.getAfsList();
-  }
+  })
 
   getAfsList(): void {
     this.isTableLoading = true;
-    this.afsService.getAfsList(this.filters).subscribe({
+    this.afsService.getAfsList(this.filters()).subscribe({
       next: (res) => {
         this.dataSource.data = res.data;
         this.isTableLoading = false;
@@ -257,9 +259,9 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
       formData.append('file', selectedFile);
       formData.append('ulbId', row.ulb);
       formData.append('financialYear', row.year);
-      formData.append('auditType', this.filters.auditType);
+      formData.append('auditType', this.filters().auditType);
 
-      const docTypeName = this.filters.docType;
+      const docTypeName = this.filters().docType;
       // const docTypeName =  this.filters.documentTypes
       //     .flatMap(group => group.items)
       //     .find(doc => doc.key === this.selectedDocType)?.name || '';
@@ -329,9 +331,9 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
 
   async refreshULBRow(row: RawRow) {
     try {
-      const financialYear = this.filters.yearId;
-      const auditType = this.filters.auditType;
-      const docTypeName = this.filters.docType;
+      const financialYear = this.filters().yearId;
+      const auditType = this.filters().auditType;
+      const docTypeName = this.filters().docType;
       // const docTypeName =
       //  this.filters.documentTypes
       //   .flatMap(group => group.items)
@@ -406,5 +408,43 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     dialogRef.afterClosed().subscribe(result => {
       // console.log(`Dialog result: ${result}`);
     });
+  }
+
+  dashboardCards = [
+    {
+      id: 1,
+      icon: "bi bi-people",
+      label: "1,234",
+      desc: "Active Users",
+    },
+    {
+      id: 2,
+      icon: "bi bi-star",
+      label: "4.8",
+      desc: "Average Rating",
+    },
+    {
+      id: 3,
+      icon: "bi bi-graph-up",
+      label: "56%",
+      desc: "Growth Rate",
+    },
+    {
+      id: 4,
+      icon: "bi bi-people",
+      label: "1,234",
+      desc: "Active Users",
+    },
+    {
+      id: 5,
+      icon: "bi bi-clock-history",
+      label: "98.3%",
+      desc: "Uptime",
+    },
+  ];
+
+  @Output() showSideBar = new EventEmitter<boolean>(true);
+  applyFilter() {
+    this.showSideBar.emit(true);
   }
 }
