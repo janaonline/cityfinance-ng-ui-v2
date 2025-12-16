@@ -11,6 +11,9 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { IState } from '../../../core/models/state/state';
 import { AfsService } from '../afs.service';
+const DEFAULT_YEAR = '606aafc14dff55e6c075d3ec'; // 2023-24
+const DEFAULT_DOC_TYPE = 'bal_sheet';
+const DEFAULT_AUDIT_STATUS = 'audited';
 
 interface City {
   _id: string;
@@ -137,9 +140,9 @@ export class AfsFilterComponent implements OnInit {
       stateSearch: [''],
       citySearch: [''],
       ulbId: [[] as string[]],
-      yearId: [''],
-      docType: ['bal_sheet_schedules'],
-      auditType: ['audited']
+      yearId: [DEFAULT_YEAR],
+      docType: [DEFAULT_DOC_TYPE],
+      auditType: [DEFAULT_AUDIT_STATUS]
     });
 
     // update filtered cities when these change
@@ -276,9 +279,9 @@ export class AfsFilterComponent implements OnInit {
       stateSearch: '',
       citySearch: '',
       ulbId: [] as string[],
-      yearId: '606aadac4dff55e6c075c507',
-      docType: 'bal_sheet',
-      auditType: 'audited'
+      yearId: DEFAULT_YEAR,
+      docType: DEFAULT_DOC_TYPE,
+      auditType: DEFAULT_AUDIT_STATUS,
     });
     this.filtersChanged.emit(this.filterForm.value);
   }

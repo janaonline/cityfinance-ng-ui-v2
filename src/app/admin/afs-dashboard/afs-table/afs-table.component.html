@@ -3,13 +3,13 @@
   <div class="row row-cols-1 row-cols-md-6 g-3 justify-content-around">
     @for (card of dashboardCards; track card.id) {
       <div class="col">
-        <div class="card h-60 text-center shadow">
-          <div class="card-body">
-            <div class="display-6 text-primary mb-2">
+        <div class="card text-center shadow">
+          <div [class]="'card-body ' + card.class">
+            <div class="display-6 mb-2">
               <i [class]="card.icon"></i>
             </div>
             <h3 class="card-title mb-3">{{ card.label }}</h3>
-            <p class="card-text text-muted">{{ card.desc }}</p>
+            <p class="card-text lh-sm" [innerHTML]="card.desc"></p>
           </div>
         </div>
       </div>
