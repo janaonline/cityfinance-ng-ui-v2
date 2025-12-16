@@ -11,19 +11,14 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { IState } from '../../../core/models/state/state';
 import { AfsService } from '../afs.service';
-const DEFAULT_YEAR = '606aafc14dff55e6c075d3ec'; // 2023-24
-const DEFAULT_DOC_TYPE = 'bal_sheet';
+import { IULB } from '../../../core/models/ulb';
+const DEFAULT_YEAR = '606aadac4dff55e6c075c507'; // 2020-21
+const DEFAULT_DOC_TYPE = 'bal_sheet_schedules';
 const DEFAULT_AUDIT_STATUS = 'audited';
 
-interface City {
-  _id: string;
-  name: string;
-  stateId: string;
-  populationCategory: string;
-}
-
 interface YearOption {
-  name: string;
+  _id: string;
+  year: string;
 }
 
 interface DocumentTypeItem {
@@ -34,6 +29,10 @@ interface DocumentTypeItem {
 interface FiltersConfig {
   years: YearOption[];
   documentTypes: DocumentTypeItem[];
+  ulbs?: IULB[];
+  states: IState[];
+  auditTypes?: { key: string; name: string }[];
+  populationCategories?: string[];
 }
 
 export interface FilterValues {
@@ -67,52 +66,18 @@ export interface FilterValues {
 export class AfsFilterComponent implements OnInit {
   states: IState[] = [];
 
-  cities: City[] = [];
+  cities: IULB[] = [];
 
-  filteredCities: City[] = [];
+  filteredCities: IULB[] = [];
   filteredStates: IState[] = [];
-  statePopFilteredCities: City[] = [];
+  statePopFilteredCities: IULB[] = [];
 
   filters: FiltersConfig = {
+    states: [],
     years: [],
-    documentTypes: [
-      {
-        "key": "bal_sheet",
-        "name": "Balance Sheet"
-      },
-      {
-        "key": "bal_sheet_schedules",
-        "name": "Schedules To Balance Sheet"
-      },
-      {
-        "key": "inc_exp",
-        "name": "Income And Expenditure"
-      },
-      {
-        "key": "inc_exp_schedules",
-        "name": "Schedules To Income And Expenditure"
-      },
-      {
-        "key": "cash_flow",
-        "name": "Cash Flow Statement"
-      }
-    ]
+    documentTypes: [],
+    populationCategories: []
   };
-
-  populationCategories: string[] = ['All', '100K-500K', '1M-4M', '4M+', '500K-1M', '<100K'];
-
-  years = [
-    { _id: '63735a4bd44534713673bfbf', value: '2017-18' },
-    { _id: '63735a5bd44534713673c1ca', value: '2018-19' },
-    { _id: '607697074dff55e6c0be33ba', value: '2019-20' },
-    { _id: '606aadac4dff55e6c075c507', value: '2020-21' },
-    { _id: '606aaf854dff55e6c075d219', value: '2021-22' },
-    { _id: '606aafb14dff55e6c075d3ae', value: '2022-23' },
-    { _id: '606aafc14dff55e6c075d3ec', value: '2023-24' },
-    { _id: '606aafcf4dff55e6c075d424', value: '2024-25' },
-    { _id: '606aafda4dff55e6c075d48f', value: '2025-26' },
-    { _id: '67d7d136d3d038946a5239e9', value: '2026-27' },
-  ]
 
   // ---------- Outputs (emit applied filters to parent) ----------
   @Output() filtersChanged = new EventEmitter<FilterValues>();
@@ -177,14 +142,16 @@ export class AfsFilterComponent implements OnInit {
   loadFilters() {
     this.afsService.getFilters().subscribe({
       next: (res) => {
-        if (res.success) {
-          this.filteredStates = this.states = res.filters.states;
-          this.populationCategories = res.filters.populationCategories;
+        const resData: any = res.data;
+        this.filters = res.data;
+        if (resData) {
+          this.filteredStates = this.states = resData.states;
+          // this.populationCategories = resData.populationCategories;
           // this.allCities = res.filters.cities; // Store full list
-          this.cities = res.filters.cities;     // Default: show all
+          this.cities = resData.ulbs;     // Default: show all
           // this.filteredCities = this.cities.slice(0, 100);
-          this.filters.years = res.filters.years;
-          this.filters.documentTypes = res.filters.documentTypes[0]?.items;
+          // this.filters.years = resData.years;
+          // this.filters.documentTypes = resData.documentTypes;
 
         }
       },
@@ -201,7 +168,7 @@ export class AfsFilterComponent implements OnInit {
     }
     this.statePopFilteredCities = this.cities.filter(c => {
       // console.log('Filtering cities for state:', selectedStateId, 'City stateId:', c.stateId);
-      return selectedStateId.length === 0 || selectedStateId.includes(c.stateId);
+      return selectedStateId.length === 0 || selectedStateId.includes(c.state);
     }
     ); //.slice(0, 100);
     this.filterForm.patchValue({ ulbId: [], citySearch: '', populationCategory: '' });
@@ -210,11 +177,39 @@ export class AfsFilterComponent implements OnInit {
   updateOnPopulationChange(): void {
     const selectedPopulation = this.filterForm.get('populationCategory')!.value;
     const selectedStateIds = this.filterForm.get('stateId')!.value;
+
+    // this.afsService.getUlbs({ stateIds: selectedStateIds, populationCategory: selectedPopulation }).subscribe({
+    //   next: (res) => {
+    //     if (res.data.length >= 0) {
+    //       this.filteredCities = this.statePopFilteredCities = res.data;
+    //     }
+    //   },
+    //   error: (err) => {
+    //     console.error('Error loading ULBS by population and states:', err);
+    //   }
+    // });
     this.statePopFilteredCities = this.cities.filter(c =>
-      (selectedPopulation === '' || selectedPopulation === 'All' || c.populationCategory === selectedPopulation) &&
-      (selectedStateIds.length === 0 || selectedStateIds.includes(c.stateId))
+      (selectedPopulation === '' || selectedPopulation === 'All' || this.checkPopulationCategory(selectedPopulation, c.population)) &&
+      (selectedStateIds.length === 0 || selectedStateIds.includes(c.state))
     );
     this.filterForm.patchValue({ ulbId: [], citySearch: '' });
+  }
+
+  checkPopulationCategory(selectedPopulation: string, cityPopulation: number): boolean {
+    if (selectedPopulation === 'All' || selectedPopulation === '') {
+      return true;
+    } else if (selectedPopulation === '<100K') {
+      return cityPopulation < 100000;
+    } else if (selectedPopulation === '100K-500K') {
+      return cityPopulation >= 100000 && cityPopulation < 500000;
+    } else if (selectedPopulation === '500K-1M') {
+      return cityPopulation >= 500000 && cityPopulation < 1000000;
+    } else if (selectedPopulation === '1M-4M') {
+      return cityPopulation >= 1000000 && cityPopulation < 4000000;
+    } else if (selectedPopulation === '4M+') {
+      return cityPopulation >= 4000000;
+    }
+    return false;
   }
 
   clearInput(key: string) {
@@ -242,11 +237,11 @@ export class AfsFilterComponent implements OnInit {
     return this.filterForm.get('stateId')!.value;
   }
 
-  isSelected(city: City): boolean {
+  isSelected(city: IULB): boolean {
     return this.selectedCityIds.includes(city._id);
   }
 
-  toggleCity(city: City): void {
+  toggleCity(city: IULB): void {
     const current = this.selectedCityIds;
     if (this.isSelected(city)) {
       this.filterForm.get('ulbId')!.setValue(

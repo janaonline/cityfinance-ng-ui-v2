@@ -94,6 +94,8 @@ export interface RawRow {
 })
 export class AfsTableComponent implements AfterViewInit {
 
+  // readonly storageUrl = environment.STORAGE_BASEURL;
+  readonly storageUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
   readonly dialog = inject(MatDialog);
   readonly afsService = inject(AfsService);
 

@@ -15,8 +15,13 @@ export class AfsService {
   constructor(private http: HttpClient) { }
 
   getFilters() {
-    const url = `${environment.api.url}afs-digitization/afs-filters`;
-    return this.http.get<any>(url);
+    const url = `${environment.api.url2}afs-digitization/filters`;
+    return this.http.get<ResponseData>(url);
+  }
+
+  getUlbs(params: { stateIds: string[]; populationCategory: string; }) {
+    const url = `${environment.api.url2}afs-digitization/ulbs`;
+    return this.http.get<ResponseData>(url, { params });
   }
 
   getRequestLog(requestId: string) {

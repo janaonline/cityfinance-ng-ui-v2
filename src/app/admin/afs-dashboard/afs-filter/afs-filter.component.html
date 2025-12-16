@@ -61,7 +61,7 @@
     <mat-label>Population Category</mat-label>
     <mat-select placeholder="Select population category" formControlName="populationCategory">
       <mat-option [value]="''">Select population category</mat-option>
-      @for (p of populationCategories; track $index) {
+      @for (p of filters.populationCategories; track $index) {
         <mat-option [value]="p">{{ p }}</mat-option>
       }
     </mat-select>
@@ -128,8 +128,8 @@
     <mat-label>Year</mat-label>
     <mat-select placeholder="Select Year" formControlName="yearId">
       <mat-option [value]="''">Select Year</mat-option>
-      @for (y of years; track $index) {
-        <mat-option [value]="y._id">{{ y.value }}</mat-option>
+      @for (y of filters.years; track $index) {
+        <mat-option [value]="y._id">{{ y.year }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
