@@ -1,171 +1,161 @@
-<form [formGroup]="filterForm" class="filters-form">
-  <div class="filters filters-top">
-    <div class="d-flex justify-content-end mt-2">
-      <button color="accent" matButton="elevated" (click)="resetFilters()">Reset Filter</button>
-    </div>
-    <!-- Reset -->
+<form [formGroup]="filterForm">
+  <!-- Reset -->
+  <button color="accent" matButton="elevated" (click)="resetFilters()">Reset Filter</button>
 
-    <mat-form-field appearance="outline" class="w-100 mt-3">
-      <mat-label>State</mat-label>
-      <input
-        matInput
-        formControlName="stateSearch"
-        [matAutocomplete]="stateAuto"
-        placeholder="Type to search..."
-      />
+  <mat-form-field appearance="outline" class="w-100 mt-3">
+    <mat-label>State</mat-label>
+    <input
+      matInput
+      formControlName="stateSearch"
+      [matAutocomplete]="stateAuto"
+      placeholder="Type to search..."
+    />
 
-      <!-- Clear all selected states -->
-      @if (filterForm.get('stateSearch')?.value) {
-        <button mat-icon-button matSuffix type="button" (click)="clearInput('stateSearch')">
-          <mat-icon>clear</mat-icon>
+    <!-- Clear all selected states -->
+    @if (filterForm.get('stateSearch')?.value) {
+      <button mat-icon-button matSuffix type="button" (click)="clearInput('stateSearch')">
+        <mat-icon>clear</mat-icon>
+      </button>
+    }
+    <mat-autocomplete
+      #stateAuto="matAutocomplete"
+      autoActiveFirstOption="false"
+      (optionSelected)="$event.option.deselect()"
+    >
+      <div class="d-flex justify-content-between px-2">
+        <button
+          matButton="elevated"
+          color="primary"
+          type="button"
+          (click)="selectAllStates(true); $event.stopPropagation()"
+        >
+          All
         </button>
-      }
-      <mat-autocomplete
-        #stateAuto="matAutocomplete"
-        autoActiveFirstOption="false"
-        (optionSelected)="$event.option.deselect()"
-      >
-        <div class="d-flex justify-content-between px-2">
-          <button
-            matButton="elevated"
-            color="primary"
-            type="button"
-            (click)="selectAllStates(true); $event.stopPropagation()"
-          >
-            All
-          </button>
-          <button
-            matButton="elevated"
-            color="accent"
-            type="button"
-            (click)="selectAllStates(false); $event.stopPropagation()"
-          >
-            Clear
-          </button>
-        </div>
-        @for (state of filteredStates; track state) {
-          <mat-option [value]="state._id" (click)="$event.stopPropagation(); toggleState(state)">
-            <mat-checkbox
-              [checked]="isStateSelected(state)"
-              (click)="$event.stopPropagation()"
-              (change)="toggleState(state)"
-            >
-              {{ state.name }}
-            </mat-checkbox>
-          </mat-option>
-        }
-      </mat-autocomplete>
-      <mat-hint>{{ selectedStateIds.length }} States selected</mat-hint>
-    </mat-form-field>
-
-    <!-- Population Category -->
-    <!-- <label>Population Category</label> -->
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Population Category</mat-label>
-      <mat-select placeholder="Select population category" formControlName="populationCategory">
-        <mat-option [value]="''">Select population category</mat-option>
-        @for (p of populationCategories; track $index) {
-          <mat-option [value]="p">{{ p }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <!-- City search -->
-    <!-- <label class="filter-label">City</label> -->
-    <mat-form-field appearance="outline" class="w-100">
-      <mat-label>City</mat-label>
-
-      <input
-        matInput
-        formControlName="citySearch"
-        [matAutocomplete]="cityAuto"
-        placeholder="Type to search..."
-      />
-
-      @if (filterForm.get('citySearch')?.value) {
-        <button mat-icon-button matSuffix type="button" (click)="clearInput('citySearch')">
-          <mat-icon>clear</mat-icon>
+        <button
+          matButton="elevated"
+          color="accent"
+          type="button"
+          (click)="selectAllStates(false); $event.stopPropagation()"
+        >
+          Clear
         </button>
+      </div>
+      @for (state of filteredStates; track state) {
+        <mat-option [value]="state._id" (click)="$event.stopPropagation(); toggleState(state)">
+          <mat-checkbox
+            [checked]="isStateSelected(state)"
+            (click)="$event.stopPropagation()"
+            (change)="toggleState(state)"
+          >
+            {{ state.name }}
+          </mat-checkbox>
+        </mat-option>
       }
-      <mat-autocomplete
-        #cityAuto="matAutocomplete"
-        autoActiveFirstOption="false"
-        (optionSelected)="$event.option.deselect()"
-      >
-        <!-- <mat-option [value]="" (click)="$event.stopPropagation()"> -->
-        <div class="d-flex justify-content-between px-2">
-          <button
-            matButton="elevated"
-            color="primary"
-            type="button"
-            (click)="selectAllCities(true); $event.stopPropagation()"
+    </mat-autocomplete>
+    <mat-hint>{{ selectedStateIds.length }} States selected</mat-hint>
+  </mat-form-field>
+
+  <!-- Population Category -->
+  <!-- <label>Population Category</label> -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Population Category</mat-label>
+    <mat-select placeholder="Select population category" formControlName="populationCategory">
+      <mat-option [value]="''">Select population category</mat-option>
+      @for (p of populationCategories; track $index) {
+        <mat-option [value]="p">{{ p }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <!-- City search -->
+  <mat-form-field appearance="outline" class="w-100">
+    <mat-label>City</mat-label>
+
+    <input
+      matInput
+      formControlName="citySearch"
+      [matAutocomplete]="cityAuto"
+      placeholder="Type to search..."
+    />
+
+    @if (filterForm.get('citySearch')?.value) {
+      <button mat-icon-button matSuffix type="button" (click)="clearInput('citySearch')">
+        <mat-icon>clear</mat-icon>
+      </button>
+    }
+    <mat-autocomplete
+      #cityAuto="matAutocomplete"
+      autoActiveFirstOption="false"
+      (optionSelected)="$event.option.deselect()"
+    >
+      <!-- <mat-option [value]="" (click)="$event.stopPropagation()"> -->
+      <div class="d-flex justify-content-between px-2">
+        <button
+          matButton="elevated"
+          color="primary"
+          type="button"
+          (click)="selectAllCities(true); $event.stopPropagation()"
+        >
+          All
+        </button>
+        <button
+          matButton="elevated"
+          color="accent"
+          type="button"
+          (click)="selectAllCities(false); $event.stopPropagation()"
+        >
+          Clear
+        </button>
+      </div>
+      <!-- </mat-option> -->
+      @for (c of filteredCities; track c) {
+        <mat-option [value]="c.name" (click)="$event.stopPropagation(); toggleCity(c)">
+          <mat-checkbox
+            [checked]="isSelected(c)"
+            (click)="$event.stopPropagation()"
+            (change)="toggleCity(c)"
           >
-            All
-          </button>
-          <button
-            matButton="elevated"
-            color="accent"
-            type="button"
-            (click)="selectAllCities(false); $event.stopPropagation()"
-          >
-            Clear
-          </button>
-        </div>
-        <!-- </mat-option> -->
-        @for (c of filteredCities; track c) {
-          <mat-option [value]="c.name" (click)="$event.stopPropagation(); toggleCity(c)">
-            <mat-checkbox
-              [checked]="isSelected(c)"
-              (click)="$event.stopPropagation()"
-              (change)="toggleCity(c)"
-            >
-              {{ c.name }}
-            </mat-checkbox>
-          </mat-option>
-        }
-      </mat-autocomplete>
-      <mat-hint>{{ selectedCityIds.length }} cities selected</mat-hint>
-    </mat-form-field>
+            {{ c.name }}
+          </mat-checkbox>
+        </mat-option>
+      }
+    </mat-autocomplete>
+    <mat-hint>{{ selectedCityIds.length }} cities selected</mat-hint>
+  </mat-form-field>
 
-    <!-- Year -->
-    <!-- <label>Year</label> -->
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Year</mat-label>
-      <mat-select placeholder="Select Year" formControlName="yearId">
-        <mat-option [value]="''">Select Year</mat-option>
-        @for (y of years; track $index) {
-          <mat-option [value]="y._id">{{ y.value }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+  <!-- Year -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Year</mat-label>
+    <mat-select placeholder="Select Year" formControlName="yearId">
+      <mat-option [value]="''">Select Year</mat-option>
+      @for (y of years; track $index) {
+        <mat-option [value]="y._id">{{ y.value }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 
-    <!-- Document Type (grouped radios) -->
-    <label>Document Type</label>
-    <div class="grouped-dropdown">
-      <mat-radio-group formControlName="docType" class="radio-options-vertical">
-        @for (d of filters.documentTypes; track $index) {
-          <div class="docType-group">
-            <div class="group-option">
-              <mat-radio-button [value]="d.key">
-                {{ d.name }}
-              </mat-radio-button>
-            </div>
-          </div>
-        }
-      </mat-radio-group>
-    </div>
-
-    <label>Audit Type</label>
-    <div class="audited-radio-container radio-options">
-      <mat-radio-group formControlName="auditType">
-        <mat-radio-button value="audited">Audited</mat-radio-button>
-        <mat-radio-button value="unAudited">UnAudited</mat-radio-button>
-      </mat-radio-group>
-    </div>
-
-    <!-- Apply button -->
-    <button mat-raised-button color="primary" class="apply-btn" (click)="applyFilters()">
-      Apply Filter
-    </button>
+  <!-- Document Type (grouped radios) -->
+  <div class="">
+    <p class="mb-0 fw-bold">Document Type</p>
+    <mat-radio-group formControlName="docType" class="">
+      @for (d of filters.documentTypes; track $index) {
+        <mat-radio-button [value]="d.key">
+          {{ d.name }}
+        </mat-radio-button>
+      }
+    </mat-radio-group>
   </div>
+
+  <div class="mt-2">
+    <p class="mb-0 fw-bold">Audit Type</p>
+    <mat-radio-group formControlName="auditType">
+      <mat-radio-button value="audited">Audited</mat-radio-button>
+      <mat-radio-button value="unAudited">UnAudited</mat-radio-button>
+    </mat-radio-group>
+  </div>
+
+  <!-- Apply button -->
+  <button mat-raised-button color="primary" class="apply-btn mt-2" (click)="applyFilters()">
+    Apply Filter
+  </button>
 </form>

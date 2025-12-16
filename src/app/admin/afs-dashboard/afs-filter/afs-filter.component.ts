@@ -1,17 +1,19 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
-import { AfsService } from '../afs.service';
 import { IState } from '../../../core/models/state/state';
-import { IULB } from '../../../core/models/ulb';
-import { MatIconModule } from '@angular/material/icon';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { AfsService } from '../afs.service';
+const DEFAULT_YEAR = '606aafc14dff55e6c075d3ec'; // 2023-24
+const DEFAULT_DOC_TYPE = 'bal_sheet';
+const DEFAULT_AUDIT_STATUS = 'audited';
 
 interface City {
   _id: string;
@@ -73,10 +75,31 @@ export class AfsFilterComponent implements OnInit {
 
   filters: FiltersConfig = {
     years: [],
-    documentTypes: []
+    documentTypes: [
+      {
+        "key": "bal_sheet",
+        "name": "Balance Sheet"
+      },
+      {
+        "key": "bal_sheet_schedules",
+        "name": "Schedules To Balance Sheet"
+      },
+      {
+        "key": "inc_exp",
+        "name": "Income And Expenditure"
+      },
+      {
+        "key": "inc_exp_schedules",
+        "name": "Schedules To Income And Expenditure"
+      },
+      {
+        "key": "cash_flow",
+        "name": "Cash Flow Statement"
+      }
+    ]
   };
 
-  populationCategories: string[] = [];
+  populationCategories: string[] = ['All', '100K-500K', '1M-4M', '4M+', '500K-1M', '<100K'];
 
   years = [
     { _id: '63735a4bd44534713673bfbf', value: '2017-18' },
@@ -117,9 +140,9 @@ export class AfsFilterComponent implements OnInit {
       stateSearch: [''],
       citySearch: [''],
       ulbId: [[] as string[]],
-      yearId: [''],
-      docType: ['bal_sheet_schedules'],
-      auditType: ['audited']
+      yearId: [DEFAULT_YEAR],
+      docType: [DEFAULT_DOC_TYPE],
+      auditType: [DEFAULT_AUDIT_STATUS]
     });
 
     // update filtered cities when these change
@@ -256,11 +279,11 @@ export class AfsFilterComponent implements OnInit {
       stateSearch: '',
       citySearch: '',
       ulbId: [] as string[],
-      yearId: '',
-      docType: '',
-      auditType: 'audited'
+      yearId: DEFAULT_YEAR,
+      docType: DEFAULT_DOC_TYPE,
+      auditType: DEFAULT_AUDIT_STATUS,
     });
-    // this.filtersChanged.emit(this.filterForm.value);
+    this.filtersChanged.emit(this.filterForm.value);
   }
 
   applyFilters(): void {

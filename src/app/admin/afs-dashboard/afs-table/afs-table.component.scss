@@ -13,7 +13,7 @@ mat-card {
 
 .table-container {
     position: relative;
-    max-height: calc(100vh - 220px);
+    max-height: 75vh;
     overflow: auto;
 }
 
@@ -34,6 +34,7 @@ mat-card {
 
 .card {
     transition: all 0.3s ease;
+    height: 189px;
 }
 
 .card:hover {

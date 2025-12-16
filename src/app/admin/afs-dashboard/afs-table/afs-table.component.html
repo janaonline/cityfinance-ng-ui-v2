@@ -1,69 +1,36 @@
-<div class="container py-5">
-  <div class="row row-cols-1 row-cols-md-6 g-4">
-    <div class="col">
-      <div class="card h-60 text-center shadow">
-        <div class="card-body">
-          <div class="display-6 text-primary mb-2">
-            <i class="bi bi-people"></i>
+<div>
+  <h3 class="fw-bold mb-4">AFS Dashboard</h3>
+  <div class="row row-cols-1 row-cols-md-6 g-3 justify-content-around">
+    @for (card of dashboardCards; track card.id) {
+      <div class="col">
+        <div class="card text-center shadow">
+          <div [class]="'card-body ' + card.class">
+            <div class="display-6 mb-2">
+              <i [class]="card.icon"></i>
+            </div>
+            <h3 class="card-title mb-3">{{ card.label }}</h3>
+            <p class="card-text lh-sm" [innerHTML]="card.desc"></p>
           </div>
-          <h3 class="card-title mb-3">1,234</h3>
-          <p class="card-text text-muted">Active Users</p>
         </div>
       </div>
-    </div>
-
-    <div class="col">
-      <div class="card h-80 text-center shadow">
-        <div class="card-body">
-          <div class="display-6 text-success mb-2">
-            <i class="bi bi-graph-up"></i>
-          </div>
-          <h3 class="card-title mb-3">56%</h3>
-          <p class="card-text text-muted">Growth Rate</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="card h-80 text-center shadow">
-        <div class="card-body">
-          <div class="display-6 text-warning mb-2">
-            <i class="bi bi-star"></i>
-          </div>
-          <h3 class="card-title mb-3">4.8</h3>
-          <p class="card-text text-muted">Average Rating</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="card h-80 text-center shadow">
-        <div class="card-body">
-          <div class="display-6 text-danger mb-2">
-            <i class="bi bi-clock-history"></i>
-          </div>
-          <h3 class="card-title mb-3">98.3%</h3>
-          <p class="card-text text-muted">Uptime</p>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card h-80 text-center shadow">
-        <div class="card-body">
-          <div class="display-6 text-danger mb-2">
-            <i class="bi bi-clock-history"></i>
-          </div>
-          <h3 class="card-title mb-3">98.3%</h3>
-          <p class="card-text text-muted">Uptime</p>
-        </div>
-      </div>
-    </div>
+    }
   </div>
 </div>
 
-<div class="table-wrapper">
+<div class="table-wrapper my-5">
+  <div class="row justify-content-between mb-2">
+    <h3 class="fw-bold col mb-0">City Documents</h3>
+  
+    <div class="col text-end">
+      <button type="button" class="mx-2 btn btn-sm btn-outline-cfPrimary" (click)="applyFilter()">Apply Filter</button>
+      <button type="button" class="mx-2 btn btn-sm btn-cfPrimary" (click)="digitizeSelected()">
+        Digitize Selected
+      </button>
+    </div>
+  </div>
+
   <mat-card>
-    <mat-card-title class="mx-3 mt-3">City Documents</mat-card-title>
+    <!-- <mat-card-title class="mx-3 mt-3 fw-bold">City Documents</mat-card-title> -->
     @if (activeFilterSummary) {
       <mat-card-subtitle>
         {{ activeFilterSummary }}
@@ -101,13 +68,13 @@
         </ng-container>
         <!-- State -->
         <ng-container matColumnDef="state">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>State</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>State</th>
           <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
         </ng-container>
 
         <!-- City -->
         <ng-container matColumnDef="city">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>City</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>City</th>
           <td mat-cell *matCellDef="let row">
             <strong>{{ row.ulbCode }}</strong> <br />{{ row.ulbName }}
           </td>
@@ -115,21 +82,21 @@
 
         <!-- City -->
         <ng-container matColumnDef="ulbUploadedPdf">
-          <th mat-header-cell *matHeaderCellDef style="width: 180px">Ulb Uploaded</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 180px">Ulb Uploaded</th>
           <td mat-cell *matCellDef="let row">
-            @if (row[`${filters.docType}`]) {
+            @if (row[`${filters().docType}`]) {
               ULB :
               <a
-                [href]="row[`${filters.docType}`].url | toStorageUrl"
+                [href]="row[`${filters().docType}`].url | toStorageUrl"
                 target="_blank"
-                [matTooltip]="row[`${filters.docType}`].name"
+                [matTooltip]="row[`${filters().docType}`].name"
               >
                 <!-- {{ row[`${filters.docType}`].name}} -->
                 <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
                 <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
               </a>
               <strong
-                >{{ row[`${filters.docType}`].url| toStorageUrl | pdfPageCount | async }}</strong
+                >{{ row[`${filters().docType}`].url| toStorageUrl | pdfPageCount | async }}</strong
               >
               pages
             }
@@ -168,7 +135,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="formStatus">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Form Status</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>Form Status</th>
           <td mat-cell *matCellDef="let row">
             {{ MASTER_FORM_STATUS[row.currentFormStatus] || 'Unknown' }}
             <br />
@@ -176,7 +143,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="digitizeStatus">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Digitized Status</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>Digitized Status</th>
           <td mat-cell *matCellDef="let row">
             @let statusText = getStatusText(row, 0);
             <!-- <span class="badge badge-primary" [ngClass]="">{{ getStatusText(row) }}</span> -->
@@ -236,7 +203,7 @@
               </ng-container> -->
 
         <ng-container matColumnDef="formUploadedOn">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Form Uploaded On</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>Form Uploaded On</th>
           <td mat-cell *matCellDef="let row">
             {{ row.ulbSubmit | date: 'd/M/yyyy, h:mm a' }}
             <br />
@@ -250,7 +217,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="digitizedOn">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Digitized On</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>Digitized On</th>
           <td mat-cell *matCellDef="let row">
             {{
               row.afsexcelfiles
@@ -268,7 +235,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="requestIdLog">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>RequestId / Log</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>RequestId / Log</th>
           <td mat-cell *matCellDef="let row">
             @if (row.afsexcelfiles) {
               <button
@@ -313,13 +280,5 @@
       [pageSizeOptions]="[5, 10, 25, 50]"
       showFirstLastButtons
     ></mat-paginator>
-    <button
-      mat-raised-button
-      color="primary"
-      class="btn-sm col-md-2 m-3"
-      (click)="digitizeSelected()"
-    >
-      Digitize Selected
-    </button>
   </mat-card>
 </div>

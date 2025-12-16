@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit, signal } from '@angular/core';
 // import { RouterModule } from '@angular/router';
 
 import { Router } from '@angular/router';
@@ -89,7 +89,14 @@ export class AfsDashboardComponent implements OnInit {
   // role = localStorage.getItem('userRole') || '';
   // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
 
-
+  filtersObj = signal<FilterValues>({
+    docType: 'bal_sheet',
+    yearId: '606aadac4dff55e6c075c507',
+    auditType: 'audited',
+    populationCategory: '1M-4M',
+    stateId: [],
+    ulbId: [],
+  });
 
   onFiltersChanged(filters: FilterValues): void {
     // this.filters = {
@@ -131,7 +138,11 @@ export class AfsDashboardComponent implements OnInit {
 
     // this.dataSource.data = filtered;
     // this.activeFilterSummary = this.buildFilterSummary(filters);
-    console.log('Appllied filters:', filters);
+
+    if ('citySearch' in filters) delete filters.citySearch;
+    if ('stateSearch' in filters) delete filters.stateSearch;
+    this.filtersObj.set(filters)
+    this.showSideBar.set(false);
     // this.getAfsList();
 
   }
@@ -1754,8 +1765,9 @@ export class AfsDashboardComponent implements OnInit {
     return updatedFiles;
   }
 
-
-
-
+  showSideBar = signal<boolean>(true);
+  toggleSideBar(toggleStatus: boolean = !this.showSideBar()) {
+    this.showSideBar.set(toggleStatus);
+  }
 
 }
