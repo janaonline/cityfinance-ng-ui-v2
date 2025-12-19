@@ -22,25 +22,8 @@ import { PDFDocument } from 'pdf-lib';
 import { environment } from '../../../../environments/environment';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
 import { FilterValues } from '../afs-filter/afs-filter.component';
-
-
-interface Years {
-  name: string;
-  _id: string;
-}
-
-
-interface State {
-  _id: string;
-  name: string;
-}
-
-interface City {
-  name: string;
-  stateId: string;
-  populationCategory: string;
-}
-
+import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
+import { HttpEventType } from '@angular/common/http';
 export interface RawRow {
   ulb: string;
   ulbCode: string;
@@ -65,8 +48,6 @@ export interface RawRow {
   isAudited: 'audited' | 'unAudited';
   [key: string]: any;
 }
-
-
 @Component({
   selector: 'app-afs-table',
   imports: [
@@ -98,6 +79,12 @@ export class AfsTableComponent implements AfterViewInit {
   readonly storageUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
   readonly dialog = inject(MatDialog);
   readonly afsService = inject(AfsService);
+  private fileService = inject(FileService);
+
+  page = 1;
+  limit = 10;
+  pageSize = 10;
+  totalCount = 0;
 
   filters = input.required<FilterValues>({});
 
@@ -116,6 +103,43 @@ export class AfsTableComponent implements AfterViewInit {
     11: 'Submission Acknowledged by PMU',
   };
 
+  dashboardCards = [
+    {
+      id: 1,
+      icon: "bi bi-folder-check",
+      label: "642",
+      desc: "Files Digitized",
+      class: "text-info",
+    },
+    {
+      id: 2,
+      icon: "bi bi-file-earmark-text",
+      label: "4,550",
+      desc: "Pages Digitized",
+      class: "text-info",
+    },
+    {
+      id: 3,
+      icon: "bi bi-folder-x",
+      label: "679",
+      desc: "Files Failed",
+      class: "text-danger",
+    },
+    {
+      id: 4,
+      icon: "bi bi-file-earmark-x",
+      label: "679",
+      desc: "Pages Failed",
+      class: "text-danger",
+    },
+    {
+      id: 5,
+      icon: "bi bi-check-circle",
+      label: "49%",
+      desc: "Successful",
+      class: "text-success",
+    },
+  ];
 
 
   docTypes = {
@@ -141,36 +165,39 @@ export class AfsTableComponent implements AfterViewInit {
     // This effect runs initially and whenever this.quantity() changes
     this.getAfsList();
   })
+  uploadFolderName: string = 'afs/uploads/';
+  selectedRow: any;
+  currentFile: any;
 
+  handlePageEvent(event: any) {
+    this.page = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+    this.getAfsList();
+  }
   getAfsList(): void {
     this.isTableLoading = true;
-    this.afsService.getAfsList(this.filters()).subscribe({
+
+    const params = {
+      ...this.filters(),
+      page: this.page,
+      limit: this.pageSize,
+      // ulb: this.filters().ulbId,
+      // stateId: this.filters().stateId,
+      // populationCategory: this.filters().populationCategory,
+      // yearId: this.filters().yearId,
+      // auditType: this.filters().auditType,
+      // docType: this.filters().docType,
+    };
+    this.afsService.getAfsList(params).subscribe({
       next: (res) => {
         this.dataSource.data = res.data;
+        this.totalCount = res.totalCount;
         this.isTableLoading = false;
       },
       error: (err) => {
         console.error('Failed to load AFS list:', err);
       }
     });
-  }
-
-  getStatusText(doc: any, index: number): string {
-    let digitizedFiles = null;
-    if (index === 0) {
-      digitizedFiles =
-        doc.afsexcelfiles?.files && doc.afsexcelfiles.files.length !== 0 ? doc.afsexcelfiles.files[0] : null;
-    } else {
-      digitizedFiles =
-        doc.afsexcelfiles?.files && doc.afsexcelfiles.files.length === 2 ? doc.afsexcelfiles.files[1] : null;
-    }
-    const digitizedStatus = digitizedFiles
-      ? digitizedFiles.fileUrl === 'https://placeholder-link.com/none'
-        ? 'Failed'
-        : 'Digitized'
-      : 'Not-Digitized';
-
-    return digitizedStatus;
   }
 
   /** Whether the number of selected elements matches the total number of rows. */
@@ -239,6 +266,66 @@ export class AfsTableComponent implements AfterViewInit {
   setActiveRow(file: any) {
     this.activeRow = file;
   }
+
+  /**
+   * format bytes
+   * @param bytes (File size in bytes)
+   * @param decimals (Decimals point)
+   */
+  formatBytes(bytes: number, decimals: number = 0) {
+    if (bytes === 0) {
+      return '0 Bytes';
+    }
+    const k = 1024;
+    const dm = decimals <= 0 ? 0 : decimals || 2;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  uploadFileToS3() {
+    // if (reset) return control.patchValue({ uploading: false, name: '', url: '' });
+    if (!this.currentFile) return;
+    const file = this.currentFile;
+
+    // control.patchValue({ uploading: true });
+    this.selectedRow.uploading = true;
+    // this.progress = 20;
+    this.uploadFolderName = `afs/uploads/${this.selectedRow.ulbCode}/`;
+    this.fileService.newGetURLForFileUpload(file.name, file.type, this.uploadFolderName).subscribe({
+      next: (s3Response: any) => {
+        // if (this.s3Subscribe) {
+        //   this.s3Subscribe.unsubscribe();
+        // }
+        const { url, path } = s3Response.data[0];
+        // this.progress = 80;
+        this.fileService.newUploadFileToS3(file, url).subscribe((res) => {
+          if (res.type !== HttpEventType.Response) return;
+          const formData = {
+            pdfUrl: path,
+            ulb: this.selectedRow.ulb,
+            year: this.filters().yearId,
+            auditType: this.filters().auditType,
+            docType: this.filters().docType,
+            uploadedBy: 'AFS',
+          };
+          this.afsService.uploadAfsFile(formData).subscribe((response) => {
+            this.selectedRow.uploading = false;
+            // this.progress = 100;
+            const fileData: any = { name: file.name, url: path, size: this.formatBytes(file.size) };
+          });
+
+
+          // this.group.get('file')?.patchValue(fileData);
+        });
+      },
+      error: (err) => console.log(err),
+    });
+    return;
+  }
+
+
+
   async handleFileUpload(event: Event, row: RawRow) {
     const input = event.target as HTMLInputElement;
     const selectedFile = input?.files?.[0];
@@ -248,7 +335,15 @@ export class AfsTableComponent implements AfterViewInit {
       return;
     }
 
+    this.currentFile = selectedFile;
+
     this.isTableLoading = true;
+
+    this.selectedRow = row;
+
+    this.uploadFolderName = 'afs/uploads/';
+
+    this.uploadFileToS3();
 
     try {
       // Extract page count
@@ -272,41 +367,41 @@ export class AfsTableComponent implements AfterViewInit {
       // const url = `${environment.api.url}afs-digitization/afs-file`;
       // const response: any = await this.http.post(url, formData).toPromise();
 
-      this.afsService.uploadAfsFile(formData).subscribe(async (response) => {
-        if (response.success && response.file?.fileUrl) {
-          console.log('File uploaded successfully:', response);
+      // this.afsService.uploadAfsFile(formData).subscribe(async (response) => {
+      //   if (response.success && response.file?.fileUrl) {
+      //     console.log('File uploaded successfully:', response);
 
-          // === overwrite or insert file entry ===
-          row.extraFiles = row.extraFiles || [];
+      //     // === overwrite or insert file entry ===
+      //     row.extraFiles = row.extraFiles || [];
 
-          const existingIndex = row.extraFiles.findIndex(
-            (ef: any) =>
-              ef.docType?.trim().toLowerCase() ===
-              (response.file.docType || docTypeName).trim().toLowerCase()
-          );
+      //     const existingIndex = row.extraFiles.findIndex(
+      //       (ef: any) =>
+      //         ef.docType?.trim().toLowerCase() ===
+      //         (response.file.docType || docTypeName).trim().toLowerCase()
+      //     );
 
-          const newEntry = {
-            docType: response.file.docType || docTypeName,
-            fileName: this.updateFileName(selectedFile.name, 'AFS_UPLOADED'),
-            fileUrl: response.file.fileUrl,
-            uploadedAt: response.file.uploadedAt,
-            pageCount
-          };
+      //     const newEntry = {
+      //       docType: response.file.docType || docTypeName,
+      //       fileName: this.updateFileName(selectedFile.name, 'AFS_UPLOADED'),
+      //       fileUrl: response.file.fileUrl,
+      //       uploadedAt: response.file.uploadedAt,
+      //       pageCount
+      //     };
 
-          if (existingIndex >= 0) {
-            row.extraFiles[existingIndex] = newEntry;
-          } else {
-            row.extraFiles.push(newEntry);
-          }
+      //     if (existingIndex >= 0) {
+      //       row.extraFiles[existingIndex] = newEntry;
+      //     } else {
+      //       row.extraFiles.push(newEntry);
+      //     }
 
-          row.hasAFS = true;
+      //     row.hasAFS = true;
 
-          // ✅ Auto-refresh that ULB’s file info
-          await this.refreshULBRow(row);
-        } else {
-          alert('Upload failed: ' + (response.message || 'Unknown error'));
-        }
-      });
+      //     // ✅ Auto-refresh that ULB’s file info
+      //     await this.refreshULBRow(row);
+      //   } else {
+      //     alert('Upload failed: ' + (response.message || 'Unknown error'));
+      //   }
+      // });
 
 
     } catch (err) {
@@ -412,45 +507,9 @@ export class AfsTableComponent implements AfterViewInit {
     });
   }
 
-  dashboardCards = [
-    {
-      id: 1,
-      icon: "bi bi-folder-check",
-      label: "642",
-      desc: "Files<br />Digitized",
-      class: "",
-    },
-    {
-      id: 2,
-      icon: "bi bi-file-earmark-text",
-      label: "4,550",
-      desc: "Pages<br />Digitized",
-      class: "",
-    },
-    {
-      id: 3,
-      icon: "bi bi-folder-x",
-      label: "679",
-      desc: "Files<br />Failed",
-      class: "text-danger",
-    },
-    {
-      id: 4,
-      icon: "bi bi-file-earmark-x",
-      label: "679",
-      desc: "Pages<br />Failed",
-      class: "text-danger",
-    },
-    {
-      id: 5,
-      icon: "bi bi-check-circle",
-      label: "49%",
-      desc: "Successful<br />Digitization",
-      class: "text-success",
-    },
-  ];
 
-  @Output() showSideBar = new EventEmitter<boolean>(true);
+
+  @Output() showSideBar = new EventEmitter<boolean>(false);
   applyFilter() {
     this.showSideBar.emit(true);
   }

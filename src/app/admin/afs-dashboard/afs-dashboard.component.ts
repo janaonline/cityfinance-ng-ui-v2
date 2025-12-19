@@ -90,7 +90,7 @@ export class AfsDashboardComponent implements OnInit {
   // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
 
   filtersObj = signal<FilterValues>({
-    docType: 'bal_sheet',
+    docType: 'bal_sheet_schedules',
     yearId: '606aadac4dff55e6c075c507',
     auditType: 'audited',
     populationCategory: '1M-4M',
@@ -99,46 +99,6 @@ export class AfsDashboardComponent implements OnInit {
   });
 
   onFiltersChanged(filters: FilterValues): void {
-    // this.filters = {
-    //   // stateId: this.selectedState,
-    //   // populationCategory: this.selectedPopulation,
-    //   // ulbId: this.selectedCities,
-    //   yearId: '606aadac4dff55e6c075c507',
-    //   docType: 'bal_sheet_schedules',
-    //   auditType: 'audited'
-    // };
-    // const {
-    //   stateId,
-    //   populationCategory,
-    //   ulbId,
-    //   yearId,
-    //   docType,
-    //   isAudited
-    // } = filters;
-
-    // const filtered = this.allRows.filter((row) => {
-    //   if (stateId && row.stateId !== stateId) return false;
-    //   if (
-    //     populationCategory &&
-    //     populationCategory !== 'All ULBs' &&
-    //     row.populationCategory !== populationCategory
-    //   ) {
-    //     return false;
-    //   }
-    //   if (cities && cities.length > 0 && !cities.includes(row.city)) {
-    //     return false;
-    //   }
-    //   if (year && row.year !== year) return false;
-    //   if (docType && row.docType !== docType) return false;
-    //   if (docType !== '16th_fc' && isAudited && row.isAudited !== isAudited) {
-    //     return false;
-    //   }
-    //   return true;
-    // });
-
-    // this.dataSource.data = filtered;
-    // this.activeFilterSummary = this.buildFilterSummary(filters);
-
     if ('citySearch' in filters) delete filters.citySearch;
     if ('stateSearch' in filters) delete filters.stateSearch;
     this.filtersObj.set(filters)
@@ -146,28 +106,6 @@ export class AfsDashboardComponent implements OnInit {
     // this.getAfsList();
 
   }
-
-
-
-  // private buildFilterSummary(filters: FilterValues): string {
-  //   const parts: string[] = [];
-
-  //   if (filters.stateName) parts.push(`State: ${filters.stateName}`);
-  //   if (filters.populationCategory)
-  //     parts.push(`Population: ${filters.populationCategory}`);
-  //   if (filters.cities?.length)
-  //     parts.push(`Cities: ${filters.cities.join(', ')}`);
-  //   if (filters.yearId) parts.push(`Year: ${filters.yearId}`);
-  //   if (filters.docType) parts.push(`Doc Type: ${filters.docType}`);
-  //   if (filters.docType !== '16th_fc' && filters.isAudited) {
-  //     parts.push(
-  //       `Audit: ${filters.isAudited === 'audited' ? 'Audited' : 'UnAudited'}`
-  //     );
-  //   }
-
-  //   return parts.length ? parts.join(' | ') : '';
-  // }
-
 
 
   fullName = '';
@@ -432,17 +370,10 @@ export class AfsDashboardComponent implements OnInit {
 
 
   ngOnInit(): void {
-    // const token = localStorage.getItem('token');
-    // const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
-    // if (!token || !isLoggedIn) {
-    //   this.router.navigate(['/login']);
-    //   return;
-    // }
-    // this.getAfsList();
-    this.getAFSMetrics();
-    this.loadFilters();
-    this.loadGlobalMetrics();
+    // this.getAFSMetrics();
+    // this.loadFilters();
+    // this.loadGlobalMetrics();
 
     const userData = localStorage.getItem('userData');
     if (userData) {
@@ -1765,7 +1696,7 @@ export class AfsDashboardComponent implements OnInit {
     return updatedFiles;
   }
 
-  showSideBar = signal<boolean>(true);
+  showSideBar = signal<boolean>(false);
   toggleSideBar(toggleStatus: boolean = !this.showSideBar()) {
     this.showSideBar.set(toggleStatus);
   }

@@ -7,6 +7,16 @@ interface ResponseData {
   data: any;
 }
 
+export interface AfsExcelFile {
+  annualAccountsId?: string;
+  ulb: string;
+  year: string;
+  auditType: string;
+  docType: string;
+  pdfUrl: string;
+  uploadedBy: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -35,11 +45,11 @@ export class AfsService {
   }
   // to be migrate to api
 
-  uploadAfsFile(formData: FormData) {
-    const url = `${environment.api.url}afs-digitization/afs-file`;
+  uploadAfsFile(payload: AfsExcelFile) {
+    // const url = `${environment.api.url}afs-digitization/afs-file`;
     // const response: any = await this.http.post(url, formData).toPromise();
-    // const url = `${environment.api.url2}afs-digitization/upload-afs-file`;
-    return this.http.post<any>(url, formData);
+    const url = `${environment.api.url2}afs-digitization/upload-afs-file`;
+    return this.http.post<any>(url, payload);
   }
 
   getAfsFile(params: { ulbId: string; financialYear: string; auditType: string; docType: string }) {
@@ -73,5 +83,12 @@ export class AfsService {
       environment.api.url + 'afs-digitization/afs-excel-file',
       backendForm
     )
+  }
+
+  startDigitization(payloads: { jobs: AfsExcelFile[] }) {
+    return this.http.post(
+      environment.api.url2 + 'afs-digitization/enqueue-batch',
+      payloads
+    );
   }
 }
