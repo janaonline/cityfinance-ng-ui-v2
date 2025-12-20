@@ -10,34 +10,6 @@ export interface DialogData {
   selectedRows: any[];
 }
 
-interface DigitizationResponse {
-  message?: string;
-  S3_Excel_Storage_Link?: string;
-  request_id?: string;
-  overall_confidence_score?: number;
-  [key: string]: any;
-}
-
-
-interface ExcelLinkMeta {
-  url: string;
-  requestId: string;
-  source: 'ULB' | 'AFS';
-  confidenceScore: number | null;
-}
-
-interface FileData {
-  annualAccountsId: string;
-  ulb: string;
-  year: string;
-  // yearLabel: string;
-  docType: string;
-  // doctTypeLabel: string;
-  auditType: string;
-  pdfUrl: string;
-  uploadedBy: string;
-}
-
 @Component({
   selector: 'app-digitization-modal',
   imports: [MatDialogModule, MatButtonModule, MatProgressSpinnerModule,],
@@ -131,6 +103,8 @@ export class DigitizationModalComponent implements OnInit {
     this.isLoading = true;
     // console.log('Proceeding digitization...', this.selectedFiles);
     const payloads = { jobs: this.selectedFiles };
+    // this.dialogRef.close(true);
+    // return;
     this.afsService.startDigitization(payloads).subscribe({
       next: (res) => {
         this.isLoading = false;

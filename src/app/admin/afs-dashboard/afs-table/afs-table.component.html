@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  <mat-card>
+  <mat-card class="shadow">
     <!-- <mat-card-title class="mx-3 mt-3 fw-bold">City Documents</mat-card-title> -->
     @if (activeFilterSummary) {
       <mat-card-subtitle>
@@ -147,7 +147,7 @@
                 style="display: none"
                 (change)="handleFileUpload($event, row)"
                 #fileInput
-                [attr.data-id]="row.cityName + row.ulbCode"
+                [attr.data-id]="row.ulbName + row.ulbCode"
               />
             </div>
           </td>
@@ -176,6 +176,7 @@
               [ngClass]="{
                 'text-bg-success': statusText === 'digitized',
                 'text-bg-danger': statusText === 'failed',
+                'text-bg-info': statusText === 'queued',
               }"
               >{{ statusText || 'Not-Started' }}
             </small>
@@ -188,6 +189,7 @@
                   [ngClass]="{
                     'text-bg-success': statusText === 'digitized',
                     'text-bg-danger': statusText === 'failed',
+                    'text-bg-info': statusText === 'queued',
                   }"
                   >{{ statusText || 'Not-Started' }}
                 </small>
@@ -204,11 +206,11 @@
           </th>
           <td mat-cell *matCellDef="let row">
             <!-- {{ row.ulbSubmit | date: 'd/M/yyyy, h:mm a' }} -->
-            {{ row.ulbSubmit | date: 'd/M/yyyy' }}
+            {{ row.ulbSubmit ? (row.ulbSubmit | date: 'd/M/yyyy') : 'N/A' }}
             <br />
             <div class="mt-5">
               @if (row.afsexcelfiles?.afsFile) {
-                {{ row.afsexcelfiles.afsFile.uploadedAt | date: 'd/M/yyyy' }}
+                {{ row.afsexcelfiles.afsFile.createdAt | date: 'd/M/yyyy' }}
               } @else {
                 N/A
               }
@@ -240,7 +242,7 @@
             RequestId / Log
           </th>
           <td mat-cell *matCellDef="let row">
-            @if (row.afsexcelfiles) {
+            @if (['digitized', 'failed'].includes(row.afsexcelfiles?.ulbFile?.digitizationStatus)) {
               <button
                 class="btn btn-primary btn-sm shadow"
                 (click)="openLogDialog(row.afsexcelfiles?.ulbFile?.requestId)"
@@ -251,7 +253,10 @@
             }
             <br />
             <div class="mt-5">
-              @if (row.afsfiles && row.afsexcelfiles && row.afsexcelfiles.files.length === 2) {
+              @if (
+                row.afsexcelfiles?.afsFile &&
+                ['digitized', 'failed'].includes(row.afsexcelfiles?.afsFile?.digitizationStatus)
+              ) {
                 <button
                   class="btn btn-success btn-sm shadow"
                   (click)="openLogDialog(row.afsexcelfiles?.afsFile?.requestId)"

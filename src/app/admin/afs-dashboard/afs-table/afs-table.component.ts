@@ -24,22 +24,121 @@ import { DigitizationModalComponent } from '../digitization-modal/digitization-m
 import { FilterValues } from '../afs-filter/afs-filter.component';
 import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
 import { HttpEventType } from '@angular/common/http';
+
+// raw row interface
+// {
+//       "_id": "630085be29ef916762354bdc",
+//       "ulb": "5dd24729437ba31f7eb42f46",
+//       "actionTakenByRole": "STATE",
+//       "isActive": true,
+//       "isDraft": false,
+//       "status": "APPROVED",
+//       "afsexcelfiles": {
+//         "_id": "69453b74559acb711f5d2a8a",
+//         "year": "606aadac4dff55e6c075c507",
+//         "docType": "bal_sheet_schedules",
+//         "auditType": "audited",
+//         "ulb": "5dd24729437ba31f7eb42f46",
+//         "__v": 0,
+//         "afsFile": {
+//           "overallConfidenceScore": 99.39,
+//           "digitizationStatus": "digitized",
+//           "uploadedBy": "AFS",
+//           "pdfUrl": "/afs/uploads/UP001//c908edc2-1b41-47e9-9a1e-62bc827d80c1_85c57f12-04ae-4157-8143-7ecbfa6dc208.pdf",
+//           "queue": {
+//             "jobId": "125",
+//             "status": "completed",
+//             "progress": 100,
+//             "attemptsMade": 0,
+//             "createdAt": "2025-12-19T12:56:34.411Z"
+//           },
+//           "createdAt": "2025-12-19T12:56:34.411Z",
+//           "excelUrl": "afs/5dd24729437ba31f7eb42f46_606aadac4dff55e6c075c507_audited_bal_sheet_schedules_de6426c1-1889-4fa0-880a-7bfc766b0cfe.xlsx",
+//           "requestId": "req-20251219-124e6c"
+//         },
+//         "annualAccountsId": "69453b740e6f43fea9af30b5",
+//         "ulbFile": {
+//           "overallConfidenceScore": 98.67,
+//           "digitizationStatus": "digitized",
+//           "uploadedBy": "ULB",
+//           "pdfUrl": "/objects/c908edc2-1b41-47e9-9a1e-62bc827d80c1.pdf",
+//           "queue": {
+//             "jobId": "124",
+//             "status": "completed",
+//             "progress": 100,
+//             "attemptsMade": 0,
+//             "createdAt": "2025-12-19T12:56:34.323Z"
+//           },
+//           "createdAt": "2025-12-19T12:56:34.324Z",
+//           "excelUrl": "afs/5dd24729437ba31f7eb42f46_606aadac4dff55e6c075c507_audited_bal_sheet_schedules_71dc59f9-6ad5-4142-ab71-55f5a986d5b4.xlsx",
+//           "requestId": "req-20251219-c21774"
+//         }
+//       },
+//       "year": "606aadac4dff55e6c075c507",
+//       "bal_sheet_schedules": {
+//         "url": "/objects/c908edc2-1b41-47e9-9a1e-62bc827d80c1.pdf",
+//         "name": "SCHEDULE 20-21.pdf"
+//       },
+//       "ulbPopulation": 1585704,
+//       "ulbName": "Agra Municipal Corporation",
+//       "ulbCode": "UP001",
+//       "stateId": "5dcf9d7516a06aed41c748fe",
+//       "stateName": "Uttar Pradesh",
+//       "doctType": "Schedules To Balance Sheet",
+//       "yearLabel": "2020-21"
+//     },
+
+export interface AfsFile {
+  overallConfidenceScore?: number;
+  digitizationStatus?: string;
+  uploadedBy?: string;
+  pdfUrl?: string;
+  queue?: {
+    jobId: string;
+    status: string;
+    progress: number;
+    attemptsMade: number;
+    createdAt: string;
+  };
+  createdAt?: string;
+  excelUrl?: string;
+  requestId?: string;
+}
+
+export interface Afsexcelfiles {
+  _id: string;
+  year: string;
+  docType: string;
+  auditType: string;
+  ulb: string;
+  __v: number;
+  afsFile?: AfsFile;
+  annualAccountsId: string;
+  ulbFile?: AfsFile;
+}
+
+// export interface FilterValues {
+//   stateId?: string;
+//   ulbId?: string;
+//   populationCategory?: string;
+//   yearId?: string;
+//   auditType?: string;
+//   docType?: string;
+
+// }
 export interface RawRow {
+  _id: string;
   ulb: string;
   ulbCode: string;
-  cityName: string;
+  // cityName: string;
   formStatus: number;
   digitizeStatus: string;
   formUploadedOn: string;
   digitizedOn: string;
-  afsexcelfiles: any;
-  afsfiles: any;
-  extraFiles?: any[];
-  hasAFS?: boolean;
-
+  afsexcelfiles: Afsexcelfiles;
   position: number;
-  city: string;
-  stateId: string;
+  // city: string;
+  state: string;
   stateName: string;
   populationCategory: string;
   year: string;
@@ -311,8 +410,10 @@ export class AfsTableComponent implements AfterViewInit {
           };
           this.afsService.uploadAfsFile(formData).subscribe((response) => {
             this.selectedRow.uploading = false;
+            this.selectedRow.afsexcelfiles = response.data;
+            this.isTableLoading = false;
             // this.progress = 100;
-            const fileData: any = { name: file.name, url: path, size: this.formatBytes(file.size) };
+            // const fileData: any = { name: file.name, url: path, size: this.formatBytes(file.size) };
           });
 
 
@@ -341,147 +442,100 @@ export class AfsTableComponent implements AfterViewInit {
 
     this.selectedRow = row;
 
-    this.uploadFolderName = 'afs/uploads/';
+    // this.selectedRow.afsexcelfiles.afsFile = {
+    //   "overallConfidenceScore": 99.39,
+    //   "digitizationStatus": "digitized",
+    //   "uploadedBy": "AFS",
+    //   "pdfUrl": "/afs/uploads/UP001//c908edc2-1b41-47e9-9a1e-62bc827d80c1_85c57f12-04ae-4157-8143-7ecbfa6dc208.pdf",
+    //   "queue": {
+    //     "jobId": "125",
+    //     "status": "completed",
+    //     "progress": 100,
+    //     "attemptsMade": 0,
+    //     "createdAt": "2025-12-19T12:56:34.411Z"
+    //   },
+    //   "createdAt": "2025-12-19T12:56:34.411Z",
+    //   "excelUrl": "afs/5dd24729437ba31f7eb42f46_606aadac4dff55e6c075c507_audited_bal_sheet_schedules_de6426c1-1889-4fa0-880a-7bfc766b0cfe.xlsx",
+    //   "requestId": "req-20251219-124e6c"
+    // };
+    // this.isTableLoading = false;
 
+    this.uploadFolderName = 'afs/uploads/';
     this.uploadFileToS3();
 
-    try {
-      // Extract page count
-      const arrayBuffer = await selectedFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const pageCount = pdfDoc.getPageCount();
 
-      // Build formData
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('ulbId', row.ulb);
-      formData.append('financialYear', row.year);
-      formData.append('auditType', this.filters().auditType);
-
-      const docTypeName = this.filters().docType;
-      // const docTypeName =  this.filters.documentTypes
-      //     .flatMap(group => group.items)
-      //     .find(doc => doc.key === this.selectedDocType)?.name || '';
-      formData.append('docType', docTypeName);
-
-      // const url = `${environment.api.url}afs-digitization/afs-file`;
-      // const response: any = await this.http.post(url, formData).toPromise();
-
-      // this.afsService.uploadAfsFile(formData).subscribe(async (response) => {
-      //   if (response.success && response.file?.fileUrl) {
-      //     console.log('File uploaded successfully:', response);
-
-      //     // === overwrite or insert file entry ===
-      //     row.extraFiles = row.extraFiles || [];
-
-      //     const existingIndex = row.extraFiles.findIndex(
-      //       (ef: any) =>
-      //         ef.docType?.trim().toLowerCase() ===
-      //         (response.file.docType || docTypeName).trim().toLowerCase()
-      //     );
-
-      //     const newEntry = {
-      //       docType: response.file.docType || docTypeName,
-      //       fileName: this.updateFileName(selectedFile.name, 'AFS_UPLOADED'),
-      //       fileUrl: response.file.fileUrl,
-      //       uploadedAt: response.file.uploadedAt,
-      //       pageCount
-      //     };
-
-      //     if (existingIndex >= 0) {
-      //       row.extraFiles[existingIndex] = newEntry;
-      //     } else {
-      //       row.extraFiles.push(newEntry);
-      //     }
-
-      //     row.hasAFS = true;
-
-      //     // ✅ Auto-refresh that ULB’s file info
-      //     await this.refreshULBRow(row);
-      //   } else {
-      //     alert('Upload failed: ' + (response.message || 'Unknown error'));
-      //   }
-      // });
-
-
-    } catch (err) {
-      console.error('Error uploading file:', err);
-      alert('Upload failed. Please try again.');
-    } finally {
-      this.isTableLoading = false;
-    }
   }
 
-  private updateFileName(originalName: string, suffix: string): string {
-    if (!originalName) return '';
+  // private updateFileName(originalName: string, suffix: string): string {
+  //   if (!originalName) return '';
 
-    // Strip extension
-    const parts = originalName.split('.');
-    const ext = parts.length > 1 ? '.' + parts.pop() : '';
-    const base = parts.join('.');
+  //   // Strip extension
+  //   const parts = originalName.split('.');
+  //   const ext = parts.length > 1 ? '.' + parts.pop() : '';
+  //   const base = parts.join('.');
 
-    // Always remove any old suffix (_ULB_UPLOADED / _AFS_UPLOADED)
-    const cleanedBase = base.replace(/_(ULB_UPLOADED|AFS_UPLOADED)$/i, '');
+  //   // Always remove any old suffix (_ULB_UPLOADED / _AFS_UPLOADED)
+  //   const cleanedBase = base.replace(/_(ULB_UPLOADED|AFS_UPLOADED)$/i, '');
 
-    return `${cleanedBase}_${suffix}.pdf`;
-  }
+  //   return `${cleanedBase}_${suffix}.pdf`;
+  // }
 
-  async refreshULBRow(row: RawRow) {
-    try {
-      const financialYear = this.filters().yearId;
-      const auditType = this.filters().auditType;
-      const docTypeName = this.filters().docType;
-      // const docTypeName =
-      //  this.filters.documentTypes
-      //   .flatMap(group => group.items)
-      //   .find(doc => doc.key === this.selectedDocType)?.name || '';
+  // async refreshULBRow(row: RawRow) {
+  //   try {
+  //     const financialYear = this.filters().yearId;
+  //     const auditType = this.filters().auditType;
+  //     const docTypeName = this.filters().docType;
+  //     // const docTypeName =
+  //     //  this.filters.documentTypes
+  //     //   .flatMap(group => group.items)
+  //     //   .find(doc => doc.key === this.selectedDocType)?.name || '';
 
-      // const afsUrl = `http://localhost:8080/api/v1/afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
-      // const afsUrl = `${environment.api.url}afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
-      // const afsResponse: any = await this.http.get(afsUrl).toPromise();
+  //     // const afsUrl = `http://localhost:8080/api/v1/afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
+  //     // const afsUrl = `${environment.api.url}afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
+  //     // const afsResponse: any = await this.http.get(afsUrl).toPromise();
 
-      const params = { ulbId: row.ulb, financialYear, auditType, docType: docTypeName };
-      const afsResponse: any = await this.afsService.getAfsFile(params).toPromise();
+  //     const params = { ulbId: row.ulb, financialYear, auditType, docType: docTypeName };
+  //     const afsResponse: any = await this.afsService.getAfsFile(params).toPromise();
 
-      const target = row;
-      if (afsResponse.success && afsResponse.file?.fileUrl && target) {
-        const afsFile = afsResponse.file;
-        const fullUrl = afsFile.fileUrl;
-        const pageCount = await this.getPdfPageCount(fullUrl);
+  //     const target = row;
+  //     if (afsResponse.success && afsResponse.file?.fileUrl && target) {
+  //       const afsFile = afsResponse.file;
+  //       const fullUrl = afsFile.fileUrl;
+  //       const pageCount = await this.getPdfPageCount(fullUrl);
 
-        target.extraFiles = [
-          {
-            docType: afsFile.docType,
-            fileName: this.updateFileName(afsFile.docType, 'AFS_UPLOADED'),
-            fileUrl: afsFile.fileUrl,
-            uploadedAt: afsFile.uploadedAt,
-            pageCount
-          }
-        ];
-      }
-    } catch (error) {
-      console.error('Error refreshing ULB row:', error);
-    }
-  }
+  //       target.extraFiles = [
+  //         {
+  //           docType: afsFile.docType,
+  //           fileName: this.updateFileName(afsFile.docType, 'AFS_UPLOADED'),
+  //           fileUrl: afsFile.fileUrl,
+  //           uploadedAt: afsFile.uploadedAt,
+  //           pageCount
+  //         }
+  //       ];
+  //     }
+  //   } catch (error) {
+  //     console.error('Error refreshing ULB row:', error);
+  //   }
+  // }
 
 
 
-  async getPdfPageCount(url: string): Promise<number> {
-    try {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      return pdfDoc.getPageCount();
-    } catch (err) {
-      console.error('Failed to load PDF for page count:', err);
-      return 0;
-    }
-  }
+  // async getPdfPageCount(url: string): Promise<number> {
+  //   try {
+  //     const response = await fetch(url);
+  //     const arrayBuffer = await response.arrayBuffer();
+  //     const pdfDoc = await PDFDocument.load(arrayBuffer);
+  //     return pdfDoc.getPageCount();
+  //   } catch (err) {
+  //     console.error('Failed to load PDF for page count:', err);
+  //     return 0;
+  //   }
+  // }
 
   @ViewChildren('fileInput') fileInputs!: QueryList<ElementRef<HTMLInputElement>>;
 
   triggerFileInput(file: any) {
-    const identifier = file.cityName + file.ulbCode;
+    const identifier = file.ulbName + file.ulbCode;
     const inputElement = this.fileInputs.find(ref => ref.nativeElement.getAttribute('data-id') === identifier);
     if (inputElement) {
       inputElement.nativeElement.click();
@@ -503,6 +557,25 @@ export class AfsTableComponent implements AfterViewInit {
     const dialogRef = this.dialog.open(DigitizationModalComponent, { data: { selectedRows } });
 
     dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        for (const row of selectedRows) {
+          const ulbFile = row[`${this.filters().docType}`]?.url;
+          if (ulbFile) {
+            if (!row.afsexcelfiles?.ulbFile) {
+              row.afsexcelfiles = row.afsexcelfiles || {};
+              row.afsexcelfiles.ulbFile = {
+                digitizationStatus: 'queued',
+              };
+            }
+            else {
+              row.afsexcelfiles.ulbFile.digitizationStatus = 'queued';
+            }
+          }
+          if (row.afsexcelfiles?.afsFile) {
+            row.afsexcelfiles.afsFile.digitizationStatus = 'queued';
+          }
+        }
+      }
       // console.log(`Dialog result: ${result}`);
     });
   }
