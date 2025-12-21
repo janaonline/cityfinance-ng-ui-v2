@@ -81,6 +81,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'afs-old-dashboard',
+    loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },

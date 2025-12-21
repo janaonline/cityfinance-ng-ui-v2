@@ -1,0 +1,51 @@
+.table-wrapper {
+    padding-bottom: 1rem;
+}
+
+.table-container {
+    max-height: calc(100vh - 220px);
+    overflow: auto;
+}
+
+mat-card {
+    width: 100%;
+}
+
+.table-container {
+    position: relative;
+    max-height: 75vh;
+    overflow: auto;
+}
+
+.table-loader-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.7); // or rgba(0,0,0,0.05) for subtle
+    pointer-events: none; // table still non-clickable visually but avoids weird hover
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+
+.card {
+    transition: all 0.3s ease;
+    height: 189px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, .12), 0 4px 8px rgba(0, 0, 0, .06);
+}
+
+.card-body .display-4 {
+    transition: all 0.3s ease;
+}
+
+.card:hover .card-body .display-4 {
+    transform: scale(1.1);
+}
