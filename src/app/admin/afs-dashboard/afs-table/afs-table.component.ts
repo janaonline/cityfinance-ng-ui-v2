@@ -1,29 +1,29 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { Component, ViewChild, AfterViewInit, inject, ViewChildren, ElementRef, QueryList, input, effect, Output, EventEmitter } from '@angular/core';
+import { AsyncPipe, DatePipe, DecimalPipe, NgClass } from '@angular/common';
+import { HttpEventType } from '@angular/common/http';
+import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { AfsService } from '../afs.service';
-import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
-import { AsyncPipe, DatePipe, NgClass } from '@angular/common';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
-import { PDFDocument } from 'pdf-lib';
 import { environment } from '../../../../environments/environment';
-import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
-import { FilterValues } from '../afs-filter/afs-filter.component';
+import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
+import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
 import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
-import { HttpEventType } from '@angular/common/http';
+import { FilterValues } from '../afs-filter/afs-filter.component';
+import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
+import { AfsService } from '../afs.service';
+import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 // raw row interface
 // {
@@ -168,6 +168,7 @@ export interface RawRow {
     NgClass,
     AsyncPipe,
     PdfPageCountPipe,
+    DecimalPipe,
   ],
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
@@ -179,7 +180,7 @@ export class AfsTableComponent implements AfterViewInit {
   readonly dialog = inject(MatDialog);
   readonly afsService = inject(AfsService);
   private fileService = inject(FileService);
-
+  private _snackBar = inject(MatSnackBar);
   page = 1;
   limit = 10;
   pageSize = 10;
@@ -280,12 +281,6 @@ export class AfsTableComponent implements AfterViewInit {
       ...this.filters(),
       page: this.page,
       limit: this.pageSize,
-      // ulb: this.filters().ulbId,
-      // stateId: this.filters().stateId,
-      // populationCategory: this.filters().populationCategory,
-      // yearId: this.filters().yearId,
-      // auditType: this.filters().auditType,
-      // docType: this.filters().docType,
     };
     this.afsService.getAfsList(params).subscribe({
       next: (res) => {
@@ -294,7 +289,10 @@ export class AfsTableComponent implements AfterViewInit {
         this.isTableLoading = false;
       },
       error: (err) => {
+        this.dataSource.data = [];
         console.error('Failed to load AFS list:', err);
+        this._snackBar.open('Failed to load AFS list', 'Close', { duration: 5000 });
+        this.isTableLoading = false;
       }
     });
   }
@@ -332,6 +330,7 @@ export class AfsTableComponent implements AfterViewInit {
     'ulbUploadedPdf',
     'formStatus',
     'digitizeStatus',
+    // 'digitizedFile',
     // 'populationCategory',
     // 'year',
     // 'docType',
@@ -540,13 +539,6 @@ export class AfsTableComponent implements AfterViewInit {
     if (inputElement) {
       inputElement.nativeElement.click();
     }
-  }
-
-  // storageBaseUrl = environment.STORAGE_BASEURL;
-
-  storageBaseUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
-  getFullExcelUrl(excel: any): string {
-    return `${environment.STORAGE_BASEURL}${excel.fileUrl}`;
   }
 
   digitizeSelected() {

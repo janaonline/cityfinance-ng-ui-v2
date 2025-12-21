@@ -15,24 +15,27 @@ import { IULB } from '../../../core/models/ulb';
 const DEFAULT_YEAR = '606aadac4dff55e6c075c507'; // 2020-21
 const DEFAULT_DOC_TYPE = 'bal_sheet_schedules';
 const DEFAULT_AUDIT_STATUS = 'audited';
+const DEFAULT_DIGITIZATION_STATUS = '';
 
 interface YearOption {
   _id: string;
   year: string;
 }
 
-interface DocumentTypeItem {
+interface KeyNameItem {
   key: string;
   name: string;
 }
 
+
 interface FiltersConfig {
   years: YearOption[];
-  documentTypes: DocumentTypeItem[];
+  documentTypes: KeyNameItem[];
   ulbs?: IULB[];
   states: IState[];
-  auditTypes?: { key: string; name: string }[];
+  auditTypes?: KeyNameItem[];
   populationCategories?: string[];
+  digitizationStatuses?: KeyNameItem[];
 }
 
 export interface FilterValues {
@@ -107,7 +110,8 @@ export class AfsFilterComponent implements OnInit {
       ulbId: [[] as string[]],
       yearId: [DEFAULT_YEAR],
       docType: [DEFAULT_DOC_TYPE],
-      auditType: [DEFAULT_AUDIT_STATUS]
+      auditType: [DEFAULT_AUDIT_STATUS],
+      digitizationStatus: [DEFAULT_DIGITIZATION_STATUS]
     });
 
     // update filtered cities when these change

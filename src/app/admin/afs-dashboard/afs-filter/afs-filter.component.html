@@ -134,6 +134,17 @@
     </mat-select>
   </mat-form-field>
 
+  <!-- Digitization Status -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Digitization Status</mat-label>
+    <mat-select placeholder="Select Digitization Status" formControlName="digitizationStatus">
+      <mat-option [value]="''">All</mat-option>
+      @for (d of filters.digitizationStatuses; track $index) {
+        <mat-option [value]="d.key">{{ d.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
   <!-- Document Type (grouped radios) -->
   <div class="">
     <p class="mb-0 fw-bold">Document Type</p>
