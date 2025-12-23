@@ -2,9 +2,23 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
-interface ResponseData {
+export interface ResponseData {
   success: boolean;
   data: any;
+  totalCount?: number;
+}
+
+export interface FilterValues {
+  stateId: string[];
+  // stateName: string | '';
+  populationCategory: string | '';
+  ulbId: string[];
+  yearId: string | '';
+  docType: string | '';
+  auditType: 'audited' | 'unAudited' | '';
+  digitizationStatus?: string | '';
+  page?: number;
+  limit?: number;
 }
 
 export interface AfsExcelFile {
@@ -41,7 +55,7 @@ export class AfsService {
 
   getAfsList(params: any) {
     const url = `${environment.api.url2}afs-digitization/afs-list`;
-    return this.http.get<any>(url, { params });
+    return this.http.get<ResponseData>(url, { params });
   }
   // to be migrate to api
 

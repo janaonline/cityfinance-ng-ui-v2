@@ -10,7 +10,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { IState } from '../../../core/models/state/state';
-import { AfsService } from '../afs.service';
+import { AfsService, FilterValues } from '../afs.service';
 import { IULB } from '../../../core/models/ulb';
 const DEFAULT_YEAR = '606aadac4dff55e6c075c507'; // 2020-21
 const DEFAULT_DOC_TYPE = 'bal_sheet_schedules';
@@ -36,16 +36,6 @@ interface FiltersConfig {
   auditTypes?: KeyNameItem[];
   populationCategories?: string[];
   digitizationStatuses?: KeyNameItem[];
-}
-
-export interface FilterValues {
-  stateId: string[];
-  // stateName: string | '';
-  populationCategory: string | '';
-  ulbId: string[];
-  yearId: string | '';
-  docType: string | '';
-  auditType: 'audited' | 'unAudited' | '';
 }
 
 @Component({
