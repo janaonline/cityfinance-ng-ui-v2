@@ -101,7 +101,9 @@ export class AfsFilterComponent implements OnInit {
       yearId: [DEFAULT_YEAR],
       docType: [DEFAULT_DOC_TYPE],
       auditType: [DEFAULT_AUDIT_STATUS],
-      digitizationStatus: [DEFAULT_DIGITIZATION_STATUS]
+      digitizationStatus: [DEFAULT_DIGITIZATION_STATUS],
+      page: [1],
+      limit: [10],
     });
 
     // update filtered cities when these change
@@ -271,6 +273,9 @@ export class AfsFilterComponent implements OnInit {
       yearId: DEFAULT_YEAR,
       docType: DEFAULT_DOC_TYPE,
       auditType: DEFAULT_AUDIT_STATUS,
+      page: 1,
+      limit: 10,
+      digitizationStatus: DEFAULT_DIGITIZATION_STATUS
     });
     this.filtersChanged.emit(this.filterForm.value);
   }
