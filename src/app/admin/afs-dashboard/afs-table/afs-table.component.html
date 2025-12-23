@@ -70,17 +70,13 @@
         </ng-container>
         <!-- State -->
         <ng-container matColumnDef="state">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            State
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>State</th>
           <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
         </ng-container>
 
         <!-- City -->
         <ng-container matColumnDef="city">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            City
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>City</th>
           <td mat-cell *matCellDef="let row">
             <strong>{{ row.ulbCode }}</strong> <br />{{ row.ulbName }}
           </td>
@@ -153,9 +149,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="formStatus">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            Form Status
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Form Status</th>
           <td mat-cell *matCellDef="let row">
             {{
               MASTER_FORM_STATUS[row.currentFormStatus] ||
@@ -167,9 +161,7 @@
         </ng-container>
 
         <ng-container matColumnDef="digitizeStatus">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            Digitized Status
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized Status</th>
           <td mat-cell *matCellDef="let row">
             @let statusText = row.afsexcelfiles?.ulbFile?.digitizationStatus;
             <small
@@ -179,7 +171,7 @@
                 'text-bg-danger': statusText === 'failed',
                 'text-bg-info': statusText === 'queued',
               }"
-              >{{ statusText || 'Not-Started' }}
+              >{{ statusText || 'Not-Digitized' }}
             </small>
             @if (statusText === 'digitized') {
               <a [href]="row.afsexcelfiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
@@ -200,7 +192,7 @@
                     'text-bg-danger': statusText === 'failed',
                     'text-bg-info': statusText === 'queued',
                   }"
-                  >{{ statusText || 'Not-Started' }}
+                  >{{ statusText || 'Not-Digitized' }}
                 </small>
                 @if (statusText === 'digitized') {
                   <a [href]="row.afsexcelfiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
@@ -219,9 +211,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="digitizedFile">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            Digitized File
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized File</th>
           <td mat-cell *matCellDef="let row">
             @let statusText = row.afsexcelfiles?.ulbFile?.digitizationStatus;
             @if (statusText === 'digitized') {
@@ -250,9 +240,7 @@
         </ng-container>
 
         <ng-container matColumnDef="formUploadedOn">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            Form Uploaded On
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Form Uploaded On</th>
           <td mat-cell *matCellDef="let row">
             <!-- {{ row.ulbSubmit | date: 'd/M/yyyy, h:mm a' }} -->
             {{ row.ulbSubmit ? (row.ulbSubmit | date: 'd/M/yyyy') : 'N/A' }}
@@ -267,9 +255,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="digitizedOn">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            Digitized On
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized On</th>
           <td mat-cell *matCellDef="let row">
             {{
               row.afsexcelfiles
@@ -287,9 +273,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="requestIdLog">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef mat-sort-header>
-            RequestId / Log
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>RequestId / Log</th>
           <td mat-cell *matCellDef="let row">
             @if (['digitized', 'failed'].includes(row.afsexcelfiles?.ulbFile?.digitizationStatus)) {
               <button

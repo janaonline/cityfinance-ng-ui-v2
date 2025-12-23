@@ -259,11 +259,34 @@ export class AfsTableComponent implements AfterViewInit {
 
   pageEvent!: PageEvent;
 
+  dataSource = new MatTableDataSource<RawRow>([]);
+  displayedColumns: string[] = [
+    'select',
+    'state',
+    'city',
+    'ulbUploadedPdf',
+    'formStatus',
+    'digitizeStatus',
+    // 'digitizedFile',
+    // 'populationCategory',
+    // 'year',
+    // 'docType',
+    // 'auditStatus'
+    'formUploadedOn',
+    'digitizedOn',
+    'requestIdLog',
+  ];
+
+  activeFilterSummary = '';
+
+
   handlePageEvent(event: PageEvent) {
     this.pageEvent = event;
     // this.totalCount = event.length;
     this.page = event.pageIndex + 1;
     this.pageSize = event.pageSize;
+    this.filters().page = this.page;
+    this.filters().limit = this.pageSize;
     this.getAfsList();
   }
   getAfsList(): void {
@@ -271,8 +294,8 @@ export class AfsTableComponent implements AfterViewInit {
 
     const params = {
       ...this.filters(),
-      page: this.page,
-      limit: this.pageSize,
+      // page: this.page,
+      // limit: this.pageSize,
     };
     this.afsService.getAfsList(params).subscribe({
       next: (res: ResponseData) => {
@@ -314,25 +337,6 @@ export class AfsTableComponent implements AfterViewInit {
     return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.position + 1}`;
   }
 
-  dataSource = new MatTableDataSource<RawRow>([]);
-  displayedColumns: string[] = [
-    'select',
-    'state',
-    'city',
-    'ulbUploadedPdf',
-    'formStatus',
-    'digitizeStatus',
-    // 'digitizedFile',
-    // 'populationCategory',
-    // 'year',
-    // 'docType',
-    // 'auditStatus'
-    'formUploadedOn',
-    'digitizedOn',
-    'requestIdLog',
-  ];
-
-  activeFilterSummary = '';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -433,95 +437,9 @@ export class AfsTableComponent implements AfterViewInit {
 
     this.selectedRow = row;
 
-    // this.selectedRow.afsexcelfiles.afsFile = {
-    //   "overallConfidenceScore": 99.39,
-    //   "digitizationStatus": "digitized",
-    //   "uploadedBy": "AFS",
-    //   "pdfUrl": "/afs/uploads/UP001//c908edc2-1b41-47e9-9a1e-62bc827d80c1_85c57f12-04ae-4157-8143-7ecbfa6dc208.pdf",
-    //   "queue": {
-    //     "jobId": "125",
-    //     "status": "completed",
-    //     "progress": 100,
-    //     "attemptsMade": 0,
-    //     "createdAt": "2025-12-19T12:56:34.411Z"
-    //   },
-    //   "createdAt": "2025-12-19T12:56:34.411Z",
-    //   "excelUrl": "afs/5dd24729437ba31f7eb42f46_606aadac4dff55e6c075c507_audited_bal_sheet_schedules_de6426c1-1889-4fa0-880a-7bfc766b0cfe.xlsx",
-    //   "requestId": "req-20251219-124e6c"
-    // };
-    // this.isTableLoading = false;
-
     this.uploadFolderName = 'afs/uploads/';
     this.uploadFileToS3();
-
-
   }
-
-  // private updateFileName(originalName: string, suffix: string): string {
-  //   if (!originalName) return '';
-
-  //   // Strip extension
-  //   const parts = originalName.split('.');
-  //   const ext = parts.length > 1 ? '.' + parts.pop() : '';
-  //   const base = parts.join('.');
-
-  //   // Always remove any old suffix (_ULB_UPLOADED / _AFS_UPLOADED)
-  //   const cleanedBase = base.replace(/_(ULB_UPLOADED|AFS_UPLOADED)$/i, '');
-
-  //   return `${cleanedBase}_${suffix}.pdf`;
-  // }
-
-  // async refreshULBRow(row: RawRow) {
-  //   try {
-  //     const financialYear = this.filters().yearId;
-  //     const auditType = this.filters().auditType;
-  //     const docTypeName = this.filters().docType;
-  //     // const docTypeName =
-  //     //  this.filters.documentTypes
-  //     //   .flatMap(group => group.items)
-  //     //   .find(doc => doc.key === this.selectedDocType)?.name || '';
-
-  //     // const afsUrl = `http://localhost:8080/api/v1/afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
-  //     // const afsUrl = `${environment.api.url}afs-digitization/afs-file?ulbId=${ulbId}&financialYear=${financialYear}&auditType=${auditType}&docType=${encodeURIComponent(docTypeName)}`;
-  //     // const afsResponse: any = await this.http.get(afsUrl).toPromise();
-
-  //     const params = { ulbId: row.ulb, financialYear, auditType, docType: docTypeName };
-  //     const afsResponse: any = await this.afsService.getAfsFile(params).toPromise();
-
-  //     const target = row;
-  //     if (afsResponse.success && afsResponse.file?.fileUrl && target) {
-  //       const afsFile = afsResponse.file;
-  //       const fullUrl = afsFile.fileUrl;
-  //       const pageCount = await this.getPdfPageCount(fullUrl);
-
-  //       target.extraFiles = [
-  //         {
-  //           docType: afsFile.docType,
-  //           fileName: this.updateFileName(afsFile.docType, 'AFS_UPLOADED'),
-  //           fileUrl: afsFile.fileUrl,
-  //           uploadedAt: afsFile.uploadedAt,
-  //           pageCount
-  //         }
-  //       ];
-  //     }
-  //   } catch (error) {
-  //     console.error('Error refreshing ULB row:', error);
-  //   }
-  // }
-
-
-
-  // async getPdfPageCount(url: string): Promise<number> {
-  //   try {
-  //     const response = await fetch(url);
-  //     const arrayBuffer = await response.arrayBuffer();
-  //     const pdfDoc = await PDFDocument.load(arrayBuffer);
-  //     return pdfDoc.getPageCount();
-  //   } catch (err) {
-  //     console.error('Failed to load PDF for page count:', err);
-  //     return 0;
-  //   }
-  // }
 
   @ViewChildren('fileInput') fileInputs!: QueryList<ElementRef<HTMLInputElement>>;
 
