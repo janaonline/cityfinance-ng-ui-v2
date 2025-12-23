@@ -27,9 +27,9 @@ import { MatTableModule } from '@angular/material/table';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { IState } from '../../core/models/state/state';
-import { AfsFilterComponent, FilterValues } from './afs-filter/afs-filter.component';
+import { AfsFilterComponent } from './afs-filter/afs-filter.component';
 import { AfsTableComponent } from "./afs-table/afs-table.component";
-import { AfsService } from './afs.service';
+import { AfsService, FilterValues } from './afs.service';
 
 const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
@@ -99,8 +99,10 @@ export class AfsDashboardComponent {
   });
 
   onFiltersChanged(filters: FilterValues): void {
+    console.log('filters received in dashboard:', filters);
     if ('citySearch' in filters) delete filters.citySearch;
     if ('stateSearch' in filters) delete filters.stateSearch;
+    if (!filters.digitizationStatus) delete filters.digitizationStatus;
     this.filtersObj.set(filters)
     this.showSideBar.set(false);
     // this.getAfsList();

@@ -27,8 +27,7 @@ import { MatTableModule } from '@angular/material/table';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { IState } from '../../../core/models/state/state';
-import { FilterValues } from '../afs-filter/afs-filter.component';
-import { AfsService } from '../afs.service';
+import { AfsService, FilterValues } from '../afs.service';
 
 const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 

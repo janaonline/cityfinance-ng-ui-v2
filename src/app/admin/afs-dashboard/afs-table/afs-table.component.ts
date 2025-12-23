@@ -10,20 +10,18 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { environment } from '../../../../environments/environment';
 import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
 import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
 import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
-import { FilterValues } from '../afs-filter/afs-filter.component';
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
-import { AfsService } from '../afs.service';
+import { AfsService, FilterValues, ResponseData } from '../afs.service';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 // raw row interface
 // {
@@ -116,16 +114,6 @@ export interface Afsexcelfiles {
   annualAccountsId: string;
   ulbFile?: AfsFile;
 }
-
-// export interface FilterValues {
-//   stateId?: string;
-//   ulbId?: string;
-//   populationCategory?: string;
-//   yearId?: string;
-//   auditType?: string;
-//   docType?: string;
-
-// }
 export interface RawRow {
   _id: string;
   ulb: string;
@@ -184,7 +172,7 @@ export class AfsTableComponent implements AfterViewInit {
   page = 1;
   limit = 10;
   pageSize = 10;
-  totalCount = 0;
+  totalCount: number | undefined = 0;
 
   filters = input.required<FilterValues>({});
 
@@ -269,7 +257,11 @@ export class AfsTableComponent implements AfterViewInit {
   selectedRow: any;
   currentFile: any;
 
-  handlePageEvent(event: any) {
+  pageEvent!: PageEvent;
+
+  handlePageEvent(event: PageEvent) {
+    this.pageEvent = event;
+    // this.totalCount = event.length;
     this.page = event.pageIndex + 1;
     this.pageSize = event.pageSize;
     this.getAfsList();
@@ -283,7 +275,7 @@ export class AfsTableComponent implements AfterViewInit {
       limit: this.pageSize,
     };
     this.afsService.getAfsList(params).subscribe({
-      next: (res) => {
+      next: (res: ResponseData) => {
         this.dataSource.data = res.data;
         this.totalCount = res.totalCount;
         this.isTableLoading = false;
@@ -346,7 +338,7 @@ export class AfsTableComponent implements AfterViewInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
+    // this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
   }
 
