@@ -46,7 +46,12 @@
           <mat-spinner diameter="40"></mat-spinner>
         </div>
       }
-      <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z1 w-100">
+      <table
+        mat-table
+        [dataSource]="dataSource"
+        matSort
+        class="mat-elevation-z1 w-100 mat-elevation-z0 bordered-mat-table"
+      >
         <!-- Checkbox Column -->
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef>
@@ -70,7 +75,9 @@
         </ng-container>
         <!-- State -->
         <ng-container matColumnDef="state">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>State</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 100px">
+            State
+          </th>
           <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
         </ng-container>
 
@@ -87,7 +94,7 @@
           <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 180px">
             Uploaded PDF
           </th>
-          <td mat-cell *matCellDef="let row">
+          <td mat-cell *matCellDef="let row" style="border: 1px solid #e0e0e0">
             @if (row[`${filters().docType}`]) {
               ULB :
               @if (row[`${filters().docType}`].url) {
@@ -149,19 +156,23 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="formStatus">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Form Status</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 180px">
+            Form Status
+          </th>
           <td mat-cell *matCellDef="let row">
-            {{
+            <small>{{
               MASTER_FORM_STATUS[row.currentFormStatus] ||
                 row.status + ' by ' + row.actionTakenByRole
-            }}
+            }}</small>
             <br />
             <div class="mt-5">N/A</div>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="digitizeStatus">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized Status</th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 135px">
+            Digitized Status
+          </th>
           <td mat-cell *matCellDef="let row">
             @let statusText = row.afsexcelfiles?.ulbFile?.digitizationStatus;
             <small
@@ -173,14 +184,12 @@
               }"
               >{{ statusText || 'Not-Digitized' }}
             </small>
-            @if (statusText === 'digitized') {
+            <!-- @if (statusText === 'digitized') {
               <a [href]="row.afsexcelfiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
                 <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
               </a>
-              <small class="badge rounded-pill text-bg-warning px-2 py-1 shadow">
-                {{ row.afsexcelfiles?.ulbFile?.overallConfidenceScore | number: '1.0-2' }}%</small
-              >
-            }
+             
+            } -->
             <br />
             <div class="mt-5">
               @if (row.afsexcelfiles?.afsFile) {
@@ -194,16 +203,12 @@
                   }"
                   >{{ statusText || 'Not-Digitized' }}
                 </small>
-                @if (statusText === 'digitized') {
+                <!-- @if (statusText === 'digitized') {
                   <a [href]="row.afsexcelfiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
                     <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
                   </a>
-                  <small class="badge rounded-pill text-bg-warning px-2 py-1 shadow">
-                    {{
-                      row.afsexcelfiles?.afsFile?.overallConfidenceScore | number: '1.0-2'
-                    }}%</small
-                  >
-                }
+                 
+                } -->
               } @else {
                 N/A
               }
@@ -301,9 +306,49 @@
             </div>
           </td>
         </ng-container>
+        <!-- Star Column -->
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef aria-label="row actions" style="width: 40px">
+            &nbsp;
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="actionsMenu"
+              [matMenuTriggerData]="{ row: element, type: 'ULB' }"
+              aria-label="Row actions"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <br />
+            <div class="mt-5">
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="actionsMenu"
+                [matMenuTriggerData]="{ row: element, type: 'AFS' }"
+                aria-label="Row actions"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+        <mat-menu #actionsMenu="matMenu">
+          <ng-template
+            matMenuContent
+            let-data="matMenuTriggerData"
+            let-selectedRow="row"
+            let-type="type"
+          >
+            <button mat-menu-item (click)="viewDetails(selectedRow, type)">View Log</button>
+            <button mat-menu-item (click)="downloadAFSExcel(selectedRow, type)">
+              Download Digitized Excel
+            </button>
+          </ng-template>
+        </mat-menu>
 
         <!-- Header & Row -->
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 
         <!-- No data row -->

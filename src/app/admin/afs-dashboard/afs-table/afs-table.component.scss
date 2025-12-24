@@ -49,3 +49,22 @@ mat-card {
 .card:hover .card-body .display-4 {
     transform: scale(1.1);
 }
+
+.bordered-mat-table {
+    width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-collapse: collapse;
+
+    .mat-mdc-header-cell,
+    .mat-mdc-cell,
+    .mat-mdc-footer-cell {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        border-right: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .mat-mdc-header-cell:last-child,
+    .mat-mdc-cell:last-child,
+    .mat-mdc-footer-cell:last-child {
+        border-right: none;
+    }
+}
