@@ -1,5 +1,5 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { AsyncPipe, DatePipe, DecimalPipe, NgClass } from '@angular/common';
+import { AsyncPipe, DatePipe, NgClass } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
 import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,8 +16,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { environment } from '../../../../environments/environment';
 import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
 import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
+import { MaterialModule } from "../../../material.module";
 import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 import { AfsService, FilterValues, ResponseData } from '../afs.service';
@@ -156,15 +158,15 @@ export interface RawRow {
     NgClass,
     AsyncPipe,
     PdfPageCountPipe,
-    DecimalPipe,
+    MaterialModule
   ],
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
 })
 export class AfsTableComponent implements AfterViewInit {
 
-  // readonly storageUrl = environment.STORAGE_BASEURL;
-  readonly storageUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
+  readonly storageUrl = environment.STORAGE_BASEURL;
+  // readonly storageUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
   readonly dialog = inject(MatDialog);
   readonly afsService = inject(AfsService);
   private fileService = inject(FileService);
@@ -272,9 +274,10 @@ export class AfsTableComponent implements AfterViewInit {
     // 'year',
     // 'docType',
     // 'auditStatus'
-    'formUploadedOn',
-    'digitizedOn',
-    'requestIdLog',
+    // 'formUploadedOn',
+    // 'digitizedOn',
+    // 'requestIdLog',
+    'action'
   ];
 
   activeFilterSummary = '';
@@ -291,7 +294,7 @@ export class AfsTableComponent implements AfterViewInit {
   }
   getAfsList(): void {
     this.isTableLoading = true;
-
+    this.filters().limit = this.pageSize;
     const params = {
       ...this.filters(),
       // page: this.page,
@@ -487,5 +490,24 @@ export class AfsTableComponent implements AfterViewInit {
   @Output() showSideBar = new EventEmitter<boolean>(false);
   applyFilter() {
     this.showSideBar.emit(true);
+  }
+
+  viewDetails(row: any, type: string = 'ulb') {
+    console.log('View details for row:', row, type);
+    const requestId = type === 'ULB' ? row.afsexcelfiles?.ulbFile?.requestId || '' : row.afsexcelfiles?.afsFile?.requestId || '';
+    if (requestId) {
+      this.openLogDialog(requestId);
+    }
+    // Implement view details logic here
+  }
+  downloadAFSExcel(row: any, type: string = 'ulb') {
+    console.log('Download AFS Excel for row:', row);
+    const excelUrl = type === 'ULB' ? row.afsexcelfiles?.ulbFile?.excelUrl : row.afsexcelfiles?.afsFile?.excelUrl;
+    if (excelUrl) {
+      const fullUrl = `${this.storageUrl}/${excelUrl}`;
+      window.open(fullUrl, '_blank');
+    } else {
+      this._snackBar.open('AFS Excel file not available for this record.', 'Close', { duration: 5000 });
+    }
   }
 }
