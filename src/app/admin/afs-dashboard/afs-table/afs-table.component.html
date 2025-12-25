@@ -6,8 +6,18 @@
       <button type="button" class="mx-2 btn btn-sm btn-outline-cfPrimary" (click)="applyFilter()">
         Apply Filter
       </button>
-      <button type="button" class="mx-2 btn btn-sm btn-cfPrimary" (click)="digitizeSelected()">
+      <button type="button" class="mx-2 btn btn-sm btn-cfPrimary" (click)="digitizeSelected('add')">
         Digitize Selected
+      </button>
+      <!-- <button
+        type="button"
+        class="mx-2 btn btn-sm btn-cfPrimary"
+        (click)="digitizeSelected('remove')"
+      >
+        Remove Queue
+      </button> -->
+      <button type="button" class="mx-2 btn btn-sm btn-cfPrimary" (click)="dumpReport()">
+        Download Report
       </button>
     </div>
   </div>
@@ -87,7 +97,11 @@
                   <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
                 </a>
                 <strong>
-                  {{ storageUrl+ row[`${filters().docType}`].url| toStorageUrl | pdfPageCount | async }}
+                  @if (row?.afsexcelfiles?.ulbFile?.noOfPages) {
+                    {{ row.afsexcelfiles.ulbFile.noOfPages }}
+                  } @else {
+                    {{ storageUrl+ row[`${filters().docType}`].url| toStorageUrl | pdfPageCount | async }}
+                  }
                 </strong>
                 pages
               } @else {
@@ -105,10 +119,12 @@
                   <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
                 </a>
                 <strong>
-                  {{
-                    row.afsexcelfiles.afsFile.pdfUrl | toStorageUrl | pdfPageCount | async
-                  }}</strong
-                >
+                  @if (row?.afsexcelfiles?.ulbFile?.noOfPages) {
+                    {{ row.afsexcelfiles.ulbFile.noOfPages }}
+                  } @else {
+                    {{ row.afsexcelfiles.afsFile.pdfUrl | toStorageUrl | pdfPageCount | async }}
+                  }
+                </strong>
                 pages
               } @else {
                 <strong>N/A</strong>

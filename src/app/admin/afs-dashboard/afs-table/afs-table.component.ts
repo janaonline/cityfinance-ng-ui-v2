@@ -22,7 +22,7 @@ import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
 import { MaterialModule } from "../../../material.module";
 import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
-import { AfsService, FilterValues, ResponseData } from '../afs.service';
+import { AfsExcelFile, AfsService, FilterValues, ResponseData } from '../afs.service';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
 
 // raw row interface
@@ -415,12 +415,12 @@ export class AfsTableComponent implements AfterViewInit {
     }
   }
 
-  digitizeSelected() {
+  digitizeSelected(type: 'add' | 'remove' = 'add') {
     const selectedRows = this.selection.selected;
     console.log('Digitize selected rows:', selectedRows);
     // Implement digitization logic here
 
-    const dialogRef = this.dialog.open(DigitizationModalComponent, { data: { selectedRows } });
+    const dialogRef = this.dialog.open(DigitizationModalComponent, { data: { selectedRows, type } });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
@@ -461,6 +461,7 @@ export class AfsTableComponent implements AfterViewInit {
     }
     // Implement view details logic here
   }
+
   downloadAFSExcel(row: any, type: string = 'ulb') {
     console.log('Download AFS Excel for row:', row);
     const excelUrl = type === 'ULB' ? row.afsexcelfiles?.ulbFile?.excelUrl : row.afsexcelfiles?.afsFile?.excelUrl;
@@ -474,15 +475,39 @@ export class AfsTableComponent implements AfterViewInit {
 
   removeFromQueue(row: any, type: string = 'ulb') {
     console.log('Remove from queue for row:', row, type);
-    const dialogRef = this.dialog.open(DigitizationModalComponent, { data: { selectedRows: [row], removeFromQueue: true, type } });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        if (type === 'ULB' && row.afsexcelfiles?.ulbFile) {
-          row.afsexcelfiles.ulbFile.digitizationStatus = 'removed';
-        } else if (type === 'AFS' && row.afsexcelfiles?.afsFile) {
-          row.afsexcelfiles.afsFile.digitizationStatus = 'removed';
+
+    const afsFile: AfsExcelFile = {
+      annualAccountsId: row.afsexcelfiles.annualAccountsId,
+      ulb: row.ulb,
+      year: row.year,
+      auditType: this.filters().auditType,
+      docType: row.afsexcelfiles.docType,
+      pdfUrl: type === 'ULB' ? row.afsexcelfiles.ulbFile?.pdfUrl : row.afsexcelfiles.afsFile?.pdfUrl,
+      uploadedBy: type,
+      jobId: type === 'ULB' ? row.afsexcelfiles.ulbFile?.queue?.jobId : row.afsexcelfiles.afsFile?.queue?.jobId,
+    };
+    this.afsService.removeJob(afsFile).subscribe({
+      next: (res) => {
+        this._snackBar.open('Job removed from queue successfully.', 'Close', { duration: 5000 });
+        if (type === 'ULB') {
+          row.afsexcelfiles.ulbFile.digitizationStatus = 'not_digitized';
+        } else {
+          row.afsexcelfiles.afsFile.digitizationStatus = 'not_digitized';
         }
+      },
+      error: (err) => {
+        // console.error('Failed to remove job from queue:', err);
+        this._snackBar.open('Failed to remove job from queue.', 'Close', { duration: 5000 });
       }
     });
+
+  }
+  // download xl report for selected filters
+  dumpReport() {
+    console.log('Dump report for selected rows:', this.selection.selected);
+    const filters = { ...this.filters() };
+    delete filters.page;
+    delete filters.limit;
+    window.open(`${environment.api.url2}afs-digitization/dump/afs-excel?` + new URLSearchParams(filters as any).toString(), '_blank');
   }
 }

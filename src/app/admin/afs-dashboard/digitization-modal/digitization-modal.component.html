@@ -34,8 +34,11 @@
 @if (!digitizeStatus) {
   <mat-dialog-actions align="center">
     <button mat-raised-button color="accent" mat-dialog-close (click)="cancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="proceedDigitization()" cdkFocusInitial>
+    <button mat-raised-button color="primary" (click)="proceedDigitization('all')" cdkFocusInitial>
       Confirm
     </button>
+    <!-- <button mat-raised-button color="primary" (click)="proceedDigitization('new')" cdkFocusInitial>
+      Confirm Only New
+    </button> -->
   </mat-dialog-actions>
 }
