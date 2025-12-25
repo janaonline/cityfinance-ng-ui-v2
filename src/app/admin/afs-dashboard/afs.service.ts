@@ -88,8 +88,8 @@ export class AfsService {
     )
   }
 
-  getMetrics(params: any) {
-    this.http.get(`${environment.api.url}afs-digitization/afs-metrics`, { params })
+  getDashboardCards() {
+    return this.http.get<ResponseData>(`${environment.api.url2}afs-digitization/metrics`)
   }
 
   afsExcelFile(backendForm: any) {

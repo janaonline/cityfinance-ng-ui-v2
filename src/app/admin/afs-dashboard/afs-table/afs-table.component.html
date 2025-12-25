@@ -1,23 +1,4 @@
-<div style="display: none">
-  <h3 class="fw-bold mb-4">AFS Dashboard</h3>
-  <div class="row row-cols-1 row-cols-md-6 g-3 justify-content-around">
-    @for (card of dashboardCards; track card.id) {
-      <div class="col">
-        <div class="card text-center shadow">
-          <div [class]="'card-body '">
-            <div class="display-6 mb-2" [ngClass]="card.class">
-              <i [class]="card.icon"></i>
-            </div>
-            <h4 class="card-title mb-3">{{ card.label }}</h4>
-            <p class="card-text lh-sm">{{ card.desc }}</p>
-          </div>
-        </div>
-      </div>
-    }
-  </div>
-</div>
-
-<div class="table-wrapper">
+<div class="table-wrapper mt-3">
   <div class="row justify-content-between mb-2">
     <h3 class="fw-bold col mb-0">City Documents</h3>
 
@@ -54,7 +35,7 @@
       >
         <!-- Checkbox Column -->
         <ng-container matColumnDef="select">
-          <th mat-header-cell *matHeaderCellDef>
+          <th mat-header-cell *matHeaderCellDef style="width: 40px">
             <mat-checkbox
               (change)="$event ? toggleAllRows() : null"
               [checked]="selection.hasValue() && isAllSelected()"
@@ -75,9 +56,7 @@
         </ng-container>
         <!-- State -->
         <ng-container matColumnDef="state">
-          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 100px">
-            State
-          </th>
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>State</th>
           <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
         </ng-container>
 
@@ -340,9 +319,27 @@
             let-selectedRow="row"
             let-type="type"
           >
-            <button mat-menu-item (click)="viewDetails(selectedRow, type)">View Log</button>
-            <button mat-menu-item (click)="downloadAFSExcel(selectedRow, type)">
-              Download Digitized Excel
+            @let status =
+              type === 'ULB'
+                ? selectedRow.afsexcelfiles?.ulbFile?.digitizationStatus
+                : selectedRow.afsexcelfiles?.afsFile?.digitizationStatus;
+            @let isDisabled = !['digitized', 'failed'].includes(status);
+            <button mat-menu-item (click)="viewDetails(selectedRow, type)" [disabled]="isDisabled">
+              View Log
+            </button>
+            <button
+              mat-menu-item
+              (click)="downloadAFSExcel(selectedRow, type)"
+              [disabled]="status !== 'digitized'"
+            >
+              Digitized Excel
+            </button>
+            <button
+              mat-menu-item
+              (click)="removeFromQueue(selectedRow, type)"
+              [disabled]="status !== 'queued'"
+            >
+              Remove from Queue
             </button>
           </ng-template>
         </mat-menu>

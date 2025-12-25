@@ -193,45 +193,6 @@ export class AfsTableComponent implements AfterViewInit {
     11: 'Submission Acknowledged by PMU',
   };
 
-  dashboardCards = [
-    {
-      id: 1,
-      icon: "bi bi-folder-check",
-      label: "642",
-      desc: "Files Digitized",
-      class: "text-info",
-    },
-    {
-      id: 2,
-      icon: "bi bi-file-earmark-text",
-      label: "4,550",
-      desc: "Pages Digitized",
-      class: "text-info",
-    },
-    {
-      id: 3,
-      icon: "bi bi-folder-x",
-      label: "679",
-      desc: "Files Failed",
-      class: "text-danger",
-    },
-    {
-      id: 4,
-      icon: "bi bi-file-earmark-x",
-      label: "679",
-      desc: "Pages Failed",
-      class: "text-danger",
-    },
-    {
-      id: 5,
-      icon: "bi bi-check-circle",
-      label: "49%",
-      desc: "Successful",
-      class: "text-success",
-    },
-  ];
-
-
   docTypes = {
     bal_sheet: 'Balance Sheet',
     bal_sheet_schedules: 'Schedules To Balance Sheet',
@@ -509,5 +470,19 @@ export class AfsTableComponent implements AfterViewInit {
     } else {
       this._snackBar.open('AFS Excel file not available for this record.', 'Close', { duration: 5000 });
     }
+  }
+
+  removeFromQueue(row: any, type: string = 'ulb') {
+    console.log('Remove from queue for row:', row, type);
+    const dialogRef = this.dialog.open(DigitizationModalComponent, { data: { selectedRows: [row], removeFromQueue: true, type } });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        if (type === 'ULB' && row.afsexcelfiles?.ulbFile) {
+          row.afsexcelfiles.ulbFile.digitizationStatus = 'removed';
+        } else if (type === 'AFS' && row.afsexcelfiles?.afsFile) {
+          row.afsexcelfiles.afsFile.digitizationStatus = 'removed';
+        }
+      }
+    });
   }
 }
