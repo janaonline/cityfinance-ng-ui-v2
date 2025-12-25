@@ -39,6 +39,14 @@ interface Years {
   _id: string;
 }
 
+interface DashboardCard {
+  id: number;
+  icon: string;
+  title: string;
+  value: string;
+  class: string;
+}
+
 
 // interface State {
 //   _id: string;
@@ -82,7 +90,7 @@ interface Years {
   templateUrl: './afs-dashboard.component.html',
   styleUrl: './afs-dashboard.component.scss'
 })
-export class AfsDashboardComponent {
+export class AfsDashboardComponent implements OnInit {
   // username = localStorage.getItem('loggedInUser') || 'User';
   // fullName = localStorage.getItem('userFullName') || '';
   // email = localStorage.getItem('userEmail') || '';
@@ -98,6 +106,57 @@ export class AfsDashboardComponent {
     ulbId: [],
   });
 
+
+  dashboardCards: DashboardCard[] = [
+    // {
+    //   id: 1,
+    //   icon: "bi bi-folder-check",
+    //   label: "642",
+    //   desc: "Files Digitized",
+    //   class: "text-info",
+    // },
+    // {
+    //   id: 2,
+    //   icon: "bi bi-file-earmark-text",
+    //   label: "4,550",
+    //   desc: "Pages Digitized",
+    //   class: "text-info",
+    // },
+    // {
+    //   id: 3,
+    //   icon: "bi bi-folder-x",
+    //   label: "679",
+    //   desc: "Files Failed",
+    //   class: "text-danger",
+    // },
+    // {
+    //   id: 4,
+    //   icon: "bi bi-file-earmark-x",
+    //   label: "679",
+    //   desc: "Pages Failed",
+    //   class: "text-danger",
+    // },
+    // {
+    //   id: 5,
+    //   icon: "bi bi-check-circle",
+    //   label: "49%",
+    //   desc: "Successful",
+    //   class: "text-success",
+    // },
+  ];
+
+  constructor(private afsService: AfsService) { }
+
+  ngOnInit(): void {
+    this.getDashboardCards();
+  }
+
+  getDashboardCards() {
+    this.afsService.getDashboardCards().subscribe((res) => {
+      console.log('dashboard stats:', res);
+      this.dashboardCards = res.data.cards;
+    });
+  }
   onFiltersChanged(filters: FilterValues): void {
     console.log('filters received in dashboard:', filters);
     if ('citySearch' in filters) delete filters.citySearch;
@@ -112,9 +171,7 @@ export class AfsDashboardComponent {
 
 
 
-  constructor(private router: Router, private http: HttpClient,
-    private afsService: AfsService,
-  ) { }
+
 
   filters = {
     docType: 'bal_sheet_schedules',

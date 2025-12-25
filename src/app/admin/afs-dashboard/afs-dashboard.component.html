@@ -17,6 +17,24 @@
 
   <!-- RIGHT: Table -->
   <div class="content">
+    <div>
+      <h3 class="fw-bold mb-4">AFS Dashboard</h3>
+      <div class="row row-cols-1 row-cols-md-6 g-3 justify-content-around">
+        @for (card of dashboardCards; track card.title) {
+          <div class="col">
+            <div class="card text-center shadow">
+              <div [class]="'card-body '">
+                <div class="display-6 mb-2" [ngClass]="card.class">
+                  <i [class]="card.icon"></i>
+                </div>
+                <h4 class="card-title mb-3">{{ card.value }}</h4>
+                <p class="card-text lh-sm">{{ card.title }}</p>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
     <app-afs-table [filters]="filtersObj()" (showSideBar)="toggleSideBar($event)"></app-afs-table>
   </div>
 </div>

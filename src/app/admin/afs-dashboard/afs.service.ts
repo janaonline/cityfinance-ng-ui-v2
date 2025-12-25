@@ -29,6 +29,7 @@ export interface AfsExcelFile {
   docType: string;
   pdfUrl: string;
   uploadedBy: string;
+  jobId?: string;
 }
 
 @Injectable({
@@ -57,7 +58,10 @@ export class AfsService {
     const url = `${environment.api.url2}afs-digitization/afs-list`;
     return this.http.get<ResponseData>(url, { params });
   }
-  // to be migrate to api
+
+  dumpDigitizationReport(params: any) {
+    return this.http.get<ResponseData>(`${environment.api.url2}afs-digitization/dump/afs-excel`, { params, responseType: 'blob' as 'json' });
+  }
 
   uploadAfsFile(payload: AfsExcelFile) {
     // const url = `${environment.api.url}afs-digitization/afs-file`;
@@ -88,8 +92,8 @@ export class AfsService {
     )
   }
 
-  getMetrics(params: any) {
-    this.http.get(`${environment.api.url}afs-digitization/afs-metrics`, { params })
+  getDashboardCards() {
+    return this.http.get<ResponseData>(`${environment.api.url2}afs-digitization/metrics`)
   }
 
   afsExcelFile(backendForm: any) {
@@ -104,5 +108,10 @@ export class AfsService {
       environment.api.url2 + 'afs-digitization/enqueue-batch',
       payloads
     );
+  }
+
+  removeJob(job: AfsExcelFile) {
+    const url = `${environment.api.url2}afs-digitization/remove-job`;
+    return this.http.post<any>(url, job);
   }
 }

@@ -8,6 +8,7 @@ import { AfsExcelFile, AfsService } from '../afs.service';
 
 export interface DialogData {
   selectedRows: any[];
+  type: 'add' | 'remove';
 }
 
 @Component({
@@ -60,9 +61,9 @@ export class DigitizationModalComponent implements OnInit {
 
   async prepareFiles() {
     // console.log('selectedRows', this.data.selectedRows);
-    const alreadyDigitizedFiles = 0;
-    const alreadyDigitizedPages = 0;
-
+    let alreadyDigitizedFiles = 0;
+    let alreadyDigitizedPages = 0;
+    this.isLoading = true;
     for (const row of this.data.selectedRows) {
       const fileData = {
         annualAccountsId: row._id,
@@ -77,20 +78,30 @@ export class DigitizationModalComponent implements OnInit {
 
       ++this.selectedFilesCount;
       if (ulbFile) {
-        this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(ulbFile);
         this.selectedFiles.push({ pdfUrl: ulbFile, uploadedBy: 'ULB', ...fileData });
-
+        if (['digitized', 'queued'].includes(row.afsexcelfiles?.ulbFile?.digitizationStatus || '')) {
+          ++alreadyDigitizedFiles;
+          this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsexcelfiles?.ulbFile?.noOfPages || 0);
+        } else {
+          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(ulbFile);
+        }
       }
 
       if (afsFile) {
-        this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
+        // this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
         this.selectedFiles.push({ pdfUrl: afsFile, uploadedBy: 'AFS', ...fileData });
         ++this.selectedFilesCount;
+        if (['digitized', 'queued'].includes(row.afsexcelfiles?.afsFile?.digitizationStatus || '')) {
+          ++alreadyDigitizedFiles;
+          this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsexcelfiles?.afsFile?.noOfPages || 0);
+        } else {
+          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
+        }
       }
     }
 
     console.log('Files prepared for digitization:', this.selectedFiles);
-
+    this.isLoading = false;
     // --- build message ---
     if (alreadyDigitizedFiles > 0) {
       this.digitizePopupMessage = `Are you sure to digitize the selected ${this.totalSelectedPages} pages from ${this.selectedFilesCount} PDF files along with ${alreadyDigitizedFiles} already digitized PDFs with ${alreadyDigitizedPages} pages?`;
@@ -99,7 +110,7 @@ export class DigitizationModalComponent implements OnInit {
     }
   }
 
-  proceedDigitization(): void {
+  proceedDigitization(type: string): void {
     this.isLoading = true;
     // console.log('Proceeding digitization...', this.selectedFiles);
     const payloads = { jobs: this.selectedFiles };
