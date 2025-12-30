@@ -254,6 +254,7 @@ export class AfsTableComponent implements AfterViewInit {
     this.getAfsList();
   }
   getAfsList(): void {
+    this.selection.clear();
     this.isTableLoading = true;
     this.filters().limit = this.pageSize;
     const params = {
@@ -504,7 +505,7 @@ export class AfsTableComponent implements AfterViewInit {
   }
   // download xl report for selected filters
   dumpReport() {
-    console.log('Dump report for selected rows:', this.selection.selected);
+    // console.log('Dump report for selected rows:', this.selection.selected);
     const filters = { ...this.filters() };
     delete filters.page;
     delete filters.limit;

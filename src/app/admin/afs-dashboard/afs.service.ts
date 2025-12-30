@@ -11,7 +11,7 @@ export interface ResponseData {
 export interface FilterValues {
   stateId: string[];
   // stateName: string | '';
-  populationCategory: string | '';
+  populationCategory?: string | '';
   ulbId: string[];
   yearId: string | '';
   docType: string | '';
