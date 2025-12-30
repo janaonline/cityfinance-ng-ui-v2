@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 // import { RouterModule } from '@angular/router';
 
-+
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -167,6 +167,7 @@ export class AfsDashboardComponent implements OnInit {
     states: [] as IState[],
     populationCategories: [] as string[],
     allCities: [] as any[],
+
     cities: [] as any[],
     years: [] as Years[],
     // documentTypes: [] as { key: string, name: string }[]
