@@ -41,7 +41,7 @@
         </button>
       </div>
       @for (state of filteredStates; track state) {
-        <mat-option [value]="state._id" (click)="$event.stopPropagation(); toggleState(state)">
+        <mat-option [value]="state.name" (click)="$event.stopPropagation(); toggleState(state)">
           <mat-checkbox
             [checked]="isStateSelected(state)"
             (click)="$event.stopPropagation()"

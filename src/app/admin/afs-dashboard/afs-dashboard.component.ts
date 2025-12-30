@@ -1,16 +1,9 @@
-import { Component, HostListener, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 // import { RouterModule } from '@angular/router';
 
-import { Router } from '@angular/router';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { ElementRef, QueryList, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PDFDocument } from 'pdf-lib';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-import { environment } from '../../../../src/environments/environment';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from "@angular/material/card";
@@ -24,8 +17,6 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
 import { IState } from '../../core/models/state/state';
 import { AfsFilterComponent } from './afs-filter/afs-filter.component';
 import { AfsTableComponent } from "./afs-table/afs-table.component";
@@ -161,6 +152,7 @@ export class AfsDashboardComponent implements OnInit {
     console.log('filters received in dashboard:', filters);
     if ('citySearch' in filters) delete filters.citySearch;
     if ('stateSearch' in filters) delete filters.stateSearch;
+    if (filters.populationCategory === 'All') delete filters.populationCategory;
     if (!filters.digitizationStatus) delete filters.digitizationStatus;
     this.filtersObj.set(filters)
     this.showSideBar.set(false);
@@ -168,17 +160,10 @@ export class AfsDashboardComponent implements OnInit {
 
   }
 
-
-
-
-
-
   filters = {
     docType: 'bal_sheet_schedules',
     yearId: '606aadac4dff55e6c075c507',
     auditType: 'audited',
-
-
     states: [] as IState[],
     populationCategories: [] as string[],
     allCities: [] as any[],
