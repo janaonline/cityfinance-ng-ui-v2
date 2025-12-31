@@ -11,6 +11,12 @@ mat-card {
     width: 100%;
 }
 
+.no-records {
+    height: 150px;
+    font-size: 1.2rem;
+    color: rgba(0, 0, 0, 0.54);
+}
+
 .table-container {
     position: relative;
     max-height: 75vh;

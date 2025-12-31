@@ -421,7 +421,7 @@ export class AfsTableComponent implements AfterViewInit {
     console.log('Digitize selected rows:', selectedRows);
     // Implement digitization logic here
 
-    const dialogRef = this.dialog.open(DigitizationModalComponent, { data: { selectedRows, type } });
+    const dialogRef = this.dialog.open(DigitizationModalComponent, { data: { selectedRows, type, filters: this.filters() } });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
