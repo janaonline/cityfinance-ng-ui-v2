@@ -365,9 +365,9 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 
         <!-- No data row -->
-        <tr class="mat-row" *matNoDataRow>
+        <tr class="mat-row no-records" *matNoDataRow>
           <td class="mat-cell text-center" [attr.colspan]="displayedColumns.length">
-            <strong class="mt-5"> No records found for selected filters.</strong>
+            {{ isTableLoading ? 'Loading...' : 'No records found for selected filters.' }}
           </td>
         </tr>
       </table>
