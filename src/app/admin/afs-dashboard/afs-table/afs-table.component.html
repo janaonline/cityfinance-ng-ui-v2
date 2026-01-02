@@ -119,8 +119,8 @@
                   <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
                 </a>
                 <strong>
-                  @if (row?.afsexcelfiles?.ulbFile?.noOfPages) {
-                    {{ row.afsexcelfiles.ulbFile.noOfPages }}
+                  @if (row?.afsexcelfiles?.afsFile?.noOfPages) {
+                    {{ row.afsexcelfiles.afsFile.noOfPages }}
                   } @else {
                     {{ row.afsexcelfiles.afsFile.pdfUrl | toStorageUrl | pdfPageCount | async }}
                   }
@@ -139,6 +139,12 @@
               >
                 {{ row.afsexcelfiles?.afsFile ? 'Re-upload' : 'Upload' }}
               </button>
+              @if (row?.uploading) {
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                  &nbsp;&nbsp;<span class="visually-hidden">Loading...</span>
+                </div>
+              }
+
               <input
                 type="file"
                 accept="application/pdf"

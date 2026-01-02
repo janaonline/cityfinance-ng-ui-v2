@@ -126,7 +126,7 @@ export class AfsFilterComponent implements OnInit {
         .filter(c =>
           !search ? true : c.name.toLowerCase().includes(search)
         )
-        .slice(0, 100); // limit to 100 if you want
+        .slice(0, 1000); // limit to 1000 if you want
     });
 
   }
