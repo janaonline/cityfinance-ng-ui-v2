@@ -135,6 +135,7 @@ export interface RawRow {
   docType: string;
   docTypeLabel: string;
   isAudited: 'audited' | 'unAudited';
+  uploading?: boolean;
   [key: string]: any;
 }
 @Component({
@@ -350,7 +351,7 @@ export class AfsTableComponent implements AfterViewInit {
     // control.patchValue({ uploading: true });
     this.selectedRow.uploading = true;
     // this.progress = 20;
-    this.uploadFolderName = `afs/uploads/${this.selectedRow.ulbCode}/`;
+    this.uploadFolderName = `afs/uploads/${this.selectedRow.ulbCode}/${this.filters().docType}`;
     this.fileService.newGetURLForFileUpload(file.name, file.type, this.uploadFolderName).subscribe({
       next: (s3Response: any) => {
         // if (this.s3Subscribe) {
@@ -402,7 +403,6 @@ export class AfsTableComponent implements AfterViewInit {
 
     this.selectedRow = row;
 
-    this.uploadFolderName = 'afs/uploads/';
     this.uploadFileToS3();
   }
 
