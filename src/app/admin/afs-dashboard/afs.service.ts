@@ -54,9 +54,9 @@ export class AfsService {
     return this.http.get<ResponseData>(url);
   }
 
-  getAfsList(params: any) {
+  getAfsList(payload: any) {
     const url = `${environment.api.url2}afs-digitization/afs-list`;
-    return this.http.get<ResponseData>(url, { params });
+    return this.http.post<ResponseData>(url, payload);
   }
 
   dumpDigitizationReport(params: any) {

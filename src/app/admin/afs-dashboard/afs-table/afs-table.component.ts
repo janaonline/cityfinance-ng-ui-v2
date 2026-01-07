@@ -508,7 +508,7 @@ export class AfsTableComponent implements AfterViewInit {
     // console.log('Dump report for selected rows:', this.selection.selected);
     const filters = { ...this.filters() };
     delete filters.page;
-    delete filters.limit;
+    filters.limit = 0;
     window.open(`${environment.api.url2}afs-digitization/dump/afs-excel?` + new URLSearchParams(filters as any).toString(), '_blank');
   }
 }
