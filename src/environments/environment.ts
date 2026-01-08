@@ -17,6 +17,8 @@ if (window.location.hostname.includes('staging')) {
 export const environment = {
   api: {
     url: baseUrl + '/api/v1/',
+    url2: baseUrl + '/api/v2/',
+    url3: baseUrl + '/api/v3/',
   },
   prefixUrl: '/fc',
   environment: env,

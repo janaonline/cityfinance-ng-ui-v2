@@ -76,13 +76,23 @@ export const routes: Routes = [
       import('./shared/components/map/map.component').then((m) => m.MapComponent),
   },
   {
+    path: 'afs-dashboard',
+    loadComponent: () => import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'afs-old-dashboard',
+    loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },
   // {
   //     path: 'pdf',
   //     loadComponent: () => import('./pdf-content/pdf-content.component').then(m => m.PdfContentComponent),
-  // },
+  // }, 
   {
     path: 'error',
     component: ErrorComponent,

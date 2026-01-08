@@ -1,0 +1,395 @@
+<div class="table-wrapper mt-3">
+  <div class="row justify-content-between mb-2">
+    <h3 class="fw-bold col mb-0">City Documents</h3>
+
+    <div class="col text-end">
+      <button type="button" class="mx-2 btn btn-sm btn-outline-cfPrimary" (click)="applyFilter()">
+        Apply Filter
+      </button>
+      <button type="button" class="mx-2 btn btn-sm btn-cfPrimary" (click)="digitizeSelected('add')">
+        Digitize Selected
+      </button>
+      <!-- <button
+        type="button"
+        class="mx-2 btn btn-sm btn-cfPrimary"
+        (click)="digitizeSelected('remove')"
+      >
+        Remove Queue
+      </button> -->
+      <button type="button" class="mx-2 btn btn-sm btn-cfPrimary" (click)="dumpReport()">
+        Download Report
+      </button>
+    </div>
+  </div>
+
+  <mat-card class="shadow">
+    <!-- <mat-card-title class="mx-3 mt-3 fw-bold">City Documents</mat-card-title> -->
+    @if (activeFilterSummary) {
+      <mat-card-subtitle>
+        {{ activeFilterSummary }}
+      </mat-card-subtitle>
+    }
+
+    <div class="table-container mt-2">
+      <!-- Loader overlay -->
+      @if (isTableLoading) {
+        <div class="table-loader-overlay">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+      }
+      <table
+        mat-table
+        [dataSource]="dataSource"
+        matSort
+        class="mat-elevation-z1 w-100 mat-elevation-z0 bordered-mat-table"
+      >
+        <!-- Checkbox Column -->
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef style="width: 40px">
+            <mat-checkbox
+              (change)="$event ? toggleAllRows() : null"
+              [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()"
+              [aria-label]="checkboxLabel()"
+            >
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)"
+              [aria-label]="checkboxLabel(row)"
+            >
+            </mat-checkbox>
+          </td>
+        </ng-container>
+        <!-- State -->
+        <ng-container matColumnDef="state">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>State</th>
+          <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
+        </ng-container>
+
+        <!-- City -->
+        <ng-container matColumnDef="city">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>City</th>
+          <td mat-cell *matCellDef="let row">
+            <strong>{{ row.ulbCode }}</strong> <br />{{ row.ulbName }}
+          </td>
+        </ng-container>
+
+        <!-- City -->
+        <ng-container matColumnDef="ulbUploadedPdf">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 180px">
+            Uploaded PDF
+          </th>
+          <td mat-cell *matCellDef="let row" style="border: 1px solid #e0e0e0">
+            @if (row[`${filters().docType}`]) {
+              ULB :
+              @if (row[`${filters().docType}`].url) {
+                <a
+                  [href]="row[`${filters().docType}`].url | toStorageUrl"
+                  target="_blank"
+                  [matTooltip]="row[`${filters().docType}`].name"
+                >
+                  <!-- {{ row[`${filters.docType}`].name}} -->
+                  <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
+                  <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
+                </a>
+                <strong>
+                  @if (row?.afsexcelfiles?.ulbFile?.noOfPages) {
+                    {{ row.afsexcelfiles.ulbFile.noOfPages }}
+                  } @else {
+                    {{ storageUrl+ row[`${filters().docType}`].url| toStorageUrl | pdfPageCount | async }}
+                  }
+                </strong>
+                pages
+              } @else {
+                <strong>N/A</strong>
+              }
+            }
+            <br />
+
+            <div class="mt-5">
+              AFS :
+              @if (row.afsexcelfiles?.afsFile) {
+                <a [href]="row.afsexcelfiles.afsFile.pdfUrl | toStorageUrl" target="_blank">
+                  <!-- {{ row[`${filters.docType}`].name}} -->
+                  <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
+                  <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
+                </a>
+                <strong>
+                  @if (row?.afsexcelfiles?.afsFile?.noOfPages) {
+                    {{ row.afsexcelfiles.afsFile.noOfPages }}
+                  } @else {
+                    {{ row.afsexcelfiles.afsFile.pdfUrl | toStorageUrl | pdfPageCount | async }}
+                  }
+                </strong>
+                pages
+              } @else {
+                <strong>N/A</strong>
+              }
+            </div>
+
+            <div>
+              <button
+                class="btn btn-sm btn-primary upload-btn shadow"
+                style="margin-bottom: 4px"
+                (click)="setActiveRow(row); triggerFileInput(row)"
+              >
+                {{ row.afsexcelfiles?.afsFile ? 'Re-upload' : 'Upload' }}
+              </button>
+              @if (row?.uploading) {
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                  &nbsp;&nbsp;<span class="visually-hidden">Loading...</span>
+                </div>
+              }
+
+              <input
+                type="file"
+                accept="application/pdf"
+                style="display: none"
+                (change)="handleFileUpload($event, row)"
+                #fileInput
+                [attr.data-id]="row.ulbName + row.ulbCode"
+              />
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="formStatus">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 180px">
+            Form Status
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <small>{{
+              MASTER_FORM_STATUS[row.currentFormStatus] ||
+                row.status + ' by ' + row.actionTakenByRole
+            }}</small>
+            <br />
+            <div class="mt-5">N/A</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="digitizeStatus">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 135px">
+            Digitized Status
+          </th>
+          <td mat-cell *matCellDef="let row">
+            @let statusText = row.afsexcelfiles?.ulbFile?.digitizationStatus;
+            <small
+              class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
+              [ngClass]="{
+                'text-bg-success': statusText === 'digitized',
+                'text-bg-danger': statusText === 'failed',
+                'text-bg-info': statusText === 'queued',
+              }"
+              >{{ statusText || 'Not-Digitized' }}
+            </small>
+            <!-- @if (statusText === 'digitized') {
+              <a [href]="row.afsexcelfiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
+                <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
+              </a>
+             
+            } -->
+            <br />
+            <div class="mt-5">
+              @if (row.afsexcelfiles?.afsFile) {
+                @let statusText = row.afsexcelfiles?.afsFile?.digitizationStatus;
+                <small
+                  class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
+                  [ngClass]="{
+                    'text-bg-success': statusText === 'digitized',
+                    'text-bg-danger': statusText === 'failed',
+                    'text-bg-info': statusText === 'queued',
+                  }"
+                  >{{ statusText || 'Not-Digitized' }}
+                </small>
+                <!-- @if (statusText === 'digitized') {
+                  <a [href]="row.afsexcelfiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
+                    <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
+                  </a>
+                 
+                } -->
+              } @else {
+                N/A
+              }
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="digitizedFile">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized File</th>
+          <td mat-cell *matCellDef="let row">
+            @let statusText = row.afsexcelfiles?.ulbFile?.digitizationStatus;
+            @if (statusText === 'digitized') {
+              <a [href]="row.afsexcelfiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
+                <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
+              </a>
+            } @else {
+              N/A
+            }
+            <br />
+            <div class="mt-5">
+              @if (row.afsexcelfiles?.afsFile) {
+                @let statusText = row.afsexcelfiles?.afsFile?.digitizationStatus;
+                @if (statusText === 'digitized') {
+                  <div class="mt-2">
+                    <a [href]="row.afsexcelfiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
+                      <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
+                    </a>
+                  </div>
+                }
+              } @else {
+                N/A
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="formUploadedOn">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Form Uploaded On</th>
+          <td mat-cell *matCellDef="let row">
+            <!-- {{ row.ulbSubmit | date: 'd/M/yyyy, h:mm a' }} -->
+            {{ row.ulbSubmit ? (row.ulbSubmit | date: 'd/M/yyyy') : 'N/A' }}
+            <br />
+            <div class="mt-5">
+              @if (row.afsexcelfiles?.afsFile) {
+                {{ row.afsexcelfiles.afsFile.createdAt | date: 'd/M/yyyy' }}
+              } @else {
+                N/A
+              }
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="digitizedOn">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized On</th>
+          <td mat-cell *matCellDef="let row">
+            {{
+              row.afsexcelfiles
+                ? (row.afsexcelfiles?.ulbFile?.uploadedAt | date: 'd/M/yyyy')
+                : 'N/A'
+            }}
+            <br />
+            <div class="mt-5">
+              @if (row.afsexcelfiles?.afsFile) {
+                {{ row.afsexcelfiles?.afsFile?.uploadedAt | date: 'd/M/yyyy' }}
+              } @else {
+                N/A
+              }
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="requestIdLog">
+          <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>RequestId / Log</th>
+          <td mat-cell *matCellDef="let row">
+            @if (['digitized', 'failed'].includes(row.afsexcelfiles?.ulbFile?.digitizationStatus)) {
+              <button
+                class="btn btn-primary btn-sm shadow"
+                (click)="openLogDialog(row.afsexcelfiles?.ulbFile?.requestId)"
+              >
+                <i class="bi bi-eye"></i>
+                Log(ULB)
+              </button>
+            }
+            <br />
+            <div class="mt-5">
+              @if (
+                row.afsexcelfiles?.afsFile &&
+                ['digitized', 'failed'].includes(row.afsexcelfiles?.afsFile?.digitizationStatus)
+              ) {
+                <button
+                  class="btn btn-success btn-sm shadow"
+                  (click)="openLogDialog(row.afsexcelfiles?.afsFile?.requestId)"
+                >
+                  <i class="bi bi-eye"></i>
+                  Log(AFS)
+                </button>
+              }
+            </div>
+          </td>
+        </ng-container>
+        <!-- Star Column -->
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef aria-label="row actions" style="width: 40px">
+            &nbsp;
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="actionsMenu"
+              [matMenuTriggerData]="{ row: element, type: 'ULB' }"
+              aria-label="Row actions"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <br />
+            <div class="mt-5">
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="actionsMenu"
+                [matMenuTriggerData]="{ row: element, type: 'AFS' }"
+                aria-label="Row actions"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+        <mat-menu #actionsMenu="matMenu">
+          <ng-template
+            matMenuContent
+            let-data="matMenuTriggerData"
+            let-selectedRow="row"
+            let-type="type"
+          >
+            @let status =
+              type === 'ULB'
+                ? selectedRow.afsexcelfiles?.ulbFile?.digitizationStatus
+                : selectedRow.afsexcelfiles?.afsFile?.digitizationStatus;
+            @let isDisabled = !['digitized', 'failed'].includes(status);
+            <button mat-menu-item (click)="viewDetails(selectedRow, type)" [disabled]="isDisabled">
+              View Log
+            </button>
+            <button
+              mat-menu-item
+              (click)="downloadAFSExcel(selectedRow, type)"
+              [disabled]="status !== 'digitized'"
+            >
+              Digitized Excel
+            </button>
+            <button
+              mat-menu-item
+              (click)="removeFromQueue(selectedRow, type)"
+              [disabled]="status !== 'queued'"
+            >
+              Remove from Queue
+            </button>
+          </ng-template>
+        </mat-menu>
+
+        <!-- Header & Row -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+        <!-- No data row -->
+        <tr class="mat-row no-records" *matNoDataRow>
+          <td class="mat-cell text-center" [attr.colspan]="displayedColumns.length">
+            {{ isTableLoading ? 'Loading...' : 'No records found for selected filters.' }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <mat-paginator
+      #paginator
+      [length]="totalCount"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="handlePageEvent($event)"
+      showFirstLastButtons
+    ></mat-paginator>
+
+    <!-- <div class="demo-data">
+      <div>Output event: {{ (pageEvent | json) || 'No events dispatched yet' }}</div>
+      <div>getNumberOfPages: {{ paginator.getNumberOfPages() }}</div>
+    </div> -->
+  </mat-card>
+</div>
