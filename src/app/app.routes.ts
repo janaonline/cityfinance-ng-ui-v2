@@ -86,6 +86,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'events-dashboard',
+    loadComponent: () => import('./admin/events/events.component').then((m) => m.EventsComponent),
+    // canActivate: [authGuard],
+  },
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },

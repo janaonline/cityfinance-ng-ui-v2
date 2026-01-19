@@ -1,19 +1,22 @@
 import { ViewportScroller } from '@angular/common';
 // import {} from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { environment } from '../environments/environment';
 import { GoogleAnalyticsService } from './core/services/google-analytics.service';
 import { HeaderComponent } from './shared/components/header/header.component';
 import { GtmService } from './core/services/gtm.service';
+import { GlobalLoaderService } from './core/services/loaders/global-loader.service';
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
 @Component({
     selector: 'app-root',
     imports: [
     RouterOutlet,
     FooterComponent,
-    HeaderComponent
+    HeaderComponent,
+    MatProgressSpinner
 ],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss'
@@ -21,6 +24,7 @@ import { GtmService } from './core/services/gtm.service';
 export class AppComponent implements OnInit {
   title = 'Cityfinance';
   baseUrl = environment.environment;
+  loaderService = inject(GlobalLoaderService);
 
   constructor(
     private route: ActivatedRoute,
