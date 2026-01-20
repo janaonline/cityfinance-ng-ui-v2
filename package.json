@@ -49,11 +49,13 @@
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
+    "pdf-lib": "^1.17.1",
     "pdfmake": "^0.1.68",
     "rxjs": "~7.8.0",
     "sweetalert2": "^11.22.0",
     "to-words": "^4.0.1",
     "tslib": "^2.3.0",
+    "xlsx": "^0.18.5",
     "zone.js": "~0.15.1"
   },
   "devDependencies": {

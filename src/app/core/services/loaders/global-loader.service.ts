@@ -1,23 +1,18 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 
 @Injectable({
   providedIn: 'root',
 })
 export class GlobalLoaderService {
-  private _loading = new BehaviorSubject<boolean>(false);
+  loading = signal(false);
 
   constructor() {}
 
-  observerLoading() {
-    return this._loading;
+  showLoader() {
+    this.loading.set(true);
   }
 
   stopLoader() {
-    this._loading.next(false);
-  }
-
-  showLoader() {
-    this._loading.next(true);
+    this.loading.set(false);
   }
 }
