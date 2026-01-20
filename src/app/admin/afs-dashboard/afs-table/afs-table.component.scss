@@ -1,0 +1,58 @@
+.table-wrapper {
+    padding-bottom: 1rem;
+}
+
+.table-container {
+    max-height: calc(100vh - 220px);
+    overflow: auto;
+}
+
+mat-card {
+    width: 100%;
+}
+
+.no-records {
+    height: 150px;
+    font-size: 1.2rem;
+    color: rgba(0, 0, 0, 0.54);
+}
+
+.table-container {
+    position: relative;
+    max-height: 75vh;
+    overflow: auto;
+}
+
+.table-loader-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.7); // or rgba(0,0,0,0.05) for subtle
+    pointer-events: none; // table still non-clickable visually but avoids weird hover
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+
+.bordered-mat-table {
+    width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-collapse: collapse;
+
+    .mat-mdc-header-cell,
+    .mat-mdc-cell,
+    .mat-mdc-footer-cell {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        border-right: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .mat-mdc-header-cell:last-child,
+    .mat-mdc-cell:last-child,
+    .mat-mdc-footer-cell:last-child {
+        border-right: none;
+    }
+}

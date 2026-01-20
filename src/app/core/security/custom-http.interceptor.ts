@@ -28,7 +28,7 @@ export const customHttpInterceptor: HttpInterceptorFn = (
   const sessionID = sessionStorage.getItem('sessionID');
 
   let headers = req.headers;
-  if (!req.headers.has('Accept')) {
+  if (!(req.body instanceof FormData) && !req.headers.has('Accept')) {
     headers = headers.set('Content-Type', 'application/json');
   }
   if (sessionID) {

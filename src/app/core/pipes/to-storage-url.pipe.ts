@@ -12,15 +12,12 @@ export class ToStorageUrlPipe implements PipeTransform {
   transform(value: string): string {
     if (value && value.toLowerCase().startsWith('https://')) {
       return value;
+    } else if (value && !value.startsWith('/')) {
+      return environment.STORAGE_BASEURL + '/' + value;
     } else if (value) {
       return environment.STORAGE_BASEURL + value;
     } else {
       return '';
     }
-    // if(value){
-    //   return environment.STORAGE_BASEURL + value;
-    // }else{
-    //   return "";
-    // }
   }
 }
