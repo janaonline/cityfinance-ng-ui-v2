@@ -1,0 +1,20 @@
+<p class="fw-bold m-2 p-1 mb-0 pb-0 fs-4">{{ data.action }} Event</p>
+<mat-dialog-content class="">
+  <mat-card-content class="p-2 row d-flex">
+    @for (field of data.eventTemplate; track field; let i = $index) {
+      <div
+        [title]="
+          field.key === 'startAt' || field.key === 'endAt'
+            ? (form.get(field.key)?.value | date: 'MMM dd, yyyy HH:mm' : ' +0530')
+            : null
+        "
+      >
+        <app-dynamic-form [field]="field" [group]="form"> </app-dynamic-form>
+      </div>
+    }
+  </mat-card-content>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="btn btn-cfPrimary mx-2" (click)="save()">Save</button>
+  <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Cancel</button>
+</mat-dialog-actions>
