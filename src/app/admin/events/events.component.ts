@@ -1,45 +1,17 @@
 import { DatePipe } from '@angular/common';
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { FormGroup } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { GlobalLoaderService } from '../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../core/services/utility.service';
 import { MaterialModule } from '../../material.module';
-import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
-import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
+import { DialogComponent } from './dialog/dialog.component';
 import { EventsService } from './events.service';
-import { EventAlert } from './interface';
+import { ARRAY_VALUES, EVENT_STATUS, EventAlert, EventTemplateDialogResponse } from './interface';
 
-const ARRAY_VALUES = ['buttonLabels', 'imgUrl'];
-const ELEMENT_DATA: EventAlert[] = [
-  {
-    _id: '696df19fbcfb4989d2d9fd6b',
-    webinarId: 'ulb_webinar_alert',
-    title: 'WEBINAR ALERT',
-    startAt: '2025-01-07T11:00:00.000Z',
-    endAt: '2025-01-07T12:00:00.000Z',
-    updatedAt: '2025-01-07T12:00:00.000Z',
-    desc: 'Join our webinar on Jan 7th, 2025 for a deep dive into revenue performance.',
-    eventStatus: 1,
-    redirectionLink: 'https://tally.so/r/jaZ1xa',
-    buttonLabels: ['Register Now', 'Learn More'],
-    imgUrl: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
-  },
-  {
-    _id: '696dfbca94c37e870d669630',
-    webinarId: 'state_webinar_alert',
-    title: 'WEBINAR ALERT',
-    startAt: '2026-01-27T11:00:00.000Z',
-    endAt: '2026-01-27T12:30:00.000Z',
-    updatedAt: '2026-01-27T12:30:00.000Z',
-    desc: 'Explore Urban Metrics: Webinar on Jan 27th. Decode city finances, compare across states.',
-    eventStatus: 2,
-    redirectionLink: 'https://tally.so/r/jaZ1xa',
-  },
-];
+const errMsg = 'An unexpected error occurred. Please try again later.';
 
 @Component({
   selector: 'app-events',
@@ -48,21 +20,19 @@ const ELEMENT_DATA: EventAlert[] = [
     MatPaginatorModule,
     DatePipe,
     MaterialModule,
-    DynamicFormComponent,
-    MatCardModule,
     // GlobalLoaderService,
   ],
   templateUrl: './events.component.html',
   styleUrl: './events.component.scss',
 })
-export class EventsComponent implements OnInit, AfterViewInit {
+export class EventsComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     public globalLoader: GlobalLoaderService,
     private utitilyService: UtilityService,
     private eventsService: EventsService,
-    public formService: DynamicFormService,
+    private dialog: MatDialog,
   ) {}
 
   displayedColumns: string[] = [
@@ -76,131 +46,102 @@ export class EventsComponent implements OnInit, AfterViewInit {
     'redirectionLink',
     'edit',
   ];
-  dataSource = new MatTableDataSource<EventAlert>(ELEMENT_DATA);
-  form!: FormGroup;
-  questions: FieldConfig[] = [];
-  eventBeingEdited: EventAlert | null = null;
+  eventsList = signal<EventAlert[]>([]);
+  dataSource = new MatTableDataSource<EventAlert>(this.eventsList());
+  eventTemplate: FieldConfig[] = [];
+  readonly ARRAY_VALUES = ARRAY_VALUES;
+  readonly EVENT_STATUS = EVENT_STATUS;
 
   ngOnInit(): void {
     this.getEventsList();
+    this.getEventTemplate();
   }
 
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-  }
-
-  createEventCta() {
-    this.globalLoader.showLoader();
-    this.eventsService.getWebinarQuestions().subscribe({
-      next: (questions) => {
-        this.questions = questions;
-        this.form = this.formService.toFormGroup(this.questions);
-        this.globalLoader.stopLoader();
-      },
-      error: () => {
-        this.globalLoader.stopLoader();
-        console.error('Error fetching form questions:');
-        this.utitilyService.swalPopup(
-          'Failed!',
-          'Failed to load form questions. Please try again later.',
-          'error',
-        );
-      },
-    });
-  }
-
-  editEvent(event: EventAlert) {
-    this.eventBeingEdited = event;
-    this.globalLoader.showLoader();
-    this.eventsService.getWebinarQuestions().subscribe({
-      next: (questions) => {
-        this.questions = questions;
-        this.questions.forEach((question) => {
-          const value = event[question.key as keyof EventAlert];
-          if (Array.isArray(value) && ARRAY_VALUES.includes(question.key)) {
-            question.value = value.join(', ');
-          } else {
-            question.value = value;
-          }
-
-          if (question.key === 'webinarId') {
-            question.readonly = true;
-          }
-        });
-
-        this.form = this.formService.toFormGroup(this.questions);
-        this.globalLoader.stopLoader();
-      },
-      error: () => {
-        console.error('Error fetching form questions:');
-        this.globalLoader.stopLoader();
-        this.utitilyService.swalPopup(
-          'Failed!',
-          'Failed to load form questions. Please try again later.',
-          'error',
-        );
-      },
-    });
-  }
-
-  saveEvent() {
-    // Create new event.
-    if (!this.eventBeingEdited) {
-      this.createEvent();
-    } else {
-      const payload = { ...this.form.value };
-      ARRAY_VALUES.forEach((key) => {
-        if (payload[key]) {
-          payload[key] = payload[key].split(',').map((item: string) => item.trim());
-        }
-      });
-      this.updateEventById(this.eventBeingEdited._id, payload);
+  openDialog(
+    action: 'Create' | 'Edit',
+    eventTemplate: FieldConfig[] = structuredClone(this.eventTemplate),
+    eventId: string | null = null,
+  ) {
+    if (!eventTemplate || eventTemplate.length === 0) {
+      console.error('Event template is missing or empty.');
+      return;
     }
-  }
 
-  createEvent() {
-    this.globalLoader.showLoader();
-    const payload = { ...this.form.value };
-    ARRAY_VALUES.forEach((key) => {
-      if (payload[key]) {
-        payload[key] = payload[key].split(',').map((item: string) => item.trim());
+    if (!eventId && action === 'Edit') {
+      console.error('Event ID is required for editing an event.');
+      this.utitilyService.swalPopup(
+        'Error!',
+        'Event ID is missing for editing. Please try again.',
+        'error',
+      );
+      return;
+    }
+
+    const dialogRef = this.dialog.open(DialogComponent, {
+      data: { action, eventTemplate, eventId },
+    });
+
+    dialogRef.afterClosed().subscribe((data: EventTemplateDialogResponse) => {
+      if (action === 'Create' && data && data.payload) {
+        this.createEvent(data.payload);
+      } else if (action === 'Edit' && data && data.payload) {
+        if (!data.eventId) {
+          console.error('No event ID provided for editing.');
+          this.utitilyService.swalPopup(
+            'Error!',
+            'Event ID is missing for editing. Please try again.',
+            'error',
+          );
+          return;
+        }
+        this.updateEventById(data.eventId, data.payload);
       }
     });
+  }
 
-    this.eventsService.createEvent(payload).subscribe({
-      next: (res) => {
-        console.log('Event Created:', res);
-        this.globalLoader.stopLoader();
-        this.eventBeingEdited = null;
-      },
-      error: () => {
-        this.eventBeingEdited = null;
-        console.error('Error creating event:');
-        this.globalLoader.stopLoader();
-        this.utitilyService.swalPopup(
-          'Failed!',
-          'Failed to create event. Please try again later.',
-          'error',
-        );
-      },
+  getEventTemplate() {
+    this.eventTemplate = this.eventsService.getEventTemplate();
+  }
+
+  // When edit button is clicked
+  editEvent(event: EventAlert) {
+    this.globalLoader.showLoader();
+    const eventTemplate = structuredClone(this.eventTemplate);
+
+    eventTemplate.forEach((question) => {
+      const value = event[question.key as keyof EventAlert];
+      if (Array.isArray(value) && this.ARRAY_VALUES.includes(question.key)) {
+        question.value = value.join(', ');
+      } else if (question.key === 'eventStatus') {
+        question.value = this.EVENT_STATUS[value as keyof typeof this.EVENT_STATUS];
+      } else {
+        question.value = value;
+      }
+
+      if (question.key === 'webinarId') {
+        question.readonly = true;
+      }
     });
+    this.globalLoader.stopLoader();
+    this.openDialog('Edit', eventTemplate, event._id);
+  }
+
+  getDate(dateString: string): Date {
+    return new Date(dateString);
   }
 
   getEventsList() {
     this.globalLoader.showLoader();
     this.eventsService.getEvents().subscribe({
       next: (res) => {
-        console.log('Events List:', res);
+        this.eventsList.set(res.data);
+        this.dataSource.data = this.eventsList();
         this.globalLoader.stopLoader();
       },
-      error: () => {
+      error: (error: Error) => {
         console.error('Error fetching events list:');
         this.globalLoader.stopLoader();
-        this.utitilyService.swalPopup(
-          'Failed!',
-          'Failed to load events. Please try again later.',
-          'error',
-        );
+        this.utitilyService.swalPopup('Failed!', error.message || errMsg, 'error');
       },
     });
   }
@@ -208,40 +149,58 @@ export class EventsComponent implements OnInit, AfterViewInit {
   getEventById(eventId: string) {
     this.globalLoader.showLoader();
     this.eventsService.getEventById(eventId).subscribe({
-      next: (res) => {
-        console.log('Event Details:', res);
+      next: () => {
         this.globalLoader.stopLoader();
       },
-      error: () => {
+      error: (error: Error) => {
         console.error('Error fetching event details:');
         this.globalLoader.stopLoader();
+        this.utitilyService.swalPopup('Failed!', error.message || errMsg, 'error');
+      },
+    });
+  }
+
+  createEvent(payload: EventAlert) {
+    this.globalLoader.showLoader();
+
+    this.eventsService.createEvent(payload).subscribe({
+      next: () => {
+        this.globalLoader.stopLoader();
         this.utitilyService.swalPopup(
-          'Failed!',
-          'Failed to load event details. Please try again later.',
-          'error',
+          'Success!',
+          `Event ${payload.title} has been created successfully.`,
         );
+        this.getEventsList();
+      },
+      error: (error: Error) => {
+        const errorMessage = Array.isArray(error.message)
+          ? error.message.join(', ')
+          : error.message || errMsg;
+        console.error('Error creating event:');
+        this.globalLoader.stopLoader();
+        this.utitilyService.swalPopup('Failed!', errorMessage, 'error');
       },
     });
   }
 
   updateEventById(event_id: string, eventData: EventAlert) {
-    console.log('event id', event_id);
     this.globalLoader.showLoader();
     this.eventsService.updateEventById(event_id, eventData).subscribe({
-      next: (res) => {
-        console.log('Event Updated:', res);
-        this.globalLoader.stopLoader();
-        this.eventBeingEdited = null;
-      },
-      error: () => {
-        this.eventBeingEdited = null;
-        console.error('Error updating event:');
+      next: () => {
         this.globalLoader.stopLoader();
         this.utitilyService.swalPopup(
-          'Failed!',
-          'Failed to update event. Please try again later.',
-          'error',
+          'Success!',
+          `Event ${eventData.title} has been updated successfully.`,
         );
+        this.getEventsList();
+      },
+      error: (error: Error) => {
+        const errorMessage = Array.isArray(error.message)
+          ? error.message.join(', ')
+          : error.message || errMsg;
+        console.error('Error updating event:');
+        this.globalLoader.stopLoader();
+        this.utitilyService.swalPopup('Failed!', errorMessage, 'error');
       },
     });
   }
@@ -252,28 +211,20 @@ export class EventsComponent implements OnInit, AfterViewInit {
     ) {
       this.globalLoader.showLoader();
       this.eventsService.removeEventById(event._id).subscribe({
-        next: (res) => {
-          console.log('Event Deleted:', res);
+        next: () => {
+          this.globalLoader.stopLoader();
           this.utitilyService.swalPopup(
             'Deleted!',
             `Event ${event.title} has been deleted successfully.`,
           );
-          this.globalLoader.stopLoader();
+          this.getEventsList();
         },
-        error: () => {
+        error: (error: Error) => {
           console.error('Error deleting event:');
           this.globalLoader.stopLoader();
-          this.utitilyService.swalPopup(
-            'Failed!',
-            'Failed to delete event. Please try again later.',
-            'error',
-          );
+          this.utitilyService.swalPopup('Failed!', error.message || errMsg, 'error');
         },
       });
     }
-  }
-
-  buttonClicked() {
-    console.log('Form Values:', this.form.value);
   }
 }

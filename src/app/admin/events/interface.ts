@@ -1,9 +1,11 @@
+import { FieldConfig } from '../../shared/dynamic-form/field.interface';
+
 export interface EventAlert {
   _id: string;
   webinarId: string;
   title: string;
   desc: string;
-  eventStatus: number;
+  eventStatus: 1 | 2;
   startAt: string;
   endAt: string;
   redirectionLink: string;
@@ -20,7 +22,7 @@ export interface EventResponse {
 }
 
 export interface EventsResponseFindAll {
-  items: EventAlert[];
+  data: EventAlert[];
   page: number;
   limit: number;
   total: number;
@@ -31,3 +33,21 @@ export interface EventDeleteResponse {
   success: boolean;
   message: string;
 }
+
+export interface EventTemplateDialogData {
+  action: 'Create' | 'Edit';
+  eventId: string | null;
+  eventTemplate: FieldConfig[];
+}
+
+export interface EventTemplateDialogResponse {
+  action: 'Create' | 'Edit';
+  eventId: string | null;
+  payload: EventAlert;
+}
+
+export const ARRAY_VALUES = ['buttonLabels', 'imgUrl'];
+export const EVENT_STATUS = {
+  1: 'Active',
+  2: 'Draft',
+};

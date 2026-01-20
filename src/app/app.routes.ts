@@ -88,7 +88,7 @@ export const routes: Routes = [
   {
     path: 'events-dashboard',
     loadComponent: () => import('./admin/events/events.component').then((m) => m.EventsComponent),
-    // canActivate: [authGuard],
+    canActivate: [authGuard],
   },
   {
     path: 'maintenance',
