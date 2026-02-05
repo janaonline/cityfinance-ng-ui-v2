@@ -6,3 +6,9 @@
   <router-outlet></router-outlet>
 </div>
 <app-footer></app-footer>
+
+@if (loaderService.loading()) {
+<div class="custom-spinner-overlay">
+  <mat-spinner></mat-spinner>
+</div>
+}
