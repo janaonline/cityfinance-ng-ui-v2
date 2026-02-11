@@ -18,7 +18,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { IState } from '../../core/models/state/state';
-import { AfsFilterComponent } from './afs-filter/afs-filter.component';
+import { AfsFilterComponent, DEFAULT_AUDIT_STATUS, DEFAULT_DOC_TYPE, DEFAULT_YEAR } from './afs-filter/afs-filter.component';
 import { AfsTableComponent } from "./afs-table/afs-table.component";
 import { AfsService, FilterValues } from './afs.service';
 
@@ -89,14 +89,13 @@ export class AfsDashboardComponent implements OnInit {
   // lastLoginTime = localStorage.getItem('lastLoginTime') || '';
 
   filtersObj = signal<FilterValues>({
-    docType: 'bal_sheet_schedules',
-    yearId: '606aadac4dff55e6c075c507',
-    auditType: 'audited',
-    populationCategory: '1M-4M',
+    docType: DEFAULT_DOC_TYPE,
+    yearId: DEFAULT_YEAR,
+    auditType: DEFAULT_AUDIT_STATUS,
+    populationCategory: '',
     stateId: [],
     ulbId: [],
   });
-
 
   dashboardCards: DashboardCard[] = [
     // {
