@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { AsyncPipe, DatePipe, NgClass } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
-import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, Output, QueryList, ViewChild, ViewChildren, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -24,6 +24,7 @@ import { FileService } from '../../../shared/dynamic-form/components/file/file.s
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 import { AfsExcelFile, AfsService, FilterValues, ResponseData } from '../afs.service';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
+export const AFS_PAGINATION_KEY = 'afsPagination';
 
 // raw row interface
 // {
@@ -164,7 +165,7 @@ export interface RawRow {
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
 })
-export class AfsTableComponent implements AfterViewInit {
+export class AfsTableComponent implements AfterViewInit, OnInit {
 
   readonly storageUrl = environment.STORAGE_BASEURL;
   // readonly storageUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
@@ -208,12 +209,20 @@ export class AfsTableComponent implements AfterViewInit {
   activeRow: any;
   // constructor(private afsService: AfsService,) { }
 
-  // ngOnInit(): void {
-  // this.getAfsList();
-  // }
+  ngOnInit(): void {
+    const afsPaginationLocalStorage = localStorage.getItem(AFS_PAGINATION_KEY);
+    if (afsPaginationLocalStorage) {
+      this.pageEvent = JSON.parse(afsPaginationLocalStorage);
+      this.setPage();
+    }
+  }
 
-  // TODO: rename
-  abc = effect(() => {
+  getAfsListEffect = effect(() => {
+    if (this.pageEvent) {
+      const page = this.filters().page;
+      this.pageEvent.pageIndex = page ? page - 1 : 0;
+      this.pageEvent.pageSize = this.filters().limit || 100;
+    }
     // This effect runs initially and whenever this.quantity() changes
     this.getAfsList();
   })
@@ -221,7 +230,11 @@ export class AfsTableComponent implements AfterViewInit {
   selectedRow: any;
   currentFile: any;
 
-  pageEvent!: PageEvent;
+  pageEvent: PageEvent = {
+    pageIndex: 0,
+    pageSize: 10,
+    length: 0
+  };
 
   dataSource = new MatTableDataSource<RawRow>([]);
   displayedColumns: string[] = [
@@ -248,16 +261,26 @@ export class AfsTableComponent implements AfterViewInit {
   handlePageEvent(event: PageEvent) {
     this.pageEvent = event;
     // this.totalCount = event.length;
-    this.page = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-    this.filters().page = this.page;
-    this.filters().limit = this.pageSize;
+    // this.page = event.pageIndex + 1;
+    // this.pageSize = event.pageSize;
+    // this.filters().page = this.page;
+    // this.filters().limit = this.pageSize;
+    localStorage.setItem(AFS_PAGINATION_KEY, JSON.stringify(event));
+    this.setPage();
     this.getAfsList();
+  }
+
+  setPage() {
+    // this.page = this.pageEvent.pageIndex + 1;
+    // this.pageSize = this.pageEvent.pageSize;
+    // this.filters().page = this.page;
+    this.filters().page = this.pageEvent.pageIndex + 1;
+    this.filters().limit = this.pageEvent.pageSize;
   }
   getAfsList(): void {
     this.selection.clear();
     this.isTableLoading = true;
-    this.filters().limit = this.pageSize;
+    this.filters().limit = this.pageEvent.pageSize;
     const params = {
       ...this.filters(),
       // page: this.page,
