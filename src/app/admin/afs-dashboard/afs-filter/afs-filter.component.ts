@@ -10,12 +10,14 @@ import { MatListModule } from '@angular/material/list';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { IState } from '../../../core/models/state/state';
-import { AfsService, FilterValues } from '../afs.service';
 import { IULB } from '../../../core/models/ulb';
-const DEFAULT_YEAR = '606aadac4dff55e6c075c507'; // 2020-21
-const DEFAULT_DOC_TYPE = 'bal_sheet_schedules';
-const DEFAULT_AUDIT_STATUS = 'audited';
-const DEFAULT_DIGITIZATION_STATUS = '';
+import { AFS_PAGINATION_KEY } from '../afs-table/afs-table.component';
+import { AfsService, FilterValues } from '../afs.service';
+export const DEFAULT_YEAR = '606aadac4dff55e6c075c507'; // 2020-21
+export const DEFAULT_DOC_TYPE = 'bal_sheet_schedules';
+export const DEFAULT_AUDIT_STATUS = 'audited';
+export const DEFAULT_DIGITIZATION_STATUS = '';
+export const AFS_FILTER_KEY = 'afsFilter';
 
 interface YearOption {
   _id: string;
@@ -132,6 +134,13 @@ export class AfsFilterComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // If available in localstorage use that.
+    const filterFormFromLocalStroage = localStorage.getItem(AFS_FILTER_KEY);
+    if (filterFormFromLocalStroage) {
+      this.filterForm.patchValue(JSON.parse(filterFormFromLocalStroage));
+      this.filtersChanged.emit(this.filterForm.value);
+    }
+
     this.loadFilters();
   }
 
@@ -273,15 +282,19 @@ export class AfsFilterComponent implements OnInit {
       yearId: DEFAULT_YEAR,
       docType: DEFAULT_DOC_TYPE,
       auditType: DEFAULT_AUDIT_STATUS,
+      pageIndex: 0,
       page: 1,
       limit: 10,
       digitizationStatus: DEFAULT_DIGITIZATION_STATUS
     });
     this.filtersChanged.emit(this.filterForm.value);
+    localStorage.removeItem(AFS_FILTER_KEY)
+    localStorage.removeItem(AFS_PAGINATION_KEY);
   }
 
   applyFilters(): void {
     this.filtersChanged.emit(this.filterForm.value);
+    localStorage.setItem(AFS_FILTER_KEY, JSON.stringify(this.filterForm.value))
   }
 
 
