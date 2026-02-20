@@ -34,7 +34,7 @@ export const AFS_PAGINATION_KEY = 'afsPagination';
 //       "isActive": true,
 //       "isDraft": false,
 //       "status": "APPROVED",
-//       "afsexcelfiles": {
+//       "afsFiles": {
 //         "_id": "69453b74559acb711f5d2a8a",
 //         "year": "606aadac4dff55e6c075c507",
 //         "docType": "bal_sheet_schedules",
@@ -106,7 +106,7 @@ export interface AfsFile {
   requestId?: string;
 }
 
-export interface Afsexcelfiles {
+export interface AfsFiles {
   _id: string;
   year: string;
   docType: string;
@@ -126,7 +126,7 @@ export interface RawRow {
   digitizeStatus: string;
   formUploadedOn: string;
   digitizedOn: string;
-  afsexcelfiles: Afsexcelfiles;
+  afsFiles: AfsFiles;
   position: number;
   // city: string;
   state: string;
@@ -394,7 +394,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
           };
           this.afsService.uploadAfsFile(formData).subscribe((response) => {
             this.selectedRow.uploading = false;
-            this.selectedRow.afsexcelfiles = response.data;
+            this.selectedRow.afsFiles = response.data;
             this.isTableLoading = false;
             // this.progress = 100;
             // const fileData: any = { name: file.name, url: path, size: this.formatBytes(file.size) };
@@ -451,18 +451,18 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
         for (const row of selectedRows) {
           const ulbFile = row[`${this.filters().docType}`]?.url;
           if (ulbFile) {
-            if (!row.afsexcelfiles?.ulbFile) {
-              row.afsexcelfiles = row.afsexcelfiles || {};
-              row.afsexcelfiles.ulbFile = {
+            if (!row.afsFiles?.ulbFile) {
+              row.afsFiles = row.afsFiles || {};
+              row.afsFiles.ulbFile = {
                 digitizationStatus: 'queued',
               };
             }
             else {
-              row.afsexcelfiles.ulbFile.digitizationStatus = 'queued';
+              row.afsFiles.ulbFile.digitizationStatus = 'queued';
             }
           }
-          if (row.afsexcelfiles?.afsFile) {
-            row.afsexcelfiles.afsFile.digitizationStatus = 'queued';
+          if (row.afsFiles?.afsFile) {
+            row.afsFiles.afsFile.digitizationStatus = 'queued';
           }
         }
       }
@@ -479,18 +479,21 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
 
   viewDetails(row: any, type: string = 'ulb') {
     console.log('View details for row:', row, type);
-    const requestId = type === 'ULB' ? row.afsexcelfiles?.ulbFile?.requestId || '' : row.afsexcelfiles?.afsFile?.requestId || '';
+    const requestId = type === 'ULB' ? row.afsFiles?.ulbFile?.requestId || '' : row.afsFiles?.afsFile?.requestId || '';
     if (requestId) {
       this.openLogDialog(requestId);
     }
     // Implement view details logic here
   }
 
-  downloadAFSExcel(row: any, type: string = 'ulb') {
+  downloadAFSFile(row: any, type: string = 'ulb') {
     console.log('Download AFS Excel for row:', row);
-    const excelUrl = type === 'ULB' ? row.afsexcelfiles?.ulbFile?.excelUrl : row.afsexcelfiles?.afsFile?.excelUrl;
-    if (excelUrl) {
-      const fullUrl = `${this.storageUrl}/${excelUrl}`;
+    let filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.excelUrl : row.afsFiles?.afsFile?.excelUrl;
+    if (row.doctType === 'Auditors report') {
+      filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.digitizedFileUrl : row.afsFiles?.afsFile?.digitizedFileUrl;
+    }
+    if (filePath) {
+      const fullUrl = `${this.storageUrl}/${filePath}`;
       window.open(fullUrl, '_blank');
     } else {
       this._snackBar.open('AFS Excel file not available for this record.', 'Close', { duration: 5000 });
@@ -501,22 +504,22 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     console.log('Remove from queue for row:', row, type);
 
     const afsFile: AfsExcelFile = {
-      annualAccountsId: row.afsexcelfiles.annualAccountsId,
+      annualAccountsId: row.afsFiles.annualAccountsId,
       ulb: row.ulb,
       year: row.year,
       auditType: this.filters().auditType,
-      docType: row.afsexcelfiles.docType,
-      pdfUrl: type === 'ULB' ? row.afsexcelfiles.ulbFile?.pdfUrl : row.afsexcelfiles.afsFile?.pdfUrl,
+      docType: row.afsFiles.docType,
+      pdfUrl: type === 'ULB' ? row.afsFiles.ulbFile?.pdfUrl : row.afsFiles.afsFile?.pdfUrl,
       uploadedBy: type,
-      jobId: type === 'ULB' ? row.afsexcelfiles.ulbFile?.queue?.jobId : row.afsexcelfiles.afsFile?.queue?.jobId,
+      jobId: type === 'ULB' ? row.afsFiles.ulbFile?.queue?.jobId : row.afsFiles.afsFile?.queue?.jobId,
     };
     this.afsService.removeJob(afsFile).subscribe({
       next: (res) => {
         this._snackBar.open('Job removed from queue successfully.', 'Close', { duration: 5000 });
         if (type === 'ULB') {
-          row.afsexcelfiles.ulbFile.digitizationStatus = 'not_digitized';
+          row.afsFiles.ulbFile.digitizationStatus = 'not_digitized';
         } else {
-          row.afsexcelfiles.afsFile.digitizationStatus = 'not_digitized';
+          row.afsFiles.afsFile.digitizationStatus = 'not_digitized';
         }
       },
       error: (err) => {
