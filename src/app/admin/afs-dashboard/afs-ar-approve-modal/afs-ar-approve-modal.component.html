@@ -56,7 +56,10 @@
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center gap-2">
           <span class="fw-semibold">OCR & Extraction decision</span>
-          <span class="badge p-1" [ngClass]="badgeClass(sections.ocr_extraction.decision)">
+          <span
+            class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
+            [ngClass]="badgeClass(sections.ocr_extraction.decision)"
+          >
             {{ label(sections.ocr_extraction.decision) }}
           </span>
         </div>
@@ -142,7 +145,10 @@
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center gap-2">
           <span class="fw-semibold">Classification decision</span>
-          <span class="badge" [ngClass]="badgeClass(sections.classification.decision)">
+          <span
+            class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
+            [ngClass]="badgeClass(sections.classification.decision)"
+          >
             {{ label(sections.classification.decision) }}
           </span>
         </div>
@@ -226,7 +232,10 @@
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center gap-2">
           <span class="fw-semibold">Audit decision</span>
-          <span class="badge" [ngClass]="badgeClass(sections.audit.decision)">
+          <span
+            class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
+            [ngClass]="badgeClass(sections.audit.decision)"
+          >
             {{ label(sections.audit.decision) }}
           </span>
         </div>
@@ -291,7 +300,10 @@
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center gap-2">
           <span class="fw-semibold">Summary decision</span>
-          <span class="badge" [ngClass]="badgeClass(sections.summary.decision)">
+          <span
+            class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
+            [ngClass]="badgeClass(sections.summary.decision)"
+          >
             {{ label(sections.summary.decision) }} {{ sections.summary.decision }}
           </span>
         </div>
