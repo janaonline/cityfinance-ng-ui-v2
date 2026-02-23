@@ -97,8 +97,8 @@
                   <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
                 </a>
                 <strong>
-                  @if (row?.afsexcelfiles?.ulbFile?.noOfPages) {
-                    {{ row.afsexcelfiles.ulbFile.noOfPages }}
+                  @if (row?.afsFiles?.ulbFile?.noOfPages) {
+                    {{ row.afsFiles.ulbFile.noOfPages }}
                   } @else {
                     {{ storageUrl+ row[`${filters().docType}`].url| toStorageUrl | pdfPageCount | async }}
                   }
@@ -112,17 +112,17 @@
 
             <div class="mt-5">
               AFS :
-              @if (row.afsexcelfiles?.afsFile) {
-                <a [href]="row.afsexcelfiles.afsFile.pdfUrl | toStorageUrl" target="_blank">
+              @if (row.afsFiles?.afsFile) {
+                <a [href]="row.afsFiles.afsFile.pdfUrl | toStorageUrl" target="_blank">
                   <!-- {{ row[`${filters.docType}`].name}} -->
                   <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
                   <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
                 </a>
                 <strong>
-                  @if (row?.afsexcelfiles?.afsFile?.noOfPages) {
-                    {{ row.afsexcelfiles.afsFile.noOfPages }}
+                  @if (row?.afsFiles?.afsFile?.noOfPages) {
+                    {{ row.afsFiles.afsFile.noOfPages }}
                   } @else {
-                    {{ row.afsexcelfiles.afsFile.pdfUrl | toStorageUrl | pdfPageCount | async }}
+                    {{ row.afsFiles.afsFile.pdfUrl | toStorageUrl | pdfPageCount | async }}
                   }
                 </strong>
                 pages
@@ -137,7 +137,7 @@
                 style="margin-bottom: 4px"
                 (click)="setActiveRow(row); triggerFileInput(row)"
               >
-                {{ row.afsexcelfiles?.afsFile ? 'Re-upload' : 'Upload' }}
+                {{ row.afsFiles?.afsFile ? 'Re-upload' : 'Upload' }}
               </button>
               @if (row?.uploading) {
                 <div class="spinner-border spinner-border-sm text-primary" role="status">
@@ -175,7 +175,7 @@
             Digitized Status
           </th>
           <td mat-cell *matCellDef="let row">
-            @let statusText = row.afsexcelfiles?.ulbFile?.digitizationStatus;
+            @let statusText = row.afsFiles?.ulbFile?.digitizationStatus;
             <small
               class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
               [ngClass]="{
@@ -186,15 +186,15 @@
               >{{ statusText || 'Not-Digitized' }}
             </small>
             <!-- @if (statusText === 'digitized') {
-              <a [href]="row.afsexcelfiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
+              <a [href]="row.afsFiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
                 <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
               </a>
              
             } -->
             <br />
             <div class="mt-5">
-              @if (row.afsexcelfiles?.afsFile) {
-                @let statusText = row.afsexcelfiles?.afsFile?.digitizationStatus;
+              @if (row.afsFiles?.afsFile) {
+                @let statusText = row.afsFiles?.afsFile?.digitizationStatus;
                 <small
                   class="badge rounded-pill text-bg-secondary px-2 py-1 shadow"
                   [ngClass]="{
@@ -205,7 +205,7 @@
                   >{{ statusText || 'Not-Digitized' }}
                 </small>
                 <!-- @if (statusText === 'digitized') {
-                  <a [href]="row.afsexcelfiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
+                  <a [href]="row.afsFiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
                     <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
                   </a>
                  
@@ -219,9 +219,9 @@
         <ng-container matColumnDef="digitizedFile">
           <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized File</th>
           <td mat-cell *matCellDef="let row">
-            @let statusText = row.afsexcelfiles?.ulbFile?.digitizationStatus;
+            @let statusText = row.afsFiles?.ulbFile?.digitizationStatus;
             @if (statusText === 'digitized') {
-              <a [href]="row.afsexcelfiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
+              <a [href]="row.afsFiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
                 <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
               </a>
             } @else {
@@ -229,11 +229,11 @@
             }
             <br />
             <div class="mt-5">
-              @if (row.afsexcelfiles?.afsFile) {
-                @let statusText = row.afsexcelfiles?.afsFile?.digitizationStatus;
+              @if (row.afsFiles?.afsFile) {
+                @let statusText = row.afsFiles?.afsFile?.digitizationStatus;
                 @if (statusText === 'digitized') {
                   <div class="mt-2">
-                    <a [href]="row.afsexcelfiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
+                    <a [href]="row.afsFiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
                       <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
                     </a>
                   </div>
@@ -252,8 +252,8 @@
             {{ row.ulbSubmit ? (row.ulbSubmit | date: 'd/M/yyyy') : 'N/A' }}
             <br />
             <div class="mt-5">
-              @if (row.afsexcelfiles?.afsFile) {
-                {{ row.afsexcelfiles.afsFile.createdAt | date: 'd/M/yyyy' }}
+              @if (row.afsFiles?.afsFile) {
+                {{ row.afsFiles.afsFile.createdAt | date: 'd/M/yyyy' }}
               } @else {
                 N/A
               }
@@ -263,28 +263,24 @@
         <ng-container matColumnDef="digitizedOn">
           <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Digitized On</th>
           <td mat-cell *matCellDef="let row">
-            {{
-              row.afsexcelfiles
-                ? (row.afsexcelfiles?.ulbFile?.uploadedAt | date: 'd/M/yyyy')
-                : 'N/A'
-            }}
+            {{ row.afsFiles ? (row.afsFiles?.ulbFile?.uploadedAt | date: 'd/M/yyyy') : 'N/A' }}
             <br />
             <div class="mt-5">
-              @if (row.afsexcelfiles?.afsFile) {
-                {{ row.afsexcelfiles?.afsFile?.uploadedAt | date: 'd/M/yyyy' }}
+              @if (row.afsFiles?.afsFile) {
+                {{ row.afsFiles?.afsFile?.uploadedAt | date: 'd/M/yyyy' }}
               } @else {
                 N/A
               }
             </div>
           </td>
         </ng-container>
-        <ng-container matColumnDef="requestIdLog">
+        <!-- <ng-container matColumnDef="requestIdLog">
           <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>RequestId / Log</th>
           <td mat-cell *matCellDef="let row">
-            @if (['digitized', 'failed'].includes(row.afsexcelfiles?.ulbFile?.digitizationStatus)) {
+            @if (['digitized', 'failed'].includes(row.afsFiles?.ulbFile?.digitizationStatus)) {
               <button
                 class="btn btn-primary btn-sm shadow"
-                (click)="openLogDialog(row.afsexcelfiles?.ulbFile?.requestId)"
+                (click)="openLogDialog(row.afsFiles?.ulbFile?.requestId, row.doctType)"
               >
                 <i class="bi bi-eye"></i>
                 Log(ULB)
@@ -293,12 +289,12 @@
             <br />
             <div class="mt-5">
               @if (
-                row.afsexcelfiles?.afsFile &&
-                ['digitized', 'failed'].includes(row.afsexcelfiles?.afsFile?.digitizationStatus)
+                row.afsFiles?.afsFile &&
+                ['digitized', 'failed'].includes(row.afsFiles?.afsFile?.digitizationStatus)
               ) {
                 <button
                   class="btn btn-success btn-sm shadow"
-                  (click)="openLogDialog(row.afsexcelfiles?.afsFile?.requestId)"
+                  (click)="openLogDialog(row.afsFiles?.afsFile?.requestId, row.doctType)"
                 >
                   <i class="bi bi-eye"></i>
                   Log(AFS)
@@ -306,7 +302,7 @@
               }
             </div>
           </td>
-        </ng-container>
+        </ng-container> -->
         <!-- Star Column -->
         <ng-container matColumnDef="action">
           <th mat-header-cell *matHeaderCellDef aria-label="row actions" style="width: 40px">
@@ -343,18 +339,18 @@
           >
             @let status =
               type === 'ULB'
-                ? selectedRow.afsexcelfiles?.ulbFile?.digitizationStatus
-                : selectedRow.afsexcelfiles?.afsFile?.digitizationStatus;
+                ? selectedRow.afsFiles?.ulbFile?.digitizationStatus
+                : selectedRow.afsFiles?.afsFile?.digitizationStatus;
             @let isDisabled = !['digitized', 'failed'].includes(status);
             <button mat-menu-item (click)="viewDetails(selectedRow, type)" [disabled]="isDisabled">
               View Log
             </button>
             <button
               mat-menu-item
-              (click)="downloadAFSExcel(selectedRow, type)"
+              (click)="downloadAFSFile(selectedRow, type)"
               [disabled]="status !== 'digitized'"
             >
-              Digitized Excel
+              Digitized File
             </button>
             <button
               mat-menu-item
