@@ -24,6 +24,7 @@ import { FileService } from '../../../shared/dynamic-form/components/file/file.s
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 import { AfsExcelFile, AfsService, FilterValues, ResponseData } from '../afs.service';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
+import { AfsArApproveModalComponent } from '../afs-ar-approve-modal/afs-ar-approve-modal.component';
 export const AFS_PAGINATION_KEY = 'afsPagination';
 
 // raw row interface
@@ -160,7 +161,7 @@ export interface RawRow {
     NgClass,
     AsyncPipe,
     PdfPageCountPipe,
-    MaterialModule
+    MaterialModule,
   ],
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
@@ -335,16 +336,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     this.dataSource.sort = this.sort;
   }
 
-  openLogDialog(requestId: string): void {
-    // Implement dialog opening logic here
-    // console.log('Open log dialog for Request ID:', requestId);
-    const dialogRef = this.dialog.open(AfsLogModalComponent, { data: { requestId }, panelClass: 'col-8' });
 
-    dialogRef.afterClosed().subscribe(result => {
-      // console.log(`Dialog result: ${result}`);
-    });
-
-  }
 
   setActiveRow(file: any) {
     this.activeRow = file;
@@ -477,13 +469,35 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     this.showSideBar.emit(true);
   }
 
-  viewDetails(row: any, type: string = 'ulb') {
+  viewDetails(row: any, type: string = 'ULB') {
     console.log('View details for row:', row, type);
     const requestId = type === 'ULB' ? row.afsFiles?.ulbFile?.requestId || '' : row.afsFiles?.afsFile?.requestId || '';
-    if (requestId) {
-      this.openLogDialog(requestId);
+    const uploadedBy = type === 'ULB' ? 'ulbFile' : 'afsFile';
+    const file = row?.afsFiles?.[uploadedBy];
+
+    console.log('File details:', file);
+
+    if (['digitized', 'failed'].includes(file?.digitizationStatus)) {
+      this.openLogDialog(row, file, row.doctType, type);
     }
     // Implement view details logic here
+  }
+
+  openLogDialog(row: any, file: any, docType: string, type: string): void {
+    console.log('Open log dialog for file:', file, docType);
+    let dialogRef = null;
+    if (docType === 'Auditors report') {
+      dialogRef = this.dialog.open(AfsArApproveModalComponent, { data: { id: row.afsFiles._id, type }, panelClass: 'col-6' });
+    } else {
+      dialogRef = this.dialog.open(AfsLogModalComponent, { data: { requestId: file?.requestId }, panelClass: 'col-8' });
+    }
+    // Implement dialog opening logic here
+    // console.log('Open log dialog for Request ID:', requestId);
+
+    dialogRef.afterClosed().subscribe(result => {
+      // console.log(`Dialog result: ${result}`);
+    });
+
   }
 
   downloadAFSFile(row: any, type: string = 'ulb') {
