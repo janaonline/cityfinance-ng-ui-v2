@@ -7,19 +7,22 @@ import { logResponse } from './log-response';
 import { AfsService } from '../afs.service';
 import { MatIcon, MatIconModule } from '@angular/material/icon';
 import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
+import { MatTabsModule } from '@angular/material/tabs';
 
 export type SectionKey = 'ocr_extraction' | 'classification' | 'audit' | 'summary';
 export type Decision = 'approved' | 'rejected' | null;
 
 @Component({
   selector: 'app-afs-ar-approve-modal',
-  imports: [MatDialogModule, MatButtonModule, NgClass, ReactiveFormsModule, FormsModule, MatIconModule, ToStorageUrlPipe],
+  imports: [MatDialogModule, MatButtonModule, NgClass, ReactiveFormsModule, FormsModule, MatIconModule, ToStorageUrlPipe, MatTabsModule],
   templateUrl: './afs-ar-approve-modal.component.html',
   styleUrl: './afs-ar-approve-modal.component.scss'
 })
 export class AfsArApproveModalComponent implements OnInit {
   activeTab: SectionKey = 'ocr_extraction';
   arData: any = null;
+
+  isSubmiting = false;
   // p: any = null;
 
   sections: Record<SectionKey, { decision: Decision; notes: FormControl<string> }> = {
@@ -80,8 +83,10 @@ export class AfsArApproveModalComponent implements OnInit {
       decision, // Convert to lowercase if API expects that
       notes: this.sections[section].notes.value
     };
-    console.log('Decision updated:', payload);
+    // console.log('Decision updated:', payload);
+    this.isSubmiting = true;
     this.afsService.submitARDecision(payload).subscribe(res => {
+      this.isSubmiting = false;
       console.log('Decision submitted:', res);
       this.sections[section].decision = decision;
     });

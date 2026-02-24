@@ -487,7 +487,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     console.log('Open log dialog for file:', file, docType);
     let dialogRef = null;
     if (docType === 'Auditors report') {
-      dialogRef = this.dialog.open(AfsArApproveModalComponent, { data: { id: row.afsFiles._id, type }, panelClass: 'col-6' });
+      dialogRef = this.dialog.open(AfsArApproveModalComponent, { data: { id: row.afsFiles._id, type }, panelClass: 'col-8' });
     } else {
       dialogRef = this.dialog.open(AfsLogModalComponent, { data: { requestId: file?.requestId }, panelClass: 'col-8' });
     }

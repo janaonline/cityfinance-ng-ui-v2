@@ -1,0 +1,30 @@
+/* Ensure dialog content doesn't overflow */
+.dialog-content {
+    padding: 0;
+    overflow: hidden;
+    /* Prevent double scrollbars */
+}
+
+/* Make the tab content scrollable */
+.tab-content {
+    max-height: 400px;
+    /* Set desired height */
+    overflow-y: auto;
+    /* Enable vertical scroll */
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+/* Optional: style scrollbar for better UX */
+.tab-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.tab-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
