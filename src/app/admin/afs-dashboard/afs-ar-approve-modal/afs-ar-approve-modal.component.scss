@@ -7,7 +7,8 @@
 
 /* Make the tab content scrollable */
 .tab-content {
-    max-height: 400px;
+    // max-height: 400px;
+    max-height: 45vh;
     /* Set desired height */
     overflow-y: auto;
     /* Enable vertical scroll */
