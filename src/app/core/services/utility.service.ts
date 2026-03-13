@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import FileSaver from 'file-saver';
 import Swal, { SweetAlertIcon, SweetAlertResult } from 'sweetalert2';
 
@@ -6,7 +7,7 @@ import Swal, { SweetAlertIcon, SweetAlertResult } from 'sweetalert2';
   providedIn: 'root',
 })
 export class UtilityService {
-  constructor() {}
+  constructor(private _snackBar: MatSnackBar) {}
 
   public fetchFile(target_file_url: string, fileName: string): void {
     // Show a popup to indicate that the file is being downloaded
@@ -27,6 +28,16 @@ export class UtilityService {
         Swal.close();
         this.swalPopup('Validation Failed!', 'Failed to download file!', 'error');
       });
+  }
+
+  // Helper: Trigger snack-bar.
+  triggerSnackbar(msg: string, className: string = 'snackbar-success'): void {
+    this._snackBar.open(msg, 'Close', {
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      duration: 3000,
+      panelClass: [className],
+    });
   }
 
   public swalPopup(title: string, text: string, icon: SweetAlertIcon = 'success'): void {
