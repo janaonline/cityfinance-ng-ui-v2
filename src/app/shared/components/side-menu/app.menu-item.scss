@@ -1,0 +1,175 @@
+* {
+    --color-primary: #114551;
+    --color-primary-hover: #16505d;
+    --color-primary-selected: #1c6170;
+    --color-muted: rgba(255, 255, 255, 0.40);
+    --color-light: #f2f7f8;
+
+    --nav-width: 260px;
+    --item-padding: 0.45rem;
+    --radius-split-rouned: 5px 20px 20px 5px;
+    --radius-split-squared: 5px 5px 5px 5px;
+
+    font-family: var(--ff-base);
+    font-weight: var(--fw-medium);
+    font-size: var(--fs-6);
+}
+
+a {
+    text-decoration: none;
+    display: block;
+    height: 100%;
+    width: 100%;
+    color: var(--color-light);
+}
+
+ul {
+    list-style: none;
+    padding-left: 1.5rem;
+}
+
+// .menu-container {
+// border: 2px solid violet;
+
+// white-space: nowrap;
+// overflow: hidden;
+// text-overflow: ellipsis;
+// }
+
+
+.submenu-item {
+    // border: 2px solid cornflowerblue;
+
+    background-color: var(--color-primary);
+}
+
+.menu-item {
+    // border: 2px solid green;
+    padding: 5px 12px 5px 5px;
+}
+
+a.menu-item {
+    // border: 2px solid pink;
+    border-radius: var(--radius-split-rouned);
+
+    transition: background-color 0.15s ease-in-out,
+        color 0.15s ease-in-out;
+
+    &:hover,
+    &:focus {
+        background-color: var(--color-primary-hover);
+        text-decoration: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+a.menu-item.active {
+    background-color: var(--color-primary-selected);
+    color: var(--color-light);
+    border-left: 3px solid var(--color-light);
+}
+
+
+// .menu-label {
+// border: 2px solid red;
+// }
+
+.menu-header {
+    // border: 2px solid navy;
+
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: var(--fs-7);
+    border-radius: var(--radius-split-squared);
+    color: var(--color-muted);
+    letter-spacing: 0.04em;
+    margin-top: 0.2rem;
+}
+
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+    // user-select: none;
+}
+
+/*
+--------------------------------------------------
+app.menu.html
+--------------------------------------------------
+*/
+
+hr {
+    margin-block: 0.5rem;
+    opacity: 0.35;
+}
+
+
+.menu-wrapper {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    height: 90vh;
+
+    flex: 1;
+    transition: width 0.3s ease;
+}
+
+.layout-menu {
+    background-color: var(--color-primary);
+    border-radius: 0px 0px 5px 0px;
+    // padding: 0.5rem;
+    width: var(--nav-width);
+    height: 100%;
+
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    position: relative;
+}
+
+.layout-menu.hideSidebar {
+    width: 0;
+    overflow: hidden;
+}
+
+.layout-menu-ul {
+    padding: 0;
+}
+
+.sidebar-toggle {
+    // color: var(--color-light);
+    // background-color: var(--color-primary);
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    z-index: 10;
+}
+
+.layout-menu-ul-pimary {
+    margin: 0.5rem;
+}
+
+.layout-menu-ul-secondary {
+    margin-bottom: 0px;
+    padding: 0.5rem;
+    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-split-squared);
+    background-color: var(--color-primary);
+    // width: var(--nav-width);
+
+    position: sticky;
+    bottom: 0;
+    left: 0;
+}

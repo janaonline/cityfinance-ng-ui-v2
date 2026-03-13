@@ -91,6 +91,10 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'xvifc-forms',
+    loadComponent: () => import('./shared/components/side-menu/test-component/test-component.component').then((m) => m.TestComponentComponent),
+  },
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },
