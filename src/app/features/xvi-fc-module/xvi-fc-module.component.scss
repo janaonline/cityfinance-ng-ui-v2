@@ -1,0 +1,19 @@
+@use './xvifc-theme' as xvifc-theme;
+
+:host {
+  @include xvifc-theme.xvifc-theme-tokens;
+  display: block;
+  min-height: 100%;
+}
+
+.component-shell {
+  position: relative;
+}
+
+.component-menu {
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}

@@ -1,15 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AppMenuComponent } from '../app.menu';
 
 @Component({
-  selector: 'app-test-component',
-  imports: [AppMenuComponent, CommonModule, ReactiveFormsModule],
-  templateUrl: './test-component.component.html',
-  styleUrl: './test-component.component.scss',
+  selector: 'app-sfc-status',
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './sfc-status.component.html',
+  styleUrl: './sfc-status.component.scss',
 })
-export class TestComponentComponent {
+export class SfcStatusComponent {
   private fb = inject(FormBuilder);
 
   readonly form = this.fb.group({

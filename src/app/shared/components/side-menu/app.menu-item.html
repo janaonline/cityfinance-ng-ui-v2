@@ -23,6 +23,7 @@
     class="menu-item"
     [routerLink]="item().routerLink"
     routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: item().exact ?? true }"
     [ngClass]="item().class"
   >
     @if (item().icon) {

@@ -91,8 +91,9 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
-    path: 'xvifc-forms',
-    loadComponent: () => import('./shared/components/side-menu/test-component/test-component.component').then((m) => m.TestComponentComponent),
+    path: 'xvifc',
+    loadChildren: () =>
+      import('./features/xvi-fc-module/xvifc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
   {
     path: 'maintenance',

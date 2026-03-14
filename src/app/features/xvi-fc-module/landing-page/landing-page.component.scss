@@ -1,0 +1,31 @@
+@use '../xvifc-theme' as xvifc-theme;
+
+:host {
+  @include xvifc-theme.xvifc-theme-tokens;
+  display: block;
+  min-height: 100%;
+}
+
+p,
+h1,
+h2 {
+  color: var(--color-primary);
+}
+
+.workspace-card {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.workspace-card:hover:not(.workspace-disabled),
+.workspace-card:focus:not(.workspace-disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--bs-box-shadow-lg);
+}
+
+.workspace-disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  // pointer-events: none;
+}

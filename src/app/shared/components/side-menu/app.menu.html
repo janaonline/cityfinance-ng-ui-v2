@@ -1,7 +1,9 @@
 <div class="menu-wrapper d-flex align-items-start">
   <div class="layout-menu" [class.hideSidebar]="isSidebarCollapsed()">
+    <!-- Top model -->
+    @if (topModel().length > 0) {
     <ul class="layout-menu-ul layout-menu-ul-pimary">
-      @for (item of model; track item.label) {
+      @for (item of topModel(); track item.label) {
       <!-- Separator/ Divider -->
       @if (item.separator) {
       <hr />
@@ -9,9 +11,12 @@
       <app-menu-item [item]="item" [root]="true"></app-menu-item>
       } }
     </ul>
+    }
 
+    <!-- Bottom Model -->
+    @if (bottomModel().length > 0) {
     <ul class="layout-menu-ul layout-menu-ul-secondary">
-      @for (item of bottomModel; track item.label) {
+      @for (item of bottomModel(); track item.label) {
       <!-- Separator/ Divider -->
       @if (item.separator) {
       <hr />
@@ -19,6 +24,7 @@
       <app-menu-item [item]="item" [root]="false"></app-menu-item>
       } }
     </ul>
+    }
   </div>
   <button
     class="sidebar-toggle border-0 rounded-end px-2 py-0 m-0"

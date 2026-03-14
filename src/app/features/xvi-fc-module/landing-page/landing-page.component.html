@@ -1,0 +1,39 @@
+<section class="min-vh-100 d-flex align-items-center justify-content-center px-3 py-4">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-xl-10">
+        <div class="bg-white rounded-4 shadow-lg p-4 p-md-5">
+          <p class="text-uppercase fw-bold small mb-3">XVI Financial Commission</p>
+          <h1 class="display-6 fw-bold mb-3">Choose a workspace</h1>
+          <p class="fs-6 mb-3 mb-md-4 opacity-75">
+            Select your role to access your dashboard and continue your workflow.
+          </p>
+
+          <div class="row g-4">
+            @for (option of roleOptions(); track option.label) {
+              <div class="col-12 col-md-6">
+                <a
+                  class="card workspace-card h-100 text-decoration-none"
+                  [routerLink]="option.isActive ? option.routerLink : null"
+                  [class.workspace-disabled]="!option.isActive"
+                  [attr.aria-disabled]="!option.isActive"
+                >
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <h2 class="h5 fw-semibold mb-0">
+                        {{ option.label }}
+                      </h2>
+                    </div>
+                    <p class="mb-0 text-muted">
+                      {{ option.description }}
+                    </p>
+                  </div>
+                </a>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

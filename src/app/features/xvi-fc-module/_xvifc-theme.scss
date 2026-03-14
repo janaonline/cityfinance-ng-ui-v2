@@ -1,0 +1,16 @@
+@mixin xvifc-theme-tokens {
+  --color-primary: #114551;
+  --color-primary-hover: #16505d;
+  --color-primary-selected: #1c6170;
+  --color-muted: rgba(255, 255, 255, 0.4);
+  --color-light: #f2f7f8;
+  --color-light-bg: #f2f7f8;
+
+  --nav-width: 260px;
+  --item-padding: 0.45rem;
+  --radius-split-rouned: 5px 20px 20px 5px;
+  --radius-split-squared: 5px 5px 5px 5px;
+
+  font-family: var(--ff-base);
+  font-weight: var(--fw-medium);
+}

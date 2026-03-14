@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AppMenuItemComponent } from './app.menu-item';
-import { MenuItem } from './interface';
+import { SideBarModel } from './interface';
 
 @Component({
   selector: 'app-menu',
@@ -10,143 +10,14 @@ import { MenuItem } from './interface';
   templateUrl: './app.menu.html',
   styleUrl: './app.menu-item.scss',
 })
-export class AppMenuComponent implements OnInit {
-  model: MenuItem[] = [];
-  bottomModel: MenuItem[] = [];
+export class AppMenuComponent {
+  readonly model = input.required<SideBarModel>();
+
+  topModel = computed(() => this.model()['topModel']);
+
+  bottomModel = computed(() => this.model()['bottomModel']);
+
   isSidebarCollapsed = signal(false);
-
-  ngOnInit() {
-    this.model = [
-      {
-        label: 'XVI Financial Commission',
-        routerLink: ['/xvifc-forms'],
-        icon: 'bi bi-bank',
-      },
-      { label: '_', separator: true },
-
-      {
-        label: 'Overview',
-        routerLink: ['/overview'],
-        icon: 'bi bi-speedometer2',
-      },
-      {
-        label: 'Review',
-        icon: 'bi bi-clipboard-data',
-        items: [
-          {
-            label: 'ULB Submissions',
-            icon: 'bi bi-upload',
-            routerLink: ['/ulb-submissions'],
-          },
-          {
-            label: 'Insights',
-            icon: 'bi bi-bar-chart-line',
-            routerLink: ['/insights'],
-          },
-          {
-            label: 'Messages',
-            icon: 'bi bi-chat-dots',
-            routerLink: ['/messages'],
-          },
-          {
-            label: 'Reports',
-            icon: 'bi bi-file-earmark-text',
-            routerLink: ['/reports'],
-          },
-        ],
-      },
-      {
-        label: 'State level conditions',
-        icon: 'bi bi-diagram-3',
-        items: [
-          {
-            label: 'FY 2026-27 Requirements',
-            icon: 'bi bi-list-check',
-            routerLink: ['/xvifc-forms'],
-          },
-          {
-            label: 'SFC Status',
-            icon: 'bi bi-building',
-            routerLink: ['/sfc-status'],
-          },
-          {
-            label: 'Elected Body Status',
-            icon: 'bi bi-person-badge',
-            routerLink: ['/elected-body-status'],
-          },
-          {
-            label: 'Devolution Formula',
-            icon: 'bi bi-calculator',
-            routerLink: ['/devolution-formula'],
-          },
-        ],
-      },
-      {
-        label: 'XVI-FC Grants',
-        icon: 'bi bi-cash-stack',
-        items: [
-          {
-            label: 'Special Infrastructure',
-            icon: 'bi bi-hammer',
-            routerLink: ['/special-infrastructure'],
-          },
-          {
-            label: 'Urbanisation Premium',
-            icon: 'bi bi-buildings',
-            routerLink: ['/urbanisation-premium'],
-          },
-        ],
-      },
-      {
-        label: 'Doe tracking',
-        icon: 'bi bi-activity',
-        items: [
-          {
-            label: 'DoE Status',
-            icon: 'bi bi-check2-circle',
-            routerLink: ['/doe-status'],
-          },
-        ],
-      },
-      {
-        label: 'Settings',
-        icon: 'bi bi-gear',
-        items: [
-          {
-            label: 'Profile',
-            icon: 'bi bi-person-circle',
-            routerLink: ['/profile'],
-          },
-          {
-            label: 'Resources',
-            icon: 'bi bi-folder2-open',
-            routerLink: ['/resources'],
-          },
-        ],
-      },
-    ];
-
-    this.bottomModel = [
-      {
-        label: 'Give feedback',
-        icon: 'bi bi-chat-square-text',
-        expanded: false,
-        routerLink: ['/feedback'],
-        items: [
-          {
-            label: 'Profile',
-            icon: 'bi bi-person-circle',
-            routerLink: ['/profile'],
-          },
-          {
-            label: 'Resources',
-            icon: 'bi bi-folder2-open',
-            routerLink: ['/resources'],
-          },
-        ],
-      },
-    ];
-  }
 
   toggleSidebar() {
     this.isSidebarCollapsed.set(!this.isSidebarCollapsed());
