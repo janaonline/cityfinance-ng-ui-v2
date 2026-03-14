@@ -1,5 +1,15 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, input, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  PLATFORM_ID,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AppMenuItemComponent } from './app.menu-item';
 import { SideBarModel } from './interface';
@@ -10,7 +20,11 @@ import { SideBarModel } from './interface';
   templateUrl: './app.menu.html',
   styleUrl: './app.menu-item.scss',
 })
-export class AppMenuComponent {
+export class AppMenuComponent implements OnInit {
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly overlayMediaQuery = '(max-width: 991.98px)';
+
   readonly model = input.required<SideBarModel>();
 
   topModel = computed(() => this.model()['topModel']);
@@ -19,8 +33,46 @@ export class AppMenuComponent {
 
   isSidebarCollapsed = signal(false);
 
+  isOverlayMode = signal(false);
+
+  ngOnInit() {
+    this.syncOverlayMode();
+  }
+
   toggleSidebar() {
     this.isSidebarCollapsed.set(!this.isSidebarCollapsed());
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.syncOverlayMode();
+  }
+
+  @HostListener('document:click', ['$event.target'])
+  onDocumentClick(target: EventTarget | null) {
+    if (!this.isOverlayMode() || this.isSidebarCollapsed() || !(target instanceof Node)) {
+      return;
+    }
+
+    // Outside-click close only applies in overlay mode so large-screen persistent
+    // navigation stays open while the content area is being used.
+    if (!this.elementRef.nativeElement.contains(target)) {
+      this.isSidebarCollapsed.set(true);
+    }
+  }
+
+  private syncOverlayMode() {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const isOverlay = window.matchMedia(this.overlayMediaQuery).matches;
+    this.isOverlayMode.set(isOverlay);
+
+    // Reopen the sidebar when the layout returns to persistent mode.
+    if (!isOverlay) {
+      this.isSidebarCollapsed.set(false);
+    }
   }
 }
 

@@ -27,7 +27,10 @@
     }
   </div>
   <button
+    type="button"
     class="sidebar-toggle border-0 rounded-end px-2 py-0 m-0"
+    [attr.aria-expanded]="!isSidebarCollapsed()"
+    [attr.aria-label]="isSidebarCollapsed() ? 'Open sidebar menu' : 'Close sidebar menu'"
     [title]="isSidebarCollapsed() ? 'Show Sidebar' : 'Hide Sidebar'"
     (click)="toggleSidebar()"
   >
