@@ -24,6 +24,7 @@ export class AppMenuComponent implements OnInit {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly overlayMediaQuery = '(max-width: 991.98px)';
+  private readonly sidebarExpandedStorageKey = 'sidebar-expanded';
 
   readonly model = input.required<SideBarModel>();
 
@@ -36,11 +37,12 @@ export class AppMenuComponent implements OnInit {
   isOverlayMode = signal(false);
 
   ngOnInit() {
-    this.syncOverlayMode();
+    const hasStoredSidebarState = this.restoreSidebarState();
+    this.syncOverlayMode(hasStoredSidebarState);
   }
 
   toggleSidebar() {
-    this.isSidebarCollapsed.set(!this.isSidebarCollapsed());
+    this.setSidebarCollapsed(!this.isSidebarCollapsed());
   }
 
   @HostListener('window:resize')
@@ -57,11 +59,11 @@ export class AppMenuComponent implements OnInit {
     // Outside-click close only applies in overlay mode so large-screen persistent
     // navigation stays open while the content area is being used.
     if (!this.elementRef.nativeElement.contains(target)) {
-      this.isSidebarCollapsed.set(true);
+      this.setSidebarCollapsed(true);
     }
   }
 
-  private syncOverlayMode() {
+  private syncOverlayMode(hasStoredSidebarState = false) {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
@@ -70,9 +72,38 @@ export class AppMenuComponent implements OnInit {
     this.isOverlayMode.set(isOverlay);
 
     // Reopen the sidebar when the layout returns to persistent mode.
-    if (!isOverlay) {
-      this.isSidebarCollapsed.set(false);
+    if (!isOverlay && this.isSidebarCollapsed()) {
+      if (hasStoredSidebarState) {
+        return;
+      }
+
+      this.setSidebarCollapsed(false);
     }
+  }
+
+  private restoreSidebarState() {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
+
+    const storedSidebarExpanded = localStorage.getItem(this.sidebarExpandedStorageKey);
+
+    if (storedSidebarExpanded !== 'true' && storedSidebarExpanded !== 'false') {
+      return false;
+    }
+
+    this.setSidebarCollapsed(storedSidebarExpanded === 'false', false);
+    return true;
+  }
+
+  private setSidebarCollapsed(isCollapsed: boolean, persist = true) {
+    this.isSidebarCollapsed.set(isCollapsed);
+
+    if (!persist || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    localStorage.setItem(this.sidebarExpandedStorageKey, String(!isCollapsed));
   }
 }
 
