@@ -1,4 +1,4 @@
-@use '../xvifc-theme' as xvifc-theme;
+@use '../styles/xvifc-theme' as xvifc-theme;
 
 :host {
   @include xvifc-theme.xvifc-theme-tokens;

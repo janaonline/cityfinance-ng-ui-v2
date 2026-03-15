@@ -1,1 +1,90 @@
-<p>requirements works!</p>
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="form-container">
+    <div class="top-accent"></div>
+
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack d-flex flex-column gap-4">
+        <div>
+          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+            State DMA &nbsp;&middot;&nbsp; Basic Grants
+          </div>
+
+          <h1 class="page-title mb-2">FY 2026-27 State Requirements</h1>
+        </div>
+
+        <!-- <hr class="my-0 text-body-tertiary" /> -->
+
+        <section
+          class="summary-banner py-4 py-md-3 px-5 px-md-4 rounded-4 overflow-hidden text-white"
+        >
+          <p class="custom-font-size-6 text-white-50 text-uppercase fw-semibold my-1">
+            Total State Allocation FY 2026-27
+          </p>
+          <h1 class="fw-bold">&#8377;1,562 crore</h1>
+          <p class="custom-font-size-6 text-white-50 my-1">
+            For 123 ULBs in Andhra Pradesh Subject to eligibility conditions below
+          </p>
+        </section>
+
+        <section class="my-2">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <p class="mb-0 fw-semibold">Your Progress</p>
+            <p class="mb-0 text-secondary custom-font-size-6">1 of 3 requirements submitted</p>
+          </div>
+
+          <div
+            class="progress bg-body-secondary rounded-4"
+            style="height: 1rem"
+            role="progressbar"
+            aria-label="Success example"
+            aria-valuenow="25"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <div
+              class="progress-bar text-bg-success text-center rounded-4"
+              style="width: 50%; height: 100%; font-size: x-small"
+            >
+              50%
+            </div>
+          </div>
+        </section>
+
+        <section class="d-flex flex-column gap-3">
+          <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3">
+            <span class="text-uppercase fw-semibold text-secondary"> Conditions to be met by </span>
+            <span class="deadline-chip rounded-pill px-3 py-1 custom-font-size-6 fw-semibold">
+              Apr 30, 2026
+            </span>
+          </div>
+
+          <div class="rounded-4 border overflow-hidden bg-white">
+            @for (item of conditionsToBeMet(); track $index) {
+              <div
+                class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3 gap-md-4 px-3 px-md-4 py-3 border"
+              >
+                <div class="d-flex align-items-center gap-3 gap-md-4 flex-grow-1">
+                  <span class="status-indicator flex-shrink-0" aria-hidden="true"></span>
+
+                  <div>
+                    <p class="fw-semibold mb-1">{{ item.label }}</p>
+                    <p class="mb-0 text-secondary custom-font-size-6">{{ item.desc }}</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-success rounded-3 px-4"
+                  (click)="upload(item.label)"
+                >
+                  Upload
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    </div>
+    <!-- </div> -->
+  </div>
+</div>

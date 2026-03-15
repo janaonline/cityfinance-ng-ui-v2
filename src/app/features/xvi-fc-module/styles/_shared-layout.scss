@@ -1,0 +1,180 @@
+@mixin shared-page-header {
+  .page-title {
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .page-subtitle {
+    max-width: 1280px;
+  }
+
+  @media (max-width: 767.98px) {
+    .page-title {
+      font-size: 1.6rem;
+    }
+
+    .page-subtitle {
+      font-size: 0.98rem;
+    }
+  }
+}
+
+@mixin shared-content-stack {
+  .content-stack {
+    width: 100%;
+    max-width: 1320px;
+    min-width: 0;
+    margin-inline: auto;
+  }
+}
+
+@mixin form-layout {
+  @include shared-content-stack;
+  @include shared-page-header;
+
+  .form-container {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+
+    max-height: 90vh;
+    overflow: hidden;
+
+    border-radius: var(--radius-split-squared);
+    background: var(--color-primary-accent);
+    color: var(--color-primary);
+    margin-inline: 0.5rem;
+    position: relative;
+  }
+
+  .top-accent {
+    height: 4px;
+    background: var(--color-primary);
+  }
+
+  .content-wrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    // overscroll-behavior: contain;
+  }
+
+  .content-body {
+    max-width: 1280px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 991.98px) {
+    .form-container {
+      margin-inline: 0 0.5rem;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .component-shell {
+      gap: 0.5rem !important;
+    }
+
+    .field-label {
+      margin-bottom: 0.35rem;
+    }
+  }
+}
+
+// Submit/ Cancel button
+@mixin acknowledgement-layout {
+  .acknowledgement {
+    background-color: var(--color-primary-accent);
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+  }
+
+  .acknowledgement-inner {
+    width: 100%;
+    max-width: 1320px;
+    margin-inline: auto;
+  }
+
+  .acknowledgement .btn {
+    min-width: 11rem;
+  }
+
+  @media (min-width: 1200px) {
+    .content-wrap,
+    .acknowledgement {
+      padding-inline: 2rem !important;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .acknowledgement-inner {
+      align-items: stretch;
+    }
+
+    .acknowledgement .btn {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+}
+
+@mixin form-summary-layout {
+  @include shared-content-stack;
+  @include shared-page-header;
+
+  .form-container {
+    max-height: none;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .content-wrap {
+    overflow: visible;
+  }
+
+  .content-stack {
+    max-width: 1080px;
+  }
+
+  .summary-banner {
+    background: var(--color-primary);
+    box-shadow: 0 1rem 2.5rem rgba(17, 69, 81, 0.14);
+  }
+
+  .deadline-chip {
+    background-color: #fff2df;
+    color: var(--clr-primary);
+  }
+
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 2px solid var(--clr-primary);
+    box-shadow: 0 0 0 3px rgba(242, 92, 5, 0.12);
+  }
+
+  .status-indicator::after {
+    content: '';
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+    background-color: var(--clr-primary);
+  }
+}
