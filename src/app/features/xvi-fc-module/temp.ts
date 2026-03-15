@@ -112,7 +112,14 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
         ],
       },
     ],
-    bottomModel: [],
+    bottomModel: [
+      {
+        label: 'Give feedback',
+        icon: 'bi bi-chat-square-text',
+        expanded: false,
+        routerLink: buildXvifcFeatureLink('STATE', yearId, 'feedback'),
+      },
+    ],
   }),
 
   MOHUA: (yearId) => ({

@@ -9,7 +9,7 @@ a {
   display: block;
   height: 100%;
   width: 100%;
-  color: var(--color-light);
+  color: var(--color-primary-accent);
 }
 
 ul {
@@ -65,8 +65,8 @@ a.menu-item {
 
 a.menu-item.active {
   background-color: var(--color-primary-selected);
-  color: var(--color-light);
-  border-left: 3px solid var(--color-light);
+  color: var(--color-primary-accent);
+  border-left: 3px solid var(--color-primary-accent);
 }
 
 .menu-label {
@@ -162,7 +162,7 @@ hr {
 }
 
 .sidebar-toggle {
-  // color: var(--color-light);
+  // color: var(--color-primary-accent);
   // background-color: var(--color-primary);
   margin-left: 0.5rem;
   flex-shrink: 0;

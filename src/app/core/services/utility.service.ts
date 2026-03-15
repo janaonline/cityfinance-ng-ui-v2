@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import FileSaver from 'file-saver';
 import Swal, { SweetAlertIcon, SweetAlertResult } from 'sweetalert2';
+type SnackbarClass = 'snackbar-success' | 'snackbar-danger' | 'snackbar-warn';
 
 @Injectable({
   providedIn: 'root',
@@ -31,7 +32,7 @@ export class UtilityService {
   }
 
   // Helper: Trigger snack-bar.
-  triggerSnackbar(msg: string, className: string = 'snackbar-success'): void {
+  triggerSnackbar(msg: string, className: SnackbarClass = 'snackbar-success'): void {
     this._snackBar.open(msg, 'Close', {
       horizontalPosition: 'end',
       verticalPosition: 'top',

@@ -1,6 +1,4 @@
 <div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
-  <!-- <app-menu class="component-menu"></app-menu> -->
-
   <div class="form-container">
     <div class="top-accent"></div>
 
@@ -23,7 +21,7 @@
 
         <hr class="my-0 text-body-tertiary" />
 
-        <form class="content-body" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <form class="content-body" [formGroup]="form">
           Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quasi, adipisci quis? Excepturi
           quidem libero laboriosam perspiciatis pariatur repudiandae velit. Tempora officiis, ab
           unde ipsum at dolore et facilis. Suscipit, possimus. Perferendis velit a, accusamus
@@ -44,8 +42,8 @@
 
     <div class="acknowledgement border-top px-3 py-3">
       <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
-        <button type="button" class="btn btn-outline-success">Save as draft</button>
-        <button type="submit" class="btn btn-success">Submit</button>
+        <button type="button" class="btn btn-outline-success" (click)="onCancel()">Cancel</button>
+        <button type="submit" class="btn btn-success" (click)="onSubmit()">Submit</button>
       </div>
     </div>
   </div>
