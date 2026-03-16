@@ -131,29 +131,7 @@
   }
 }
 
-@mixin form-summary-layout {
-  @include shared-content-stack;
-  @include shared-page-header;
-
-  .form-container {
-    max-height: none;
-    min-height: 100%;
-    overflow: visible;
-  }
-
-  .content-wrap {
-    overflow: visible;
-  }
-
-  .content-stack {
-    max-width: 1080px;
-  }
-
-  .summary-banner {
-    background: var(--color-primary);
-    box-shadow: 0 1rem 2.5rem rgba(17, 69, 81, 0.14);
-  }
-
+@mixin status-indicator {
   .deadline-chip {
     background-color: #fff2df;
     color: var(--clr-primary);
@@ -176,5 +154,39 @@
     height: 0.65rem;
     border-radius: 50%;
     background-color: var(--clr-primary);
+  }
+}
+
+@mixin form-summary-layout {
+  @include shared-content-stack;
+  @include shared-page-header;
+
+  .form-container {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+
+    max-height: 90vh;
+    overflow: hidden;
+
+    border-radius: var(--radius-split-squared);
+    background: var(--color-primary-accent);
+    color: var(--color-primary);
+    margin-inline: 0.5rem;
+    position: relative;
+  }
+
+  .content-wrap {
+    // overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .content-stack {
+    max-width: 1080px;
+  }
+
+  .summary-banner {
+    background: var(--color-primary);
+    box-shadow: 0 1rem 2.5rem rgba(17, 69, 81, 0.14);
   }
 }

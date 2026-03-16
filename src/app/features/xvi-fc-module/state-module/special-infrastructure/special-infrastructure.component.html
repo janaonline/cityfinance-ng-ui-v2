@@ -1,1 +1,68 @@
-<p>special-infrastructure works!</p>
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="form-container">
+    <div class="top-accent"></div>
+
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+        <div>
+          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+            XVI Finance Commission &nbsp;&middot;&nbsp; New Grant
+          </div>
+
+          <h1 class="page-title mb-2">Special Infrastructure Component</h1>
+        </div>
+
+        <!-- <hr class="my-0 text-body-tertiary" /> -->
+
+        <section
+          class="summary-banner my-3 py-4 py-md-3 px-5 px-md-4 rounded-4 overflow-hidden text-white"
+        >
+          <p class="custom-font-size-6 text-white-50 text-uppercase fw-semibold my-1">
+            Total National Allocation
+          </p>
+          <h1 class="fw-bold">&#8377;56,100 crore</h1>
+          <p class="custom-font-size-6 text-white-50 my-1">
+            60% of project costs &nbsp;&middot;&nbsp; State + ULG contribute 40%
+          </p>
+        </section>
+
+        <section class="my-3" aria-labelledby="special-infrastructure-highlights">
+          <div class="row g-3">
+            @for (item of statCards(); track item.title) {
+              <div class="col-12 col-md-4">
+                <article class="border rounded p-3 h-100">
+                  <h5 class="fw-bold my-0 py-0">{{ item.title }}</h5>
+                  <p class="text-secondary custom-font-size-6 my-0 py-0">
+                    {{ item.description }}
+                  </p>
+                </article>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section>
+          @for (item of summary(); track $index) {
+            <div class="border rounded overflow-hidden my-2">
+              <div class="d-flex">
+                <div style="width: 3px; background-color: var(--color-primary)"></div>
+
+                <article class="p-3 w-100">
+                  <p class="text-secondary fw-bold custom-font-size-6 text-uppercase my-0 py-0">
+                    {{ item.title }}
+                  </p>
+
+                  <ul class="custom-font-size-6 my-0 py-0">
+                    @for (liItem of item.desc; track $index) {
+                      <li>{{ liItem }}</li>
+                    }
+                  </ul>
+                </article>
+              </div>
+            </div>
+          }
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

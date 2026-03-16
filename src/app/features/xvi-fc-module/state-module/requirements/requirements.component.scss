@@ -3,4 +3,5 @@
 :host {
   @include layout.form-layout;
   @include layout.form-summary-layout;
+  @include layout.status-indicator;
 }
