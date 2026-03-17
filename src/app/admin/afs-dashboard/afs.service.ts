@@ -86,6 +86,17 @@ export class AfsService {
     );
   }
 
+  uploadOcrFile(file: File, documentTypeId: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('Document_type_ID', documentTypeId);
+    // return this.digitizeFile(formData);
+    return this.http.post(
+      environment.api.url3 + "sarvam-validate/combined-gemini-validate",
+      formData
+    );
+  }
+
   saveDigitizeReq(metaBody: any) {
     return this.http.post(
       environment.api.url + 'afs-digitization/save-request-only',

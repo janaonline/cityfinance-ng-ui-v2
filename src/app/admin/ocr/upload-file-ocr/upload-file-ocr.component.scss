@@ -1,0 +1,141 @@
+.ocr-upload-page {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(24, 119, 242, 0.12), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  min-height: 100%;
+}
+
+.hero-card,
+.upload-card,
+.response-card {
+  border-radius: 20px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+}
+
+.hero-card {
+  padding: 1.75rem;
+  background: linear-gradient(135deg, #123b69 0%, #2563eb 100%);
+  color: #fff;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+h1,
+h2,
+.summary-value {
+  margin: 0;
+}
+
+.subcopy {
+  margin: 0.75rem 0 0;
+  max-width: 60rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.upload-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.file-picker {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.file-picker__label,
+.summary-label {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.file-note,
+.summary-meta,
+.empty-text {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.file-summary {
+  display: flex;
+  align-items: center;
+  min-height: 92px;
+  padding: 1rem 1.1rem;
+  border: 1px dashed #93c5fd;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.file-summary--empty {
+  justify-content: center;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.response-card {
+  overflow: hidden;
+}
+
+.response-card--error {
+  border: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.response-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.status-chip {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.status-chip--error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+pre {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 16px;
+  background: #0f172a;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+}
+
+@media (max-width: 768px) {
+  .ocr-upload-page {
+    padding: 1rem;
+  }
+
+  .actions,
+  .response-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

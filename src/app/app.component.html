@@ -1,14 +1,17 @@
 <!-- <div class="wrapper app-wrapper" [ngClass]="true ? 'mt-4' : ''"> -->
-<div class="wrapper app-wrapper">
-  <!-- <app-home-header></app-home-header> -->
-  <app-header></app-header>
+@if (loaderService.isLayoutVisible()) {
+  <div class="wrapper app-wrapper">
+    <!-- <app-home-header></app-home-header> -->
+    <app-header></app-header>
 
+    <router-outlet></router-outlet>
+  </div>
+  <app-footer></app-footer>
+} @else {
   <router-outlet></router-outlet>
-</div>
-<app-footer></app-footer>
-
+}
 @if (loaderService.loading()) {
-<div class="custom-spinner-overlay">
-  <mat-spinner></mat-spinner>
-</div>
+  <div class="custom-spinner-overlay">
+    <mat-spinner></mat-spinner>
+  </div>
 }
