@@ -184,9 +184,20 @@
   .content-stack {
     max-width: 1080px;
   }
-
   .summary-banner {
     background: var(--color-primary);
     box-shadow: 0 1rem 2.5rem rgba(17, 69, 81, 0.14);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: 1.5rem 3rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    color: #fff;
+  }
+
+  @media (min-width: 768px) {
+    .summary-banner {
+      padding: 1rem 1.5rem;
+    }
   }
 }
