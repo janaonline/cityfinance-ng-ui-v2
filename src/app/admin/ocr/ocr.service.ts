@@ -31,11 +31,26 @@ export interface OcrTaskListResponse {
 export class OcrService {
   private readonly http = inject(HttpClient);
 
-  uploadOcrFile(file: File, documentTypeId: string, financialYear: string) {
+  uploadOcrFile(
+    file: File,
+    documentTypeId: string,
+    financialYear: string,
+    ocrMethod: string,
+    ulb?: { _id: string; name: string },
+  ) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('Document_type_ID', documentTypeId);
     formData.append('financialYear', financialYear);
+    formData.append('ocrMethod', ocrMethod);
+
+    if (ulb?._id) {
+      formData.append('ulbId', ulb._id);
+    }
+
+    if (ulb?.name) {
+      formData.append('ulbName', ulb.name);
+    }
 
     return this.http.post(
       environment.api.url3 + 'sarvam-validate/combined-gemini-validate',

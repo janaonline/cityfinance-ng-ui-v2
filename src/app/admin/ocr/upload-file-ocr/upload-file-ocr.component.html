@@ -42,6 +42,44 @@
                 <mat-error>Financial year is required.</mat-error>
               }
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>OCR method</mat-label>
+              <mat-select formControlName="ocrMethod">
+                @for (method of ocrMethods; track method.value) {
+                  <mat-option [value]="method.value">{{ method.label }}</mat-option>
+                }
+              </mat-select>
+              @if (uploadForm.controls.ocrMethod.invalid && uploadForm.controls.ocrMethod.touched) {
+                <mat-error>OCR method is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>ULB</mat-label>
+              <input
+                type="text"
+                matInput
+                formControlName="ulb"
+                placeholder="Search ULB name or code"
+                [matAutocomplete]="ulbAuto"
+              />
+              <mat-autocomplete
+                #ulbAuto="matAutocomplete"
+                [displayWith]="displayUlbName"
+                (optionSelected)="onUlbSelected($event)"
+              >
+                @for (ulb of filteredUlbs(); track ulb._id) {
+                  <mat-option [value]="ulb">{{ ulb.name }} ({{ ulb.code }})</mat-option>
+                }
+              </mat-autocomplete>
+              @if (selectedUlb()) {
+                <mat-hint>{{ selectedUlb()?.code }}</mat-hint>
+              }
+              @if (uploadForm.controls.ulb.invalid && uploadForm.controls.ulb.touched) {
+                <mat-error>Please select a valid ULB from the list.</mat-error>
+              }
+            </mat-form-field>
           </div>
 
           <div class="file-picker">
@@ -75,7 +113,7 @@
               mat-flat-button
               color="primary"
               type="button"
-              [disabled]="!selectedFile || globalLoader.loading()"
+              [disabled]="!selectedFile || uploadForm.invalid || globalLoader.loading()"
               (click)="uploadFile()"
             >
               @if (globalLoader.loading()) {

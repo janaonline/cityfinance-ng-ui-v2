@@ -11,15 +11,15 @@ import { GlobalLoaderService } from './core/services/loaders/global-loader.servi
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
 @Component({
-    selector: 'app-root',
-    imports: [
+  selector: 'app-root',
+  imports: [
     RouterOutlet,
     FooterComponent,
     HeaderComponent,
     MatProgressSpinner
-],
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.scss'
+  ],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
   title = 'Cityfinance';
@@ -48,8 +48,10 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.gaService.init();
-    this.gtmService.initScript();
+    if (environment.isProduction && environment.googleAnalyticsId) {
+      this.gaService.init();
+      this.gtmService.initScript();
+    }
     // this.gaService.trackEvent('button click',{});
     this.getQueryParams();
 
