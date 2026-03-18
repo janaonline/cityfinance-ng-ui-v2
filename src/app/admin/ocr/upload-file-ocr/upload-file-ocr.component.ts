@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, ViewChild, computed, inject, signal, OnInit } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { finalize } from 'rxjs';
+import { CommonService } from '../../../core/services/common.service';
+import { IULB } from '../../../core/models/ulb';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../core/services/utility.service';
 import { MaterialModule } from '../../../material.module';
@@ -28,6 +31,11 @@ interface FinancialYearOption {
   label: string;
 }
 
+interface OcrMethodOption {
+  value: string;
+  label: string;
+}
+
 @Component({
   standalone: true,
   selector: 'app-upload-file-ocr',
@@ -40,6 +48,7 @@ export class UploadFileOcrComponent implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly ocrService = inject(OcrService);
+  private readonly commonService = inject(CommonService);
   readonly globalLoader = inject(GlobalLoaderService);
   private readonly utilityService = inject(UtilityService);
 
@@ -61,12 +70,22 @@ export class UploadFileOcrComponent implements OnInit {
     { value: '2020-21', label: '2020-21' },
     { value: '2019-20', label: '2019-20' },
   ];
+  readonly ocrMethods: OcrMethodOption[] = [
+    { value: 'combined', label: 'Combined' },
+    { value: 'sarvam', label: 'Sarvam' },
+    { value: 'textract', label: 'Textract' },
+    { value: 'tesseract', label: 'Tesseract' },
+  ];
 
-  readonly uploadForm = this.fb.nonNullable.group({
-    documentTypeId: ['bal_sheet_schedules', Validators.required],
-    financialYear: ['2024-25', Validators.required],
+  readonly uploadForm = this.fb.group({
+    documentTypeId: this.fb.nonNullable.control('bal_sheet_schedules', Validators.required),
+    financialYear: this.fb.nonNullable.control('2024-25', Validators.required),
+    ocrMethod: this.fb.nonNullable.control('combined', Validators.required),
+    ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
   });
 
+  ulbs: IULB[] = [];
+  readonly filteredUlbs = signal<IULB[]>([]);
   selectedFile: File | null = null;
   readonly uploadState = signal<'idle' | 'success' | 'error'>('idle');
   readonly responseData = signal<OcrApiResponse | null>(null);
@@ -92,6 +111,9 @@ export class UploadFileOcrComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadUlbs();
+    this.setupUlbAutocomplete();
+
     // For testing purpose - to be removed
     this.setSampleResponse();
     // this.setFailedSampleResponse();
@@ -146,8 +168,10 @@ export class UploadFileOcrComponent implements OnInit {
     this.ocrService
       .uploadOcrFile(
         this.selectedFile,
-        this.uploadForm.getRawValue().documentTypeId,
-        this.uploadForm.getRawValue().financialYear,
+        this.uploadForm.getRawValue().documentTypeId ?? 'bal_sheet_schedules',
+        this.uploadForm.getRawValue().financialYear ?? '2024-25',
+        this.uploadForm.getRawValue().ocrMethod ?? 'combined',
+        this.selectedUlb(),
       )
       .pipe(finalize(() => this.globalLoader.stopLoader()))
       .subscribe({
@@ -223,9 +247,89 @@ export class UploadFileOcrComponent implements OnInit {
     this.showRawResponse.update((value) => !value);
   }
 
+  onUlbSelected(event: MatAutocompleteSelectedEvent): void {
+    this.uploadForm.controls.ulb.setValue(event.option.value as IULB);
+  }
+
+  displayUlbName(ulb: IULB | string | null): string {
+    if (!ulb) {
+      return '';
+    }
+
+    return typeof ulb === 'string' ? ulb : ulb.name;
+  }
+
+  readonly selectedUlb = computed<IULB | undefined>(() => {
+    const value = this.uploadForm.controls.ulb.value;
+    return value && typeof value !== 'string' ? value : undefined;
+  });
+
+  private loadUlbs(): void {
+    this.commonService.getAllUlbs().subscribe({
+      next: (response: any) => {
+        this.ulbs = this.extractUlbs(response);
+        this.filteredUlbs.set(this.ulbs.slice(0, 50));
+      },
+      error: () => {
+        this.ulbs = [];
+        this.filteredUlbs.set([]);
+      },
+    });
+  }
+
+  private setupUlbAutocomplete(): void {
+    this.uploadForm.controls.ulb.valueChanges.subscribe((value) => {
+      const searchText = typeof value === 'string' ? value : value?.name || '';
+      const normalizedSearch = searchText.trim().toLowerCase();
+      const ulbList = Array.isArray(this.ulbs) ? this.ulbs : [];
+
+      if (!normalizedSearch) {
+        this.filteredUlbs.set(ulbList.slice(0, 50));
+        return;
+      }
+
+      this.filteredUlbs.set(
+        ulbList
+          .filter(
+            (ulb) =>
+              ulb.name.toLowerCase().includes(normalizedSearch) ||
+              ulb.code.toLowerCase().includes(normalizedSearch),
+          )
+          .slice(0, 50),
+      );
+    });
+  }
+
   private resetFileInput(): void {
     if (this.fileInput?.nativeElement) {
       this.fileInput.nativeElement.value = '';
     }
+  }
+
+  private ulbSelectionValidator(): ValidatorFn {
+    return (control) => {
+      const value = control.value;
+      return value && typeof value === 'object' ? null : { invalidUlb: true };
+    };
+  }
+
+  private extractUlbs(response: any): IULB[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (Array.isArray(response?.data)) {
+      return response.data;
+    }
+
+    if (Array.isArray(response?.ulbs)) {
+      return response.ulbs;
+    }
+
+    if (Array.isArray(response?.data?.ulbs)) {
+      return response.data.ulbs;
+    }
+
+    return [];
   }
 }
