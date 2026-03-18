@@ -81,7 +81,8 @@ export class UploadFileOcrComponent implements OnInit {
     documentTypeId: this.fb.nonNullable.control('bal_sheet_schedules', Validators.required),
     financialYear: this.fb.nonNullable.control('2024-25', Validators.required),
     ocrMethod: this.fb.nonNullable.control('combined', Validators.required),
-    ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
+    // ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
+    ulb: this.fb.control<IULB | string | null>(null),
   });
 
   ulbs: IULB[] = [];
