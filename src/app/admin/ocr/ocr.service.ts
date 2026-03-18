@@ -42,7 +42,7 @@ export class OcrService {
     formData.append('file', file);
     formData.append('Document_type_ID', documentTypeId);
     formData.append('financialYear', financialYear);
-    formData.append('ocrMethod', ocrMethod);
+    formData.append('ocr_method', ocrMethod);
 
     if (ulb?._id) {
       formData.append('ulbId', ulb._id);
