@@ -8,14 +8,12 @@ let url3 = baseUrl + '/api/v3/digitization/';
 
 if (window.location.hostname.includes('staging')) {
   env = 'staging';
-} else if (window.location.hostname.includes('dev')) {
-  env = 'dev';
-  url3 = baseUrl + '/api/v3/digitization';
 } else if (window.location.origin === 'https://cityfinance.in' || window.location.origin === 'https://www.cityfinance.in') {
   env = 'prod';
   isProduction = true;
   GoogleTagID = 'G-5Z5B41B3G4';
   STORAGE_BASEURL = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
+  url3 = 'https://afs.cityfinance.in/';
 }
 
 export const environment = {
