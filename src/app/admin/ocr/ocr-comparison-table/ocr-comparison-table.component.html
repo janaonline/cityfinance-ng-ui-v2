@@ -1,13 +1,16 @@
 @if (comparisonRows().length > 0) {
   <div class="summary-grid mb-2">
-      @for (item of summaryItems(); track item.label) {
-        <div class="summary-card border rounded-3 bg-white p-2" [class.summary-card--wide]="item.fullWidth">
-          <div class="summary-line">
-            <span class="text-uppercase text-secondary summary-label">{{ item.label }}:</span>
-            <span class="summary-value">{{ item.value }}</span>
-          </div>
+    @for (item of summaryItems(); track item.label) {
+      <div
+        class="summary-card border rounded-3 bg-white p-2"
+        [class.summary-card--wide]="item.fullWidth"
+      >
+        <div class="summary-line">
+          <span class="text-uppercase text-secondary summary-label">{{ item.label }}:</span>
+          <span class="summary-value">{{ item.value }}</span>
         </div>
-      }
+      </div>
+    }
   </div>
 
   @if (agreementSummary().length > 0) {

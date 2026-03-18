@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { MaterialModule } from '../../../material.module';
-import { OcrEngineConfidence, OcrResponse } from './ocr-response';
+import { OcrEngineConfidence, OcrResponse } from '../upload-file-ocr/ocr-response';
 
 interface OcrComparisonRow {
   engine: string;

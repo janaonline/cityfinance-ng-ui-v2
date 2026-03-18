@@ -86,10 +86,11 @@ export class AfsService {
     );
   }
 
-  uploadOcrFile(file: File, documentTypeId: string) {
+  uploadOcrFile(file: File, documentTypeId: string, financialYear: string) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('Document_type_ID', documentTypeId);
+    formData.append('financialYear', financialYear);
     // return this.digitizeFile(formData);
     return this.http.post(
       environment.api.url3 + "sarvam-validate/combined-gemini-validate",

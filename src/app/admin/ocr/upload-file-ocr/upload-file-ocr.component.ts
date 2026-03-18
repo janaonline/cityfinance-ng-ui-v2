@@ -1,15 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild, inject, signal, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../core/services/utility.service';
 import { MaterialModule } from '../../../material.module';
 import { AfsService } from '../../afs-dashboard/afs.service';
-import { OcrComparisonTableComponent } from './ocr-comparison-table.component';
-import { ocrResponse, OcrResponse } from './ocr-response';
+import { OcrComparisonTableComponent } from '../ocr-comparison-table/ocr-comparison-table.component';
+import {
+  FailedOcrResponse,
+  failedOcrResponse,
+  isFailedOcrResponse,
+  isSuccessfulOcrResponse,
+  OcrApiResponse,
+  ocrResponse,
+} from './ocr-response';
 
 interface OcrDocumentType {
+  value: string;
+  label: string;
+}
+
+interface FinancialYearOption {
   value: string;
   label: string;
 }
@@ -37,16 +49,35 @@ export class UploadFileOcrComponent implements OnInit {
     { value: 'inc_exp_schedules', label: 'Schedules To Income And Expenditure' },
     { value: 'cash_flow', label: 'Cash Flow Statement' },
     { value: 'auditor_report', label: 'Auditors Report' },
-    { value: '16th_fc', label: '16th FC' },
+  ];
+  readonly financialYears: FinancialYearOption[] = [
+    { value: '2025-26', label: '2025-26' },
+    { value: '2024-25', label: '2024-25' },
+    { value: '2023-24', label: '2023-24' },
+    { value: '2022-23', label: '2022-23' },
+    { value: '2021-22', label: '2021-22' },
+    { value: '2020-21', label: '2020-21' },
+    { value: '2019-20', label: '2019-20' },
   ];
 
   readonly uploadForm = this.fb.nonNullable.group({
     documentTypeId: ['bal_sheet_schedules', Validators.required],
+    financialYear: ['2024-25', Validators.required],
   });
 
   selectedFile: File | null = null;
   readonly uploadState = signal<'idle' | 'success' | 'error'>('idle');
-  readonly responseData = signal<OcrResponse | null>(null);
+  readonly responseData = signal<OcrApiResponse | null>(null);
+  readonly showResponseDetails = signal(true);
+  readonly showRawResponse = signal(false);
+  readonly successfulResponse = computed(() => {
+    const response = this.responseData();
+    return isSuccessfulOcrResponse(response) ? response : null;
+  });
+  readonly failedResponse = computed<FailedOcrResponse | null>(() => {
+    const response = this.responseData();
+    return isFailedOcrResponse(response) ? response : null;
+  });
 
   constructor() {
     this.globalLoader.hideLayout();
@@ -55,6 +86,7 @@ export class UploadFileOcrComponent implements OnInit {
   ngOnInit(): void {
     // For testing purpose - to be removed
     this.setSampleResponse();
+    // this.setFailedSampleResponse();
   }
 
   onFileSelected(event: Event): void {
@@ -99,23 +131,33 @@ export class UploadFileOcrComponent implements OnInit {
 
     this.uploadState.set('idle');
     this.responseData.set(null);
+    this.showResponseDetails.set(true);
+    this.showRawResponse.set(false);
     this.globalLoader.showLoader();
 
     this.afsService
-      .uploadOcrFile(this.selectedFile, this.uploadForm.getRawValue().documentTypeId)
+      .uploadOcrFile(
+        this.selectedFile,
+        this.uploadForm.getRawValue().documentTypeId,
+        this.uploadForm.getRawValue().financialYear,
+      )
       .pipe(finalize(() => this.globalLoader.stopLoader()))
       .subscribe({
         next: (response) => {
-          this.responseData.set(response as OcrResponse);
+          this.responseData.set(response as OcrApiResponse);
           this.uploadState.set('success');
+          this.showResponseDetails.set(true);
+          this.showRawResponse.set(false);
           this.utilityService.swalPopup(
             'Upload complete',
             'The OCR request has been submitted successfully.',
           );
         },
         error: (error) => {
-          this.responseData.set((error?.error ?? error) as OcrResponse);
+          this.responseData.set((error?.error ?? error) as OcrApiResponse);
           this.uploadState.set('error');
+          this.showResponseDetails.set(true);
+          this.showRawResponse.set(false);
           this.utilityService.swalPopup(
             'Upload failed',
             error?.error?.message || 'OCR upload failed. Please try again.',
@@ -128,13 +170,36 @@ export class UploadFileOcrComponent implements OnInit {
   setSampleResponse(): void {
     this.responseData.set(ocrResponse);
     this.uploadState.set('success');
+    this.showResponseDetails.set(true);
+    this.showRawResponse.set(false);
+  }
+
+  setFailedSampleResponse(): void {
+    this.responseData.set(failedOcrResponse);
+    this.uploadState.set('error');
+    this.showResponseDetails.set(true);
+    this.showRawResponse.set(false);
   }
 
   clearSelectedFile(): void {
     this.selectedFile = null;
     this.uploadState.set('idle');
     this.responseData.set(null);
+    this.showResponseDetails.set(true);
+    this.showRawResponse.set(false);
     this.resetFileInput();
+  }
+
+  openFilePicker(): void {
+    this.fileInput?.nativeElement.click();
+  }
+
+  toggleResponseDetails(): void {
+    this.showResponseDetails.update((value) => !value);
+  }
+
+  toggleRawResponse(): void {
+    this.showRawResponse.update((value) => !value);
   }
 
   private resetFileInput(): void {
