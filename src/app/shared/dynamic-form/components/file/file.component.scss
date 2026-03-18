@@ -30,6 +30,23 @@
   animation-iteration-count: infinite;
 }
 
+.button-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.button-view-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.button-view-progress {
+  width: min(16rem, 100%);
+}
+
 .files-list {
   margin-top: 1rem;
 

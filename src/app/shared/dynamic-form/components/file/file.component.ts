@@ -18,47 +18,55 @@ import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MaterialModule } from '../../../../material.module';
 import { FieldConfig, LegacyFileValue, UploadedFileValue } from '../../field.interface';
+import { FileIconComponent } from '../file-icon/file-icon.component';
 import { DndDirective } from './dnd.directive';
 import { FileService } from './file.service';
 
-type FileMimeTypeMap = Readonly<Record<'pdf' | 'xlsx', string>>;
 type FileParentFieldConfig = Pick<FieldConfig, 'readonly' | 'validations'>;
+type UploadableFileExtension = 'pdf' | 'xlsx' | 'xls' | 'docx' | 'doc' | 'txt';
+type FileMimeTypeMap = Readonly<Record<UploadableFileExtension, string>>;
 
 @Component({
   selector: 'app-file',
-  imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe],
+  imports: [
+    MaterialModule,
+    DndDirective,
+    MatProgressBarModule,
+    ToStorageUrlPipe,
+    FileIconComponent,
+  ],
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss',
 })
 export class FileComponent implements OnInit, OnDestroy {
   private static nextFileInputId = 0;
 
+  @Input() parentField?: FileParentFieldConfig;
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
+
+  readonly showUploadedFileMessage = input(false);
+  readonly fileInputId = `file-drop-ref-${FileComponent.nextFileInputId++}`;
+  readonly fileTypes: FileMimeTypeMap = {
+    pdf: 'application/pdf',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    xls: 'application/vnd.ms-excel',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    txt: 'text/plain',
+  };
+
   isUploading = false;
   uploadProgress = signal(0);
-  readonly showUploadedFileMessage = input(false);
-  currentFile: File | null = null;
+
   s3Subscribe!: Subscription;
-  readonly fileInputId = `file-drop-ref-${FileComponent.nextFileInputId++}`;
-  fileTypes: FileMimeTypeMap = {
-    pdf: 'application/pdf',
-    xlsx: 'application/vnd.ms-excel',
-  };
+  currentFile: File | null = null;
   allowedFileTypeStr: string = '';
   maxFileSize: number = 20;
+  uploadFolderName: string = `ulb/year/audited/ulbCode`;
   readonly: boolean | undefined = false;
-  @Input() parentField?: FileParentFieldConfig;
+
   validations: FieldConfig['validations'] = [];
-
-  // uploadFolderName!: string;
-
-  get uploadFolderName() {
-    // const years = JSON.parse(localStorage.getItem("Years"));
-    // const year = this.getKeyByValue(years, this.design_year);
-    // return `${this.userData?.role}/${year}/sfc/${this.userData?.stateCode}`
-    return `ulb/year/audited/ulbCode`;
-  }
 
   constructor(
     private fileService: FileService,
@@ -69,7 +77,10 @@ export class FileComponent implements OnInit, OnDestroy {
     this.allowedFileTypeStr =
       this.field.allowedFileTypes
         ?.map((extension) => this.getMimeTypeForExtension(extension))
+        ?.filter((mimeType): mimeType is string => !!mimeType)
         ?.join(',') || '';
+    this.maxFileSize = this.field.maxFileSize || this.maxFileSize;
+    this.uploadFolderName = this.field.folderPath || this.uploadFolderName;
     this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations || [];
   }
@@ -120,6 +131,22 @@ export class FileComponent implements OnInit, OnDestroy {
     return !!this.standaloneFileControl && !!this.field?.label;
   }
 
+  get isButtonView(): boolean {
+    return this.field.fileViewType === 'button';
+  }
+
+  get uploadPromptLabel(): string {
+    return this.showStandaloneLabel ? 'Upload file' : 'Upload consolidated PDF';
+  }
+
+  get hasUploadedFile(): boolean {
+    return !!this.uploadedFile;
+  }
+
+  get showButtonUploadedState(): boolean {
+    return this.hasUploadedFile && !this.showUploadProgress;
+  }
+
   get showUploadProgress(): boolean {
     return this.isUploading && !!this.currentFile;
   }
@@ -161,6 +188,11 @@ export class FileComponent implements OnInit, OnDestroy {
     if (this.fileDropRef?.nativeElement) {
       this.fileDropRef.nativeElement.value = '';
     }
+  }
+
+  openFileBrowser(): void {
+    this.resetFileInput();
+    this.fileDropRef?.nativeElement.click();
   }
 
   /**
@@ -303,11 +335,18 @@ export class FileComponent implements OnInit, OnDestroy {
   }
 
   private getMimeTypeForExtension(extension: string): string | undefined {
-    if (!(extension in this.fileTypes)) {
+    const normalizedExtension = extension.toLowerCase();
+    if (!this.isSupportedFileExtension(normalizedExtension)) {
       return undefined;
     }
 
-    return this.fileTypes[extension as keyof FileMimeTypeMap];
+    return this.fileTypes[normalizedExtension];
+  }
+
+  private isSupportedFileExtension(
+    extension: string | undefined,
+  ): extension is UploadableFileExtension {
+    return !!extension && extension in this.fileTypes;
   }
 
   private patchUploadedFileValue(fileValue: Exclude<UploadedFileValue, null>): void {

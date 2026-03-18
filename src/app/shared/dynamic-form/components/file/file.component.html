@@ -2,83 +2,154 @@
   <p class="fw-bold mb-2">{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</p>
 }
 
-@if (!readonly) {
-  <div class="container" appDnd (fileDropped)="onFileDropped($event)">
+@if (isButtonView) {
+  @if (!readonly) {
     <input
       #fileDropRef
+      class="d-none"
       type="file"
       [id]="fileInputId"
       (change)="fileBrowseHandler($event)"
       [accept]="allowedFileTypeStr"
     />
-    <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
-    <p class="fw-bold m-0">
-      {{ showStandaloneLabel ? 'Upload file' : 'Upload consolidated PDF' }}
-    </p>
-    <label [for]="fileInputId">
-      <small class="text-secondary">Drag and drop the file here.</small>
-    </label>
-  </div>
-}
+  }
 
-@if (showUploadProgress) {
-  <div class="files-list">
-    <p class="file-list-title">Selected file</p>
-    <div class="single-file dotted-border-secondary">
-      <div class="file-icon">
-        <div class="align-self-center">
-          <!-- TODO: Handle excel, doc, txt -->
-          <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
-        </div>
-      </div>
-      <div class="info">
-        <p class="file-name">{{ currentFile?.name }}</p>
-        <mat-progress-bar
-          class="upload-progress"
-          mode="determinate"
-          [value]="uploadProgress()"
-        ></mat-progress-bar>
-        @if (currentFileSize) {
-          <p class="size">{{ currentFileSize }}</p>
-        }
-      </div>
-    </div>
-  </div>
-} @else if (uploadedFile) {
-  <div class="files-list">
-    <p class="file-list-title">Uploaded file</p>
-    <div class="single-file dotted-border-secondary">
-      <div class="file-icon">
-        <div class="align-self-center">
-          <!-- TODO: Handle excel, doc, txt -->
-          <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
-        </div>
-      </div>
-      <div class="info">
-        <p class="file-name">{{ uploadedFile.name }}</p>
-        @if (uploadedFile.size) {
-          <p class="size">{{ uploadedFile.size }}</p>
-        }
-      </div>
-      @if (previewUrl) {
-        <a [href]="previewUrl | toStorageUrl" target="_blank" rel="noopener noreferrer">
-          <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
-        </a>
-      }
+  <div class="button-view">
+    <div class="button-view-toolbar">
       @if (!readonly) {
         <button
           type="button"
-          class="delete align-self-center"
-          aria-label="Remove uploaded file"
-          (click)="deleteFile()"
+          class="btn btn-success d-inline-flex align-items-center gap-2"
+          (click)="openFileBrowser()"
         >
-          <mat-icon class="text-danger fs-3 me-1" title="Remove uploaded file">
-            delete_forever
-          </mat-icon>
+          @if (showButtonUploadedState) {
+            <i class="bi bi-check2"></i>
+            <span>Uploaded</span>
+          } @else {
+            <i class="bi bi-upload"></i>
+            <span>{{ uploadPromptLabel }}</span>
+          }
         </button>
+      } @else if (showButtonUploadedState) {
+        <span
+          class="btn btn-success disabled d-inline-flex align-items-center gap-2"
+          aria-disabled="true"
+        >
+          <i class="bi bi-check2"></i>
+          <span>Uploaded</span>
+        </span>
+      }
+
+      @if (hasUploadedFile) {
+        @if (previewUrl) {
+          <a
+            [href]="previewUrl | toStorageUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View file"
+          >
+            <i class="bi bi-eye fs-5 mx-1 text-dark" title="View file"></i>
+          </a>
+        }
+        @if (!readonly) {
+          <button
+            type="button"
+            class="m-0 p-0 border-0 bg-transparent"
+            aria-label="Remove file"
+            (click)="deleteFile()"
+          >
+            <i class="bi bi-x-circle fs-5 mx-1 text-danger" title="Remove file"></i>
+          </button>
+        }
       }
     </div>
+
+    @if (showUploadProgress) {
+      <mat-progress-bar
+        class="button-view-progress"
+        mode="determinate"
+        [value]="uploadProgress()"
+      ></mat-progress-bar>
+    }
   </div>
+} @else {
+  @if (!readonly) {
+    <div class="container" appDnd (fileDropped)="onFileDropped($event)">
+      <input
+        #fileDropRef
+        type="file"
+        [id]="fileInputId"
+        (change)="fileBrowseHandler($event)"
+        [accept]="allowedFileTypeStr"
+      />
+      <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
+      <p class="fw-bold m-0">{{ uploadPromptLabel }}</p>
+      <label [for]="fileInputId">
+        <small class="text-secondary">Drag and drop the file here.</small>
+      </label>
+    </div>
+  }
+
+  @if (showUploadProgress) {
+    <div class="files-list">
+      <p class="file-list-title">Selected file</p>
+      <div class="single-file dotted-border-secondary">
+        <div class="file-icon">
+          <div class="align-self-center">
+            <app-file-icon [fileName]="currentFile?.name"></app-file-icon>
+          </div>
+        </div>
+        <div class="info">
+          <p class="file-name">{{ currentFile?.name }}</p>
+          <mat-progress-bar
+            class="upload-progress"
+            mode="determinate"
+            [value]="uploadProgress()"
+          ></mat-progress-bar>
+          @if (currentFileSize) {
+            <p class="size">{{ currentFileSize }}</p>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (uploadedFile) {
+    <div class="files-list">
+      <p class="file-list-title">Uploaded file</p>
+      <div class="single-file dotted-border-secondary">
+        <div class="file-icon">
+          <div class="align-self-center">
+            <app-file-icon [fileName]="uploadedFile.name"></app-file-icon>
+          </div>
+        </div>
+        <div class="info">
+          <p class="file-name">{{ uploadedFile.name }}</p>
+          @if (uploadedFile.size) {
+            <p class="size">{{ uploadedFile.size }}</p>
+          }
+        </div>
+        @if (previewUrl) {
+          <a
+            [href]="previewUrl | toStorageUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View file"
+          >
+            <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
+          </a>
+        }
+        @if (!readonly) {
+          <button
+            type="button"
+            class="delete align-self-center"
+            aria-label="Remove file"
+            (click)="deleteFile()"
+          >
+            <mat-icon class="text-danger fs-3 me-1" title="Remove file"> delete_forever </mat-icon>
+          </button>
+        }
+      </div>
+    </div>
+  }
 }
 
 @if (shouldShowUploadedFileMessage) {

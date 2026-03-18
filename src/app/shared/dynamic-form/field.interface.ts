@@ -44,6 +44,9 @@ export interface FieldConfig {
   fileRejectOptions?: string[];
   decimal?: 0;
   file?: LegacyFileValue;
+  fileViewType?: 'button' | 'dropzone';
+  folderPath?: string;
+  maxFileSize?: number;
 }
 
 export interface JsonFieldConfig {
