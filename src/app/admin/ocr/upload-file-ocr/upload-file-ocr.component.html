@@ -1,0 +1,147 @@
+<div class="wrapper app-wrapper">
+  <section class="ocr-upload-page">
+    <div class="hero-card">
+      <!-- <p class="eyebrow">Admin OCR Upload</p> -->
+      <h1>Upload a PDF for OCR processing</h1>
+      <p class="subcopy">
+        Choose a document type, upload a PDF, and submit it to the existing OCR digitization
+        pipeline.
+      </p>
+    </div>
+
+    <mat-card class="upload-card">
+      <mat-card-content>
+        <form [formGroup]="uploadForm" class="upload-form">
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Document type</mat-label>
+              <mat-select formControlName="documentTypeId">
+                @for (documentType of documentTypes; track documentType.value) {
+                  <mat-option [value]="documentType.value">{{ documentType.label }}</mat-option>
+                }
+              </mat-select>
+              @if (
+                uploadForm.controls.documentTypeId.invalid &&
+                uploadForm.controls.documentTypeId.touched
+              ) {
+                <mat-error>Document type is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Financial year</mat-label>
+              <mat-select formControlName="financialYear">
+                @for (year of financialYears; track year.value) {
+                  <mat-option [value]="year.value">{{ year.label }}</mat-option>
+                }
+              </mat-select>
+              @if (
+                uploadForm.controls.financialYear.invalid &&
+                uploadForm.controls.financialYear.touched
+              ) {
+                <mat-error>Financial year is required.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="file-picker">
+            <input
+              #fileInput
+              id="ocr-file"
+              class="file-input-hidden"
+              type="file"
+              accept="application/pdf"
+              (change)="onFileSelected($event)"
+            />
+
+            <button type="button" class="file-drop-box" (click)="openFilePicker()">
+              <span class="file-picker__label">PDF file</span>
+              @if (selectedFile) {
+                <span class="file-box-name">{{ selectedFile.name }}</span>
+                <span class="file-box-meta"
+                  >{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span
+                >
+              } @else {
+                <span class="file-box-placeholder">Click to choose a PDF file</span>
+                <span class="file-box-meta">Accepted format: PDF</span>
+              }
+            </button>
+            <p class="file-note">Accepted format: PDF. Maximum size: {{ maxFileSizeMb }} MB.</p>
+          </div>
+
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="clearSelectedFile()">Clear</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="!selectedFile || globalLoader.loading()"
+              (click)="uploadFile()"
+            >
+              @if (globalLoader.loading()) {
+                Submitting...
+              } @else {
+                Start OCR
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    @if (responseData()) {
+      <mat-card class="response-card" [class.response-card--error]="uploadState() === 'error'">
+        <mat-card-content>
+          <div class="response-header">
+            <h2>OCR Response</h2>
+            <div class="response-header-actions">
+              <span class="status-chip" [class.status-chip--error]="uploadState() === 'error'">
+                {{ uploadState() === 'error' ? 'Failed' : 'Submitted' }}
+              </span>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary response-action-btn"
+                (click)="toggleResponseDetails()"
+              >
+                {{ showResponseDetails() ? 'Collapse Response' : 'Expand Response' }}
+              </button>
+            </div>
+          </div>
+
+          @if (showResponseDetails()) {
+            @if (successfulResponse()) {
+              <app-ocr-comparison-table [response]="successfulResponse()!" />
+            } @else if (failedJobResponse()) {
+              <div class="failure-box">
+                <h3 class="failure-title">OCR job failed</h3>
+                <p class="failure-text">
+                  {{ failedJobResponse()?.error || 'Unable to process this OCR job.' }}
+                </p>
+              </div>
+            } @else if (failedResponse()) {
+              <div class="failure-box">
+                <h3 class="failure-title">Validation failed</h3>
+                <p class="failure-text">{{ failedResponse()?.detail }}</p>
+              </div>
+            }
+          }
+
+          <div class="raw-response-section">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary raw-toggle-btn response-action-btn"
+              (click)="toggleRawResponse()"
+            >
+              {{ showRawResponse() ? 'Hide Raw Response' : 'Show Raw Response' }}
+            </button>
+
+            @if (showRawResponse()) {
+              <h3 class="raw-title">Raw response</h3>
+              <pre>{{ responseData() | json }}</pre>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </section>
+</div>

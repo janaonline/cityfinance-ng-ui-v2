@@ -2,7 +2,8 @@ export const environment = {
   api: {
     url: 'https://dev.cityfinance.in/api/v1/',
     url2: 'https://dev.cityfinance.in/api/v2/',
-    url3: 'https://dev.cityfinance.in/api/v3/',
+    url3: 'https://dev.cityfinance.in/api/v3/digitization/',
+    // url3: 'http://localhost:8080/api/v3/', // For local testing purpose
   },
   prefixUrl: '',
   environment: 'dev_local',

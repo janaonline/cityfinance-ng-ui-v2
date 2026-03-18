@@ -1,0 +1,78 @@
+.comparison-table-shell {
+  background: #fff;
+  max-width: 100%;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.4rem;
+}
+
+.summary-card {
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.summary-card--wide {
+  grid-column: 1 / -1;
+}
+
+.summary-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.summary-value {
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.summary-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.comparison-table th {
+  position: sticky;
+  top: 0;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.4rem 0.45rem;
+}
+
+.comparison-table td {
+  min-width: 78px;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.45rem;
+  line-height: 1.2;
+}
+
+.agreement-badge {
+  font-size: 0.68rem;
+}
+
+.file-link-btn {
+  font-size: 0.68rem;
+  line-height: 1.1;
+}
+
+@media (max-width: 768px) {
+  .comparison-table td {
+    min-width: 72px;
+    font-size: 0.72rem;
+  }
+
+  .comparison-table th {
+    font-size: 0.64rem;
+  }
+}

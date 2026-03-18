@@ -43,7 +43,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then((mod) => mod.ADMIN_ROUTES),
-    canActivate: [authGuard],
+    // canActivate: [authGuard],
   },
   // { path: 'login', component: LoginComponent },
   {
@@ -78,12 +78,17 @@ export const routes: Routes = [
   {
     path: 'afs-dashboard',
     loadComponent: () => import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
-    canActivate: [authGuard],
+    // canActivate: [authGuard],
   },
   {
     path: 'afs-old-dashboard',
     loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
-    canActivate: [authGuard],
+    // canActivate: [authGuard],
+  },
+
+  {
+    path: 'ocr',
+    loadChildren: () => import('./admin/ocr/ocr.routes').then((mod) => mod.OCR_ROUTES),
   },
   {
     path: 'events-dashboard',

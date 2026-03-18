@@ -1,0 +1,132 @@
+.ocr-details-page {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(24, 119, 242, 0.12), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  min-height: 100%;
+}
+
+.hero-card,
+.search-card,
+.response-card {
+  border-radius: 20px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+}
+
+.hero-card {
+  padding: 1.75rem;
+  background: linear-gradient(135deg, #123b69 0%, #2563eb 100%);
+  color: #fff;
+}
+
+h1,
+h3 {
+  margin: 0;
+}
+
+.subcopy {
+  margin: 0.75rem 0 0;
+  max-width: 60rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.details-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.helper-text {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.failure-box {
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: 14px;
+  background: #fff7f7;
+  color: #991b1b;
+}
+
+.failure-title {
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.failure-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.raw-response-section {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.raw-toggle-btn {
+  justify-self: flex-start;
+}
+
+.response-action-btn {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #fff;
+}
+
+.response-action-btn:hover,
+.response-action-btn:focus {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.raw-title {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+pre {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 16px;
+  background: #0f172a;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+}
+
+@media (max-width: 992px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ocr-details-page {
+    padding: 1rem;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

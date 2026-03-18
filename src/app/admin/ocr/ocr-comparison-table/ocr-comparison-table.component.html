@@ -1,0 +1,99 @@
+@if (comparisonRows().length > 0) {
+  <div class="summary-grid mb-2">
+    @for (item of summaryItems(); track item.label) {
+      <div
+        class="summary-card border rounded-3 bg-white p-2"
+        [class.summary-card--wide]="item.fullWidth"
+      >
+        <div class="summary-line">
+          <span class="text-uppercase text-secondary summary-label">{{ item.label }}:</span>
+          <span class="summary-value">{{ item.value }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (agreementSummary().length > 0) {
+    <div class="d-flex flex-wrap gap-1 mb-2">
+      @for (agreement of agreementSummary(); track agreement.label) {
+        <div
+          class="badge rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1 agreement-badge"
+          [class.text-bg-danger]="agreement.value === false"
+          [class.text-bg-success]="agreement.value !== false"
+        >
+          <span>{{ agreement.label }}</span>
+          <strong>
+            {{ agreement.value === true ? 'Yes' : agreement.value === false ? 'No' : '-' }}
+          </strong>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="table-responsive border rounded-3 mb-2 comparison-table-shell">
+    <table class="table table-sm table-hover align-middle mb-0 comparison-table">
+      <thead>
+        <tr>
+          <th>Engine</th>
+          <th>Status</th>
+          <th>Doc Type</th>
+          <th>FY</th>
+          <th>As On Date</th>
+          <th>ULB Name</th>
+          <th>Pages</th>
+          <th>Confidence</th>
+          <th>Issues</th>
+          <th>OCR Time</th>
+          <th>Validation Time</th>
+          <th>Excel Time</th>
+          <th>Files</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of comparisonRows(); track row.engine) {
+          <tr>
+            <td class="fw-semibold text-nowrap">{{ row.engine }}</td>
+            <td>
+              <span [class]="getStatusClass(row.status)">{{ row.status }}</span>
+            </td>
+            <td>{{ row.docType }}</td>
+            <td>{{ row.financialYear }}</td>
+            <td>{{ row.asOnDate }}</td>
+            <td>{{ row.ulbName }}</td>
+            <td>{{ row.pageCount }}</td>
+            <td>{{ row.confidence }}</td>
+            <td>{{ row.issues }}</td>
+            <td>{{ row.ocrDuration }}</td>
+            <td>{{ row.validationDuration }}</td>
+            <td>{{ row.excelDuration }}</td>
+            <td>
+              @if (row.ocrUrl) {
+                <a
+                  class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1 file-link-btn"
+                  [href]="row.ocrUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  OCR
+                </a>
+              }
+              @if (row.excelUrl) {
+                <a
+                  class="btn btn-sm btn-outline-success py-0 px-1 mb-1 file-link-btn"
+                  [href]="row.excelUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Excel
+                </a>
+              }
+              @if (!row.ocrUrl && !row.excelUrl) {
+                <span class="text-muted">-</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
