@@ -81,6 +81,11 @@
             </span>
           </div>
 
+          @if (uploadState() === 'success' && responseData()) {
+            <app-ocr-comparison-table [response]="responseData()!" />
+          }
+
+          <h3 class="raw-title">Raw response</h3>
           <pre>{{ responseData() | json }}</pre>
         </mat-card-content>
       </mat-card>

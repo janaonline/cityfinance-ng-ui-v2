@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../core/services/utility.service';
 import { MaterialModule } from '../../../material.module';
 import { AfsService } from '../../afs-dashboard/afs.service';
+import { OcrComparisonTableComponent } from './ocr-comparison-table.component';
+import { ocrResponse, OcrResponse } from './ocr-response';
 
 interface OcrDocumentType {
   value: string;
@@ -15,11 +17,11 @@ interface OcrDocumentType {
 @Component({
   standalone: true,
   selector: 'app-upload-file-ocr',
-  imports: [CommonModule, ReactiveFormsModule, MaterialModule],
+  imports: [CommonModule, ReactiveFormsModule, MaterialModule, OcrComparisonTableComponent],
   templateUrl: './upload-file-ocr.component.html',
   styleUrl: './upload-file-ocr.component.scss',
 })
-export class UploadFileOcrComponent {
+export class UploadFileOcrComponent implements OnInit {
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   private readonly fb = inject(FormBuilder);
@@ -44,10 +46,15 @@ export class UploadFileOcrComponent {
 
   selectedFile: File | null = null;
   readonly uploadState = signal<'idle' | 'success' | 'error'>('idle');
-  readonly responseData = signal<any | null>(null);
+  readonly responseData = signal<OcrResponse | null>(null);
 
   constructor() {
     this.globalLoader.hideLayout();
+  }
+
+  ngOnInit(): void {
+    // For testing purpose - to be removed
+    this.setSampleResponse();
   }
 
   onFileSelected(event: Event): void {
@@ -99,7 +106,7 @@ export class UploadFileOcrComponent {
       .pipe(finalize(() => this.globalLoader.stopLoader()))
       .subscribe({
         next: (response) => {
-          this.responseData.set(response);
+          this.responseData.set(response as OcrResponse);
           this.uploadState.set('success');
           this.utilityService.swalPopup(
             'Upload complete',
@@ -107,7 +114,7 @@ export class UploadFileOcrComponent {
           );
         },
         error: (error) => {
-          this.responseData.set(error?.error ?? error);
+          this.responseData.set((error?.error ?? error) as OcrResponse);
           this.uploadState.set('error');
           this.utilityService.swalPopup(
             'Upload failed',
@@ -116,6 +123,11 @@ export class UploadFileOcrComponent {
           );
         },
       });
+  }
+
+  setSampleResponse(): void {
+    this.responseData.set(ocrResponse);
+    this.uploadState.set('success');
   }
 
   clearSelectedFile(): void {
