@@ -8,11 +8,13 @@ import { MaterialModule } from '../../../material.module';
 import { OcrComparisonTableComponent } from '../ocr-comparison-table/ocr-comparison-table.component';
 import { OcrService } from '../ocr.service';
 import {
+  isErroredOcrJobResponse,
   FailedOcrResponse,
   failedOcrResponse,
   isFailedOcrResponse,
   isSuccessfulOcrResponse,
   OcrApiResponse,
+  OcrResponse,
   ocrResponse,
 } from './ocr-response';
 
@@ -70,13 +72,19 @@ export class UploadFileOcrComponent implements OnInit {
   readonly responseData = signal<OcrApiResponse | null>(null);
   readonly showResponseDetails = signal(true);
   readonly showRawResponse = signal(false);
-  readonly successfulResponse = computed(() => {
+  readonly successfulResponse = computed<OcrResponse | null>(() => {
     const response = this.responseData();
-    return isSuccessfulOcrResponse(response) ? response : null;
+    return isSuccessfulOcrResponse(response) && !isErroredOcrJobResponse(response)
+      ? response
+      : null;
   });
   readonly failedResponse = computed<FailedOcrResponse | null>(() => {
     const response = this.responseData();
     return isFailedOcrResponse(response) ? response : null;
+  });
+  readonly failedJobResponse = computed<OcrResponse | null>(() => {
+    const response = this.responseData();
+    return isErroredOcrJobResponse(response) ? response : null;
   });
 
   constructor() {
@@ -144,10 +152,23 @@ export class UploadFileOcrComponent implements OnInit {
       .pipe(finalize(() => this.globalLoader.stopLoader()))
       .subscribe({
         next: (response) => {
-          this.responseData.set(response as OcrApiResponse);
-          this.uploadState.set('success');
+          const normalizedResponse = response as OcrApiResponse;
+
+          this.responseData.set(normalizedResponse);
           this.showResponseDetails.set(true);
           this.showRawResponse.set(false);
+
+          if (isErroredOcrJobResponse(normalizedResponse)) {
+            this.uploadState.set('error');
+            this.utilityService.swalPopup(
+              'Upload failed',
+              normalizedResponse.error || 'The OCR job finished with a failed status.',
+              'error',
+            );
+            return;
+          }
+
+          this.uploadState.set('success');
           this.utilityService.swalPopup(
             'Upload complete',
             'The OCR request has been submitted successfully.',

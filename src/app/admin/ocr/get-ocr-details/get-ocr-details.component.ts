@@ -9,10 +9,12 @@ import { MaterialModule } from '../../../material.module';
 import { OcrComparisonTableComponent } from '../ocr-comparison-table/ocr-comparison-table.component';
 import { OcrService } from '../ocr.service';
 import {
+  isErroredOcrJobResponse,
   FailedOcrResponse,
   isFailedOcrResponse,
   isSuccessfulOcrResponse,
   OcrApiResponse,
+  OcrResponse,
 } from '../upload-file-ocr/ocr-response';
 
 interface OcrMethodOption {
@@ -49,13 +51,19 @@ export class GetOcrDetailsComponent implements OnInit {
 
   readonly responseData = signal<OcrApiResponse | null>(null);
   readonly showRawResponse = signal(false);
-  readonly successfulResponse = computed(() => {
+  readonly successfulResponse = computed<OcrResponse | null>(() => {
     const response = this.responseData();
-    return isSuccessfulOcrResponse(response) ? response : null;
+    return isSuccessfulOcrResponse(response) && !isErroredOcrJobResponse(response)
+      ? response
+      : null;
   });
   readonly failedResponse = computed<FailedOcrResponse | null>(() => {
     const response = this.responseData();
     return isFailedOcrResponse(response) ? response : null;
+  });
+  readonly failedJobResponse = computed<OcrResponse | null>(() => {
+    const response = this.responseData();
+    return isErroredOcrJobResponse(response) ? response : null;
   });
 
   constructor() {
@@ -108,7 +116,18 @@ export class GetOcrDetailsComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.responseData.set(response);
-          this.utilityService.swalPopup('Success', 'OCR details fetched successfully.');
+
+          // console.log('OCR Details Response:---', response); // Debug log
+          // if (isErroredOcrJobResponse(response)) {
+          //   this.utilityService.swalPopup(
+          //     'OCR job failed',
+          //     response.error || 'The OCR job finished with a failed status.',
+          //     'error',
+          //   );
+          //   return;
+          // }
+
+          // this.utilityService.swalPopup('Success', 'OCR details fetched successfully.');
         },
         error: (error) => {
           this.responseData.set((error?.error ?? error) as OcrApiResponse);

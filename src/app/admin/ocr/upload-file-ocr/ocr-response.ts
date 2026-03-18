@@ -86,12 +86,12 @@ export interface OcrResponse {
     filename: string;
     created_at: string;
     updated_at: string;
-    agreement: OcrAgreement;
-    engines: Record<string, OcrEngineResult>;
-    errors: Record<string, unknown>;
+    agreement?: OcrAgreement;
+    engines?: Record<string, OcrEngineResult>;
+    errors?: Record<string, unknown>;
     ocr_method: string;
-    pdf_quality: OcrPdfQuality;
-    timing: OcrResponseTiming;
+    pdf_quality?: OcrPdfQuality;
+    timing?: OcrResponseTiming;
 }
 
 export type OcrApiResponse = OcrResponse | FailedOcrResponse;
@@ -102,6 +102,13 @@ export function isFailedOcrResponse(response: OcrApiResponse | null | undefined)
 
 export function isSuccessfulOcrResponse(response: OcrApiResponse | null | undefined): response is OcrResponse {
     return !!response && 'job_id' in response;
+}
+
+export function isErroredOcrJobResponse(response: OcrApiResponse | null | undefined): response is OcrResponse {
+    return (
+        isSuccessfulOcrResponse(response) &&
+        (response.status?.toUpperCase() === 'FAILED' || !!response.error)
+    );
 }
 
 export const failedOcrResponse: FailedOcrResponse = {

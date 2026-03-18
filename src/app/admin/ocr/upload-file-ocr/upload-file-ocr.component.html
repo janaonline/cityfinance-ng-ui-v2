@@ -111,6 +111,13 @@
           @if (showResponseDetails()) {
             @if (successfulResponse()) {
               <app-ocr-comparison-table [response]="successfulResponse()!" />
+            } @else if (failedJobResponse()) {
+              <div class="failure-box">
+                <h3 class="failure-title">OCR job failed</h3>
+                <p class="failure-text">
+                  {{ failedJobResponse()?.error || 'Unable to process this OCR job.' }}
+                </p>
+              </div>
             } @else if (failedResponse()) {
               <div class="failure-box">
                 <h3 class="failure-title">Validation failed</h3>
