@@ -129,6 +129,27 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     readonly: true,
   },
   {
+    formFieldType: 'file',
+    label: 'Action Taken Report',
+    key: 'actionTakenReport',
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+    allowedFileTypes: ['pdf'],
+    value: {
+      fileName: '',
+      fileUrl: '',
+      fileSize: null,
+      mimeType: '',
+    },
+    // folderPath: '',
+    // maxFileSize: 5,
+  },
+  {
     formFieldType: 'radio',
     label: 'SFC Active',
     key: 'sfcActive',

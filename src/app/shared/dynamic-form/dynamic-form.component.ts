@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, FormArray } from '@angular/forms';
 import { FieldConfig } from './field.interface';
 import { ButtonComponent } from './components/button/button.component';
@@ -10,6 +10,7 @@ import { RadiobuttonComponent } from './components/radiobutton/radiobutton.compo
 import { SelectComponent } from './components/select/select.component';
 import { TableComponent } from './components/table/table.component';
 import { MaterialModule } from '../../material.module';
+import { FileComponent } from './components/file/file.component';
 
 @Component({
     // exportAs: "dynamicForm",
@@ -17,21 +18,22 @@ import { MaterialModule } from '../../material.module';
     selector: 'app-dynamic-form',
     templateUrl: './dynamic-form.component.html',
     imports: [
-        // DynamicFieldDirective,
-        MaterialModule,
-        InputComponent,
-        ButtonComponent,
-        SelectComponent,
-        DateComponent,
-        RadiobuttonComponent,
-        CheckboxComponent,
-        ChildFormComponent,
-        TableComponent,
-    ],
+    // DynamicFieldDirective,
+    MaterialModule,
+    InputComponent,
+    ButtonComponent,
+    SelectComponent,
+    DateComponent,
+    RadiobuttonComponent,
+    CheckboxComponent,
+    ChildFormComponent,
+    TableComponent,
+    FileComponent
+],
     // styles: []
     styleUrl: './dynamic-form.component.scss'
 })
-export class DynamicFormComponent {
+export class DynamicFormComponent implements OnInit {
   // @Input() field!: FieldConfig;
   @Input() field!: any;
   @Input() group!: FormGroup;
