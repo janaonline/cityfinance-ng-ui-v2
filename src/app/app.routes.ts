@@ -87,11 +87,8 @@ export const routes: Routes = [
   },
 
   {
-    path: 'upload-file-ocr',
-    loadComponent: () =>
-      import('./admin/ocr/upload-file-ocr/upload-file-ocr.component').then(
-        (mod) => mod.UploadFileOcrComponent,
-      ),
+    path: 'ocr',
+    loadChildren: () => import('./admin/ocr/ocr.routes').then((mod) => mod.OCR_ROUTES),
   },
   {
     path: 'events-dashboard',

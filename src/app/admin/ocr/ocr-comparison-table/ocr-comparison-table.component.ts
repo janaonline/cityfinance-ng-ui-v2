@@ -77,10 +77,15 @@ export class OcrComparisonTableComponent {
       ocrDuration: this.formatDuration(engine.timing?.ocr_duration_seconds),
       validationDuration: this.formatDuration(engine.timing?.validation_duration_seconds),
       excelDuration: this.formatDuration(engine.timing?.excel_duration_seconds),
-      ocrUrl: engine.ocr_url ?? null,
-      excelUrl: engine.excel_url ?? null,
+      ocrUrl: engine.ocr_url ? this.removeSignedInfo(engine.ocr_url) : null,
+      excelUrl: engine.excel_url ? this.removeSignedInfo(engine.excel_url) : null,
     }));
   });
+
+  removeSignedInfo(url: string): string {
+    const parsedUrl = new URL(url);
+    return `${parsedUrl.origin}${parsedUrl.pathname}`;
+  }
 
   readonly agreementSummary = computed(() => {
     const agreement = this.response()?.agreement;

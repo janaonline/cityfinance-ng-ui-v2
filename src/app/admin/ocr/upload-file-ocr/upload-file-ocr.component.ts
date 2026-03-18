@@ -5,8 +5,8 @@ import { finalize } from 'rxjs';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../core/services/utility.service';
 import { MaterialModule } from '../../../material.module';
-import { AfsService } from '../../afs-dashboard/afs.service';
 import { OcrComparisonTableComponent } from '../ocr-comparison-table/ocr-comparison-table.component';
+import { OcrService } from '../ocr.service';
 import {
   FailedOcrResponse,
   failedOcrResponse,
@@ -37,7 +37,7 @@ export class UploadFileOcrComponent implements OnInit {
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   private readonly fb = inject(FormBuilder);
-  private readonly afsService = inject(AfsService);
+  private readonly ocrService = inject(OcrService);
   readonly globalLoader = inject(GlobalLoaderService);
   private readonly utilityService = inject(UtilityService);
 
@@ -135,7 +135,7 @@ export class UploadFileOcrComponent implements OnInit {
     this.showRawResponse.set(false);
     this.globalLoader.showLoader();
 
-    this.afsService
+    this.ocrService
       .uploadOcrFile(
         this.selectedFile,
         this.uploadForm.getRawValue().documentTypeId,

@@ -3,7 +3,7 @@ export const environment = {
     url: 'http://localhost:8080/api/v1/',
     url2: 'http://localhost:3000/api/v2/',
     // url2: 'https://dev.cityfinance.in/api/v2/', // For testing purpose
-    url3: 'http://localhost:8080/api/v3/',
+    url3: 'http://localhost:8000/',
   },
   prefixUrl: '',
   environment: 'local',
