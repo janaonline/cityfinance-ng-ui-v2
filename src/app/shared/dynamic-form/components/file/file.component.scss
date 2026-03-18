@@ -1,7 +1,7 @@
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 
-.container {
+.file-dropzone {
   border: 1px dotted var(--clr-primary);
   background-color: rgba(250, 240, 230, 1);
   padding: 0.75rem;
@@ -10,100 +10,94 @@
   cursor: pointer;
   transition:
     background-color 0.3s,
-    border-color 0.3s;
+    border-color 0.3s,
+    transform 0.2s ease;
   border-radius: 10px;
-  position: relative;
-
-  input {
-    opacity: 0;
-    position: absolute;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-  }
 }
 
-.fileover {
-  animation: shake 1s;
+.file-dropzone.fileover {
+  // animation: file-dropzone-shake 0.45s ease-in-out infinite;
+  animation: file-dropzone-shake 1s;
   animation-iteration-count: infinite;
 }
 
-.button-view {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.button-view-toolbar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.file-dropzone[aria-disabled='true'] {
+  cursor: default;
 }
 
 .button-view-progress {
   width: min(16rem, 100%);
 }
 
-.files-list {
-  margin-top: 1rem;
+.single-file {
+  border: 1px dotted $secondary;
 
-  .file-list-title {
-    margin: 0 0 0.5rem 0;
-    font-weight: 600;
+  .file-icon {
+    width: 50px;
   }
 
-  .single-file {
-    display: flex;
-    padding: 0.5rem;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px dotted $secondary;
-    margin-bottom: 0.75rem;
+  .info {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
 
-    .delete {
-      display: flex;
-      margin-left: 0.5rem;
-      cursor: pointer;
-      align-self: flex-end;
-      background: transparent;
-      border: 0;
-      padding: 0;
-    }
+  .file-name {
+    margin: 0;
+    font-weight: 600;
+    word-break: break-word;
+  }
 
-    .file-icon {
-      width: 50px;
-    }
+  .size {
+    margin: 0;
+    font-size: 0.75rem;
+    color: $secondary;
+  }
 
-    display: flex;
-    flex-grow: 1;
-
-    .file-name {
-      margin: 0;
-      font-weight: 600;
-      word-break: break-word;
-    }
-
-    .size {
-      font-size: 0.75rem;
-      color: $secondary;
-      margin: 0;
-    }
-
-    .info {
-      width: 100%;
-    }
-
-    .upload-progress {
-      margin: 0.5rem 0;
-    }
+  .upload-progress {
+    margin: 0.5rem 0;
   }
 }
 
-/* Shake animation */
-@keyframes shake {
+.file-action-link:focus-visible,
+.file-icon-button:focus-visible,
+.file-dropzone:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.file-icon-button {
+  display: flex;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.verified-info {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(54, 160, 4, 1);
+  background: rgba(227, 249, 217, 1);
+  margin-top: 20px;
+}
+@keyframes file-dropzone-shake {
+  // 0%,
+  // 100% {
+  //   transform: translate3d(0, 0, 0);
+  // }
+
+  // 25% {
+  //   transform: translate3d(-1px, 0, 0);
+  // }
+
+  // 50% {
+  //   transform: translate3d(1px, -1px, 0);
+  // }
+
+  // 75% {
+  //   transform: translate3d(-1px, 0, 0);
+  // }
   0% {
     transform: translate(1px, 1px) rotate(0deg);
   }
@@ -147,12 +141,4 @@
   100% {
     transform: translate(1px, -2px) rotate(-1deg);
   }
-}
-
-.verified-info {
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid rgba(54, 160, 4, 1);
-  background: rgba(227, 249, 217, 1);
-  margin-top: 20px;
 }

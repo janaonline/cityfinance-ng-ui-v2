@@ -1,33 +1,66 @@
-import { HttpEventType } from '@angular/common/http';
+import { HttpEvent, HttpEventType } from '@angular/common/http';
 import {
+  ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
-  Input,
-  OnDestroy,
   OnInit,
-  ViewChild,
+  computed,
+  inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl, FormGroup } from '@angular/forms';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Subscription } from 'rxjs';
+import { filter, finalize, map, startWith, switchMap, tap } from 'rxjs';
 import Swal from 'sweetalert2';
 import { S3FileURLResponse } from '../../../../core/models/s3Responses/fileURLResponse';
 import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MaterialModule } from '../../../../material.module';
 import { FieldConfig, LegacyFileValue, UploadedFileValue } from '../../field.interface';
-import { FileIconComponent } from '../file-icon/file-icon.component';
+import { FileIconComponent, SupportedFileExtension } from '../file-icon/file-icon.component';
 import { DndDirective } from './dnd.directive';
 import { FileService } from './file.service';
 
 type FileParentFieldConfig = Pick<FieldConfig, 'readonly' | 'validations'>;
-type UploadableFileExtension = 'pdf' | 'xlsx' | 'xls' | 'docx' | 'doc' | 'txt';
-type FileMimeTypeMap = Readonly<Record<UploadableFileExtension, string>>;
+type StandaloneFileControl = FormControl<UploadedFileValue | LegacyFileValue>;
+// type SupportedFileExtension = 'pdf' | 'xlsx' | 'xls' | 'docx' | 'doc' | 'txt';
+type FileMimeTypeMap = Readonly<Record<SupportedFileExtension, string>>;
+type NormalizedStandaloneFileValue = Exclude<UploadedFileValue, null>;
+type ValidationSnapshot = Readonly<{
+  invalid: boolean;
+  dirty: boolean;
+  touched: boolean;
+}>;
+type UploadTarget = Readonly<{
+  uploadUrl: string;
+  storagePath: string;
+}>;
+type UploadedFileViewModel = Readonly<{
+  name: string;
+  url: string;
+  sizeLabel: string | null;
+  mimeType: string | null;
+}>;
+type DisplayFileState = Readonly<{
+  title: 'Selected file' | 'Uploaded file';
+  name: string;
+  sizeLabel: string | null;
+  previewUrl: string | null;
+  isUploading: boolean;
+  progress: number | null;
+}>;
+
+const DEFAULT_MAX_FILE_SIZE_MB = 20;
+const DEFAULT_UPLOAD_FOLDER = 'ulb/year/audited/ulbCode';
+const REQUIRED_VALIDATION_NAME = 'required';
 
 @Component({
   selector: 'app-file',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MaterialModule,
     DndDirective,
@@ -38,16 +71,13 @@ type FileMimeTypeMap = Readonly<Record<UploadableFileExtension, string>>;
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss',
 })
-export class FileComponent implements OnInit, OnDestroy {
+export class FileComponent implements OnInit {
   private static nextFileInputId = 0;
 
-  @Input() parentField?: FileParentFieldConfig;
-  @Input() field!: FieldConfig;
-  @Input() group!: FormGroup;
-
-  readonly showUploadedFileMessage = input(false);
-  readonly fileInputId = `file-drop-ref-${FileComponent.nextFileInputId++}`;
-  readonly fileTypes: FileMimeTypeMap = {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly fileService = inject(FileService);
+  private readonly utilityService = inject(UtilityService);
+  private readonly fileMimeTypes: FileMimeTypeMap = {
     pdf: 'application/pdf',
     xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     xls: 'application/vnd.ms-excel',
@@ -55,157 +85,226 @@ export class FileComponent implements OnInit, OnDestroy {
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     txt: 'text/plain',
   };
+  private readonly fileValueSnapshot = signal<unknown>(null);
+  private readonly validationSnapshot = signal<ValidationSnapshot>({
+    invalid: false,
+    dirty: false,
+    touched: false,
+  });
 
-  isUploading = false;
-  uploadProgress = signal(0);
+  readonly parentField = input<FileParentFieldConfig | undefined>(undefined);
+  readonly field = input.required<FieldConfig>();
+  readonly group = input.required<FormGroup>();
+  readonly showUploadedFileMessage = input(false);
+  readonly fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInputRef');
+  readonly fileInputId = `file-drop-ref-${FileComponent.nextFileInputId++}`;
+  readonly selectedFile = signal<File | null>(null);
+  readonly isUploading = signal(false);
+  readonly uploadProgress = signal(0);
 
-  s3Subscribe!: Subscription;
-  currentFile: File | null = null;
-  allowedFileTypeStr: string = '';
-  maxFileSize: number = 20;
-  uploadFolderName: string = `ulb/year/audited/ulbCode`;
-  readonly: boolean | undefined = false;
+  readonly standaloneFileControl = computed<StandaloneFileControl | null>(() => {
+    const control = this.group().get(this.field().key);
+    return control instanceof FormControl ? (control as StandaloneFileControl) : null;
+  });
 
-  validations: FieldConfig['validations'] = [];
-
-  constructor(
-    private fileService: FileService,
-    private utilityService: UtilityService,
-  ) {}
-
-  ngOnInit() {
-    this.allowedFileTypeStr =
-      this.field.allowedFileTypes
-        ?.map((extension) => this.getMimeTypeForExtension(extension))
-        ?.filter((mimeType): mimeType is string => !!mimeType)
-        ?.join(',') || '';
-    this.maxFileSize = this.field.maxFileSize || this.maxFileSize;
-    this.uploadFolderName = this.field.folderPath || this.uploadFolderName;
-    this.readonly = this.parentField?.readonly || this.field?.readonly;
-    this.validations = this.parentField?.validations || this.field?.validations || [];
-  }
-
-  ngOnDestroy(): void {
-    this.s3Subscribe?.unsubscribe();
-    this.resetUploadState();
-  }
-
-  get standaloneFileControl(): FormControl<UploadedFileValue | null> | null {
-    const control = this.group.get(this.field.key);
-    return control instanceof FormControl
-      ? (control as FormControl<UploadedFileValue | null>)
-      : null;
-  }
-
-  get legacyFileGroup(): FormGroup | null {
-    if (this.standaloneFileControl) {
+  // xvifc-data-collection form (year-wise upload section)
+  readonly legacyFileGroup = computed<FormGroup | null>(() => {
+    if (this.standaloneFileControl()) {
       return null;
     }
 
-    const control = this.group.get('file');
+    const control = this.group().get('file');
     return control instanceof FormGroup ? control : null;
-  }
+  });
 
-  get uploadedFile(): LegacyFileValue | null {
-    if (this.legacyFileGroup) {
-      const fileValue = this.legacyFileGroup.getRawValue() as LegacyFileValue;
-      return this.hasUploadedFileValue(fileValue) ? fileValue : null;
+  readonly fileValueControl = computed<AbstractControl | null>(
+    () => this.standaloneFileControl() ?? this.legacyFileGroup(),
+  );
+
+  readonly validationControl = computed<AbstractControl | null>(
+    () => this.legacyFileGroup()?.get('name') ?? this.standaloneFileControl(),
+  );
+
+  readonly validations = computed(
+    () => this.parentField()?.validations ?? this.field().validations ?? [],
+  );
+
+  readonly isReadonly = computed(
+    () => this.parentField()?.readonly ?? this.field().readonly ?? false,
+  );
+
+  readonly isButtonView = computed(() => this.field().fileViewType === 'button');
+
+  readonly allowedFileTypeStr = computed(() => {
+    const allowedFileTypes = this.field().allowedFileTypes ?? [];
+    return allowedFileTypes
+      .map((extension) => this.getMimeTypeForExtension(extension))
+      .filter((mimeType): mimeType is string => mimeType !== undefined)
+      .join(',');
+  });
+
+  readonly maxFileSize = computed(() => this.field().maxFileSize ?? DEFAULT_MAX_FILE_SIZE_MB);
+
+  readonly uploadFolderName = computed(() => this.field().folderPath ?? DEFAULT_UPLOAD_FOLDER);
+
+  readonly showStandaloneLabel = computed(
+    () => !!this.standaloneFileControl() && !!this.getNonEmptyString(this.field().label),
+  );
+
+  readonly fieldLabel = computed(() => {
+    const field = this.field();
+    return `${field.position ? `${field.position}. ` : ''}${field.label}`;
+  });
+
+  readonly uploadPromptLabel = computed(() =>
+    this.showStandaloneLabel() ? 'Upload file' : 'Upload consolidated PDF',
+  );
+
+  readonly uploadedFile = computed<UploadedFileViewModel | null>(() => {
+    if (this.standaloneFileControl()) {
+      const standaloneValue = this.normalizeStandaloneValue(this.fileValueSnapshot());
+      if (!standaloneValue) {
+        return null;
+      }
+
+      return {
+        name: standaloneValue.fileName,
+        url: standaloneValue.fileUrl,
+        sizeLabel:
+          standaloneValue.fileSize === null ? null : this.formatBytes(standaloneValue.fileSize),
+        mimeType: standaloneValue.mimeType ?? null,
+      };
     }
 
-    const fileValue = this.normalizeStandaloneValue(this.standaloneFileControl?.value ?? null);
-    if (!fileValue) {
+    return this.normalizeLegacyValue(this.fileValueSnapshot());
+  });
+
+  readonly hasUploadedFile = computed(() => !!this.uploadedFile());
+
+  readonly previewUrl = computed(() => {
+    if (this.isUploading()) {
       return null;
     }
 
-    const fileSize = Number(fileValue.fileSize);
+    return this.getNonEmptyString(this.uploadedFile()?.url);
+  });
+
+  readonly currentFileSize = computed(() => {
+    const file = this.selectedFile();
+    return file ? this.formatBytes(file.size) : null;
+  });
+
+  readonly canSelectFile = computed(() => !this.isReadonly() && !this.isUploading());
+
+  readonly canRemoveFile = computed(
+    () => !this.isReadonly() && !this.isUploading() && this.hasUploadedFile(),
+  );
+
+  readonly showUploadProgress = computed(() => this.isUploading() && !!this.selectedFile());
+
+  readonly showButtonUploadedState = computed(
+    () => this.hasUploadedFile() && !this.showUploadProgress(),
+  );
+
+  readonly displayFile = computed<DisplayFileState | null>(() => {
+    const selectedFile = this.selectedFile();
+    if (this.isUploading() && selectedFile) {
+      return {
+        title: 'Selected file',
+        name: selectedFile.name,
+        sizeLabel: this.currentFileSize(),
+        previewUrl: null,
+        isUploading: true,
+        progress: this.uploadProgress(),
+      };
+    }
+
+    const uploadedFile = this.uploadedFile();
+    if (!uploadedFile) {
+      return null;
+    }
 
     return {
-      name: fileValue.fileName,
-      url: fileValue.fileUrl,
-      size: fileValue.fileSize === null ? null : this.formatBytes(fileSize),
-      ...(fileValue.mimeType ? { mimeType: fileValue.mimeType } : {}),
+      title: 'Uploaded file',
+      name: uploadedFile.name,
+      sizeLabel: uploadedFile.sizeLabel,
+      previewUrl: this.previewUrl(),
+      isUploading: false,
+      progress: null,
     };
-  }
+  });
 
-  get showStandaloneLabel(): boolean {
-    return !!this.standaloneFileControl && !!this.field?.label;
-  }
+  readonly shouldShowUploadedFileMessage = computed(
+    () => !!this.uploadedFile() && this.showUploadedFileMessage(),
+  );
 
-  get isButtonView(): boolean {
-    return this.field.fileViewType === 'button';
-  }
+  readonly showError = computed(() => {
+    const validationSnapshot = this.validationSnapshot();
+    return validationSnapshot.invalid && (validationSnapshot.dirty || validationSnapshot.touched);
+  });
 
-  get uploadPromptLabel(): string {
-    return this.showStandaloneLabel ? 'Upload file' : 'Upload consolidated PDF';
-  }
+  readonly errorMessage = computed(
+    () =>
+      this.validations().find((validation) => validation.name === REQUIRED_VALIDATION_NAME)
+        ?.message ?? 'This field is required.',
+  );
 
-  get hasUploadedFile(): boolean {
-    return !!this.uploadedFile;
-  }
-
-  get showButtonUploadedState(): boolean {
-    return this.hasUploadedFile && !this.showUploadProgress;
-  }
-
-  get showUploadProgress(): boolean {
-    return this.isUploading && !!this.currentFile;
-  }
-
-  get currentFileSize(): string | null {
-    return this.currentFile ? this.formatBytes(this.currentFile.size) : null;
-  }
-
-  get previewUrl(): string | null {
-    if (!this.uploadedFile?.url || this.field.uploading || this.isUploading) {
-      return null;
+  readonly liveRegionMessage = computed(() => {
+    const displayFile = this.displayFile();
+    if (displayFile?.isUploading) {
+      return `Uploading ${displayFile.name}. ${displayFile.progress ?? 0} percent complete.`;
     }
 
-    return this.uploadedFile.url;
+    if (this.shouldShowUploadedFileMessage()) {
+      return 'File uploaded successfully.';
+    }
+
+    if (this.showError()) {
+      return this.errorMessage();
+    }
+
+    return '';
+  });
+
+  public ngOnInit(): void {
+    this.bindFileValueState();
+    this.bindValidationState();
   }
 
-  get shouldShowUploadedFileMessage(): boolean {
-    return !!this.uploadedFile && this.showUploadedFileMessage();
-  }
-
-  get fileNameControl(): AbstractControl | null {
-    return this.legacyFileGroup?.get('name') ?? this.standaloneFileControl;
-  }
-
-  get showError(): boolean {
-    const control = this.fileNameControl;
-    return !!control && control.invalid && (control.dirty || control.touched);
-  }
-
-  get errorMessage(): string {
-    return (
-      this.validations?.find((validation) => validation.name === 'required')?.message ||
-      'This field is required.'
-    );
-  }
-
-  @ViewChild('fileDropRef', { static: false }) fileDropRef!: ElementRef<HTMLInputElement>;
-  resetFileInput() {
-    if (this.fileDropRef?.nativeElement) {
-      this.fileDropRef.nativeElement.value = '';
+  public resetFileInput(): void {
+    const fileInput = this.fileInputRef()?.nativeElement;
+    if (fileInput) {
+      fileInput.value = '';
     }
   }
 
-  openFileBrowser(): void {
+  public openFileBrowser(): void {
+    if (!this.canSelectFile()) {
+      return;
+    }
+
     this.resetFileInput();
-    this.fileDropRef?.nativeElement.click();
+    this.fileInputRef()?.nativeElement.click();
   }
 
-  /**
-   * on file drop handler
-   */
-  onFileDropped($event: FileList) {
-    this.prepareFilesList($event);
+  public onDropzoneKeydown(event: KeyboardEvent): void {
+    if (!this.canSelectFile()) {
+      return;
+    }
+
+    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') {
+      return;
+    }
+
+    event.preventDefault();
+    this.openFileBrowser();
   }
 
-  /**
-   * handle file from browsing
-   */
-  fileBrowseHandler(event: Event) {
+  public onFileDropped(files: FileList): void {
+    this.prepareFilesList(files);
+  }
+
+  public fileBrowseHandler(event: Event): void {
     const target = event.target;
     if (!(target instanceof HTMLInputElement)) {
       return;
@@ -214,70 +313,75 @@ export class FileComponent implements OnInit, OnDestroy {
     this.prepareFilesList(target.files);
   }
 
-  /**
-   * Delete file from files list
-   * @param index (File index)
-   */
-  deleteFile() {
+  public deleteFile(): void {
+    if (!this.canRemoveFile()) {
+      return;
+    }
+
     this.resetFileInput();
-    this.s3Subscribe?.unsubscribe();
-    this.currentFile = null;
     this.resetUploadState();
 
-    if (this.legacyFileGroup) {
-      this.legacyFileGroup.reset();
-      this.legacyFileGroup.markAllAsTouched();
-      this.legacyFileGroup.markAsDirty();
-      this.legacyFileGroup.updateValueAndValidity();
+    const legacyFileGroup = this.legacyFileGroup();
+    if (legacyFileGroup) {
+      legacyFileGroup.reset();
+      legacyFileGroup.markAllAsTouched();
+      legacyFileGroup.markAsDirty();
+      legacyFileGroup.updateValueAndValidity();
       return;
     }
 
-    this.standaloneFileControl?.setValue(null);
-    this.standaloneFileControl?.markAsTouched();
-    this.standaloneFileControl?.markAsDirty();
-    this.standaloneFileControl?.updateValueAndValidity();
+    const standaloneControl = this.standaloneFileControl();
+    standaloneControl?.setValue(null);
+    standaloneControl?.markAsTouched();
+    standaloneControl?.markAsDirty();
+    standaloneControl?.updateValueAndValidity();
   }
 
-  /**
-   * Convert Files list to normal array list
-   * @param files (Files List)
-   */
-  prepareFilesList(files: FileList | null) {
-    if (!files?.length || !files[0]) return;
-
-    this.s3Subscribe?.unsubscribe();
-    this.resetUploadState();
-
-    if (!this.isValidFile(files[0])) {
+  public prepareFilesList(files: FileList | null): void {
+    if (!this.canSelectFile()) {
       return;
     }
-    this.currentFile = files[0];
 
-    // this.uploadFilesSimulator(0);
-    this.uploadFileToS3();
+    const file = files?.item(0);
+    if (!file) {
+      return;
+    }
+
+    if (!this.isValidFile(file)) {
+      this.resetFileInput();
+      return;
+    }
+
+    this.uploadFile(file);
   }
 
-  isValidFile(file: File): boolean {
-    if (!file) return false;
-
+  public isValidFile(file: File): boolean {
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const allowedFileTypes = this.field.allowedFileTypes?.map((type) => type.toLowerCase());
-    if (allowedFileTypes?.length && (!fileExtension || !allowedFileTypes.includes(fileExtension))) {
+    const allowedFileTypes = this.field().allowedFileTypes?.map((type) => type.toLowerCase()) ?? [];
+
+    if (
+      allowedFileTypes.length > 0 &&
+      (!fileExtension || !allowedFileTypes.includes(fileExtension))
+    ) {
       Swal.fire(
         'Error',
-        `Allowed file extensions: ${this.field.allowedFileTypes?.join(', ')}`,
+        `Allowed file extensions: ${this.field().allowedFileTypes?.join(', ')}`,
         'error',
       );
       return false;
     }
 
-    if (file.size / 1024 / 1024 > this.maxFileSize) {
-      Swal.fire('File Limit Error', `Maximum ${this.maxFileSize} mb file can be allowed.`, 'error');
+    if (file.size / 1024 / 1024 > this.maxFileSize()) {
+      Swal.fire(
+        'File Limit Error',
+        `Maximum ${this.maxFileSize()} mb file can be allowed.`,
+        'error',
+      );
       return false;
     }
 
-    const isfileValid = this.fileService.checkSpcialCharInFileName(file);
-    if (isfileValid == false) {
+    const hasValidFileName = this.fileService.checkSpcialCharInFileName(file);
+    if (!hasValidFileName) {
       Swal.fire(
         'Error',
         'File name has special characters ~`!#$%^&*+=[]\\\';,/{}|":<>?@ \nThese are not allowed in file name,please edit file name then upload.\n',
@@ -289,94 +393,72 @@ export class FileComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  uploadFileToS3() {
-    // if (reset) return control.patchValue({ uploading: false, name: '', url: '' });
-    if (!this.currentFile) return;
-    const file = this.currentFile;
+  private bindFileValueState(): void {
+    const source = this.fileValueControl();
+    this.fileValueSnapshot.set(this.readControlValue(source));
 
-    // control.patchValue({ uploading: true });
-    this.field.uploading = true;
-    this.s3Subscribe = this.fileService
-      .newGetURLForFileUpload(file.name, file.type, this.uploadFolderName)
-      .subscribe({
-        next: (s3Response: S3FileURLResponse) => {
-          const { url, path } = s3Response.data[0];
-          this.startUpload();
-          this.s3Subscribe = this.fileService.newUploadFileToS3(file, url).subscribe({
-            next: (res) => {
-              if (res.type === HttpEventType.UploadProgress) {
-                this.updateUploadProgress(res.loaded, res.total);
-                return;
-              }
-
-              if (res.type !== HttpEventType.Response) {
-                return;
-              }
-
-              this.currentFile = null;
-              this.resetUploadState();
-              this.patchUploadedFileValue({
-                fileName: file.name,
-                fileUrl: path,
-                fileSize: file.size,
-                ...(file.type ? { mimeType: file.type } : {}),
-              });
-            },
-            error: () => {
-              this.handleUploadFailure();
-            },
-          });
-        },
-        error: () => {
-          this.handleUploadFailure();
-        },
-      });
-    return;
-  }
-
-  private getMimeTypeForExtension(extension: string): string | undefined {
-    const normalizedExtension = extension.toLowerCase();
-    if (!this.isSupportedFileExtension(normalizedExtension)) {
-      return undefined;
-    }
-
-    return this.fileTypes[normalizedExtension];
-  }
-
-  private isSupportedFileExtension(
-    extension: string | undefined,
-  ): extension is UploadableFileExtension {
-    return !!extension && extension in this.fileTypes;
-  }
-
-  private patchUploadedFileValue(fileValue: Exclude<UploadedFileValue, null>): void {
-    if (this.legacyFileGroup) {
-      this.legacyFileGroup.patchValue({
-        name: fileValue.fileName,
-        url: fileValue.fileUrl,
-        size: this.formatBytes(fileValue.fileSize ?? 0),
-      });
-      this.legacyFileGroup.get('name')?.markAsTouched();
-      this.legacyFileGroup.markAsDirty();
-      this.legacyFileGroup.updateValueAndValidity();
-      this.uploadSuccessful();
+    if (!source) {
       return;
     }
 
-    this.standaloneFileControl?.setValue(fileValue);
-    this.standaloneFileControl?.markAsTouched();
-    this.standaloneFileControl?.markAsDirty();
-    this.standaloneFileControl?.updateValueAndValidity();
-    this.uploadSuccessful();
+    source.events
+      .pipe(startWith(null), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.fileValueSnapshot.set(this.readControlValue(source)));
   }
 
-  private uploadSuccessful() {
-    this.utilityService.triggerSnackbar('File attached successfully!');
+  private bindValidationState(): void {
+    const control = this.validationControl();
+    this.validationSnapshot.set(this.createValidationSnapshot(control));
+
+    if (!control) {
+      return;
+    }
+
+    control.events
+      .pipe(startWith(null), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.validationSnapshot.set(this.createValidationSnapshot(control)));
   }
 
-  private startUpload(): void {
-    this.isUploading = true;
+  private uploadFile(file: File): void {
+    this.startUpload(file);
+
+    this.fileService
+      .newGetURLForFileUpload(file.name, file.type, this.uploadFolderName())
+      .pipe(
+        map((response) => this.resolveUploadTarget(response)),
+        switchMap((uploadTarget) =>
+          this.fileService.newUploadFileToS3(file, uploadTarget.uploadUrl).pipe(
+            tap((event) => this.handleUploadEvent(event)),
+            filter((event) => event.type === HttpEventType.Response),
+            map(() => this.createUploadedFileValue(file, uploadTarget.storagePath)),
+          ),
+        ),
+        finalize(() => this.resetUploadState()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (uploadedFileValue) => {
+          this.patchUploadedFileValue(uploadedFileValue);
+          this.uploadSuccessful();
+        },
+        error: (error: unknown) => {
+          this.handleUploadFailure(error);
+        },
+      });
+  }
+
+  private startUpload(file: File): void {
+    this.selectedFile.set(file);
+    this.isUploading.set(true);
     this.uploadProgress.set(0);
+  }
+
+  private handleUploadEvent(event: HttpEvent<unknown>): void {
+    if (event.type !== HttpEventType.UploadProgress) {
+      return;
+    }
+
+    this.updateUploadProgress(event.loaded, event.total);
   }
 
   private updateUploadProgress(loaded: number, total?: number): void {
@@ -391,37 +473,119 @@ export class FileComponent implements OnInit, OnDestroy {
   }
 
   private resetUploadState(): void {
-    this.isUploading = false;
+    this.selectedFile.set(null);
+    this.isUploading.set(false);
     this.uploadProgress.set(0);
-    this.field.uploading = false;
   }
 
-  private handleUploadFailure(): void {
-    this.currentFile = null;
-    this.resetUploadState();
-    console.error('Failed to upload to file!');
+  private handleUploadFailure(error: unknown): void {
+    console.error('Failed to upload file.', error);
     this.utilityService.triggerSnackbar('Failed to upload file!', 'snackbar-danger');
   }
 
-  private normalizeStandaloneValue(value: unknown): UploadedFileValue {
+  private resolveUploadTarget(response: S3FileURLResponse): UploadTarget {
+    const uploadTarget = response.data?.[0];
+    const uploadUrl = this.getNonEmptyString(uploadTarget?.url);
+    const storagePath = this.getNonEmptyString(uploadTarget?.path);
+
+    if (!uploadUrl || !storagePath) {
+      throw new Error('Upload URL response is missing upload url or storage path.');
+    }
+
+    return { uploadUrl, storagePath };
+  }
+
+  private createUploadedFileValue(
+    file: File,
+    storagePath: string,
+  ): Exclude<UploadedFileValue, null> {
+    return {
+      fileName: file.name,
+      fileUrl: storagePath,
+      fileSize: file.size,
+      ...(file.type ? { mimeType: file.type } : {}),
+    };
+  }
+
+  private patchUploadedFileValue(fileValue: Exclude<UploadedFileValue, null>): void {
+    const legacyFileGroup = this.legacyFileGroup();
+    if (legacyFileGroup) {
+      legacyFileGroup.patchValue({
+        name: fileValue.fileName,
+        url: fileValue.fileUrl,
+        size: fileValue.fileSize === null ? null : this.formatBytes(fileValue.fileSize),
+      });
+      legacyFileGroup.get('name')?.markAsTouched();
+      legacyFileGroup.markAsDirty();
+      legacyFileGroup.updateValueAndValidity();
+      return;
+    }
+
+    const standaloneControl = this.standaloneFileControl();
+    standaloneControl?.setValue(fileValue);
+    standaloneControl?.markAsTouched();
+    standaloneControl?.markAsDirty();
+    standaloneControl?.updateValueAndValidity();
+  }
+
+  private uploadSuccessful(): void {
+    this.utilityService.triggerSnackbar('File attached successfully!');
+  }
+
+  private readControlValue(control: AbstractControl | null): unknown {
+    if (!control) {
+      return null;
+    }
+
+    return control instanceof FormGroup ? control.getRawValue() : control.value;
+  }
+
+  private createValidationSnapshot(control: AbstractControl | null): ValidationSnapshot {
+    if (!control) {
+      return {
+        invalid: false,
+        dirty: false,
+        touched: false,
+      };
+    }
+
+    return {
+      invalid: control.invalid,
+      dirty: control.dirty,
+      touched: control.touched,
+    };
+  }
+
+  private getMimeTypeForExtension(extension: string): string | undefined {
+    const normalizedExtension = extension.toLowerCase();
+    return this.isSupportedFileExtension(normalizedExtension)
+      ? this.fileMimeTypes[normalizedExtension]
+      : undefined;
+  }
+
+  private isSupportedFileExtension(
+    extension: string | undefined,
+  ): extension is SupportedFileExtension {
+    return !!extension && extension in this.fileMimeTypes;
+  }
+
+  private normalizeStandaloneValue(value: unknown): NormalizedStandaloneFileValue | null {
     if (!value || typeof value !== 'object') {
       return null;
     }
 
+    const rawValue = value as Record<string, unknown>;
     const fileName =
-      this.getNonEmptyString((value as Record<string, unknown>)['fileName']) ??
-      this.getNonEmptyString((value as Record<string, unknown>)['name']);
+      this.getNonEmptyString(rawValue['fileName']) ?? this.getNonEmptyString(rawValue['name']);
     const fileUrl =
-      this.getNonEmptyString((value as Record<string, unknown>)['fileUrl']) ??
-      this.getNonEmptyString((value as Record<string, unknown>)['url']);
-    const fileSize = this.normalizeFileSize(
-      (value as Record<string, unknown>)['fileSize'] ?? (value as Record<string, unknown>)['size'],
-    );
-    const mimeType = this.getNonEmptyString((value as Record<string, unknown>)['mimeType']);
+      this.getNonEmptyString(rawValue['fileUrl']) ?? this.getNonEmptyString(rawValue['url']);
 
-    if (!fileName && !fileUrl && fileSize === null && !mimeType) {
+    if (!fileName && !fileUrl) {
       return null;
     }
+
+    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
+    const mimeType = this.getNonEmptyString(rawValue['mimeType']);
 
     return {
       fileName: fileName ?? this.getFileNameFromUrl(fileUrl),
@@ -431,8 +595,27 @@ export class FileComponent implements OnInit, OnDestroy {
     };
   }
 
-  private hasUploadedFileValue(fileValue: LegacyFileValue | null): boolean {
-    return !!fileValue?.name || !!fileValue?.url;
+  private normalizeLegacyValue(value: unknown): UploadedFileViewModel | null {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const rawValue = value as Record<string, unknown>;
+    const fileName =
+      this.getNonEmptyString(rawValue['name']) ?? this.getNonEmptyString(rawValue['fileName']);
+    const fileUrl =
+      this.getNonEmptyString(rawValue['url']) ?? this.getNonEmptyString(rawValue['fileUrl']);
+
+    if (!fileName && !fileUrl) {
+      return null;
+    }
+
+    return {
+      name: fileName ?? this.getFileNameFromUrl(fileUrl),
+      url: fileUrl ?? '',
+      sizeLabel: this.normalizeFileSizeLabel(rawValue['size'] ?? rawValue['fileSize']),
+      mimeType: this.getNonEmptyString(rawValue['mimeType']),
+    };
   }
 
   private getNonEmptyString(value: unknown): string | null {
@@ -440,31 +623,52 @@ export class FileComponent implements OnInit, OnDestroy {
   }
 
   private normalizeFileSize(value: unknown): number | null {
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return value;
+    }
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalizedValue = value.trim();
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const numericValue = Number(normalizedValue);
+    return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
   }
 
-  private getFileNameFromUrl(fileUrl: string | null): string {
+  private normalizeFileSizeLabel(value: unknown): string | null {
+    const normalizedFileSize = this.normalizeFileSize(value);
+    if (normalizedFileSize !== null) {
+      return this.formatBytes(normalizedFileSize);
+    }
+
+    return this.getNonEmptyString(value);
+  }
+
+  private getFileNameFromUrl(fileUrl: string | null | undefined): string {
     if (!fileUrl) {
       return '';
     }
 
-    const segments = fileUrl.split('/');
+    const pathSegment = fileUrl.split(/[?#]/)[0];
+    const segments = pathSegment.split('/');
     return segments[segments.length - 1] ?? '';
   }
 
-  /**
-   * format bytes
-   * @param bytes (File size in bytes)
-   * @param decimals (Decimals point)
-   */
-  formatBytes(bytes: number, decimals: number = 0) {
-    if (bytes === 0) {
+  private formatBytes(bytes: number, decimals: number = 0): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
       return '0 Bytes';
     }
+
     const k = 1024;
-    const dm = decimals <= 0 ? 0 : decimals || 2;
+    const dm = decimals > 0 ? decimals : 0;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   }
 }

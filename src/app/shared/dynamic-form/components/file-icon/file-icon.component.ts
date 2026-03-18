@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 
 const SUPPORTED_FILE_EXTENSIONS = ['pdf', 'xlsx', 'xls', 'doc', 'docx', 'txt'] as const;
 
-type SupportedFileExtension = (typeof SUPPORTED_FILE_EXTENSIONS)[number];
+export type SupportedFileExtension = (typeof SUPPORTED_FILE_EXTENSIONS)[number];
 type ResolvedFileExtension = SupportedFileExtension | 'unknown';
 type FileIconConfig = Readonly<{
   iconClass: string;
