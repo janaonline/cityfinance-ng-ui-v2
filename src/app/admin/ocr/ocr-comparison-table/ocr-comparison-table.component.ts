@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { MaterialModule } from '../../../material.module';
-import { OcrEngineConfidence, OcrResponse } from '../upload-file-ocr/ocr-response';
+import {
+  OcrEngineConfidence,
+  OcrMatchSummary,
+  OcrResponse,
+} from '../upload-file-ocr/ocr-response';
 
 interface OcrComparisonRow {
   engine: string;
@@ -12,6 +16,7 @@ interface OcrComparisonRow {
   ulbName: string;
   pageCount: string;
   confidence: string;
+  matchSummary: string[];
   issues: string;
   ocrDuration: string;
   validationDuration: string;
@@ -73,6 +78,7 @@ export class OcrComparisonTableComponent {
       ulbName: this.formatValue(engine.result?.ulb_name),
       pageCount: this.formatValue(engine.page_count),
       confidence: this.formatConfidence(engine.result?.confidence),
+      matchSummary: this.formatMatchSummary(engine.match_summary),
       issues: this.formatIssues(engine.result?.issues),
       ocrDuration: this.formatDuration(engine.timing?.ocr_duration_seconds),
       validationDuration: this.formatDuration(engine.timing?.validation_duration_seconds),
@@ -119,6 +125,65 @@ export class OcrComparisonTableComponent {
     return `Doc: ${this.formatPercent(confidence.doc_type)} | FY: ${this.formatPercent(confidence.fy)} | ULB: ${this.formatPercent(confidence.ulb)}`;
   }
 
+  private formatMatchSummary(matchSummary?: OcrMatchSummary): string[] {
+    if (!matchSummary) {
+      return ['-'];
+    }
+
+    const lines: string[] = [];
+
+    if (matchSummary.overall_match !== undefined) {
+      lines.push(`Overall: ${this.formatMatchValue(matchSummary.overall_match)}`);
+    }
+
+    if (matchSummary.doc_type) {
+      lines.push(
+        `Doc: ${this.formatMatchField(
+          matchSummary.doc_type.expected,
+          matchSummary.doc_type.extracted,
+          matchSummary.doc_type.match,
+        )}`,
+      );
+    }
+
+    if (matchSummary.fy) {
+      lines.push(
+        `FY: ${this.formatMatchField(
+          matchSummary.fy.expected,
+          matchSummary.fy.extracted,
+          matchSummary.fy.match,
+        )}`,
+      );
+    }
+
+    if (matchSummary.ulb_name) {
+      lines.push(
+        `ULB: ${this.formatMatchField(
+          matchSummary.ulb_name.expected,
+          matchSummary.ulb_name.extracted,
+          matchSummary.ulb_name.match,
+        )}`,
+      );
+    }
+
+    if (matchSummary.table_exists) {
+      const tableSummary = this.formatMatchField(
+        matchSummary.table_exists.expected,
+        matchSummary.table_exists.extracted,
+        matchSummary.table_exists.match,
+      );
+      const tableCount =
+        matchSummary.table_exists.table_count !== null &&
+        matchSummary.table_exists.table_count !== undefined
+          ? `, Count: ${matchSummary.table_exists.table_count}`
+          : '';
+
+      lines.push(`Table: ${tableSummary}${tableCount}`);
+    }
+
+    return lines.length > 0 ? lines : ['-'];
+  }
+
   private formatIssues(issues?: string[]): string {
     return issues && issues.length > 0 ? issues.join(', ') : 'None';
   }
@@ -133,6 +198,28 @@ export class OcrComparisonTableComponent {
     }
 
     return `${(value * 100).toFixed(0)}%`;
+  }
+
+  private formatMatchField(
+    expected?: string | boolean | number | null,
+    extracted?: string | boolean | number | null,
+    match?: boolean | null,
+  ): string {
+    return `Expected ${this.formatValue(expected)}, Got ${this.formatValue(
+      extracted,
+    )}, Match ${this.formatMatchValue(match)}`;
+  }
+
+  private formatMatchValue(value?: boolean | null): string {
+    if (value === true) {
+      return 'Yes';
+    }
+
+    if (value === false) {
+      return 'No';
+    }
+
+    return '-';
   }
 
   private formatDateTime(value?: string | null): string {

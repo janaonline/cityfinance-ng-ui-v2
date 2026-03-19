@@ -42,6 +42,7 @@
           <th>ULB Name</th>
           <th>Pages</th>
           <th>Confidence</th>
+          <th>Match Summary</th>
           <th>Issues</th>
           <th>OCR Time</th>
           <th>Validation Time</th>
@@ -62,6 +63,11 @@
             <td>{{ row.ulbName }}</td>
             <td>{{ row.pageCount }}</td>
             <td>{{ row.confidence }}</td>
+            <td>
+              @for (line of row.matchSummary; track line) {
+                <div>{{ line }}</div>
+              }
+            </td>
             <td>{{ row.issues }}</td>
             <td>{{ row.ocrDuration }}</td>
             <td>{{ row.validationDuration }}</td>
