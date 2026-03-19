@@ -40,16 +40,16 @@ export class OcrService {
   ) {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('Document_type_ID', documentTypeId);
-    formData.append('financialYear', financialYear);
+    formData.append('doc_type', documentTypeId);
+    formData.append('financial_year', financialYear);
     formData.append('ocr_method', ocrMethod);
 
     if (ulb?._id) {
-      formData.append('ulbId', ulb._id);
+      formData.append('ulb_id', ulb._id);
     }
 
     if (ulb?.name) {
-      formData.append('ulbName', ulb.name);
+      formData.append('ulb_name', ulb.name);
     }
 
     return this.http.post(
@@ -60,11 +60,11 @@ export class OcrService {
 
   getOcrDetails(params: { jobId?: string; filename?: string; ocrMethod: string }) {
     const queryParams: Record<string, string> = {
-      ocrMethod: params.ocrMethod,
+      ocr_method: params.ocrMethod,
     };
 
     if (params.jobId) {
-      queryParams['jobId'] = params.jobId;
+      queryParams['job_id'] = params.jobId;
     }
 
     if (params.filename) {
