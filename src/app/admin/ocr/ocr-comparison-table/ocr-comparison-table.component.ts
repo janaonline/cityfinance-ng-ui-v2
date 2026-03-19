@@ -3,24 +3,29 @@ import { Component, computed, input } from '@angular/core';
 import { MaterialModule } from '../../../material.module';
 import {
   OcrEngineConfidence,
-  OcrMatchSummary,
+  OcrMatchSummaryField,
   OcrResponse,
 } from '../upload-file-ocr/ocr-response';
+
+interface OcrMatchCell {
+  expected: string;
+  extracted: string;
+  matched: string;
+  extra?: string;
+}
 
 interface OcrComparisonRow {
   engine: string;
   status: string;
-  docType: string;
-  financialYear: string;
+  docType: OcrMatchCell;
+  financialYear: OcrMatchCell;
   asOnDate: string;
-  ulbName: string;
+  ulbName: OcrMatchCell;
+  table: OcrMatchCell;
   pageCount: string;
   confidence: string;
-  matchSummary: string[];
   issues: string;
-  ocrDuration: string;
-  validationDuration: string;
-  excelDuration: string;
+  timings: string[];
   ocrUrl: string | null;
   excelUrl: string | null;
 }
@@ -47,10 +52,10 @@ export class OcrComparisonTableComponent {
     return [
       { label: 'File Name', value: this.formatValue(response.filename), fullWidth: true },
       { label: 'Job ID', value: this.formatValue(response.job_id) },
-      { label: 'Overall Status', value: this.formatValue(response.status) },
+      { label: 'Job Status', value: this.formatValue(response.status) },
       { label: 'OCR Method', value: this.formatValue(response.ocr_method) },
       { label: 'Created At', value: this.formatDateTime(response.created_at) },
-      { label: 'Updated At', value: this.formatDateTime(response.updated_at) },
+      // { label: 'Updated At', value: this.formatDateTime(response.updated_at) },
       {
         label: 'Total Duration',
         value: this.formatDuration(response.timing?.total_duration_seconds),
@@ -72,17 +77,19 @@ export class OcrComparisonTableComponent {
     return Object.entries(response.engines).map(([engineName, engine]) => ({
       engine: this.toTitleCase(engineName),
       status: this.formatValue(engine.status),
-      docType: this.formatValue(engine.result?.doc_type),
-      financialYear: this.formatValue(engine.result?.fy),
+      docType: this.toMatchCell(engine.match_summary?.doc_type),
+      financialYear: this.toMatchCell(engine.match_summary?.fy),
       asOnDate: this.formatValue(engine.result?.as_on_date),
-      ulbName: this.formatValue(engine.result?.ulb_name),
+      ulbName: this.toMatchCell(engine.match_summary?.ulb_name),
+      table: this.toMatchCell(engine.match_summary?.table_exists, true),
       pageCount: this.formatValue(engine.page_count),
       confidence: this.formatConfidence(engine.result?.confidence),
-      matchSummary: this.formatMatchSummary(engine.match_summary),
       issues: this.formatIssues(engine.result?.issues),
-      ocrDuration: this.formatDuration(engine.timing?.ocr_duration_seconds),
-      validationDuration: this.formatDuration(engine.timing?.validation_duration_seconds),
-      excelDuration: this.formatDuration(engine.timing?.excel_duration_seconds),
+      timings: this.formatTimings(
+        engine.timing?.ocr_duration_seconds,
+        engine.timing?.validation_duration_seconds,
+        engine.timing?.excel_duration_seconds,
+      ),
       ocrUrl: engine.ocr_url ? this.removeSignedInfo(engine.ocr_url) : null,
       excelUrl: engine.excel_url ? this.removeSignedInfo(engine.excel_url) : null,
     }));
@@ -113,6 +120,18 @@ export class OcrComparisonTableComponent {
       : 'badge rounded-pill text-bg-danger text-capitalize fw-semibold px-2 py-1 small';
   }
 
+  getMatchClass(value: string): string {
+    if (value === 'Matched') {
+      return 'match-badge match-badge--success';
+    }
+
+    if (value === 'Not Matched') {
+      return 'match-badge match-badge--danger';
+    }
+
+    return 'match-badge match-badge--neutral';
+  }
+
   private formatValue(value: string | number | boolean | null | undefined): string {
     return value === null || value === undefined || value === '' ? '-' : String(value);
   }
@@ -125,71 +144,24 @@ export class OcrComparisonTableComponent {
     return `Doc: ${this.formatPercent(confidence.doc_type)} | FY: ${this.formatPercent(confidence.fy)} | ULB: ${this.formatPercent(confidence.ulb)}`;
   }
 
-  private formatMatchSummary(matchSummary?: OcrMatchSummary): string[] {
-    if (!matchSummary) {
-      return ['-'];
-    }
-
-    const lines: string[] = [];
-
-    if (matchSummary.overall_match !== undefined) {
-      lines.push(`Overall: ${this.formatMatchValue(matchSummary.overall_match)}`);
-    }
-
-    if (matchSummary.doc_type) {
-      lines.push(
-        `Doc: ${this.formatMatchField(
-          matchSummary.doc_type.expected,
-          matchSummary.doc_type.extracted,
-          matchSummary.doc_type.match,
-        )}`,
-      );
-    }
-
-    if (matchSummary.fy) {
-      lines.push(
-        `FY: ${this.formatMatchField(
-          matchSummary.fy.expected,
-          matchSummary.fy.extracted,
-          matchSummary.fy.match,
-        )}`,
-      );
-    }
-
-    if (matchSummary.ulb_name) {
-      lines.push(
-        `ULB: ${this.formatMatchField(
-          matchSummary.ulb_name.expected,
-          matchSummary.ulb_name.extracted,
-          matchSummary.ulb_name.match,
-        )}`,
-      );
-    }
-
-    if (matchSummary.table_exists) {
-      const tableSummary = this.formatMatchField(
-        matchSummary.table_exists.expected,
-        matchSummary.table_exists.extracted,
-        matchSummary.table_exists.match,
-      );
-      const tableCount =
-        matchSummary.table_exists.table_count !== null &&
-        matchSummary.table_exists.table_count !== undefined
-          ? `, Count: ${matchSummary.table_exists.table_count}`
-          : '';
-
-      lines.push(`Table: ${tableSummary}${tableCount}`);
-    }
-
-    return lines.length > 0 ? lines : ['-'];
-  }
-
   private formatIssues(issues?: string[]): string {
     return issues && issues.length > 0 ? issues.join(', ') : 'None';
   }
 
   private formatDuration(duration?: number): string {
     return duration === null || duration === undefined ? '-' : `${duration.toFixed(2)} s`;
+  }
+
+  private formatTimings(
+    ocrDuration?: number,
+    validationDuration?: number,
+    excelDuration?: number,
+  ): string[] {
+    return [
+      `OCR: ${this.formatDuration(ocrDuration)}`,
+      `Validation: ${this.formatDuration(validationDuration)}`,
+      `Excel: ${this.formatDuration(excelDuration)}`,
+    ];
   }
 
   private formatPercent(value?: number | null): string {
@@ -200,26 +172,32 @@ export class OcrComparisonTableComponent {
     return `${(value * 100).toFixed(0)}%`;
   }
 
-  private formatMatchField(
-    expected?: string | boolean | number | null,
-    extracted?: string | boolean | number | null,
-    match?: boolean | null,
-  ): string {
-    return `Expected ${this.formatValue(expected)}, Got ${this.formatValue(
-      extracted,
-    )}, Match ${this.formatMatchValue(match)}`;
-  }
-
   private formatMatchValue(value?: boolean | null): string {
     if (value === true) {
-      return 'Yes';
+      return 'Matched';
     }
 
-    if (value === false) {
-      return 'No';
-    }
+    // if (value === false) {
+    //   return 'Not Matched';
+    // }
+    return 'Not Matched';
 
     return '-';
+  }
+
+  private toMatchCell(
+    field?: OcrMatchSummaryField,
+    includeTableCount = false,
+  ): OcrMatchCell {
+    return {
+      expected: this.formatValue(field?.expected),
+      extracted: this.formatValue(field?.extracted),
+      matched: this.formatMatchValue(field?.match),
+      extra:
+        includeTableCount && field?.table_count !== null && field?.table_count !== undefined
+          ? `Count: ${field.table_count}`
+          : undefined,
+    };
   }
 
   private formatDateTime(value?: string | null): string {
