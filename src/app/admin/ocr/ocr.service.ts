@@ -36,7 +36,7 @@ export class OcrService {
     documentTypeId: string,
     financialYear: string,
     ocrMethod: string,
-    ulb?: { _id: string; name: string },
+    ulb?: { _id?: string; name?: string } | string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -44,12 +44,16 @@ export class OcrService {
     formData.append('financial_year', financialYear);
     formData.append('ocr_method', ocrMethod);
 
-    if (ulb?._id) {
-      formData.append('ulb_id', ulb._id);
+    const ulbId = typeof ulb === 'object' && ulb?._id ? ulb._id : '';
+    const ulbName =
+      typeof ulb === 'string' ? ulb.trim() : typeof ulb === 'object' && ulb?.name ? ulb.name : '';
+
+    if (ulbId) {
+      formData.append('ulb_id', ulbId);
     }
 
-    if (ulb?.name) {
-      formData.append('ulb_name', ulb.name);
+    if (ulbName) {
+      formData.append('ulb_name', ulbName);
     }
 
     return this.http.post(

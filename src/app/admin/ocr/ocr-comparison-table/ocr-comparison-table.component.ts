@@ -17,6 +17,7 @@ interface OcrMatchCell {
 interface OcrComparisonRow {
   engine: string;
   status: string;
+  overallMatch: string;
   docType: OcrMatchCell;
   financialYear: OcrMatchCell;
   asOnDate: string;
@@ -77,6 +78,7 @@ export class OcrComparisonTableComponent {
     return Object.entries(response.engines).map(([engineName, engine]) => ({
       engine: this.toTitleCase(engineName),
       status: this.formatValue(engine.status),
+      overallMatch: this.formatMatchValue(engine.match_summary?.overall_match),
       docType: this.toMatchCell(engine.match_summary?.doc_type),
       financialYear: this.toMatchCell(engine.match_summary?.fy),
       asOnDate: this.formatValue(engine.result?.as_on_date),
@@ -177,10 +179,9 @@ export class OcrComparisonTableComponent {
       return 'Matched';
     }
 
-    // if (value === false) {
-    //   return 'Not Matched';
-    // }
-    return 'Not Matched';
+    if (value === false) {
+      return 'Not Matched';
+    }
 
     return '-';
   }

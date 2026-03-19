@@ -182,7 +182,7 @@ export class UploadFileOcrComponent implements OnInit {
         this.uploadForm.getRawValue().documentTypeId ?? 'bal_sheet_schedules',
         this.uploadForm.getRawValue().financialYear ?? '2024-25',
         this.uploadForm.getRawValue().ocrMethod ?? 'combined',
-        this.selectedUlb(),
+        this.uploadForm.getRawValue().ulb,
       )
       .pipe(finalize(() => this.globalLoader.stopLoader()))
       .subscribe({

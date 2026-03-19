@@ -51,7 +51,12 @@
       <tbody>
         @for (row of comparisonRows(); track row.engine) {
           <tr>
-            <td class="fw-semibold text-nowrap">{{ row.engine }}</td>
+            <td class="fw-semibold text-nowrap">
+              <div>{{ row.engine }}</div>
+              <div class="mt-1">
+                <span [class]="getMatchClass(row.overallMatch)">{{ row.overallMatch }}</span>
+              </div>
+            </td>
             <!-- <td>
               <span [class]="getStatusClass(row.status)">{{ row.status }}</span>
             </td> -->
@@ -83,12 +88,11 @@
               </div>
             </td>
             <td>
-              <div><strong>Expected:</strong> {{ row.table.expected }}</div>
+              <!-- <div><strong>Expected:</strong> {{ row.table.expected }}</div>
               <div><strong>Extracted:</strong> {{ row.table.extracted }}</div>
               <div>
-                <!-- <strong>Matched:</strong> -->
                 <span [class]="getMatchClass(row.table.matched)">{{ row.table.matched }}</span>
-              </div>
+              </div> -->
               @if (row.table.extra) {
                 <div>
                   <strong>{{ row.table.extra }}</strong>
