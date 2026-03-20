@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-
 import { XvifcModuleService } from './xvifc-module.service';
 
 describe('XvifcModuleService', () => {
