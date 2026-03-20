@@ -20,8 +20,11 @@ import { S3FileURLResponse } from '../../../../core/models/s3Responses/fileURLRe
 import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MaterialModule } from '../../../../material.module';
+import {
+  FileIconComponent,
+  SupportedFileExtension,
+} from '../../../components/file-icon/file-icon.component';
 import { FieldConfig, LegacyFileValue, UploadedFileValue } from '../../field.interface';
-import { FileIconComponent, SupportedFileExtension } from '../file-icon/file-icon.component';
 import { DndDirective } from './dnd.directive';
 import { FileService } from './file.service';
 
