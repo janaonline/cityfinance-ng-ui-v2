@@ -10,11 +10,18 @@ export interface OcrEngineConfidence {
     ulb: number | null;
 }
 
+export interface OcrAuditorInfo {
+    auditor_name?: string | null;
+    auditor_firm?: string | null;
+    seal_present?: boolean | null;
+}
+
 export interface OcrEngineAnalysis {
     doc_type?: string | null;
     fy?: string | null;
     as_on_date?: string | null;
     ulb_name?: string | null;
+    auditor_info?: OcrAuditorInfo;
     evidence?: OcrEngineEvidence;
     confidence?: OcrEngineConfidence;
     issues?: string[];

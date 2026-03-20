@@ -21,6 +21,7 @@ interface OcrComparisonRow {
   docType: OcrMatchCell;
   financialYear: OcrMatchCell;
   languageTag: string;
+  auditorInfo: string[];
   asOnDate: string;
   ulbName: OcrMatchCell;
   table: OcrMatchCell;
@@ -47,6 +48,21 @@ interface OcrSummaryItem {
 })
 export class OcrComparisonTableComponent {
   response = input.required<OcrResponse>();
+
+  readonly showAuditorInfo = computed(() => {
+    const response = this.response();
+    const expectedDocType = `${response.expected?.doc_type || ''}`.toLowerCase();
+
+    if (expectedDocType.includes('auditor')) {
+      return true;
+    }
+
+    return Object.values(response.engines || {}).some((engine) =>
+      `${engine.match_summary?.doc_type?.extracted || engine.result?.doc_type || ''}`
+        .toLowerCase()
+        .includes('auditor'),
+    );
+  });
 
   readonly summaryItems = computed<OcrSummaryItem[]>(() => {
     const response = this.response();
@@ -83,6 +99,11 @@ export class OcrComparisonTableComponent {
       docType: this.toMatchCell(engine.match_summary?.doc_type),
       financialYear: this.toMatchCell(engine.match_summary?.fy),
       languageTag: this.formatValue(engine.language_tag),
+      auditorInfo: this.formatAuditorInfo(
+        engine.result?.auditor_info?.auditor_name,
+        engine.result?.auditor_info?.auditor_firm,
+        engine.result?.auditor_info?.seal_present,
+      ),
       asOnDate: this.formatValue(engine.result?.as_on_date),
       ulbName: this.toMatchCell(engine.match_summary?.ulb_name),
       table: this.toMatchCell(engine.match_summary?.table_exists, true),
@@ -154,6 +175,18 @@ export class OcrComparisonTableComponent {
 
   private formatDuration(duration?: number): string {
     return duration === null || duration === undefined ? '-' : `${duration.toFixed(2)} s`;
+  }
+
+  private formatAuditorInfo(
+    auditorName?: string | null,
+    auditorFirm?: string | null,
+    sealPresent?: boolean | null,
+  ): string[] {
+    return [
+      `Name: ${this.formatValue(auditorName)}`,
+      `Firm: ${this.formatValue(auditorFirm)}`,
+      `Seal: ${this.formatValue(sealPresent)}`,
+    ];
   }
 
   private formatTimings(
