@@ -39,6 +39,9 @@
           <th>Doc Type</th>
           <th>FY</th>
           <th>Language</th>
+          @if (showAuditorInfo()) {
+            <th>Auditor Info</th>
+          }
           <!-- <th>As On Date</th> -->
           <th>ULB Name</th>
           <th>Table</th>
@@ -81,6 +84,13 @@
               </div>
             </td>
             <td>{{ row.languageTag }}</td>
+            @if (showAuditorInfo()) {
+              <td>
+                @for (info of row.auditorInfo; track info) {
+                  <div>{{ info }}</div>
+                }
+              </td>
+            }
             <!-- <td>{{ row.asOnDate }}</td> -->
             <td>
               <div><strong>Expected:</strong> {{ row.ulbName.expected }}</div>
