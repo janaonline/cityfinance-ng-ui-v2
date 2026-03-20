@@ -8,8 +8,6 @@ import { ROLES, Roles, XVIFC_DEFAULT_ROLE, XVIFC_DEFAULT_YEAR_ID } from './xvifc
   providedIn: 'root',
 })
 export class XvifcModuleService {
-  constructor() {}
-
   // Returns sidebar menu data for a given role and yearId.
   getSideMenuItems(
     role: Roles = XVIFC_DEFAULT_ROLE,
@@ -17,10 +15,10 @@ export class XvifcModuleService {
   ): SideBarModel {
     // TODO: Replace with API call once available.
     // The API should ideally accept role and yearId as parameters and return the appropriate menu structure.
-    const menuItems = SIDE_MENU_ITEMS[role](yearId);
-    if (!menuItems) {
+    if (!SIDE_MENU_ITEMS[role]) {
       throw new Error(`No side menu configured for role: ${role}`);
     }
+    const menuItems = SIDE_MENU_ITEMS[role](yearId);
     return menuItems;
   }
 
