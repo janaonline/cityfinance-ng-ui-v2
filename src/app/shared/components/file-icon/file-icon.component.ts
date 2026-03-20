@@ -38,7 +38,6 @@ const FILE_ICON_MAP: Readonly<Record<ResolvedFileExtension, FileIconConfig>> = {
   },
 };
 
-// TEST
 @Component({
   selector: 'app-file-icon',
   imports: [],
