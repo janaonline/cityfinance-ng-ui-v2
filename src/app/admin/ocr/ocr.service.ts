@@ -36,20 +36,24 @@ export class OcrService {
     documentTypeId: string,
     financialYear: string,
     ocrMethod: string,
-    ulb?: { _id: string; name: string },
+    ulb?: { _id?: string; name?: string } | string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('Document_type_ID', documentTypeId);
-    formData.append('financialYear', financialYear);
+    formData.append('doc_type', documentTypeId);
+    formData.append('financial_year', financialYear);
     formData.append('ocr_method', ocrMethod);
 
-    if (ulb?._id) {
-      formData.append('ulbId', ulb._id);
+    const ulbId = typeof ulb === 'object' && ulb?._id ? ulb._id : '';
+    const ulbName =
+      typeof ulb === 'string' ? ulb.trim() : typeof ulb === 'object' && ulb?.name ? ulb.name : '';
+
+    if (ulbId) {
+      formData.append('ulb_id', ulbId);
     }
 
-    if (ulb?.name) {
-      formData.append('ulbName', ulb.name);
+    if (ulbName) {
+      formData.append('ulb_name', ulbName);
     }
 
     return this.http.post(
@@ -60,11 +64,11 @@ export class OcrService {
 
   getOcrDetails(params: { jobId?: string; filename?: string; ocrMethod: string }) {
     const queryParams: Record<string, string> = {
-      ocrMethod: params.ocrMethod,
+      ocr_method: params.ocrMethod,
     };
 
     if (params.jobId) {
-      queryParams['jobId'] = params.jobId;
+      queryParams['job_id'] = params.jobId;
     }
 
     if (params.filename) {

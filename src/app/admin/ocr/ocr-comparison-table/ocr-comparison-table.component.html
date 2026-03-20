@@ -13,7 +13,7 @@
     }
   </div>
 
-  @if (agreementSummary().length > 0) {
+  <!-- @if (agreementSummary().length > 0) {
     <div class="d-flex flex-wrap gap-1 mb-2">
       @for (agreement of agreementSummary(); track agreement.label) {
         <div
@@ -28,44 +28,85 @@
         </div>
       }
     </div>
-  }
+  } -->
 
   <div class="table-responsive border rounded-3 mb-2 comparison-table-shell">
     <table class="table table-sm table-hover align-middle mb-0 comparison-table">
       <thead>
         <tr>
           <th>Engine</th>
-          <th>Status</th>
+          <!-- <th>JOB Status</th> -->
           <th>Doc Type</th>
           <th>FY</th>
-          <th>As On Date</th>
+          <!-- <th>As On Date</th> -->
           <th>ULB Name</th>
+          <th>Table</th>
           <th>Pages</th>
           <th>Confidence</th>
           <th>Issues</th>
-          <th>OCR Time</th>
-          <th>Validation Time</th>
-          <th>Excel Time</th>
+          <th>Timings</th>
           <th>Files</th>
         </tr>
       </thead>
       <tbody>
         @for (row of comparisonRows(); track row.engine) {
           <tr>
-            <td class="fw-semibold text-nowrap">{{ row.engine }}</td>
-            <td>
-              <span [class]="getStatusClass(row.status)">{{ row.status }}</span>
+            <td class="fw-semibold text-nowrap">
+              <div>{{ row.engine }}</div>
+              <div class="mt-1">
+                <span [class]="getMatchClass(row.overallMatch)">{{ row.overallMatch }}</span>
+              </div>
             </td>
-            <td>{{ row.docType }}</td>
-            <td>{{ row.financialYear }}</td>
-            <td>{{ row.asOnDate }}</td>
-            <td>{{ row.ulbName }}</td>
+            <!-- <td>
+              <span [class]="getStatusClass(row.status)">{{ row.status }}</span>
+            </td> -->
+            <td>
+              <div><strong>Expected:</strong> {{ row.docType.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.docType.extracted }}</div>
+              <div>
+                <!-- <strong>Matched:</strong> -->
+                <span [class]="getMatchClass(row.docType.matched)">{{ row.docType.matched }}</span>
+              </div>
+            </td>
+            <td>
+              <div><strong>Expected:</strong> {{ row.financialYear.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.financialYear.extracted }}</div>
+              <div>
+                <!-- <strong>Matched:</strong> -->
+                <span [class]="getMatchClass(row.financialYear.matched)">{{
+                  row.financialYear.matched
+                }}</span>
+              </div>
+            </td>
+            <!-- <td>{{ row.asOnDate }}</td> -->
+            <td>
+              <div><strong>Expected:</strong> {{ row.ulbName.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.ulbName.extracted }}</div>
+              <div>
+                <!-- <strong>Matched:</strong> -->
+                <span [class]="getMatchClass(row.ulbName.matched)">{{ row.ulbName.matched }}</span>
+              </div>
+            </td>
+            <td>
+              <!-- <div><strong>Expected:</strong> {{ row.table.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.table.extracted }}</div>
+              <div>
+                <span [class]="getMatchClass(row.table.matched)">{{ row.table.matched }}</span>
+              </div> -->
+              @if (row.table.extra) {
+                <div>
+                  <strong>{{ row.table.extra }}</strong>
+                </div>
+              }
+            </td>
             <td>{{ row.pageCount }}</td>
             <td>{{ row.confidence }}</td>
             <td>{{ row.issues }}</td>
-            <td>{{ row.ocrDuration }}</td>
-            <td>{{ row.validationDuration }}</td>
-            <td>{{ row.excelDuration }}</td>
+            <td>
+              @for (timing of row.timings; track timing) {
+                <div>{{ timing }}</div>
+              }
+            </td>
             <td>
               @if (row.ocrUrl) {
                 <a
