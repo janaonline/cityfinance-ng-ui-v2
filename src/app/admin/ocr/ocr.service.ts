@@ -21,6 +21,9 @@ export interface OcrTaskListResponse {
   records?: OcrTaskListItem[];
   payload?: OcrTaskListItem[] | OcrTaskListResponse;
   total?: number;
+  skip?: number;
+  limit?: number;
+  total_pages?: number;
   count?: number;
   total_count?: number;
 }
@@ -110,9 +113,8 @@ export class OcrService {
       queryParams['status'] = params.status;
     }
 
-    return this.http.get<OcrTaskListResponse>(
-      environment.api.url3 + 'sarvam-validate/tasks',
-      { params: queryParams },
-    );
+    return this.http.get<OcrTaskListResponse>(environment.api.url3 + 'sarvam-validate/tasks', {
+      params: queryParams,
+    });
   }
 }
