@@ -64,15 +64,33 @@ export class UploadFileOcrComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
 
   readonly maxFileSizeMb = 50;
-  readonly documentTypes: OcrDocumentType[] = [
-    { value: 'bal_sheet', label: 'Balance Sheet' },
-    { value: 'bal_sheet_schedules', label: 'Balance Sheet Schedule' },
-    { value: 'inc_exp', label: 'Income and Expenditure' },
-    { value: 'inc_exp_schedules', label: 'Income and Expenditure Schedule' },
-    { value: 'cash_flow', label: 'Cash Flow Statement' },
-    { value: 'auditor_report', label: 'Auditors Report' },
+  // readonly documentTypes: OcrDocumentType[] = [
+  //   { value: 'bal_sheet', label: 'Balance Sheet' },
+  //   { value: 'bal_sheet_schedules', label: 'Balance Sheet Schedule' },
+  //   { value: 'inc_exp', label: 'Income and Expenditure' },
+  //   { value: 'inc_exp_schedules', label: 'Income and Expenditure Schedule' },
+  //   { value: 'cash_flow', label: 'Cash Flow Statement' },
+  //   { value: 'auditor_report', label: 'Auditors Report' },
 
+  // ];
+  // DOCUMENT_TYPE_MAPPING_FULL = {
+  //   "BALANCE_SHEET": "Balance Sheet",
+  //   "BALANCE_SHEET_SCHEDULE": "Balance Sheet Schedule",
+  //   "INCOME_EXPENDITURE": "Income and Expenditure",
+  //   "INCOME_EXPENDITURE_SCHEDULE": "Income and Expenditure Schedule",
+  //   "CASH_FLOW": "Cash Flow Statement",
+  //   "AUDITOR_REPORT": "Auditors Report",
+  //   "UNKNOWN": "Unknown",
+  // }
+  readonly documentTypes: OcrDocumentType[] = [
+    { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
+    { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
+    { value: 'INCOME_EXPENDITURE', label: 'Income and Expenditure' },
+    { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'Income and Expenditure Schedule' },
+    { value: 'CASH_FLOW', label: 'Cash Flow Statement' },
+    { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
   ];
+
   readonly financialYears: FinancialYearOption[] = [
     { value: '2025-26', label: '2025-26' },
     { value: '2024-25', label: '2024-25' },
@@ -87,10 +105,11 @@ export class UploadFileOcrComponent implements OnInit {
     { value: 'sarvam', label: 'Sarvam' },
     { value: 'textract', label: 'Textract' },
     { value: 'tesseract', label: 'Tesseract' },
+    { value: 'gemini_vision', label: 'Gemini Vision' },
   ];
 
   readonly uploadForm = this.fb.group({
-    documentTypeId: this.fb.nonNullable.control('bal_sheet_schedules', Validators.required),
+    documentTypeId: this.fb.nonNullable.control('BALANCE_SHEET_SCHEDULE', Validators.required),
     financialYear: this.fb.nonNullable.control('2024-25', Validators.required),
     ocrMethod: this.fb.nonNullable.control('combined', Validators.required),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
@@ -179,7 +198,7 @@ export class UploadFileOcrComponent implements OnInit {
     this.ocrService
       .uploadOcrFile(
         this.selectedFile,
-        this.uploadForm.getRawValue().documentTypeId ?? 'bal_sheet_schedules',
+        this.uploadForm.getRawValue().documentTypeId ?? 'BALANCE_SHEET_SCHEDULE',
         this.uploadForm.getRawValue().financialYear ?? '2024-25',
         this.uploadForm.getRawValue().ocrMethod ?? 'combined',
         this.uploadForm.getRawValue().ulb,
