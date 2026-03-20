@@ -34,7 +34,7 @@ const FILE_ICON_MAP: Readonly<Record<ResolvedFileExtension, FileIconConfig>> = {
   },
   unknown: {
     iconClass: 'bi bi-file-earmark-fill fs-4 me-1 text-muted',
-    label: 'Unknown file',
+    label: 'Unknown file test',
   },
 };
 
