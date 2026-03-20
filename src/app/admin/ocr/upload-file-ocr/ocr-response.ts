@@ -67,6 +67,7 @@ export interface OcrEngineResult {
     textract_job_type?: string | null;
     textract_input_key?: string | null;
     timing?: OcrEngineTiming;
+    language_tag?: string | null;
 }
 
 export interface OcrAgreement {

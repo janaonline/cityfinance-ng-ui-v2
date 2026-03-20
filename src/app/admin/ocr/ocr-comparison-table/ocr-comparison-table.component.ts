@@ -20,6 +20,7 @@ interface OcrComparisonRow {
   overallMatch: string;
   docType: OcrMatchCell;
   financialYear: OcrMatchCell;
+  languageTag: string;
   asOnDate: string;
   ulbName: OcrMatchCell;
   table: OcrMatchCell;
@@ -81,6 +82,7 @@ export class OcrComparisonTableComponent {
       overallMatch: this.formatMatchValue(engine.match_summary?.overall_match),
       docType: this.toMatchCell(engine.match_summary?.doc_type),
       financialYear: this.toMatchCell(engine.match_summary?.fy),
+      languageTag: this.formatValue(engine.language_tag),
       asOnDate: this.formatValue(engine.result?.as_on_date),
       ulbName: this.toMatchCell(engine.match_summary?.ulb_name),
       table: this.toMatchCell(engine.match_summary?.table_exists, true),
