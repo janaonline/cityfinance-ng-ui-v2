@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { OcrApiResponse } from './upload-file-ocr/ocr-response';
+import { IULB } from '../../core/models/ulb';
 
 export interface OcrTaskListItem {
   job_id?: string;
@@ -39,7 +40,7 @@ export class OcrService {
     documentTypeId: string,
     financialYear: string,
     ocrMethod: string,
-    ulb?: { _id?: string; name?: string } | string | null,
+    ulb?: IULB | string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -47,18 +48,18 @@ export class OcrService {
     formData.append('financial_year', financialYear);
     formData.append('ocr_method', ocrMethod);
 
-    const ulbId = typeof ulb === 'object' && ulb?._id ? ulb._id : '';
-    const ulbName =
-      typeof ulb === 'string' ? ulb.trim() : typeof ulb === 'object' && ulb?.name ? ulb.name : '';
+    if (ulb && typeof ulb === 'object') {
+      const ulbKeys: string[] = [ulb?.name];
 
-    if (ulbId) {
-      formData.append('ulb_id', ulbId);
+      if (ulb?.slug) ulbKeys.push(ulb.slug);
+      if (ulb?.keywords) ulbKeys.push(ulb.keywords);
+      const ulbKey = ulbKeys.join('|');
+      // formData.append('ulb_name', ulbName);
+      formData.append('ulb_name', ulbKey);
+      formData.append('ulb_id', ulb?._id);
+    } else {
+      formData.append('ulb_name', ulb ? ulb.trim() : '');
     }
-
-    if (ulbName) {
-      formData.append('ulb_name', ulbName);
-    }
-
     return this.http.post(
       environment.api.url3 + 'sarvam-validate/combined-gemini-validate',
       formData,
