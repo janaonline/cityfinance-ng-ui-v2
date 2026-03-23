@@ -1,0 +1,23 @@
+@if (field && field.label) {
+  <mat-label data-testid="field-label" class="fw-bold">{{ field.label }}</mat-label>
+}
+
+@if (field && field.key) {
+  <mat-form-field [formGroup]="group" [appearance]="readonly() ? 'fill' : 'outline'">
+    <!-- <mat-label>{{ field.label }}</mat-label> -->
+    <textarea
+      matInput
+      [formControlName]="field.key"
+      [readonly]="readonly()"
+      placeholder=""
+      data-testid="field-textarea"
+    ></textarea>
+    @for (validation of validations(); track $index) {
+      <ng-container ngProjectAs="mat-error">
+        @if (hasError(field.key, validation.name)) {
+          <mat-error data-testid="field-error">{{ validation.message }}</mat-error>
+        }
+      </ng-container>
+    }
+  </mat-form-field>
+}

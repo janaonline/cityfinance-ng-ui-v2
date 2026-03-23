@@ -1,23 +1,23 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder, FormArray } from '@angular/forms';
-import { FieldConfig } from './field.interface';
+import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { MaterialModule } from '../../material.module';
 import { ButtonComponent } from './components/button/button.component';
 import { CheckboxComponent } from './components/checkbox/checkbox.component';
 import { ChildFormComponent } from './components/child-form/child-form.component';
 import { DateComponent } from './components/date/date.component';
+import { FileComponent } from './components/file/file.component';
 import { InputComponent } from './components/input/input.component';
 import { RadiobuttonComponent } from './components/radiobutton/radiobutton.component';
 import { SelectComponent } from './components/select/select.component';
 import { TableComponent } from './components/table/table.component';
-import { MaterialModule } from '../../material.module';
-import { FileComponent } from './components/file/file.component';
+import { TextareaComponent } from './components/textarea/textarea.component';
 
 @Component({
-    // exportAs: "dynamicForm",
-    // selector: "dynamic-form",
-    selector: 'app-dynamic-form',
-    templateUrl: './dynamic-form.component.html',
-    imports: [
+  // exportAs: "dynamicForm",
+  // selector: "dynamic-form",
+  selector: 'app-dynamic-form',
+  templateUrl: './dynamic-form.component.html',
+  imports: [
     // DynamicFieldDirective,
     MaterialModule,
     InputComponent,
@@ -28,10 +28,11 @@ import { FileComponent } from './components/file/file.component';
     CheckboxComponent,
     ChildFormComponent,
     TableComponent,
-    FileComponent
-],
-    // styles: []
-    styleUrl: './dynamic-form.component.scss'
+    FileComponent,
+    TextareaComponent,
+  ],
+  // styles: []
+  styleUrl: './dynamic-form.component.scss',
 })
 export class DynamicFormComponent implements OnInit {
   // @Input() field!: FieldConfig;

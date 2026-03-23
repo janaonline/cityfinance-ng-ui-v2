@@ -168,7 +168,7 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     ],
   },
   {
-    formFieldType: 'text',
+    formFieldType: 'textarea',
     label: 'SFC Term',
     key: 'sfcTerm',
     visibleWhen: {
