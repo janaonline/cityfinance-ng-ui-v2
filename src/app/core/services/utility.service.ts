@@ -78,4 +78,47 @@ export class UtilityService {
     if (includeTime) return `${dateString}_${timeString}`;
     return dateString;
   }
+
+  /**
+   * Formats a byte count into a human-readable size string.
+   * @param bytes - File size in bytes
+   * @param decimals - Number of decimal places to preserve in the formatted value
+   * @returns Human-readable file size string
+   */
+  public formatBytes(bytes: number, decimals: number = 0): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+      return '0 Bytes';
+    }
+
+    const k = 1024;
+    const dm = decimals > 0 ? decimals : 0;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  }
+
+  /**
+   * Derives a file name from a storage path when an explicit name is not available.
+   * @param fileUrl - Storage path or URL containing the file name segment
+   * @returns Extracted file name or an empty string when no usable segment exists
+   */
+  public getFileNameFromUrl(fileUrl: string | null | undefined): string {
+    if (!fileUrl) {
+      return '';
+    }
+
+    const pathSegment = fileUrl.split(/[?#]/)[0];
+    const segments = pathSegment.split('/');
+    return segments[segments.length - 1] ?? '';
+  }
+
+  /**
+   * Returns a trimmed string only when it is non-empty.
+   * @param value - Candidate string-like value
+   * @returns Trimmed string or `null` when the value is empty or not a string
+   */
+  public getNonEmptyString(value: unknown): string | null {
+    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+  }
 }

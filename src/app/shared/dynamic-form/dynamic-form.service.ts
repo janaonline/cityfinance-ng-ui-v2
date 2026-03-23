@@ -11,14 +11,14 @@ import {
   compareArrFieldsValidator,
   compareFieldsValidator,
 } from '../../core/validators/comparison.validator';
-import { FieldConfig } from './field.interface';
+import { FieldConfig, UploadedFileValue } from './field.interface';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DynamicFormService {
   form!: FormGroup;
-  constructor(private fb: FormBuilder) { }
+  constructor(private fb: FormBuilder) {}
 
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i];
@@ -229,7 +229,10 @@ export class DynamicFormService {
   createContorl(field: any, validations = false, readonly = false) {
     const validationsData = validations || field.validations;
     // const val = field.value ? { value: field.value, disabled: readonly || field.readonly } : '';
-    const val = { value: field.value, disabled: readonly || field.readonly };
+    const val = {
+      value: this.resolveInitialControlValue(field, false),
+      disabled: readonly || field.readonly,
+    };
     return new FormControl(val, this.bindValidations(validationsData));
     // return new FormControl(field.value || '');
   }
@@ -280,8 +283,93 @@ export class DynamicFormService {
   toFormGroup(questions: FieldConfig[]): FormGroup {
     const group: any = {};
     questions.forEach((question: FieldConfig) => {
-      group[question.key] = new FormControl(question.value || '', this.bindValidations(question.validations))
+      group[question.key] = new FormControl(
+        this.resolveInitialControlValue(question, true),
+        this.bindValidations(question.validations),
+      );
     });
     return new FormGroup(group);
+  }
+
+  /**
+   * Resolve the initial value assigned to a dynamic form control at creation time.
+   *
+   * File fields require a dedicated normalization path so standalone uploads start with `null`
+   * when they are effectively empty. This keeps Angular validators such as `required` aligned
+   * with the actual UI state and preserves patched edit values when a valid uploaded file object
+   * is already present. Non-file controls retain the existing fallback behavior used across the
+   * dynamic-form system.
+   *
+   * @param field - Minimal field configuration used to determine the control type and seed value
+   * @param useEmptyStringFallback - Whether falsy non-file values should default to an empty string
+   * @returns The normalized initial control value for the field
+   */
+  private resolveInitialControlValue(
+    field: Pick<FieldConfig, 'formFieldType' | 'value'>,
+    useEmptyStringFallback: boolean,
+  ): unknown {
+    if (field.formFieldType === 'file') {
+      return this.normalizeStandaloneFileValue(field.value);
+    }
+
+    return useEmptyStringFallback ? field.value || '' : field.value;
+  }
+
+  private normalizeStandaloneFileValue(value: unknown): UploadedFileValue {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const rawValue = value as Record<string, unknown>;
+    const fileName =
+      this.getNonEmptyString(rawValue['fileName']) ?? this.getNonEmptyString(rawValue['name']);
+    const fileUrl =
+      this.getNonEmptyString(rawValue['fileUrl']) ?? this.getNonEmptyString(rawValue['url']);
+
+    if (!fileName && !fileUrl) {
+      return null;
+    }
+
+    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
+    const mimeType = this.getNonEmptyString(rawValue['mimeType']);
+
+    return {
+      fileName: fileName ?? this.getFileNameFromUrl(fileUrl),
+      fileUrl: fileUrl ?? '',
+      fileSize,
+      ...(mimeType ? { mimeType } : {}),
+    };
+  }
+
+  private getNonEmptyString(value: unknown): string | null {
+    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+  }
+
+  private normalizeFileSize(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return value;
+    }
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalizedValue = value.trim();
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const numericValue = Number(normalizedValue);
+    return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
+  }
+
+  private getFileNameFromUrl(fileUrl: string | null): string {
+    if (!fileUrl) {
+      return '';
+    }
+
+    const pathSegment = fileUrl.split(/[?#]/)[0];
+    const segments = pathSegment.split('/');
+    return segments[segments.length - 1] ?? '';
   }
 }

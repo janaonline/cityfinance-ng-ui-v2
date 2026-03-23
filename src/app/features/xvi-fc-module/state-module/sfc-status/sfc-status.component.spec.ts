@@ -129,6 +129,8 @@ describe('SfcStatusComponent', () => {
 
     component.onSubmit();
 
+    expect(getControl('actionTakenReport')?.touched).toBeTrue();
+    expect(getControl('actionTakenReport')?.invalid).toBeTrue();
     expect(getControl('sfcTerm')?.touched).toBeTrue();
     expect(getControl('applicableSfcGrantCalculation')?.touched).toBeTrue();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
@@ -143,6 +145,12 @@ describe('SfcStatusComponent', () => {
 
     const logSpy = spyOn(console, 'log');
 
+    getControl('actionTakenReport')?.setValue({
+      fileName: 'action-taken-report.pdf',
+      fileUrl: '/objects/action-taken-report.pdf',
+      fileSize: 2048,
+      mimeType: 'application/pdf',
+    });
     getControl('sfcTerm')?.setValue('Sixth SFC');
     getControl('sfcReportStatus')?.setValue('Submitted');
     getControl('sfcActive')?.setValue('no');
@@ -158,10 +166,10 @@ describe('SfcStatusComponent', () => {
 
     expect(payload['stateName']).toBe('Andhra Pradesh');
     expect(payload['actionTakenReport']).toEqual({
-      fileName: '',
-      fileUrl: '',
-      fileSize: null,
-      mimeType: '',
+      fileName: 'action-taken-report.pdf',
+      fileUrl: '/objects/action-taken-report.pdf',
+      fileSize: 2048,
+      mimeType: 'application/pdf',
     });
     expect(payload['sfcActive']).toBe('no');
     expect(payload['applicableSfcGrantCalculation']).toBe('6th SFC');

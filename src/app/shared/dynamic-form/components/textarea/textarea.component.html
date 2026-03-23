@@ -11,6 +11,7 @@
       [readonly]="readonly()"
       placeholder=""
       data-testid="field-textarea"
+      appTrimOnBlur
     ></textarea>
     @for (validation of validations(); track $index) {
       <ng-container ngProjectAs="mat-error">

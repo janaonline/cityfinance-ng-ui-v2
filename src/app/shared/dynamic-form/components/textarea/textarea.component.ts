@@ -1,11 +1,12 @@
 import { Component, computed, Input } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
+import { TrimOnBlurDirective } from '../../../../core/directives/trim-on-blur.directive';
 import { MaterialModule } from '../../../../material.module';
 import { FieldConfig } from '../../field.interface';
 
 @Component({
   selector: 'app-textarea',
-  imports: [MaterialModule],
+  imports: [MaterialModule, TrimOnBlurDirective],
   templateUrl: './textarea.component.html',
   styleUrl: './textarea.component.scss',
 })
