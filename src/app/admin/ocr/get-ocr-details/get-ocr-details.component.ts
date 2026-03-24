@@ -154,4 +154,36 @@ export class GetOcrDetailsComponent implements OnInit {
   toggleRawResponse(): void {
     this.showRawResponse.update((value) => !value);
   }
+
+  isTreeObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  isTreeArray(value: unknown): value is unknown[] {
+    return Array.isArray(value);
+  }
+
+  getObjectEntries(value: Record<string, unknown>): Array<{ key: string; value: unknown }> {
+    return Object.entries(value).map(([key, entryValue]) => ({ key, value: entryValue }));
+  }
+
+  formatTreeValue(value: unknown): string {
+    if (value === null) {
+      return 'null';
+    }
+
+    if (value === undefined) {
+      return 'undefined';
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    return '';
+  }
 }
