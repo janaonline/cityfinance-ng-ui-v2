@@ -99,8 +99,84 @@
 
 .ocr-table {
   width: 100%;
-  min-width: 920px;
+  min-width: 1080px;
   background: #fff;
+}
+
+.identity-cell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.identity-cell + .identity-cell {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed #dbeafe;
+}
+
+.cell-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.cell-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.cell-value {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #1e293b;
+  word-break: break-word;
+}
+
+.table-copy-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.json-cell {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.copy-btn:hover {
+  background: #dbeafe;
+}
+
+.copy-btn mat-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  font-size: 0.95rem;
+  line-height: 0.95rem;
 }
 
 .status-badge {
@@ -132,7 +208,7 @@
 
 ::ng-deep .ocr-table .mat-mdc-header-cell {
   white-space: nowrap;
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #0f172a;
   background: #eff6ff;
@@ -140,13 +216,18 @@
 
 ::ng-deep .ocr-table .mat-mdc-cell,
 ::ng-deep .ocr-table .mat-mdc-header-cell {
-  padding: 0.85rem 1rem;
+  padding: 0.7rem 0.8rem;
   border-bottom-color: #e2e8f0;
+  vertical-align: top;
 }
 
 ::ng-deep .ocr-table .mat-mdc-cell {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: #334155;
+}
+
+::ng-deep .ocr-table .mat-mdc-row:nth-child(even) .mat-mdc-cell {
+  background: #f8fbff;
 }
 
 @media (max-width: 992px) {

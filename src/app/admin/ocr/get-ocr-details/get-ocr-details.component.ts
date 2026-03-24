@@ -41,6 +41,7 @@ export class GetOcrDetailsComponent implements OnInit {
     { value: 'sarvam', label: 'Sarvam' },
     { value: 'textract', label: 'Textract' },
     { value: 'tesseract', label: 'Tesseract' },
+    { value: 'gemini_vision', label: 'Gemini Vision' },
   ];
 
   readonly detailsForm = this.fb.nonNullable.group({

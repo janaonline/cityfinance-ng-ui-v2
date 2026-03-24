@@ -46,6 +46,11 @@ interface OcrMethodOption {
   label: string;
 }
 
+interface GeminiModelOption {
+  value: string;
+  label: string;
+}
+
 @Component({
   standalone: true,
   selector: 'app-upload-file-ocr',
@@ -107,11 +112,19 @@ export class UploadFileOcrComponent implements OnInit {
     { value: 'tesseract', label: 'Tesseract' },
     { value: 'gemini_vision', label: 'Gemini Vision' },
   ];
+  readonly geminiModels: GeminiModelOption[] = [
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+    { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview' },
+    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
+    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
+  ];
 
   readonly uploadForm = this.fb.group({
     documentTypeId: this.fb.nonNullable.control('BALANCE_SHEET_SCHEDULE', Validators.required),
     financialYear: this.fb.nonNullable.control('2024-25', Validators.required),
     ocrMethod: this.fb.nonNullable.control('combined', Validators.required),
+    model: this.fb.nonNullable.control('gemini-2.5-flash', Validators.required),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
   });
 
@@ -201,6 +214,7 @@ export class UploadFileOcrComponent implements OnInit {
         this.uploadForm.getRawValue().documentTypeId ?? 'BALANCE_SHEET_SCHEDULE',
         this.uploadForm.getRawValue().financialYear ?? '2024-25',
         this.uploadForm.getRawValue().ocrMethod ?? 'combined',
+        this.uploadForm.getRawValue().model ?? 'gemini-2.5-flash',
         this.uploadForm.getRawValue().ulb,
       )
       .pipe(finalize(() => this.globalLoader.stopLoader()))
