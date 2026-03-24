@@ -24,7 +24,8 @@ interface OcrListRow {
   jobId: string;
   filename: string;
   ocrMethod: string;
-  financialYear: string;
+  expected: string;
+  totalPages: string;
   status: string;
   createdAt: string;
 }
@@ -66,10 +67,10 @@ export class OcrListComponent implements OnInit {
   ];
 
   readonly displayedColumns: string[] = [
-    'jobId',
-    'filename',
+    'jobAndFile',
     'ocrMethod',
-    'financialYear',
+    'expected',
+    'totalPages',
     'status',
     'createdAt',
     'action',
@@ -115,6 +116,34 @@ export class OcrListComponent implements OnInit {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.loadTasks();
+  }
+
+  copyValue(label: string, value: string): void {
+    if (!value || value === '-') {
+      this.utilityService.swalPopup('Nothing to copy', `No ${label.toLowerCase()} available.`, 'info');
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        this.utilityService.swalPopup('Copied', `${label} copied to clipboard.`, 'success');
+      })
+      .catch(() => {
+        this.utilityService.swalPopup(
+          'Copy failed',
+          `Unable to copy ${label.toLowerCase()}. Please try again.`,
+          'error',
+        );
+      });
+  }
+
+  getCompactFilename(filename: string): string {
+    if (!filename || filename === '-' || filename.length <= 24) {
+      return filename;
+    }
+
+    return `${filename.slice(0, 10)}...${filename.slice(-10)}`;
   }
 
   private loadTasks(): void {
@@ -214,7 +243,8 @@ export class OcrListComponent implements OnInit {
       jobId: item.job_id || '-',
       filename: item.filename || '-',
       ocrMethod: item.ocr_method || '-',
-      financialYear: item.financial_year || '-',
+      expected: this.formatExpected(item.expected),
+      totalPages: this.formatCount(item.pdf_quality?.report?.total_pages ?? item.total_pages),
       status: this.normalizeStatus(item.status),
       createdAt: this.formatCreatedAt(item.created_at || item.updated_at),
     };
@@ -238,5 +268,66 @@ export class OcrListComponent implements OnInit {
     } catch {
       return value;
     }
+  }
+
+  private formatExpected(value: unknown): string {
+    if (value === null || value === undefined || value === '') {
+      return '-';
+    }
+
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.formatExpectedValue(item)).join('\n');
+    }
+
+    if (typeof value === 'object') {
+      const entries = Object.entries(value as Record<string, unknown>);
+
+      if (entries.length === 0) {
+        return '-';
+      }
+
+      return entries
+        .map(([key, entryValue]) => `${this.formatFieldLabel(key)}: ${this.formatExpectedValue(entryValue)}`)
+        .join('\n');
+    }
+
+    return '-';
+  }
+
+  private formatCount(value?: number): string {
+    return typeof value === 'number' ? String(value) : '-';
+  }
+
+  private formatExpectedValue(value: unknown): string {
+    if (value === null || value === undefined || value === '') {
+      return '-';
+    }
+
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.formatExpectedValue(item)).join(', ');
+    }
+
+    if (typeof value === 'object') {
+      return Object.entries(value as Record<string, unknown>)
+        .map(([key, entryValue]) => `${this.formatFieldLabel(key)}: ${this.formatExpectedValue(entryValue)}`)
+        .join(', ');
+    }
+
+    return '-';
+  }
+
+  private formatFieldLabel(value: string): string {
+    return value
+      .replace(/_/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 }

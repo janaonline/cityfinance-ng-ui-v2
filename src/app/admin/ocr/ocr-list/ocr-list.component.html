@@ -78,15 +78,43 @@
       </form>
 
       <div class="table-shell">
-        <table mat-table [dataSource]="dataSource" class="ocr-table">
-          <ng-container matColumnDef="jobId">
-            <th mat-header-cell *matHeaderCellDef>Job ID</th>
-            <td mat-cell *matCellDef="let row">{{ row.jobId }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="filename">
-            <th mat-header-cell *matHeaderCellDef>File Name</th>
-            <td mat-cell *matCellDef="let row">{{ row.filename }}</td>
+        <table mat-table [dataSource]="dataSource" class="ocr-table table-striped">
+          <ng-container matColumnDef="jobAndFile">
+            <th mat-header-cell *matHeaderCellDef>Job / File</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="identity-cell">
+                <div class="cell-inline">
+                  <span class="cell-label">Job:</span>
+                  <span class="cell-value">{{ row.jobId }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="copy-btn"
+                  aria-label="Copy job ID"
+                  title="Copy job ID"
+                  (click)="copyValue('Job ID', row.jobId)"
+                >
+                  <mat-icon>content_copy</mat-icon>
+                </button>
+              </div>
+              <div class="identity-cell">
+                <div class="cell-inline">
+                  <span class="cell-label">File:</span>
+                  <span class="cell-value" [title]="row.filename">
+                    {{ getCompactFilename(row.filename) }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="copy-btn"
+                  aria-label="Copy file name"
+                  title="Copy file name"
+                  (click)="copyValue('File Name', row.filename)"
+                >
+                  <mat-icon>content_copy</mat-icon>
+                </button>
+              </div>
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="ocrMethod">
@@ -94,9 +122,16 @@
             <td mat-cell *matCellDef="let row">{{ row.ocrMethod | titlecase }}</td>
           </ng-container>
 
-          <ng-container matColumnDef="financialYear">
-            <th mat-header-cell *matHeaderCellDef>Financial Year</th>
-            <td mat-cell *matCellDef="let row">{{ row.financialYear }}</td>
+          <ng-container matColumnDef="expected">
+            <th mat-header-cell *matHeaderCellDef>Expected</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="json-cell">{{ row.expected }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="totalPages">
+            <th mat-header-cell *matHeaderCellDef>Total Pages</th>
+            <td mat-cell *matCellDef="let row">{{ row.totalPages }}</td>
           </ng-container>
 
           <ng-container matColumnDef="status">

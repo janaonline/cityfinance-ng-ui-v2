@@ -9,6 +9,13 @@ export interface OcrTaskListItem {
   filename?: string;
   ocr_method?: string;
   financial_year?: string;
+  expected?: string | number | boolean | Record<string, unknown> | null;
+  total_pages?: number;
+  pdf_quality?: {
+    report?: {
+      total_pages?: number;
+    };
+  };
   status?: string;
   created_at?: string;
   updated_at?: string;
