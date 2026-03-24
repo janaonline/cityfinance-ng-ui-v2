@@ -7,7 +7,23 @@
       >
         <div class="summary-line">
           <span class="text-uppercase text-secondary summary-label">{{ item.label }}:</span>
-          <span class="summary-value">{{ item.value }}</span>
+          <span
+            class="summary-value"
+            [attr.title]="item.label === 'Job ID' || item.label === 'File Name' ? item.value : null"
+          >
+            {{ item.label === 'Job ID' ? formatMiddleEllipsis(item.value) : item.value }}
+          </span>
+          @if (item.label === 'Job ID' || item.label === 'File Name') {
+            <button
+              type="button"
+              class="copy-btn"
+              [attr.aria-label]="copiedSummaryLabel() === item.label ? 'Copied' : 'Copy ' + item.label"
+              [attr.title]="copiedSummaryLabel() === item.label ? 'Copied' : 'Copy ' + item.label"
+              (click)="copySummaryValue(item.label, item.value)"
+            >
+              <span aria-hidden="true">{{ copiedSummaryLabel() === item.label ? '✓' : '⧉' }}</span>
+            </button>
+          }
         </div>
       </div>
     }
@@ -101,11 +117,11 @@
               </div>
             </td>
             <td>
-              <!-- <div><strong>Expected:</strong> {{ row.table.expected }}</div>
+              <div><strong>Expected:</strong> {{ row.table.expected }}</div>
               <div><strong>Extracted:</strong> {{ row.table.extracted }}</div>
               <div>
                 <span [class]="getMatchClass(row.table.matched)">{{ row.table.matched }}</span>
-              </div> -->
+              </div>
               @if (row.table.extra) {
                 <div>
                   <strong>{{ row.table.extra }}</strong>
@@ -114,8 +130,21 @@
             </td>
             <td>{{ row.confidence }}</td>
             <td>
-              @for (usage of row.usageMetadata; track usage) {
-                <div>{{ usage }}</div>
+              @for (usage of getUsageSummaryItems(row.usageMetadata); track usage.label) {
+                <div>
+                  @if (usage.label === 'Total' && row.usageMetadata) {
+                    <button
+                      type="button"
+                      class="usage-link-btn"
+                      [attr.title]="'Open full usage metadata for ' + row.engine"
+                      (click)="openUsageDetails(row.engine, row.usageMetadata)"
+                    >
+                      {{ usage.label }}: {{ usage.value }}
+                    </button>
+                  } @else {
+                    <span>{{ usage.label }}: {{ usage.value }}</span>
+                  }
+                </div>
               }
             </td>
             <td>

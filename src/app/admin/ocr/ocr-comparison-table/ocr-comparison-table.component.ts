@@ -1,12 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MaterialModule } from '../../../material.module';
 import {
   OcrEngineConfidence,
+  OcrEngineResult,
   OcrMatchSummaryField,
   OcrResponse,
   OcrUsageMetadata,
 } from '../upload-file-ocr/ocr-response';
+import { OcrUsageDetailsDialogComponent } from './ocr-usage-details-dialog.component';
 
 interface OcrMatchCell {
   expected: string;
@@ -27,7 +30,7 @@ interface OcrComparisonRow {
   ulbName: OcrMatchCell;
   table: OcrMatchCell;
   confidence: string;
-  usageMetadata: string[];
+  usageMetadata: OcrUsageMetadata | null;
   issues: string;
   timings: string[];
   ocrUrl: string | null;
@@ -49,6 +52,8 @@ interface OcrSummaryItem {
 })
 export class OcrComparisonTableComponent {
   response = input.required<OcrResponse>();
+  readonly dialog = inject(MatDialog);
+  readonly copiedSummaryLabel = signal<string | null>(null);
 
   readonly showAuditorInfo = computed(() => {
     const response = this.response();
@@ -77,6 +82,14 @@ export class OcrComparisonTableComponent {
       { label: 'Job ID', value: this.formatValue(response.job_id) },
       { label: 'Job Status', value: this.formatValue(response.status) },
       { label: 'OCR Method', value: this.formatValue(response.ocr_method) },
+      {
+        label: 'Page Count',
+        value: this.formatValue(response.file_info?.page_count),
+      },
+      {
+        label: 'File Size',
+        value: this.formatFileSize(response.file_info?.uploaded_file_size_kb),
+      },
       { label: 'Created At', value: this.formatDateTime(response.created_at) },
       // { label: 'Updated At', value: this.formatDateTime(response.updated_at) },
       {
@@ -111,11 +124,9 @@ export class OcrComparisonTableComponent {
       ),
       asOnDate: this.formatValue(engine.result?.as_on_date),
       ulbName: this.toMatchCell(engine.match_summary?.ulb_name),
-      table: this.toMatchCell(engine.match_summary?.table_exists, true),
+      table: this.toTableMatchCell(engine),
       confidence: this.formatConfidence(engine.result?.confidence),
-      usageMetadata: this.formatUsageMetadata(
-        engine.result?.usage_metadata ?? engine.extracted?.usage_metadata,
-      ),
+      usageMetadata: engine.result?.usage_metadata ?? engine.extracted?.usage_metadata ?? null,
       issues: this.formatIssues(engine.result?.issues),
       timings: this.formatTimings(
         engine.timing?.ocr_duration_seconds,
@@ -150,8 +161,110 @@ export class OcrComparisonTableComponent {
     return 'match-badge match-badge--neutral';
   }
 
+  formatMiddleEllipsis(value: string, keepChars = 6): string {
+    if (!value || value.length <= keepChars * 2 + 3) {
+      return value;
+    }
+
+    return `${value.slice(0, keepChars)}...${value.slice(-keepChars)}`;
+  }
+
+  async copySummaryValue(label: string, value: string): Promise<void> {
+    if (!value || value === '-') {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      this.copiedSummaryLabel.set(label);
+      window.setTimeout(() => {
+        if (this.copiedSummaryLabel() === label) {
+          this.copiedSummaryLabel.set(null);
+        }
+      }, 1500);
+    } catch {
+      this.copiedSummaryLabel.set(null);
+    }
+  }
+
+  openUsageDetails(engine: string, usageMetadata?: OcrUsageMetadata | null): void {
+    if (!usageMetadata) {
+      return;
+    }
+
+    this.dialog.open(OcrUsageDetailsDialogComponent, {
+      width: '680px',
+      maxWidth: '96vw',
+      data: {
+        engine,
+        details: this.getUsageDetailItems(usageMetadata),
+      },
+    });
+  }
+
+  getUsageSummaryItems(usageMetadata?: OcrUsageMetadata | null): Array<{ label: string; value: string }> {
+    if (!usageMetadata) {
+      return [
+        { label: 'Prompt', value: '-' },
+        { label: 'Candidates', value: '-' },
+        { label: 'Total', value: '-' },
+      ];
+    }
+
+    const items: Array<{ label: string; value: string }> = [
+      { label: 'Prompt', value: this.formatValue(usageMetadata.prompt_token_count) },
+      { label: 'Candidates', value: this.formatValue(usageMetadata.candidates_token_count) },
+    ];
+
+    if (
+      usageMetadata.cached_content_token_count !== null &&
+      usageMetadata.cached_content_token_count !== undefined
+    ) {
+      items.push({
+        label: 'Cached',
+        value: this.formatValue(usageMetadata.cached_content_token_count),
+      });
+    }
+
+    items.push({ label: 'Total', value: this.formatValue(usageMetadata.total_token_count) });
+
+    return items;
+  }
+
+  getUsageDetailItems(usageMetadata?: OcrUsageMetadata | null): Array<{ label: string; value: string }> {
+    if (!usageMetadata) {
+      return [];
+    }
+
+    return [
+      { label: 'Prompt Tokens', value: this.formatValue(usageMetadata.prompt_token_count) },
+      { label: 'Candidate Tokens', value: this.formatValue(usageMetadata.candidates_token_count) },
+      { label: 'Cached Content Tokens', value: this.formatValue(usageMetadata.cached_content_token_count) },
+      { label: 'Thoughts Tokens', value: this.formatValue(usageMetadata.thoughts_token_count) },
+      { label: 'Tool Use Prompt Tokens', value: this.formatValue(usageMetadata.tool_use_prompt_token_count) },
+      { label: 'Traffic Type', value: this.formatValue(usageMetadata.traffic_type) },
+      {
+        label: 'Prompt Token Details',
+        value: this.formatTokenDetails(usageMetadata.prompt_tokens_details),
+      },
+      { label: 'Total Tokens', value: this.formatValue(usageMetadata.total_token_count) },
+    ];
+  }
+
   private formatValue(value: string | number | boolean | null | undefined): string {
     return value === null || value === undefined || value === '' ? '-' : String(value);
+  }
+
+  private formatFileSize(sizeInKb?: number | null): string {
+    if (sizeInKb === null || sizeInKb === undefined) {
+      return '-';
+    }
+
+    if (sizeInKb >= 1024) {
+      return `${(sizeInKb / 1024).toFixed(2)} MB`;
+    }
+
+    return `${sizeInKb.toFixed(2)} KB`;
   }
 
   private formatConfidence(confidence?: OcrEngineConfidence): string {
@@ -164,27 +277,6 @@ export class OcrComparisonTableComponent {
 
   private formatIssues(issues?: string[]): string {
     return issues && issues.length > 0 ? issues.join(', ') : 'None';
-  }
-
-  private formatUsageMetadata(usageMetadata?: OcrUsageMetadata): string[] {
-    if (!usageMetadata) {
-      return ['-'];
-    }
-
-    const items = [
-      `Prompt: ${this.formatValue(usageMetadata.prompt_token_count)}`,
-      `Candidates: ${this.formatValue(usageMetadata.candidates_token_count)}`,
-      `Total: ${this.formatValue(usageMetadata.total_token_count)}`,
-    ];
-
-    if (
-      usageMetadata.cached_content_token_count !== null &&
-      usageMetadata.cached_content_token_count !== undefined
-    ) {
-      items.push(`Cached: ${this.formatValue(usageMetadata.cached_content_token_count)}`);
-    }
-
-    return items;
   }
 
   private formatDuration(duration?: number): string {
@@ -250,6 +342,21 @@ export class OcrComparisonTableComponent {
     };
   }
 
+  private toTableMatchCell(engine: OcrEngineResult): OcrMatchCell {
+    const field = engine.match_summary?.table_exists;
+    const tableCount = field?.table_count ?? engine.extracted?.table_count;
+    const extractedValue =
+      field?.extracted ?? engine.extracted?.table_exists ?? engine.expected?.table_exists ?? null;
+
+    return {
+      expected: this.formatValue(field?.expected ?? engine.expected?.table_exists),
+      extracted: this.formatValue(extractedValue),
+      matched: this.formatMatchValue(field?.match),
+      extra:
+        tableCount !== null && tableCount !== undefined ? `Count: ${tableCount}` : undefined,
+    };
+  }
+
   private formatDateTime(value?: string | null): string {
     if (!value) {
       return '-';
@@ -261,5 +368,17 @@ export class OcrComparisonTableComponent {
 
   private toTitleCase(value: string): string {
     return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  private formatTokenDetails(
+    tokenDetails?: OcrUsageMetadata['prompt_tokens_details'],
+  ): string {
+    if (!tokenDetails || tokenDetails.length === 0) {
+      return '-';
+    }
+
+    return tokenDetails
+      .map((detail) => `${detail.modality}: ${this.formatValue(detail.token_count)}`)
+      .join(', ');
   }
 }

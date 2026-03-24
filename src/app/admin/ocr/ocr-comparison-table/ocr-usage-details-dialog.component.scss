@@ -1,0 +1,50 @@
+.usage-dialog-content {
+  min-width: min(92vw, 640px);
+}
+
+.usage-dialog-engine {
+  margin: 0 0 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.usage-details-table-shell {
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.usage-details-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.usage-details-table td {
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.usage-details-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.usage-details-table tr:last-child {
+  background: #eff6ff;
+}
+
+.usage-detail-label {
+  width: 42%;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #f8fbff;
+}
+
+.usage-detail-value {
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  word-break: break-word;
+}
