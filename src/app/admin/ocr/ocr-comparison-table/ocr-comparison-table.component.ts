@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MaterialModule } from '../../../material.module';
 import {
   OcrEngineConfidence,
+  OcrFinancialFigures,
   OcrEngineResult,
   OcrMatchSummaryField,
   OcrResponse,
@@ -19,6 +20,7 @@ interface OcrMatchCell {
 }
 
 interface OcrComparisonRow {
+  engineKey: string;
   engine: string;
   status: string;
   overallMatch: string;
@@ -31,6 +33,7 @@ interface OcrComparisonRow {
   table: OcrMatchCell;
   confidence: string;
   usageMetadata: OcrUsageMetadata | null;
+  financialFigures: OcrFinancialFigures | null;
   issues: string;
   timings: string[];
   ocrUrl: string | null;
@@ -111,6 +114,7 @@ export class OcrComparisonTableComponent {
     }
 
     return Object.entries(response.engines).map(([engineName, engine]) => ({
+      engineKey: engineName,
       engine: this.toTitleCase(engineName),
       status: this.formatValue(engine.status),
       overallMatch: this.formatMatchValue(engine.match_summary?.overall_match),
@@ -127,6 +131,7 @@ export class OcrComparisonTableComponent {
       table: this.toTableMatchCell(engine),
       confidence: this.formatConfidence(engine.result?.confidence),
       usageMetadata: engine.result?.usage_metadata ?? engine.extracted?.usage_metadata ?? null,
+      financialFigures: engine.result?.financial_figures ?? engine.extracted?.financial_figures ?? null,
       issues: this.formatIssues(engine.result?.issues),
       timings: this.formatTimings(
         engine.timing?.ocr_duration_seconds,
@@ -196,8 +201,25 @@ export class OcrComparisonTableComponent {
       width: '680px',
       maxWidth: '96vw',
       data: {
+        title: 'Usage Metadata',
         engine,
         details: this.getUsageDetailItems(usageMetadata),
+      },
+    });
+  }
+
+  openFinancialFigures(engine: string, financialFigures?: OcrFinancialFigures | null): void {
+    if (!financialFigures) {
+      return;
+    }
+
+    this.dialog.open(OcrUsageDetailsDialogComponent, {
+      width: '680px',
+      maxWidth: '96vw',
+      data: {
+        title: 'Financial Figures',
+        engine,
+        details: this.getFinancialFigureItems(financialFigures),
       },
     });
   }
@@ -248,6 +270,23 @@ export class OcrComparisonTableComponent {
         value: this.formatTokenDetails(usageMetadata.prompt_tokens_details),
       },
       { label: 'Total Tokens', value: this.formatValue(usageMetadata.total_token_count) },
+    ];
+  }
+
+  getFinancialFigureItems(
+    financialFigures?: OcrFinancialFigures | null,
+  ): Array<{ label: string; value: string }> {
+    if (!financialFigures) {
+      return [];
+    }
+
+    return [
+      { label: 'Total Assets', value: this.formatValue(financialFigures.total_assets) },
+      { label: 'Total Liabilities', value: this.formatValue(financialFigures.total_liabilities) },
+      { label: 'Total Income', value: this.formatValue(financialFigures.total_income) },
+      { label: 'Total Expenditure', value: this.formatValue(financialFigures.total_expenditure) },
+      { label: 'Opening Balance', value: this.formatValue(financialFigures.opening_balance) },
+      { label: 'Closing Balance', value: this.formatValue(financialFigures.closing_balance) },
     ];
   }
 

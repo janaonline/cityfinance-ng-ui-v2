@@ -178,6 +178,15 @@
                   Excel
                 </a>
               }
+              @if (row.engineKey === 'gemini_vision' && row.financialFigures) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary py-0 px-1 mb-1 ms-1 file-link-btn"
+                  (click)="openFinancialFigures(row.engine, row.financialFigures)"
+                >
+                  Info
+                </button>
+              }
               @if (!row.ocrUrl && !row.excelUrl) {
                 <span class="text-muted">-</span>
               }

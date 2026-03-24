@@ -2,9 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
-import { OcrUsageMetadata } from '../upload-file-ocr/ocr-response';
-
 interface OcrUsageDialogData {
+  title: string;
   engine: string;
   details: Array<{ label: string; value: string }>;
 }
