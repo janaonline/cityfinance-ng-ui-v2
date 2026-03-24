@@ -223,15 +223,70 @@ h2,
   border-color: #1d4ed8;
 }
 
-pre {
-  margin: 0;
+.raw-tree {
   padding: 1rem;
   border-radius: 16px;
   background: #0f172a;
   color: #e2e8f0;
-  white-space: pre-wrap;
-  word-break: break-word;
   overflow: auto;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.86rem;
+}
+
+.tree-branch,
+.tree-leaf {
+  margin-left: 0;
+}
+
+.tree-branch summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+  color: #93c5fd;
+}
+
+.tree-branch summary::-webkit-details-marker {
+  display: none;
+}
+
+.tree-branch summary::before {
+  content: '▸';
+  color: #60a5fa;
+  font-size: 0.8rem;
+}
+
+.tree-branch[open] > summary::before {
+  content: '▾';
+}
+
+.tree-children {
+  margin: 0.4rem 0 0.25rem 1rem;
+  padding-left: 0.85rem;
+  border-left: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.tree-leaf {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0.2rem 0;
+}
+
+.tree-key {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.tree-meta {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.tree-value {
+  color: #e2e8f0;
+  word-break: break-word;
 }
 
 @media (max-width: 768px) {

@@ -1,0 +1,22 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content class="usage-dialog-content">
+  <p class="usage-dialog-engine">{{ data.engine }}</p>
+
+  <div class="usage-details-table-shell">
+    <table class="usage-details-table">
+      <tbody>
+        @for (detail of data.details; track detail.label) {
+          <tr>
+            <td class="usage-detail-label">{{ detail.label }}:</td>
+            <td class="usage-detail-value">{{ detail.value }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="close()">Close</button>
+</mat-dialog-actions>

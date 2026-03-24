@@ -195,7 +195,11 @@
 
             @if (showRawResponse()) {
               <h3 class="raw-title">Raw response</h3>
-              <pre>{{ responseData() | json }}</pre>
+              <div class="raw-tree">
+                <ng-container
+                  *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: responseData(), key: 'root' }"
+                />
+              </div>
             }
           </div>
         </mat-card-content>
@@ -203,3 +207,39 @@
     }
   </section>
 </div>
+
+<ng-template #treeNodeTemplate let-value let-key="key">
+  @if (isTreeArray(value)) {
+    <details class="tree-branch" open>
+      <summary>
+        <span class="tree-key">{{ key }}</span>
+        <span class="tree-meta">[{{ value.length }}]</span>
+      </summary>
+      <div class="tree-children">
+        @for (item of value; track $index) {
+          <ng-container
+            *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: item, key: '[' + $index + ']' }"
+          />
+        }
+      </div>
+    </details>
+  } @else if (isTreeObject(value)) {
+    <details class="tree-branch" open>
+      <summary>
+        <span class="tree-key">{{ key }}</span>
+      </summary>
+      <div class="tree-children">
+        @for (entry of getObjectEntries(value); track entry.key) {
+          <ng-container
+            *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: entry.value, key: entry.key }"
+          />
+        }
+      </div>
+    </details>
+  } @else {
+    <div class="tree-leaf">
+      <span class="tree-key">{{ key }}:</span>
+      <span class="tree-value">{{ formatTreeValue(value) }}</span>
+    </div>
+  }
+</ng-template>
