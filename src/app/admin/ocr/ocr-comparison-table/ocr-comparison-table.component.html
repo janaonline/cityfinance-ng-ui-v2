@@ -45,8 +45,8 @@
           <!-- <th>As On Date</th> -->
           <th>ULB Name</th>
           <th>Table</th>
-          <th>Pages</th>
           <th>Confidence</th>
+          <th>Usage</th>
           <th>Issues</th>
           <th>Timings</th>
           <th>Files</th>
@@ -112,9 +112,17 @@
                 </div>
               }
             </td>
-            <td>{{ row.pageCount }}</td>
             <td>{{ row.confidence }}</td>
-            <td>{{ row.issues }}</td>
+            <td>
+              @for (usage of row.usageMetadata; track usage) {
+                <div>{{ usage }}</div>
+              }
+            </td>
+            <td>
+              <span class="issue-text" [attr.title]="row.issues !== 'None' ? row.issues : null">
+                {{ row.issues }}
+              </span>
+            </td>
             <td>
               @for (timing of row.timings; track timing) {
                 <div>{{ timing }}</div>

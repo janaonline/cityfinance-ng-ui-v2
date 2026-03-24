@@ -66,6 +66,15 @@
   line-height: 1.1;
 }
 
+.issue-text {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .match-badge {
   display: inline-flex;
   align-items: center;

@@ -5,6 +5,7 @@ import {
   OcrEngineConfidence,
   OcrMatchSummaryField,
   OcrResponse,
+  OcrUsageMetadata,
 } from '../upload-file-ocr/ocr-response';
 
 interface OcrMatchCell {
@@ -25,8 +26,8 @@ interface OcrComparisonRow {
   asOnDate: string;
   ulbName: OcrMatchCell;
   table: OcrMatchCell;
-  pageCount: string;
   confidence: string;
+  usageMetadata: string[];
   issues: string;
   timings: string[];
   ocrUrl: string | null;
@@ -68,7 +69,11 @@ export class OcrComparisonTableComponent {
     const response = this.response();
 
     return [
-      { label: 'File Name', value: this.formatValue(response.filename), fullWidth: true },
+      {
+        label: 'File Name',
+        value: this.formatValue(response.file_info?.filename ?? response.filename),
+        fullWidth: true,
+      },
       { label: 'Job ID', value: this.formatValue(response.job_id) },
       { label: 'Job Status', value: this.formatValue(response.status) },
       { label: 'OCR Method', value: this.formatValue(response.ocr_method) },
@@ -107,8 +112,10 @@ export class OcrComparisonTableComponent {
       asOnDate: this.formatValue(engine.result?.as_on_date),
       ulbName: this.toMatchCell(engine.match_summary?.ulb_name),
       table: this.toMatchCell(engine.match_summary?.table_exists, true),
-      pageCount: this.formatValue(engine.page_count),
       confidence: this.formatConfidence(engine.result?.confidence),
+      usageMetadata: this.formatUsageMetadata(
+        engine.result?.usage_metadata ?? engine.extracted?.usage_metadata,
+      ),
       issues: this.formatIssues(engine.result?.issues),
       timings: this.formatTimings(
         engine.timing?.ocr_duration_seconds,
@@ -124,20 +131,6 @@ export class OcrComparisonTableComponent {
     const parsedUrl = new URL(url);
     return `${parsedUrl.origin}${parsedUrl.pathname}`;
   }
-
-  readonly agreementSummary = computed(() => {
-    const agreement = this.response()?.agreement;
-
-    if (!agreement) {
-      return [];
-    }
-
-    return [
-      { label: 'Doc type match', value: agreement.doc_type_match },
-      { label: 'FY match', value: agreement.fy_match },
-      { label: 'ULB name match', value: agreement.ulb_name_match },
-    ];
-  });
 
   getStatusClass(status: string): string {
     return status.toLowerCase() === 'succeeded'
@@ -171,6 +164,27 @@ export class OcrComparisonTableComponent {
 
   private formatIssues(issues?: string[]): string {
     return issues && issues.length > 0 ? issues.join(', ') : 'None';
+  }
+
+  private formatUsageMetadata(usageMetadata?: OcrUsageMetadata): string[] {
+    if (!usageMetadata) {
+      return ['-'];
+    }
+
+    const items = [
+      `Prompt: ${this.formatValue(usageMetadata.prompt_token_count)}`,
+      `Candidates: ${this.formatValue(usageMetadata.candidates_token_count)}`,
+      `Total: ${this.formatValue(usageMetadata.total_token_count)}`,
+    ];
+
+    if (
+      usageMetadata.cached_content_token_count !== null &&
+      usageMetadata.cached_content_token_count !== undefined
+    ) {
+      items.push(`Cached: ${this.formatValue(usageMetadata.cached_content_token_count)}`);
+    }
+
+    return items;
   }
 
   private formatDuration(duration?: number): string {
