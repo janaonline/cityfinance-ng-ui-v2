@@ -56,6 +56,18 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
+              <mat-label>Gemini model</mat-label>
+              <mat-select formControlName="model">
+                @for (model of geminiModels; track model.value) {
+                  <mat-option [value]="model.value">{{ model.label }}</mat-option>
+                }
+              </mat-select>
+              @if (uploadForm.controls.model.invalid && uploadForm.controls.model.touched) {
+                <mat-error>Gemini model is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>ULB</mat-label>
               <input
                 type="text"

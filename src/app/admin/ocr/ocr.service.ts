@@ -40,6 +40,7 @@ export class OcrService {
     documentTypeId: string,
     financialYear: string,
     ocrMethod: string,
+    model: string,
     ulb?: IULB | string | null,
   ) {
     const formData = new FormData();
@@ -47,6 +48,7 @@ export class OcrService {
     formData.append('doc_type', documentTypeId);
     formData.append('financial_year', financialYear);
     formData.append('ocr_method', ocrMethod);
+    formData.append('model', model);
 
     if (ulb && typeof ulb === 'object') {
       const ulbKeys: string[] = [ulb?.name];
