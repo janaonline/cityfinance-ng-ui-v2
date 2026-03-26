@@ -1,0 +1,15 @@
+<div class="container-fluid px-0">
+  <div class="row g-0">
+    <!-- g-0 removes gutters (spacing between columns) -->
+    <div class="col-6" *ngFor="let item of items">
+      <div
+        class="d-flex flex-column justify-content-center align-items-center px-3 text-dark shadow-sm"
+        [ngStyle]="{ background: item.gradient, 'box-shadow': '1px 1px 40px 0px #1933690F' }"
+        style="height: 90px"
+      >
+        <div class="fw-bold fs-5">{{ item.value }}</div>
+        <div class="text-muted small text-center">{{ item.desc }}</div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,1 +1,42 @@
-<p>city-header works!</p>
+<div>
+  <div class="row my-3">
+    <div class="col-sm-7">
+      <h1 class="d-inline-block pb-3 mb-2" style="border-bottom: 3px solid #e67e15">
+        Indore Municipal Corporation
+      </h1>
+    </div>
+    <div class="col-sm-5 d-flex align-items-end justify-content-end">
+      <div class="input-group flex-nowrap" style="height: 42px; width: 230px">
+        <span class="input-group-text bg-white border-end-0 p-2" style="height: 100%">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control border-start-0 shadow-none px-2"
+          placeholder="Search for city"
+          aria-label="Search for city"
+          style="outline: none; box-shadow: none; height: 100%"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-5">
+    <div class="col-sm-7">
+      <p class="my-4">
+        This urban local body has been classified as a Municipal Corporation in the 1 Million – 4
+        Million population category
+      </p>
+      <app-grid-view></app-grid-view>
+    </div>
+    <div class="col-sm-5">
+      <app-map
+        [ulbId]="ulbId"
+        [stateCode]="stateCode"
+        (ulbIdChange)="onUlbChange($event)"
+      ></app-map>
+      <button class="btn btn-outline-cfSecondary" (click)="resetMap()">Reset</button>
+    </div>
+  </div>
+  <h1 class="fw-bold d-flex justify-content-center align-items-center">Indore Financials</h1>
+</div>

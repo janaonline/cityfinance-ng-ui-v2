@@ -1,5 +1,35 @@
-<p>city-tabs works!</p>
+<div class="position-relative mb-0">
+  <ul class="nav nav-tabs border-bottom" style="border-color: #f7dbbf !important">
+    <li class="nav-item" *ngFor="let tab of tabs; let i = index" #tabButtons>
+      <button
+        class="nav-link bg-transparent border-0 fw-medium px-4 py-3 text-center"
+        [class.text-warning]="i === activeTabIndex"
+        (click)="setActiveTab(i)"
+      >
+        {{ tab.title }}
+      </button>
+    </li>
+  </ul>
 
-<app-financial-performance></app-financial-performance>
-<app-balancesheet-incomestatement></app-balancesheet-incomestatement>
-<app-borrow-credit-rating></app-borrow-credit-rating>
+  <!-- Underline -->
+  <div
+    class="position-absolute"
+    style="
+      bottom: 0;
+      height: 3px;
+      background-color: #e67e15;
+      transition:
+        left 0.3s ease,
+        width 0.3s ease;
+    "
+    [ngStyle]="{ left: underlineLeft + 'px', width: underlineWidth + 'px' }"
+  ></div>
+</div>
+
+<!-- <div class="border-top p-3">
+  <ng-container [ngSwitch]="tabs[activeTabIndex].component">
+    <app-financial-performance *ngSwitchCase="'performance'"></app-financial-performance>
+    <app-balancesheet-incomestatement *ngSwitchCase="'balance'"></app-balancesheet-incomestatement>
+    <app-borrow-credit-rating *ngSwitchCase="'borrow'"></app-borrow-credit-rating>
+  </ng-container>
+</div> -->
