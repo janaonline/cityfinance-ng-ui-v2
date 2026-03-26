@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { Decision, SectionKey } from './afs-ar-approve-modal/afs-ar-approve-modal.component';
 
 export interface ResponseData {
   success: boolean;
@@ -113,5 +114,14 @@ export class AfsService {
   removeJob(job: AfsExcelFile) {
     const url = `${environment.api.url2}afs-digitization/remove-job`;
     return this.http.post<any>(url, job);
+  }
+
+  getARItems(params: { id: string }) {
+    const url = `${environment.api.url2}afs-digitization/get-ar-item/${params.id}`;
+    return this.http.get<ResponseData>(url, { params });
+  }
+  submitARDecision(payload: { id: string; type: string; section: SectionKey; decision: Exclude<Decision, null>; notes: string }) {
+    const url = `${environment.api.url2}afs-digitization/submit-ar-decision`;
+    return this.http.post<ResponseData>(url, payload);
   }
 }
