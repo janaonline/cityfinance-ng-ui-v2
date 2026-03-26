@@ -442,7 +442,9 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
       if (result) {
         for (const row of selectedRows) {
           const ulbFile = row[`${this.filters().docType}`]?.url;
-          if (ulbFile) {
+          if (row.afsFiles?.afsFile) {
+            row.afsFiles.afsFile.digitizationStatus = 'queued';
+          } else if (ulbFile) {
             if (!row.afsFiles?.ulbFile) {
               row.afsFiles = row.afsFiles || {};
               row.afsFiles.ulbFile = {
@@ -453,9 +455,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
               row.afsFiles.ulbFile.digitizationStatus = 'queued';
             }
           }
-          if (row.afsFiles?.afsFile) {
-            row.afsFiles.afsFile.digitizationStatus = 'queued';
-          }
+
         }
       }
       // console.log(`Dialog result: ${result}`);
