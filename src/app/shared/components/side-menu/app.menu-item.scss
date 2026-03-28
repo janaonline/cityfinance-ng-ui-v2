@@ -1,9 +1,3 @@
-:host {
-  font-family: var(--ff-base);
-  font-weight: var(--fw-medium);
-  font-size: var(--fs-6);
-}
-
 a {
   text-decoration: none;
   display: block;
@@ -117,6 +111,8 @@ hr {
 }
 
 .layout-menu {
+  font-size: var(--fs-6);
+
   background-color: var(--color-primary);
   border-radius: 0px 0px 5px 0px;
   // padding: 0.5rem;

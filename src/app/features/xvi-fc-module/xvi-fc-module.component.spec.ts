@@ -160,4 +160,10 @@ describe('XviFcModuleComponent', () => {
     const outlet = fixture.nativeElement.querySelector('router-outlet');
     expect(outlet).toBeTruthy();
   });
+
+  it('should add the XVIFC theme class to the host element', () => {
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.classList.contains('xvifc-theme')).toBeTrue();
+  });
 });

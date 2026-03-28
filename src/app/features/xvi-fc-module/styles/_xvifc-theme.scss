@@ -1,3 +1,10 @@
+@use '@angular/material' as mat;
+@use './theme-colors' as mat-theme;
+
+$xvifc_theme_class: 'xvifc-theme';
+$xvifc-font-family: Montserrat;
+$xvifc-density: -1;
+
 @mixin xvifc-theme-tokens {
   --color-primary: #114551;
   --color-primary-hover: #16505d;
@@ -9,7 +16,24 @@
   --item-padding: 0.45rem;
   --radius-split-rouned: 5px 20px 20px 5px;
   --radius-split-squared: 5px 5px 5px 5px;
+}
 
-  font-family: var(--ff-base);
-  font-weight: var(--fw-medium);
+@mixin xvifc-material-theme {
+  font-family: $xvifc-font-family, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  @include xvifc-theme-tokens;
+  @include mat.theme(
+    (
+      
+      color: (
+        primary: mat-theme.$primary-palette,
+        tertiary: mat-theme.$tertiary-palette,
+        theme-type: light,
+      ),
+      typography: $xvifc-font-family,
+      density: $xvifc-density,
+    )
+  );
 }

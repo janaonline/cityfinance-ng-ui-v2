@@ -2,15 +2,21 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
+import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
 import { AppMenuComponent } from '../../shared/components/side-menu/app.menu';
 import { SideBarModel } from '../../shared/components/side-menu/interface';
 import { XvifcModuleService } from './xvifc-module.service';
 
+const XVIFC_THEME_CLASS = 'xvifc-theme';
 @Component({
   selector: 'app-xvi-fc-module',
   imports: [AppMenuComponent, RouterModule],
   templateUrl: './xvi-fc-module.component.html',
   styleUrl: './xvi-fc-module.component.scss',
+  host: {
+    class: XVIFC_THEME_CLASS,
+  },
+  providers: [...provideMaterialThemeScope(XVIFC_THEME_CLASS)],
 })
 export class XviFcModuleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -19,6 +25,7 @@ export class XviFcModuleComponent implements OnInit {
   private readonly xvifcService = inject(XvifcModuleService);
 
   readonly model = signal<SideBarModel>({ topModel: [], bottomModel: [] });
+
   ngOnInit() {
     // It syncs the sidebar once immediately.
     this.syncMenuModel();

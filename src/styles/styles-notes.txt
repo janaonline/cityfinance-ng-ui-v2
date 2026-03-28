@@ -1,0 +1,39 @@
+ /**
+ * Theme scoping note:
+ *
+ * The app uses two Angular Material theme paths:
+ * 1. the global/default Material theme for shared or legacy UI, and
+ * 2. scoped feature themes such as `.xvifc-theme` (xvi-fc-module)
+ *
+ * Regular Material components render inside the normal DOM tree, so they pick
+ * up the theme from their nearest themed wrapper. Overlay-based components
+ * such as datepicker, select, menu, autocomplete, tooltip, and dialog render
+ * inside the CDK overlay container, outside the component DOM tree.
+ *
+ * Because of that, overlay components do not inherit component-scoped theme
+ * styles automatically. Overlay theming is bridged in two places:
+ * - `material-theme.provider.ts` assigns the scoped theme class to supported
+ *   Material overlay panels/default options
+ * - `overlay-theme.service.ts` applies the same theme class to the global
+ *   CDK overlay container for the active feature/module lifecycle
+ *
+ * In short:
+ * - global theme path => default blue Material theme
+ * - `.xvifc-theme` => scoped green XVI FC theme
+ * - overlays need explicit theme bridging; normal DOM inheritance is not enough
+ *
+ * Adding a new scoped theme:
+ * 1. create a new theme stylesheet with its own theme class and Material mixin
+ *    (same pattern as `_xvifc-theme.scss`)
+ * 2. register selectors in global styles for both:
+ *    - `.your-theme-class`
+ *    - `.cdk-overlay-container.your-theme-class`
+ * 3. provide the theme scope in the feature/module using
+ *    `provideMaterialThemeScope('your-theme-class')`
+ * 4. apply the same class to the feature wrapper/root element
+ * 5. use `OverlayThemeService` so overlay-based Material components opened from
+ *    that feature receive the same scoped theme
+ *
+ * Follow the existing XVI FC theme implementation as the reference pattern for
+ * any future feature-level Material theme.
+ */

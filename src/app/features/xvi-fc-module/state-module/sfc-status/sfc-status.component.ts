@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
@@ -13,7 +14,13 @@ import {
 
 @Component({
   selector: 'app-sfc-status',
-  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DynamicFormComponent,
+    PreLoaderComponent,
+    MatButtonModule,
+  ],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
 })
@@ -200,7 +207,7 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     ],
   },
   {
-    formFieldType: 'text',
+    formFieldType: 'date',
     label: 'Applicable SFC for Grant Calculation',
     key: 'applicableSfcGrantCalculation',
     validations: [

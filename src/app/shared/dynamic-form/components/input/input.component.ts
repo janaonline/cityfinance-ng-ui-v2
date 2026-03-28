@@ -11,9 +11,9 @@ import { TrimOnBlurDirective } from '../../../../core/directives/trim-on-blur.di
   templateUrl: './input.component.html',
   styles: [
     `
-    * {
-        font-family: var(--ff-base) !important;
-    }
+    // * {
+    //     font-family: var(--ff-base) !important;
+    // }
     .warning-hint {
         display: block;
         color: orange;

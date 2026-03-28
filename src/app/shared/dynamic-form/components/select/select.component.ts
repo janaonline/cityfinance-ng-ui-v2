@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
@@ -11,7 +11,7 @@ import { MaterialModule } from '../../../../material.module';
     <!-- <span class="text-danger" *ngIf="field.required">*&nbsp;</span> -->
   </label>
 }
-<mat-form-field appearance="outline" class="demo-full-width mt-2" [formGroup]="group">
+<mat-form-field appearance="outline" class="demo-full-width" [formGroup]="group">
   @if (displayInlineLabel) {
     <mat-label>{{ field.label }}</mat-label>
   }
@@ -19,7 +19,6 @@ import { MaterialModule } from '../../../../material.module';
     [formControlName]="field.key"
     [multiple]="field.multiple"
     placeholder="Select an Option"
-    panelClass="example-panel-blue"
     [panelWidth]="parentField ? 400 : 'auto'"
     >
     <!-- <mat-option value="">Select an Option</mat-option> -->
@@ -52,7 +51,7 @@ import { MaterialModule } from '../../../../material.module';
 </mat-icon></mat-label><mat-select formControlName="value"><mat-option *ngFor="let opt of getValue('options')" [value]="opt">{{opt}}</mat-option></mat-select></mat-form-field> -->`,
     styles: []
 })
-export class SelectComponent {
+export class SelectComponent implements OnInit {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() options!: any[];
