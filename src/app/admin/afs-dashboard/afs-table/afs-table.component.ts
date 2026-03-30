@@ -178,7 +178,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
   limit = 10;
   pageSize = 10;
   totalCount: number | undefined = 0;
-
+  @Output() queuedValues = new EventEmitter<string>();
   filters = input.required<FilterValues>({});
 
   MASTER_FORM_STATUS: { [key: number]: string } = {
@@ -443,15 +443,18 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
         for (const row of selectedRows) {
           const ulbFile = row[`${this.filters().docType}`]?.url;
           if (row.afsFiles?.afsFile) {
+            this.queuedValues.emit(this.selection.selected.length.toString());
             row.afsFiles.afsFile.digitizationStatus = 'queued';
           } else if (ulbFile) {
             if (!row.afsFiles?.ulbFile) {
+              this.queuedValues.emit(this.selection.selected.length.toString());
               row.afsFiles = row.afsFiles || {};
               row.afsFiles.ulbFile = {
                 digitizationStatus: 'queued',
               };
             }
             else {
+              this.queuedValues.emit(this.selection.selected.length.toString());
               row.afsFiles.ulbFile.digitizationStatus = 'queued';
             }
           }
