@@ -4,6 +4,8 @@ export interface Validator {
   message: string;
 }
 
+export type DateConfigValue = Date | string | null;
+
 export type UploadedFileValue = {
   fileName: string;
   fileUrl: string;
@@ -47,6 +49,8 @@ export interface FieldConfig {
   fileViewType?: 'button' | 'dropzone';
   folderPath?: string;
   maxFileSize?: number;
+  minDate?: DateConfigValue;
+  maxDate?: DateConfigValue;
 }
 
 export interface JsonFieldConfig {
@@ -59,4 +63,7 @@ export interface JsonFieldConfig {
   value?: any;
   validations?: Validator[];
   formArrays?: any[];
+  readonly?: boolean;
+  minDate?: DateConfigValue;
+  maxDate?: DateConfigValue;
 }

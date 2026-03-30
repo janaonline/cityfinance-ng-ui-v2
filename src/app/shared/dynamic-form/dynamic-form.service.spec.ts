@@ -54,4 +54,45 @@ describe('DynamicFormService', () => {
     expect(control.value).toEqual(populatedValue);
     expect(control.valid).toBeTrue();
   });
+
+  it('serializes date field payload values to UTC ISO strings', () => {
+    const payload = service.serializeFormPayload(
+      [
+        {
+          key: 'startDate',
+          label: 'Start date',
+          formFieldType: 'date',
+        } as FieldConfig,
+      ],
+      {
+        startDate: new Date(2026, 0, 2),
+      },
+    );
+
+    expect(payload['startDate']).toBe('2026-01-02T00:00:00.000Z');
+  });
+
+  it('preserves non-date values while keeping existing ISO date strings stable', () => {
+    const payload = service.serializeFormPayload(
+      [
+        {
+          key: 'startDate',
+          label: 'Start date',
+          formFieldType: 'date',
+        } as FieldConfig,
+        {
+          key: 'title',
+          label: 'Title',
+          formFieldType: 'input',
+        } as FieldConfig,
+      ],
+      {
+        startDate: '2026-01-02T00:00:00.000Z',
+        title: 'Budget review',
+      },
+    );
+
+    expect(payload['startDate']).toBe('2026-01-02T00:00:00.000Z');
+    expect(payload['title']).toBe('Budget review');
+  });
 });

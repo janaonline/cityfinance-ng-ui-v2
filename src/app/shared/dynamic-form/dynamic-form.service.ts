@@ -6,12 +6,15 @@ import {
   Validators,
   FormControl,
   AbstractControl,
+  ValidatorFn,
 } from '@angular/forms';
 import {
   compareArrFieldsValidator,
   compareFieldsValidator,
 } from '../../core/validators/comparison.validator';
 import { FieldConfig, UploadedFileValue } from './field.interface';
+import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
+import { toUtcIsoDateString } from './components/date/utc-iso-date-adapter';
 
 @Injectable({
   providedIn: 'root',
@@ -190,10 +193,17 @@ export class DynamicFormService {
     });
   }
 
-  bindValidations(validations: any) {
-    if (validations && validations.length > 0) {
-      const validators: any = [];
-      validations.forEach((row: any) => {
+  bindValidations(
+    validations: FieldConfig['validations'] | false | undefined,
+    field?: Pick<FieldConfig, 'formFieldType' | 'minDate' | 'maxDate'>,
+  ) {
+    const validators: ValidatorFn[] = [];
+    const validationList = validations || [];
+    let hasMinDateValidation = false;
+    let hasMaxDateValidation = false;
+
+    if (validationList.length > 0) {
+      validationList.forEach((row: any) => {
         switch (row.name) {
           case 'required':
             validators.push(Validators.required);
@@ -210,6 +220,14 @@ export class DynamicFormService {
           case 'max':
             validators.push(Validators.max(row.validator));
             break;
+          case 'minDate':
+            hasMinDateValidation = true;
+            validators.push(minDateValidator(row.validator ?? field?.minDate));
+            break;
+          case 'maxDate':
+            hasMaxDateValidation = true;
+            validators.push(maxDateValidator(row.validator ?? field?.maxDate));
+            break;
           case 'minlength':
             validators.push(Validators.minLength(row.validator));
             break;
@@ -221,19 +239,29 @@ export class DynamicFormService {
             break;
         }
       });
-
-      return Validators.compose(validators);
     }
-    return null;
+
+    if (field?.formFieldType === 'date') {
+      if (!hasMinDateValidation && field.minDate !== undefined) {
+        validators.push(minDateValidator(field.minDate));
+      }
+
+      if (!hasMaxDateValidation && field.maxDate !== undefined) {
+        validators.push(maxDateValidator(field.maxDate));
+      }
+    }
+
+    return validators.length > 0 ? Validators.compose(validators) : null;
   }
   createContorl(field: any, validations = false, readonly = false) {
     const validationsData = validations || field.validations;
     // const val = field.value ? { value: field.value, disabled: readonly || field.readonly } : '';
+    const resolvedReadonly = readonly || field.readonly;
     const val = {
       value: this.resolveInitialControlValue(field, false),
-      disabled: readonly || field.readonly,
+      disabled: field.formFieldType === 'date' ? false : resolvedReadonly,
     };
-    return new FormControl(val, this.bindValidations(validationsData));
+    return new FormControl(val, this.bindValidations(validationsData, field));
     // return new FormControl(field.value || '');
   }
   tabControl(fields: any[]) {
@@ -285,10 +313,46 @@ export class DynamicFormService {
     questions.forEach((question: FieldConfig) => {
       group[question.key] = new FormControl(
         this.resolveInitialControlValue(question, true),
-        this.bindValidations(question.validations),
+        this.bindValidations(question.validations, question),
       );
     });
     return new FormGroup(group);
+  }
+
+  /**
+   * Convert dynamic-form values into the payload shape expected by persistence layers.
+   * Date fields stay compatible with the Material datepicker in form state and are
+   * serialized to UTC ISO strings only when building the outbound payload.
+   */
+  serializeFormPayload(
+    fields: ReadonlyArray<Pick<FieldConfig, 'key' | 'formFieldType'>>,
+    values: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = Object.create(null);
+
+    for (const field of fields) {
+      const key = field.key;
+      if (
+        typeof key !== 'string' ||
+        key.length === 0 ||
+        !Object.prototype.hasOwnProperty.call(values, key)
+      ) {
+        continue;
+      }
+
+      payload[key] = this.serializeFieldValue(field, values[key]);
+    }
+
+    return payload;
+  }
+
+  serializeFieldValue(field: Pick<FieldConfig, 'formFieldType'>, value: unknown): unknown {
+    if (field.formFieldType !== 'date') {
+      return value;
+    }
+
+    const serializedDate = toUtcIsoDateString(value);
+    return serializedDate === undefined ? value : serializedDate;
   }
 
   /**

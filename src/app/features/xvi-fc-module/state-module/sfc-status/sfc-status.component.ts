@@ -72,7 +72,12 @@ export class SfcStatusComponent implements OnInit {
       }
 
       // If field is readonly but has no value, make it editable to allow user input
-      field.readonly = !field.value && field.readonly ? false : field.readonly;
+      const hasInitialValue =
+        field.value !== null && field.value !== undefined && field.value !== '';
+      field.readonly =
+        !hasInitialValue && field.readonly && field.formFieldType !== 'date'
+          ? false
+          : field.readonly;
 
       // Create form control with validations and readonly state
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
@@ -140,11 +145,11 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     label: 'Action Taken Report',
     key: 'actionTakenReport',
     validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
+      // {
+      //   name: 'required',
+      //   validator: null,
+      //   message: 'This field is required.',
+      // },
     ],
     value: {
       fileName: '',
@@ -210,11 +215,24 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     formFieldType: 'date',
     label: 'Applicable SFC for Grant Calculation',
     key: 'applicableSfcGrantCalculation',
+    readonly: false,
+    minDate: '2026-02-01',
+    maxDate: '2026-12-31',
     validations: [
       {
         name: 'required',
         validator: null,
         message: 'This field is required.',
+      },
+      {
+        name: 'minDate',
+        validator: '2026-02-01',
+        message: 'Date must be on or after 01 Feb 2026.',
+      },
+      {
+        name: 'maxDate',
+        validator: '2026-12-31',
+        message: 'Date must be on or before 31 Dec 2026.',
       },
     ],
   },

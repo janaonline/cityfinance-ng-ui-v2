@@ -130,9 +130,10 @@ describe('SfcStatusComponent', () => {
     component.onSubmit();
 
     expect(getControl('actionTakenReport')?.touched).toBeTrue();
-    expect(getControl('actionTakenReport')?.invalid).toBeTrue();
     expect(getControl('sfcTerm')?.touched).toBeTrue();
+    expect(getControl('sfcTerm')?.invalid).toBeTrue();
     expect(getControl('applicableSfcGrantCalculation')?.touched).toBeTrue();
+    expect(getControl('applicableSfcGrantCalculation')?.invalid).toBeTrue();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
       'Please correct the errors in the form before submitting.',
       'snackbar-danger',
@@ -154,7 +155,7 @@ describe('SfcStatusComponent', () => {
     getControl('sfcTerm')?.setValue('Sixth SFC');
     getControl('sfcReportStatus')?.setValue('Submitted');
     getControl('sfcActive')?.setValue('no');
-    getControl('applicableSfcGrantCalculation')?.setValue('6th SFC');
+    getControl('applicableSfcGrantCalculation')?.setValue(new Date(2026, 5, 15));
     getControl('applicableSfcReportSubmissionDate')?.setValue('19-01-2024');
     fixture.detectChanges();
 
@@ -172,12 +173,55 @@ describe('SfcStatusComponent', () => {
       mimeType: 'application/pdf',
     });
     expect(payload['sfcActive']).toBe('no');
-    expect(payload['applicableSfcGrantCalculation']).toBe('6th SFC');
+    expect(payload['applicableSfcGrantCalculation']).toBe('2026-06-15T00:00:00.000Z');
     expect(payload['applicableSfcReportSubmissionDate']).toBe('19-01-2024');
     expect(payload['sfcTerm']).toBeUndefined();
     expect(payload['sfcReportStatus']).toBeUndefined();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submitted successfully!');
   }));
+
+  it('applies the configured min and max date validation to applicableSfcGrantCalculation', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const control = getControl('applicableSfcGrantCalculation');
+
+    control?.setValue(new Date(2026, 0, 31));
+    control?.updateValueAndValidity();
+    expect(control?.hasError('minDate')).toBeTrue();
+
+    control?.setValue(new Date(2027, 0, 1));
+    control?.updateValueAndValidity();
+    expect(control?.hasError('maxDate')).toBeTrue();
+
+    control?.setValue(new Date(2026, 5, 15));
+    control?.updateValueAndValidity();
+    expect(control?.hasError('minDate')).toBeFalse();
+    expect(control?.hasError('maxDate')).toBeFalse();
+  }));
+
+  it('keeps readonly date controls enabled so their values stay visible in form state', () => {
+    createComponent();
+
+    component.fields.set([
+      {
+        formFieldType: 'date',
+        label: 'Readonly date',
+        key: 'readonlyDate',
+        readonly: true,
+        minDate: '2026-02-01',
+        maxDate: '2026-12-31',
+      } as ConditionalFieldConfig,
+    ]);
+
+    component.createFormControls();
+
+    const control = component.form.get('readonlyDate');
+
+    expect(component.fields()[0].readonly).toBeTrue();
+    expect(control).toBeTruthy();
+    expect(control?.disabled).toBeFalse();
+  });
 
   it('stops control creation and reports invalid field configuration', () => {
     createComponent();

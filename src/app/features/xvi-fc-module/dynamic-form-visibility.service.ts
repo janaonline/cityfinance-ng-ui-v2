@@ -1,7 +1,8 @@
-import { DestroyRef, Injectable, WritableSignal } from '@angular/core';
+import { DestroyRef, Injectable, WritableSignal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
+import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 
 export type VisibilityCondition =
   | { key: string; operator: 'equals'; value: unknown }
@@ -22,6 +23,8 @@ export type DependencyIndex<T extends ConditionalFieldConfig = ConditionalFieldC
 
 @Injectable({ providedIn: 'root' })
 export class DynamicFormVisibilityService {
+  private readonly dynamicFormService = inject(DynamicFormService);
+
   /**
    * Create a map of controller field keys to the list of fields that depend on them for visibility
    * @param fields - Array of conditional field configurations
@@ -133,7 +136,7 @@ export class DynamicFormVisibilityService {
         continue;
       }
 
-      payload[key] = control.value;
+      payload[key] = this.dynamicFormService.serializeFieldValue(field, control.value);
     }
 
     return payload;
