@@ -28,7 +28,11 @@
         } @else {
           <form class="content-body" [formGroup]="form">
             @for (item of visibleFields(); track item.key) {
-              <app-dynamic-form [field]="item" [group]="form"></app-dynamic-form>
+              <app-dynamic-form
+                class="d-block my-2"
+                [field]="item"
+                [group]="form"
+              ></app-dynamic-form>
             }
           </form>
         }

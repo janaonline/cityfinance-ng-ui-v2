@@ -7,9 +7,9 @@ import { FieldConfig } from '../../field.interface';
   selector: 'app-date',
   imports: [MaterialModule],
   template: `
-    <mat-label class="fw-bold">{{ field.label }}</mat-label>
-    <mat-form-field class="demo-full-width margin-top" appearance="outline" [formGroup]="group">
-      <input matInput [matDatepicker]="picker" [formControlName]="field.key" />
+    <label for="{{ field.key }}" class="fw-bold">{{ field.label }}</label>
+    <mat-form-field class="margin-top" appearance="outline" [formGroup]="group">
+      <input id="{{ field.key }}" matInput [matDatepicker]="picker" [formControlName]="field.key" />
       <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-datepicker #picker [panelClass]="materialThemeClass"></mat-datepicker>
 

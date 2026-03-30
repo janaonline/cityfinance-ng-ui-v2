@@ -33,7 +33,7 @@
     }
     @default {
       @if (displayLabel && !displayInlineLabel) {
-        <label class="fw-bold"
+        <label [for]="field.key" class="fw-bold"
           >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label
           >
       }

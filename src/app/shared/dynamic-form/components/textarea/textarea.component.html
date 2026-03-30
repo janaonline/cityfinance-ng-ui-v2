@@ -1,5 +1,5 @@
 @if (field && field.label) {
-  <mat-label data-testid="field-label" class="fw-bold">{{ field.label }}</mat-label>
+  <label [for]="field.key" data-testid="field-label" class="fw-bold">{{ field.label }}</label>
 }
 
 @if (field && field.key) {
@@ -12,6 +12,7 @@
       placeholder=""
       data-testid="field-textarea"
       appTrimOnBlur
+      [id]="field.key"
     ></textarea>
     @for (validation of validations(); track $index) {
       <ng-container ngProjectAs="mat-error">

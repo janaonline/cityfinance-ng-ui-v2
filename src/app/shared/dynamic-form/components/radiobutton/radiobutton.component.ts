@@ -8,7 +8,7 @@ import { MaterialModule } from '../../../../material.module';
     template: ` <div class="demo-full-width margin-top" [formGroup]="group">
       @if (field.label) {
         <div>
-          <label class="fw-bold radio-label-padding"
+          <label [for]="field.key" class="fw-bold radio-label-padding"
             >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
             <!-- <span class="text-danger">*&nbsp;</span> -->
           </label>
