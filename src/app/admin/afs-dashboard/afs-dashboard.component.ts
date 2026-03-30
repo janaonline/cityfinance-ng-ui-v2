@@ -134,13 +134,19 @@ export class AfsDashboardComponent implements OnInit {
     //   class: "text-success",
     // },
   ];
-
+  queuedValues: string = '';
   constructor(private afsService: AfsService) { }
 
   ngOnInit(): void {
     this.getDashboardCards();
   }
-
+  onQueuedValuesChanged(value: string) {
+    this.dashboardCards = this.dashboardCards.map(card =>
+      card.title === 'Queued Files'
+        ? { ...card, value }
+        : card
+    );
+  }
   getDashboardCards() {
     this.afsService.getDashboardCards().subscribe((res) => {
       console.log('dashboard stats:', res);
