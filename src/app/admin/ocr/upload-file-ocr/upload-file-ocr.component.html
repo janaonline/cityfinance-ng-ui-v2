@@ -68,6 +68,15 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
+              <mat-label>Enable orientation check</mat-label>
+              <mat-select formControlName="enableOrientationCheck">
+                @for (option of orientationCheckOptions; track option.label) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>ULB</mat-label>
               <input
                 type="text"
@@ -93,7 +102,10 @@
               </mat-autocomplete>
               @if (selectedUlb()) {
                 <mat-hint>{{ selectedUlb()?.code }}</mat-hint>
-              } @else if ((uploadForm.controls.ulb.value ?? '').toString().length > 0 && (uploadForm.controls.ulb.value ?? '').toString().length < 2) {
+              } @else if (
+                (uploadForm.controls.ulb.value ?? '').toString().length > 0 &&
+                (uploadForm.controls.ulb.value ?? '').toString().length < 2
+              ) {
                 <mat-hint>Type at least 2 characters to search.</mat-hint>
               }
               @if (uploadForm.controls.ulb.invalid && uploadForm.controls.ulb.touched) {
@@ -139,7 +151,7 @@
               @if (globalLoader.loading()) {
                 Submitting...
               } @else {
-                Start OCR
+                Submit & Validate
               }
             </button>
           </div>
@@ -197,7 +209,10 @@
               <h3 class="raw-title">Raw response</h3>
               <div class="raw-tree">
                 <ng-container
-                  *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: responseData(), key: 'root' }"
+                  *ngTemplateOutlet="
+                    treeNodeTemplate;
+                    context: { $implicit: responseData(), key: 'root' }
+                  "
                 />
               </div>
             }
@@ -218,7 +233,10 @@
       <div class="tree-children">
         @for (item of value; track $index) {
           <ng-container
-            *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: item, key: '[' + $index + ']' }"
+            *ngTemplateOutlet="
+              treeNodeTemplate;
+              context: { $implicit: item, key: '[' + $index + ']' }
+            "
           />
         }
       </div>
@@ -231,7 +249,10 @@
       <div class="tree-children">
         @for (entry of getObjectEntries(value); track entry.key) {
           <ng-container
-            *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: entry.value, key: entry.key }"
+            *ngTemplateOutlet="
+              treeNodeTemplate;
+              context: { $implicit: entry.value, key: entry.key }
+            "
           />
         }
       </div>

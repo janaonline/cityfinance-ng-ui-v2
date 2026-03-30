@@ -320,7 +320,6 @@ export class OcrComparisonTableComponent {
       label: `${index + 1}. ${this.formatValue(validation.rule_label || validation.rule_id)}`,
       status: validation.status,
       value: [
-        `Status: ${this.formatValue(validation.status)}`,
         `Message: ${this.formatValue(validation.message)}`,
         `Affected Items: ${validation.affected_items?.length ? validation.affected_items.join(', ') : '-'}`,
         `Computed: ${this.formatValue(validation.computed_value)}`,
