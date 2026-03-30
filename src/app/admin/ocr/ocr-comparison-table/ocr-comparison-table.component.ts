@@ -9,6 +9,7 @@ import {
   OcrMatchSummaryField,
   OcrResponse,
   OcrUsageMetadata,
+  OcrValidationRule,
 } from '../upload-file-ocr/ocr-response';
 import { OcrUsageDetailsDialogComponent } from './ocr-usage-details-dialog.component';
 
@@ -34,6 +35,7 @@ interface OcrComparisonRow {
   confidence: string;
   usageMetadata: OcrUsageMetadata | null;
   financialFigures: OcrFinancialFigures | null;
+  validations: OcrValidationRule[] | null;
   issues: string;
   timings: string[];
   ocrUrl: string | null;
@@ -132,6 +134,7 @@ export class OcrComparisonTableComponent {
       confidence: this.formatConfidence(engine.result?.confidence),
       usageMetadata: engine.result?.usage_metadata ?? engine.extracted?.usage_metadata ?? null,
       financialFigures: engine.result?.financial_figures ?? engine.extracted?.financial_figures ?? null,
+      validations: engine.result?.validations ?? null,
       issues: this.formatIssues(engine.result?.issues),
       timings: this.formatTimings(
         engine.timing?.ocr_duration_seconds,
@@ -224,6 +227,22 @@ export class OcrComparisonTableComponent {
     });
   }
 
+  openValidations(engine: string, validations?: OcrValidationRule[] | null): void {
+    if (!validations || validations.length === 0) {
+      return;
+    }
+
+    this.dialog.open(OcrUsageDetailsDialogComponent, {
+      width: '720px',
+      maxWidth: '96vw',
+      data: {
+        title: 'Validations',
+        engine,
+        details: this.getValidationItems(validations),
+      },
+    });
+  }
+
   getUsageSummaryItems(usageMetadata?: OcrUsageMetadata | null): Array<{ label: string; value: string }> {
     if (!usageMetadata) {
       return [
@@ -288,6 +307,26 @@ export class OcrComparisonTableComponent {
       { label: 'Opening Balance', value: this.formatValue(financialFigures.opening_balance) },
       { label: 'Closing Balance', value: this.formatValue(financialFigures.closing_balance) },
     ];
+  }
+
+  getValidationItems(
+    validations?: OcrValidationRule[] | null,
+  ): Array<{ label: string; value: string; status?: string | null }> {
+    if (!validations || validations.length === 0) {
+      return [];
+    }
+
+    return validations.map((validation, index) => ({
+      label: `${index + 1}. ${this.formatValue(validation.rule_label || validation.rule_id)}`,
+      status: validation.status,
+      value: [
+        `Status: ${this.formatValue(validation.status)}`,
+        `Message: ${this.formatValue(validation.message)}`,
+        `Affected Items: ${validation.affected_items?.length ? validation.affected_items.join(', ') : '-'}`,
+        `Computed: ${this.formatValue(validation.computed_value)}`,
+        `Expected: ${this.formatValue(validation.expected_value)}`,
+      ].join('\n'),
+    }));
   }
 
   private formatValue(value: string | number | boolean | null | undefined): string {

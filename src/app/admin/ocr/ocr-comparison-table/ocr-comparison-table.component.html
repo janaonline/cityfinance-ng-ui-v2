@@ -178,6 +178,15 @@
                   Excel
                 </a>
               }
+              @if (row.validations?.length) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-info py-0 px-1 mb-1 ms-1 file-link-btn"
+                  (click)="openValidations(row.engine, row.validations)"
+                >
+                  Validations
+                </button>
+              }
               @if (row.engineKey === 'gemini_vision' && row.financialFigures) {
                 <button
                   type="button"
