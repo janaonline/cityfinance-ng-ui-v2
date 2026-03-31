@@ -35,13 +35,11 @@
   margin-top: 0.45rem;
 }
 
-.validation-list,
 .section-list {
   display: grid;
   gap: 0.75rem;
 }
 
-.validation-card,
 .section-card {
   border: 1px solid #dbeafe;
   border-radius: 12px;
@@ -49,7 +47,6 @@
   overflow: hidden;
 }
 
-.validation-card__header,
 .section-card__header {
   display: flex;
   align-items: center;
@@ -60,13 +57,6 @@
   border-bottom: 1px solid #dbeafe;
 }
 
-.validation-card__title {
-  color: #1e3a8a;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.validation-card__body,
 .subtotal-grid {
   display: grid;
   gap: 0.45rem;
@@ -82,8 +72,17 @@
 .line-items-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
+.validations-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.validations-table th,
+.validations-table td,
 .line-items-table th,
 .line-items-table td {
   padding: 0.7rem 0.95rem;
@@ -92,6 +91,7 @@
   vertical-align: top;
 }
 
+.validations-table th,
 .line-items-table th {
   background: #eff6ff;
   color: #1e3a8a;
@@ -101,9 +101,25 @@
   text-transform: uppercase;
 }
 
+.validations-table td,
 .line-items-table td {
   color: #0f172a;
   font-size: 0.88rem;
+  background: #fff;
+}
+
+.line-items-table th:last-child,
+.line-items-table td:last-child {
+  text-align: right;
+}
+
+.line-items-table__value {
+  width: 180px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .validation-status-badge {
@@ -159,7 +175,6 @@
     min-width: min(96vw, 96vw);
   }
 
-  .validation-card__header,
   .section-card__header {
     align-items: flex-start;
     flex-direction: column;

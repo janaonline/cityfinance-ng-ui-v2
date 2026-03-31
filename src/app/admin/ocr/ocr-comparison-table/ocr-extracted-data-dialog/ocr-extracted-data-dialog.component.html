@@ -25,28 +25,38 @@
     </div>
 
     @if (data.validations.length > 0) {
-      <div class="validation-list">
-        @for (validation of data.validations; track $index) {
-          <article class="validation-card">
-            <div class="validation-card__header">
-              <div class="validation-card__title">
-                {{ validation.rule_label || validation.rule_id || 'Validation' }}
-              </div>
-              @if (validation.status) {
-                <span [class]="getStatusClass(validation.status)">{{ validation.status }}</span>
-              }
-            </div>
-            <div class="validation-card__body">
-              <div><strong>Message:</strong> {{ formatValue(validation.message) }}</div>
-              <div>
-                <strong>Affected Items:</strong>
-                {{ formatAffectedItems(validation.affected_items) }}
-              </div>
-              <div><strong>Computed:</strong> {{ formatValue(validation.computed_value) }}</div>
-              <div><strong>Expected:</strong> {{ formatValue(validation.expected_value) }}</div>
-            </div>
-          </article>
-        }
+      <div class="table-shell">
+        <table class="validations-table">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Affected Items</th>
+              <th>Computed / Expected</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (validation of data.validations; track $index) {
+              <tr>
+                <td>{{ validation.rule_label || validation.rule_id || 'Validation' }}</td>
+                <td>
+                  @if (validation.status) {
+                    <span [class]="getStatusClass(validation.status)">{{ validation.status }}</span>
+                  } @else {
+                    -
+                  }
+                </td>
+                <td>{{ formatValue(validation.message) }}</td>
+                <td>{{ formatAffectedItems(validation.affected_items) }}</td>
+                <td>
+                  <div><strong>Computed:</strong> {{ formatValue(validation.computed_value) }}</div>
+                  <div><strong>Expected:</strong> {{ formatValue(validation.expected_value) }}</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
     } @else {
       <p class="empty-state">No validations available.</p>
@@ -72,14 +82,14 @@
                   <thead>
                     <tr>
                       <th>Label</th>
-                      <th>Value</th>
+                      <th class="line-items-table__value">Value</th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (item of section.line_items; track $index) {
                       <tr>
                         <td>{{ formatValue(item.label) }}</td>
-                        <td>{{ formatValue(item.value) }}</td>
+                        <td class="line-items-table__value">{{ formatValue(item.value) }}</td>
                       </tr>
                     }
                   </tbody>
