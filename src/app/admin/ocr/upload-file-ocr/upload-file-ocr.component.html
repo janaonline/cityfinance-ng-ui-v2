@@ -44,30 +44,6 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>OCR method</mat-label>
-              <mat-select formControlName="ocrMethod">
-                @for (method of ocrMethods; track method.value) {
-                  <mat-option [value]="method.value">{{ method.label }}</mat-option>
-                }
-              </mat-select>
-              @if (uploadForm.controls.ocrMethod.invalid && uploadForm.controls.ocrMethod.touched) {
-                <mat-error>OCR method is required.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Gemini model</mat-label>
-              <mat-select formControlName="model">
-                @for (model of geminiModels; track model.value) {
-                  <mat-option [value]="model.value">{{ model.label }}</mat-option>
-                }
-              </mat-select>
-              @if (uploadForm.controls.model.invalid && uploadForm.controls.model.touched) {
-                <mat-error>Gemini model is required.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
               <mat-label>ULB</mat-label>
               <input
                 type="text"
@@ -93,12 +69,48 @@
               </mat-autocomplete>
               @if (selectedUlb()) {
                 <mat-hint>{{ selectedUlb()?.code }}</mat-hint>
-              } @else if ((uploadForm.controls.ulb.value ?? '').toString().length > 0 && (uploadForm.controls.ulb.value ?? '').toString().length < 2) {
+              } @else if (
+                (uploadForm.controls.ulb.value ?? '').toString().length > 0 &&
+                (uploadForm.controls.ulb.value ?? '').toString().length < 2
+              ) {
                 <mat-hint>Type at least 2 characters to search.</mat-hint>
               }
               @if (uploadForm.controls.ulb.invalid && uploadForm.controls.ulb.touched) {
                 <mat-error>Please select a valid ULB from the list.</mat-error>
               }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>OCR method</mat-label>
+              <mat-select formControlName="ocrMethod">
+                @for (method of ocrMethods; track method.value) {
+                  <mat-option [value]="method.value">{{ method.label }}</mat-option>
+                }
+              </mat-select>
+              @if (uploadForm.controls.ocrMethod.invalid && uploadForm.controls.ocrMethod.touched) {
+                <mat-error>OCR method is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini model</mat-label>
+              <mat-select formControlName="model">
+                @for (model of geminiModels; track model.value) {
+                  <mat-option [value]="model.value">{{ model.label }}</mat-option>
+                }
+              </mat-select>
+              @if (uploadForm.controls.model.invalid && uploadForm.controls.model.touched) {
+                <mat-error>Gemini model is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Enable orientation check</mat-label>
+              <mat-select formControlName="enableOrientationCheck">
+                @for (option of orientationCheckOptions; track option.label) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
             </mat-form-field>
           </div>
 
@@ -139,7 +151,7 @@
               @if (globalLoader.loading()) {
                 Submitting...
               } @else {
-                Start OCR
+                Submit & Validate
               }
             </button>
           </div>
@@ -197,11 +209,21 @@
               <h3 class="raw-title">Raw response</h3>
               <div class="raw-tree">
                 <ng-container
-                  *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: responseData(), key: 'root' }"
+                  *ngTemplateOutlet="
+                    treeNodeTemplate;
+                    context: { $implicit: responseData(), key: 'root' }
+                  "
                 />
               </div>
             }
           </div>
+
+          @if (successfulResponse()) {
+            <div class="raw-response-section">
+              <h3 class="raw-title">Validation Info</h3>
+              <app-ocr-validation-info-table />
+            </div>
+          }
         </mat-card-content>
       </mat-card>
     }
@@ -218,7 +240,10 @@
       <div class="tree-children">
         @for (item of value; track $index) {
           <ng-container
-            *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: item, key: '[' + $index + ']' }"
+            *ngTemplateOutlet="
+              treeNodeTemplate;
+              context: { $implicit: item, key: '[' + $index + ']' }
+            "
           />
         }
       </div>
@@ -231,7 +256,10 @@
       <div class="tree-children">
         @for (entry of getObjectEntries(value); track entry.key) {
           <ng-container
-            *ngTemplateOutlet="treeNodeTemplate; context: { $implicit: entry.value, key: entry.key }"
+            *ngTemplateOutlet="
+              treeNodeTemplate;
+              context: { $implicit: entry.value, key: entry.key }
+            "
           />
         }
       </div>

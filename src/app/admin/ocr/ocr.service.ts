@@ -48,6 +48,7 @@ export class OcrService {
     financialYear: string,
     ocrMethod: string,
     model: string,
+    enableOrientationCheck: boolean,
     ulb?: IULB | string | null,
   ) {
     const formData = new FormData();
@@ -56,6 +57,7 @@ export class OcrService {
     formData.append('financial_year', financialYear);
     formData.append('ocr_method', ocrMethod);
     formData.append('model', model);
+    formData.append('enable_orientation_check', String(enableOrientationCheck));
 
     if (ulb && typeof ulb === 'object') {
       const ulbKeys: string[] = [ulb?.name];

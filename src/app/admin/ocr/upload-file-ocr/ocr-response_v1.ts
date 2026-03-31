@@ -252,20 +252,20 @@ export const failedOcrResponse: FailedOcrResponse = {
 }
 
 export const ocrResponse: OcrResponse = {
-    "job_id": "be53f6a2f1764a999c5f8c16708e134d",
+    "job_id": "a5a80d76543e466da79b5b9ae389ad4b",
     "status": "SUCCEEDED",
     "error": null,
     "pdf_s3_key": null,
     "filename": "1 A.1 Balance Sheet Signed Copy Accounts 2020-21_6dd415e6-334b-46c1-bae6-232bca66da8b.pdf",
-    "created_at": "2026-03-31T17:55:19.856000",
-    "updated_at": "2026-03-31T17:58:37.644000",
+    "created_at": "2026-03-30T16:33:21.204000",
+    "updated_at": "2026-03-30T16:36:40.490000",
     "file_info": {
         "filename": "1 A.1 Balance Sheet Signed Copy Accounts 2020-21_6dd415e6-334b-46c1-bae6-232bca66da8b.pdf",
         "page_count": 1,
         "uploaded_file_size_kb": 197.19140625
     },
     "engines": {
-        "textract": {
+        "sarvam": {
             "status": "succeeded",
             "result": {
                 "doc_type": "BALANCE_SHEET",
@@ -273,156 +273,6 @@ export const ocrResponse: OcrResponse = {
                 "fy": "2020-21",
                 "as_on_date": "2021-03-31",
                 "auditor_info": null,
-                "ocr_notes": [
-                    "Values are stated in 'Rs. in Lakhs'.",
-                    "Grants, Contributions For Specific Purposes are grouped under the 'Total Loans' subtotal in the source document."
-                ],
-                "extracted_data": [
-                    {
-                        "section_name": "Reserves & Surplus",
-                        "line_items": [
-                            {
-                                "label": "Municipal (General) Fund",
-                                "value": 552429.01
-                            },
-                            {
-                                "label": "Earmarked Funds",
-                                "value": 15678.74
-                            },
-                            {
-                                "label": "Reserves",
-                                "value": 673820.79
-                            }
-                        ],
-                        "subtotal_label": "Total Reserves & Surplus",
-                        "subtotal_stated": 1241928.54,
-                        "subtotal_computed": 1241928.54
-                    },
-                    {
-                        "section_name": "Loans",
-                        "line_items": [
-                            {
-                                "label": "Grants, Contributions For Specific Purposes",
-                                "value": 233592.22
-                            },
-                            {
-                                "label": "Secured Loans",
-                                "value": 250035
-                            },
-                            {
-                                "label": "Unsecured Loans",
-                                "value": 0
-                            }
-                        ],
-                        "subtotal_label": "Total Loans",
-                        "subtotal_stated": 483627.22,
-                        "subtotal_computed": 483627.22
-                    },
-                    {
-                        "section_name": "Current Liabilities & Provisions",
-                        "line_items": [
-                            {
-                                "label": "Deposits Received",
-                                "value": 55492.91
-                            },
-                            {
-                                "label": "Deposit Works",
-                                "value": 7.85
-                            },
-                            {
-                                "label": "Other Liabilities (Sundry Creditors)",
-                                "value": 256884.5
-                            },
-                            {
-                                "label": "Provisions",
-                                "value": 2947.79
-                            }
-                        ],
-                        "subtotal_label": "Total Current Liabilities & Provisions",
-                        "subtotal_stated": 315333.06,
-                        "subtotal_computed": 315333.05
-                    },
-                    {
-                        "section_name": "Fixed Assets",
-                        "line_items": [
-                            {
-                                "label": "Gross Block",
-                                "value": 1168255.87
-                            },
-                            {
-                                "label": "Less: Accumulated Depreciation",
-                                "value": -448773.94
-                            },
-                            {
-                                "label": "Capital Work-in-Progress",
-                                "value": 754213.79
-                            }
-                        ],
-                        "subtotal_label": "Total Fixed Assets",
-                        "subtotal_stated": 1473695.72,
-                        "subtotal_computed": 1473695.72
-                    },
-                    {
-                        "section_name": "Investments",
-                        "line_items": [
-                            {
-                                "label": "Investments - General Fund",
-                                "value": 212.5
-                            },
-                            {
-                                "label": "Investments - Other Funds",
-                                "value": 0
-                            }
-                        ],
-                        "subtotal_label": "Total Investments",
-                        "subtotal_stated": 212.5,
-                        "subtotal_computed": 212.5
-                    },
-                    {
-                        "section_name": "Current Assets, Loans & Advances",
-                        "line_items": [
-                            {
-                                "label": "Stock in Hand (Inventories)",
-                                "value": 0
-                            },
-                            {
-                                "label": "Sundry Debtors (Receivables)",
-                                "value": 489446.38
-                            },
-                            {
-                                "label": "Less: Accumulated Provision Against Bad And Doubtful Receivables",
-                                "value": -233520
-                            },
-                            {
-                                "label": "Prepaid Expenses",
-                                "value": 0
-                            },
-                            {
-                                "label": "Cash & Bank Balances",
-                                "value": 164608.51
-                            },
-                            {
-                                "label": "Loans, Advances & Deposits",
-                                "value": 146445.71
-                            },
-                            {
-                                "label": "Less: Accumulated Provision Against Loans",
-                                "value": 0
-                            }
-                        ],
-                        "subtotal_label": "Total Current Assets, Loans & Advances",
-                        "subtotal_stated": 566980.6,
-                        "subtotal_computed": 566980.6
-                    }
-                ],
-                "financial_figures": {
-                    "total_assets": 2040888.82,
-                    "total_liabilities": 2040888.82,
-                    "total_income": null,
-                    "total_expenditure": null,
-                    "opening_balance": null,
-                    "closing_balance": null
-                },
                 "evidence": {
                     "doc_type": [
                         "Balance Sheet"
@@ -439,18 +289,18 @@ export const ocrResponse: OcrResponse = {
                     "auditor_info": null
                 },
                 "confidence": {
-                    "doc_type": 0.99,
-                    "ulb_name": 0.99,
-                    "fy": 0.99,
-                    "as_on_date": 0.99,
+                    "doc_type": 1,
+                    "ulb_name": 1,
+                    "fy": 1,
+                    "as_on_date": 1,
                     "auditor_info": null
                 },
                 "validations": [
                     {
-                        "rule_id": "BS_1",
+                        "rule_id": "BS_001",
                         "rule_label": "Totals must tally with sum of line items",
                         "status": "WARNING",
-                        "message": "Total Current Liabilities & Provisions stated as 315333.06 but computed as 315333.05 (difference of 0.01). Overall TOTAL LIABILITIES (2040888.82) and TOTAL ASSETS (2040888.82) tally correctly with their respective subtotals.",
+                        "message": "Sum of Current Liabilities & Provisions (55492.91 + 7.85 + 256884.50 + 2947.79 = 315333.05) differs from reported total (315333.06) by 0.01 due to rounding. Other subtotals tally correctly.",
                         "affected_items": [
                             "Total Current Liabilities & Provisions"
                         ],
@@ -458,7 +308,141 @@ export const ocrResponse: OcrResponse = {
                         "expected_value": "315333.06"
                     },
                     {
-                        "rule_id": "BS_2",
+                        "rule_id": "BS_002",
+                        "rule_label": "Total assets must equal total liabilities",
+                        "status": "WARNING",
+                        "message": "TOTAL ASSETS row is missing from OCR text. However, calculated Total Assets (1473695.72 + 212.50 + 566980.60 = 2040888.82) equals reported Total Liabilities (2040888.82).",
+                        "affected_items": [
+                            "TOTAL LIABILITIES",
+                            "TOTAL ASSETS"
+                        ],
+                        "computed_value": "2040888.82",
+                        "expected_value": "2040888.82"
+                    },
+                    {
+                        "rule_id": "BS_003",
+                        "rule_label": "Total assets and total liabilities cannot be 0",
+                        "status": "PASS",
+                        "message": "Total liabilities is 2040888.82 and calculated total assets is 2040888.82.",
+                        "affected_items": [
+                            "TOTAL LIABILITIES"
+                        ],
+                        "computed_value": "2040888.82",
+                        "expected_value": "> 0"
+                    },
+                    {
+                        "rule_id": "BS_004",
+                        "rule_label": "Financial amounts should be numeric",
+                        "status": "PASS",
+                        "message": "All financial amounts are numeric.",
+                        "affected_items": [],
+                        "computed_value": null,
+                        "expected_value": null
+                    }
+                ],
+                "issues": [
+                    "The 'TOTAL ASSETS' row is missing from the OCR text, likely cut off at the bottom of the page.",
+                    "Minor rounding difference of 0.01 in 'Total Current Liabilities & Provisions' calculation."
+                ],
+                "usage_metadata": {
+                    "cache_tokens_details": null,
+                    "cached_content_token_count": null,
+                    "candidates_token_count": 900,
+                    "candidates_tokens_details": null,
+                    "prompt_token_count": 2704,
+                    "prompt_tokens_details": [
+                        {
+                            "modality": "TEXT",
+                            "token_count": 2704
+                        }
+                    ],
+                    "thoughts_token_count": 3264,
+                    "tool_use_prompt_token_count": null,
+                    "tool_use_prompt_tokens_details": null,
+                    "total_token_count": 6868,
+                    "traffic_type": null
+                },
+                "table_exists": true,
+                "table_count": 1
+            },
+            "language_tag": "LANG_EN",
+            "ocr_language": "en-IN",
+            "ocr_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/sarvam/ocr_text/a5a80d76543e466da79b5b9ae389ad4b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260330%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260330T110427Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d82f5e91c23b9519ce9232ddd830a583d5ae7d7cdd3817ca24e2817ba0b26a16",
+            "excel_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/sarvam/excel/a5a80d76543e466da79b5b9ae389ad4b.xlsx?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260330%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260330T110427Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6ccbc730bd2474b7a4a99aa89fb08157a51947ab17ff31a578b70cca28c511d0",
+            "timing": {
+                "ocr_duration_seconds": 13.599295,
+                "validation_duration_seconds": 44.563211,
+                "excel_duration_seconds": 5.33813
+            },
+            "match_summary": {
+                "ulb_name": {
+                    "expected": "string",
+                    "extracted": "Greater Hyderabad Municipal Corporation",
+                    "match": false
+                },
+                "fy": {
+                    "expected": "2020-21",
+                    "extracted": "2020-21",
+                    "match": true
+                },
+                "doc_type": {
+                    "expected": "BALANCE_SHEET",
+                    "extracted": "BALANCE_SHEET",
+                    "match": true
+                },
+                "table_exists": {
+                    "expected": true,
+                    "extracted": true,
+                    "match": true,
+                    "table_count": 1
+                },
+                "overall_match": false
+            }
+        },
+        "textract": {
+            "status": "succeeded",
+            "result": {
+                "doc_type": "BALANCE_SHEET",
+                "ulb_name": "Greater Hyderabad Municipal Corporation",
+                "fy": "2020-21",
+                "as_on_date": "2021-03-31",
+                "auditor_info": null,
+                "evidence": {
+                    "doc_type": [
+                        "Balance Sheet"
+                    ],
+                    "ulb_name": [
+                        "Greater Hyderabad Municipal Corporation"
+                    ],
+                    "fy": [
+                        "2020-21"
+                    ],
+                    "as_on_date": [
+                        "31st March 2021"
+                    ],
+                    "auditor_info": null
+                },
+                "confidence": {
+                    "doc_type": 1,
+                    "ulb_name": 1,
+                    "fy": 1,
+                    "as_on_date": 1,
+                    "auditor_info": null
+                },
+                "validations": [
+                    {
+                        "rule_id": "BS_RULE_1",
+                        "rule_label": "Totals must tally with sum of line items",
+                        "status": "WARNING",
+                        "message": "Overall Total Assets and Liabilities tally perfectly at 2040888.82. However, there is a minor rounding difference of 0.01 in Total Current Liabilities & Provisions (calculated sum is 315333.05, reported as 315333.06).",
+                        "affected_items": [
+                            "Total Current Liabilities & Provisions"
+                        ],
+                        "computed_value": "315333.05",
+                        "expected_value": "315333.06"
+                    },
+                    {
+                        "rule_id": "BS_RULE_2",
                         "rule_label": "Total assets must equal total liabilities",
                         "status": "PASS",
                         "message": "Total Assets (2040888.82) equals Total Liabilities (2040888.82).",
@@ -470,10 +454,10 @@ export const ocrResponse: OcrResponse = {
                         "expected_value": "2040888.82"
                     },
                     {
-                        "rule_id": "BS_3",
+                        "rule_id": "BS_RULE_3",
                         "rule_label": "Total assets and total liabilities cannot be 0",
                         "status": "PASS",
-                        "message": "Total Assets and Total Liabilities are non-zero.",
+                        "message": "Total Assets and Liabilities are 2040888.82, which is greater than 0.",
                         "affected_items": [
                             "TOTAL ASSETS",
                             "TOTAL LIABILITIES"
@@ -482,50 +466,52 @@ export const ocrResponse: OcrResponse = {
                         "expected_value": "> 0"
                     },
                     {
-                        "rule_id": "BS_4",
+                        "rule_id": "BS_RULE_4",
                         "rule_label": "Financial amounts should be numeric",
                         "status": "PASS",
-                        "message": "All extracted financial amounts are numeric.",
-                        "affected_items": [],
-                        "computed_value": "true",
-                        "expected_value": "true"
+                        "message": "All financial amounts parsed successfully as numeric values.",
+                        "affected_items": [
+                            "All financial figures"
+                        ],
+                        "computed_value": "Numeric",
+                        "expected_value": "Numeric"
                     }
                 ],
                 "issues": [
-                    "Minor rounding difference of 0.01 in the computation of 'Total Current Liabilities & Provisions' (Stated: 315333.06, Computed: 315333.05)."
+                    "Minor rounding difference of 0.01 in Total Current Liabilities & Provisions subtotal (calculated 315333.05 vs reported 315333.06)."
                 ],
                 "usage_metadata": {
                     "cache_tokens_details": null,
                     "cached_content_token_count": null,
-                    "candidates_token_count": 2148,
+                    "candidates_token_count": 852,
                     "candidates_tokens_details": null,
-                    "prompt_token_count": 2560,
+                    "prompt_token_count": 2540,
                     "prompt_tokens_details": [
                         {
                             "modality": "TEXT",
-                            "token_count": 2560
+                            "token_count": 2540
                         }
                     ],
-                    "thoughts_token_count": 3941,
+                    "thoughts_token_count": 2737,
                     "tool_use_prompt_token_count": null,
                     "tool_use_prompt_tokens_details": null,
-                    "total_token_count": 8649,
+                    "total_token_count": 6129,
                     "traffic_type": null
                 },
                 "table_exists": true,
                 "table_count": 2
             },
-            "textract_job_id": "a2a401da3909d7fb2a49ea7808bfa2c02218989d66db4e6776e329886b5b8a9d",
+            "textract_job_id": "57f35418e0ba87bf1cea1b4908d5f6dcc3f0e616ae2b3ab12c3f5c7e9c72c7b8",
             "textract_job_type": "document_analysis",
-            "textract_input_key": "uploads/39bbaf06-5f70-4a98-bffb-f350b7f8ea16-1 A.1 Balance Sheet Signed Copy Accounts 2020-21_6dd415e6-334b-46c1-bae6-232bca66da8b.pdf",
+            "textract_input_key": "uploads/6af57e1b-5755-4b09-9f17-d60e6218228a-1 A.1 Balance Sheet Signed Copy Accounts 2020-21_6dd415e6-334b-46c1-bae6-232bca66da8b.pdf",
             "language_tag": "LANG_EN",
             "ocr_language": "en-IN",
-            "ocr_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/textract/ocr_text/be53f6a2f1764a999c5f8c16708e134d.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260331%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260331T122634Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=26c434fd907684885d0b2e914e63ff99021e2c7666d21f9d558985b1b9d1069b",
-            "excel_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/textract/excel/be53f6a2f1764a999c5f8c16708e134d.xlsx?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260331%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260331T122634Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=1ded2edb9f3c5b4c5208170f234d8629d80e9a3a1645930aee554e01534954cc",
+            "ocr_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/textract/ocr_text/a5a80d76543e466da79b5b9ae389ad4b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260330%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260330T110515Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=fd53eb75bc58f07b62ba510d77a0b748f0c308be24e8f288599c8b6831777f25",
+            "excel_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/textract/excel/a5a80d76543e466da79b5b9ae389ad4b.xlsx?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260330%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260330T110515Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=442b71a2d44aac93b703180b19240b260205e0f546294b9741562e1730d04c3c",
             "timing": {
-                "ocr_duration_seconds": 11.805624,
-                "validation_duration_seconds": 59.538369,
-                "excel_duration_seconds": 0.745224
+                "ocr_duration_seconds": 10.836989,
+                "validation_duration_seconds": 35.671337,
+                "excel_duration_seconds": 1.116116
             },
             "match_summary": {
                 "ulb_name": {
@@ -560,76 +546,6 @@ export const ocrResponse: OcrResponse = {
                 "fy": "2020-21",
                 "as_on_date": "2021-03-31",
                 "auditor_info": null,
-                "ocr_notes": [
-                    "Amounts are stated in 'Rs. in Lakhs'.",
-                    "Several line items for Fixed Assets, Investments, and Current Liabilities/Assets are missing or blank in the OCR text, leading to subtotal mismatches."
-                ],
-                "extracted_data": [
-                    {
-                        "section_name": "Reserves & Surplus",
-                        "line_items": [
-                            {
-                                "label": "Municipal (General) Fund",
-                                "value": 552429.01
-                            },
-                            {
-                                "label": "Earmarked Funds",
-                                "value": 15678.74
-                            },
-                            {
-                                "label": "Reserves B-3",
-                                "value": 673820.79
-                            }
-                        ],
-                        "subtotal_label": "Total Reserves & Surplus",
-                        "subtotal_stated": 1241928.54,
-                        "subtotal_computed": 1241928.54
-                    },
-                    {
-                        "section_name": "LIABILITIES",
-                        "line_items": [
-                            {
-                                "label": "Total Reserves & Surplus",
-                                "value": 1241928.54
-                            },
-                            {
-                                "label": "Grants, Contributions For Specific Purposes B-4",
-                                "value": 233592.22
-                            },
-                            {
-                                "label": "Secured Loans B-5",
-                                "value": 250035
-                            },
-                            {
-                                "label": "Total Current Liabilities & Provisions",
-                                "value": 245588.99
-                            }
-                        ],
-                        "subtotal_label": "TOTAL LIABILITIES",
-                        "subtotal_stated": 2040888.82,
-                        "subtotal_computed": 1971144.75
-                    },
-                    {
-                        "section_name": "ASSETS",
-                        "line_items": [
-                            {
-                                "label": "Total Current Assets, Loans & Advances",
-                                "value": 566980.6
-                            }
-                        ],
-                        "subtotal_label": "TOTAL ASSETS",
-                        "subtotal_stated": 2040888.82,
-                        "subtotal_computed": 566980.6
-                    }
-                ],
-                "financial_figures": {
-                    "total_assets": 2040888.82,
-                    "total_liabilities": 2040888.82,
-                    "total_income": null,
-                    "total_expenditure": null,
-                    "opening_balance": null,
-                    "closing_balance": null
-                },
                 "evidence": {
                     "doc_type": [
                         "Balance Sheet"
@@ -646,30 +562,29 @@ export const ocrResponse: OcrResponse = {
                     "auditor_info": null
                 },
                 "confidence": {
-                    "doc_type": 0.95,
-                    "ulb_name": 0.95,
-                    "fy": 0.9,
-                    "as_on_date": 0.95,
+                    "doc_type": 0.99,
+                    "ulb_name": 0.99,
+                    "fy": 0.95,
+                    "as_on_date": 0.99,
                     "auditor_info": null
                 },
                 "validations": [
                     {
-                        "rule_id": "BS_1",
+                        "rule_id": "BS_RULE_1",
                         "rule_label": "Totals must tally with sum of line items",
                         "status": "FAIL",
-                        "message": "Sum of liability line items (1971144.75) does not match TOTAL LIABILITIES (2040888.82). Sum of asset line items (566980.60) does not match TOTAL ASSETS (2040888.82).",
+                        "message": "Sum of liability major heads (1971144.75) does not match TOTAL LIABILITIES (2040888.82) due to missing or unreadable line items in OCR.",
                         "affected_items": [
-                            "TOTAL LIABILITIES",
-                            "TOTAL ASSETS"
+                            "TOTAL LIABILITIES"
                         ],
                         "computed_value": "1971144.75",
                         "expected_value": "2040888.82"
                     },
                     {
-                        "rule_id": "BS_2",
+                        "rule_id": "BS_RULE_2",
                         "rule_label": "Total assets must equal total liabilities",
                         "status": "PASS",
-                        "message": "Total assets (2040888.82) equals total liabilities (2040888.82).",
+                        "message": "Total assets (2040888.82) matches total liabilities (2040888.82).",
                         "affected_items": [
                             "TOTAL ASSETS",
                             "TOTAL LIABILITIES"
@@ -678,7 +593,7 @@ export const ocrResponse: OcrResponse = {
                         "expected_value": "2040888.82"
                     },
                     {
-                        "rule_id": "BS_3",
+                        "rule_id": "BS_RULE_3",
                         "rule_label": "Total assets and total liabilities cannot be 0",
                         "status": "PASS",
                         "message": "Total assets and liabilities are non-zero.",
@@ -690,35 +605,37 @@ export const ocrResponse: OcrResponse = {
                         "expected_value": "> 0"
                     },
                     {
-                        "rule_id": "BS_4",
+                        "rule_id": "BS_RULE_4",
                         "rule_label": "Financial amounts should be numeric",
                         "status": "PASS",
                         "message": "All extracted financial amounts are numeric.",
-                        "affected_items": [],
-                        "computed_value": null,
-                        "expected_value": null
+                        "affected_items": [
+                            "All financial line items"
+                        ],
+                        "computed_value": "Numeric",
+                        "expected_value": "Numeric"
                     }
                 ],
                 "issues": [
-                    "Missing line items in OCR text cause the computed subtotals to not match the stated grand totals for both Assets and Liabilities.",
-                    "Auditor info is null because the document is a Balance Sheet, not an Auditor Report."
+                    "Several line items for Current Liabilities & Provisions and Fixed/Current Assets are missing or blank in the OCR text.",
+                    "Sum of liability major heads (1971144.75) does not match TOTAL LIABILITIES (2040888.82) due to missing/unrecognized line items in OCR."
                 ],
                 "usage_metadata": {
                     "cache_tokens_details": null,
                     "cached_content_token_count": null,
-                    "candidates_token_count": 1499,
+                    "candidates_token_count": 848,
                     "candidates_tokens_details": null,
-                    "prompt_token_count": 1670,
+                    "prompt_token_count": 1650,
                     "prompt_tokens_details": [
                         {
                             "modality": "TEXT",
-                            "token_count": 1670
+                            "token_count": 1650
                         }
                     ],
-                    "thoughts_token_count": 3330,
+                    "thoughts_token_count": 2685,
                     "tool_use_prompt_token_count": null,
                     "tool_use_prompt_tokens_details": null,
-                    "total_token_count": 6499,
+                    "total_token_count": 5183,
                     "traffic_type": null
                 },
                 "table_exists": false,
@@ -726,10 +643,10 @@ export const ocrResponse: OcrResponse = {
             },
             "language_tag": "LANG_EN",
             "ocr_language": "en-IN",
-            "ocr_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/tesseract/ocr_text/be53f6a2f1764a999c5f8c16708e134d.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260331%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260331T122724Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=dc366c72639b6c1a71b9a87b8461a6da60be5056aee9614b0ee5081a702b26f0",
+            "ocr_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/tesseract/ocr_text/a5a80d76543e466da79b5b9ae389ad4b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260330%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260330T110554Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=cca2e758262f9e971e4a123597f391e80c1bb22e47d3ee86ce571b1ba674ec3d",
             "timing": {
-                "ocr_duration_seconds": 3.6026,
-                "validation_duration_seconds": 45.389177
+                "ocr_duration_seconds": 3.320965,
+                "validation_duration_seconds": 34.08034
             },
             "match_summary": {
                 "ulb_name": {
@@ -762,236 +679,156 @@ export const ocrResponse: OcrResponse = {
                 "doc_type": "BALANCE_SHEET",
                 "fy": "2020-21",
                 "ulb_name": "Greater Hyderabad Municipal Corporation",
-                "as_on_date": "31st March 2021",
                 "auditor_info": {},
-                "ocr_notes": [
-                    "All financial amounts are stated in 'Rs. in Lakhs'.",
-                    "Minor rounding difference of 0.01 observed in 'Total Current Liabilities & Provisions' subtotal."
-                ],
-                "extracted_data": [
-                    {
-                        "section_name": "Reserve & Surplus",
-                        "line_items": [
-                            {
-                                "label": "310 Municipal (General) Fund",
-                                "value": 552429.01
-                            },
-                            {
-                                "label": "311 Earmarked Funds",
-                                "value": 15678.74
-                            },
-                            {
-                                "label": "312 Reserves",
-                                "value": 673820.79
-                            }
-                        ],
-                        "subtotal_label": "Total Reserves & Surplus",
-                        "subtotal_stated": 1241928.54,
-                        "subtotal_computed": 1241928.54
-                    },
-                    {
-                        "section_name": "Loans",
-                        "line_items": [
-                            {
-                                "label": "320 Grants, Contributions For Specific Purposes",
-                                "value": 233592.22
-                            },
-                            {
-                                "label": "330 Secured Loans",
-                                "value": 250035
-                            },
-                            {
-                                "label": "331 Unsecured Loans",
-                                "value": null
-                            }
-                        ],
-                        "subtotal_label": "Total Loans",
-                        "subtotal_stated": 483627.22,
-                        "subtotal_computed": 483627.22
-                    },
-                    {
-                        "section_name": "Current Liabilities & Provisions",
-                        "line_items": [
-                            {
-                                "label": "340 Deposits Received",
-                                "value": 55492.91
-                            },
-                            {
-                                "label": "341 Deposit Works",
-                                "value": 7.85
-                            },
-                            {
-                                "label": "350 Other Liabilities (Sundry Creditors)",
-                                "value": 256884.5
-                            },
-                            {
-                                "label": "360 Provisions",
-                                "value": 2947.79
-                            }
-                        ],
-                        "subtotal_label": "Total Current Liabilities & Provisions",
-                        "subtotal_stated": 315333.06,
-                        "subtotal_computed": 315333.05
-                    },
-                    {
-                        "section_name": "Fixed Assets",
-                        "line_items": [
-                            {
-                                "label": "410 Gross Block",
-                                "value": 1168255.87
-                            },
-                            {
-                                "label": "411 Less: Accumulated Depreciation",
-                                "value": 448773.94
-                            },
-                            {
-                                "label": "Net Block",
-                                "value": 719481.93
-                            },
-                            {
-                                "label": "412 Capital Work-in-Progress",
-                                "value": 754213.79
-                            }
-                        ],
-                        "subtotal_label": "Total Fixed Assets",
-                        "subtotal_stated": 1473695.72,
-                        "subtotal_computed": 1473695.72
-                    },
-                    {
-                        "section_name": "Investments",
-                        "line_items": [
-                            {
-                                "label": "420 Investments - General Fund",
-                                "value": 212.5
-                            },
-                            {
-                                "label": "421 Investments - Other Funds",
-                                "value": null
-                            }
-                        ],
-                        "subtotal_label": "Total Investments",
-                        "subtotal_stated": 212.5,
-                        "subtotal_computed": 212.5
-                    },
-                    {
-                        "section_name": "Current Assets, Loans & Advances",
-                        "line_items": [
-                            {
-                                "label": "430 Stock in Hand (Inventories)",
-                                "value": null
-                            },
-                            {
-                                "label": "431 Sundry Debtors (Receivables)",
-                                "value": 489446.38
-                            },
-                            {
-                                "label": "432 Less: Accumulated Provision Against Bad And Doubtful Receivables",
-                                "value": 233520
-                            },
-                            {
-                                "label": "Net Amount Outstanding",
-                                "value": 255926.38
-                            },
-                            {
-                                "label": "440 Prepaid Expenses",
-                                "value": null
-                            },
-                            {
-                                "label": "450 Cash & Bank Balances",
-                                "value": 164608.51
-                            },
-                            {
-                                "label": "460 Loans, Advances & Deposits",
-                                "value": 146445.71
-                            },
-                            {
-                                "label": "461 Less: Accumulated Provision Against Loans",
-                                "value": null
-                            }
-                        ],
-                        "subtotal_label": "Total Current Assets, Loans & Advances",
-                        "subtotal_stated": 566980.6,
-                        "subtotal_computed": 566980.6
-                    },
-                    {
-                        "section_name": "Other Assets",
-                        "line_items": [
-                            {
-                                "label": "470 Other Assets",
-                                "value": null
-                            },
-                            {
-                                "label": "480 Miscellaneous Expenditure (to the extent not written off)",
-                                "value": null
-                            }
-                        ],
-                        "subtotal_label": null,
-                        "subtotal_stated": null,
-                        "subtotal_computed": null
-                    }
-                ],
-                "evidence": {
-                    "doc_type": [
-                        "Balance Sheet"
-                    ],
-                    "ulb_name": [
-                        "Greater Hyderabad Municipal Corporation"
-                    ],
-                    "fy": [
-                        "2020-21"
-                    ],
-                    "as_on_date": [
-                        "31st March 2021"
-                    ],
-                    "auditor_info": null
-                },
-                "financial_figures": {
-                    "total_assets": 2040888.82,
-                    "total_liabilities": 2040888.82,
-                    "total_income": null,
-                    "total_expenditure": null,
-                    "opening_balance": null,
-                    "closing_balance": null
-                },
+                "financial_figures": {},
                 "validations": [
                     {
-                        "rule_id": "BS_MATH_01",
-                        "rule_label": "Total Liabilities Match",
+                        "rule_id": "BS-T1",
+                        "rule_label": "Total Reserves & Surplus tally",
                         "status": "PASS",
-                        "message": "Total Liabilities (2040888.82) matches sum of major heads (1241928.54 + 483627.22 + 315333.06).",
+                        "message": "Computed Total Reserves & Surplus (12,41,928.54) matches reported value (12,41,928.54). (5,52,429.01 + 15,678.74 + 6,73,820.79 = 12,41,928.54)",
                         "affected_items": [
-                            "TOTAL LIABILITIES"
+                            "Municipal (General) Fund",
+                            "Earmarked Funds",
+                            "Reserves",
+                            "Total Reserves & Surplus"
                         ],
-                        "computed_value": "2040888.82",
-                        "expected_value": "2040888.82"
+                        "computed_value": "1241928.54",
+                        "expected_value": "1241928.54"
                     },
                     {
-                        "rule_id": "BS_MATH_02",
-                        "rule_label": "Total Assets Match",
+                        "rule_id": "BS-T2",
+                        "rule_label": "Total Loans tally",
                         "status": "PASS",
-                        "message": "Total Assets (2040888.82) matches sum of major heads (1473695.72 + 212.50 + 566980.60).",
+                        "message": "Computed Total Loans (4,83,627.22) matches reported value (4,83,627.22). (2,33,592.22 + 2,50,035.00 + 0.00 = 4,83,627.22)",
                         "affected_items": [
-                            "TOTAL ASSETS"
+                            "Grants, Contributions For Specific Purposes",
+                            "Secured Loans",
+                            "Unsecured Loans",
+                            "Total Loans"
                         ],
-                        "computed_value": "2040888.82",
-                        "expected_value": "2040888.82"
+                        "computed_value": "483627.22",
+                        "expected_value": "483627.22"
                     },
                     {
-                        "rule_id": "BS_MATH_03",
-                        "rule_label": "Current Liabilities Subtotal Match",
-                        "status": "WARNING",
-                        "message": "Sum of Current Liabilities & Provisions (315333.05) differs from stated subtotal (315333.06) by 0.01.",
+                        "rule_id": "BS-T3",
+                        "rule_label": "Total Current Liabilities & Provisions tally",
+                        "status": "FAIL",
+                        "message": "Computed Total Current Liabilities & Provisions (3,15,333.05) does not match reported value (3,15,333.06). (55,492.91 + 7.85 + 2,56,884.50 + 2,947.79 = 3,15,333.05)",
                         "affected_items": [
+                            "Deposits Received",
+                            "Deposit Works",
+                            "Other Liabilities (Sundry Creditors)",
+                            "Provisions",
                             "Total Current Liabilities & Provisions"
                         ],
                         "computed_value": "315333.05",
                         "expected_value": "315333.06"
                     },
                     {
-                        "rule_id": "BS_EQ_01",
-                        "rule_label": "Assets equals Liabilities",
+                        "rule_id": "BS-T4",
+                        "rule_label": "TOTAL LIABILITIES tally",
                         "status": "PASS",
-                        "message": "Total Assets (2040888.82) equals Total Liabilities (2040888.82).",
+                        "message": "Computed TOTAL LIABILITIES (20,40,888.82) matches reported value (20,40,888.82). (12,41,928.54 + 4,83,627.22 + 3,15,333.06 = 20,40,888.82)",
+                        "affected_items": [
+                            "Total Reserves & Surplus",
+                            "Total Loans",
+                            "Total Current Liabilities & Provisions",
+                            "TOTAL LIABILITIES"
+                        ],
+                        "computed_value": "2040888.82",
+                        "expected_value": "2040888.82"
+                    },
+                    {
+                        "rule_id": "BS-T5",
+                        "rule_label": "Net Block calculation",
+                        "status": "PASS",
+                        "message": "Computed Net Block (7,19,481.93) matches reported value (7,19,481.93). (11,68,255.87 - 4,48,773.94 = 7,19,481.93)",
+                        "affected_items": [
+                            "Gross Block",
+                            "Less: Accumulated Depreciation",
+                            "Net Block"
+                        ],
+                        "computed_value": "719481.93",
+                        "expected_value": "719481.93"
+                    },
+                    {
+                        "rule_id": "BS-T6",
+                        "rule_label": "Total Fixed Assets tally",
+                        "status": "PASS",
+                        "message": "Computed Total Fixed Assets (14,73,695.72) matches reported value (14,73,695.72). (7,19,481.93 + 7,54,213.79 = 14,73,695.72)",
+                        "affected_items": [
+                            "Net Block",
+                            "Capital Work-in-Progress",
+                            "Total Fixed Assets"
+                        ],
+                        "computed_value": "1473695.72",
+                        "expected_value": "1473695.72"
+                    },
+                    {
+                        "rule_id": "BS-T7",
+                        "rule_label": "Total Investments tally",
+                        "status": "PASS",
+                        "message": "Computed Total Investments (212.50) matches reported value (212.50). (212.50 + 0.00 = 212.50)",
+                        "affected_items": [
+                            "Investments - General Fund",
+                            "Investments - Other Funds",
+                            "Total Investments"
+                        ],
+                        "computed_value": "212.50",
+                        "expected_value": "212.50"
+                    },
+                    {
+                        "rule_id": "BS-T8",
+                        "rule_label": "Net Amount Outstanding (Sundry Debtors) calculation",
+                        "status": "PASS",
+                        "message": "Computed Net Amount Outstanding (2,55,926.38) matches reported value (2,55,926.38). (4,89,446.38 - 2,33,520.00 = 2,55,926.38)",
+                        "affected_items": [
+                            "Sundry Debtors (Receivables)",
+                            "Less: Accumulated Provision Against Bad And Doubtful Receivables",
+                            "Net Amount Outstanding"
+                        ],
+                        "computed_value": "255926.38",
+                        "expected_value": "255926.38"
+                    },
+                    {
+                        "rule_id": "BS-T9",
+                        "rule_label": "Total Current Assets, Loans & Advances tally",
+                        "status": "PASS",
+                        "message": "Computed Total Current Assets, Loans & Advances (5,66,980.60) matches reported value (5,66,980.60). (0.00 + 2,55,926.38 + 0.00 + 1,64,608.51 + 1,46,445.71 + 0.00 = 5,66,980.60)",
+                        "affected_items": [
+                            "Stock in Hand (Inventories)",
+                            "Net Amount Outstanding",
+                            "Prepaid Expenses",
+                            "Cash & Bank Balances",
+                            "Loans, Advances & Deposits",
+                            "Less: Accumulated Provision Against Loans",
+                            "Total Current Assets, Loans & Advances"
+                        ],
+                        "computed_value": "566980.60",
+                        "expected_value": "566980.60"
+                    },
+                    {
+                        "rule_id": "BS-T10",
+                        "rule_label": "TOTAL ASSETS tally",
+                        "status": "PASS",
+                        "message": "Computed TOTAL ASSETS (20,40,888.82) matches reported value (20,40,888.82). (14,73,695.72 + 212.50 + 5,66,980.60 + 0.00 + 0.00 = 20,40,888.82)",
+                        "affected_items": [
+                            "Total Fixed Assets",
+                            "Total Investments",
+                            "Total Current Assets, Loans & Advances",
+                            "Other Assets",
+                            "Miscellaneous Expenditure",
+                            "TOTAL ASSETS"
+                        ],
+                        "computed_value": "2040888.82",
+                        "expected_value": "2040888.82"
+                    },
+                    {
+                        "rule_id": "BS-EQ1",
+                        "rule_label": "Total Assets equals Total Liabilities",
+                        "status": "PASS",
+                        "message": "Total Assets (20,40,888.82) equals Total Liabilities (20,40,888.82).",
                         "affected_items": [
                             "TOTAL ASSETS",
                             "TOTAL LIABILITIES"
@@ -1000,31 +837,36 @@ export const ocrResponse: OcrResponse = {
                         "expected_value": "2040888.82"
                     },
                     {
-                        "rule_id": "BS_NONZERO_01",
-                        "rule_label": "Assets and Liabilities Non-Zero",
+                        "rule_id": "BS-NZ1",
+                        "rule_label": "Total Assets not zero",
                         "status": "PASS",
-                        "message": "Total Assets and Liabilities are non-zero.",
+                        "message": "Total Assets (20,40,888.82) is not zero.",
                         "affected_items": [
-                            "TOTAL ASSETS",
+                            "TOTAL ASSETS"
+                        ],
+                        "computed_value": "2040888.82",
+                        "expected_value": "Not Zero"
+                    },
+                    {
+                        "rule_id": "BS-NZ2",
+                        "rule_label": "Total Liabilities not zero",
+                        "status": "PASS",
+                        "message": "Total Liabilities (20,40,888.82) is not zero.",
+                        "affected_items": [
                             "TOTAL LIABILITIES"
                         ],
                         "computed_value": "2040888.82",
-                        "expected_value": "> 0"
+                        "expected_value": "Not Zero"
                     },
                     {
-                        "rule_id": "NUM_01",
-                        "rule_label": "Amounts are Numeric",
+                        "rule_id": "BS-NUM1",
+                        "rule_label": "Financial amounts are numeric",
                         "status": "PASS",
                         "message": "All extracted financial amounts are numeric.",
-                        "affected_items": [
-                            "All line items"
-                        ],
-                        "computed_value": "Numeric",
-                        "expected_value": "Numeric"
+                        "affected_items": [],
+                        "computed_value": null,
+                        "expected_value": null
                     }
-                ],
-                "issues": [
-                    "Minor rounding difference of 0.01 in Total Current Liabilities & Provisions."
                 ],
                 "confidence": {
                     "doc_type": 0,
@@ -1043,23 +885,23 @@ export const ocrResponse: OcrResponse = {
                 "usage_metadata": {
                     "cache_tokens_details": null,
                     "cached_content_token_count": null,
-                    "candidates_token_count": 2606,
+                    "candidates_token_count": 829,
                     "candidates_tokens_details": null,
-                    "prompt_token_count": 2293,
+                    "prompt_token_count": 2273,
                     "prompt_tokens_details": [
+                        {
+                            "modality": "TEXT",
+                            "token_count": 1181
+                        },
                         {
                             "modality": "IMAGE",
                             "token_count": 1092
-                        },
-                        {
-                            "modality": "TEXT",
-                            "token_count": 1201
                         }
                     ],
-                    "thoughts_token_count": 5203,
+                    "thoughts_token_count": 3360,
                     "tool_use_prompt_token_count": null,
                     "tool_use_prompt_tokens_details": null,
-                    "total_token_count": 10102,
+                    "total_token_count": 6462,
                     "traffic_type": null
                 },
                 "table_exists": false,
@@ -1068,11 +910,11 @@ export const ocrResponse: OcrResponse = {
             "model": "gemini-3.1-pro-preview",
             "language_tag": "LANG_UNKNOWN",
             "ocr_language": "unknown",
-            "ocr_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/gemini_vision/ocr_text/be53f6a2f1764a999c5f8c16708e134d.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260331%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260331T122837Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d4a64822da1e752049ededc655ef62d3fd9004d1aea96f63a73262f5654999ed",
-            "excel_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/gemini_vision/excel/be53f6a2f1764a999c5f8c16708e134d.xlsx?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260331%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260331T122837Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=956b747ff9ea26d1160563b121669d4e7dbaf002113e5aa0109acc5352231648",
+            "ocr_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/gemini_vision/ocr_text/a5a80d76543e466da79b5b9ae389ad4b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260330%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260330T110640Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ed99d3e2f057843995a5f812f331581c526f49af0343b71d66e3ad3191571848",
+            "excel_url": "https://cf-digitization-dev.s3.amazonaws.com/combined/gemini_vision/excel/a5a80d76543e466da79b5b9ae389ad4b.xlsx?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYMBHWUBN5KGTKY2E%2F20260330%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20260330T110638Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=11bda6bc02161219416e8736b0027ff4a1bc3ab1d18b45d1870a4caffea87764",
             "timing": {
-                "ocr_duration_seconds": 71.981257,
-                "excel_duration_seconds": 0.893033
+                "ocr_duration_seconds": 42.025274,
+                "excel_duration_seconds": 2.74337
             },
             "match_summary": {
                 "ulb_name": {
@@ -1114,6 +956,10 @@ export const ocrResponse: OcrResponse = {
             "unknown"
         ],
         "per_engine": {
+            "sarvam": {
+                "ocr_language": "en-IN",
+                "language_tag": "LANG_EN"
+            },
             "textract": {
                 "ocr_language": "en-IN",
                 "language_tag": "LANG_EN"
@@ -1148,10 +994,9 @@ export const ocrResponse: OcrResponse = {
         }
     },
     "timing": {
-        "total_duration_seconds": 197.788295
+        "total_duration_seconds": 199.285668
     }
 }
-
 export const ocrResponse_v2: OcrResponse = {
     "job_id": "14a519794be54bf0a69c9236c9b3aba5",
     "status": "SUCCEEDED",

@@ -7,8 +7,15 @@
     <table class="usage-details-table">
       <tbody>
         @for (detail of data.details; track detail.label) {
-          <tr>
-            <td class="usage-detail-label">{{ detail.label }}:</td>
+          <tr [class]="getRowClass(detail.status)">
+            <td class="usage-detail-label">
+              <div class="usage-detail-label-content">
+                <span>{{ detail.label }}:</span>
+                @if (detail.status) {
+                  <span [class]="getStatusClass(detail.status)">{{ detail.status }}</span>
+                }
+              </div>
+            </td>
             <td class="usage-detail-value">{{ detail.value }}</td>
           </tr>
         }

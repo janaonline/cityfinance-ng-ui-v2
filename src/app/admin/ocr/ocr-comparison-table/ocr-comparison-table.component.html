@@ -73,6 +73,11 @@
           <tr>
             <td class="fw-semibold text-nowrap">
               <div>{{ row.engine }}</div>
+              @if (row.model !== '-') {
+                <div class="text-muted small mt-1">
+                  <strong>Model:</strong> {{ row.model }}
+                </div>
+              }
               <div class="mt-1">
                 <strong>Overall:</strong>
                 <span [class]="getMatchClass(row.overallMatch)">{{ row.overallMatch }}</span>
@@ -177,6 +182,33 @@
                 >
                   Excel
                 </a>
+              }
+              @if (row.ocrNotes.length || row.validations?.length || row.extractedData.length) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-info py-0 px-1 mb-1 ms-1 file-link-btn"
+                  (click)="
+                    openExtractedDataDetails(
+                      row.engine,
+                      row.ocrNotes,
+                      row.validations,
+                      row.extractedData
+                    )
+                  "
+                >
+                  Details
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-dark py-0 px-1 mb-1 ms-1 file-link-btn"
+                  (click)="
+                    downloadExtractedDataHtml(
+                      row
+                    )
+                  "
+                >
+                  HTML
+                </button>
               }
               @if (row.engineKey === 'gemini_vision' && row.financialFigures) {
                 <button

@@ -19,6 +19,7 @@ import { GlobalLoaderService } from '../../../core/services/loaders/global-loade
 import { UtilityService } from '../../../core/services/utility.service';
 import { MaterialModule } from '../../../material.module';
 import { OcrComparisonTableComponent } from '../ocr-comparison-table/ocr-comparison-table.component';
+import { OcrValidationInfoTableComponent } from '../ocr-comparison-table/ocr-validation-info-table.component';
 import { OcrService } from '../ocr.service';
 import {
   isErroredOcrJobResponse,
@@ -51,10 +52,21 @@ interface GeminiModelOption {
   label: string;
 }
 
+interface BooleanOption {
+  value: boolean;
+  label: string;
+}
+
 @Component({
   standalone: true,
   selector: 'app-upload-file-ocr',
-  imports: [CommonModule, ReactiveFormsModule, MaterialModule, OcrComparisonTableComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MaterialModule,
+    OcrComparisonTableComponent,
+    OcrValidationInfoTableComponent,
+  ],
   templateUrl: './upload-file-ocr.component.html',
   styleUrl: './upload-file-ocr.component.scss',
 })
@@ -119,12 +131,17 @@ export class UploadFileOcrComponent implements OnInit {
     { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
     { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
   ];
+  readonly orientationCheckOptions: BooleanOption[] = [
+    { value: false, label: 'False' },
+    { value: true, label: 'True' },
+  ];
 
   readonly uploadForm = this.fb.group({
     documentTypeId: this.fb.nonNullable.control('BALANCE_SHEET_SCHEDULE', Validators.required),
     financialYear: this.fb.nonNullable.control('2024-25', Validators.required),
     ocrMethod: this.fb.nonNullable.control('combined', Validators.required),
     model: this.fb.nonNullable.control('gemini-2.5-flash', Validators.required),
+    enableOrientationCheck: this.fb.nonNullable.control(false),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
   });
 
@@ -215,6 +232,7 @@ export class UploadFileOcrComponent implements OnInit {
         this.uploadForm.getRawValue().financialYear ?? '2024-25',
         this.uploadForm.getRawValue().ocrMethod ?? 'combined',
         this.uploadForm.getRawValue().model ?? 'gemini-2.5-flash',
+        this.uploadForm.getRawValue().enableOrientationCheck ?? false,
         this.uploadForm.getRawValue().ulb,
       )
       .pipe(finalize(() => this.globalLoader.stopLoader()))

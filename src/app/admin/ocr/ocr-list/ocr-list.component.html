@@ -90,11 +90,11 @@
                 <button
                   type="button"
                   class="copy-btn"
-                  aria-label="Copy job ID"
-                  title="Copy job ID"
+                  [attr.aria-label]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                  [attr.title]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
                   (click)="copyValue('Job ID', row.jobId)"
                 >
-                  <mat-icon>content_copy</mat-icon>
+                  <mat-icon>{{ isCopied('Job ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
                 </button>
               </div>
               <div class="identity-cell">
@@ -107,11 +107,13 @@
                 <button
                   type="button"
                   class="copy-btn"
-                  aria-label="Copy file name"
-                  title="Copy file name"
+                  [attr.aria-label]="isCopied('File Name', row.filename) ? 'Copied' : 'Copy file name'"
+                  [attr.title]="isCopied('File Name', row.filename) ? 'Copied' : 'Copy file name'"
                   (click)="copyValue('File Name', row.filename)"
                 >
-                  <mat-icon>content_copy</mat-icon>
+                  <mat-icon>{{
+                    isCopied('File Name', row.filename) ? 'check' : 'content_copy'
+                  }}</mat-icon>
                 </button>
               </div>
             </td>
@@ -163,6 +165,8 @@
                   filename: row.filename,
                   ocrMethod: row.ocrMethod,
                 }"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 View
               </a>

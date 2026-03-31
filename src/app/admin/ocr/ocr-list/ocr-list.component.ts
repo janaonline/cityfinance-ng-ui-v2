@@ -85,6 +85,7 @@ export class OcrListComponent implements OnInit {
 
   readonly dataSource = new MatTableDataSource<OcrListRow>([]);
   readonly loading = signal(false);
+  readonly copiedKey = signal<string | null>(null);
 
   pageSize = 5;
   pageIndex = 0;
@@ -120,14 +121,19 @@ export class OcrListComponent implements OnInit {
 
   copyValue(label: string, value: string): void {
     if (!value || value === '-') {
-      this.utilityService.swalPopup('Nothing to copy', `No ${label.toLowerCase()} available.`, 'info');
       return;
     }
 
     navigator.clipboard
       .writeText(value)
       .then(() => {
-        this.utilityService.swalPopup('Copied', `${label} copied to clipboard.`, 'success');
+        const copyKey = `${label}:${value}`;
+        this.copiedKey.set(copyKey);
+        window.setTimeout(() => {
+          if (this.copiedKey() === copyKey) {
+            this.copiedKey.set(null);
+          }
+        }, 1500);
       })
       .catch(() => {
         this.utilityService.swalPopup(
@@ -136,6 +142,10 @@ export class OcrListComponent implements OnInit {
           'error',
         );
       });
+  }
+
+  isCopied(label: string, value: string): boolean {
+    return this.copiedKey() === `${label}:${value}`;
   }
 
   getCompactFilename(filename: string): string {
