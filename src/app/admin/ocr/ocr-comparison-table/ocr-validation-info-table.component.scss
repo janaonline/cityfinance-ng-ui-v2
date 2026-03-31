@@ -1,0 +1,59 @@
+.comparison-table-shell {
+  background: #fff;
+  max-width: 100%;
+}
+
+.comparison-table th {
+  position: sticky;
+  top: 0;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.4rem 0.45rem;
+}
+
+.comparison-table td {
+  min-width: 78px;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.45rem;
+  line-height: 1.2;
+}
+
+.validation-info-table td:first-child {
+  min-width: 260px;
+}
+
+.validation-info-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.validation-info-badge--yes {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.validation-info-badge--no {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+@media (max-width: 768px) {
+  .comparison-table td {
+    min-width: 72px;
+    font-size: 0.72rem;
+  }
+
+  .comparison-table th {
+    font-size: 0.64rem;
+  }
+}

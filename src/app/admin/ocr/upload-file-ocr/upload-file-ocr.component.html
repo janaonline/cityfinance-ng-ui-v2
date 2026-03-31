@@ -217,6 +217,13 @@
               </div>
             }
           </div>
+
+          @if (successfulResponse()) {
+            <div class="raw-response-section">
+              <h3 class="raw-title">Validation Info</h3>
+              <app-ocr-validation-info-table />
+            </div>
+          }
         </mat-card-content>
       </mat-card>
     }

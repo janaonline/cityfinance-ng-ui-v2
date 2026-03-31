@@ -19,6 +19,7 @@ import { GlobalLoaderService } from '../../../core/services/loaders/global-loade
 import { UtilityService } from '../../../core/services/utility.service';
 import { MaterialModule } from '../../../material.module';
 import { OcrComparisonTableComponent } from '../ocr-comparison-table/ocr-comparison-table.component';
+import { OcrValidationInfoTableComponent } from '../ocr-comparison-table/ocr-validation-info-table.component';
 import { OcrService } from '../ocr.service';
 import {
   isErroredOcrJobResponse,
@@ -59,7 +60,13 @@ interface BooleanOption {
 @Component({
   standalone: true,
   selector: 'app-upload-file-ocr',
-  imports: [CommonModule, ReactiveFormsModule, MaterialModule, OcrComparisonTableComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MaterialModule,
+    OcrComparisonTableComponent,
+    OcrValidationInfoTableComponent,
+  ],
   templateUrl: './upload-file-ocr.component.html',
   styleUrl: './upload-file-ocr.component.scss',
 })
