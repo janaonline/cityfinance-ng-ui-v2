@@ -273,6 +273,24 @@ export class OcrComparisonTableComponent {
     });
   }
 
+  downloadExtractedDataHtml(row: OcrComparisonRow): void {
+    const sections = row.extractedData ?? [];
+    const validationItems = row.validations ?? [];
+
+    if (row.ocrNotes.length === 0 && validationItems.length === 0 && sections.length === 0) {
+      return;
+    }
+
+    const html = this.buildExtractedDataHtml(row, validationItems, sections);
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.getOriginalHtmlFilename();
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   getUsageSummaryItems(usageMetadata?: OcrUsageMetadata | null): Array<{ label: string; value: string }> {
     if (!usageMetadata) {
       return [
@@ -487,5 +505,248 @@ export class OcrComparisonTableComponent {
     return tokenDetails
       .map((detail) => `${detail.modality}: ${this.formatValue(detail.token_count)}`)
       .join(', ');
+  }
+
+  private buildExtractedDataHtml(
+    row: OcrComparisonRow,
+    validations: OcrValidationRule[],
+    extractedData: OcrExtractedSection[],
+  ): string {
+    const response = this.response();
+    const getValidationStatusClass = (status?: string | null): string => {
+      const normalizedStatus = `${status || ''}`.toUpperCase();
+
+      if (normalizedStatus === 'PASS') {
+        return 'text-bg-success';
+      }
+
+      if (normalizedStatus === 'WARNING') {
+        return 'text-bg-warning';
+      }
+
+      if (
+        normalizedStatus === 'FAIL' ||
+        normalizedStatus === 'FAILED' ||
+        normalizedStatus === 'ERROR'
+      ) {
+        return 'text-bg-danger';
+      }
+
+      return 'text-bg-secondary';
+    };
+
+    const getSubtotalClass = (stated?: number | null, computed?: number | null): string => {
+      if (stated === null || stated === undefined || computed === null || computed === undefined) {
+        return 'text-body';
+      }
+
+      return Math.abs(stated - computed) < 0.000001 ? 'text-success fw-semibold' : 'text-danger fw-semibold';
+    };
+
+    const noteMarkup = row.ocrNotes.length
+      ? `<ul class="mb-0">${row.ocrNotes
+          .map((note) => `<li class="mb-2">${this.escapeHtml(note)}</li>`)
+          .join('')}</ul>`
+      : '<div class="alert alert-light border mb-0">No OCR notes available.</div>';
+
+    const summaryMarkup = `
+      <div class="row g-3">
+        ${this.buildSummaryCard('Engine', row.engine)}
+        ${row.model !== '-' ? this.buildSummaryCard('Model', row.model) : ''}
+        ${this.buildSummaryCard('Doc Type', `${row.docType.expected} / ${row.docType.extracted}`)}
+        ${this.buildSummaryCard('FY', `${row.financialYear.expected} / ${row.financialYear.extracted}`)}
+        ${this.buildSummaryCard('ULB', `${row.ulbName.expected} / ${row.ulbName.extracted}`)}
+        ${this.buildSummaryCard('File Name', this.formatValue(response.file_info?.filename ?? response.filename))}
+        ${this.buildSummaryCard('Job ID', this.formatValue(response.job_id))}
+        ${this.buildSummaryCard('File Info', `Pages: ${this.formatValue(response.file_info?.page_count)} | Size: ${this.formatFileSize(response.file_info?.uploaded_file_size_kb)}`)}
+        ${this.buildSummaryCard('Duration', `Total: ${this.formatDuration(response.timing?.total_duration_seconds)} | ${row.timings.join(' | ')}`)}
+        ${this.buildSummaryCard('Issue', row.issues)}
+        ${this.buildSummaryCard(
+          'Usage',
+          this.getUsageSummaryItems(row.usageMetadata)
+            .map((item) => `${item.label}: ${item.value}`)
+            .join(' | '),
+        )}
+      </div>`;
+
+    const validationMarkup = validations.length
+      ? `
+        <div class="table-responsive">
+        <table class="table table-sm table-bordered table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Affected Items</th>
+              <th>Computed</th>
+              <th>Expected</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${validations
+              .map(
+                (validation) => `
+                  <tr>
+                    <td>${this.escapeHtml(
+                      this.formatValue(validation.rule_label || validation.rule_id || 'Validation'),
+                    )}</td>
+                    <td><span class="badge ${getValidationStatusClass(validation.status)}">${this.escapeHtml(
+                      this.formatValue(validation.status),
+                    )}</span></td>
+                    <td>${this.escapeHtml(this.formatValue(validation.message))}</td>
+                    <td>${this.escapeHtml(
+                      validation.affected_items?.length
+                        ? validation.affected_items.join(', ')
+                        : '-',
+                    )}</td>
+                    <td>${this.escapeHtml(this.formatValue(validation.computed_value))}</td>
+                    <td>${this.escapeHtml(this.formatValue(validation.expected_value))}</td>
+                  </tr>`,
+              )
+              .join('')}
+          </tbody>
+        </table>
+        </div>`
+      : '<div class="alert alert-light border mb-0">No validations available.</div>';
+
+    const extractedMarkup = extractedData.length
+      ? extractedData
+          .map((section) => {
+            const lineItemRows = section.line_items?.length
+              ? section.line_items
+                  .map(
+                    (item) => `
+                      <tr>
+                        <td>${this.escapeHtml(this.formatValue(item.label))}</td>
+                        <td class="num">${this.escapeHtml(this.formatValue(item.value))}</td>
+                      </tr>`,
+                  )
+                  .join('')
+              : `<tr><td colspan="2">No line items available.</td></tr>`;
+
+            return `
+              <section class="card border-primary-subtle shadow-sm mb-3">
+                <div class="card-header bg-primary-subtle">
+                  <h3 class="h5 mb-0">${this.escapeHtml(
+                    this.formatValue(section.section_name || 'Untitled Section'),
+                  )}</h3>
+                </div>
+                <div class="card-body">
+                <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Label</th>
+                      <th class="num">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>${lineItemRows}</tbody>
+                </table>
+                </div>
+                <div class="mt-3 d-grid gap-2">
+                  <div><strong>Subtotal Label:</strong> ${this.escapeHtml(
+                    this.formatValue(section.subtotal_label),
+                  )}</div>
+                  <div class="num ${getSubtotalClass(section.subtotal_stated, section.subtotal_computed)}"><strong>Subtotal Stated:</strong> ${this.escapeHtml(
+                    this.formatValue(section.subtotal_stated),
+                  )}</div>
+                  <div class="num ${getSubtotalClass(section.subtotal_stated, section.subtotal_computed)}"><strong>Subtotal Computed:</strong> ${this.escapeHtml(
+                    this.formatValue(section.subtotal_computed),
+                  )}</div>
+                </div>
+                </div>
+              </section>`;
+          })
+          .join('')
+      : '<div class="alert alert-light border mb-0">No extracted data available.</div>';
+
+    return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${this.escapeHtml(row.engine)} Extracted Data</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body { background: #f8fafc; color: #0f172a; }
+    .page-shell { max-width: 1200px; margin: 0 auto; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <div class="container py-4 page-shell">
+    <div class="bg-primary text-white rounded-4 p-4 shadow-sm mb-4">
+      <h1 class="h2 mb-1">${this.escapeHtml(row.engine)} Extracted Data</h1>
+      <p class="mb-0 opacity-75">Exported OCR notes, validations, and extracted tables.</p>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h2 class="h5 mb-0">Summary</h2>
+      </div>
+      <div class="card-body">
+        ${summaryMarkup}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h2 class="h5 mb-0">OCR Notes</h2>
+      </div>
+      <div class="card-body">
+        ${noteMarkup}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h2 class="h5 mb-0">Validations</h2>
+      </div>
+      <div class="card-body">
+        ${validationMarkup}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h2 class="h5 mb-0">Extracted Data</h2>
+      </div>
+      <div class="card-body">
+        ${extractedMarkup}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+  }
+
+  private buildSummaryCard(label: string, value: string): string {
+    return `
+      <div class="col-sm-6 col-lg-4 col-xl-3">
+        <div class="border rounded-3 bg-light p-2 h-100">
+          <div class="text-uppercase text-secondary small fw-semibold mb-1">${this.escapeHtml(label)}</div>
+          <div class="small">${this.escapeHtml(value || '-')}</div>
+        </div>
+      </div>`;
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  private getOriginalHtmlFilename(): string {
+    const response = this.response();
+    const originalFilename = response.file_info?.filename ?? response.filename ?? 'ocr-export';
+
+    return `${originalFilename}.html`;
   }
 }
