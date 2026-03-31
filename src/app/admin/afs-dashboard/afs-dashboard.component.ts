@@ -140,10 +140,40 @@ export class AfsDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.getDashboardCards();
   }
-  onQueuedValuesChanged(value: string) {
+  readonly QUEUED_FILES_TITLE = 'Queued Files';
+
+  apiQueuedFiles = 0;
+  localQueuedFiles = 0;
+
+  setQueuedFilesFromApi(value: string | number) {
+    this.apiQueuedFiles = Number(value) || 0;
+    this.localQueuedFiles = 0;
+    console.log('queued files from API:', this.apiQueuedFiles);
+    this.updateQueuedFilesCard();
+  }
+
+  onQueuedValuesChanged(value: string | number) {
+    const queuedValue = Number(value) || 0;
+    // console.log('queued values received in dashboard:', queuedValue);
+
+    this.localQueuedFiles = queuedValue;
+    this.updateQueuedFilesCard();
+  }
+
+  updateQueuedFilesCard() {
+    const finalValue = this.apiQueuedFiles + this.localQueuedFiles;
+
+    // console.log(
+    //   'updating queued files card with API value:',
+    //   this.apiQueuedFiles,
+    //   'and local value:',
+    //   this.localQueuedFiles
+    // );
+    // console.log('final queued files value to display:', finalValue);
+
     this.dashboardCards = this.dashboardCards.map(card =>
-      card.title === 'Queued Files'
-        ? { ...card, value }
+      card.title === this.QUEUED_FILES_TITLE
+        ? { ...card, value: String(finalValue) }
         : card
     );
   }
@@ -151,6 +181,11 @@ export class AfsDashboardComponent implements OnInit {
     this.afsService.getDashboardCards().subscribe((res) => {
       console.log('dashboard stats:', res);
       this.dashboardCards = res.data.cards;
+      const queuedCard = this.dashboardCards.find(
+        card => card.title === 'Queued Files'
+      );
+
+      this.setQueuedFilesFromApi(queuedCard?.value ?? 0);
     });
   }
   onFiltersChanged(filters: FilterValues): void {
