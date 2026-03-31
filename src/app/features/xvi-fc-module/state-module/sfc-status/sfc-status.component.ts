@@ -134,35 +134,6 @@ export class SfcStatusComponent implements OnInit {
 
 const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
   {
-    formFieldType: 'text',
-    label: 'State Name',
-    key: 'stateName',
-    value: 'Andhra Pradesh',
-    readonly: true,
-  },
-  {
-    formFieldType: 'file',
-    label: 'Action Taken Report',
-    key: 'actionTakenReport',
-    validations: [
-      // {
-      //   name: 'required',
-      //   validator: null,
-      //   message: 'This field is required.',
-      // },
-    ],
-    value: {
-      fileName: '',
-      fileUrl: '',
-      fileSize: null,
-      mimeType: '',
-    },
-    folderPath: '',
-    maxFileSize: 5,
-    // fileViewType: 'button',
-    allowedFileTypes: ['pdf'],
-  },
-  {
     formFieldType: 'radio',
     label: 'SFC Active',
     key: 'sfcActive',
@@ -180,20 +151,15 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     ],
   },
   {
-    formFieldType: 'textarea',
-    label: 'SFC Term',
-    key: 'sfcTerm',
+    formFieldType: 'text',
+    label: 'State Name',
+    key: 'stateName',
+    value: 'Andhra Pradesh',
+    readonly: true,
     visibleWhen: {
       mode: 'all',
       conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
     },
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-    ],
   },
   {
     formFieldType: 'text',
@@ -235,6 +201,10 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
         message: 'Date must be on or before 31 Dec 2026.',
       },
     ],
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    },
   },
   {
     formFieldType: 'text',
@@ -252,5 +222,51 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
         message: 'Date must be in DD-MM-YYYY format (e.g., 19-01-2024)',
       },
     ],
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    },
+  },
+  {
+    formFieldType: 'textarea',
+    label: 'SFC Term',
+    key: 'sfcTerm',
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    },
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+  },
+  {
+    formFieldType: 'file',
+    label: 'Action Taken Report',
+    key: 'actionTakenReport',
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+    value: {
+      fileName: '',
+      fileUrl: '',
+      fileSize: null,
+      mimeType: '',
+    },
+    folderPath: '',
+    maxFileSize: 5,
+    // fileViewType: 'button',
+    allowedFileTypes: ['pdf'],
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    },
   },
 ];
