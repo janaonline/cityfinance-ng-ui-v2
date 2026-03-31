@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { AsyncPipe, DatePipe, NgClass } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
-import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, Output, QueryList, ViewChild, ViewChildren, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -24,6 +24,8 @@ import { FileService } from '../../../shared/dynamic-form/components/file/file.s
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 import { AfsExcelFile, AfsService, FilterValues, ResponseData } from '../afs.service';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
+import { AfsArApproveModalComponent } from '../afs-ar-approve-modal/afs-ar-approve-modal.component';
+export const AFS_PAGINATION_KEY = 'afsPagination';
 
 // raw row interface
 // {
@@ -33,7 +35,7 @@ import { DigitizationModalComponent } from '../digitization-modal/digitization-m
 //       "isActive": true,
 //       "isDraft": false,
 //       "status": "APPROVED",
-//       "afsexcelfiles": {
+//       "afsFiles": {
 //         "_id": "69453b74559acb711f5d2a8a",
 //         "year": "606aadac4dff55e6c075c507",
 //         "docType": "bal_sheet_schedules",
@@ -105,7 +107,7 @@ export interface AfsFile {
   requestId?: string;
 }
 
-export interface Afsexcelfiles {
+export interface AfsFiles {
   _id: string;
   year: string;
   docType: string;
@@ -125,7 +127,7 @@ export interface RawRow {
   digitizeStatus: string;
   formUploadedOn: string;
   digitizedOn: string;
-  afsexcelfiles: Afsexcelfiles;
+  afsFiles: AfsFiles;
   position: number;
   // city: string;
   state: string;
@@ -159,12 +161,12 @@ export interface RawRow {
     NgClass,
     AsyncPipe,
     PdfPageCountPipe,
-    MaterialModule
+    MaterialModule,
   ],
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
 })
-export class AfsTableComponent implements AfterViewInit {
+export class AfsTableComponent implements AfterViewInit, OnInit {
 
   readonly storageUrl = environment.STORAGE_BASEURL;
   // readonly storageUrl = 'https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com';
@@ -176,7 +178,7 @@ export class AfsTableComponent implements AfterViewInit {
   limit = 10;
   pageSize = 10;
   totalCount: number | undefined = 0;
-
+  @Output() queuedValues = new EventEmitter<string>();
   filters = input.required<FilterValues>({});
 
   MASTER_FORM_STATUS: { [key: number]: string } = {
@@ -208,12 +210,20 @@ export class AfsTableComponent implements AfterViewInit {
   activeRow: any;
   // constructor(private afsService: AfsService,) { }
 
-  // ngOnInit(): void {
-  // this.getAfsList();
-  // }
+  ngOnInit(): void {
+    const afsPaginationLocalStorage = localStorage.getItem(AFS_PAGINATION_KEY);
+    if (afsPaginationLocalStorage) {
+      this.pageEvent = JSON.parse(afsPaginationLocalStorage);
+      this.setPage();
+    }
+  }
 
-  // TODO: rename
-  abc = effect(() => {
+  getAfsListEffect = effect(() => {
+    if (this.pageEvent) {
+      const page = this.filters().page;
+      this.pageEvent.pageIndex = page ? page - 1 : 0;
+      this.pageEvent.pageSize = this.filters().limit || 100;
+    }
     // This effect runs initially and whenever this.quantity() changes
     this.getAfsList();
   })
@@ -221,7 +231,11 @@ export class AfsTableComponent implements AfterViewInit {
   selectedRow: any;
   currentFile: any;
 
-  pageEvent!: PageEvent;
+  pageEvent: PageEvent = {
+    pageIndex: 0,
+    pageSize: 10,
+    length: 0
+  };
 
   dataSource = new MatTableDataSource<RawRow>([]);
   displayedColumns: string[] = [
@@ -248,16 +262,26 @@ export class AfsTableComponent implements AfterViewInit {
   handlePageEvent(event: PageEvent) {
     this.pageEvent = event;
     // this.totalCount = event.length;
-    this.page = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-    this.filters().page = this.page;
-    this.filters().limit = this.pageSize;
+    // this.page = event.pageIndex + 1;
+    // this.pageSize = event.pageSize;
+    // this.filters().page = this.page;
+    // this.filters().limit = this.pageSize;
+    localStorage.setItem(AFS_PAGINATION_KEY, JSON.stringify(event));
+    this.setPage();
     this.getAfsList();
+  }
+
+  setPage() {
+    // this.page = this.pageEvent.pageIndex + 1;
+    // this.pageSize = this.pageEvent.pageSize;
+    // this.filters().page = this.page;
+    this.filters().page = this.pageEvent.pageIndex + 1;
+    this.filters().limit = this.pageEvent.pageSize;
   }
   getAfsList(): void {
     this.selection.clear();
     this.isTableLoading = true;
-    this.filters().limit = this.pageSize;
+    this.filters().limit = this.pageEvent.pageSize;
     const params = {
       ...this.filters(),
       // page: this.page,
@@ -312,16 +336,7 @@ export class AfsTableComponent implements AfterViewInit {
     this.dataSource.sort = this.sort;
   }
 
-  openLogDialog(requestId: string): void {
-    // Implement dialog opening logic here
-    // console.log('Open log dialog for Request ID:', requestId);
-    const dialogRef = this.dialog.open(AfsLogModalComponent, { data: { requestId }, panelClass: 'col-8' });
 
-    dialogRef.afterClosed().subscribe(result => {
-      // console.log(`Dialog result: ${result}`);
-    });
-
-  }
 
   setActiveRow(file: any) {
     this.activeRow = file;
@@ -371,7 +386,7 @@ export class AfsTableComponent implements AfterViewInit {
           };
           this.afsService.uploadAfsFile(formData).subscribe((response) => {
             this.selectedRow.uploading = false;
-            this.selectedRow.afsexcelfiles = response.data;
+            this.selectedRow.afsFiles = response.data;
             this.isTableLoading = false;
             // this.progress = 100;
             // const fileData: any = { name: file.name, url: path, size: this.formatBytes(file.size) };
@@ -427,20 +442,23 @@ export class AfsTableComponent implements AfterViewInit {
       if (result) {
         for (const row of selectedRows) {
           const ulbFile = row[`${this.filters().docType}`]?.url;
-          if (ulbFile) {
-            if (!row.afsexcelfiles?.ulbFile) {
-              row.afsexcelfiles = row.afsexcelfiles || {};
-              row.afsexcelfiles.ulbFile = {
+          if (row.afsFiles?.afsFile) {
+            this.queuedValues.emit(this.selection.selected.length.toString());
+            row.afsFiles.afsFile.digitizationStatus = 'queued';
+          } else if (ulbFile) {
+            if (!row.afsFiles?.ulbFile) {
+              this.queuedValues.emit(this.selection.selected.length.toString());
+              row.afsFiles = row.afsFiles || {};
+              row.afsFiles.ulbFile = {
                 digitizationStatus: 'queued',
               };
             }
             else {
-              row.afsexcelfiles.ulbFile.digitizationStatus = 'queued';
+              this.queuedValues.emit(this.selection.selected.length.toString());
+              row.afsFiles.ulbFile.digitizationStatus = 'queued';
             }
           }
-          if (row.afsexcelfiles?.afsFile) {
-            row.afsexcelfiles.afsFile.digitizationStatus = 'queued';
-          }
+
         }
       }
       // console.log(`Dialog result: ${result}`);
@@ -454,20 +472,45 @@ export class AfsTableComponent implements AfterViewInit {
     this.showSideBar.emit(true);
   }
 
-  viewDetails(row: any, type: string = 'ulb') {
+  viewDetails(row: any, type: string = 'ULB') {
     console.log('View details for row:', row, type);
-    const requestId = type === 'ULB' ? row.afsexcelfiles?.ulbFile?.requestId || '' : row.afsexcelfiles?.afsFile?.requestId || '';
-    if (requestId) {
-      this.openLogDialog(requestId);
+    const requestId = type === 'ULB' ? row.afsFiles?.ulbFile?.requestId || '' : row.afsFiles?.afsFile?.requestId || '';
+    const uploadedBy = type === 'ULB' ? 'ulbFile' : 'afsFile';
+    const file = row?.afsFiles?.[uploadedBy];
+
+    console.log('File details:', file);
+
+    if (['digitized', 'failed'].includes(file?.digitizationStatus)) {
+      this.openLogDialog(row, file, row.doctType, type);
     }
     // Implement view details logic here
   }
 
-  downloadAFSExcel(row: any, type: string = 'ulb') {
+  openLogDialog(row: any, file: any, docType: string, type: string): void {
+    console.log('Open log dialog for file:', file, docType);
+    let dialogRef = null;
+    if (docType === 'Auditors report') {
+      dialogRef = this.dialog.open(AfsArApproveModalComponent, { data: { id: row.afsFiles._id, type }, panelClass: 'col-8' });
+    } else {
+      dialogRef = this.dialog.open(AfsLogModalComponent, { data: { requestId: file?.requestId }, panelClass: 'col-8' });
+    }
+    // Implement dialog opening logic here
+    // console.log('Open log dialog for Request ID:', requestId);
+
+    dialogRef.afterClosed().subscribe(result => {
+      // console.log(`Dialog result: ${result}`);
+    });
+
+  }
+
+  downloadAFSFile(row: any, type: string = 'ulb') {
     console.log('Download AFS Excel for row:', row);
-    const excelUrl = type === 'ULB' ? row.afsexcelfiles?.ulbFile?.excelUrl : row.afsexcelfiles?.afsFile?.excelUrl;
-    if (excelUrl) {
-      const fullUrl = `${this.storageUrl}/${excelUrl}`;
+    let filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.excelUrl : row.afsFiles?.afsFile?.excelUrl;
+    if (row.doctType === 'Auditors report') {
+      filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.digitizedFileUrl : row.afsFiles?.afsFile?.digitizedFileUrl;
+    }
+    if (filePath) {
+      const fullUrl = `${this.storageUrl}/${filePath}`;
       window.open(fullUrl, '_blank');
     } else {
       this._snackBar.open('AFS Excel file not available for this record.', 'Close', { duration: 5000 });
@@ -478,22 +521,22 @@ export class AfsTableComponent implements AfterViewInit {
     console.log('Remove from queue for row:', row, type);
 
     const afsFile: AfsExcelFile = {
-      annualAccountsId: row.afsexcelfiles.annualAccountsId,
+      annualAccountsId: row.afsFiles.annualAccountsId,
       ulb: row.ulb,
       year: row.year,
       auditType: this.filters().auditType,
-      docType: row.afsexcelfiles.docType,
-      pdfUrl: type === 'ULB' ? row.afsexcelfiles.ulbFile?.pdfUrl : row.afsexcelfiles.afsFile?.pdfUrl,
+      docType: row.afsFiles.docType,
+      pdfUrl: type === 'ULB' ? row.afsFiles.ulbFile?.pdfUrl : row.afsFiles.afsFile?.pdfUrl,
       uploadedBy: type,
-      jobId: type === 'ULB' ? row.afsexcelfiles.ulbFile?.queue?.jobId : row.afsexcelfiles.afsFile?.queue?.jobId,
+      jobId: type === 'ULB' ? row.afsFiles.ulbFile?.queue?.jobId : row.afsFiles.afsFile?.queue?.jobId,
     };
     this.afsService.removeJob(afsFile).subscribe({
       next: (res) => {
         this._snackBar.open('Job removed from queue successfully.', 'Close', { duration: 5000 });
         if (type === 'ULB') {
-          row.afsexcelfiles.ulbFile.digitizationStatus = 'not_digitized';
+          row.afsFiles.ulbFile.digitizationStatus = 'not_digitized';
         } else {
-          row.afsexcelfiles.afsFile.digitizationStatus = 'not_digitized';
+          row.afsFiles.afsFile.digitizationStatus = 'not_digitized';
         }
       },
       error: (err) => {

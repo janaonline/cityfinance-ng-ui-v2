@@ -35,6 +35,10 @@
         }
       </div>
     </div>
-    <app-afs-table [filters]="filtersObj()" (showSideBar)="toggleSideBar($event)"></app-afs-table>
+    <app-afs-table
+      [filters]="filtersObj()"
+      (showSideBar)="toggleSideBar($event)"
+      (queuedValues)="onQueuedValuesChanged($event)"
+    ></app-afs-table>
   </div>
 </div>
