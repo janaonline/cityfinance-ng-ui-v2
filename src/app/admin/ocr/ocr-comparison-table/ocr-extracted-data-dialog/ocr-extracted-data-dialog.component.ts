@@ -55,6 +55,23 @@ export class OcrExtractedDataDialogComponent {
     return items && items.length > 0 ? items.join(', ') : '-';
   }
 
+  getSubtotalMatchClass(
+    stated?: number | null,
+    computed?: number | null,
+  ): string {
+    if (stated === null || stated === undefined || computed === null || computed === undefined) {
+      return 'subtotal-grid__value-row subtotal-grid__value-row--neutral';
+    }
+
+    const difference = Math.abs(stated - computed);
+
+    if (difference < 0.000001) {
+      return 'subtotal-grid__value-row subtotal-grid__value-row--match';
+    }
+
+    return 'subtotal-grid__value-row subtotal-grid__value-row--mismatch';
+  }
+
   close(): void {
     this.dialogRef.close();
   }

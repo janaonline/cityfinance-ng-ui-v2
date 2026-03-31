@@ -1,32 +1,32 @@
 <h2 mat-dialog-title>Extracted OCR Details</h2>
 
 <mat-dialog-content class="extracted-dialog-content">
-  <p class="extracted-dialog-engine">{{ data.engine }}</p>
+  <p class="text-muted small mb-0">{{ data.engine }}</p>
 
-  <section class="detail-section">
-    <div class="section-header">
-      <h3>OCR Notes</h3>
+  <section class="border rounded-3 bg-white p-3 d-grid gap-3">
+    <div>
+      <h3 class="h6 mb-0">OCR Notes</h3>
     </div>
 
     @if (data.ocrNotes.length > 0) {
-      <ul class="notes-list">
+      <ul class="mb-0 ps-3 text-dark">
         @for (note of data.ocrNotes; track note) {
           <li>{{ note }}</li>
         }
       </ul>
     } @else {
-      <p class="empty-state">No OCR notes available.</p>
+      <p class="text-muted mb-0">No OCR notes available.</p>
     }
   </section>
 
-  <section class="detail-section">
-    <div class="section-header">
-      <h3>Validations</h3>
+  <section class="border rounded-3 bg-white p-3 d-grid gap-3">
+    <div>
+      <h3 class="h6 mb-0">Validations</h3>
     </div>
 
     @if (data.validations.length > 0) {
-      <div class="table-shell">
-        <table class="validations-table">
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle mb-0 validations-table">
           <thead>
             <tr>
               <th>Rule</th>
@@ -59,26 +59,26 @@
         </table>
       </div>
     } @else {
-      <p class="empty-state">No validations available.</p>
+      <p class="text-muted mb-0">No validations available.</p>
     }
   </section>
 
-  <section class="detail-section">
-    <div class="section-header">
-      <h3>Extracted Data</h3>
+  <section class="border rounded-3 bg-white p-3 d-grid gap-3">
+    <div>
+      <h3 class="h6 mb-0">Extracted Data</h3>
     </div>
 
     @if (data.extractedData.length > 0) {
-      <div class="section-list">
+      <div class="d-grid gap-3">
         @for (section of data.extractedData; track $index) {
-          <article class="section-card">
-            <div class="section-card__header">
-              <h4>{{ section.section_name || 'Untitled Section' }}</h4>
+          <article class="border rounded-3 bg-light overflow-hidden">
+            <div class="px-3 py-2 border-bottom bg-body-tertiary">
+              <h4 class="h6 mb-0">{{ section.section_name || 'Untitled Section' }}</h4>
             </div>
 
             @if (section.line_items?.length) {
-              <div class="table-shell">
-                <table class="line-items-table">
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0 line-items-table">
                   <thead>
                     <tr>
                       <th>Label</th>
@@ -96,13 +96,19 @@
                 </table>
               </div>
             } @else {
-              <p class="empty-state empty-state--compact">No line items available.</p>
+              <p class="text-muted mb-0 px-3 pt-3">No line items available.</p>
             }
 
-            <div class="subtotal-grid">
+            <div class="px-3 py-3 d-grid gap-2 small subtotal-grid">
               <div><strong>Subtotal Label:</strong> {{ formatValue(section.subtotal_label) }}</div>
-              <div><strong>Subtotal Stated:</strong> {{ formatValue(section.subtotal_stated) }}</div>
-              <div>
+              <div
+                [class]="getSubtotalMatchClass(section.subtotal_stated, section.subtotal_computed)"
+              >
+                <strong>Subtotal Stated:</strong> {{ formatValue(section.subtotal_stated) }}
+              </div>
+              <div
+                [class]="getSubtotalMatchClass(section.subtotal_stated, section.subtotal_computed)"
+              >
                 <strong>Subtotal Computed:</strong> {{ formatValue(section.subtotal_computed) }}
               </div>
             </div>
@@ -110,7 +116,7 @@
         }
       </div>
     } @else {
-      <p class="empty-state">No extracted data available.</p>
+      <p class="text-muted mb-0">No extracted data available.</p>
     }
   </section>
 </mat-dialog-content>
