@@ -44,39 +44,6 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>OCR method</mat-label>
-              <mat-select formControlName="ocrMethod">
-                @for (method of ocrMethods; track method.value) {
-                  <mat-option [value]="method.value">{{ method.label }}</mat-option>
-                }
-              </mat-select>
-              @if (uploadForm.controls.ocrMethod.invalid && uploadForm.controls.ocrMethod.touched) {
-                <mat-error>OCR method is required.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Gemini model</mat-label>
-              <mat-select formControlName="model">
-                @for (model of geminiModels; track model.value) {
-                  <mat-option [value]="model.value">{{ model.label }}</mat-option>
-                }
-              </mat-select>
-              @if (uploadForm.controls.model.invalid && uploadForm.controls.model.touched) {
-                <mat-error>Gemini model is required.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Enable orientation check</mat-label>
-              <mat-select formControlName="enableOrientationCheck">
-                @for (option of orientationCheckOptions; track option.label) {
-                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
               <mat-label>ULB</mat-label>
               <input
                 type="text"
@@ -111,6 +78,39 @@
               @if (uploadForm.controls.ulb.invalid && uploadForm.controls.ulb.touched) {
                 <mat-error>Please select a valid ULB from the list.</mat-error>
               }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>OCR method</mat-label>
+              <mat-select formControlName="ocrMethod">
+                @for (method of ocrMethods; track method.value) {
+                  <mat-option [value]="method.value">{{ method.label }}</mat-option>
+                }
+              </mat-select>
+              @if (uploadForm.controls.ocrMethod.invalid && uploadForm.controls.ocrMethod.touched) {
+                <mat-error>OCR method is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini model</mat-label>
+              <mat-select formControlName="model">
+                @for (model of geminiModels; track model.value) {
+                  <mat-option [value]="model.value">{{ model.label }}</mat-option>
+                }
+              </mat-select>
+              @if (uploadForm.controls.model.invalid && uploadForm.controls.model.touched) {
+                <mat-error>Gemini model is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Enable orientation check</mat-label>
+              <mat-select formControlName="enableOrientationCheck">
+                @for (option of orientationCheckOptions; track option.label) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
             </mat-form-field>
           </div>
 
