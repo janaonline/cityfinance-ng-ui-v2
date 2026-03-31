@@ -1,0 +1,110 @@
+<h2 mat-dialog-title>Extracted OCR Details</h2>
+
+<mat-dialog-content class="extracted-dialog-content">
+  <p class="extracted-dialog-engine">{{ data.engine }}</p>
+
+  <section class="detail-section">
+    <div class="section-header">
+      <h3>OCR Notes</h3>
+    </div>
+
+    @if (data.ocrNotes.length > 0) {
+      <ul class="notes-list">
+        @for (note of data.ocrNotes; track note) {
+          <li>{{ note }}</li>
+        }
+      </ul>
+    } @else {
+      <p class="empty-state">No OCR notes available.</p>
+    }
+  </section>
+
+  <section class="detail-section">
+    <div class="section-header">
+      <h3>Validations</h3>
+    </div>
+
+    @if (data.validations.length > 0) {
+      <div class="validation-list">
+        @for (validation of data.validations; track $index) {
+          <article class="validation-card">
+            <div class="validation-card__header">
+              <div class="validation-card__title">
+                {{ validation.rule_label || validation.rule_id || 'Validation' }}
+              </div>
+              @if (validation.status) {
+                <span [class]="getStatusClass(validation.status)">{{ validation.status }}</span>
+              }
+            </div>
+            <div class="validation-card__body">
+              <div><strong>Message:</strong> {{ formatValue(validation.message) }}</div>
+              <div>
+                <strong>Affected Items:</strong>
+                {{ formatAffectedItems(validation.affected_items) }}
+              </div>
+              <div><strong>Computed:</strong> {{ formatValue(validation.computed_value) }}</div>
+              <div><strong>Expected:</strong> {{ formatValue(validation.expected_value) }}</div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="empty-state">No validations available.</p>
+    }
+  </section>
+
+  <section class="detail-section">
+    <div class="section-header">
+      <h3>Extracted Data</h3>
+    </div>
+
+    @if (data.extractedData.length > 0) {
+      <div class="section-list">
+        @for (section of data.extractedData; track $index) {
+          <article class="section-card">
+            <div class="section-card__header">
+              <h4>{{ section.section_name || 'Untitled Section' }}</h4>
+            </div>
+
+            @if (section.line_items?.length) {
+              <div class="table-shell">
+                <table class="line-items-table">
+                  <thead>
+                    <tr>
+                      <th>Label</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of section.line_items; track $index) {
+                      <tr>
+                        <td>{{ formatValue(item.label) }}</td>
+                        <td>{{ formatValue(item.value) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="empty-state empty-state--compact">No line items available.</p>
+            }
+
+            <div class="subtotal-grid">
+              <div><strong>Subtotal Label:</strong> {{ formatValue(section.subtotal_label) }}</div>
+              <div><strong>Subtotal Stated:</strong> {{ formatValue(section.subtotal_stated) }}</div>
+              <div>
+                <strong>Subtotal Computed:</strong> {{ formatValue(section.subtotal_computed) }}
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="empty-state">No extracted data available.</p>
+    }
+  </section>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="close()">Close</button>
+</mat-dialog-actions>

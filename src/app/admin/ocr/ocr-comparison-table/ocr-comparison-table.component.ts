@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MaterialModule } from '../../../material.module';
 import {
   OcrEngineConfidence,
+  OcrExtractedSection,
   OcrFinancialFigures,
   OcrEngineResult,
   OcrMatchSummaryField,
@@ -11,6 +12,7 @@ import {
   OcrUsageMetadata,
   OcrValidationRule,
 } from '../upload-file-ocr/ocr-response';
+import { OcrExtractedDataDialogComponent } from './ocr-extracted-data-dialog/ocr-extracted-data-dialog.component';
 import { OcrUsageDetailsDialogComponent } from './ocr-usage-details-dialog.component';
 
 interface OcrMatchCell {
@@ -23,6 +25,7 @@ interface OcrMatchCell {
 interface OcrComparisonRow {
   engineKey: string;
   engine: string;
+  model: string;
   status: string;
   overallMatch: string;
   docType: OcrMatchCell;
@@ -34,8 +37,10 @@ interface OcrComparisonRow {
   table: OcrMatchCell;
   confidence: string;
   usageMetadata: OcrUsageMetadata | null;
+  ocrNotes: string[];
   financialFigures: OcrFinancialFigures | null;
   validations: OcrValidationRule[] | null;
+  extractedData: OcrExtractedSection[];
   issues: string;
   timings: string[];
   ocrUrl: string | null;
@@ -118,6 +123,7 @@ export class OcrComparisonTableComponent {
     return Object.entries(response.engines).map(([engineName, engine]) => ({
       engineKey: engineName,
       engine: this.toTitleCase(engineName),
+      model: this.formatValue(engine.model),
       status: this.formatValue(engine.status),
       overallMatch: this.formatMatchValue(engine.match_summary?.overall_match),
       docType: this.toMatchCell(engine.match_summary?.doc_type),
@@ -133,8 +139,10 @@ export class OcrComparisonTableComponent {
       table: this.toTableMatchCell(engine),
       confidence: this.formatConfidence(engine.result?.confidence),
       usageMetadata: engine.result?.usage_metadata ?? engine.extracted?.usage_metadata ?? null,
+      ocrNotes: engine.result?.ocr_notes ?? [],
       financialFigures: engine.result?.financial_figures ?? engine.extracted?.financial_figures ?? null,
       validations: engine.result?.validations ?? null,
+      extractedData: engine.result?.extracted_data ?? [],
       issues: this.formatIssues(engine.result?.issues),
       timings: this.formatTimings(
         engine.timing?.ocr_duration_seconds,
@@ -239,6 +247,28 @@ export class OcrComparisonTableComponent {
         title: 'Validations',
         engine,
         details: this.getValidationItems(validations),
+      },
+    });
+  }
+
+  openExtractedDataDetails(
+    engine: string,
+    ocrNotes: string[],
+    validations?: OcrValidationRule[] | null,
+    extractedData?: OcrExtractedSection[] | null,
+  ): void {
+    if (ocrNotes.length === 0 && (!validations || validations.length === 0) && (!extractedData || extractedData.length === 0)) {
+      return;
+    }
+
+    this.dialog.open(OcrExtractedDataDialogComponent, {
+      width: '960px',
+      maxWidth: '96vw',
+      data: {
+        engine,
+        ocrNotes,
+        validations: validations ?? [],
+        extractedData: extractedData ?? [],
       },
     });
   }
