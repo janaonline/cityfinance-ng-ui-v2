@@ -1,9 +1,11 @@
 <!-- <ng-container *ngFor="let field of fields;"> -->
-
 @switch (this.formFieldType) {
   @case ('input') {
     <!-- <app-input [field]="field" [group]="group"></app-input> -->
     <app-input [field]="field" [group]="group"></app-input>
+  }
+  @case ('textarea') {
+    <app-textarea [field]="field" [group]="group"></app-textarea>
   }
   @case ('radio') {
     <app-radiobutton [field]="field" [group]="group"></app-radiobutton>
@@ -28,6 +30,9 @@
   }
   @case ('button') {
     <app-button [field]="field" [group]="group"></app-button>
+  }
+  @case ('file') {
+    <app-file [field]="field" [group]="group"></app-file>
   }
 
   <!-- @default {

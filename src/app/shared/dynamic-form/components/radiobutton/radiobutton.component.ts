@@ -5,13 +5,13 @@ import { MaterialModule } from '../../../../material.module';
 @Component({
     selector: 'app-radiobutton',
     imports: [MaterialModule],
-    template: ` <div class="demo-full-width margin-top" [formGroup]="group">
+    template: ` <fieldset class="demo-full-width margin-top" [formGroup]="group">
       @if (field.label) {
         <div>
-          <label class="fw-bold radio-label-padding"
+          <legend class="fw-bold m-0 custom-font-size-6"
             >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
             <!-- <span class="text-danger">*&nbsp;</span> -->
-          </label>
+          </legend>
         </div>
       }
       <mat-radio-group [formControlName]="field.key">
@@ -28,7 +28,7 @@ import { MaterialModule } from '../../../../material.module';
           </ng-container>
         }
       </mat-radio-group>
-    </div>`,
+    </fieldset>`,
     styles: ``
 })
 export class RadiobuttonComponent implements OnInit {

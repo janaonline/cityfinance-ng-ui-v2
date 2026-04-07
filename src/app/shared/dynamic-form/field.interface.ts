@@ -3,6 +3,23 @@ export interface Validator {
   validator: any;
   message: string;
 }
+
+export type DateConfigValue = Date | string | null;
+
+export type UploadedFileValue = {
+  fileName: string;
+  fileUrl: string;
+  fileSize: number | null;
+  mimeType?: string;
+} | null;
+
+export interface LegacyFileValue {
+  name: string;
+  size: string | number | null;
+  url: string;
+  mimeType?: string;
+}
+
 export interface FieldConfig {
   required?: any;
   label: string;
@@ -28,6 +45,12 @@ export interface FieldConfig {
   allowedFileTypes?: string[];
   fileRejectOptions?: string[];
   decimal?: 0;
+  file?: LegacyFileValue;
+  fileViewType?: 'button' | 'dropzone';
+  folderPath?: string;
+  maxFileSize?: number;
+  minDate?: DateConfigValue;
+  maxDate?: DateConfigValue;
 }
 
 export interface JsonFieldConfig {
@@ -40,4 +63,7 @@ export interface JsonFieldConfig {
   value?: any;
   validations?: Validator[];
   formArrays?: any[];
+  readonly?: boolean;
+  minDate?: DateConfigValue;
+  maxDate?: DateConfigValue;
 }

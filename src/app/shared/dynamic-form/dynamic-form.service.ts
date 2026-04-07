@@ -6,19 +6,22 @@ import {
   Validators,
   FormControl,
   AbstractControl,
+  ValidatorFn,
 } from '@angular/forms';
 import {
   compareArrFieldsValidator,
   compareFieldsValidator,
 } from '../../core/validators/comparison.validator';
-import { FieldConfig } from './field.interface';
+import { FieldConfig, UploadedFileValue } from './field.interface';
+import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
+import { toUtcIsoDateString } from './components/date/utc-iso-date-adapter';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DynamicFormService {
   form!: FormGroup;
-  constructor(private fb: FormBuilder) { }
+  constructor(private fb: FormBuilder) {}
 
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i];
@@ -190,10 +193,17 @@ export class DynamicFormService {
     });
   }
 
-  bindValidations(validations: any) {
-    if (validations && validations.length > 0) {
-      const validators: any = [];
-      validations.forEach((row: any) => {
+  bindValidations(
+    validations: FieldConfig['validations'] | false | undefined,
+    field?: Pick<FieldConfig, 'formFieldType' | 'minDate' | 'maxDate'>,
+  ) {
+    const validators: ValidatorFn[] = [];
+    const validationList = validations || [];
+    let hasMinDateValidation = false;
+    let hasMaxDateValidation = false;
+
+    if (validationList.length > 0) {
+      validationList.forEach((row: any) => {
         switch (row.name) {
           case 'required':
             validators.push(Validators.required);
@@ -210,6 +220,14 @@ export class DynamicFormService {
           case 'max':
             validators.push(Validators.max(row.validator));
             break;
+          case 'minDate':
+            hasMinDateValidation = true;
+            validators.push(minDateValidator(row.validator ?? field?.minDate));
+            break;
+          case 'maxDate':
+            hasMaxDateValidation = true;
+            validators.push(maxDateValidator(row.validator ?? field?.maxDate));
+            break;
           case 'minlength':
             validators.push(Validators.minLength(row.validator));
             break;
@@ -221,16 +239,29 @@ export class DynamicFormService {
             break;
         }
       });
-
-      return Validators.compose(validators);
     }
-    return null;
+
+    if (field?.formFieldType === 'date') {
+      if (!hasMinDateValidation && field.minDate !== undefined) {
+        validators.push(minDateValidator(field.minDate));
+      }
+
+      if (!hasMaxDateValidation && field.maxDate !== undefined) {
+        validators.push(maxDateValidator(field.maxDate));
+      }
+    }
+
+    return validators.length > 0 ? Validators.compose(validators) : null;
   }
   createContorl(field: any, validations = false, readonly = false) {
     const validationsData = validations || field.validations;
     // const val = field.value ? { value: field.value, disabled: readonly || field.readonly } : '';
-    const val = { value: field.value, disabled: readonly || field.readonly };
-    return new FormControl(val, this.bindValidations(validationsData));
+    const resolvedReadonly = readonly || field.readonly;
+    const val = {
+      value: this.resolveInitialControlValue(field, false),
+      disabled: field.formFieldType === 'date' ? false : resolvedReadonly,
+    };
+    return new FormControl(val, this.bindValidations(validationsData, field));
     // return new FormControl(field.value || '');
   }
   tabControl(fields: any[]) {
@@ -280,8 +311,129 @@ export class DynamicFormService {
   toFormGroup(questions: FieldConfig[]): FormGroup {
     const group: any = {};
     questions.forEach((question: FieldConfig) => {
-      group[question.key] = new FormControl(question.value || '', this.bindValidations(question.validations))
+      group[question.key] = new FormControl(
+        this.resolveInitialControlValue(question, true),
+        this.bindValidations(question.validations, question),
+      );
     });
     return new FormGroup(group);
+  }
+
+  /**
+   * Convert dynamic-form values into the payload shape expected by persistence layers.
+   * Date fields stay compatible with the Material datepicker in form state and are
+   * serialized to UTC ISO strings only when building the outbound payload.
+   */
+  serializeFormPayload(
+    fields: ReadonlyArray<Pick<FieldConfig, 'key' | 'formFieldType'>>,
+    values: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = Object.create(null);
+
+    for (const field of fields) {
+      const key = field.key;
+      if (
+        typeof key !== 'string' ||
+        key.length === 0 ||
+        !Object.prototype.hasOwnProperty.call(values, key)
+      ) {
+        continue;
+      }
+
+      payload[key] = this.serializeFieldValue(field, values[key]);
+    }
+
+    return payload;
+  }
+
+  serializeFieldValue(field: Pick<FieldConfig, 'formFieldType'>, value: unknown): unknown {
+    if (field.formFieldType !== 'date') {
+      return value;
+    }
+
+    const serializedDate = toUtcIsoDateString(value);
+    return serializedDate === undefined ? value : serializedDate;
+  }
+
+  /**
+   * Resolve the initial value assigned to a dynamic form control at creation time.
+   *
+   * File fields require a dedicated normalization path so standalone uploads start with `null`
+   * when they are effectively empty. This keeps Angular validators such as `required` aligned
+   * with the actual UI state and preserves patched edit values when a valid uploaded file object
+   * is already present. Non-file controls retain the existing fallback behavior used across the
+   * dynamic-form system.
+   *
+   * @param field - Minimal field configuration used to determine the control type and seed value
+   * @param useEmptyStringFallback - Whether falsy non-file values should default to an empty string
+   * @returns The normalized initial control value for the field
+   */
+  private resolveInitialControlValue(
+    field: Pick<FieldConfig, 'formFieldType' | 'value'>,
+    useEmptyStringFallback: boolean,
+  ): unknown {
+    if (field.formFieldType === 'file') {
+      return this.normalizeStandaloneFileValue(field.value);
+    }
+
+    return useEmptyStringFallback ? field.value || '' : field.value;
+  }
+
+  private normalizeStandaloneFileValue(value: unknown): UploadedFileValue {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const rawValue = value as Record<string, unknown>;
+    const fileName =
+      this.getNonEmptyString(rawValue['fileName']) ?? this.getNonEmptyString(rawValue['name']);
+    const fileUrl =
+      this.getNonEmptyString(rawValue['fileUrl']) ?? this.getNonEmptyString(rawValue['url']);
+
+    if (!fileName && !fileUrl) {
+      return null;
+    }
+
+    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
+    const mimeType = this.getNonEmptyString(rawValue['mimeType']);
+
+    return {
+      fileName: fileName ?? this.getFileNameFromUrl(fileUrl),
+      fileUrl: fileUrl ?? '',
+      fileSize,
+      ...(mimeType ? { mimeType } : {}),
+    };
+  }
+
+  private getNonEmptyString(value: unknown): string | null {
+    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+  }
+
+  private normalizeFileSize(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return value;
+    }
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalizedValue = value.trim();
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const numericValue = Number(normalizedValue);
+    return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
+  }
+
+  private getFileNameFromUrl(fileUrl: string | null): string {
+    if (!fileUrl) {
+      return '';
+    }
+
+    const pathSegment = fileUrl.split(/[?#]/)[0];
+    const segments = pathSegment.split('/');
+    return segments[segments.length - 1] ?? '';
   }
 }

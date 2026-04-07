@@ -1,70 +1,175 @@
-@if (!readonly) {
-  <div class="container" appDnd (fileDropped)="onFileDropped($event)">
-    <input
-      type="file"
-      #fileDropRef
-      id="fileDropRef"
-      (change)="fileBrowseHandler($event)"
-      [accept]="this.allowedFileTypeStr"
-      />
-      <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
-      <p class="fw-bold mt-2 mb-1">Upload consolidated PDF</p>
-      <label for="fileDropRef"
-        ><small class="text-secondary">Drag and drop the file here.</small></label
-        >
-      </div>
-    }
-    <!-- {{getRawValue|json}} -->
-    @if (currentFile) {
-      <div class="files-list">
-        <p class="mb-1">Uploaded file:</p>
-        <div class="single-file dotted-border-secondary">
-          <div class="file-icon" style="width: 50px">
-            <div class="align-self-center">
-              <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
-            </div>
-          </div>
-          <div class="info">
-            <h4 class="name">{{ currentFile.name }}</h4>
-            <p class="size">{{ formatBytes(currentFile.size) }}</p>
-            <!-- <app-progress [progress]="progress"></app-progress> -->
-            <mat-progress-bar mode="determinate" [value]="progress"></mat-progress-bar>
-          </div>
-          <a [href]="getRawValue.file.url | toStorageUrl" target="_blank"
-            ><i class="bi bi-eye-fill fs-5 me-1 text-dark"></i
-          ></a>
-          <div class="delete align-self-center" (click)="deleteFile()">
-            <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
-          </div>
-        </div>
-      </div>
-    } @else if (getRawValue.file.name) {
-      <div class="files-list">
-        <p class="mb-1">Uploaded file:</p>
-        <div class="single-file dotted-border-secondary p-3">
-          <div class="file-icon" style="width: 50px">
-            <div class="align-self-center">
-              <i class="bi bi-file-earmark-pdf-fill fs-4 me-1 text-danger"></i>
-            </div>
-          </div>
+@if (showStandaloneLabel()) {
+  <label [for]="fileInputId" class="fw-bold m-0">{{ fieldLabel() }}</label>
+}
 
-          <div class="info">
-            <h4 class="name">{{ getRawValue.file.name }}</h4>
-          </div>
-          <a [href]="getRawValue.file.url | toStorageUrl" target="_blank"
-            ><i class="bi bi-eye-fill fs-5 me-1 text-dark"></i
-          ></a>
-          <div class="delete align-self-center" (click)="deleteFile()">
-            <mat-icon class="text-danger fs-3 me-1">delete_forever</mat-icon>
-          </div>
-        </div>
-      </div>
+@if (!isReadonly()) {
+  <input
+    #fileInputRef
+    class="d-none"
+    type="file"
+    [id]="fileInputId"
+    [accept]="allowedFileTypeStr()"
+    tabindex="-1"
+    aria-hidden="true"
+    (change)="fileBrowseHandler($event)"
+  />
+}
+
+<div class="visually-hidden" aria-live="polite">{{ liveRegionMessage() }}</div>
+
+@if (isButtonView()) {
+  <div class="d-flex flex-column gap-2">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+      @if (!isReadonly()) {
+        <button
+          type="button"
+          class="btn btn-success d-inline-flex align-items-center gap-2"
+          [disabled]="isUploading()"
+          [attr.aria-busy]="isUploading()"
+          [attr.aria-describedby]="showError() ? fileInputId + '-error' : null"
+          (click)="openFileBrowser()"
+        >
+          @if (showButtonUploadedState()) {
+            <i class="bi bi-check2"></i>
+            <span>Uploaded</span>
+          } @else {
+            <i class="bi bi-upload"></i>
+            <span>{{ uploadPromptLabel() }}</span>
+          }
+        </button>
+      } @else if (showButtonUploadedState()) {
+        <span
+          class="btn btn-success disabled d-inline-flex align-items-center gap-2"
+          aria-disabled="true"
+        >
+          <i class="bi bi-check2"></i>
+          <span>Uploaded</span>
+        </span>
+      }
+
+      @if (uploadedFile(); as uploadedFile) {
+        @if (previewUrl(); as previewUrl) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [href]="previewUrl | toStorageUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'View file ' + uploadedFile.name"
+          >
+            <i class="bi bi-eye fs-5 mx-1 text-dark" title="View file"></i>
+          </a>
+        }
+
+        @if (canRemoveFile()) {
+          <button
+            type="button"
+            class="file-icon-button m-0 p-0 border-0 bg-transparent"
+            [attr.aria-label]="'Remove file ' + uploadedFile.name"
+            (click)="deleteFile()"
+          >
+            <i class="bi bi-x-circle fs-5 mx-1 text-danger" title="Remove file"></i>
+          </button>
+        }
+      }
+    </div>
+
+    @if (showUploadProgress()) {
+      <mat-progress-bar
+        class="button-view-progress"
+        mode="determinate"
+        [value]="uploadProgress()"
+        aria-label="Upload progress"
+      ></mat-progress-bar>
     }
-    @if (getRawValue.file.name) {
-      <div class="verified-info">
-        <div class="d-flex align-items-center justify-content-start">
-          <span><mat-icon class="material-icons-round me-2 text-success"> verified </mat-icon></span>
-          <p>File uploaded successfully.</p>
+  </div>
+} @else {
+  @if (!isReadonly()) {
+    <div
+      class="file-dropzone mb-1"
+      appDnd
+      role="button"
+      [attr.tabindex]="canSelectFile() ? 0 : -1"
+      [attr.aria-busy]="isUploading()"
+      [attr.aria-disabled]="!canSelectFile()"
+      [attr.aria-describedby]="showError() ? fileInputId + '-error' : null"
+      [attr.aria-label]="uploadPromptLabel()"
+      (click)="openFileBrowser()"
+      (keydown)="onDropzoneKeydown($event)"
+      (fileDropped)="onFileDropped($event)"
+    >
+      <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
+      <p class="fw-bold m-0">{{ uploadPromptLabel() }}</p>
+      <small class="text-secondary">Drag and drop the file here.</small>
+    </div>
+  }
+
+  @if (displayFile(); as displayFile) {
+    <div class="mt-3">
+      <p class="fw-semibold m-0">{{ displayFile.title }}</p>
+      <div
+        class="single-file d-flex align-items-center justify-content-between p-2 mb-3 dotted-border-secondary"
+        [attr.aria-busy]="displayFile.isUploading"
+        [attr.role]="displayFile.isUploading ? 'status' : null"
+      >
+        <div class="file-icon d-flex align-items-center justify-content-center flex-shrink-0">
+          <app-file-icon [fileName]="displayFile.name"></app-file-icon>
         </div>
+
+        <div class="info w-100">
+          <p class="file-name">{{ displayFile.name }}</p>
+
+          @if (displayFile.isUploading) {
+            <mat-progress-bar
+              class="upload-progress"
+              mode="determinate"
+              [value]="displayFile.progress ?? 0"
+              aria-label="Upload progress"
+            ></mat-progress-bar>
+          }
+
+          @if (displayFile.sizeLabel) {
+            <p class="size">{{ displayFile.sizeLabel }}</p>
+          }
+        </div>
+
+        @if (displayFile.previewUrl) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [href]="displayFile.previewUrl | toStorageUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'View file ' + displayFile.name"
+          >
+            <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
+          </a>
+        }
+
+        @if (canRemoveFile()) {
+          <button
+            type="button"
+            class="file-icon-button align-self-center"
+            [attr.aria-label]="'Remove file ' + displayFile.name"
+            (click)="deleteFile()"
+          >
+            <mat-icon class="text-danger fs-3 me-1" title="Remove file">delete_forever</mat-icon>
+          </button>
+        }
       </div>
-    }
+    </div>
+  }
+}
+
+@if (shouldShowUploadedFileMessage()) {
+  <div class="verified-info" role="status" aria-live="polite">
+    <div class="d-flex align-items-center justify-content-start">
+      <span><mat-icon class="material-icons-round me-2 text-success">verified</mat-icon></span>
+      <p>File uploaded successfully.</p>
+    </div>
+  </div>
+}
+
+@if (showError()) {
+  <div [id]="fileInputId + '-error'" class="text-danger small mt-2" role="alert">
+    {{ errorMessage() }}
+  </div>
+}

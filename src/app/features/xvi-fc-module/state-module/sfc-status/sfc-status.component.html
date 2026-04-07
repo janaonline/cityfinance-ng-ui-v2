@@ -1,0 +1,49 @@
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="form-container">
+    <div class="top-accent"></div>
+
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack d-flex flex-column gap-4">
+        <div>
+          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+            16th Finance Commission &nbsp;&middot;&nbsp; Andhra Pradesh
+          </div>
+
+          <h1 class="page-title mb-2">State Finance Commission Verification</h1>
+
+          <p class="page-subtitle text-secondary mb-0">
+            As part of the 16th Finance Commission grant conditions, the constitution and
+            functioning of the State Finance Commission (SFC) must be verified by the state
+            government. Based on records available with the 15th Finance Commission, we have the
+            following information. Please review and confirm.
+          </p>
+        </div>
+
+        <hr class="my-0 text-body-tertiary" />
+
+        @if (isLoading()) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        } @else {
+          <form class="content-body" [formGroup]="form">
+            @for (item of visibleFields(); track item.key) {
+              <app-dynamic-form
+                class="d-block my-2"
+                [field]="item"
+                [group]="form"
+              ></app-dynamic-form>
+            }
+          </form>
+        }
+      </div>
+    </div>
+
+    <div class="acknowledgement border-top px-3 py-3">
+      <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+        <button type="button" matButton="outlined" (click)="onCancel()">Cancel</button>
+        <button type="submit" matButton="filled" (click)="onSubmit()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>

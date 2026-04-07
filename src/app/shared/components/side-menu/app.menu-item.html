@@ -1,0 +1,86 @@
+<div class="menu-container">
+  @if (item().separator) {
+  <hr />
+  }
+  <!-- Leaf Menu Item -->
+  @if (!hasChildren()) {
+
+  <!-- Header Label -->
+  @if (root() && item().label && !item().routerLink && !item().url) {
+
+  <div class="menu-header menu-item" [class.disabled]="item().disabled" [title]="item().label">
+    @if (item().icon) {
+    <i class="me-2" [class]="item().icon"></i>
+    }{{ item().label }}
+  </div>
+
+  } @else {
+
+  <!-- Internal Router Link -->
+  @if (isInternalLink()) {
+
+  <a
+    class="menu-item"
+    [routerLink]="item().routerLink"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: item().exact ?? true }"
+    [ngClass]="item().class"
+  >
+    @if (item().icon) {
+    <i class="me-2" [class]="item().icon"></i>
+    }
+
+    <span class="menu-label" [title]="item().label">{{ item().label }}</span>
+  </a>
+
+  }
+
+  <!-- External Link -->
+  @if (isExternalLink()) {
+
+  <a class="menu-item" [href]="item().url" [target]="item().target ?? '_self'" rel="noopener">
+    @if (item().icon) {
+    <i class="me-2" [class]="item().icon"></i>
+    }
+
+    <span class="menu-label" [title]="item().label">{{ item().label }}</span>
+  </a>
+
+  } } }
+
+  <!-- Parent Menu -->
+  @if (hasChildren()) {
+
+  <!-- Labels/ Headers -->
+  @if (root()) {
+  <div class="menu-header menu-item" [class.disabled]="item().disabled" [title]="item().label">
+    {{ item().label }}
+  </div>
+  } @else {
+
+  <a href="javascript:void(0)" class="menu-item" (click)="toggle()">
+    @if (item().icon) {
+    <i [class]="'me-2 ' + item().icon"></i>
+    }
+    <span class="menu-label" [title]="item().label">{{ item().label }} </span>
+    <i
+      class="bi ms-auto fs-6 fw-bold"
+      [class.bi-chevron-down]="expanded()"
+      [class.bi-chevron-up]="!expanded()"
+    ></i>
+  </a>
+
+  }
+
+  <!-- Sub Menu -->
+  <!-- Hide if chevron is toggled -->
+  @if (expanded()) {
+  <ul class="submenu-item">
+    @for (child of item().items; track child.label) {
+    <li>
+      <app-menu-item [item]="child"></app-menu-item>
+    </li>
+    }
+  </ul>
+  } }
+</div>
