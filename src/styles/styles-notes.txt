@@ -24,7 +24,7 @@
  *
  * Adding a new scoped theme:
  * 1. create a new theme stylesheet with its own theme class and Material mixin
- *    (same pattern as `_xvifc-theme.scss`)
+ *    (same pattern as `_xvi-fc-theme.scss`)
  * 2. register selectors in global styles for both:
  *    - `.your-theme-class`
  *    - `.cdk-overlay-container.your-theme-class`

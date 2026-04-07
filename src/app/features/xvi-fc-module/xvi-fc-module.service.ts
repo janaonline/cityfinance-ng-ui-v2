@@ -4,7 +4,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SideBarModel } from '../../shared/components/side-menu/interface';
 import { Login_Logout } from '../../core/util/logout.util';
 import { SIDE_MENU_ITEMS } from './temp';
-import { ROLES, Roles, XVIFC_LANDING_ROUTE, XvifcYearId, YEAR_IDS } from './xvifc-side-menu.config';
+import { ROLES, Roles, XVIFC_LANDING_ROUTE, XvifcYearId, YEAR_IDS } from './xvi-fc-side-menu.config';
 
 interface XvifcRouteContext {
   role: Roles;

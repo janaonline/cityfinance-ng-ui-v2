@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { XvifcModuleService } from '../xvifc-module.service';
-import { Roles, XvifcYearId, buildXvifcFeatureLink } from '../xvifc-side-menu.config';
+import { XvifcModuleService } from '../xvi-fc-module.service';
+import { Roles, XvifcYearId, buildXvifcFeatureLink } from '../xvi-fc-side-menu.config';
 
 interface LandingRoleOption {
   label: Roles;

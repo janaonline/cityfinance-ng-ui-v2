@@ -11,8 +11,8 @@ import {
 import { Subject } from 'rxjs';
 import { MenuItem, SideBarModel } from '../../shared/components/side-menu/interface';
 import { XviFcModuleComponent } from './xvi-fc-module.component';
-import { XvifcModuleService } from './xvifc-module.service';
-import { Roles, XvifcYearId } from './xvifc-side-menu.config';
+import { XvifcModuleService } from './xvi-fc-module.service';
+import { Roles, XvifcYearId } from './xvi-fc-side-menu.config';
 
 @Component({
   selector: 'app-menu',

@@ -4,7 +4,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/ro
 import { filter } from 'rxjs';
 import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
 import { AppMenuComponent } from '../../shared/components/side-menu/app.menu';
-import { XvifcModuleService } from './xvifc-module.service';
+import { XvifcModuleService } from './xvi-fc-module.service';
 
 const XVIFC_THEME_CLASS = 'xvifc-theme';
 @Component({

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { XvifcModuleService } from '../xvifc-module.service';
-import { buildXvifcFeatureLink, XvifcYearId } from '../xvifc-side-menu.config';
+import { XvifcModuleService } from '../xvi-fc-module.service';
+import { buildXvifcFeatureLink, XvifcYearId } from '../xvi-fc-side-menu.config';
 import { LandingPageComponent } from './landing-page.component';
 
 describe('LandingPageComponent', () => {

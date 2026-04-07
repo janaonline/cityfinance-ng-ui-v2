@@ -4,8 +4,8 @@ import { Subject } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { Login_Logout } from '../../core/util/logout.util';
 import { SIDE_MENU_ITEMS } from './temp';
-import { XvifcModuleService } from './xvifc-module.service';
-import { XVIFC_LANDING_ROUTE } from './xvifc-side-menu.config';
+import { XvifcModuleService } from './xvi-fc-module.service';
+import { XVIFC_LANDING_ROUTE } from './xvi-fc-side-menu.config';
 
 describe('XvifcModuleService', () => {
   let service: XvifcModuleService;

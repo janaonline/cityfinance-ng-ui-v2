@@ -93,7 +93,7 @@ export const routes: Routes = [
   {
     path: 'xvifc',
     loadChildren: () =>
-      import('./features/xvi-fc-module/xvifc-module.routes').then((m) => m.XVIFC_ROUTES),
+      import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
   {
     path: 'maintenance',
