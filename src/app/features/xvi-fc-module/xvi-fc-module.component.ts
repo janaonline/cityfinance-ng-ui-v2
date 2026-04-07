@@ -1,10 +1,9 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
 import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
 import { AppMenuComponent } from '../../shared/components/side-menu/app.menu';
-import { SideBarModel } from '../../shared/components/side-menu/interface';
 import { XvifcModuleService } from './xvifc-module.service';
 
 const XVIFC_THEME_CLASS = 'xvifc-theme';
@@ -18,30 +17,48 @@ const XVIFC_THEME_CLASS = 'xvifc-theme';
   },
   providers: [...provideMaterialThemeScope(XVIFC_THEME_CLASS)],
 })
+/**
+ * Feature shell for the XVI-FC module.
+ *
+ * Applies the feature-scoped Material theme and keeps the shared side menu
+ * synchronized with the currently active child route so nested navigation
+ * always reflects the resolved role/year context.
+ */
 export class XviFcModuleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  /** Resolves route-derived feature context and menu state shared across the shell. */
   private readonly xvifcService = inject(XvifcModuleService);
 
-  readonly model = signal<SideBarModel>({ topModel: [], bottomModel: [] });
+  /** Menu model consumed by the shell template and recalculated from route context. */
+  readonly model = this.xvifcService.sideMenuModel;
+  readonly role = this.xvifcService.role;
+  readonly yearId = this.xvifcService.yearId;
 
+  /**
+   * Primes menu state from the initial route snapshot and re-synchronizes
+   * after each completed navigation within the feature area.
+   */
   ngOnInit() {
-    // It syncs the sidebar once immediately.
+    // Route params/data can already be finalized by redirects before the shell renders.
     this.syncMenuModel();
 
-    // Listens for future navigation completions on each completed navigation, it syncs again.
+    // Re-read the route tree only after navigation completes so child snapshots are stable.
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        // Router events outlive the component; bind cleanup to the shell instance.
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => this.syncMenuModel());
   }
 
+  /**
+   * Re-reads the current route tree and pushes the resolved role/year context
+   * into the shared XVI-FC state service.
+   */
   private syncMenuModel() {
-    // Given the current route snapshot, get the active role and yearId
-    const { role, yearId } = this.xvifcService.resolveRoleAndYearFromRoute(this.route.snapshot);
-    this.model.set(this.xvifcService.getSideMenuItems(role, yearId));
+    this.xvifcService.syncContextFromRoute(this.route.snapshot);
   }
 }

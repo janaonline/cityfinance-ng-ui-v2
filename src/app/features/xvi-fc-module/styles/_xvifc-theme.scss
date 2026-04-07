@@ -1,32 +1,37 @@
+@use 'sass:map';
 @use '@angular/material' as mat;
 @use './theme-colors' as mat-theme;
 
 $xvifc_theme_class: 'xvifc-theme';
 $xvifc-font-family: Montserrat;
 $xvifc-density: -1;
+$xvifc-primary-palette: mat-theme.$primary-palette;
 
 @mixin xvifc-theme-tokens {
-  --color-primary: #114551;
-  --color-primary-hover: #16505d;
-  --color-primary-selected: #1c6170;
-  --color-primary-accent: #f2f7f8;
+  --color-primary: #{map.get($xvifc-primary-palette, 25)};
+  --color-primary-hover: #{map.get($xvifc-primary-palette, 30)};
+  --color-primary-selected: #{map.get($xvifc-primary-palette, 35)};
+  --color-primary-accent: #{map.get($xvifc-primary-palette, 98)};
+  --color-on-primary: #{map.get($xvifc-primary-palette, 100)};
+  --color-primary-shadow: #{rgba(map.get($xvifc-primary-palette, 25), 0.14)};
+  --color-status-accent-background: #fff2df;
+  --color-status-accent-shadow: rgba(242, 92, 5, 0.12);
   --color-muted: rgba(255, 255, 255, 0.4);
 
   --nav-width: 260px;
   --item-padding: 0.45rem;
   --radius-split-rouned: 5px 20px 20px 5px;
-  --radius-split-squared: 5px 5px 5px 5px;
-}
+  --radius-split-squared: 8px 8px 8px 8px;
 
-@mixin xvifc-material-theme {
   font-family: $xvifc-font-family, sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
+}
 
+@mixin xvifc-material-theme {
   @include xvifc-theme-tokens;
   @include mat.theme(
     (
-      
       color: (
         primary: mat-theme.$primary-palette,
         tertiary: mat-theme.$tertiary-palette,

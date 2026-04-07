@@ -83,22 +83,22 @@ describe('SfcStatusComponent', () => {
     expect(component.isLoading()).toBeFalse();
     expect(component.fields().length).toBe(7);
     expect(component.visibleFields().map((field) => field.key)).toEqual([
-      'stateName',
-      'actionTakenReport',
       'sfcActive',
-      'sfcTerm',
+      'stateName',
       'sfcReportStatus',
       'applicableSfcGrantCalculation',
       'applicableSfcReportSubmissionDate',
+      'sfcTerm',
+      'actionTakenReport',
     ]);
     expect(Object.keys(component.form.controls)).toEqual([
-      'stateName',
-      'actionTakenReport',
       'sfcActive',
-      'sfcTerm',
+      'stateName',
       'sfcReportStatus',
       'applicableSfcGrantCalculation',
       'applicableSfcReportSubmissionDate',
+      'sfcTerm',
+      'actionTakenReport',
     ]);
     expect(fixture.nativeElement.querySelectorAll('app-dynamic-form').length).toBe(7);
   }));
@@ -107,18 +107,28 @@ describe('SfcStatusComponent', () => {
     createComponent();
     completeInitialLoad();
 
-    const sfcTermControl = getControl('sfcTerm');
-    const reportStatusControl = getControl('sfcReportStatus');
-
-    sfcTermControl?.setValue('Sixth SFC');
-    reportStatusControl?.setValue('Submitted');
-    getControl('sfcActive')?.setValue('no');
+    getControl('sfcActive')?.setValue('yes');
     fixture.detectChanges();
 
-    expect(component.visibleFields().map((field) => field.key)).not.toContain('sfcTerm');
-    expect(component.visibleFields().map((field) => field.key)).not.toContain('sfcReportStatus');
-    expect(sfcTermControl?.disabled).toBeTrue();
-    expect(reportStatusControl?.disabled).toBeTrue();
+    const sfcTermControl = getControl('sfcTerm');
+    const reportStatusControl = getControl('sfcReportStatus');
+    sfcTermControl?.setValue('Sixth SFC');
+    reportStatusControl?.setValue('Submitted');
+
+    const HIDDEN_FIELDS = [
+      'stateName',
+      'sfcReportStatus',
+      'applicableSfcGrantCalculation',
+      'applicableSfcReportSubmissionDate',
+      'sfcTerm',
+      'actionTakenReport',
+    ];
+    getControl('sfcActive')?.setValue('no');
+    fixture.detectChanges();
+    for (const fieldKey of HIDDEN_FIELDS) {
+      expect(component.visibleFields().map((field) => field.key)).not.toContain(fieldKey);
+    }
+
     expect(sfcTermControl?.value).toBe('Sixth SFC');
     expect(reportStatusControl?.value).toBe('Submitted');
   }));
@@ -140,7 +150,7 @@ describe('SfcStatusComponent', () => {
     );
   }));
 
-  it('submits only the currently visible payload when the form is valid', fakeAsync(() => {
+  it('submits the full visible payload and serializes date values when sfcActive stays yes', fakeAsync(() => {
     createComponent();
     completeInitialLoad();
 
@@ -152,11 +162,10 @@ describe('SfcStatusComponent', () => {
       fileSize: 2048,
       mimeType: 'application/pdf',
     });
-    getControl('sfcTerm')?.setValue('Sixth SFC');
-    getControl('sfcReportStatus')?.setValue('Submitted');
-    getControl('sfcActive')?.setValue('no');
     getControl('applicableSfcGrantCalculation')?.setValue(new Date(2026, 5, 15));
     getControl('applicableSfcReportSubmissionDate')?.setValue('19-01-2024');
+    getControl('sfcTerm')?.setValue('Sixth SFC');
+    getControl('sfcReportStatus')?.setValue('Submitted');
     fixture.detectChanges();
 
     expect(component.form.valid).toBeTrue();
@@ -172,9 +181,46 @@ describe('SfcStatusComponent', () => {
       fileSize: 2048,
       mimeType: 'application/pdf',
     });
-    expect(payload['sfcActive']).toBe('no');
+    expect(payload['sfcActive']).toBe('yes');
+    expect(payload['stateName']).toBe('Andhra Pradesh');
+    expect(payload['sfcReportStatus']).toBe('Submitted');
     expect(payload['applicableSfcGrantCalculation']).toBe('2026-06-15T00:00:00.000Z');
     expect(payload['applicableSfcReportSubmissionDate']).toBe('19-01-2024');
+    expect(payload['sfcTerm']).toBe('Sixth SFC');
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submitted successfully!');
+  }));
+
+  it('submits only the currently visible payload after dependent fields are hidden', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const logSpy = spyOn(console, 'log');
+
+    getControl('actionTakenReport')?.setValue({
+      fileName: 'action-taken-report.pdf',
+      fileUrl: '/objects/action-taken-report.pdf',
+      fileSize: 2048,
+      mimeType: 'application/pdf',
+    });
+    getControl('applicableSfcGrantCalculation')?.setValue(new Date(2026, 5, 15));
+    getControl('applicableSfcReportSubmissionDate')?.setValue('19-01-2024');
+    getControl('sfcTerm')?.setValue('Sixth SFC');
+    getControl('sfcReportStatus')?.setValue('Submitted');
+    getControl('sfcActive')?.setValue('no');
+    fixture.detectChanges();
+
+    expect(component.form.valid).toBeTrue();
+
+    component.onSubmit();
+
+    const payload = logSpy.calls.mostRecent().args[1] as Record<string, unknown>;
+
+    expect(Object.keys(payload)).toEqual(['sfcActive']);
+    expect(payload['sfcActive']).toBe('no');
+    expect(payload['stateName']).toBeUndefined();
+    expect(payload['actionTakenReport']).toBeUndefined();
+    expect(payload['applicableSfcGrantCalculation']).toBeUndefined();
+    expect(payload['applicableSfcReportSubmissionDate']).toBeUndefined();
     expect(payload['sfcTerm']).toBeUndefined();
     expect(payload['sfcReportStatus']).toBeUndefined();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submitted successfully!');
@@ -221,6 +267,39 @@ describe('SfcStatusComponent', () => {
     expect(component.fields()[0].readonly).toBeTrue();
     expect(control).toBeTruthy();
     expect(control?.disabled).toBeFalse();
+  });
+
+  it('allows readonly text fields without an initial value to become editable', () => {
+    createComponent();
+
+    component.fields.set([
+      {
+        formFieldType: 'text',
+        label: 'Editable fallback',
+        key: 'editableFallback',
+        readonly: true,
+        value: '',
+      } as ConditionalFieldConfig,
+    ]);
+
+    component.createFormControls();
+
+    const control = component.form.get('editableFallback');
+
+    expect(component.fields()[0].readonly).toBeFalse();
+    expect(control).toBeTruthy();
+    expect(control?.disabled).toBeFalse();
+  });
+
+  it('shows a cancellation message when onCancel is called', () => {
+    createComponent();
+
+    component.onCancel();
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
+      'Form submission cancelled.',
+      'snackbar-danger',
+    );
   });
 
   it('stops control creation and reports invalid field configuration', () => {

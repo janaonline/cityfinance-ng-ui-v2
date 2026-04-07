@@ -29,28 +29,28 @@
   }
 }
 
-@mixin form-layout {
-  @include shared-content-stack;
-  @include shared-page-header;
-
+@mixin shared-panel-surface {
   .form-container {
     scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-width: 0;
-    width: 100%;
-
     max-height: 90vh;
-    overflow: hidden;
-
+    overflow-y: scroll;
     border-radius: var(--radius-split-squared);
     background: var(--color-primary-accent);
     color: var(--color-primary);
     margin-inline: 0.5rem;
     position: relative;
+  }
+}
+
+@mixin form-layout {
+  @include shared-content-stack;
+  @include shared-page-header;
+  @include shared-panel-surface;
+
+  .form-container {
+    min-width: 0;
+    width: 100%;
+    padding: 0;
   }
 
   .top-accent {
@@ -59,15 +59,10 @@
   }
 
   .content-wrap {
-    display: flex;
-    justify-content: center;
     width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
     min-width: 0;
-    overflow-y: auto;
+    min-height: 0;
     overflow-x: hidden;
-    // overscroll-behavior: contain;
   }
 
   .content-body {
@@ -93,13 +88,12 @@
   }
 }
 
-// Submit/ Cancel button
 @mixin acknowledgement-layout {
   .acknowledgement {
-    background-color: var(--color-primary-accent);
     position: sticky;
     bottom: 0;
     z-index: 1;
+    background-color: var(--color-primary-accent);
   }
 
   .acknowledgement-inner {
@@ -133,7 +127,7 @@
 
 @mixin status-indicator {
   .deadline-chip {
-    background-color: #fff2df;
+    background-color: var(--color-status-accent-background);
     color: var(--clr-primary);
   }
 
@@ -143,56 +137,37 @@
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: 50%;
     border: 2px solid var(--clr-primary);
-    box-shadow: 0 0 0 3px rgba(242, 92, 5, 0.12);
-  }
-
-  .status-indicator::after {
-    content: '';
-    width: 0.65rem;
-    height: 0.65rem;
     border-radius: 50%;
-    background-color: var(--clr-primary);
+    box-shadow: 0 0 0 3px var(--color-status-accent-shadow);
+
+    &::after {
+      content: '';
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background-color: var(--clr-primary);
+    }
   }
 }
 
 @mixin form-summary-layout {
   @include shared-content-stack;
   @include shared-page-header;
-
-  .form-container {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-
-    max-height: 90vh;
-    overflow: hidden;
-
-    border-radius: var(--radius-split-squared);
-    background: var(--color-primary-accent);
-    color: var(--color-primary);
-    margin-inline: 0.5rem;
-    position: relative;
-  }
-
-  .content-wrap {
-    // overflow: visible;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
+  @include shared-panel-surface;
 
   .content-stack {
     max-width: 1080px;
   }
+
   .summary-banner {
-    background: var(--color-primary);
-    box-shadow: 0 1rem 2.5rem rgba(17, 69, 81, 0.14);
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin-block: 1rem;
     padding: 1.5rem 3rem;
     border-radius: 0.75rem;
     overflow: hidden;
-    color: #fff;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    box-shadow: 0 1rem 2.5rem var(--color-primary-shadow);
   }
 
   @media (min-width: 768px) {

@@ -1,7 +1,7 @@
 import { SideBarModel } from '../../shared/components/side-menu/interface';
-import { buildXvifcFeatureLink, Roles } from './xvifc-side-menu.config';
+import { buildXvifcFeatureLink, Roles, XvifcYearId } from './xvifc-side-menu.config';
 
-type SideBarFactory = (yearId: string) => SideBarModel;
+type SideBarFactory = (yearId: XvifcYearId) => SideBarModel;
 
 // Temporary mock payload until the side-menu API is available.
 // Keep this file shaped around menu data so it can be swapped with API output later.
@@ -131,6 +131,22 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
       },
       { label: '_', separator: true },
       buildMenuItem('Workspace', 'bi bi-building-gear', buildXvifcFeatureLink('MOHUA', yearId)),
+      {
+        label: 'Review',
+        icon: 'bi bi-clipboard-data',
+        items: [
+          buildMenuItem(
+            'Review ULB Submissions',
+            'bi bi-ui-checks-grid',
+            buildXvifcFeatureLink('MOHUA', yearId, 'review-ulb-submissions'),
+          ),
+          buildMenuItem(
+            'Review State Submissions',
+            'bi bi-ui-checks-grid',
+            buildXvifcFeatureLink('MOHUA', yearId, 'review-state-submissions'),
+          ),
+        ],
+      },
     ],
     bottomModel: [],
   }),

@@ -1,19 +1,37 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, convertToParamMap } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, convertToParamMap } from '@angular/router';
+import { Subject } from 'rxjs';
+import { AuthService } from '../../core/services/auth.service';
+import { Login_Logout } from '../../core/util/logout.util';
 import { SIDE_MENU_ITEMS } from './temp';
 import { XvifcModuleService } from './xvifc-module.service';
-import { ROLES, Roles, XVIFC_DEFAULT_ROLE, XVIFC_DEFAULT_YEAR_ID } from './xvifc-side-menu.config';
+import { XVIFC_LANDING_ROUTE } from './xvifc-side-menu.config';
 
 describe('XvifcModuleService', () => {
   let service: XvifcModuleService;
+  let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuthService: { logout: jasmine.Spy; loginLogoutCheck: Subject<boolean> };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    mockRouter = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    mockAuthService = {
+      logout: jasmine.createSpy('logout'),
+      loginLogoutCheck: new Subject<boolean>(),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        XvifcModuleService,
+        { provide: Router, useValue: mockRouter },
+        { provide: AuthService, useValue: mockAuthService },
+      ],
+    });
+
     service = TestBed.inject(XvifcModuleService);
   });
 
   function createRouteSnapshot(options?: {
-    role?: Roles;
+    role?: unknown;
     yearId?: string | null;
     firstChild?: ActivatedRouteSnapshot | null;
   }): ActivatedRouteSnapshot {
@@ -21,152 +39,108 @@ describe('XvifcModuleService', () => {
     const paramMap = convertToParamMap(
       options?.yearId !== undefined && options?.yearId !== null ? { yearId: options.yearId } : {},
     );
-    const firstChild = options?.firstChild ?? null;
 
     return {
       data,
       paramMap,
-      firstChild,
+      firstChild: options?.firstChild ?? null,
     } as ActivatedRouteSnapshot;
   }
 
-  describe('getSideMenuItems', () => {
-    it('should return menu items for the given role and yearId', () => {
-      // Arrange
-      const role: Roles = ROLES[0];
-      const yearId = '2025';
-      const expected = SIDE_MENU_ITEMS[role](yearId);
+  it('should expose the configured list of year options', () => {
+    expect(service.availableYearIds).toEqual(['2026-27', '2027-28', '2028-29', '2029-30']);
+  });
 
-      // Act
-      const result = service.getSideMenuItems(role, yearId);
+  it('should sync the deepest valid role and yearId from the route tree', () => {
+    const child = createRouteSnapshot({ role: 'STATE', yearId: '2027-28' });
+    const root = createRouteSnapshot({ role: 'ULB', yearId: '2026-27', firstChild: child });
 
-      // Assert
-      expect(result).toEqual(expected);
-    });
+    service.syncContextFromRoute(root);
 
-    it('should use default role and yearId when no arguments are provided', () => {
-      const expected = SIDE_MENU_ITEMS[XVIFC_DEFAULT_ROLE](XVIFC_DEFAULT_YEAR_ID);
+    expect(service.role()).toBe('STATE');
+    expect(service.yearId()).toBe('2027-28');
+    expect(service.sideMenuModel()).toEqual(SIDE_MENU_ITEMS.STATE('2027-28'));
+  });
 
-      const result = service.getSideMenuItems();
+  it('should keep DOE as a supported role for future routes', () => {
+    const snapshot = createRouteSnapshot({ role: 'DOE', yearId: '2028-29' });
 
-      expect(result).toEqual(expected);
-    });
+    service.syncContextFromRoute(snapshot);
 
-    it('should throw an error when no side menu is configure for the role', () => {
-      const invalidRole = 'invalid-role' as Roles;
-      expect(() => service.getSideMenuItems(invalidRole, '2025')).toThrowError(
-        `No side menu configured for role: ${invalidRole}`,
-      );
+    expect(service.role()).toBe('DOE');
+    expect(service.yearId()).toBe('2028-29');
+    expect(service.sideMenuModel()).toEqual(SIDE_MENU_ITEMS.DOE('2028-29'));
+  });
+
+  it('should clear stale context, clear auth details, and redirect when role is missing', () => {
+    const logoutEventSpy = spyOn(Login_Logout, 'logout');
+    const loginLogoutNextSpy = spyOn(mockAuthService.loginLogoutCheck, 'next');
+    const sessionStorageClearSpy = spyOn(sessionStorage, 'clear');
+
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'ULB', yearId: '2026-27' }));
+    service.syncContextFromRoute(createRouteSnapshot({ yearId: '2026-27' }));
+
+    expect(service.role()).toBeNull();
+    expect(service.yearId()).toBeNull();
+    expect(service.sideMenuModel()).toEqual({ topModel: [], bottomModel: [] });
+    expect(loginLogoutNextSpy).toHaveBeenCalledWith(false);
+    expect(mockAuthService.logout).toHaveBeenCalled();
+    expect(sessionStorageClearSpy).toHaveBeenCalled();
+    expect(logoutEventSpy).toHaveBeenCalled();
+    expect(mockRouter.navigate).toHaveBeenCalledWith([...XVIFC_LANDING_ROUTE], {
+      replaceUrl: true,
     });
   });
 
-  describe('resolveRoleAndYearFromRoute', () => {
-    it('should return role and yearId when both are found on the route', () => {
-      const snapshot = createRouteSnapshot({ role: ROLES[0], yearId: '2025' });
+  it('should redirect when role is malformed', () => {
+    const logoutEventSpy = spyOn(Login_Logout, 'logout');
 
-      const result = service.resolveRoleAndYearFromRoute(snapshot);
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'NOT_A_ROLE', yearId: '2026-27' }));
 
-      expect(result).toEqual({ role: ROLES[0], yearId: '2025' });
+    expect(service.role()).toBeNull();
+    expect(service.yearId()).toBeNull();
+    expect(mockAuthService.logout).toHaveBeenCalled();
+    expect(logoutEventSpy).toHaveBeenCalled();
+    expect(mockRouter.navigate).toHaveBeenCalledWith([...XVIFC_LANDING_ROUTE], {
+      replaceUrl: true,
     });
+  });
 
-    it('should fall back to defaults when role and yearId are not found', () => {
-      spyOn(console, 'warn');
-      const snapshot = createRouteSnapshot();
+  it('should redirect when yearId is malformed', () => {
+    const logoutEventSpy = spyOn(Login_Logout, 'logout');
 
-      const result = service.resolveRoleAndYearFromRoute(snapshot);
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'ULB', yearId: '2025' }));
 
-      expect(result).toEqual({ role: XVIFC_DEFAULT_ROLE, yearId: XVIFC_DEFAULT_YEAR_ID });
+    expect(service.role()).toBeNull();
+    expect(service.yearId()).toBeNull();
+    expect(mockAuthService.logout).toHaveBeenCalled();
+    expect(logoutEventSpy).toHaveBeenCalled();
+    expect(mockRouter.navigate).toHaveBeenCalledWith([...XVIFC_LANDING_ROUTE], {
+      replaceUrl: true,
     });
+  });
 
-    it('should read role from route data', () => {
-      const snapshot = createRouteSnapshot({ role: ROLES[0] });
+  it('should redirect when yearId is missing', () => {
+    const logoutEventSpy = spyOn(Login_Logout, 'logout');
 
-      const result = service.resolveRoleAndYearFromRoute(snapshot);
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'MOHUA' }));
 
-      expect(result.role).toBe(ROLES[0]);
+    expect(service.role()).toBeNull();
+    expect(service.yearId()).toBeNull();
+    expect(mockAuthService.logout).toHaveBeenCalled();
+    expect(logoutEventSpy).toHaveBeenCalled();
+    expect(mockRouter.navigate).toHaveBeenCalledWith([...XVIFC_LANDING_ROUTE], {
+      replaceUrl: true,
     });
+  });
 
-    it('should read yearId from route params', () => {
-      const snapshot = createRouteSnapshot({ yearId: '2030' });
+  it('should allow consumers to clear the resolved context explicitly', () => {
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'STATE', yearId: '2029-30' }));
 
-      const result = service.resolveRoleAndYearFromRoute(snapshot);
+    service.clearResolvedContext();
 
-      expect(result.yearId).toBe('2030');
-    });
-
-    it('should walk nested route snapshots to find role and yearId', () => {
-      const child = createRouteSnapshot({ role: ROLES[0], yearId: '2031' });
-      const root = createRouteSnapshot({ firstChild: child });
-
-      const result = service.resolveRoleAndYearFromRoute(root);
-
-      expect(result).toEqual({ role: ROLES[0], yearId: '2031' });
-    });
-
-    it('should use deepest valid role found in the route tree', () => {
-      const child = createRouteSnapshot({ role: ROLES[1] ?? ROLES[0] });
-      const root = createRouteSnapshot({ role: ROLES[0], firstChild: child });
-
-      const result = service.resolveRoleAndYearFromRoute(root);
-
-      expect(result.role).toBe(ROLES[1] ?? ROLES[0]);
-    });
-
-    it('should use the deepest yearId found in the route tree', () => {
-      const child = createRouteSnapshot({ yearId: '2040' });
-      const root = createRouteSnapshot({ yearId: '2020', firstChild: child });
-
-      const result = service.resolveRoleAndYearFromRoute(root);
-
-      expect(result.yearId).toBe('2040');
-    });
-
-    it('should ignore an invalid role and keep default role if no valid role is found', () => {
-      spyOn(console, 'warn');
-      const snapshot = createRouteSnapshot({
-        role: 'not-valid-role' as Roles,
-        yearId: '2025',
-      });
-
-      const result = service.resolveRoleAndYearFromRoute(snapshot);
-
-      expect(result).toEqual({
-        role: XVIFC_DEFAULT_ROLE,
-        yearId: '2025',
-      });
-    });
-
-    it('should warn when role is not found', () => {
-      const warnSpy = spyOn(console, 'warn');
-      const snapshot = createRouteSnapshot({ yearId: '2025' });
-
-      service.resolveRoleAndYearFromRoute(snapshot);
-
-      expect(warnSpy).toHaveBeenCalledWith('Route role not found. Falling back to default role.');
-    });
-
-    it('should warn when yearId is not found', () => {
-      const warnSpy = spyOn(console, 'warn');
-      const snapshot = createRouteSnapshot({ role: ROLES[0] });
-
-      service.resolveRoleAndYearFromRoute(snapshot);
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Route yearId not found. Falling back to default yearId.',
-      );
-    });
-
-    it('should warn twice when both role and yearId are missing', () => {
-      const warnSpy = spyOn(console, 'warn');
-      const snapshot = createRouteSnapshot();
-
-      service.resolveRoleAndYearFromRoute(snapshot);
-
-      expect(warnSpy).toHaveBeenCalledTimes(2);
-      expect(warnSpy).toHaveBeenCalledWith('Route role not found. Falling back to default role.');
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Route yearId not found. Falling back to default yearId.',
-      );
-    });
+    expect(service.role()).toBeNull();
+    expect(service.yearId()).toBeNull();
+    expect(service.sideMenuModel()).toEqual({ topModel: [], bottomModel: [] });
   });
 });
