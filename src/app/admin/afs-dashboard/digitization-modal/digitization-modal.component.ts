@@ -69,30 +69,31 @@ export class DigitizationModalComponent implements OnInit {
       }
 
       const ulbFile = row[`${this.filters.docType}`]?.url;
-      const afsFile = row.afsexcelfiles?.afsFile ? row.afsexcelfiles?.afsFile.pdfUrl : null;
-
-      ++this.selectedFilesCount;
-      if (ulbFile) {
-        this.selectedFiles.push({ pdfUrl: ulbFile, uploadedBy: 'ULB', ...fileData });
-        if (['digitized', 'queued'].includes(row.afsexcelfiles?.ulbFile?.digitizationStatus || '')) {
+      const afsFile = row.afsFiles?.afsFile ? row.afsFiles?.afsFile.pdfUrl : null;
+      // console.log('Processing row:', row._id, { ulbFile, afsFile });
+      if (afsFile) {
+        // this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
+        this.selectedFiles.push({ pdfUrl: afsFile, uploadedBy: 'AFS', ...fileData });
+        ++this.selectedFilesCount;
+        if (['digitized', 'queued'].includes(row.afsFiles?.afsFile?.digitizationStatus || '')) {
           ++alreadyDigitizedFiles;
-          this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsexcelfiles?.ulbFile?.noOfPages || 0);
+          this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsFiles?.afsFile?.noOfPages || 0);
+        } else {
+          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
+        }
+      } else if (ulbFile) {
+        ++this.selectedFilesCount;
+
+        this.selectedFiles.push({ pdfUrl: ulbFile, uploadedBy: 'ULB', ...fileData });
+        if (['digitized', 'queued'].includes(row.afsFiles?.ulbFile?.digitizationStatus || '')) {
+          ++alreadyDigitizedFiles;
+          this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsFiles?.ulbFile?.noOfPages || 0);
         } else {
           this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(ulbFile);
         }
       }
 
-      if (afsFile) {
-        // this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
-        this.selectedFiles.push({ pdfUrl: afsFile, uploadedBy: 'AFS', ...fileData });
-        ++this.selectedFilesCount;
-        if (['digitized', 'queued'].includes(row.afsexcelfiles?.afsFile?.digitizationStatus || '')) {
-          ++alreadyDigitizedFiles;
-          this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsexcelfiles?.afsFile?.noOfPages || 0);
-        } else {
-          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
-        }
-      }
+
     }
 
     console.log('Files prepared for digitization:', this.selectedFiles);
