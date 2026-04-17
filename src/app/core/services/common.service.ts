@@ -394,8 +394,6 @@ export class CommonService {
     skip?: any;
     limit?: any;
   }) {
-    const token = localStorage.getItem('id_token');
-    body['token'] = token ? token.replace('"', '') : '';
     body['csv'] = true;
     let params = new HttpParams();
     if (body.registration === 'Yes') {
