@@ -1,23 +1,49 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject, throwError } from 'rxjs';
+import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
+
 import { environment } from '../../../environments/environment';
+import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
+
+export interface AuthSessionState {
+  isAuthenticated: boolean;
+  isRefreshing: boolean;
+  hasAccessToken: boolean;
+  user: IUserLoggedInDetails | null;
+}
 
 @Injectable()
 export class AuthService {
+  private readonly accessTokenStorageKey = 'id_token';
+  private readonly loginUrl = `${environment.api.url}login`;
+  private readonly logoutUrl = `${environment.api.url}logout`;
+  private readonly refreshTokenUrl = `${environment.api.url}refresh`;
+
+  private accessToken: string | null = this.readStoredAccessToken();
+  private refreshRequest$: Observable<any> | null = null;
+
   public badCredentials: Subject<boolean> = new Subject<boolean>();
-
   public helper = new JwtHelperService();
-  // public decodedToken = this.helper.decodeToken(myRawToken);
-  // public expirationDate = this.helper.getTokenExpirationDate(myRawToken);
-  // public isExpired = this.helper.isTokenExpired(myRawToken);
+  public loginLogoutCheck = new Subject<any>();
 
-  constructor(private http: HttpClient) {}
+  private readonly currentUserSubject =
+    new BehaviorSubject<IUserLoggedInDetails | null>(this.readStoredUser());
+  private readonly sessionStateSubject = new BehaviorSubject<AuthSessionState>(
+    this.buildSessionState(false)
+  );
 
-  loginLogoutCheck = new Subject<any>();
+  readonly currentUser$ = this.currentUserSubject.asObservable();
+  readonly sessionState$ = this.sessionStateSubject.asObservable();
+
+  constructor(private http: HttpClient) {
+    this.removeLegacyRefreshTokenStorage();
+    this.publishSessionState();
+  }
+
   authenticateUser(user: any) {
-    this.http.post(environment.api.url + 'users/signin', user);
+    return this.login(user);
   }
 
   getLastUpdated(params?: any) {
@@ -32,42 +58,338 @@ export class AuthService {
       environment.api.url + `all-dashboard/people-information?type=ulb&ulb=${ulbId}`,
     );
   }
+
+  login(user: any) {
+    return this.http
+      .post(this.loginUrl, user, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap((response: any) => {
+          this.storeTokens(response);
+          const currentUser = this.extractUser(response);
+          if (currentUser) {
+            this.setCurrentUser(currentUser);
+          }
+        }),
+      );
+  }
+
   signin(user: any) {
-    return this.http.post(environment.api.url + 'login', user);
+    return this.login(user);
+  }
+
+  refreshToken() {
+    if (this.refreshRequest$) {
+      return this.refreshRequest$;
+    }
+
+    this.publishSessionState(true);
+    this.refreshRequest$ = this.http
+      .post(this.refreshTokenUrl, {}, { withCredentials: true })
+      .pipe(
+        tap((response: any) => {
+          this.storeTokens(response);
+          const currentUser = this.extractUser(response);
+          if (currentUser) {
+            this.setCurrentUser(currentUser);
+          }
+        }),
+        catchError((error) => {
+          if ([401, 403, 440, 441].includes(error?.status)) {
+            this.clearLocalStorage();
+          } else {
+            this.clearAccessToken();
+          }
+
+          return throwError(() => error);
+        }),
+        finalize(() => {
+          this.refreshRequest$ = null;
+          this.publishSessionState(false);
+        }),
+        shareReplay(1),
+      );
+
+    return this.refreshRequest$;
+  }
+
+  refreshAccessToken() {
+    return this.refreshToken();
+  }
+
+  initializeSession() {
+    if (this.loggedIn()) {
+      return of(true);
+    }
+
+    if (!this.getCurrentUserSnapshot()) {
+      this.publishSessionState();
+      return of(false);
+    }
+
+    return this.refreshToken().pipe(
+      map(() => this.loggedIn()),
+      catchError(() => of(false)),
+    );
+  }
+
+  ensureAuthenticated() {
+    if (this.loggedIn()) {
+      return of(true);
+    }
+
+    if (!this.canAttemptSilentRefresh()) {
+      return of(false);
+    }
+
+    return this.refreshToken().pipe(
+      map(() => this.loggedIn()),
+      catchError(() => of(false)),
+    );
   }
 
   signup(newUser: any) {
-    return this.http.post(environment.api.url + 'register', newUser);
-  }
-
-  decodeToken() {
-    return this.helper.decodeToken(this.getToken());
-  }
-
-  getToken(): string {
-    return localStorage.getItem('id_token') || '';
-  }
-
-  /**
-   * @description Checks if user is logged in or not.
-   */
-  loggedIn() {
-    return !this.helper.isTokenExpired(this.getToken());
-  }
-
-  verifyCaptcha(recaptcha: string) {
-    return this.http.post(`${environment.api.url}captcha_validate`, {
-      recaptcha,
+    return this.http.post(environment.api.url + 'register', newUser, {
+      withCredentials: true,
     });
   }
 
+  decodeToken() {
+    const token = this.getToken();
+    return token ? this.helper.decodeToken(token) : null;
+  }
+
+  getToken() {
+    return this.getAccessToken();
+  }
+
+  getAccessToken() {
+    return this.accessToken;
+  }
+
+  hasAccessToken() {
+    return !!this.accessToken;
+  }
+
+  loggedIn() {
+    const token = this.getToken();
+
+    if (!token) {
+      return false;
+    }
+
+    return !this.helper.isTokenExpired(token);
+  }
+
+  canAttemptSilentRefresh() {
+    return !!this.getCurrentUserSnapshot() || this.hasAccessToken();
+  }
+
+  storeTokens(authResponse: any) {
+    const accessToken = this.extractAccessToken(authResponse);
+    this.accessToken = accessToken || null;
+
+    if (this.accessToken) {
+      localStorage.setItem(this.accessTokenStorageKey, this.accessToken);
+    } else {
+      localStorage.removeItem(this.accessTokenStorageKey);
+    }
+
+    this.removeLegacyRefreshTokenStorage();
+    this.publishSessionState();
+  }
+
+  extractAccessToken(authResponse: any) {
+    return (
+      authResponse?.token ??
+      authResponse?.accessToken ??
+      authResponse?.access_token ??
+      authResponse?.data?.token ??
+      authResponse?.data?.accessToken ??
+      authResponse?.data?.access_token ??
+      null
+    );
+  }
+
+  extractRefreshToken(authResponse: any) {
+    return (
+      authResponse?.refreshToken ??
+      authResponse?.refresh_token ??
+      authResponse?.data?.refreshToken ??
+      authResponse?.data?.refresh_token
+    );
+  }
+
+  extractUser(authResponse: any): IUserLoggedInDetails | null {
+    return authResponse?.user ?? authResponse?.data?.user ?? authResponse?.data ?? null;
+  }
+
+  isRefreshRequest(url: string) {
+    return this.isUrlMatch(url, this.refreshTokenUrl);
+  }
+
+  isLoginRequest(url: string) {
+    return this.isUrlMatch(url, this.loginUrl);
+  }
+
+  isLogoutRequest(url: string) {
+    return this.isUrlMatch(url, this.logoutUrl);
+  }
+
+  isAuthRequest(url: string) {
+    return (
+      this.isLoginRequest(url) ||
+      this.isRefreshRequest(url) ||
+      this.isLogoutRequest(url)
+    );
+  }
+
+  isApiRequest(url: string) {
+    return [environment.api.url, environment.api.url2, environment.api.url3].some(
+      (baseUrl) => !!baseUrl && url.startsWith(baseUrl),
+    );
+  }
+
+  shouldAttachAccessToken(url: string) {
+    return this.isApiRequest(url) && !this.isAuthRequest(url);
+  }
+
+  shouldSendCredentials(url: string) {
+    return this.isApiRequest(url);
+  }
+
+  verifyCaptcha(recaptcha: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(
+      `${environment.api.url}captcha_validate`,
+      {
+        recaptcha,
+      },
+    );
+  }
+
   logout() {
-    localStorage.clear();
+    const request$ = this.http
+      .post(this.logoutUrl, {}, { withCredentials: true })
+      .pipe(catchError(() => of(null)), shareReplay(1));
+
+    request$.subscribe({
+      next: () => {},
+      error: () => {},
+    });
+
+    this.clearLocalStorage();
+    return request$;
   }
+
   otpSignIn(body: any) {
-    return this.http.post(`${environment.api.url}sendOtp`, body);
+    return this.http.post(`${environment.api.url}sendOtp`, body, {
+      withCredentials: true,
+    });
   }
+
   otpVerify(body: any) {
-    return this.http.post(`${environment.api.url}verifyOtp`, body);
+    return this.http.post(`${environment.api.url}verifyOtp`, body, {
+      withCredentials: true,
+    });
+  }
+
+  clearLocalStorage(excludeKeys = ['userInfo']) {
+    this.clearAccessToken();
+
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach((key) => {
+      const shouldExclude = excludeKeys.some((exclude) => key === exclude);
+      if (!shouldExclude) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    localStorage.removeItem(this.accessTokenStorageKey);
+    sessionStorage.removeItem('sessionID');
+    this.loginLogoutCheck.next(false);
+    this.currentUserSubject.next(null);
+    this.publishSessionState();
+  }
+
+  clearLocalStorageKey(key: string) {
+    localStorage.removeItem(key);
+    if (key === 'userData') {
+      this.currentUserSubject.next(null);
+      this.publishSessionState();
+    }
+  }
+
+  setCurrentUser(user: IUserLoggedInDetails | null) {
+    if (user) {
+      localStorage.setItem('userData', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('userData');
+    }
+
+    this.currentUserSubject.next(user);
+    this.publishSessionState();
+  }
+
+  getCurrentUserSnapshot() {
+    return this.currentUserSubject.getValue();
+  }
+
+  public sendOtp(email: string) {
+    if (!email) throw new Error("Email is mandatory!");
+
+    return this.http.post(`${environment.api.url2}email/sendOtp`, { email });
+  }
+
+  public verifyOtp(email: string, otp: string) {
+    if (!email || !otp) throw new Error("Email or OTP is missing!");
+
+    return this.http.post(`${environment.api.url2}email/verifyOtp`, {
+      email,
+      otp,
+    });
+  }
+
+  private readStoredUser(): IUserLoggedInDetails | null {
+    try {
+      const user = localStorage.getItem('userData');
+      return user ? JSON.parse(user) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private buildSessionState(isRefreshing: boolean): AuthSessionState {
+    return {
+      isAuthenticated: this.loggedIn(),
+      isRefreshing,
+      hasAccessToken: this.hasAccessToken(),
+      user: this.getCurrentUserSnapshot(),
+    };
+  }
+
+  private publishSessionState(isRefreshing = false) {
+    this.sessionStateSubject.next(this.buildSessionState(isRefreshing));
+  }
+
+  private clearAccessToken() {
+    this.accessToken = null;
+    localStorage.removeItem(this.accessTokenStorageKey);
+    sessionStorage.removeItem(this.accessTokenStorageKey);
+    this.removeLegacyRefreshTokenStorage();
+    this.publishSessionState();
+  }
+
+  private readStoredAccessToken() {
+    return localStorage.getItem(this.accessTokenStorageKey) || sessionStorage.getItem(this.accessTokenStorageKey);
+  }
+
+  private removeLegacyRefreshTokenStorage() {
+    localStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('refresh_token');
+  }
+
+  private isUrlMatch(url: string, targetUrl: string) {
+    return url === targetUrl || url.endsWith(targetUrl.replace(environment.api.url, ""));
   }
 }
