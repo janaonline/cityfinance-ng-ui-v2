@@ -1,8 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import { BehaviorSubject, Observable, of, Subject, throwError } from 'rxjs';
-import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subject, catchError, filter, finalize, map, of, shareReplay, take, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
@@ -10,28 +9,35 @@ import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
 export interface AuthSessionState {
   isAuthenticated: boolean;
   isRefreshing: boolean;
+  isRestoringSession: boolean;
   hasAccessToken: boolean;
+  isReady: boolean;
   user: IUserLoggedInDetails | null;
 }
 
 @Injectable()
 export class AuthService {
   private readonly accessTokenStorageKey = 'id_token';
+  private readonly sessionHintStorageKey = 'auth_session_hint';
   private readonly loginUrl = `${environment.api.url}login`;
   private readonly logoutUrl = `${environment.api.url}logout`;
   private readonly refreshTokenUrl = `${environment.api.url}refresh`;
+  private readonly jwtHelper = new JwtHelperService();
 
   private accessToken: string | null = this.readStoredAccessToken();
   private refreshRequest$: Observable<any> | null = null;
+  private restoreRequest$: Observable<boolean> | null = null;
+  private isRefreshing = false;
+  private isRestoringSession = this.shouldRestoreSessionOnBootstrap();
 
   public badCredentials: Subject<boolean> = new Subject<boolean>();
-  public helper = new JwtHelperService();
+  public helper = this.jwtHelper;
   public loginLogoutCheck = new Subject<any>();
 
   private readonly currentUserSubject =
     new BehaviorSubject<IUserLoggedInDetails | null>(this.readStoredUser());
   private readonly sessionStateSubject = new BehaviorSubject<AuthSessionState>(
-    this.buildSessionState(false)
+    this.buildSessionState(),
   );
 
   readonly currentUser$ = this.currentUserSubject.asObservable();
@@ -65,12 +71,9 @@ export class AuthService {
         withCredentials: true,
       })
       .pipe(
-        tap((response: any) => {
-          this.storeTokens(response);
-          const currentUser = this.extractUser(response);
-          if (currentUser) {
-            this.setCurrentUser(currentUser);
-          }
+        map((response: any) => {
+          this.applyAuthResponse(response);
+          return response;
         }),
       );
   }
@@ -84,29 +87,24 @@ export class AuthService {
       return this.refreshRequest$;
     }
 
-    this.publishSessionState(true);
+    this.isRefreshing = true;
+    this.publishSessionState();
+
     this.refreshRequest$ = this.http
       .post(this.refreshTokenUrl, {}, { withCredentials: true })
       .pipe(
-        tap((response: any) => {
-          this.storeTokens(response);
-          // const currentUser = this.extractUser(response);
-          // if (currentUser) {
-          //   this.setCurrentUser(currentUser);
-          // }
+        map((response: any) => {
+          this.applyAuthResponse(response);
+          return response;
         }),
         catchError((error) => {
-          if ([401, 403, 440, 441].includes(error?.status)) {
-            this.clearLocalStorage();
-          } else {
-            this.clearAccessToken();
-          }
-
+          this.handleRefreshFailure(error);
           return throwError(() => error);
         }),
         finalize(() => {
           this.refreshRequest$ = null;
-          this.publishSessionState(false);
+          this.isRefreshing = false;
+          this.publishSessionState();
         }),
         shareReplay(1),
       );
@@ -118,25 +116,51 @@ export class AuthService {
     return this.refreshToken();
   }
 
-  initializeSession() {
+  restoreSession(): Observable<boolean> {
     if (this.loggedIn()) {
+      this.isRestoringSession = false;
+      this.publishSessionState();
       return of(true);
     }
 
-    if (!this.getCurrentUserSnapshot()) {
+    if (this.restoreRequest$) {
+      return this.restoreRequest$;
+    }
+
+    if (!this.canAttemptSilentRefresh()) {
+      this.isRestoringSession = false;
       this.publishSessionState();
       return of(false);
     }
 
-    return this.refreshToken().pipe(
+    this.isRestoringSession = true;
+    this.publishSessionState();
+
+    this.restoreRequest$ = this.refreshToken().pipe(
       map(() => this.loggedIn()),
       catchError(() => of(false)),
+      finalize(() => {
+        this.restoreRequest$ = null;
+        this.isRestoringSession = false;
+        this.publishSessionState();
+      }),
+      shareReplay(1),
     );
+
+    return this.restoreRequest$;
+  }
+
+  initializeSession() {
+    return this.restoreSession();
   }
 
   ensureAuthenticated() {
     if (this.loggedIn()) {
       return of(true);
+    }
+
+    if (this.isRestoringSession) {
+      return this.waitForAuthReady().pipe(map((state) => state.isAuthenticated));
     }
 
     if (!this.canAttemptSilentRefresh()) {
@@ -146,6 +170,24 @@ export class AuthService {
     return this.refreshToken().pipe(
       map(() => this.loggedIn()),
       catchError(() => of(false)),
+    );
+  }
+
+  waitForAuthReady() {
+    return this.sessionState$.pipe(
+      filter((state) => state.isReady),
+      take(1),
+    );
+  }
+
+  waitForSessionRestore() {
+    if (!this.isRestoringSession) {
+      return of(this.buildSessionState());
+    }
+
+    return this.sessionState$.pipe(
+      filter((state) => state.isReady),
+      take(1),
     );
   }
 
@@ -179,25 +221,15 @@ export class AuthService {
       return false;
     }
 
-    return !this.helper.isTokenExpired(token);
+    return !this.jwtHelper.isTokenExpired(token);
   }
 
   canAttemptSilentRefresh() {
-    return !!this.getCurrentUserSnapshot() || this.hasAccessToken();
+    return this.hasSessionHint() || !!this.getCurrentUserSnapshot() || this.hasAccessToken();
   }
 
   storeTokens(authResponse: any) {
-    const accessToken = this.extractAccessToken(authResponse);
-    this.accessToken = accessToken || null;
-
-    if (this.accessToken) {
-      localStorage.setItem(this.accessTokenStorageKey, this.accessToken);
-    } else {
-      localStorage.removeItem(this.accessTokenStorageKey);
-    }
-
-    this.removeLegacyRefreshTokenStorage();
-    this.publishSessionState();
+    this.applyAuthResponse(authResponse);
   }
 
   extractAccessToken(authResponse: any) {
@@ -222,7 +254,7 @@ export class AuthService {
   }
 
   extractUser(authResponse: any): IUserLoggedInDetails | null {
-    return authResponse?.user ?? authResponse?.data?.user ?? authResponse?.data ?? null;
+    return authResponse?.user ?? authResponse?.data?.user ?? null;
   }
 
   isRefreshRequest(url: string) {
@@ -271,14 +303,17 @@ export class AuthService {
   logout() {
     const request$ = this.http
       .post(this.logoutUrl, {}, { withCredentials: true })
-      .pipe(catchError(() => of(null)), shareReplay(1));
+      .pipe(
+        catchError(() => of(null)),
+        finalize(() => this.clearLocalStorage()),
+        shareReplay(1),
+      );
 
     request$.subscribe({
       next: () => { },
       error: () => { },
     });
 
-    this.clearLocalStorage();
     return request$;
   }
 
@@ -306,9 +341,12 @@ export class AuthService {
     });
 
     localStorage.removeItem(this.accessTokenStorageKey);
+    localStorage.removeItem(this.sessionHintStorageKey);
     sessionStorage.removeItem('sessionID');
     this.loginLogoutCheck.next(false);
     this.currentUserSubject.next(null);
+    this.isRefreshing = false;
+    this.isRestoringSession = false;
     this.publishSessionState();
   }
 
@@ -323,6 +361,7 @@ export class AuthService {
   setCurrentUser(user: IUserLoggedInDetails | null) {
     if (user) {
       localStorage.setItem('userData', JSON.stringify(user));
+      localStorage.setItem(this.sessionHintStorageKey, 'true');
     } else {
       localStorage.removeItem('userData');
     }
@@ -336,18 +375,49 @@ export class AuthService {
   }
 
   public sendOtp(email: string) {
-    if (!email) throw new Error("Email is mandatory!");
+    if (!email) throw new Error('Email is mandatory!');
 
     return this.http.post(`${environment.api.url2}email/sendOtp`, { email });
   }
 
   public verifyOtp(email: string, otp: string) {
-    if (!email || !otp) throw new Error("Email or OTP is missing!");
+    if (!email || !otp) throw new Error('Email or OTP is missing!');
 
     return this.http.post(`${environment.api.url2}email/verifyOtp`, {
       email,
       otp,
     });
+  }
+
+  private applyAuthResponse(authResponse: any) {
+    const accessToken = this.extractAccessToken(authResponse);
+    const currentUser = this.extractUser(authResponse) ?? this.getCurrentUserSnapshot();
+
+    this.accessToken = accessToken || null;
+
+    if (this.accessToken) {
+      localStorage.setItem(this.accessTokenStorageKey, this.accessToken);
+      localStorage.setItem(this.sessionHintStorageKey, 'true');
+    } else {
+      localStorage.removeItem(this.accessTokenStorageKey);
+    }
+
+    if (currentUser) {
+      localStorage.setItem('userData', JSON.stringify(currentUser));
+    }
+
+    this.currentUserSubject.next(currentUser);
+    this.removeLegacyRefreshTokenStorage();
+    this.publishSessionState();
+  }
+
+  private handleRefreshFailure(error: any) {
+    if ([401, 403, 440, 441].includes(error?.status)) {
+      this.clearLocalStorage();
+      return;
+    }
+
+    this.clearAccessToken();
   }
 
   private readStoredUser(): IUserLoggedInDetails | null {
@@ -359,22 +429,25 @@ export class AuthService {
     }
   }
 
-  private buildSessionState(isRefreshing: boolean): AuthSessionState {
+  private buildSessionState(): AuthSessionState {
     return {
       isAuthenticated: this.loggedIn(),
-      isRefreshing,
+      isRefreshing: this.isRefreshing,
+      isRestoringSession: this.isRestoringSession,
       hasAccessToken: this.hasAccessToken(),
+      isReady: !this.isRestoringSession,
       user: this.getCurrentUserSnapshot(),
     };
   }
 
-  private publishSessionState(isRefreshing = false) {
-    this.sessionStateSubject.next(this.buildSessionState(isRefreshing));
+  private publishSessionState() {
+    this.sessionStateSubject.next(this.buildSessionState());
   }
 
   private clearAccessToken() {
     this.accessToken = null;
     localStorage.removeItem(this.accessTokenStorageKey);
+    localStorage.removeItem(this.sessionHintStorageKey);
     sessionStorage.removeItem(this.accessTokenStorageKey);
     this.removeLegacyRefreshTokenStorage();
     this.publishSessionState();
@@ -384,12 +457,20 @@ export class AuthService {
     return localStorage.getItem(this.accessTokenStorageKey) || sessionStorage.getItem(this.accessTokenStorageKey);
   }
 
+  private hasSessionHint() {
+    return localStorage.getItem(this.sessionHintStorageKey) === 'true';
+  }
+
+  private shouldRestoreSessionOnBootstrap() {
+    return !this.loggedIn() && (this.hasSessionHint() || !!this.readStoredUser() || !!this.readStoredAccessToken());
+  }
+
   private removeLegacyRefreshTokenStorage() {
     localStorage.removeItem('refresh_token');
     sessionStorage.removeItem('refresh_token');
   }
 
   private isUrlMatch(url: string, targetUrl: string) {
-    return url === targetUrl || url.endsWith(targetUrl.replace(environment.api.url, ""));
+    return url === targetUrl || url.endsWith(targetUrl.replace(environment.api.url, ''));
   }
 }
