@@ -82,7 +82,12 @@
 
       <!-- Login/ Logout -->
       <div class="ms-2">
-        @if (!isLoggedIn) {
+        @if (!isAuthResolved) {
+          <button class="btn btn-cfPrimary fw-bold" type="button" disabled>
+            Checking session...
+          </button>
+        }
+        @if (isAuthResolved && !isLoggedIn) {
           <button class="btn btn-cfPrimary fw-bold" [matMenuTriggerFor]="loginMenu">
             Login <i class="bi bi-caret-down-fill"></i>
           </button>
@@ -98,7 +103,7 @@
             </button>
           </mat-menu>
         }
-        @if (isLoggedIn) {
+        @if (isAuthResolved && isLoggedIn) {
           <button class="btn btn-cfPrimary fw-bold" [matMenuTriggerFor]="logoutMenu">
             <i class="bi bi-person-circle fs-5 text-white"></i>&nbsp;
             <i class="bi bi-caret-down-fill"></i>

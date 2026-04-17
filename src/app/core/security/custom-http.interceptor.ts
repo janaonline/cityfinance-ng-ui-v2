@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
+
 import { AuthService } from '../services/auth.service';
 import { Login_Logout } from '../util/logout.util';
 
@@ -36,11 +37,17 @@ export const customHttpInterceptor: HttpInterceptorFn = (
               ),
             ),
           ),
-          catchError((refreshError) => handleError(refreshError, authService, router, snackBar)),
+          catchError((refreshError) =>
+            handleError(refreshError, authService, router, snackBar, {
+              logoutOnUnauthorized: true,
+            }),
+          ),
         );
       }
 
-      return handleError(error, authService, router, snackBar);
+      return handleError(error, authService, router, snackBar, {
+        logoutOnUnauthorized: authService.isAuthRequest(preparedRequest.url),
+      });
     }),
   );
 };
@@ -107,11 +114,13 @@ function handleError(
   authService: AuthService,
   router: Router,
   snackBar: MatSnackBar,
+  options: { logoutOnUnauthorized: boolean },
 ) {
   switch (error.status) {
     case 401:
-      showError(snackBar, error.error?.message);
-      logoutRedirection(authService, router);
+      if (options.logoutOnUnauthorized) {
+        logoutRedirection(authService, router);
+      }
       break;
     case 403:
       void Swal.fire('Error', error.error?.message ?? 'Something went wrong', 'error');
@@ -130,7 +139,7 @@ function handleError(
         sessionStorage.setItem('postLoginNavigation', url);
       }
       void router.navigate(['login'], {
-        queryParams: { message: 'Session Expired. Kindly login again.' },
+        queryParams: { message: 'Session expired. Kindly login again.' },
       });
       break;
     }
@@ -138,7 +147,7 @@ function handleError(
       clearLocalStorage(authService);
       void router.navigate(['login'], {
         queryParams: {
-          message: 'Password Expired. Kindly reset your password.',
+          message: 'Password expired. Kindly reset your password.',
         },
       });
       break;
@@ -148,7 +157,18 @@ function handleError(
       }));
   }
 
+  if (shouldShowError(error, options)) {
+    showError(snackBar, error.error?.message);
+  }
+
   return throwError(() => error);
+}
+
+function shouldShowError(
+  error: HttpErrorResponse,
+  options: { logoutOnUnauthorized: boolean },
+) {
+  return error.status !== 401 || !options.logoutOnUnauthorized;
 }
 
 function showError(snackBar: MatSnackBar, message?: string) {
@@ -161,16 +181,27 @@ function showError(snackBar: MatSnackBar, message?: string) {
 }
 
 function logoutRedirection(authService: AuthService, router: Router) {
-  const loginType = localStorage.getItem('loginType');
+  const url = !['/', ''].includes(router.url)
+    ? router.url
+    : location.pathname + location.search + location.hash;
+
+  if (!url.includes('login')) {
+    sessionStorage.setItem('postLoginNavigation', url);
+  }
+
   clearLocalStorage(authService);
 
-  if (loginType === 'state-dashboard') {
-    void router.navigate(['login/state-dashboard']);
-  } else if (loginType === 'XVIFC') {
-    void router.navigate(['login/xvi-fc']);
-  } else {
-    void router.navigate(['fc_grant']);
-  }
+  // const loginType = localStorage.getItem('loginType');
+  // if (loginType === 'state-dashboard') {
+  //   void router.navigate(['login/state-dashboard']);
+  // } else if (loginType === 'XVIFC') {
+  //   void router.navigate(['login/xvi-fc']);
+  // } else {
+  //   void router.navigate(['fc_grant']);
+  // }
+  void router.navigate(['login'], {
+    queryParams: { message: 'Your session expired. Please sign in again.' },
+  });
 }
 
 function clearLocalStorage(authService: AuthService) {

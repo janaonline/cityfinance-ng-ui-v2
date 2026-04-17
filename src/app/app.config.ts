@@ -1,4 +1,4 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -13,6 +13,7 @@ import { VersionCheckService } from './core/services/version-check.service';
 // import { APP_BASE_HREF } from '@angular/common';
 import { provideClientHydration } from '@angular/platform-browser';
 import { customHttpInterceptor } from './core/security/custom-http.interceptor';
+import { firstValueFrom } from 'rxjs';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -36,5 +37,9 @@ export const appConfig: ApplicationConfig = {
     AuthService,
     AuthGuard,
     VersionCheckService,
+    provideAppInitializer(() => {
+      const authService = inject(AuthService);
+      return firstValueFrom(authService.restoreSession());
+    }),
   ],
 };
