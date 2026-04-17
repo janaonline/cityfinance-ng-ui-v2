@@ -49,7 +49,7 @@ export class AuthService {
   getLastUpdated(params?: any) {
     return this.http.get(
       environment.api.url +
-        `ledger/lastUpdated?ulb=${params?.ulb ?? ''}&state=${params?.state ?? ''}`,
+      `ledger/lastUpdated?ulb=${params?.ulb ?? ''}&state=${params?.state ?? ''}`,
     );
   }
 
@@ -90,10 +90,10 @@ export class AuthService {
       .pipe(
         tap((response: any) => {
           this.storeTokens(response);
-          const currentUser = this.extractUser(response);
-          if (currentUser) {
-            this.setCurrentUser(currentUser);
-          }
+          // const currentUser = this.extractUser(response);
+          // if (currentUser) {
+          //   this.setCurrentUser(currentUser);
+          // }
         }),
         catchError((error) => {
           if ([401, 403, 440, 441].includes(error?.status)) {
@@ -274,8 +274,8 @@ export class AuthService {
       .pipe(catchError(() => of(null)), shareReplay(1));
 
     request$.subscribe({
-      next: () => {},
-      error: () => {},
+      next: () => { },
+      error: () => { },
     });
 
     this.clearLocalStorage();
