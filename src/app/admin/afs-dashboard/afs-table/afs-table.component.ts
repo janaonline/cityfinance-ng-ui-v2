@@ -18,13 +18,14 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { environment } from '../../../../environments/environment';
 import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
-import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
 import { MaterialModule } from "../../../material.module";
 import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 import { AfsExcelFile, AfsService, FilterValues, ResponseData } from '../afs.service';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
 import { AfsArApproveModalComponent } from '../afs-ar-approve-modal/afs-ar-approve-modal.component';
+import { SignedUrlDirective } from '../../../core/directives/storage-url.directive';
+import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
 export const AFS_PAGINATION_KEY = 'afsPagination';
 
 // raw row interface
@@ -156,13 +157,14 @@ export interface RawRow {
     MatProgressSpinnerModule,
     MatDialogModule,
     MatTooltipModule,
-    ToStorageUrlPipe,
+    SignedUrlDirective,
     DatePipe,
     NgClass,
     AsyncPipe,
     PdfPageCountPipe,
     MaterialModule,
-  ],
+    ToStorageUrlPipe
+],
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
 })

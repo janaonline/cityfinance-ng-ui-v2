@@ -114,8 +114,9 @@
                     </div>
                     <div class="flex-shrink-0">
                       @if (fileSection.readonly) {
-                        <a [href]="year.file.url | toStorageUrl" target="_blank"><i
-                        class="bi bi-eye-fill fs-5 me-1 text-dark"></i></a>
+                        <a [appSignedUrl]="year.file.url" target="_blank">
+                          <i class="bi bi-eye-fill fs-5 me-1 text-dark"></i>
+                        </a>
                       } @else {
                         <i class="bi bi-trash3-fill fs-4 me-1 text-danger" (click)="deleteFile(sectionIndex, year.key)"></i>
                       }
@@ -141,8 +142,9 @@
                     <h4 class="name">{{ year.file.name }}</h4>
                   </div>
                   <div class="align-self-center">
-                    <a [href]="year.file.url | toStorageUrl" target="_blank"><i
-                    class="bi bi-eye-fill fs-5 me-1 text-dark"></i></a>
+                    <a [appSignedUrl]="year.file.url" target="_blank">
+                      <i class="bi bi-eye-fill fs-5 me-1 text-dark"></i>
+                    </a>
                   </div>
                 </div>
               }

@@ -8,12 +8,12 @@ import { FieldConfig } from '../../field.interface';
 import { DndDirective } from './dnd.directive';
 import { Subscription } from 'rxjs';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import Swal from 'sweetalert2';
+import { SignedUrlDirective } from '../../../../core/directives/storage-url.directive';
 
 @Component({
     selector: 'app-file',
-    imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe],
+    imports: [MaterialModule, DndDirective, MatProgressBarModule, SignedUrlDirective],
     templateUrl: './file.component.html',
     styleUrl: './file.component.scss'
 })

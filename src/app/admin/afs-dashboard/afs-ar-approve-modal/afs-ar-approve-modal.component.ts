@@ -3,18 +3,17 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { logResponse } from './log-response';
 import { AfsService } from '../afs.service';
-import { MatIcon, MatIconModule } from '@angular/material/icon';
-import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
+import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { SignedUrlDirective } from '../../../core/directives/storage-url.directive';
 
 export type SectionKey = 'ocr_extraction' | 'classification' | 'audit' | 'summary';
 export type Decision = 'approved' | 'rejected' | null;
 
 @Component({
   selector: 'app-afs-ar-approve-modal',
-  imports: [MatDialogModule, MatButtonModule, NgClass, ReactiveFormsModule, FormsModule, MatIconModule, ToStorageUrlPipe, MatTabsModule],
+  imports: [MatDialogModule, MatButtonModule, NgClass, ReactiveFormsModule, FormsModule, MatIconModule, SignedUrlDirective, MatTabsModule],
   templateUrl: './afs-ar-approve-modal.component.html',
   styleUrl: './afs-ar-approve-modal.component.scss'
 })

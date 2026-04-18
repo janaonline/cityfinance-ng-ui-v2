@@ -67,7 +67,7 @@
             <div class="text-muted small">OCR File</div>
             <div class="fw-medium">
               @if (arData?.ocr_extraction?.ocr_text_key) {
-                <a target="_blank" href="{{ arData?.ocr_extraction?.ocr_text_key | toStorageUrl }}">
+                <a target="_blank" [appSignedUrl]="arData?.ocr_extraction?.ocr_text_key">
                   View OCR File
                 </a>
               } @else {
