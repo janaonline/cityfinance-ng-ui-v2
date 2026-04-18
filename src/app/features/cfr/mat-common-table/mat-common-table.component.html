@@ -34,8 +34,9 @@
           } @else if (element[column.key] === '-') {
           {{ element[column.key] }}
           } @else {
-          <a [href]="element[column.key] | toStorageUrl" target="_blank"><i
-              class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></a>
+            <a [appSignedUrl]="element[column.key]" target="_blank">
+              <i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i>
+            </a>
           }
           } @else if (column.link) {
           <a [href]="prefixUrl + element[column.link]" target="_blank">{{
