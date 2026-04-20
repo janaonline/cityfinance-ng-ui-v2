@@ -9,7 +9,7 @@ import { VerifyDocumentsDialogueComponent } from './verify-documents-dialogue/ve
 // import { deepClone } from '@angular-devkit/core';
 // import * as _ from 'lodash';
 import { cloneDeep } from 'lodash-es';
-import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
+import { SignedUrlDirective } from '../../../core/directives/storage-url.directive';
 
 export enum FileVerifyStatus {
   pending = 1,
@@ -19,7 +19,7 @@ export enum FileVerifyStatus {
 
 @Component({
     selector: 'app-yearwise-files',
-    imports: [MaterialModule, FileComponent, ToStorageUrlPipe],
+    imports: [MaterialModule, FileComponent, SignedUrlDirective],
     templateUrl: './yearwise-files.component.html',
     styleUrl: './yearwise-files.component.scss'
 })
@@ -54,7 +54,7 @@ export class YearwiseFilesComponent {
   openDialog(sectionIndex: number, year: FieldConfig, i: number): void {
     const fg = new FormGroup({});
     // let verifyForm = _.cloneDeep(this.getYearGroup(i, year.key));
-    let verifyForm = cloneDeep(this.getYearGroup(sectionIndex, i, year.key));
+    const verifyForm = cloneDeep(this.getYearGroup(sectionIndex, i, year.key));
     // let verifyForm = structuredClone(this.getYearGroup(i, year.key));
 
     const dialogRef = this.dialog.open(VerifyDocumentsDialogueComponent, {

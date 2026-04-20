@@ -88,13 +88,11 @@
               ULB :
               @if (row[`${filters().docType}`].url) {
                 <a
-                  [href]="row[`${filters().docType}`].url | toStorageUrl"
+                  [appSignedUrl]="row[`${filters().docType}`].url"
                   target="_blank"
                   [matTooltip]="row[`${filters().docType}`].name"
                 >
-                  <!-- {{ row[`${filters.docType}`].name}} -->
                   <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
-                  <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
                 </a>
                 <strong>
                   @if (row?.afsFiles?.ulbFile?.noOfPages) {
@@ -113,10 +111,8 @@
             <div class="mt-5">
               AFS :
               @if (row.afsFiles?.afsFile) {
-                <a [href]="row.afsFiles.afsFile.pdfUrl | toStorageUrl" target="_blank">
-                  <!-- {{ row[`${filters.docType}`].name}} -->
+                <a [appSignedUrl]="row.afsFiles.afsFile.pdfUrl" target="_blank">
                   <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
-                  <!-- <i class="bi bi-file-earmark-pdf-fill fs-4 me-2 text-danger"></i> -->
                 </a>
                 <strong>
                   @if (row?.afsFiles?.afsFile?.noOfPages) {
@@ -221,7 +217,7 @@
           <td mat-cell *matCellDef="let row">
             @let statusText = row.afsFiles?.ulbFile?.digitizationStatus;
             @if (statusText === 'digitized') {
-              <a [href]="row.afsFiles?.ulbFile?.excelUrl | toStorageUrl" target="_blank">
+              <a [appSignedUrl]="row.afsFiles?.ulbFile?.excelUrl" target="_blank">
                 <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
               </a>
             } @else {
@@ -233,7 +229,7 @@
                 @let statusText = row.afsFiles?.afsFile?.digitizationStatus;
                 @if (statusText === 'digitized') {
                   <div class="mt-2">
-                    <a [href]="row.afsFiles?.afsFile?.excelUrl | toStorageUrl" target="_blank">
+                    <a [appSignedUrl]="row.afsFiles?.afsFile?.excelUrl" target="_blank">
                       <i class="bi bi-file-earmark-excel fs-4 text-success"></i>
                     </a>
                   </div>

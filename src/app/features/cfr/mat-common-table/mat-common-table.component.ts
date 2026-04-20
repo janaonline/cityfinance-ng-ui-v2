@@ -5,14 +5,14 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { environment } from '../../../../environments/environment';
-import { ToStorageUrlPipe } from '../../../core/pipes/to-storage-url.pipe';
 import { MaterialModule } from '../../../material.module';
 import { TableResponse } from '../services/common-table.interface';
 import { isEmpty } from 'lodash-es';
+import { SignedUrlDirective } from '../../../core/directives/storage-url.directive';
 
 @Component({
     selector: 'app-mat-common-table',
-    imports: [MatTableModule, MatButtonModule, CommonModule, ToStorageUrlPipe, MaterialModule],
+    imports: [MatTableModule, MatButtonModule, CommonModule, SignedUrlDirective, MaterialModule],
     templateUrl: './mat-common-table.component.html',
     styleUrl: './mat-common-table.component.scss'
 })
