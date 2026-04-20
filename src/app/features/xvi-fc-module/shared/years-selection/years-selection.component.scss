@@ -1,0 +1,268 @@
+:host {
+  display: block;
+}
+
+/* FULL SCREEN BLUR BACKGROUND */
+.year-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(29, 111, 115, 0.12), transparent 40%),
+    linear-gradient(180deg, #f8fcff 0%, #eef7fb 50%, #f9fdff 100%);
+
+  backdrop-filter: blur(12px);
+}
+
+/* CARD */
+.year-card {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.96);
+  // border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.18),
+    0 8px 24px rgba(15, 23, 42, 0.08);
+  animation: cardFadeUp 0.35s ease;
+}
+
+/* HEADER */
+.year-card__header {
+  background: linear-gradient(135deg, #0f4f4f, #1d6f73);
+  color: #ffffff;
+  padding: 22px 24px 20px;
+
+  .tag {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.82;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    margin: 8px 0 0;
+    max-width: 360px;
+    font-size: 13px;
+    line-height: 1.55;
+    opacity: 0.92;
+  }
+}
+
+/* BODY */
+.year-card__body {
+  padding: 24px 22px 22px;
+}
+
+/* YEAR GRID */
+.year-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* YEAR TILE */
+.year-pill {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  user-select: none;
+  animation: tileFadeIn 0.3s ease;
+}
+
+.year-pill input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.year-pill__label {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 16px;
+  border: 1px solid #d8e3e6;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #17353c;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 6px 16px rgba(16, 24, 40, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.year-pill__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  opacity: 0;
+  transform: scale(0.96);
+  background: radial-gradient(circle, rgba(29, 111, 115, 0.12), transparent 72%);
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.year-pill:hover .year-pill__label {
+  transform: translateY(-2px);
+  border-color: #9fc2c7;
+  background: #f6fbfb;
+  color: #155c5e;
+  box-shadow:
+    0 12px 24px rgba(21, 92, 94, 0.1),
+    0 0 0 1px rgba(29, 111, 115, 0.04);
+}
+
+.year-pill:hover .year-pill__glow {
+  opacity: 1;
+  transform: scale(1.03);
+}
+
+.year-pill:active .year-pill__label {
+  transform: translateY(0);
+}
+
+/* ACTIVE */
+.year-pill--active .year-pill__label {
+  border-color: #1d6f73;
+  background: #eef8f8;
+  color: #114f52;
+  box-shadow:
+    0 12px 24px rgba(21, 92, 94, 0.12),
+    0 0 0 3px rgba(29, 111, 115, 0.12);
+}
+
+.year-pill--active .year-pill__glow {
+  opacity: 1;
+  transform: scale(1.02);
+  background: radial-gradient(circle, rgba(29, 111, 115, 0.14), transparent 72%);
+}
+
+/* BUTTON */
+.continue-btn {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1d6f73 0%, #155c5e 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(21, 92, 94, 0.16);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    opacity 0.22s ease,
+    background 0.22s ease;
+}
+
+.continue-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #216f73 0%, #176568 100%);
+  box-shadow: 0 16px 28px rgba(21, 92, 94, 0.22);
+}
+
+.continue-btn:disabled {
+  background: #cfd8dc;
+  color: #6b7f86;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ANIMATIONS */
+@keyframes cardFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tileFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .year-overlay {
+    padding: 16px;
+  }
+
+  .year-card {
+    max-width: 100%;
+  }
+
+  .year-card__body {
+    padding: 20px 16px 18px;
+  }
+
+  .year-radio-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .year-pill__label {
+    min-height: 46px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .year-radio-group {
+    grid-template-columns: 1fr;
+  }
+
+  .year-card__header {
+    padding: 20px 18px 18px;
+  }
+
+  .year-card__header h2 {
+    font-size: 22px;
+  }
+
+  .year-card__header .subtitle {
+    max-width: 100%;
+  }
+}

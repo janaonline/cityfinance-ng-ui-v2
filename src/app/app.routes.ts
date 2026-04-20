@@ -46,18 +46,17 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   // { path: 'login', component: LoginComponent },
-  {
-    path: 'login',
-    loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
-  },
+  // {
+  //   path: 'login',
+  //   loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
+  // },
   {
     path: '',
     children: [
       // {
       //   // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
       //   path: 'home', component: HomeComponent,
-      // },      
-
+      // },
     ],
   },
   // {
@@ -77,12 +76,16 @@ export const routes: Routes = [
   },
   {
     path: 'afs-dashboard',
-    loadComponent: () => import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
-    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
+    // canActivate: [authGuard],
   },
   {
     path: 'afs-old-dashboard',
-    loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
+    loadComponent: () =>
+      import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then(
+        (m) => m.OldDashboardComponent,
+      ),
     canActivate: [authGuard],
   },
   {
@@ -96,13 +99,33 @@ export const routes: Routes = [
       import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
   {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/landing-page/landing-page.component').then(
+        (m) => m.LandingPageComponent,
+      ),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
+    path: 'signup',
+    loadComponent: () =>
+      import('./features/auth/signup/signup.component').then((m) => m.SignupComponent),
+  },
+
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },
   // {
   //     path: 'pdf',
   //     loadComponent: () => import('./pdf-content/pdf-content.component').then(m => m.PdfContentComponent),
-  // }, 
+  // },
   {
     path: 'error',
     component: ErrorComponent,

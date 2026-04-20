@@ -1,16 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterModule } from '@angular/router';
+import { combineLatest } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
 import { environment } from '../../../../environments/environment';
 import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../../core/models/user/userType';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, AuthSessionState } from '../../../core/services/auth.service';
 import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
-import { UserUtility } from '../../../core/util/user/user';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-navbar',
@@ -20,25 +31,10 @@ import { MatButtonModule } from '@angular/material/button';
   standalone: true,
 })
 export class NavbarComponent implements OnInit, AfterViewInit {
-  private accessChecker = new AccessChecker();
-  isProd: boolean = false;
-  canViewUserList: boolean = false;
-  canViewULBSingUpListing: boolean = false;
-  isLoggedIn: boolean = false;
-  user!: IUserLoggedInDetails | null;
-  loggedInUserDetails: any;
-  loggedInUserType: any;
-  btnName = 'Login for 15th FC Grants';
-  sticky: boolean = false;
-  isCollapsed = true;
-  prefixUrl = environment.prefixUrl;
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly accessChecker = new AccessChecker();
 
-  menus: any = [
-    // {
-    //   name: `<img src="./assets/images/city-finance-ranking.png"/>`,
-    //   class: 'cfr-img-logo',
-    //   href: `${this.prefixUrl}/cfr/home`,
-    // },
+  readonly defaultMenus: any[] = [
     {
       name: 'Dashboard',
       href: '',
@@ -50,76 +46,48 @@ export class NavbarComponent implements OnInit, AfterViewInit {
         { name: 'Municipal Budgets', href: '/municipal-budgets' },
       ],
     },
-
     { name: 'Resources', href: '/resources-dashboard/data-sets/income_statement' },
   ];
 
-  showMobileNav: boolean = false;
+  isProd = false;
+  canViewUserList = false;
+  canViewULBSingUpListing = false;
+  isLoggedIn = false;
+  isAuthResolved = false;
+  user: IUserLoggedInDetails | null = null;
+  btnName = 'Login for 15th FC Grants';
+  sticky = false;
+  isCollapsed = true;
+  prefixUrl = environment.prefixUrl;
+  menus: any[] = [...this.defaultMenus];
+  showMobileNav = false;
+  isSticky = false;
+
+  private elementPosition = 0;
+  private ticking = false;
+
+  @ViewChild('stickyMenu') menuElement?: ElementRef;
 
   constructor(
     public _router: Router,
     private authService: AuthService,
   ) {
     this.initializeAccessChecking();
-    // this._router.events.subscribe((event: any) => {
-
-    // });
-  }
-
-  checkUserLoggedIn() {
-    this.isLoggedIn = this.authService.loggedIn();
-    this.user = this.isLoggedIn ? this.user : null;
-
-    this.initializeAccessChecking();
-
-    if (this.isLoggedIn) {
-      UserUtility.getUserLoggedInData().subscribe((value: any) => {
-        this.user = value;
-        // this.setLoggedInUserMenu();
-      });
-      this.btnName = 'Logout';
-    } else {
-      this.btnName = 'Login for 15th FC Grants';
-    }
-  }
-  setLoggedInUserMenu() {
-    if (!this.user) {
-      return;
-    }
-    const role = this.user ? this.user.role : '';
-    this.menus = [
-      // ...this.menus,
-      // (role === USER_TYPE.PMU && { name: 'State resources', href: '/mohua-form/state-resource-manager' }),
-      // (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: '15<sup>th</sup> FC Grants', href: '/fc-home-page' }),
-      role === USER_TYPE.ULB && { name: `XVI FC Data Collection`, link: '/xvifc-form' },
-      role === USER_TYPE.ULB && {
-        name: `User Manual`,
-        href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
-        target: '_blank',
-      },
-      this.inRole([USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE]) && {
-        name: `Review XVI FC`,
-        link: '/admin/xvi-fc-review',
-      },
-      // (this.notInRole([USER_TYPE.ULB, USER_TYPE.XVIFC_STATE]) && { name: `Rankings'22 Dashboard`, href: '/cfr/review-rankings-ulbform' }),
-      // (this.notInRole([USER_TYPE.PMU, USER_TYPE.XVIFC_STATE]) && { name: 'Users', href: '/user/list/ULB' }),
-    ];
-  }
-
-  notInRole(roles: string[]) {
-    const role = this.user ? this.user.role : '';
-    return !roles.includes(role);
-  }
-  inRole(roles: string[]) {
-    const role = this.user ? this.user.role : '';
-    return roles.includes(role);
   }
 
   ngOnInit(): void {
     this.isProd = environment?.isProduction;
-    this.checkUserLoggedIn();
-    this.setLoggedInUserMenu();
+    this.bindAuthState();
   }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      if (this.menuElement) {
+        this.elementPosition = this.menuElement.nativeElement.offsetTop;
+      }
+    });
+  }
+
   initializeAccessChecking() {
     this.canViewUserList = this.accessChecker.hasAccess({
       moduleName: MODULES_NAME.USERLIST,
@@ -132,111 +100,55 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   }
 
   removeSessionItem() {
-    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation'),
-      sessionID = sessionStorage.getItem('sessionID');
-    sessionStorage.clear();
-    sessionStorage.setItem('sessionID', sessionID || '');
-    if (postLoginNavigation) sessionStorage.setItem('postLoginNavigation', postLoginNavigation);
-  }
-  // @HostListener('window:scroll', ['$event'])
-  // handleScroll() {
-  //   const windowScroll = window.pageYOffset;
-  //   if (windowScroll >= 50) {
-  //     this.sticky = true;
-  //   } else {
-  //     this.sticky = false;
-  //   }
-  // }
-  // scroll() {
-  //   window.scrollTo({
-  //     top: 1000,
+    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation');
+    const sessionID = sessionStorage.getItem('sessionID');
 
-  //     behavior: 'smooth',
-  //   });
-  // }
+    sessionStorage.clear();
+
+    if (sessionID) {
+      sessionStorage.setItem('sessionID', sessionID);
+    }
+    if (postLoginNavigation) {
+      sessionStorage.setItem('postLoginNavigation', postLoginNavigation);
+    }
+  }
 
   loginLogout(type: string) {
     localStorage.setItem('loginType', type);
-    if (type == '15thFC') {
-      // this._router.navigateByUrl("/fc_grant");
-      window.location.href = '/fc_grant';
+
+    if (type === '15thFC') {
+      this._router.navigate(['/login'], {
+        queryParams: { type },
+      });
+      // window.location.href = '/fc_grant';
+      // return;
     }
-    else if (type == 'XVIFC') {
+    if (type == 'xvifc') {
+      this._router.navigate(['/login'], {
+        queryParams: { type },
+      });
       // this._router.navigateByUrl("/login/xvi-fc");
+      // window.location.href = '/login';
+    }
+    if (type === 'XVIFC') {
       window.location.href = '/login/xvi-fc';
+      return;
     }
-    else if (type == 'ranking') {
-      // this._router.navigateByUrl("/rankings/login");
+
+    if (type === 'ranking') {
       window.location.href = '/rankings/login';
-    } else if (type == 'logout') {
-      this.authService.loginLogoutCheck.next(false);
-      // this.newCommonService.setFormStatus2223.next(false);
-      localStorage.clear();
-      this.removeSessionItem();
-      this.isLoggedIn = false;
-      // this._router.navigateByUrl("rankings/home");
-      window.location.href = '/';
+      return;
     }
 
-  }
-
-  loginLogout_bkp(type: string) {
-    // if (type == '15th_Fc') {
-    //   this._router.navigateByUrl("/fc_grant");
-    // } else if (type == 'ranking') {
-    //   this._router.navigateByUrl("/cfr/login");
-    // } else if (type == 'logout') {
-    this.authService.loginLogoutCheck.next(false);
-    // this.newCommonService.setFormStatus2223.next(false);
-    localStorage.clear();
-    this.removeSessionItem();
-    this.isLoggedIn = false;
-    // this._router.navigateByUrl("rankings/home");
-    window.location.href = '/';
-    // } else {
-
-    // }
-    // if (this.btnName == "Login for 15th FC Grants") {
-    //   this._router.navigateByUrl("/fc_grant");
-    // }
-    // if (this.btnName == "Logout") {
-    //   this.btnName = "Login for 15th FC Grants";
-    //   this.authService.loginLogoutCheck.next(false);
-    //   // this.newCommonService.setFormStatus2223.next(false);
-    //   localStorage.clear();
-    //   this.removeSessionItem();
-    //   this._router.navigateByUrl("/home");
-    // }
-  }
-
-  // isSticky = false;
-  public screenHeight: any;
-  // elementPosition!: number;
-  // @ViewChild('stickyMenu') menuElement: ElementRef | undefined;
-  // ngAfterViewInit() {
-  //   this.elementPosition = this.menuElement?.nativeElement.offsetTop;
-  // }
-  // @HostListener('window:scroll', ['$event'])
-  // handleScrollTop() {
-  //   if (window.scrollY >= this.elementPosition) {
-  //     this.isSticky = true;
-  //   } else {
-  //     this.isSticky = false;
-  //   }
-  // }
-
-  isSticky = false;
-  private elementPosition = 0;
-  private ticking = false;
-
-  @ViewChild('stickyMenu') menuElement?: ElementRef;
-
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      if (this.menuElement) {
-        this.elementPosition = this.menuElement.nativeElement.offsetTop;
-      }
-    });
+    if (type === 'logout') {
+      this.authService.logout().subscribe({
+        next: () => {
+          this.removeSessionItem();
+          this.isLoggedIn = false;
+          window.location.href = '/';
+        },
+      });
+    }
   }
 
   @HostListener('window:scroll')
@@ -250,8 +162,58 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private bindAuthState() {
+    combineLatest([this.authService.sessionState$, this.authService.currentUser$])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([sessionState, user]) => {
+        this.applySessionState(sessionState, user);
+      });
+  }
+
+  private applySessionState(sessionState: AuthSessionState, user: IUserLoggedInDetails | null) {
+    this.isAuthResolved = sessionState.isReady;
+    this.isLoggedIn = sessionState.isAuthenticated;
+    this.user = sessionState.isAuthenticated ? user : null;
+    this.btnName = sessionState.isAuthenticated ? 'Logout' : 'Login for 15th FC Grants';
+
+    this.initializeAccessChecking();
+    this.setLoggedInUserMenu();
+  }
+
+  private setLoggedInUserMenu() {
+    if (!this.user || !this.isLoggedIn) {
+      this.menus = [...this.defaultMenus];
+      return;
+    }
+
+    const role = this.user.role;
+    this.menus = [
+      ...(role === USER_TYPE.ULB ? [{ name: 'XVI FC Data Collection', link: '/xvifc-form' }] : []),
+      ...(role === USER_TYPE.ULB
+        ? [
+            {
+              name: 'User Manual',
+              href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
+              target: '_blank',
+            },
+          ]
+        : []),
+      ...(this.inRole([USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE])
+        ? [{ name: 'Review XVI FC', link: '/admin/xvi-fc-review' }]
+        : []),
+    ];
+  }
+
+  private inRole(roles: string[]) {
+    const role = this.user ? this.user.role : '';
+    return roles.includes(role);
+  }
+
   private updateStickyState(): void {
-    if (!this.menuElement) return;
+    if (!this.menuElement) {
+      return;
+    }
+
     this.isSticky = window.scrollY >= this.elementPosition;
   }
 }

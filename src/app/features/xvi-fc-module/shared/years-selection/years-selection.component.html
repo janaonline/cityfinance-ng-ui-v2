@@ -1,0 +1,32 @@
+<div class="year-overlay">
+  <div class="year-card">
+    <div class="year-card__header">
+      <p class="tag">16th Finance Commission · Grant Portal</p>
+      <h2>Select Financial Year</h2>
+      <p class="subtitle">Please choose a financial year to continue.</p>
+    </div>
+
+    <div class="year-card__body">
+      <div class="year-radio-group">
+        @for (year of years; track year) {
+          <label class="year-pill" [class.year-pill--active]="selectedYear() === year">
+            <input
+              type="radio"
+              name="financialYear"
+              [value]="year"
+              [checked]="selectedYear() === year"
+              (change)="selectYear(year)"
+            />
+
+            <span class="year-pill__label">{{ year }}</span>
+            <span class="year-pill__glow"></span>
+          </label>
+        }
+      </div>
+
+      <button class="continue-btn" type="button" (click)="continue()" [disabled]="!selectedYear()">
+        Continue
+      </button>
+    </div>
+  </div>
+</div>

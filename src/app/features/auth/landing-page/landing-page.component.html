@@ -1,0 +1,273 @@
+<div class="auth-page">
+  <div class="auth-page__left">
+    <div class="left-panel">
+      <div class="brand-block">
+        <div class="brand-header">
+          <div class="brand-logo">
+            <i class="bi bi-bank2"></i>
+          </div>
+
+          <div class="brand-title">{{ brandName }}</div>
+        </div>
+        @if (typeKey() === 'xvifc') {
+          <h1 class="hero-title">
+            16th Finance Commission
+            <br />
+            Grant Management System
+          </h1>
+
+          <p class="hero-description">
+            Cityfinance.in is the official grant management system for the administration of the
+            Sixteenth Finance Commission (XVI-FC) grants to Urban Local Bodies (ULBs) in India.
+            Under the oversight of the Ministry of Housing and Urban Affairs (MoHUA), the platform
+            handles the allocation and disbursement of grants totaling ₹3,56,357 crore for the
+            fiscal years 2026–2031.
+          </p>
+
+          <p class="hero-description hero-description--secondary">
+            The platform serves to facilitate smooth communication and data exchange between ULBs,
+            State Urban Development Departments (UDDs), and MoHUA, ensuring efficiency and
+            transparency in the process.
+          </p>
+
+          <div class="stats-section">
+            <div class="stats-grid">
+              @for (stat of stats; track trackByStat($index, stat)) {
+                <div class="stat-item">
+                  <div class="stat-item__label">{{ stat.label }}</div>
+                  <div class="stat-item__value">{{ stat.value }}</div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="resource-actions">
+            <button
+              mat-stroked-button
+              type="button"
+              class="resource-btn"
+              (click)="openReferenceDocuments()"
+            >
+              <i class="bi bi-file-earmark-text"></i>
+              <span>Reference Documents</span>
+            </button>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="resource-btn"
+              (click)="openGuidelines()"
+            >
+              <i class="bi bi-grid"></i>
+              <span>Guidelines</span>
+            </button>
+          </div>
+        } @else if (typeKey() === '15thFC') {
+          <h1 class="hero-title">
+            15th Finance Commission
+            <br />
+            Grant Management System
+          </h1>
+          <div>
+            <p class="hero-description">
+              Welcome to
+              <a href="http://cityfinance.in/">Cityfinance.in</a>, the official grant management
+              system for the administration of the Fifteenth Finance Commission (XV FC) grants to
+              Urban Local Bodies (ULBs) in India. Under the oversight of the Ministry of Housing and
+              Urban Affairs (MoHUA), the platform handles the allocation and disbursement of grants
+              totaling Rs. 1,08,916 Crore for the fiscal years 2021-2026.
+            </p>
+
+            <p class="hero-description hero-description--secondary">
+              <a href="http://cityfinance.in/">Cityfinance.in</a>
+              serves to facilitate smooth communication and data exchange among ULBs, State Urban
+              Development Departments (UDDs), and MoHUA, ensuring efficiency and transparency in the
+              process.
+            </p>
+          </div>
+
+          <p>Reference Documents</p>
+
+          <div class="docs-section mt-3">
+            <h5 class="docs-title mb-3">Reference Documents</h5>
+
+            <div class="list-group docs-list">
+              @for (doc of documents; track doc.title) {
+                <a
+                  [href]="doc.file"
+                  target="_blank"
+                  class="list-group-item list-group-item-action d-flex align-items-start gap-3 docs-item"
+                >
+                  <div class="doc-icon">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                  </div>
+
+                  <div class="doc-content">
+                    <div class="doc-title">
+                      {{ doc.title }}
+                    </div>
+                  </div>
+
+                  <div class="ms-auto">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                  </div>
+                </a>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-page__right">
+    <div class="right-panel">
+      <div class="login-section">
+        <mat-card class="login-card" appearance="outlined">
+          <div class="login-card__header">
+            <h2>Sign In</h2>
+            <p>Select your role to continue</p>
+          </div>
+
+          <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+            <div class="role-grid" role="radiogroup" aria-label="User role">
+              @for (role of roleOptions; track trackByRole($index, role)) {
+                <button
+                  type="button"
+                  class="role-card"
+                  [class.role-card--active]="isRoleSelected(role.id)"
+                  [class.role-card--disabled]="role.disabled"
+                  [disabled]="role.disabled"
+                  role="radio"
+                  [attr.aria-checked]="isRoleSelected(role.id)"
+                  (click)="selectRole(role)"
+                >
+                  @if (role.badge) {
+                    <span class="role-card__badge">{{ role.badge }}</span>
+                  }
+
+                  <span
+                    class="role-card__icon"
+                    [ngClass]="{
+                      'role-card__icon--ulb': role.icon === 'ulb',
+                      'role-card__icon--state': role.icon === 'state',
+                      'role-card__icon--mohua': role.icon === 'mohua',
+                      'role-card__icon--doe': role.icon === 'doe',
+                    }"
+                  >
+                    @switch (role.icon) {
+                      @case ('ulb') {
+                        <i class="bi bi-buildings-fill"></i>
+                      }
+                      @case ('state') {
+                        <i class="bi bi-bank"></i>
+                      }
+                      @case ('mohua') {
+                        <i class="bi bi-bullseye"></i>
+                      }
+                      @case ('doe') {
+                        <i class="bi bi-shield-lock"></i>
+                      }
+                    }
+                  </span>
+
+                  <span class="role-card__label">{{ role.label }}</span>
+                </button>
+              }
+            </div>
+
+            @if (hasControlError('role', 'required')) {
+              <div class="field-error field-error--role">Please select your role.</div>
+            }
+
+            <div class="form-group mb-4">
+              <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                <mat-label>Email ID</mat-label>
+                <input
+                  id="email"
+                  matInput
+                  type="email"
+                  formControlName="email"
+                  autocomplete="username"
+                />
+              </mat-form-field>
+
+              @if (hasControlError('email', 'required')) {
+                <div class="field-error">Email ID is required.</div>
+              }
+
+              @if (!hasControlError('email', 'required') && hasControlError('email', 'email')) {
+                <div class="field-error">Enter a valid official email address.</div>
+              }
+            </div>
+
+            <div class="form-group">
+              <mat-form-field
+                subscriptSizing="dynamic"
+                appearance="outline"
+                class="app-field-compact"
+              >
+                <mat-label>Password</mat-label>
+                <input
+                  id="password"
+                  matInput
+                  [type]="isPasswordVisible ? 'text' : 'password'"
+                  formControlName="password"
+                  autocomplete="current-password"
+                />
+
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  class="password-toggle-btn"
+                  (click)="togglePasswordVisibility()"
+                  [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+                >
+                  <i
+                    class="bi"
+                    [class.bi-eye]="!isPasswordVisible"
+                    [class.bi-eye-slash]="isPasswordVisible"
+                  ></i>
+                </button>
+              </mat-form-field>
+
+              @if (hasControlError('password', 'required')) {
+                <div class="field-error">Password is required.</div>
+              }
+
+              @if (
+                !hasControlError('password', 'required') && hasControlError('password', 'minlength')
+              ) {
+                <div class="field-error">Password must be at least 6 characters.</div>
+              }
+            </div>
+
+            <button mat-flat-button type="submit" class="signin-btn">Sign In</button>
+
+            <div class="d-flex justify-content-between align-items-center w-100 mt-2">
+              <button type="button" class="forgot-password-btn" (click)="onForgotPassword()">
+                Forgot password?
+              </button>
+
+              @if (roleControl.value === 'ULB') {
+                <button type="button" class="forgot-password-btn" (click)="onSignup()">
+                  Not Registered?
+                </button>
+              }
+            </div>
+          </form>
+        </mat-card>
+
+        <div class="help-card">
+          <h3>Need Help?</h3>
+          <p>
+            For clarifications or questions, please email
+            <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a
+            >. We will respond within 24 hours.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

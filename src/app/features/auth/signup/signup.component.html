@@ -1,0 +1,169 @@
+<div class="container-fluid signup-page bg-light px-2 px-md-3 py-2 py-md-3">
+  <div class="signup-shell mx-auto">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div class="row g-0 min-vh-shell">
+        <div class="col-lg-4 d-none d-lg-block">
+          <div class="brand-panel h-100 p-3 p-xl-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <i class="bi bi-person-plus fs-5"></i>
+              <div>
+                <div class="fw-bold small-title">CityFinance</div>
+                <div class="small-text opacity-75">ULB registration request</div>
+              </div>
+            </div>
+
+            <h2 class="brand-title fw-bold mb-2">Request access for your ULB account</h2>
+            <p class="brand-copy mb-3 text-white-50">
+              Submit your ULB details for verification. Once approved by the concerned state
+              officers, your login access can be enabled.
+            </p>
+
+            <div class="rounded-4 p-3 panel-info-card">
+              <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-info-circle mt-1 small-text"></i>
+                <div class="small-text">
+                  This registration request is available only for
+                  <strong>ULB users</strong>. State officers will review your details before
+                  approval.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="p-3 p-md-4">
+            <div class="mb-3">
+              <h1 class="page-title mb-1">ULB Sign Up</h1>
+              <p class="page-subtitle mb-0">Submit your details to request account registration.</p>
+            </div>
+
+            @if (isSuccess()) {
+              <div class="alert alert-success border rounded-4 compact-alert">
+                <div class="fw-semibold mb-1">Request submitted successfully</div>
+                <div class="compact-text mb-3">
+                  We have sent your details to the state officers. Please wait for verification.
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-primary compact-action-btn px-3"
+                  (click)="onBackToLogin()"
+                >
+                  Back to Login
+                </button>
+              </div>
+            } @else {
+              <form [formGroup]="signupForm" novalidate>
+                <div class="mb-3">
+                  <label class="form-label compact-label fw-semibold">State</label>
+
+                  <select class="form-select compact-control" formControlName="stateId">
+                    <option value="">Select State</option>
+
+                    @if (isLoadingStates()) {
+                      <option value="" disabled>Loading states...</option>
+                    } @else {
+                      @for (state of states(); track state.id) {
+                        <option [value]="state.id">{{ state.name }}</option>
+                      }
+                    }
+                  </select>
+
+                  @if (signupForm.controls.stateId.touched && signupForm.controls.stateId.invalid) {
+                    <div class="invalid-feedback d-block small-error">State is required.</div>
+                  }
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label compact-label fw-semibold">ULB Name</label>
+                  <input
+                    type="text"
+                    class="form-control compact-control"
+                    formControlName="ulbName"
+                    placeholder="Enter ULB Name"
+                  />
+                  @if (signupForm.controls.ulbName.touched && signupForm.controls.ulbName.invalid) {
+                    <div class="invalid-feedback d-block small-error">ULB Name is required.</div>
+                  }
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label compact-label fw-semibold">Email ID</label>
+                  <input
+                    type="email"
+                    class="form-control compact-control"
+                    formControlName="email"
+                    placeholder="Enter official email ID"
+                  />
+                  @if (
+                    signupForm.controls.email.touched &&
+                    signupForm.controls.email.hasError('required')
+                  ) {
+                    <div class="invalid-feedback d-block small-error">Email is required.</div>
+                  }
+                  @if (
+                    signupForm.controls.email.touched && signupForm.controls.email.hasError('email')
+                  ) {
+                    <div class="invalid-feedback d-block small-error">
+                      Enter a valid email address.
+                    </div>
+                  }
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label compact-label fw-semibold">Contact Number</label>
+                  <input
+                    type="text"
+                    maxlength="10"
+                    class="form-control compact-control"
+                    formControlName="contactNumber"
+                    placeholder="Enter contact number"
+                  />
+                  @if (
+                    signupForm.controls.contactNumber.touched &&
+                    signupForm.controls.contactNumber.hasError('required')
+                  ) {
+                    <div class="invalid-feedback d-block small-error">
+                      Contact number is required.
+                    </div>
+                  }
+                  @if (
+                    signupForm.controls.contactNumber.touched &&
+                    signupForm.controls.contactNumber.hasError('pattern')
+                  ) {
+                    <div class="invalid-feedback d-block small-error">
+                      Enter a valid 10-digit mobile number.
+                    </div>
+                  }
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+                  <button
+                    type="button"
+                    class="btn btn-primary compact-action-btn px-3"
+                    [disabled]="isSubmitting() || isLoadingStates()"
+                    (click)="onSubmit()"
+                  >
+                    @if (isSubmitting()) {
+                      <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                    }
+                    Send Request
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary compact-action-btn px-3"
+                    (click)="onBackToLogin()"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

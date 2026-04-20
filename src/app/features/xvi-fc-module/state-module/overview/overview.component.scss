@@ -1,0 +1,201 @@
+.yearwise-placeholder__title {
+  height: 16px;
+}
+
+.yearwise-placeholder__table .placeholder {
+  height: 40px;
+}
+
+.requirements-placeholder {
+  flex: 1;
+}
+
+.requirements-placeholder__title {
+  height: 16px;
+}
+
+.requirements-placeholder .placeholder {
+  height: 14px;
+}
+
+.requirements-placeholder__button-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 180px;
+}
+
+.requirements-placeholder__button {
+  width: 160px;
+  height: 44px;
+}
+
+@media (max-width: 767.98px) {
+  .requirements-placeholder__button-wrap {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 1rem;
+  }
+
+  .requirements-placeholder__button {
+    width: 100%;
+  }
+
+  .yearwise-placeholder__table .d-flex {
+    gap: 0.5rem !important;
+  }
+}
+.yearwise-card {
+  border: 1px solid rgba(17, 69, 81, 0.14);
+  border-radius: 1rem;
+  // background: #ffffff;
+  overflow: hidden;
+}
+
+.yearwise-card__inner {
+  padding: 1.2rem 1.2rem 1.15rem;
+}
+
+.yearwise-card__eyebrow {
+  color: rgba(17, 69, 81, 0.42);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.yearwise-table {
+  --bs-table-bg: transparent;
+  --bs-table-border-color: rgba(17, 69, 81, 0.14);
+  margin-bottom: 0;
+}
+
+.yearwise-table thead th {
+  color: rgba(17, 69, 81, 0.46);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-bottom-width: 1px;
+  padding: 0.85rem 0.95rem;
+  white-space: nowrap;
+}
+
+.yearwise-table tbody th,
+.yearwise-table tbody td {
+  padding: 0.95rem 0.95rem;
+  border-bottom-width: 1px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.yearwise-table tbody th {
+  color: #1f1f1f;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.yearwise-table tbody td {
+  color: #1f1f1f;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.yearwise-table__stub {
+  width: 136px;
+}
+
+.yearwise-table__highlight {
+  background: #edf3f2;
+}
+
+.yearwise-table tbody tr:last-child th,
+.yearwise-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.requirements-card {
+  border: 1px solid rgba(17, 69, 81, 0.14);
+  border-radius: 1rem;
+  background: #edf3f2;
+  overflow: hidden;
+}
+
+.requirements-card__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.2rem 1.2rem;
+}
+
+.requirements-card__copy {
+  min-width: 0;
+}
+
+.requirements-card__title {
+  color: #1f1f1f;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.requirements-card__text {
+  color: rgba(17, 69, 81, 0.68);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
+.requirements-card__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 168px;
+  padding: 0.9rem 1.2rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: #1e7a41;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.requirements-card__button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(30, 122, 65, 0.18);
+  background: #176737;
+}
+
+.requirements-card__button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(30, 122, 65, 0.16);
+}
+
+@media (max-width: 991.98px) {
+  .requirements-card__content {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .requirements-card__button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .yearwise-card__inner,
+  .requirements-card__content {
+    padding: 1rem;
+  }
+
+  .yearwise-table thead th,
+  .yearwise-table tbody th,
+  .yearwise-table tbody td {
+    padding: 0.8rem 0.75rem;
+  }
+}
