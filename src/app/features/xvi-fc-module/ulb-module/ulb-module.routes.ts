@@ -16,6 +16,11 @@ export const ULB_ROUTES: Routes = [
           import('./overview/overview.component').then((m) => m.OverviewComponent),
       },
       {
+        path: 'support-hours',
+        loadComponent: () =>
+          import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
+      },
+      {
         path: '**',
         redirectTo: '/xvifc',
       },

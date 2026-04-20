@@ -1,1 +1,126 @@
-<p>overview works!</p>
+<main class="container-fluid px-3 px-md-4 px-xl-5 py-4 py-lg-5">
+  @if (errorMessage) {
+    <div class="alert alert-danger mb-4" role="alert">
+      {{ errorMessage }}
+    </div>
+  }
+
+  <app-overview-card
+    [overviewData]="stateOverviewData"
+    [initialSelectedGrantId]="'basic'"
+    [isLoading]="isLoading"
+  />
+
+  @if (isLoading) {
+    <section class="yearwise-card mt-4">
+      <div class="yearwise-card__inner">
+        <div class="placeholder-glow">
+          <span class="placeholder rounded-pill col-4 mb-3 yearwise-placeholder__title"></span>
+
+          <div class="yearwise-placeholder__table">
+            <div class="d-flex gap-2 mb-3">
+              <span class="placeholder rounded col-2"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+            </div>
+
+            <div class="d-flex gap-2 mb-2">
+              <span class="placeholder rounded col-2"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+              <span class="placeholder rounded col-2"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+              <span class="placeholder rounded col"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="requirements-card mt-4">
+      <div class="requirements-card__content">
+        <div class="placeholder-glow w-100 requirements-placeholder">
+          <span class="placeholder rounded-pill col-4 mb-3 requirements-placeholder__title"></span>
+          <span class="placeholder rounded col-8 mb-2"></span>
+          <span class="placeholder rounded col-6"></span>
+        </div>
+
+        <div class="placeholder-glow requirements-placeholder__button-wrap">
+          <span class="placeholder rounded-pill requirements-placeholder__button"></span>
+        </div>
+      </div>
+    </section>
+  } @else {
+    @if (stateOverviewData) {
+      <section class="yearwise-card mt-4">
+        <div class="yearwise-card__inner">
+          <p class="yearwise-card__eyebrow mb-3">
+            {{ stateOverviewData.name }} — YEAR-WISE DISBURSEMENT
+          </p>
+
+          <div class="table-responsive">
+            <table class="table yearwise-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th scope="col" class="yearwise-table__stub"></th>
+                  @for (column of disbursementColumns; track column.key) {
+                    <th
+                      scope="col"
+                      class="text-center"
+                      [class.yearwise-table__highlight]="column.highlight"
+                    >
+                      {{ column.label }}
+                    </th>
+                  }
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (row of disbursementRows; track row.id) {
+                  <tr>
+                    <th scope="row">{{ row.label }}</th>
+
+                    @for (column of disbursementColumns; track column.key) {
+                      <td class="text-center" [class.yearwise-table__highlight]="column.highlight">
+                        {{ row.values[column.key] }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="requirements-card mt-4">
+        <div class="requirements-card__content">
+          <div class="requirements-card__copy">
+            <h3 class="requirements-card__title mb-1">Submit this year’s requirements</h3>
+            <p class="requirements-card__text mb-0">
+              Upload SFC status, elected body confirmation, and devolution formula to begin grant
+              release for {{ currentRequirementYear }}.
+            </p>
+          </div>
+
+          <button type="button" class="requirements-card__button" (click)="onViewRequirements()">
+            <span>View Requirements</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>
+    }
+  }
+</main>

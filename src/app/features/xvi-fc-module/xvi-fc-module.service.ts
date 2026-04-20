@@ -1,12 +1,20 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
-import { SideBarModel } from '../../shared/components/side-menu/interface';
-import { Login_Logout } from '../../core/util/logout.util';
-import { SIDE_MENU_ITEMS } from './temp';
-import { ROLES, Roles, XVIFC_LANDING_ROUTE, XvifcYearId, YEAR_IDS } from './xvi-fc-side-menu.config';
+import { firstValueFrom } from 'rxjs';
 
-interface XvifcRouteContext {
+import { AuthService } from '../../core/services/auth.service';
+import { Login_Logout } from '../../core/util/logout.util';
+import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { XviFcSideMenuApiService } from './xvi-fc-side-menu.service';
+import {
+  ROLES,
+  Roles,
+  XVIFC_LANDING_ROUTE,
+  XvifcYearId,
+  YEAR_IDS,
+} from './xvi-fc-side-menu.config';
+
+export interface XvifcRouteContext {
   role: Roles;
   yearId: XvifcYearId;
 }
@@ -22,20 +30,33 @@ const EMPTY_SIDE_MENU_MODEL: SideBarModel = {
 export class XvifcModuleService {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly sideMenuApiService = inject(XviFcSideMenuApiService);
+
   private readonly resolvedContext = signal<XvifcRouteContext | null>(null);
+  private readonly lastMenuRequestKey = signal<string | null>(null);
 
   readonly availableYearIds: readonly XvifcYearId[] = YEAR_IDS;
+
   readonly role = computed<Roles | null>(() => this.resolvedContext()?.role ?? null);
   readonly yearId = computed<XvifcYearId | null>(() => this.resolvedContext()?.yearId ?? null);
-  /**
-   * Derives the sidebar model from the latest valid route context.
-   * Falls back to an empty model so the shell does not require null guards
-   * while context is unresolved or after teardown.
-   */
-  readonly sideMenuModel = computed<SideBarModel>(() => {
-    const context = this.resolvedContext();
-    return context ? this.buildSideMenuItems(context) : EMPTY_SIDE_MENU_MODEL;
-  });
+
+  readonly sideMenuModel = signal<SideBarModel>(EMPTY_SIDE_MENU_MODEL);
+  readonly isSideMenuLoading = signal(false);
+
+  constructor() {
+    effect(() => {
+      const context = this.resolvedContext();
+
+      if (!context) {
+        this.lastMenuRequestKey.set(null);
+        this.sideMenuModel.set(EMPTY_SIDE_MENU_MODEL);
+        this.isSideMenuLoading.set(false);
+        return;
+      }
+
+      void this.loadSideMenu(context);
+    });
+  }
 
   /**
    * Extracts the effective role/year from the provided route snapshot tree.
@@ -92,7 +113,6 @@ export class XvifcModuleService {
           return null;
         }
 
-        // Prefer the most specific child route definition when multiple levels declare a role.
         resolvedRole = routeRole;
       }
 
@@ -119,7 +139,6 @@ export class XvifcModuleService {
           return null;
         }
 
-        // Later matches are more specific because they come from deeper child routes.
         resolvedYearId = routeYearId;
       }
 
@@ -130,17 +149,34 @@ export class XvifcModuleService {
   }
 
   /**
-   * Maps resolved role/year context to the side-menu factory registered for that role.
-   * Throws early when route configuration and menu configuration drift apart.
+   * Calls the side menu API and resolves one menu model.
    */
-  private buildSideMenuItems(context: XvifcRouteContext): SideBarModel {
-    const menuFactory = SIDE_MENU_ITEMS[context.role];
+  private buildSideMenuItems(context: XvifcRouteContext): Promise<SideBarModel> {
+    return firstValueFrom(this.sideMenuApiService.getSideMenu(context));
+  }
 
-    if (!menuFactory) {
-      throw new Error(`No side menu configured for role: ${context.role}`);
+  /**
+   * Loads sidebar items asynchronously whenever role/year context changes.
+   */
+  private async loadSideMenu(context: XvifcRouteContext): Promise<void> {
+    const requestKey = `${context.role}-${context.yearId}`;
+
+    if (this.lastMenuRequestKey() === requestKey && this.sideMenuModel().topModel.length > 0) {
+      return;
     }
 
-    return menuFactory(context.yearId);
+    this.lastMenuRequestKey.set(requestKey);
+    this.isSideMenuLoading.set(true);
+
+    try {
+      const menu = await this.buildSideMenuItems(context);
+      this.sideMenuModel.set(menu);
+    } catch (error) {
+      console.error('Failed to load side menu', error);
+      this.sideMenuModel.set(EMPTY_SIDE_MENU_MODEL);
+    } finally {
+      this.isSideMenuLoading.set(false);
+    }
   }
 
   /** Treats unsupported route state as a broken or expired session. */

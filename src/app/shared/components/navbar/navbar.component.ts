@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { IUserLoggedInDetails } from '../../../core/models/login/userLoggedInDetails';
@@ -158,14 +166,21 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   loginLogout(type: string) {
     localStorage.setItem('loginType', type);
     if (type == '15thFC') {
+      this._router.navigate(['/login'], {
+        queryParams: { type },
+      });
       // this._router.navigateByUrl("/fc_grant");
-      window.location.href = '/fc_grant';
-    }
-    else if (type == 'XVIFC') {
+      // window.location.href = '/login';
+    } else if (type == 'xvifc') {
+      this._router.navigate(['/login'], {
+        queryParams: { type },
+      });
+      // this._router.navigateByUrl("/login/xvi-fc");
+      // window.location.href = '/login';
+    } else if (type == 'XVIFC') {
       // this._router.navigateByUrl("/login/xvi-fc");
       window.location.href = '/login/xvi-fc';
-    }
-    else if (type == 'ranking') {
+    } else if (type == 'ranking') {
       // this._router.navigateByUrl("/rankings/login");
       window.location.href = '/rankings/login';
     } else if (type == 'logout') {
@@ -177,7 +192,6 @@ export class NavbarComponent implements OnInit, AfterViewInit {
       // this._router.navigateByUrl("rankings/home");
       window.location.href = '/';
     }
-
   }
 
   loginLogout_bkp(type: string) {

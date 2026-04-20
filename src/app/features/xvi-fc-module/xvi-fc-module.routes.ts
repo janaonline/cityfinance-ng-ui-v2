@@ -2,10 +2,12 @@ import { Routes } from '@angular/router';
 
 export const XVIFC_ROUTES: Routes = [
   {
-    path: '',
+    path: 'year',
     pathMatch: 'full',
     loadComponent: () =>
-      import('./landing-page/landing-page.component').then((m) => m.LandingPageComponent),
+      import('./shared/years-selection/years-selection.component').then(
+        (m) => m.YearsSelectionComponent,
+      ),
   },
   {
     path: '',
