@@ -182,22 +182,22 @@
 
             <div class="form-group mb-4">
               <mat-form-field subscriptSizing="dynamic" appearance="outline">
-                <mat-label>Email ID</mat-label>
+                <mat-label>Email / Census Code</mat-label>
                 <input
-                  id="email"
+                  id="identifier"
                   matInput
-                  type="email"
-                  formControlName="email"
+                  type="text"
+                  formControlName="identifier"
                   autocomplete="username"
                 />
               </mat-form-field>
 
-              @if (hasControlError('email', 'required')) {
-                <div class="field-error">Email ID is required.</div>
+              @if (hasControlError('identifier', 'required')) {
+                <div class="field-error">Email or Census Code is required.</div>
               }
 
-              @if (!hasControlError('email', 'required') && hasControlError('email', 'email')) {
-                <div class="field-error">Enter a valid official email address.</div>
+              @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'invalidIdentifier')) {
+                <div class="field-error">Enter a valid email address or numeric census code.</div>
               }
             </div>
 

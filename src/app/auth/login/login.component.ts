@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule, RouterLink } from '@angular/router';
+import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,7 +16,15 @@ import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.s
 
 type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE';
 type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe';
-type LoginControlName = 'role' | 'email' | 'password';
+type LoginControlName = 'role' | 'identifier' | 'password';
+
+function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
+  const value = (control.value as string)?.trim();
+  if (!value) return null;
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const censusRe = /^\d+$/;
+  return emailRe.test(value) || censusRe.test(value) ? null : { invalidIdentifier: true };
+}
 
 interface StatItem {
   label: string;
@@ -33,7 +41,7 @@ interface RoleOption {
 type LoginType = 'xvifc' | '15thFC';
 type LoginFormModel = {
   role: FormControl<LoginRole | ''>;
-  email: FormControl<string>;
+  identifier: FormControl<string>;
   password: FormControl<string>;
 };
 
@@ -90,9 +98,9 @@ export class LoginComponent implements OnInit {
       nonNullable: true,
       validators: [Validators.required],
     }),
-    email: new FormControl('', {
+    identifier: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.email],
+      validators: [Validators.required, emailOrCensusCode],
     }),
     password: new FormControl('', {
       nonNullable: true,
@@ -207,9 +215,9 @@ export class LoginComponent implements OnInit {
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    const { email, password } = this.loginForm.getRawValue();
+    const { identifier, password } = this.loginForm.getRawValue();
     const payload = {
-      email,
+      email: identifier.trim(),
       password,
       type: this.typeKey() ?? '15thFC',
     };
