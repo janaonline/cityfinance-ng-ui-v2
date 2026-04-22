@@ -19,9 +19,9 @@ export interface AuthSessionState {
 export class AuthService {
   private readonly accessTokenStorageKey = 'id_token';
   private readonly sessionHintStorageKey = 'auth_session_hint';
-  private readonly loginUrl = `${environment.api.url}login`;
-  private readonly logoutUrl = `${environment.api.url}logout`;
-  private readonly refreshTokenUrl = `${environment.api.url}refresh`;
+  private readonly loginUrl = `${environment.api.url2}auth/login`;
+  private readonly logoutUrl = `${environment.api.url2}auth/logout`;
+  private readonly refreshTokenUrl = `${environment.api.url2}auth/refresh`;
   private readonly jwtHelper = new JwtHelperService();
 
   private accessToken: string | null = this.readStoredAccessToken();
@@ -318,13 +318,13 @@ export class AuthService {
   }
 
   otpSignIn(body: any) {
-    return this.http.post(`${environment.api.url}sendOtp`, body, {
+    return this.http.post(`${environment.api.url2}auth/sendOtp`, body, {
       withCredentials: true,
     });
   }
 
   otpVerify(body: any) {
-    return this.http.post(`${environment.api.url}verifyOtp`, body, {
+    return this.http.post(`${environment.api.url2}auth/verifyOtp`, body, {
       withCredentials: true,
     });
   }

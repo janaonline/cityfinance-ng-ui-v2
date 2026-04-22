@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule, RouterLink } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
@@ -8,7 +8,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
-import { signal } from '@angular/core';
+import { finalize } from 'rxjs/operators';
+import { AuthService } from '../../core/services/auth.service';
+import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
+import { USER_TYPE } from '../../core/models/user/userType';
 import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 
 type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE';
@@ -35,7 +38,7 @@ type LoginFormModel = {
 };
 
 @Component({
-  selector: 'app-landing-page',
+  selector: 'app-login',
   standalone: true,
   imports: [
     CommonModule,
@@ -47,17 +50,21 @@ type LoginFormModel = {
     MatIconModule,
     MatCardModule,
   ],
-  templateUrl: './landing-page.component.html',
-  styleUrl: './landing-page.component.scss',
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LandingPageComponent implements OnInit {
+export class LoginComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private _router: Router,
   ) {}
   private readonly xvifcService = inject(XvifcModuleService);
+  private readonly authService = inject(AuthService);
+
   typeKey = signal<LoginType | null>(null);
+  protected readonly isSubmitting = signal(false);
+  protected readonly errorMessage = signal('');
   protected readonly supportEmail = '16fcgrant@cityfinance.in';
   protected readonly brandName = 'CITY FINANCE';
 
@@ -195,10 +202,58 @@ export class LandingPageComponent implements OnInit {
       return;
     }
 
-    const payload = this.loginForm.getRawValue();
+    if (this.isSubmitting()) return;
 
-    // Replace this with your API integration
-    this._router.navigate(['/xvifc/year']);
-    console.log('Login submitted', payload);
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
+
+    const { email, password } = this.loginForm.getRawValue();
+    const payload = {
+      email,
+      password,
+      type: this.typeKey() ?? '15thFC',
+    };
+
+    this.authService
+      .login(payload)
+      .pipe(finalize(() => this.isSubmitting.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          const currentUser =
+            this.authService.extractUser(response) || this.authService.getCurrentUserSnapshot();
+          void this.navigateAfterLogin(currentUser);
+        },
+        error: (error: any) => {
+          this.errorMessage.set(
+            error?.error?.message || 'Invalid credentials. Please try again.',
+          );
+        },
+      });
+  }
+
+  private async navigateAfterLogin(currentUser: IUserLoggedInDetails | null): Promise<void> {
+    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation');
+    if (postLoginNavigation) {
+      sessionStorage.removeItem('postLoginNavigation');
+      await this._router.navigateByUrl(postLoginNavigation);
+      return;
+    }
+
+    if (currentUser?.role === USER_TYPE.ULB) {
+      // await this._router.navigate(['/xvifc-form']);
+      this._router.navigate(['/xvifc/year']);
+      return;
+    }
+
+    if (
+      [USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE, USER_TYPE.STATE, USER_TYPE.MoHUA].includes(
+        currentUser?.role as USER_TYPE,
+      )
+    ) {
+      await this._router.navigate(['/admin']);
+      return;
+    }
+
+    await this._router.navigate(['/xvifc/year']);
   }
 }

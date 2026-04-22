@@ -2,11 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { XvifcModuleService } from '../../xvi-fc-module/xvi-fc-module.service';
 import { buildXvifcFeatureLink, XvifcYearId } from '../../xvi-fc-module/xvi-fc-side-menu.config';
-import { LandingPageComponent } from './landing-page.component';
+import { LoginComponent } from './login.component';
 
-describe('LandingPageComponent', () => {
-  let component: LandingPageComponent;
-  let fixture: ComponentFixture<LandingPageComponent>;
+describe('LoginComponent', () => {
+  let component: LoginComponent;
+  let fixture: ComponentFixture<LoginComponent>;
   let mockXvifcService: jasmine.SpyObj<XvifcModuleService>;
 
   const mockAvailableYearIds: XvifcYearId[] = ['2024-25', '2025-26'] as unknown as XvifcYearId[];
@@ -21,11 +21,11 @@ describe('LandingPageComponent', () => {
     );
 
     await TestBed.configureTestingModule({
-      imports: [LandingPageComponent],
+      imports: [LoginComponent],
       providers: [provideRouter([]), { provide: XvifcModuleService, useValue: mockXvifcService }],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(LandingPageComponent);
+    fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
   });
 

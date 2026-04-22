@@ -101,8 +101,8 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./auth/landing-page/landing-page.component').then(
-        (m) => m.LandingPageComponent,
+      import('./auth/login/login.component').then(
+        (m) => m.LoginComponent,
       ),
   },
   {
