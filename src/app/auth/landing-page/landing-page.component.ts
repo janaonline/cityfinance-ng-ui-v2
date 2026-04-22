@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { signal } from '@angular/core';
-import { XvifcModuleService } from '../../xvi-fc-module/xvi-fc-module.service';
+import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 
 type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE';
 type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe';
@@ -39,7 +39,7 @@ type LoginFormModel = {
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
+    // RouterLink,
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,

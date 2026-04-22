@@ -101,14 +101,14 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./features/auth/landing-page/landing-page.component').then(
+      import('./auth/landing-page/landing-page.component').then(
         (m) => m.LandingPageComponent,
       ),
   },
   {
     path: 'forgot-password',
     loadComponent: () =>
-      import('./features/auth/forgot-password/forgot-password.component').then(
+      import('./auth/forgot-password/forgot-password.component').then(
         (m) => m.ForgotPasswordComponent,
       ),
   },
