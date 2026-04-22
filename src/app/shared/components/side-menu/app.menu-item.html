@@ -90,7 +90,7 @@
     </a>
     }
 
-    <!-- Sub-menu: hidden in collapsed mode -->
+    <!-- Sub-menu: hidden in collapsed mode (non-root) or shown as icon list (root) -->
     @if (expanded() && !collapsed()) {
     <ul class="submenu-item">
       @for (child of item().items; track child.label) {
@@ -99,6 +99,11 @@
       </li>
       }
     </ul>
+    }
+    @if (collapsed() && root()) {
+      @for (child of item().items; track child.label) {
+      <app-menu-item [item]="child" [collapsed]="collapsed()"></app-menu-item>
+      }
     }
   }
 </div>
