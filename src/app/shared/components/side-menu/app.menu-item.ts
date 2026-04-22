@@ -13,6 +13,7 @@ import { MenuItem } from './interface';
 export class AppMenuItemComponent {
   readonly item = input.required<MenuItem>();
   readonly root = input<boolean>(false);
+  readonly collapsed = input<boolean>(false);
 
   readonly hasChildren = computed(() => !!this.item().items?.length);
   readonly isExternalLink = computed(() => !!this.item().url);

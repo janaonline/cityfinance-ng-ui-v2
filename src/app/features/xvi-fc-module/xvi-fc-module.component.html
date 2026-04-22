@@ -1,5 +1,7 @@
-<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
-  <app-menu class="component-menu" [model]="model()"></app-menu>
+<div class="component-shell w-100 h-100 d-flex align-items-stretch gap-2">
+  <div class="component-menu-col">
+    <app-menu class="component-menu" [model]="model()"></app-menu>
+  </div>
   <div class="flex-grow-1 min-w-0">
     <router-outlet></router-outlet>
   </div>

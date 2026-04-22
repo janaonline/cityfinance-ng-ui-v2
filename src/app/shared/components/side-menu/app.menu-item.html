@@ -1,86 +1,104 @@
 <div class="menu-container">
-  @if (item().separator) {
+  @if (item().separator && !collapsed()) {
   <hr />
   }
+
   <!-- Leaf Menu Item -->
   @if (!hasChildren()) {
 
-  <!-- Header Label -->
-  @if (root() && item().label && !item().routerLink && !item().url) {
+    <!-- Header Label: section titles hidden when collapsed -->
+    @if (root() && item().label && !item().routerLink && !item().url) {
+      @if (!collapsed()) {
+      <div class="menu-header menu-item" [class.disabled]="item().disabled">
+        @if (item().icon) {
+        <i [class]="item().icon"></i>
+        }{{ item().label }}
+      </div>
+      }
+    } @else {
 
-  <div class="menu-header menu-item" [class.disabled]="item().disabled" [title]="item().label">
-    @if (item().icon) {
-    <i class="me-2" [class]="item().icon"></i>
-    }{{ item().label }}
-  </div>
+      <!-- Internal Router Link -->
+      @if (isInternalLink()) {
+      <a
+        class="menu-item"
+        [class.icon-only]="collapsed()"
+        [routerLink]="item().routerLink"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item().exact ?? true }"
+        [ngClass]="item().class"
+        [title]="item().label"
+      >
+        @if (item().icon) {
+        <i [class]="item().icon"></i>
+        }
+        @if (!collapsed()) {
+        <span class="menu-label">{{ item().label }}</span>
+        }
+      </a>
+      }
 
-  } @else {
-
-  <!-- Internal Router Link -->
-  @if (isInternalLink()) {
-
-  <a
-    class="menu-item"
-    [routerLink]="item().routerLink"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{ exact: item().exact ?? true }"
-    [ngClass]="item().class"
-  >
-    @if (item().icon) {
-    <i class="me-2" [class]="item().icon"></i>
+      <!-- External Link -->
+      @if (isExternalLink()) {
+      <a
+        class="menu-item"
+        [class.icon-only]="collapsed()"
+        [href]="item().url"
+        [target]="item().target ?? '_self'"
+        rel="noopener"
+        [title]="item().label"
+      >
+        @if (item().icon) {
+        <i [class]="item().icon"></i>
+        }
+        @if (!collapsed()) {
+        <span class="menu-label">{{ item().label }}</span>
+        }
+      </a>
+      }
     }
-
-    <span class="menu-label" [title]="item().label">{{ item().label }}</span>
-  </a>
-
   }
-
-  <!-- External Link -->
-  @if (isExternalLink()) {
-
-  <a class="menu-item" [href]="item().url" [target]="item().target ?? '_self'" rel="noopener">
-    @if (item().icon) {
-    <i class="me-2" [class]="item().icon"></i>
-    }
-
-    <span class="menu-label" [title]="item().label">{{ item().label }}</span>
-  </a>
-
-  } } }
 
   <!-- Parent Menu -->
   @if (hasChildren()) {
 
-  <!-- Labels/ Headers -->
-  @if (root()) {
-  <div class="menu-header menu-item" [class.disabled]="item().disabled" [title]="item().label">
-    {{ item().label }}
-  </div>
-  } @else {
-
-  <a href="javascript:void(0)" class="menu-item" (click)="toggle()">
-    @if (item().icon) {
-    <i [class]="'me-2 ' + item().icon"></i>
+    <!-- Root section header: hide when collapsed -->
+    @if (root()) {
+      @if (!collapsed()) {
+      <div class="menu-header menu-item" [class.disabled]="item().disabled">
+        {{ item().label }}
+      </div>
+      }
+    } @else {
+    <a
+      href="javascript:void(0)"
+      class="menu-item"
+      [class.icon-only]="collapsed()"
+      [title]="item().label"
+      (click)="toggle()"
+    >
+      @if (item().icon) {
+      <i [class]="item().icon"></i>
+      }
+      @if (!collapsed()) {
+      <span class="menu-label">{{ item().label }}</span>
+      <i
+        class="bi ms-auto fs-6 fw-bold"
+        [class.bi-chevron-down]="expanded()"
+        [class.bi-chevron-up]="!expanded()"
+      ></i>
+      }
+    </a>
     }
-    <span class="menu-label" [title]="item().label">{{ item().label }} </span>
-    <i
-      class="bi ms-auto fs-6 fw-bold"
-      [class.bi-chevron-down]="expanded()"
-      [class.bi-chevron-up]="!expanded()"
-    ></i>
-  </a>
 
+    <!-- Sub-menu: hidden in collapsed mode -->
+    @if (expanded() && !collapsed()) {
+    <ul class="submenu-item">
+      @for (child of item().items; track child.label) {
+      <li>
+        <app-menu-item [item]="child" [collapsed]="collapsed()"></app-menu-item>
+      </li>
+      }
+    </ul>
+    }
   }
-
-  <!-- Sub Menu -->
-  <!-- Hide if chevron is toggled -->
-  @if (expanded()) {
-  <ul class="submenu-item">
-    @for (child of item().items; track child.label) {
-    <li>
-      <app-menu-item [item]="child"></app-menu-item>
-    </li>
-    }
-  </ul>
-  } }
 </div>

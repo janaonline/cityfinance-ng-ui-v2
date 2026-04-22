@@ -4,11 +4,12 @@
     @if (topModel().length > 0) {
     <ul class="layout-menu-ul layout-menu-ul-pimary">
       @for (item of topModel(); track item.label) {
-      <!-- Separator/ Divider -->
       @if (item.separator) {
-      <hr />
+        @if (!isSidebarCollapsed()) {
+        <hr />
+        }
       } @else {
-      <app-menu-item [item]="item" [root]="true"></app-menu-item>
+      <app-menu-item [item]="item" [root]="true" [collapsed]="isSidebarCollapsed()"></app-menu-item>
       } }
     </ul>
     }
@@ -17,11 +18,12 @@
     @if (bottomModel().length > 0) {
     <ul class="layout-menu-ul layout-menu-ul-secondary">
       @for (item of bottomModel(); track item.label) {
-      <!-- Separator/ Divider -->
       @if (item.separator) {
-      <hr />
+        @if (!isSidebarCollapsed()) {
+        <hr />
+        }
       } @else {
-      <app-menu-item [item]="item" [root]="false"></app-menu-item>
+      <app-menu-item [item]="item" [root]="false" [collapsed]="isSidebarCollapsed()"></app-menu-item>
       } }
     </ul>
     }
@@ -31,7 +33,7 @@
     class="sidebar-toggle border-0 rounded-end px-2 py-0 m-0"
     [attr.aria-expanded]="!isSidebarCollapsed()"
     [attr.aria-label]="isSidebarCollapsed() ? 'Open sidebar menu' : 'Close sidebar menu'"
-    [title]="isSidebarCollapsed() ? 'Show Sidebar' : 'Hide Sidebar'"
+    [title]="isSidebarCollapsed() ? 'Expand menu' : 'Collapse menu'"
     (click)="toggleSidebar()"
   >
     <i
