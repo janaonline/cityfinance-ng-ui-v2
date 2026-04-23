@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
+import { Subscription, timer } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
@@ -16,15 +17,7 @@ import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.s
 
 type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE';
 type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe';
-type LoginControlName = 'role' | 'identifier' | 'password';
-
-function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
-  const value = (control.value as string)?.trim();
-  if (!value) return null;
-  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const censusRe = /^\d+$/;
-  return emailRe.test(value) || censusRe.test(value) ? null : { invalidIdentifier: true };
-}
+type LoginControlName = 'role' | 'identifier' | 'password' | 'otp';
 
 interface StatItem {
   label: string;
@@ -38,19 +31,36 @@ interface RoleOption {
   disabled?: boolean;
   badge?: string;
 }
+
 type LoginType = 'xvifc' | '15thFC';
 type LoginFormModel = {
   role: FormControl<LoginRole | ''>;
   identifier: FormControl<string>;
   password: FormControl<string>;
+  otp: FormControl<string>;
 };
+
+const OTP_LENGTH = 4;
+const OTP_VALIDATORS = [
+  Validators.required,
+  Validators.minLength(OTP_LENGTH),
+  Validators.maxLength(OTP_LENGTH),
+  Validators.pattern(new RegExp(`^\\d{${OTP_LENGTH}}$`)),
+];
+
+function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
+  const value = (control.value as string)?.trim();
+  if (!value) return null;
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const censusRe = /^\d+$/;
+  return emailRe.test(value) || censusRe.test(value) ? null : { invalidIdentifier: true };
+}
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
     CommonModule,
-    // RouterLink,
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -62,7 +72,7 @@ type LoginFormModel = {
   styleUrl: './login.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private _router: Router,
@@ -73,11 +83,18 @@ export class LoginComponent implements OnInit {
   typeKey = signal<LoginType | null>(null);
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
+  protected readonly isOtpLogin = signal(false);
   protected readonly supportEmail = '16fcgrant@cityfinance.in';
   protected readonly brandName = 'CITY FINANCE';
+  protected readonly otpLength = OTP_LENGTH;
 
   protected isSubmitted = false;
   protected isPasswordVisible = false;
+  protected otpCreds: any = {};
+
+  protected readonly otpCountdown = signal(0);
+  protected readonly otpCountdownActive = signal(false);
+  private countdownSub: Subscription | null = null;
 
   protected readonly stats: readonly StatItem[] = [
     { label: 'Eligible Urban Local Bodies', value: '4,485' },
@@ -106,11 +123,9 @@ export class LoginComponent implements OnInit {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(6)],
     }),
+    otp: new FormControl('', { nonNullable: true }),
   });
 
-  protected get roleControl(): FormControl<LoginRole | ''> {
-    return this.loginForm.controls.role;
-  }
   documents = [
     {
       title: 'ULB Nodal Officers Manual for Claiming XV FC ULB Grants for 2021-22',
@@ -138,11 +153,24 @@ export class LoginComponent implements OnInit {
     },
   ];
 
+  protected get roleControl(): FormControl<LoginRole | ''> {
+    return this.loginForm.controls.role;
+  }
+
+  protected get otpControl(): FormControl<string> {
+    return this.loginForm.controls.otp;
+  }
+
   ngOnInit(): void {
     this.route.queryParams.subscribe(({ type }) => {
       this.typeKey.set(type === 'xvifc' || type === '15thFC' ? type : null);
     });
     this.xvifcService.clearResolvedContext();
+    this.enablePasswordMode();
+  }
+
+  ngOnDestroy(): void {
+    this.clearCountdown();
   }
 
   protected trackByRole(_: number, role: RoleOption): string {
@@ -154,10 +182,7 @@ export class LoginComponent implements OnInit {
   }
 
   protected selectRole(role: RoleOption): void {
-    if (role.disabled) {
-      return;
-    }
-
+    if (role.disabled) return;
     this.roleControl.setValue(role.id);
     this.roleControl.markAsTouched();
     this.roleControl.markAsDirty();
@@ -173,11 +198,7 @@ export class LoginComponent implements OnInit {
 
   protected hasControlError(controlName: LoginControlName, errorKey?: string): boolean {
     const control = this.loginForm.controls[controlName];
-
-    if (!(control.touched || this.isSubmitted)) {
-      return false;
-    }
-
+    if (!(control.touched || this.isSubmitted)) return false;
     return errorKey ? control.hasError(errorKey) : control.invalid;
   }
 
@@ -186,14 +207,13 @@ export class LoginComponent implements OnInit {
       queryParams: { type: this.typeKey() },
     });
   }
+
   onSignup(): void {
     this._router.navigate(['/signup'], {
-      queryParams: {
-        type: this.typeKey(),
-        role: 'ULB',
-      },
+      queryParams: { type: this.typeKey(), role: 'ULB' },
     });
   }
+
   protected openReferenceDocuments(): void {
     console.log('Reference documents clicked');
   }
@@ -201,6 +221,8 @@ export class LoginComponent implements OnInit {
   protected openGuidelines(): void {
     console.log('Guidelines clicked');
   }
+
+  // --- Password login ---
 
   protected onSubmit(): void {
     this.isSubmitted = true;
@@ -232,11 +254,111 @@ export class LoginComponent implements OnInit {
           void this.navigateAfterLogin(currentUser);
         },
         error: (error: any) => {
-          this.errorMessage.set(
-            error?.error?.message || 'Invalid credentials. Please try again.',
-          );
+          this.errorMessage.set(error?.error?.message || 'Invalid credentials. Please try again.');
         },
       });
+  }
+
+  // --- OTP login ---
+
+  protected startOtpFlow(): void {
+    const identifier = this.loginForm.controls.identifier.value.trim();
+
+    if (!identifier) {
+      this.loginForm.controls.identifier.markAsTouched();
+      this.errorMessage.set('Please enter your Email or Census Code first.');
+      return;
+    }
+
+    if (this.otpCountdownActive()) return;
+
+    this.errorMessage.set('');
+    this.isSubmitting.set(true);
+
+    this.authService
+      .otpSignIn({ email: identifier })
+      .pipe(finalize(() => this.isSubmitting.set(false)))
+      .subscribe({
+        next: (res: any) => {
+          this.otpCreds = res;
+          this.enableOtpMode();
+          this.isOtpLogin.set(true);
+          this.startCountdown();
+        },
+        error: (error: any) => {
+          this.errorMessage.set(error?.error?.message || 'Failed to send OTP. Please try again.');
+        },
+      });
+  }
+
+  protected submitOtp(): void {
+    if (this.otpControl.invalid) {
+      this.otpControl.markAsTouched();
+      return;
+    }
+
+    if (this.isSubmitting()) return;
+
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
+
+    const payload = { requestId: this.otpCreds?.requestId, email: this.otpCreds?.email, otp: this.otpControl.value };
+
+    this.authService
+      .otpVerify(payload)
+      .pipe(finalize(() => this.isSubmitting.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          const currentUser =
+            this.authService.extractUser(response) || this.authService.getCurrentUserSnapshot();
+          void this.navigateAfterLogin(currentUser);
+        },
+        error: (error: any) => {
+          this.errorMessage.set(error?.error?.message || 'Invalid OTP. Please try again.');
+        },
+      });
+  }
+
+  protected switchToPassword(): void {
+    this.isOtpLogin.set(false);
+    this.clearCountdown();
+    this.enablePasswordMode();
+    this.errorMessage.set('');
+  }
+
+  // --- Helpers ---
+
+  private enablePasswordMode(): void {
+    this.loginForm.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
+    this.loginForm.controls.otp.clearValidators();
+    this.loginForm.controls.otp.setValue('', { emitEvent: false });
+    this.loginForm.controls.password.updateValueAndValidity();
+    this.loginForm.controls.otp.updateValueAndValidity();
+  }
+
+  private enableOtpMode(): void {
+    this.loginForm.controls.password.clearValidators();
+    this.loginForm.controls.otp.setValidators(OTP_VALIDATORS);
+    this.loginForm.controls.password.updateValueAndValidity();
+    this.loginForm.controls.otp.updateValueAndValidity();
+  }
+
+  private startCountdown(): void {
+    this.clearCountdown();
+    this.otpCountdown.set(60);
+    this.otpCountdownActive.set(true);
+    this.countdownSub = timer(1000, 1000).subscribe(() => {
+      const next = this.otpCountdown() - 1;
+      this.otpCountdown.set(next);
+      if (next <= 0) this.clearCountdown();
+    });
+  }
+
+  private clearCountdown(): void {
+    this.countdownSub?.unsubscribe();
+    this.countdownSub = null;
+    this.otpCountdownActive.set(false);
+    this.otpCountdown.set(0);
   }
 
   private async navigateAfterLogin(currentUser: IUserLoggedInDetails | null): Promise<void> {
@@ -248,7 +370,6 @@ export class LoginComponent implements OnInit {
     }
 
     if (currentUser?.role === USER_TYPE.ULB) {
-      // await this._router.navigate(['/xvifc-form']);
       this._router.navigate(['/xvifc/year']);
       return;
     }
