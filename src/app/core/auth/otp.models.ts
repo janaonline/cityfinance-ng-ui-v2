@@ -1,4 +1,4 @@
-export type OtpPurpose = 'login';
+export type OtpPurpose = 'login' | 'forgot-password';
 
 export interface SendOtpPayload {
   identifier: string;
@@ -84,6 +84,18 @@ export interface ApiErrorResponse {
   timestamp: string;
   path: string;
   errors?: Record<string, string[]>;
+}
+
+export interface ResetPasswordPayload {
+  identifier: string;
+  otp: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  success: true;
+  message: string;
 }
 
 export const OtpErrorMessage = {

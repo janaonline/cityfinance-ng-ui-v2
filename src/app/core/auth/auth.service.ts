@@ -7,6 +7,9 @@ import { environment } from '../../../environments/environment';
 import { AuthService as LegacyAuthService } from '../services/auth.service';
 import {
   AuthUser,
+  OtpPurpose,
+  ResetPasswordPayload,
+  ResetPasswordResponse,
   SendOtpResponse,
   VerifyOtpResponse,
 } from './otp.models';
@@ -27,10 +30,18 @@ export class OtpAuthService {
   readonly isLoggedIn = computed(() => !!this.accessToken());
   readonly user = this.currentUser.asReadonly();
 
-  sendOtp(identifier: string): Observable<SendOtpResponse> {
+  sendOtp(identifier: string, purpose: OtpPurpose = 'login'): Observable<SendOtpResponse> {
     return this.http.post<SendOtpResponse>(
       `${environment.api.url2}auth/sendOtp`,
-      { identifier, purpose: 'login' },
+      { identifier, purpose },
+      { withCredentials: true },
+    );
+  }
+
+  resetPassword(payload: ResetPasswordPayload): Observable<ResetPasswordResponse> {
+    return this.http.post<ResetPasswordResponse>(
+      `${environment.api.url2}auth/forgot-password/reset`,
+      payload,
       { withCredentials: true },
     );
   }
