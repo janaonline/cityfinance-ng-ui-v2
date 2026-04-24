@@ -23,6 +23,6 @@ export const AUTH_ROUTES: Routes = [
   {
     path: 'signup',
     loadComponent: () =>
-      import('../features/auth/signup/signup.component').then((m) => m.SignupComponent),
+      import('./signup/signup.component').then((m) => m.SignupComponent),
   },
 ];

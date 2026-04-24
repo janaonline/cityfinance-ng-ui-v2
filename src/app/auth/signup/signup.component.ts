@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 
-type LoginType = 'xvifc' | '15thFC';
+type LoginType = '16thFC' | '15thFC';
 
 interface StateOption {
   id: string;
@@ -42,7 +42,7 @@ export class SignupComponent implements OnInit {
   ngOnInit(): void {
     const type = this.route.snapshot.queryParamMap.get('type');
 
-    this.typeKey.set(type === 'xvifc' || type === '15thFC' ? type : 'xvifc');
+    this.typeKey.set(type === '16thFC' || type === '15thFC' ? type : '16thFC');
     this.loadStates();
   }
 
