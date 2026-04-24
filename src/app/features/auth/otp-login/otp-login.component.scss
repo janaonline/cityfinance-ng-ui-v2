@@ -1,0 +1,321 @@
+// ─── Design tokens (override at host level to theme the component) ────────────
+:host {
+  // Brand colours
+  --cf-primary: #15535f;
+  --cf-primary-dark: #0d3a44;
+  --cf-primary-light: #e6f3f5;
+  --cf-primary-ring: rgba(21, 83, 95, 0.25);
+
+  // Semantic
+  --cf-error: #c62828;
+  --cf-error-bg: #fff5f5;
+  --cf-error-ring: rgba(198, 40, 40, 0.25);
+
+  // Surface
+  --cf-text: #17353c;
+  --cf-text-muted: #5a7880;
+  --cf-bg: #f5f7f8;
+  --cf-surface: #ffffff;
+  --cf-border: #c8d8db;
+
+  // OTP digit boxes
+  --cf-otp-box-w: 48px;
+  --cf-otp-box-h: 56px;
+  --cf-otp-gap: 8px;
+  --cf-otp-bottom-active: var(--cf-primary);
+  --cf-otp-bottom-error: var(--cf-error);
+
+  // Misc
+  --cf-radius: 8px;
+  --cf-radius-sm: 4px;
+  --cf-transition: 0.15s ease;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--cf-bg);
+  font-family: Inter, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: var(--cf-text);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+// ─── Card ────────────────────────────────────────────────────────────────────
+.otp-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-border);
+  border-radius: calc(var(--cf-radius) * 1.5);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 0 1px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.otp-card__header {
+  padding: 32px 32px 0;
+}
+
+.otp-card__title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--cf-text);
+  margin-bottom: 6px;
+}
+
+.otp-card__subtitle {
+  font-size: 0.875rem;
+  color: var(--cf-text-muted);
+  line-height: 1.5;
+}
+
+.otp-card__body {
+  padding: 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.otp-card__alt-link {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+// ─── Form field ──────────────────────────────────────────────────────────────
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cf-text);
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--cf-border);
+  border-radius: var(--cf-radius);
+  font-size: 0.9375rem;
+  color: var(--cf-text);
+  background: var(--cf-surface);
+  outline: none;
+  transition:
+    border-color var(--cf-transition),
+    box-shadow var(--cf-transition);
+
+  &::placeholder {
+    color: #a0b4b8;
+  }
+
+  &:focus {
+    border-color: var(--cf-primary);
+    box-shadow: 0 0 0 3px var(--cf-primary-ring);
+  }
+
+  &--error {
+    border-color: var(--cf-error);
+    background: var(--cf-error-bg);
+
+    &:focus {
+      box-shadow: 0 0 0 3px var(--cf-error-ring);
+    }
+  }
+}
+
+.form-error {
+  font-size: 0.8rem;
+  color: var(--cf-error);
+  line-height: 1.4;
+
+  &--centered {
+    text-align: center;
+  }
+}
+
+// ─── OTP digit boxes ─────────────────────────────────────────────────────────
+.otp-boxes {
+  display: flex;
+  justify-content: center;
+  gap: var(--cf-otp-gap);
+}
+
+.otp-box {
+  width: var(--cf-otp-box-w);
+  height: var(--cf-otp-box-h);
+  border: 1.5px solid var(--cf-border);
+  border-bottom: 3px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  text-align: center;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--cf-text);
+  background: var(--cf-surface);
+  outline: none;
+  caret-color: var(--cf-primary);
+  transition:
+    border-color var(--cf-transition),
+    box-shadow var(--cf-transition);
+  // Remove browser number arrows
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  &:focus {
+    border-color: var(--cf-primary);
+    border-bottom-color: var(--cf-otp-bottom-active);
+    box-shadow: 0 0 0 3px var(--cf-primary-ring);
+  }
+
+  &--error {
+    border-color: var(--cf-error);
+    border-bottom-color: var(--cf-otp-bottom-error);
+    background: var(--cf-error-bg);
+
+    &:focus {
+      box-shadow: 0 0 0 3px var(--cf-error-ring);
+    }
+  }
+}
+
+// ─── Buttons ─────────────────────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 20px;
+  border-radius: var(--cf-radius);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition:
+    background var(--cf-transition),
+    box-shadow var(--cf-transition),
+    opacity var(--cf-transition);
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: var(--cf-primary);
+    color: #fff;
+
+    &:not(:disabled):hover {
+      background: var(--cf-primary-dark);
+    }
+
+    &:not(:disabled):focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--cf-primary-ring);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--cf-primary);
+    border: 1.5px solid var(--cf-primary);
+
+    &:not(:disabled):hover {
+      background: var(--cf-primary-light);
+    }
+
+    &:not(:disabled):focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--cf-primary-ring);
+    }
+  }
+}
+
+// ─── Spinner ─────────────────────────────────────────────────────────────────
+.btn__spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ─── Resend & back rows ───────────────────────────────────────────────────────
+.resend-row,
+.back-row {
+  display: flex;
+  justify-content: center;
+}
+
+.resend-countdown {
+  font-size: 0.875rem;
+  color: var(--cf-text-muted);
+}
+
+// ─── Link / ghost text button ─────────────────────────────────────────────────
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--cf-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--cf-primary-dark);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cf-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  :host {
+    align-items: flex-start;
+    padding: 24px 16px;
+  }
+
+  .otp-card__header {
+    padding: 24px 20px 0;
+  }
+
+  .otp-card__body {
+    padding: 20px 20px 24px;
+  }
+
+  .otp-card__footer {
+    padding: 0 20px 20px;
+  }
+
+  .otp-box {
+    --cf-otp-box-w: 40px;
+    --cf-otp-box-h: 48px;
+  }
+}

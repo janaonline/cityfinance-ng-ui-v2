@@ -99,23 +99,8 @@ export const routes: Routes = [
       import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
   {
-    path: 'login',
-    loadComponent: () =>
-      import('./auth/login/login.component').then(
-        (m) => m.LoginComponent,
-      ),
-  },
-  {
-    path: 'forgot-password',
-    loadComponent: () =>
-      import('./auth/forgot-password/forgot-password.component').then(
-        (m) => m.ForgotPasswordComponent,
-      ),
-  },
-  {
-    path: 'signup',
-    loadComponent: () =>
-      import('./features/auth/signup/signup.component').then((m) => m.SignupComponent),
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
 
   {

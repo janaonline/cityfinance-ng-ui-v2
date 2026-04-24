@@ -239,9 +239,10 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     const { identifier, password } = this.loginForm.getRawValue();
     const payload = {
-      email: identifier.trim(),
+      identifier: identifier.trim(),
       password,
       type: this.typeKey() ?? '15thFC',
+      recaptchaToken: '',
     };
 
     this.authService
@@ -276,7 +277,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isSubmitting.set(true);
 
     this.authService
-      .otpSignIn({ email: identifier })
+      .otpSignIn({ identifier })
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (res: any) => {
@@ -302,7 +303,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    const payload = { requestId: this.otpCreds?.requestId, email: this.otpCreds?.email, otp: this.otpControl.value };
+    const payload = { identifier: this.loginForm.controls.identifier.value.trim(), otp: this.otpControl.value };
 
     this.authService
       .otpVerify(payload)
