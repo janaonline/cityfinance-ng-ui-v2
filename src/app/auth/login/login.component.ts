@@ -32,7 +32,7 @@ interface RoleOption {
   badge?: string;
 }
 
-type LoginType = 'xvifc' | '15thFC';
+type LoginType = '16thFC' | '15thFC' | 'XVIFC' | 'ranking';
 type LoginFormModel = {
   role: FormControl<LoginRole | ''>;
   identifier: FormControl<string>;
@@ -163,7 +163,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(({ type }) => {
-      this.typeKey.set(type === 'xvifc' || type === '15thFC' ? type : null);
+      this.typeKey.set(type === '16thFC' || type === '15thFC' ? type : null);
     });
     this.xvifcService.clearResolvedContext();
     this.enablePasswordMode();

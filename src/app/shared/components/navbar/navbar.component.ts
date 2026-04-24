@@ -115,32 +115,27 @@ export class NavbarComponent implements OnInit, AfterViewInit {
 
   loginLogout(type: string) {
     localStorage.setItem('loginType', type);
+    
+    // if (type === '15thFC') {
+    //   this._router.navigate(['/auth/login'], {
+    //     queryParams: { type },
+    //   });
+    //   // window.location.href = '/fc_grant';
+    //   // return;
+    // }
+    // if (type == 'xvifc') {
+    //   this._router.navigate(['/login'], {
+    //     queryParams: { type },
+    //   });
+    //   // this._router.navigateByUrl("/login/xvi-fc");
+    //   // window.location.href = '/login';
+    // }
+    // if (type === 'XVIFC') {
+    //   window.location.href = '/login/16thFC';
+    //   return;
+    // }
 
-    if (type === '15thFC') {
-      this._router.navigate(['/login'], {
-        queryParams: { type },
-      });
-      // window.location.href = '/fc_grant';
-      // return;
-    }
-    if (type == 'xvifc') {
-      this._router.navigate(['/login'], {
-        queryParams: { type },
-      });
-      // this._router.navigateByUrl("/login/xvi-fc");
-      // window.location.href = '/login';
-    }
-    if (type === 'XVIFC') {
-      window.location.href = '/login/xvi-fc';
-      return;
-    }
-
-    if (type === 'ranking') {
-      window.location.href = '/rankings/login';
-      return;
-    }
-
-    if (type === 'logout') {
+     if (type === 'logout') {
       this.authService.logout().subscribe({
         next: () => {
           this.removeSessionItem();
@@ -148,7 +143,14 @@ export class NavbarComponent implements OnInit, AfterViewInit {
           window.location.href = '/';
         },
       });
-    }
+    } else if (type === 'ranking') {
+      window.location.href = '/rankings/login';
+      return;
+    } else {
+       this._router.navigate(['/auth/login'], {
+        queryParams: { type },
+      });
+    }   
   }
 
   @HostListener('window:scroll')

@@ -324,9 +324,16 @@ export class AuthService {
   }
 
   otpVerify(body: any) {
-    return this.http.post(`${environment.api.url2}auth/verifyOtp`, body, {
-      withCredentials: true,
-    });
+    return this.http
+      .post(`${environment.api.url2}auth/verifyOtp`, body, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((response: any) => {
+          this.applyAuthResponse(response);
+          return response;
+        }),
+      );
   }
 
   clearLocalStorage(excludeKeys = ['userInfo']) {
