@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
@@ -36,9 +39,7 @@ describe('SfcStatusComponent', () => {
   beforeEach(async () => {
     utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
 
-    await TestBed.configureTestingModule({
-      imports: [SfcStatusComponent],
-      providers: [
+    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, SfcStatusComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
         DynamicFormService,
         DynamicFormVisibilityService,
         { provide: UtilityService, useValue: utilityService },
@@ -46,10 +47,10 @@ describe('SfcStatusComponent', () => {
     })
       .overrideComponent(SfcStatusComponent, {
         remove: {
-          imports: [DynamicFormComponent, PreLoaderComponent],
+          imports: [HttpClientTestingModule, RouterTestingModule, DynamicFormComponent, PreLoaderComponent],
         },
         add: {
-          imports: [MockDynamicFormComponent, MockPreLoaderComponent],
+          imports: [HttpClientTestingModule, RouterTestingModule, MockDynamicFormComponent, MockPreLoaderComponent],
         },
       })
       .compileComponents();

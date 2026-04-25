@@ -1,179 +1,259 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { XvifcModuleService } from '../../xvi-fc-module/xvi-fc-module.service';
-import { buildXvifcFeatureLink, XvifcYearId } from '../../xvi-fc-module/xvi-fc-side-menu.config';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  discardPeriodicTasks,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { ActivatedRoute, Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
+
+import { USER_TYPE } from '../../core/models/user/userType';
+import { AuthService } from '../../core/services/auth.service';
+import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 import { LoginComponent } from './login.component';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
-  let mockXvifcService: jasmine.SpyObj<XvifcModuleService>;
-
-  const mockAvailableYearIds: XvifcYearId[] = ['2024-25', '2025-26'] as unknown as XvifcYearId[];
+  let authSpy: jasmine.SpyObj<AuthService>;
+  let routerSpy: jasmine.SpyObj<Router>;
+  let xvifcSpy: jasmine.SpyObj<XvifcModuleService>;
 
   beforeEach(async () => {
-    mockXvifcService = jasmine.createSpyObj<XvifcModuleService>(
-      'XvifcModuleService',
-      ['clearResolvedContext'],
-      {
-        availableYearIds: mockAvailableYearIds,
-      },
-    );
+    authSpy = jasmine.createSpyObj<AuthService>('AuthService', [
+      'extractUser',
+      'getCurrentUserSnapshot',
+      'login',
+      'otpSignIn',
+      'otpVerify',
+    ]);
+    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
+    xvifcSpy = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', [
+      'clearResolvedContext',
+    ]);
 
-    await TestBed.configureTestingModule({
-      imports: [LoginComponent],
-      providers: [provideRouter([]), { provide: XvifcModuleService, useValue: mockXvifcService }],
+    routerSpy.navigate.and.resolveTo(true);
+    routerSpy.navigateByUrl.and.resolveTo(true);
+    authSpy.getCurrentUserSnapshot.and.returnValue(null);
+
+    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, LoginComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
+        provideNoopAnimations(),
+        { provide: AuthService, useValue: authSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: XvifcModuleService, useValue: xvifcSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ type: '16thFC' }) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  it('should create', () => {
+  afterEach(() => {
+    sessionStorage.removeItem('postLoginNavigation');
+  });
+
+  it('should create and initialize the 16th FC login context', () => {
     expect(component).toBeTruthy();
+    expect(component['typeKey']()).toBe('16thFC');
+    expect(xvifcSpy.clearResolvedContext).toHaveBeenCalledTimes(1);
   });
 
-  it('should call clearResolvedContext on init', () => {
-    fixture.detectChanges(); // triggers ngOnInit
-    expect(mockXvifcService.clearResolvedContext).toHaveBeenCalledTimes(1);
+  it('should ignore unsupported type query params', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, LoginComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
+        provideNoopAnimations(),
+        { provide: AuthService, useValue: authSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: XvifcModuleService, useValue: xvifcSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'ranking' }) } },
+      ],
+    }).compileComponents();
+
+    const localFixture = TestBed.createComponent(LoginComponent);
+    localFixture.detectChanges();
+
+    expect(localFixture.componentInstance['typeKey']()).toBeNull();
   });
 
-  it('should initialize selectedYearId as null', () => {
-    expect(component['selectedYearId']()).toBeNull();
+  it('should select enabled roles and ignore disabled roles', () => {
+    const [ulbRole] = component['roleOptions'];
+    const doeRole = component['roleOptions'].find((role) => role.id === 'DOE')!;
+
+    component['selectRole'](ulbRole);
+    expect(component['loginForm'].controls.role.value).toBe('ULB');
+    expect(component['isRoleSelected']('ULB')).toBeTrue();
+
+    component['selectRole'](doeRole);
+    expect(component['loginForm'].controls.role.value).toBe('ULB');
   });
 
-  it('should expose availableYearIds from the service', () => {
-    expect(component['availableYearIds']).toEqual(mockAvailableYearIds);
+  it('should toggle password visibility', () => {
+    expect(component['isPasswordVisible']).toBeFalse();
+    component['togglePasswordVisibility']();
+    expect(component['isPasswordVisible']).toBeTrue();
   });
 
-  it('should return 4 role options initially', () => {
-    const roleOptions = component['roleOptions']();
-    expect(roleOptions.length).toBe(4);
+  it('should show validation errors only after controls are touched or submitted', () => {
+    expect(component['hasControlError']('identifier', 'required')).toBeFalse();
+
+    component['loginForm'].controls.identifier.markAsTouched();
+
+    expect(component['hasControlError']('identifier', 'required')).toBeTrue();
   });
 
-  it('should disable ULB, STATE, and MOHUA when no year is selected', () => {
-    const roleOptions = component['roleOptions']();
+  it('should not submit password login when the form is invalid', () => {
+    component['onSubmit']();
 
-    const ulb = roleOptions.find((x) => x.label === 'ULB');
-    const state = roleOptions.find((x) => x.label === 'STATE');
-    const mohua = roleOptions.find((x) => x.label === 'MOHUA');
-
-    expect(ulb?.isDisabled).toBeTrue();
-    expect(state?.isDisabled).toBeTrue();
-    expect(mohua?.isDisabled).toBeTrue();
+    expect(authSpy.login).not.toHaveBeenCalled();
+    expect(component['loginForm'].touched).toBeTrue();
   });
 
-  it('should keep DOE disabled and inactive initially', () => {
-    const doe = component['roleOptions']().find((x) => x.label === 'DOE');
+  it('should submit password login with trimmed identifier and default login type', fakeAsync(() => {
+    component['typeKey'].set(null);
+    authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.ULB } }));
+    authSpy.extractUser.and.returnValue({ role: USER_TYPE.ULB } as any);
+    component['loginForm'].setValue({
+      role: 'ULB',
+      identifier: '  ulb@example.com  ',
+      password: 'secret1',
+      otp: '',
+    });
 
-    expect(doe).toBeDefined();
-    expect(doe?.isDisabled).toBeTrue();
-    expect(doe?.isActive).toBeFalse();
-    expect(doe?.routerLink).toBeNull();
+    component['onSubmit']();
+    tick();
+
+    expect(authSpy.login).toHaveBeenCalledWith({
+      identifier: 'ulb@example.com',
+      password: 'secret1',
+      type: '15thFC',
+      recaptchaToken: '',
+    });
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/xvifc/year']);
+  }));
+
+  it('should navigate admin users to the admin area after password login', fakeAsync(() => {
+    authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.MoHUA } }));
+    authSpy.extractUser.and.returnValue({ role: USER_TYPE.MoHUA } as any);
+    component['loginForm'].setValue({
+      role: 'MOHUA',
+      identifier: 'mohua@example.com',
+      password: 'secret1',
+      otp: '',
+    });
+
+    component['onSubmit']();
+    tick();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin']);
+  }));
+
+  it('should honor stored post-login navigation before role-based redirects', fakeAsync(() => {
+    sessionStorage.setItem('postLoginNavigation', '/saved/path');
+    authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.ULB } }));
+    authSpy.extractUser.and.returnValue({ role: USER_TYPE.ULB } as any);
+    component['loginForm'].setValue({
+      role: 'ULB',
+      identifier: '123456',
+      password: 'secret1',
+      otp: '',
+    });
+
+    component['onSubmit']();
+    tick();
+
+    expect(routerSpy.navigateByUrl).toHaveBeenCalledWith('/saved/path');
+    expect(sessionStorage.getItem('postLoginNavigation')).toBeNull();
+  }));
+
+  it('should show an API error when password login fails', fakeAsync(() => {
+    authSpy.login.and.returnValue(throwError(() => ({ error: { message: 'Bad credentials' } })));
+    component['loginForm'].setValue({
+      role: 'ULB',
+      identifier: '123456',
+      password: 'secret1',
+      otp: '',
+    });
+
+    component['onSubmit']();
+    tick();
+
+    expect(component['errorMessage']()).toBe('Bad credentials');
+    expect(component['isSubmitting']()).toBeFalse();
+  }));
+
+  it('should navigate to forgot password and signup with the current type', () => {
+    component.onForgotPassword();
+    component.onSignup();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/forgot-password'], {
+      queryParams: { type: '16thFC' },
+    });
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/signup'], {
+      queryParams: { type: '16thFC', role: 'ULB' },
+    });
   });
 
-  it('should have null routerLink for ULB, STATE, and MOHUA when no year is selected', () => {
-    const roleOptions = component['roleOptions']();
+  it('should require an identifier before starting OTP login', () => {
+    component['startOtpFlow']();
 
-    expect(roleOptions.find((x) => x.label === 'ULB')?.routerLink).toBeNull();
-    expect(roleOptions.find((x) => x.label === 'STATE')?.routerLink).toBeNull();
-    expect(roleOptions.find((x) => x.label === 'MOHUA')?.routerLink).toBeNull();
+    expect(authSpy.otpSignIn).not.toHaveBeenCalled();
+    expect(component['errorMessage']()).toBe('Please enter your Email or Census Code first.');
   });
 
-  it('should set selectedYearId for a valid year', () => {
-    component['updateSelectedYear']('2024-25');
-    expect(component['selectedYearId']()).toBe('2024-25' as XvifcYearId);
-  });
+  it('should start OTP mode and countdown after OTP is sent', fakeAsync(() => {
+    authSpy.otpSignIn.and.returnValue(of({ mobile: '****1234', email: 'u***@example.com' }));
+    component['loginForm'].controls.identifier.setValue('  123456  ');
 
-  it('should enable ULB, STATE, and MOHUA when a valid year is selected', () => {
-    component['updateSelectedYear']('2024-25');
+    component['startOtpFlow']();
+    tick();
 
-    const roleOptions = component['roleOptions']();
-    expect(roleOptions.find((x) => x.label === 'ULB')?.isDisabled).toBeFalse();
-    expect(roleOptions.find((x) => x.label === 'STATE')?.isDisabled).toBeFalse();
-    expect(roleOptions.find((x) => x.label === 'MOHUA')?.isDisabled).toBeFalse();
-  });
+    expect(authSpy.otpSignIn).toHaveBeenCalledWith({ identifier: '123456' });
+    expect(component['isOtpLogin']()).toBeTrue();
+    expect(component['otpCountdownActive']()).toBeTrue();
+    expect(component['loginForm'].controls.password.hasValidator).toBeDefined();
+    expect(component['loginForm'].controls.otp.hasError('required')).toBeTrue();
 
-  it('should keep DOE disabled even when a valid year is selected', () => {
-    component['updateSelectedYear']('2024-25');
+    discardPeriodicTasks();
+  }));
 
-    const doe = component['roleOptions']().find((x) => x.label === 'DOE');
-    expect(doe?.isDisabled).toBeTrue();
-    expect(doe?.routerLink).toBeNull();
-  });
+  it('should submit OTP and navigate after verification', fakeAsync(() => {
+    authSpy.otpVerify.and.returnValue(of({ user: { role: USER_TYPE.STATE } }));
+    authSpy.extractUser.and.returnValue({ role: USER_TYPE.STATE } as any);
+    component['loginForm'].controls.identifier.setValue('state@example.com');
+    component['loginForm'].controls.otp.setValidators([
+      (control) => (control.value === '1234' ? null : { invalid: true }),
+    ]);
+    component['loginForm'].controls.otp.setValue('1234');
 
-  it('should generate correct routerLink for ULB when a valid year is selected', () => {
-    component['updateSelectedYear']('2024-25');
+    component['submitOtp']();
+    tick();
 
-    const ulb = component['roleOptions']().find((x) => x.label === 'ULB');
-    expect(ulb?.routerLink).toEqual(
-      buildXvifcFeatureLink('ULB', '2024-25' as XvifcYearId, 'overview'),
-    );
-  });
+    expect(authSpy.otpVerify).toHaveBeenCalledWith({
+      identifier: 'state@example.com',
+      otp: '1234',
+    });
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin']);
+  }));
 
-  it('should generate correct routerLink for STATE when a valid year is selected', () => {
-    component['updateSelectedYear']('2024-25');
+  it('should switch back from OTP login to password login', fakeAsync(() => {
+    authSpy.otpSignIn.and.returnValue(of({ mobile: '****1234', email: 'u***@example.com' }));
+    component['loginForm'].controls.identifier.setValue('123456');
+    component['startOtpFlow']();
+    tick();
 
-    const state = component['roleOptions']().find((x) => x.label === 'STATE');
-    expect(state?.routerLink).toEqual(
-      buildXvifcFeatureLink('STATE', '2024-25' as XvifcYearId, 'overview'),
-    );
-  });
+    component['switchToPassword']();
 
-  it('should generate correct routerLink for MOHUA when a valid year is selected', () => {
-    component['updateSelectedYear']('2024-25');
+    expect(component['isOtpLogin']()).toBeFalse();
+    expect(component['otpCountdownActive']()).toBeFalse();
+    expect(component['loginForm'].controls.otp.value).toBe('');
 
-    const mohua = component['roleOptions']().find((x) => x.label === 'MOHUA');
-    expect(mohua?.routerLink).toEqual(buildXvifcFeatureLink('MOHUA', '2024-25' as XvifcYearId));
-  });
-
-  it('should set selectedYearId to null for an invalid year', () => {
-    component['updateSelectedYear']('invalid-year');
-    expect(component['selectedYearId']()).toBeNull();
-  });
-
-  it('should keep all selectable roles disabled after invalid year selection', () => {
-    component['updateSelectedYear']('invalid-year');
-
-    const roleOptions = component['roleOptions']();
-    expect(roleOptions.find((x) => x.label === 'ULB')?.isDisabled).toBeTrue();
-    expect(roleOptions.find((x) => x.label === 'STATE')?.isDisabled).toBeTrue();
-    expect(roleOptions.find((x) => x.label === 'MOHUA')?.isDisabled).toBeTrue();
-  });
-
-  it('should clear a previously selected valid year when an invalid year is selected next', () => {
-    component['updateSelectedYear']('2024-25');
-    expect(component['selectedYearId']()).toBe('2024-25' as XvifcYearId);
-
-    component['updateSelectedYear']('invalid-year');
-    expect(component['selectedYearId']()).toBeNull();
-  });
-
-  it('should update correctly when changing from one valid year to another', () => {
-    component['updateSelectedYear']('2024-25');
-    expect(component['selectedYearId']()).toBe('2024-25' as XvifcYearId);
-
-    component['updateSelectedYear']('2025-26');
-    expect(component['selectedYearId']()).toBe('2025-26' as XvifcYearId);
-
-    const ulb = component['roleOptions']().find((x) => x.label === 'ULB');
-    expect(ulb?.routerLink).toEqual(
-      buildXvifcFeatureLink('ULB', '2025-26' as XvifcYearId, 'overview'),
-    );
-  });
-
-  it('should keep ULB, STATE, and MOHUA active by business rule', () => {
-    const roleOptions = component['roleOptions']();
-
-    expect(roleOptions.find((x) => x.label === 'ULB')?.isActive).toBeTrue();
-    expect(roleOptions.find((x) => x.label === 'STATE')?.isActive).toBeTrue();
-    expect(roleOptions.find((x) => x.label === 'MOHUA')?.isActive).toBeTrue();
-  });
-
-  it('should always keep DOE inactive by business rule', () => {
-    component['updateSelectedYear']('2024-25');
-
-    const doe = component['roleOptions']().find((x) => x.label === 'DOE');
-    expect(doe?.isActive).toBeFalse();
-  });
+    discardPeriodicTasks();
+  }));
 });

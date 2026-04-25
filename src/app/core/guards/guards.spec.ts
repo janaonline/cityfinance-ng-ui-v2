@@ -1,3 +1,5 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CanActivateFn, Router } from '@angular/router';
@@ -17,9 +19,7 @@ xdescribe('Functional Guards', () => {
     TestBed.runInInjectionContext(() => MaintenanceGuard(...guardParameters));
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, AppComponent],
-      providers: [SiteStatusService],
+    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, RouterTestingModule, AppComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, SiteStatusService],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);

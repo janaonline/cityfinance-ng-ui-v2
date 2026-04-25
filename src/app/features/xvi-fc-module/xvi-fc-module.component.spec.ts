@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -56,9 +59,7 @@ describe('XviFcModuleComponent', () => {
       sideMenuModel: signal<SideBarModel>(sidebarModel),
     };
 
-    await TestBed.configureTestingModule({
-      imports: [XviFcModuleComponent, AppMenuStubComponent, RouterOutlet],
-      providers: [
+    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, XviFcModuleComponent, AppMenuStubComponent, RouterOutlet], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         {
@@ -68,7 +69,7 @@ describe('XviFcModuleComponent', () => {
       ],
     })
       .overrideComponent(XviFcModuleComponent, {
-        set: { imports: [AppMenuStubComponent, RouterOutlet] },
+        set: { imports: [HttpClientTestingModule, AppMenuStubComponent, RouterOutlet] },
       })
       .compileComponents();
 

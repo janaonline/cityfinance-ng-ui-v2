@@ -1,3 +1,5 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { CanActivateFn, Router } from '@angular/router';
 import { Location } from '@angular/common';
@@ -22,15 +24,12 @@ xdescribe('MaintenanceGuard', () => {
     TestBed.runInInjectionContext(() => MaintenanceGuard(...guardParameters));
 
   beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      imports: [RouterTestingModule.withRoutes(routes)],
+    TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, RouterTestingModule.withRoutes(routes)],
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [AppComponent, FooterComponent],
-      providers: [SiteStatusService, Router],
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, AppComponent, FooterComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, SiteStatusService, Router],
     });
     // component = fixture.componentInstance
     fixture = TestBed.createComponent(AppComponent);
