@@ -132,7 +132,8 @@
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
             "styles": ["src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "exclude": ["src/app/features/cfr/**/*.spec.ts"]
           }
         },
         "lint": {
