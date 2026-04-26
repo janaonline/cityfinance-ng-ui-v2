@@ -11,10 +11,10 @@ import { isEmpty } from 'lodash-es';
 import { SignedUrlDirective } from '../../../core/directives/storage-url.directive';
 
 @Component({
-    selector: 'app-mat-common-table',
-    imports: [MatTableModule, MatButtonModule, CommonModule, SignedUrlDirective, MaterialModule],
-    templateUrl: './mat-common-table.component.html',
-    styleUrl: './mat-common-table.component.scss'
+  selector: 'app-mat-common-table',
+  imports: [MatTableModule, MatButtonModule, CommonModule, SignedUrlDirective, MaterialModule],
+  templateUrl: './mat-common-table.component.html',
+  styleUrl: './mat-common-table.component.scss'
 })
 export class MatCommonTableComponent implements OnChanges {
   @Input() response: TableResponse = {} as TableResponse;
@@ -27,7 +27,7 @@ export class MatCommonTableComponent implements OnChanges {
   decimalPlace = 2;
 
   @Output() pageChange = new EventEmitter();
-  prefixUrl = environment.prefixUrl;
+  prefixUrl = environment.ui.urlV2;
 
   tableColumns: any[] = [];
   columnData: any[] = [];

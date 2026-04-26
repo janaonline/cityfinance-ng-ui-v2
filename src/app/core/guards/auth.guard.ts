@@ -30,7 +30,7 @@ export const authGuard: CanActivateFn = (_route, state) => {
 
 function createLoginRedirect(router: Router, returnUrl: string): UrlTree {
   if (returnUrl && !returnUrl.includes('login')) {
-    sessionStorage.setItem('postLoginNavigation', returnUrl);
+    sessionStorage.setItem('postLoginNavigationV2', returnUrl);
   }
 
   return router.createUrlTree(['/login'], {

@@ -1,3 +1,4 @@
+const baseUrl = 'http://localhost:8080';
 export const environment = {
   api: {
     url: 'http://localhost:8080/api/v1/',
@@ -5,7 +6,7 @@ export const environment = {
     // url2: 'https://dev.cityfinance.in/api/v2/', // For testing purpose
     url3: 'http://localhost:8000/',
   },
-  prefixUrl: '',
+  ui: { urlV1: 'http://localhost:4200', urlV2: 'http://localhost:8080' },
   environment: 'local',
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',

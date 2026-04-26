@@ -1,10 +1,11 @@
+const baseUrl = 'https://staging.cityfinance.in';
 export const environment = {
   api: {
-    url: 'https://staging.cityfinance.in/api/v1/',
-    url2: 'https://staging.cityfinance.in/api/v2/',
-    url3: 'https://staging.cityfinance.in/api/v3/',
+    url: baseUrl + '/api/v1/',
+    url2: baseUrl + '/api/v2/',
+    url3: baseUrl + '/api/v3/',
   },
-  prefixUrl: '',
+  ui: { urlV1: baseUrl + '/v1/', urlV2: baseUrl + '/fc/' },
   environment: 'staging_local',
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',

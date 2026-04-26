@@ -1,11 +1,11 @@
+const baseUrl = 'https://dev.cityfinance.in';
 export const environment = {
   api: {
-    url: 'https://dev.cityfinance.in/api/v1/',
-    url2: 'https://dev.cityfinance.in/api/v2/',
-    // url3: 'https://dev.cityfinance.in/api/v3/digitization/',
-    url3: 'http://localhost:8000/', // for testing purpose
+    url: baseUrl + '/api/v1/',
+    url2: baseUrl + '/api/v2/',
+    url3: baseUrl + '/api/v3/',
   },
-  prefixUrl: '',
+  ui: { urlV1: baseUrl + '/v1/', urlV2: baseUrl + '/fc/' },
   environment: 'dev_local',
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',

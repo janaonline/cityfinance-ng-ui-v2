@@ -46,7 +46,9 @@ export const customHttpInterceptor: HttpInterceptorFn = (
       }
 
       return handleError(error, authService, router, snackBar, {
-        logoutOnUnauthorized: authService.isAuthRequest(preparedRequest.url),
+        logoutOnUnauthorized:
+          authService.isAuthRequest(preparedRequest.url) &&
+          !authService.isLoginRequest(preparedRequest.url),
       });
     }),
   );
@@ -136,7 +138,7 @@ function handleError(
         ? router.url
         : location.pathname + location.search + location.hash;
       if (!url.includes('login')) {
-        sessionStorage.setItem('postLoginNavigation', url);
+        sessionStorage.setItem('postLoginNavigationV2', url);
       }
       void router.navigate(['login'], {
         queryParams: { message: 'Session expired. Kindly login again.' },
@@ -186,7 +188,7 @@ function logoutRedirection(authService: AuthService, router: Router) {
     : location.pathname + location.search + location.hash;
 
   if (!url.includes('login')) {
-    sessionStorage.setItem('postLoginNavigation', url);
+    sessionStorage.setItem('postLoginNavigationV2', url);
   }
 
   clearLocalStorage(authService);
@@ -199,7 +201,7 @@ function logoutRedirection(authService: AuthService, router: Router) {
   // } else {
   //   void router.navigate(['fc_grant']);
   // }
-  void router.navigate(['login'], {
+  void router.navigate(['auth/login'], {
     queryParams: { message: 'Your session expired. Please sign in again.' },
   });
 }
