@@ -11,4 +11,5 @@ export const environment = {
   STORAGE_BASEURL: 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com',
   googleAnalyticsId: '',
   storageType: 'S3Url',
+  recaptchaSiteKey: '6LcT9_gUAAAAANrZM5TNnE4OEEC46iFDfcAHZ8lD',
 };

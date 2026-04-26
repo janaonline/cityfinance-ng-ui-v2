@@ -508,6 +508,19 @@
   color: #7d9298;
 }
 
+.recaptcha-notice {
+  width: 100%;
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-align: center;
+
+  a {
+    color: #6b7280;
+    text-decoration: underline;
+  }
+}
+
 .help-card {
   width: 100%;
   margin-top: 1rem;

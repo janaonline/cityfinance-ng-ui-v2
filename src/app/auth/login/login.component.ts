@@ -9,7 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { Subscription, timer } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { finalize, switchMap } from 'rxjs/operators';
+import { RecaptchaService } from '../../core/services/recaptcha.service';
 import { AuthService } from '../../core/services/auth.service';
 import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../core/models/user/userType';
@@ -79,6 +80,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   ) {}
   private readonly xvifcService = inject(XvifcModuleService);
   private readonly authService = inject(AuthService);
+  private readonly recaptchaService = inject(RecaptchaService);
 
   typeKey = signal<LoginType | null>(null);
   protected readonly isSubmitting = signal(false);
@@ -167,6 +169,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     });
     this.xvifcService.clearResolvedContext();
     this.enablePasswordMode();
+    this.recaptchaService.loadScript();
   }
 
   ngOnDestroy(): void {
@@ -238,16 +241,20 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.errorMessage.set('');
 
     const { identifier, password } = this.loginForm.getRawValue();
-    const payload = {
-      identifier: identifier.trim(),
-      password,
-      type: this.typeKey() ?? '15thFC',
-      recaptchaToken: '',
-    };
 
-    this.authService
-      .login(payload)
-      .pipe(finalize(() => this.isSubmitting.set(false)))
+    this.recaptchaService
+      .execute('login')
+      .pipe(
+        switchMap((recaptchaToken) =>
+          this.authService.login({
+            identifier: identifier.trim(),
+            password,
+            type: this.typeKey() ?? '15thFC',
+            recaptchaToken,
+          }),
+        ),
+        finalize(() => this.isSubmitting.set(false)),
+      )
       .subscribe({
         next: (response: any) => {
           const currentUser =
