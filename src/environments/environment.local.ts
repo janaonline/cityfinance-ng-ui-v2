@@ -10,6 +10,7 @@ export const environment = {
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',
   STORAGE_BASEURL: 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com',
-  googleAnalyticsId: 'G-803HPPLFMM',
+  googleAnalyticsId: '',
   storageType: 'S3Url',
+  recaptchaSiteKey: '6LcT9_gUAAAAANrZM5TNnE4OEEC46iFDfcAHZ8lD',
 };

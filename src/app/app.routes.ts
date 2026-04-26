@@ -46,18 +46,17 @@ export const routes: Routes = [
     // canActivate: [authGuard],
   },
   // { path: 'login', component: LoginComponent },
-  {
-    path: 'login',
-    loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
-  },
+  // {
+  //   path: 'login',
+  //   loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
+  // },
   {
     path: '',
     children: [
       // {
       //   // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
       //   path: 'home', component: HomeComponent,
-      // },      
-
+      // },
     ],
   },
   // {
@@ -77,7 +76,8 @@ export const routes: Routes = [
   },
   {
     path: 'afs-dashboard',
-    loadComponent: () => import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
+    loadComponent: () =>
+      import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
     // canActivate: [authGuard],
   },
   {
@@ -101,13 +101,18 @@ export const routes: Routes = [
       import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
   {
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },
   // {
   //     path: 'pdf',
   //     loadComponent: () => import('./pdf-content/pdf-content.component').then(m => m.PdfContentComponent),
-  // }, 
+  // },
   {
     path: 'error',
     component: ErrorComponent,

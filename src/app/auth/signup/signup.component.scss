@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.signup-page {
+  min-height: calc(100vh - 72px);
+}
+
+.signup-shell {
+  max-width: 980px;
+}
+
+.min-vh-shell {
+  min-height: calc(100vh - 120px);
+}
+
+.brand-panel {
+  min-height: 100%;
+  color: #fff;
+  background:
+    linear-gradient(135deg, rgba(15, 84, 84, 0.96), rgba(24, 99, 100, 0.96)),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 30%);
+}
+
+.panel-info-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.small-title {
+  font-size: 0.95rem;
+}
+
+.small-text {
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.brand-title {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.brand-copy {
+  font-size: 0.78rem;
+  line-height: 1.75;
+}
+
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #101828;
+}
+
+.page-subtitle {
+  font-size: 0.8rem;
+  color: #667085;
+}
+
+.compact-label {
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+}
+
+.compact-text {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.small-error {
+  font-size: 0.72rem;
+}
+
+.compact-control {
+  min-height: 42px;
+  font-size: 0.9rem;
+  border-radius: 0.8rem;
+}
+
+.compact-action-btn {
+  min-height: 42px;
+  font-size: 0.9rem;
+  border-radius: 0.8rem;
+}
+
+.compact-alert {
+  padding: 1rem 1rem;
+}
+
+.btn-primary {
+  background-color: #0f5b5b;
+  border-color: #0f5b5b;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #0c4b4b;
+  border-color: #0c4b4b;
+}
+
+.alert {
+  background: #f8fafc;
+}
+
+@media (max-width: 991.98px) {
+  .signup-shell {
+    max-width: 760px;
+  }
+
+  .min-vh-shell {
+    min-height: auto;
+  }
+
+  .signup-page {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .signup-page {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .page-title {
+    font-size: 1.35rem;
+  }
+
+  .page-subtitle,
+  .compact-text,
+  .small-text,
+  .brand-copy {
+    font-size: 0.78rem;
+  }
+
+  .compact-control,
+  .compact-action-btn {
+    min-height: 40px;
+    font-size: 0.88rem;
+  }
+}

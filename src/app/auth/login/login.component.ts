@@ -1,94 +1,396 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs/operators';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { Subscription, timer } from 'rxjs';
+import { finalize, switchMap } from 'rxjs/operators';
+import { RecaptchaService } from '../../core/services/recaptcha.service';
 import { AuthService } from '../../core/services/auth.service';
 import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
 import { USER_TYPE } from '../../core/models/user/userType';
+import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
+
+type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE';
+type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe';
+type LoginControlName = 'role' | 'identifier' | 'password' | 'otp';
+
+interface StatItem {
+  label: string;
+  value: string;
+}
+
+interface RoleOption {
+  id: LoginRole;
+  label: string;
+  icon: RoleIcon;
+  disabled?: boolean;
+  badge?: string;
+}
+
+type LoginType = '16thFC' | '15thFC' | 'XVIFC' | 'ranking';
+type LoginFormModel = {
+  role: FormControl<LoginRole | ''>;
+  identifier: FormControl<string>;
+  password: FormControl<string>;
+  otp: FormControl<string>;
+};
+
+const OTP_LENGTH = 4;
+const OTP_VALIDATORS = [
+  Validators.required,
+  Validators.minLength(OTP_LENGTH),
+  Validators.maxLength(OTP_LENGTH),
+  Validators.pattern(new RegExp(`^\\d{${OTP_LENGTH}}$`)),
+];
+
+function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
+  const value = (control.value as string)?.trim();
+  if (!value) return null;
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const censusRe = /^\d+$/;
+  return emailRe.test(value) || censusRe.test(value) ? null : { invalidIdentifier: true };
+}
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, FormsModule],
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatCardModule,
+  ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy {
+  constructor(
+    private route: ActivatedRoute,
+    private _router: Router,
+  ) {}
+  private readonly xvifcService = inject(XvifcModuleService);
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
+  private readonly recaptchaService = inject(RecaptchaService);
 
-  credentials = {
-    identifier: '',
-    password: '',
-  };
+  typeKey = signal<LoginType | null>(null);
+  protected readonly isSubmitting = signal(false);
+  protected readonly errorMessage = signal('');
+  protected readonly isOtpLogin = signal(false);
+  protected readonly supportEmail = '16fcgrant@cityfinance.in';
+  protected readonly brandName = 'CITY FINANCE';
+  protected readonly otpLength = OTP_LENGTH;
 
-  isSubmitting = false;
-  errorMessage = '';
-  infoMessage = this.route.snapshot.queryParamMap.get('message') || '';
+  protected isSubmitted = false;
+  protected isPasswordVisible = false;
+  protected otpCreds: any = {};
 
-  submitLogin() {
-    if (this.isSubmitting) {
+  protected readonly otpCountdown = signal(0);
+  protected readonly otpCountdownActive = signal(false);
+  private countdownSub: Subscription | null = null;
+
+  protected readonly stats: readonly StatItem[] = [
+    { label: 'Eligible Urban Local Bodies', value: '4,485' },
+    { label: 'Special Grant Categories', value: '2' },
+    { label: 'Total Grants Allocated', value: '₹1,29,987 Cr' },
+    { label: 'Year 1 Disbursement', value: '₹37,272 Cr' },
+  ];
+
+  protected readonly roleOptions: readonly RoleOption[] = [
+    { id: 'ULB', label: 'ULB', icon: 'ulb' },
+    { id: 'STATE', label: 'State DMA', icon: 'state' },
+    { id: 'MOHUA', label: 'MoHUA', icon: 'mohua' },
+    { id: 'DOE', label: 'DoE', icon: 'doe', disabled: true, badge: 'SOON' },
+  ];
+
+  protected readonly loginForm = new FormGroup<LoginFormModel>({
+    role: new FormControl<LoginRole | ''>('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    identifier: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, emailOrCensusCode],
+    }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(6)],
+    }),
+    otp: new FormControl('', { nonNullable: true }),
+  });
+
+  documents = [
+    {
+      title: 'ULB Nodal Officers Manual for Claiming XV FC ULB Grants for 2021-22',
+      file: './assets/files/ULB Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
+    },
+    {
+      title: 'State Nodal Officers Manual for Claiming XV FC ULB Grants for 2021-22',
+      file: './assets/files/State Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
+    },
+    {
+      title: 'XV-FC VOL I Main Report 2021-26',
+      file: './assets/files/XVFC VOL I Main Report 2021-26.pdf',
+    },
+    {
+      title: 'XV-FC VOL II Annexes',
+      file: './assets/files/XV-FC -VOL II Annexes.pdf',
+    },
+    {
+      title: 'MoHUA Marking Scheme',
+      file: './assets/files/XV FC Marking Scheme Guidelines.pdf',
+    },
+    {
+      title: 'XV-FC Operational Guidelines 2021-26',
+      file: './assets/files/FC-XV recommended Urban Local Body Final Operational Guidelines for 2021-26.pdf',
+    },
+  ];
+
+  protected get roleControl(): FormControl<LoginRole | ''> {
+    return this.loginForm.controls.role;
+  }
+
+  protected get otpControl(): FormControl<string> {
+    return this.loginForm.controls.otp;
+  }
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(({ type }) => {
+      this.typeKey.set(type === '16thFC' || type === '15thFC' ? type : null);
+    });
+    this.xvifcService.clearResolvedContext();
+    this.enablePasswordMode();
+    this.recaptchaService.loadScript();
+  }
+
+  ngOnDestroy(): void {
+    this.clearCountdown();
+  }
+
+  protected trackByRole(_: number, role: RoleOption): string {
+    return role.id;
+  }
+
+  protected trackByStat(_: number, stat: StatItem): string {
+    return stat.label;
+  }
+
+  protected selectRole(role: RoleOption): void {
+    if (role.disabled) return;
+    this.roleControl.setValue(role.id);
+    this.roleControl.markAsTouched();
+    this.roleControl.markAsDirty();
+  }
+
+  protected isRoleSelected(roleId: LoginRole): boolean {
+    return this.roleControl.value === roleId;
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.isPasswordVisible = !this.isPasswordVisible;
+  }
+
+  protected hasControlError(controlName: LoginControlName, errorKey?: string): boolean {
+    const control = this.loginForm.controls[controlName];
+    if (!(control.touched || this.isSubmitted)) return false;
+    return errorKey ? control.hasError(errorKey) : control.invalid;
+  }
+
+  onForgotPassword(): void {
+    this._router.navigate(['/forgot-password'], {
+      queryParams: { type: this.typeKey() },
+    });
+  }
+
+  onSignup(): void {
+    this._router.navigate(['/signup'], {
+      queryParams: { type: this.typeKey(), role: 'ULB' },
+    });
+  }
+
+  protected openReferenceDocuments(): void {
+    console.log('Reference documents clicked');
+  }
+
+  protected openGuidelines(): void {
+    console.log('Guidelines clicked');
+  }
+
+  // --- Password login ---
+
+  protected onSubmit(): void {
+    this.isSubmitted = true;
+
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
       return;
     }
 
-    if (!this.credentials.identifier.trim() || !this.credentials.password.trim()) {
-      this.errorMessage = 'Email or census code and password are required.';
-      return;
-    }
+    if (this.isSubmitting()) return;
 
-    this.errorMessage = '';
-    this.infoMessage = '';
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
 
-    const identifier = this.credentials.identifier.trim();
-    const loginPayload = this.buildLoginPayload(identifier);
+    const { identifier, password } = this.loginForm.getRawValue();
 
-    this.authService
-      .login(loginPayload)
-      .pipe(finalize(() => (this.isSubmitting = false)))
+    this.recaptchaService
+      .execute('login')
+      .pipe(
+        switchMap((recaptchaToken) =>
+          this.authService.login({
+            identifier: identifier.trim(),
+            password,
+            type: this.typeKey() ?? '15thFC',
+            recaptchaToken,
+          }),
+        ),
+        finalize(() => this.isSubmitting.set(false)),
+      )
       .subscribe({
         next: (response: any) => {
           const currentUser =
             this.authService.extractUser(response) || this.authService.getCurrentUserSnapshot();
-
           void this.navigateAfterLogin(currentUser);
         },
-        error: (error) => {
-          this.errorMessage = error?.error?.message || 'Unable to sign in. Please try again.';
-          this.authService.badCredentials.next(true);
+        error: (error: any) => {
+          this.errorMessage.set(error?.error?.message || 'Invalid credentials. Please try again.');
         },
       });
   }
 
-  private buildLoginPayload(identifier: string) {
-    const payload: { password: string; email: string; type: string } = {
-      password: this.credentials.password,
-      email: this.credentials.identifier.trim(),
-      type: "15thFC"
-    };
+  // --- OTP login ---
 
-    return payload;
+  protected startOtpFlow(): void {
+    const identifier = this.loginForm.controls.identifier.value.trim();
+
+    if (!identifier) {
+      this.loginForm.controls.identifier.markAsTouched();
+      this.errorMessage.set('Please enter your Email or Census Code first.');
+      return;
+    }
+
+    if (this.otpCountdownActive()) return;
+
+    this.errorMessage.set('');
+    this.isSubmitting.set(true);
+
+    this.authService
+      .otpSignIn({ identifier })
+      .pipe(finalize(() => this.isSubmitting.set(false)))
+      .subscribe({
+        next: (res: any) => {
+          this.otpCreds = res;
+          this.enableOtpMode();
+          this.isOtpLogin.set(true);
+          this.startCountdown();
+        },
+        error: (error: any) => {
+          this.errorMessage.set(error?.error?.message || 'Failed to send OTP. Please try again.');
+        },
+      });
   }
 
-  private async navigateAfterLogin(currentUser: IUserLoggedInDetails | null) {
+  protected submitOtp(): void {
+    if (this.otpControl.invalid) {
+      this.otpControl.markAsTouched();
+      return;
+    }
+
+    if (this.isSubmitting()) return;
+
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
+
+    const payload = { identifier: this.loginForm.controls.identifier.value.trim(), otp: this.otpControl.value };
+
+    this.authService
+      .otpVerify(payload)
+      .pipe(finalize(() => this.isSubmitting.set(false)))
+      .subscribe({
+        next: (response: any) => {
+          const currentUser =
+            this.authService.extractUser(response) || this.authService.getCurrentUserSnapshot();
+          void this.navigateAfterLogin(currentUser);
+        },
+        error: (error: any) => {
+          this.errorMessage.set(error?.error?.message || 'Invalid OTP. Please try again.');
+        },
+      });
+  }
+
+  protected switchToPassword(): void {
+    this.isOtpLogin.set(false);
+    this.clearCountdown();
+    this.enablePasswordMode();
+    this.errorMessage.set('');
+  }
+
+  // --- Helpers ---
+
+  private enablePasswordMode(): void {
+    this.loginForm.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
+    this.loginForm.controls.otp.clearValidators();
+    this.loginForm.controls.otp.setValue('', { emitEvent: false });
+    this.loginForm.controls.password.updateValueAndValidity();
+    this.loginForm.controls.otp.updateValueAndValidity();
+  }
+
+  private enableOtpMode(): void {
+    this.loginForm.controls.password.clearValidators();
+    this.loginForm.controls.otp.setValidators(OTP_VALIDATORS);
+    this.loginForm.controls.password.updateValueAndValidity();
+    this.loginForm.controls.otp.updateValueAndValidity();
+  }
+
+  private startCountdown(): void {
+    this.clearCountdown();
+    this.otpCountdown.set(60);
+    this.otpCountdownActive.set(true);
+    this.countdownSub = timer(1000, 1000).subscribe(() => {
+      const next = this.otpCountdown() - 1;
+      this.otpCountdown.set(next);
+      if (next <= 0) this.clearCountdown();
+    });
+  }
+
+  private clearCountdown(): void {
+    this.countdownSub?.unsubscribe();
+    this.countdownSub = null;
+    this.otpCountdownActive.set(false);
+    this.otpCountdown.set(0);
+  }
+
+  private async navigateAfterLogin(currentUser: IUserLoggedInDetails | null): Promise<void> {
     const postLoginNavigation = sessionStorage.getItem('postLoginNavigation');
     if (postLoginNavigation) {
       sessionStorage.removeItem('postLoginNavigation');
-      await this.router.navigateByUrl(postLoginNavigation);
+      await this._router.navigateByUrl(postLoginNavigation);
       return;
     }
 
     if (currentUser?.role === USER_TYPE.ULB) {
-      await this.router.navigate(['/xvifc-form']);
+      this._router.navigate(['/xvifc/year']);
       return;
     }
 
-    if ([USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE].includes(currentUser?.role as USER_TYPE)) {
-      await this.router.navigate(['/admin']);
+    if (
+      [USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE, USER_TYPE.STATE, USER_TYPE.MoHUA].includes(
+        currentUser?.role as USER_TYPE,
+      )
+    ) {
+      await this._router.navigate(['/admin']);
       return;
     }
 
-    await this.router.navigate(['/cfr']);
+    await this._router.navigate(['/xvifc/year']);
   }
 }

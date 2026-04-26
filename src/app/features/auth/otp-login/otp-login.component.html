@@ -1,0 +1,162 @@
+<div class="otp-login">
+  <div class="otp-card" role="main">
+
+    <!-- ── Header (always visible) ───────────────────────────────────── -->
+    <div class="otp-card__header">
+      <h1 class="otp-card__title">Login with OTP</h1>
+
+      @if (step() === 'identifier') {
+        <p class="otp-card__subtitle">
+          Enter your email, census code, or SB code to receive a one-time password.
+        </p>
+      }
+
+      @if (step() === 'otp' && maskedContact()) {
+        <p class="otp-card__subtitle">
+          OTP sent to <strong>{{ maskedContact() }}</strong>
+        </p>
+      }
+    </div>
+
+    <!-- ── Identifier form (hidden once OTP is sent) ──────────────────── -->
+    @if (step() === 'identifier') {
+      <form
+        class="otp-card__body"
+        [formGroup]="identifierForm"
+        (ngSubmit)="onSendOtp()"
+        novalidate
+      >
+        <div class="form-field">
+          <label class="form-label" for="identifier">Email / Census Code / SB Code</label>
+          <input
+            id="identifier"
+            class="form-input"
+            [class.form-input--error]="
+              identifierForm.controls.identifier.invalid &&
+              identifierForm.controls.identifier.touched
+            "
+            type="text"
+            formControlName="identifier"
+            autocomplete="username"
+            placeholder="e.g. admin@cityfinance.in or 800011"
+            [attr.aria-describedby]="
+              identifierForm.controls.identifier.invalid &&
+              identifierForm.controls.identifier.touched
+                ? 'identifier-error'
+                : null
+            "
+          />
+
+          @if (
+            identifierForm.controls.identifier.touched &&
+            identifierForm.controls.identifier.hasError('required')
+          ) {
+            <p id="identifier-error" class="form-error" role="alert">
+              This field is required.
+            </p>
+          } @else if (hasFieldError('identifier')) {
+            <p id="identifier-error" class="form-error" role="alert">
+              {{ getFieldError('identifier') }}
+            </p>
+          } @else if (identifierError()) {
+            <p id="identifier-error" class="form-error" role="alert">
+              {{ identifierError() }}
+            </p>
+          }
+        </div>
+
+        <button
+          class="btn btn--primary"
+          type="submit"
+          [disabled]="isLoading()"
+          [attr.aria-busy]="isLoading()"
+        >
+          @if (isLoading()) {
+            <span class="btn__spinner" aria-hidden="true"></span>
+            <span>Sending OTP…</span>
+          } @else {
+            <span>Send OTP</span>
+          }
+        </button>
+
+        <div class="otp-card__alt-link">
+          <a class="link" [routerLink]="['/login', 'password']">
+            Or login with password →
+          </a>
+        </div>
+      </form>
+    }
+
+    <!-- ── OTP entry (hidden until OTP is sent) ──────────────────────── -->
+    @if (step() === 'otp') {
+      <div class="otp-card__body">
+
+        <div
+          class="otp-boxes"
+          role="group"
+          aria-label="One-time password digits"
+          (paste)="onOtpPaste($event)"
+        >
+          @for (val of otpValues(); track $index) {
+            <input
+              #otpInput
+              class="otp-box"
+              [class.otp-box--error]="otpError()"
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              [attr.aria-label]="'Digit ' + ($index + 1) + ' of ' + OTP_LENGTH"
+              [value]="val"
+              (input)="onOtpInput($index, $event)"
+              (keydown)="onOtpKeydown($index, $event)"
+            />
+          }
+        </div>
+
+        @if (otpError()) {
+          <p class="form-error form-error--centered" role="alert">{{ otpError() }}</p>
+        }
+
+        <button
+          class="btn btn--primary"
+          type="button"
+          [disabled]="!isOtpComplete() || isLoading()"
+          [attr.aria-busy]="isLoading()"
+          (click)="onVerifyOtp()"
+        >
+          @if (isLoading()) {
+            <span class="btn__spinner" aria-hidden="true"></span>
+            <span>Verifying…</span>
+          } @else {
+            <span>Verify OTP</span>
+          }
+        </button>
+
+        <div class="resend-row">
+          @if (isCountdownActive()) {
+            <span class="resend-countdown" aria-live="polite">
+              Resend in {{ countdown() }}s
+            </span>
+          } @else {
+            <button
+              class="btn btn--ghost"
+              type="button"
+              [disabled]="isLoading()"
+              (click)="onResendOtp()"
+            >
+              Resend OTP
+            </button>
+          }
+        </div>
+
+        <div class="back-row">
+          <button class="link" type="button" (click)="onChangeIdentifier()">
+            ← Change identifier
+          </button>
+        </div>
+
+      </div>
+    }
+
+  </div>
+</div>

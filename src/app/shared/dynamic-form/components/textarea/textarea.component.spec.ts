@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -9,8 +12,7 @@ describe('TextareaComponent', () => {
   let fixture: ComponentFixture<TextareaComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [TextareaComponent, ReactiveFormsModule, NoopAnimationsModule],
+    await TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, TextareaComponent, ReactiveFormsModule, NoopAnimationsModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TextareaComponent);

@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MaterialModule } from '../../../../material.module';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FieldConfig } from '../../../../shared/dynamic-form/field.interface';
@@ -7,7 +7,7 @@ import { FileComponent } from '../../../../shared/dynamic-form/components/file/f
 import { InputComponent } from '../../../../shared/dynamic-form/components/input/input.component';
 import { RadiobuttonComponent } from '../../../../shared/dynamic-form/components/radiobutton/radiobutton.component';
 import { SelectComponent } from '../../../../shared/dynamic-form/components/select/select.component';
-import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
+import { SignedUrlDirective } from '../../../../core/directives/storage-url.directive';
 
 export interface DialogData {
   field: FieldConfig;
@@ -24,12 +24,12 @@ export interface DialogData {
         InputComponent,
         RadiobuttonComponent,
         SelectComponent,
-        ToStorageUrlPipe,
+        SignedUrlDirective,
     ],
     templateUrl: './verify-documents-dialogue.component.html',
     styleUrl: './verify-documents-dialogue.component.scss'
 })
-export class VerifyDocumentsDialogueComponent {
+export class VerifyDocumentsDialogueComponent implements OnInit {
   verifyOptions = [
     { id: 2, label: 'Accept Existing Document' },
     { id: 3, label: 'Reject Existing Document' },

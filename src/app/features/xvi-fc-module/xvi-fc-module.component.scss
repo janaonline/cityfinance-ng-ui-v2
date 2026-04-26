@@ -1,6 +1,7 @@
 :host {
   display: block;
   min-height: 100%;
+  overflow-x: clip;
 }
 
 .component-shell {
@@ -8,10 +9,15 @@
   background-color: var(--color-primary-accent);
 }
 
-.component-menu {
-  display: block;
+.component-menu-col {
   flex: 0 0 auto;
   min-width: 0;
-  position: relative;
+  background-color: var(--color-primary);
+}
+
+.component-menu {
+  display: block;
+  position: sticky;
+  top: 68px;
   z-index: 2;
 }

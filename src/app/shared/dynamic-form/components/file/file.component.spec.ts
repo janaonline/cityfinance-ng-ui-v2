@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { HttpEventType, HttpResponse, HttpUploadProgressEvent } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -44,9 +47,7 @@ describe('FileComponent', () => {
       return segments[segments.length - 1] ?? '';
     });
 
-    await TestBed.configureTestingModule({
-      imports: [FileComponent, ReactiveFormsModule, NoopAnimationsModule],
-      providers: [
+    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, FileComponent, ReactiveFormsModule, NoopAnimationsModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
         { provide: FileService, useValue: fileService },
         { provide: UtilityService, useValue: utilityService },
       ],

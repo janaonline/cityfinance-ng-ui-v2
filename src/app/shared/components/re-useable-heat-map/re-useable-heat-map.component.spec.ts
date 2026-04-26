@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 //import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 //
 //import { ReUseableHeatMapComponent } from './re-useable-heat-map.component';
@@ -8,7 +11,7 @@
 //
 //  beforeEach(async(() => {
 //    TestBed.configureTestingModule({
-//      declarations: [ ReUseableHeatMapComponent ]
+//      imports: [HttpClientTestingModule, RouterTestingModule,  ReUseableHeatMapComponent ]
 //    })
 //    .compileComponents();
 //  }));

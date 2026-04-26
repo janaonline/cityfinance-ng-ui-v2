@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ProgressComponent } from './progress.component';
@@ -7,8 +10,7 @@ describe('ProgressComponent', () => {
   let fixture: ComponentFixture<ProgressComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ProgressComponent],
+    await TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, ProgressComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProgressComponent);

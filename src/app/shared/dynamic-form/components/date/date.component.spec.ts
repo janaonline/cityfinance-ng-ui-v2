@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
@@ -10,7 +13,7 @@ import { DateComponent } from './date.component';
 
 @Component({
   standalone: true,
-  imports: [DateComponent],
+  imports: [HttpClientTestingModule, RouterTestingModule, DateComponent],
   template: `<app-date [field]="field" [group]="group"></app-date>`,
 })
 class HostComponent {
@@ -45,8 +48,7 @@ describe('DateComponent', () => {
   let host: HostComponent;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [HostComponent, NoopAnimationsModule],
+    await TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, HostComponent, NoopAnimationsModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HostComponent);

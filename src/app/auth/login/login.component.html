@@ -1,63 +1,376 @@
-<section class="vh-100">
-  <div class="container py-5 h-100">
-    <div class="row d-flex align-items-center justify-content-center h-100">
-      <!-- <div class="col-md-8 col-lg-7 col-xl-6">
-        <img
-          src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg"
-          class="img-fluid"
-          alt="Login illustration"
-        />
-      </div> -->
-      <div class="col-md-7 col-lg-5 col-xl-5 offset-xl-1">
-        <form (ngSubmit)="submitLogin()" #loginForm="ngForm">
-          <div class="mb-4">
-            <h2 class="fw-bold mb-1">Sign in</h2>
-            <p class="text-muted mb-0">Use your Cityfinance account to continue.</p>
+<div class="auth-page">
+  <div class="auth-page__left">
+    <div class="left-panel">
+      <div class="brand-block">
+        <div class="brand-header">
+          <div class="brand-logo">
+            <i class="bi bi-bank2"></i>
           </div>
 
-          <div *ngIf="infoMessage" class="alert alert-info" role="alert">
-            {{ infoMessage }}
+          <div class="brand-title">{{ brandName }}</div>
+        </div>
+        @if (typeKey() === '16thFC') {
+          <h1 class="hero-title">
+            16th Finance Commission
+            <br />
+            Grant Management System
+          </h1>
+
+          <p class="hero-description">
+            Cityfinance.in is the official grant management system for the administration of the
+            Sixteenth Finance Commission (XVI-FC) grants to Urban Local Bodies (ULBs) in India.
+            Under the oversight of the Ministry of Housing and Urban Affairs (MoHUA), the platform
+            handles the allocation and disbursement of grants totaling ₹3,56,357 crore for the
+            fiscal years 2026–2031.
+          </p>
+
+          <p class="hero-description hero-description--secondary">
+            The platform serves to facilitate smooth communication and data exchange between ULBs,
+            State Urban Development Departments (UDDs), and MoHUA, ensuring efficiency and
+            transparency in the process.
+          </p>
+
+          <div class="stats-section">
+            <div class="stats-grid">
+              @for (stat of stats; track trackByStat($index, stat)) {
+                <div class="stat-item">
+                  <div class="stat-item__label">{{ stat.label }}</div>
+                  <div class="stat-item__value">{{ stat.value }}</div>
+                </div>
+              }
+            </div>
           </div>
 
-          <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
-            {{ errorMessage }}
+          <div class="resource-actions">
+            <button
+              mat-stroked-button
+              type="button"
+              class="resource-btn"
+              (click)="openReferenceDocuments()"
+            >
+              <i class="bi bi-file-earmark-text"></i>
+              <span>Reference Documents</span>
+            </button>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="resource-btn"
+              (click)="openGuidelines()"
+            >
+              <i class="bi bi-grid"></i>
+              <span>Guidelines</span>
+            </button>
+          </div>
+        } @else if (typeKey() === '15thFC') {
+          <h1 class="hero-title">
+            15th Finance Commission
+            <br />
+            Grant Management System
+          </h1>
+          <div>
+            <p class="hero-description">
+              Welcome to
+              <a href="http://cityfinance.in/">Cityfinance.in</a>, the official grant management
+              system for the administration of the Fifteenth Finance Commission (XV FC) grants to
+              Urban Local Bodies (ULBs) in India. Under the oversight of the Ministry of Housing and
+              Urban Affairs (MoHUA), the platform handles the allocation and disbursement of grants
+              totaling Rs. 1,08,916 Crore for the fiscal years 2021-2026.
+            </p>
+
+            <p class="hero-description hero-description--secondary">
+              <a href="http://cityfinance.in/">Cityfinance.in</a>
+              serves to facilitate smooth communication and data exchange among ULBs, State Urban
+              Development Departments (UDDs), and MoHUA, ensuring efficiency and transparency in the
+              process.
+            </p>
           </div>
 
-          <div class="form-outline mb-4">
-            <input
-              type="text"
-              id="loginIdentifier"
-              class="form-control form-control-lg"
-              [(ngModel)]="credentials.identifier"
-              name="identifier"
-              required
-              autocomplete="username"
-            />
-            <label class="form-label" for="loginIdentifier">Email or census code</label>
-          </div>
+          <p>Reference Documents</p>
 
-          <div class="form-outline mb-4">
-            <input
-              type="password"
-              id="loginPassword"
-              class="form-control form-control-lg"
-              [(ngModel)]="credentials.password"
-              name="password"
-              required
-              autocomplete="current-password"
-            />
-            <label class="form-label" for="loginPassword">Password</label>
-          </div>
+          <div class="docs-section mt-3">
+            <h5 class="docs-title mb-3">Reference Documents</h5>
 
-          <button
-            type="submit"
-            class="btn btn-primary btn-lg btn-block w-100"
-            [disabled]="isSubmitting || loginForm.invalid"
-          >
-            {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
-          </button>
-        </form>
+            <div class="list-group docs-list">
+              @for (doc of documents; track doc.title) {
+                <a
+                  [href]="doc.file"
+                  target="_blank"
+                  class="list-group-item list-group-item-action d-flex align-items-start gap-3 docs-item"
+                >
+                  <div class="doc-icon">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                  </div>
+
+                  <div class="doc-content">
+                    <div class="doc-title">
+                      {{ doc.title }}
+                    </div>
+                  </div>
+
+                  <div class="ms-auto">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                  </div>
+                </a>
+              }
+            </div>
+          </div>
+        }
       </div>
     </div>
   </div>
-</section>
+
+  <div class="auth-page__right">
+    <div class="right-panel">
+      <div class="login-section">
+        <mat-card class="login-card" appearance="outlined">
+          <div class="login-card__header">
+            <h2>Sign In</h2>
+            <p>Select your role to continue</p>
+          </div>
+
+          @if (!isOtpLogin()) {
+            <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+              <div class="role-grid" role="radiogroup" aria-label="User role">
+                @for (role of roleOptions; track trackByRole($index, role)) {
+                  <button
+                    type="button"
+                    class="role-card"
+                    [class.role-card--active]="isRoleSelected(role.id)"
+                    [class.role-card--disabled]="role.disabled"
+                    [disabled]="role.disabled"
+                    role="radio"
+                    [attr.aria-checked]="isRoleSelected(role.id)"
+                    (click)="selectRole(role)"
+                  >
+                    @if (role.badge) {
+                      <span class="role-card__badge">{{ role.badge }}</span>
+                    }
+
+                    <span
+                      class="role-card__icon"
+                      [ngClass]="{
+                        'role-card__icon--ulb': role.icon === 'ulb',
+                        'role-card__icon--state': role.icon === 'state',
+                        'role-card__icon--mohua': role.icon === 'mohua',
+                        'role-card__icon--doe': role.icon === 'doe',
+                      }"
+                    >
+                      @switch (role.icon) {
+                        @case ('ulb') {
+                          <i class="bi bi-buildings-fill"></i>
+                        }
+                        @case ('state') {
+                          <i class="bi bi-bank"></i>
+                        }
+                        @case ('mohua') {
+                          <i class="bi bi-bullseye"></i>
+                        }
+                        @case ('doe') {
+                          <i class="bi bi-shield-lock"></i>
+                        }
+                      }
+                    </span>
+
+                    <span class="role-card__label">{{ role.label }}</span>
+                  </button>
+                }
+              </div>
+
+              @if (hasControlError('role', 'required')) {
+                <div class="field-error field-error--role">Please select your role.</div>
+              }
+
+              <div class="form-group mb-4">
+                <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                  <mat-label>Email / Census Code</mat-label>
+                  <input
+                    id="identifier"
+                    matInput
+                    type="text"
+                    formControlName="identifier"
+                    autocomplete="username"
+                  />
+                </mat-form-field>
+
+                @if (hasControlError('identifier', 'required')) {
+                  <div class="field-error">Email or Census Code is required.</div>
+                }
+
+                @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'invalidIdentifier')) {
+                  <div class="field-error">Enter a valid email address or numeric census code.</div>
+                }
+              </div>
+
+              <div class="form-group">
+                <mat-form-field
+                  subscriptSizing="dynamic"
+                  appearance="outline"
+                  class="app-field-compact"
+                >
+                  <mat-label>Password</mat-label>
+                  <input
+                    id="password"
+                    matInput
+                    [type]="isPasswordVisible ? 'text' : 'password'"
+                    formControlName="password"
+                    autocomplete="current-password"
+                  />
+
+                  <button
+                    mat-icon-button
+                    matSuffix
+                    type="button"
+                    class="password-toggle-btn"
+                    (click)="togglePasswordVisibility()"
+                    [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+                  >
+                    <i
+                      class="bi"
+                      [class.bi-eye]="!isPasswordVisible"
+                      [class.bi-eye-slash]="isPasswordVisible"
+                    ></i>
+                  </button>
+                </mat-form-field>
+
+                @if (hasControlError('password', 'required')) {
+                  <div class="field-error">Password is required.</div>
+                }
+
+                @if (
+                  !hasControlError('password', 'required') && hasControlError('password', 'minlength')
+                ) {
+                  <div class="field-error">Password must be at least 6 characters.</div>
+                }
+              </div>
+
+              @if (errorMessage()) {
+                <div class="api-error">{{ errorMessage() }}</div>
+              }
+
+              <button mat-flat-button type="submit" class="signin-btn" [disabled]="isSubmitting()">
+                @if (isSubmitting()) {
+                  Signing in...
+                } @else {
+                  Sign In
+                }
+              </button>
+
+              <div class="d-flex justify-content-between align-items-center w-100 mt-2">
+                <button type="button" class="forgot-password-btn" (click)="onForgotPassword()">
+                  Forgot password?
+                </button>
+
+                @if (roleControl.value === 'ULB') {
+                  <button type="button" class="forgot-password-btn" (click)="onSignup()">
+                    Not Registered?
+                  </button>
+                }
+              </div>
+            </form>
+
+            <div class="otp-divider">
+              <span>Or</span>
+            </div>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="otp-btn"
+              [disabled]="isSubmitting()"
+              (click)="startOtpFlow()"
+            >
+              <i class="bi bi-phone"></i>
+              Get OTP on your phone and email
+            </button>
+
+          } @else {
+
+            <div class="otp-info">
+              <p class="otp-info__text">
+                An OTP has been sent to
+                <strong>{{ otpCreds?.mobile && otpCreds.mobile + ' and ' }}{{ otpCreds?.email }}</strong>
+              </p>
+            </div>
+
+            <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submitOtp()" novalidate>
+              <div class="form-group">
+                <div class="otp-resend-row">
+                  @if (otpCountdownActive()) {
+                    <span class="otp-countdown">Resend OTP in {{ otpCountdown() }}s</span>
+                  } @else {
+                    <button type="button" class="forgot-password-btn" (click)="startOtpFlow()">
+                      Resend OTP
+                    </button>
+                  }
+                </div>
+
+                <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                  <mat-label>Enter OTP</mat-label>
+                  <input
+                    matInput
+                    type="text"
+                    inputmode="numeric"
+                    formControlName="otp"
+                    [placeholder]="'Enter ' + otpLength + '-digit OTP'"
+                    [attr.maxlength]="otpLength"
+                  />
+                </mat-form-field>
+
+                @if (otpControl.invalid && (otpControl.dirty || otpControl.touched)) {
+                  <div class="field-error">Enter a valid {{ otpLength }}-digit OTP.</div>
+                }
+              </div>
+
+              @if (errorMessage()) {
+                <div class="api-error">{{ errorMessage() }}</div>
+              }
+
+              <button
+                mat-flat-button
+                type="submit"
+                class="signin-btn"
+                [disabled]="isSubmitting() || otpControl.invalid"
+              >
+                @if (isSubmitting()) {
+                  Verifying...
+                } @else {
+                  Sign In
+                }
+              </button>
+            </form>
+
+            <div class="otp-divider">
+              <span>Or</span>
+            </div>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="otp-btn"
+              (click)="switchToPassword()"
+            >
+              Sign in with your password
+            </button>
+
+          }
+        </mat-card>
+
+        <p class="recaptcha-notice">
+          This site is protected by reCAPTCHA and the Google
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a> and
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Terms of Service</a> apply.
+        </p>
+
+        <div class="help-card">
+          <h3>Need Help?</h3>
+          <p>
+            For clarifications or questions, please email
+            <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a
+            >. We will respond within 24 hours.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

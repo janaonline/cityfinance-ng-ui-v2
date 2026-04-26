@@ -1,3 +1,6 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DownloadPdfComponent } from './download-pdf.component';
@@ -7,8 +10,7 @@ describe('DowloadPdfComponent', () => {
   let fixture: ComponentFixture<DownloadPdfComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [DownloadPdfComponent]
+    await TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, DownloadPdfComponent]
     })
       .compileComponents();
 

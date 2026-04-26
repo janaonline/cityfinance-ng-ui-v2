@@ -1,10 +1,14 @@
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, convertToParamMap } from '@angular/router';
-import { Subject } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { Login_Logout } from '../../core/util/logout.util';
 import { SIDE_MENU_ITEMS } from './temp';
 import { XvifcModuleService } from './xvi-fc-module.service';
+import { XviFcSideMenuApiService } from './xvi-fc-side-menu.service';
 import { XVIFC_LANDING_ROUTE } from './xvi-fc-side-menu.config';
 
 describe('XvifcModuleService', () => {
@@ -19,11 +23,17 @@ describe('XvifcModuleService', () => {
       loginLogoutCheck: new Subject<boolean>(),
     };
 
-    TestBed.configureTestingModule({
-      providers: [
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
         XvifcModuleService,
         { provide: Router, useValue: mockRouter },
         { provide: AuthService, useValue: mockAuthService },
+        {
+          provide: XviFcSideMenuApiService,
+          useValue: {
+            getSideMenu: ({ role, yearId }: { role: keyof typeof SIDE_MENU_ITEMS; yearId: string }) =>
+              of(SIDE_MENU_ITEMS[role](yearId as any)),
+          },
+        },
       ],
     });
 
@@ -51,21 +61,27 @@ describe('XvifcModuleService', () => {
     expect(service.availableYearIds).toEqual(['2026-27', '2027-28', '2028-29', '2029-30']);
   });
 
-  it('should sync the deepest valid role and yearId from the route tree', () => {
+  it('should sync the deepest valid role and yearId from the route tree', async () => {
     const child = createRouteSnapshot({ role: 'STATE', yearId: '2027-28' });
     const root = createRouteSnapshot({ role: 'ULB', yearId: '2026-27', firstChild: child });
 
     service.syncContextFromRoute(root);
+    (TestBed as any).flushEffects();
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(service.role()).toBe('STATE');
     expect(service.yearId()).toBe('2027-28');
     expect(service.sideMenuModel()).toEqual(SIDE_MENU_ITEMS.STATE('2027-28'));
   });
 
-  it('should keep DOE as a supported role for future routes', () => {
+  it('should keep DOE as a supported role for future routes', async () => {
     const snapshot = createRouteSnapshot({ role: 'DOE', yearId: '2028-29' });
 
     service.syncContextFromRoute(snapshot);
+    (TestBed as any).flushEffects();
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(service.role()).toBe('DOE');
     expect(service.yearId()).toBe('2028-29');
