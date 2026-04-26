@@ -413,9 +413,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private async navigateAfterLogin(currentUser: IUserLoggedInDetails | null): Promise<void> {
-    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation');
-    // console.log('postLoginNavigation', postLoginNavigation)
+    const postLoginNavigation =
+      sessionStorage.getItem('postLoginNavigationV2') ?? sessionStorage.getItem('postLoginNavigation');
     if (postLoginNavigation) {
+      sessionStorage.removeItem('postLoginNavigationV2');
       sessionStorage.removeItem('postLoginNavigation');
       await this._router.navigateByUrl(postLoginNavigation);
       return;

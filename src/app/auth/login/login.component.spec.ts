@@ -56,7 +56,7 @@ describe('LoginComponent', () => {
   });
 
   afterEach(() => {
-    sessionStorage.removeItem('postLoginNavigation');
+    sessionStorage.removeItem('postLoginNavigationV2');
   });
 
   it('should create and initialize the 16th FC login context', () => {
@@ -155,7 +155,7 @@ describe('LoginComponent', () => {
   }));
 
   it('should honor stored post-login navigation before role-based redirects', fakeAsync(() => {
-    sessionStorage.setItem('postLoginNavigation', '/saved/path');
+    sessionStorage.setItem('postLoginNavigationV2', '/saved/path');
     authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.ULB } }));
     authSpy.extractUser.and.returnValue({ role: USER_TYPE.ULB } as any);
     component['loginForm'].setValue({
@@ -169,7 +169,7 @@ describe('LoginComponent', () => {
     tick();
 
     expect(routerSpy.navigateByUrl).toHaveBeenCalledWith('/saved/path');
-    expect(sessionStorage.getItem('postLoginNavigation')).toBeNull();
+    expect(sessionStorage.getItem('postLoginNavigationV2')).toBeNull();
   }));
 
   it('should show an API error when password login fails', fakeAsync(() => {

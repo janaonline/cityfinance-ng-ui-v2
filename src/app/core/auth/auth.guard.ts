@@ -10,7 +10,7 @@ export const otpAuthGuard: CanActivateFn = (_route, state) => {
   if (authService.isLoggedIn()) return true;
 
   if (state.url && !state.url.includes('login')) {
-    sessionStorage.setItem('postLoginNavigation', state.url);
+    sessionStorage.setItem('postLoginNavigationV2', state.url);
   }
 
   return router.createUrlTree(['/login'], {

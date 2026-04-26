@@ -138,7 +138,7 @@ function handleError(
         ? router.url
         : location.pathname + location.search + location.hash;
       if (!url.includes('login')) {
-        sessionStorage.setItem('postLoginNavigation', url);
+        sessionStorage.setItem('postLoginNavigationV2', url);
       }
       void router.navigate(['login'], {
         queryParams: { message: 'Session expired. Kindly login again.' },
@@ -188,7 +188,7 @@ function logoutRedirection(authService: AuthService, router: Router) {
     : location.pathname + location.search + location.hash;
 
   if (!url.includes('login')) {
-    sessionStorage.setItem('postLoginNavigation', url);
+    sessionStorage.setItem('postLoginNavigationV2', url);
   }
 
   clearLocalStorage(authService);

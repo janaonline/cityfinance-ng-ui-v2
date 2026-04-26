@@ -284,8 +284,10 @@ export class OtpLoginComponent implements OnInit {
   }
 
   private async navigateAfterLogin(user: AuthUser): Promise<void> {
-    const postLogin = sessionStorage.getItem('postLoginNavigation');
+    const postLogin =
+      sessionStorage.getItem('postLoginNavigationV2') ?? sessionStorage.getItem('postLoginNavigation');
     if (postLogin) {
+      sessionStorage.removeItem('postLoginNavigationV2');
       sessionStorage.removeItem('postLoginNavigation');
       await this.router.navigateByUrl(postLogin);
       return;

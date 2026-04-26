@@ -100,7 +100,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   }
 
   removeSessionItem() {
-    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation');
+    const postLoginNavigation = sessionStorage.getItem('postLoginNavigationV2');
     const sessionID = sessionStorage.getItem('sessionID');
 
     sessionStorage.clear();
@@ -109,7 +109,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
       sessionStorage.setItem('sessionID', sessionID);
     }
     if (postLoginNavigation) {
-      sessionStorage.setItem('postLoginNavigation', postLoginNavigation);
+      sessionStorage.setItem('postLoginNavigationV2', postLoginNavigation);
     }
   }
 
