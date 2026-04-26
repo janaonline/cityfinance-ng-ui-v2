@@ -140,7 +140,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
         next: () => {
           this.removeSessionItem();
           this.isLoggedIn = false;
-          window.location.href = '/';
+          window.location.href = 'auth/login';
         },
       });
     } else if (type === 'ranking') {
