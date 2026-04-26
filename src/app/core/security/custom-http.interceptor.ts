@@ -46,7 +46,9 @@ export const customHttpInterceptor: HttpInterceptorFn = (
       }
 
       return handleError(error, authService, router, snackBar, {
-        logoutOnUnauthorized: authService.isAuthRequest(preparedRequest.url),
+        logoutOnUnauthorized:
+          authService.isAuthRequest(preparedRequest.url) &&
+          !authService.isLoginRequest(preparedRequest.url),
       });
     }),
   );
@@ -199,7 +201,7 @@ function logoutRedirection(authService: AuthService, router: Router) {
   // } else {
   //   void router.navigate(['fc_grant']);
   // }
-  void router.navigate(['login'], {
+  void router.navigate(['auth/login'], {
     queryParams: { message: 'Your session expired. Please sign in again.' },
   });
 }

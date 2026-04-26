@@ -20,7 +20,7 @@ export const environment = {
     url2: baseUrl + '/api/v2/',
     url3: baseUrl + '/api/v3/',
   },
-  prefixUrl: '/fc',
+  ui: { urlV1: baseUrl + '/v1/', urlV2: baseUrl + '/fc/' },
   environment: env,
   isProduction,
   versionCheckURL: baseUrl + '/version.json',

@@ -58,7 +58,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   btnName = 'Login for 15th FC Grants';
   sticky = false;
   isCollapsed = true;
-  prefixUrl = environment.prefixUrl;
+  prefixUrl = environment.ui.urlV2;
   menus: any[] = [...this.defaultMenus];
   showMobileNav = false;
   isSticky = false;
@@ -115,7 +115,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
 
   loginLogout(type: string) {
     localStorage.setItem('loginType', type);
-    
+
     // if (type === '15thFC') {
     //   this._router.navigate(['/auth/login'], {
     //     queryParams: { type },
@@ -135,7 +135,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     //   return;
     // }
 
-     if (type === 'logout') {
+    if (type === 'logout') {
       this.authService.logout().subscribe({
         next: () => {
           this.removeSessionItem();
@@ -147,10 +147,10 @@ export class NavbarComponent implements OnInit, AfterViewInit {
       window.location.href = '/rankings/login';
       return;
     } else {
-       this._router.navigate(['/auth/login'], {
+      this._router.navigate(['/auth/login'], {
         queryParams: { type },
       });
-    }   
+    }
   }
 
   @HostListener('window:scroll')
@@ -193,12 +193,12 @@ export class NavbarComponent implements OnInit, AfterViewInit {
       ...(role === USER_TYPE.ULB ? [{ name: 'XVI FC Data Collection', link: '/xvifc-form' }] : []),
       ...(role === USER_TYPE.ULB
         ? [
-            {
-              name: 'User Manual',
-              href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
-              target: '_blank',
-            },
-          ]
+          {
+            name: 'User Manual',
+            href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
+            target: '_blank',
+          },
+        ]
         : []),
       ...(this.inRole([USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE])
         ? [{ name: 'Review XVI FC', link: '/admin/xvi-fc-review' }]

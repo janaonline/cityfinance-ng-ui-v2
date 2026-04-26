@@ -108,7 +108,7 @@ export class ForgotPasswordComponent implements OnInit {
 
   onBackToLogin(): void {
     const type = this.typeKey();
-    this.router.navigate(['/login'], { queryParams: type ? { type } : {} });
+    this.router.navigate(['/auth/login'], { queryParams: type ? { type } : {} });
   }
 
   onContinue(): void {
