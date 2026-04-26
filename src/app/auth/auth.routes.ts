@@ -11,11 +11,6 @@ export const AUTH_ROUTES: Routes = [
     loadComponent: () => import('./login/login.component').then((m) => m.LoginComponent),
   },
   {
-    path: 'otp',
-    loadComponent: () =>
-      import('../features/auth/otp-login/otp-login.component').then((m) => m.OtpLoginComponent),
-  },
-  {
     path: 'forgot-password',
     loadComponent: () =>
       import('./forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
