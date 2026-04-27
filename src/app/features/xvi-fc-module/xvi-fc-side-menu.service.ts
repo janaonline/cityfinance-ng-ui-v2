@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
 import { SideBarModel } from '../../shared/components/side-menu/interface';
 // import { SideBarModel } from '../../shared/components/side-menu/interface';
 import { XvifcRouteContext } from './xvi-fc-module.service';
 import { buildXvifcFeatureLink, Roles } from './xvi-fc-side-menu.config';
+import { environment } from '../../../environments/environment';
 // import { SIDE_MENU_ITEMS } from './temp';
 
 interface ApiMenuItem {
@@ -28,17 +29,25 @@ interface ApiSideMenuResponse {
 export class XviFcSideMenuApiService {
   private readonly http = inject(HttpClient);
 
-  private readonly baseUrl = 'http://localhost:3001/api/v2';
-
+  // private readonly baseUrl = 'http://localhost:3001/api/v2';
+  private readonly baseUrl = environment.api.url2;
   getSideMenu(context: XvifcRouteContext): Observable<SideBarModel> {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('id_token') : null;
+    const headers = new HttpHeaders(
+      token ? { Authorization: `Bearer ${token}`, 'x-access-token': token } : {},
+    );
     return this.http
-      .get<ApiSideMenuResponse>(`${this.baseUrl}/xvi-fc/sidebar/${context.role}`, {
-        params: {
-          yearId: context.yearId,
+      .get<{ success: boolean; data: ApiSideMenuResponse; timestamp: string }>(
+        `${this.baseUrl}xvi-fc/sidebar/${context.role}`,
+        {
+          headers,
+          params: {
+            yearId: context.yearId,
+          },
         },
-      })
+      )
       .pipe(
-        map((response) => this.mapApiResponseToSideBarModel(response, context)),
+        map((wrapper) => this.mapApiResponseToSideBarModel(wrapper.data, context)),
         catchError((error) => {
           console.error('Failed to load side menu API.', error);
           throw error;

@@ -413,6 +413,14 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private async navigateAfterLogin(currentUser: IUserLoggedInDetails | null): Promise<void> {
+    // Always go to year selection for 16th FC — never skip it via a saved post-login URL.
+    if (this.typeKey() === '16thFC') {
+      sessionStorage.removeItem('postLoginNavigationV2');
+      sessionStorage.removeItem('postLoginNavigation');
+      await this._router.navigate(['/xvifc/year']);
+      return;
+    }
+
     const postLoginNavigation =
       sessionStorage.getItem('postLoginNavigationV2') ?? sessionStorage.getItem('postLoginNavigation');
     if (postLoginNavigation) {
