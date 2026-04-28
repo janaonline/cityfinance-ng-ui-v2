@@ -13,4 +13,5 @@ export const environment = {
   googleAnalyticsId: 'G-803HPPLFMM',
   storageType: 'S3Url',
   recaptchaSiteKey: '6LcT9_gUAAAAANrZM5TNnE4OEEC46iFDfcAHZ8lD',
+  captchaEnabled: true,
 };
