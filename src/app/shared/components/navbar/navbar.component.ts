@@ -146,13 +146,14 @@ export class NavbarComponent implements OnInit, AfterViewInit {
           window.location.href = `auth/login?type=${loginType}`;
         },
       });
-    } else if (type === 'ranking') {
-      window.location.href = '/rankings/login';
-      return;
+      // } else if (type === 'ranking') {
+      //   window.location.href = '/rankings/login';
+      //   return;
     } else {
-      this._router.navigate(['/auth/login'], {
-        queryParams: { type },
-      });
+      this._router.navigate(['/auth/login', type]);
+      // this._router.navigate(['/auth/login', { type }], {
+      //   queryParams: { type },
+      // });
     }
   }
 

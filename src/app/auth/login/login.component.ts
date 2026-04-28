@@ -222,9 +222,38 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.loginForm.controls.role.updateValueAndValidity();
       }
     });
+    this.setLoginType();
     this.xvifcService.clearResolvedContext();
     this.enablePasswordMode();
     this.recaptchaService.loadScript();
+  }
+
+  setLoginType(): void {
+    this.route.queryParams.subscribe(({ type }) => {
+      if (LOGIN_TYPES.includes(type)) {
+        this.typeKey.set(type);
+        if (type === 'XVIFC') {
+          this.loginForm.controls.role.clearValidators();
+          this.loginForm.controls.role.updateValueAndValidity();
+        } else {
+          this.loginForm.controls.role.setValidators([Validators.required]);
+          this.loginForm.controls.role.updateValueAndValidity();
+        }
+      }
+    });
+    this.route.paramMap.subscribe(params => {
+      const type = params.get('type') as LoginType;
+      if (LOGIN_TYPES.includes(type)) {
+        this.typeKey.set(type);
+        if (type === 'XVIFC') {
+          this.loginForm.controls.role.clearValidators();
+          this.loginForm.controls.role.updateValueAndValidity();
+        } else {
+          this.loginForm.controls.role.setValidators([Validators.required]);
+          this.loginForm.controls.role.updateValueAndValidity();
+        }
+      }
+    });
   }
 
   ngOnDestroy(): void {
