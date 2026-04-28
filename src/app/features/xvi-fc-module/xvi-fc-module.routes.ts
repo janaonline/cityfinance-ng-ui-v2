@@ -10,6 +10,14 @@ export const XVIFC_ROUTES: Routes = [
       ),
   },
   {
+    path: 'profile-verify',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./shared/profile-verification/profile-verification.component').then(
+        (m) => m.ProfileVerificationComponent,
+      ),
+  },
+  {
     path: '',
     loadComponent: () => import('./xvi-fc-module.component').then((m) => m.XviFcModuleComponent),
     children: [

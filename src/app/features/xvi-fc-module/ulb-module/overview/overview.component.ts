@@ -1,47 +1,59 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import {
-  OverviewData,
   OverviewCardComponent,
+  OverviewData,
 } from '../../shared/overview-card/overview-card.component';
+import { UlbOverviewService } from './overview-card.service';
+import { DisbursementColumn, DisbursementRow } from './overview-card.models';
+
 @Component({
   selector: 'app-overview',
+  standalone: true,
   imports: [OverviewCardComponent],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
 })
-export class OverviewComponent {
-  ulbOverviewData: OverviewData = {
-    name: 'Greater Visakhapatnam Municipal Corporation',
-    financialYear: 'FY 2026-27',
-    subHeader1: 'Estimated Grant',
-    subHeader2: 'BASIC GRANT ONLY',
-    totalAllocation: '₹12,158 crore',
-    totalAllocationNote: 'Based on SFC data, population figures, and CF calculations',
-    grantSections: [
-      {
-        id: 'basic',
-        label: 'Basic Grants',
-        componentLabel: 'Grant Component',
-        title: 'Basic Grants',
-        amount: '₹1,500 crore',
-        points: [
-          'Supports delivery of core municipal services across eligible Urban Local Bodies.',
-          'Focused on improving service continuity, maintenance, and local civic infrastructure.',
-          'Released as part of the state’s overall grant support framework.',
-        ],
+export class OverviewComponent implements OnInit {
+  private readonly overviewService = inject(UlbOverviewService);
+
+  private get ulbId(): string {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
+    return raw ? JSON.parse(raw)?.ulb ?? '' : '';
+  }
+
+  currentRequirementYear = 'FY 2026-27';
+  isLoading = false;
+  errorMessage = '';
+
+  ulbOverviewData: OverviewData | null = null;
+  disbursementColumns: DisbursementColumn[] = [];
+  disbursementRows: DisbursementRow[] = [];
+
+  ngOnInit(): void {
+    this.loadOverview();
+  }
+
+  loadOverview(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.overviewService.getOverviewViewModel(this.ulbId).subscribe({
+      next: ({ ulbOverviewData, disbursementColumns, disbursementRows }) => {
+        this.ulbOverviewData = ulbOverviewData;
+        this.disbursementColumns = disbursementColumns;
+        this.disbursementRows = disbursementRows;
+        this.currentRequirementYear = disbursementColumns[0]?.label ?? 'FY 2026-27';
+        this.isLoading = false;
       },
-      {
-        id: 'performance',
-        label: 'Performance Grants',
-        componentLabel: 'Grant Component',
-        title: 'Performance Grants',
-        amount: '₹648 crore',
-        points: [
-          'Linked to achievement of reform-linked performance indicators by eligible ULBs.',
-          'Encourages stronger financial management, reporting, and governance outcomes.',
-          'Designed to reward measurable improvements in urban administration.',
-        ],
+      error: (error) => {
+        console.error('Failed to load ULB overview', error);
+        this.errorMessage = 'Failed to load overview data.';
+        this.isLoading = false;
       },
-    ],
-  };
+    });
+  }
+
+  onViewRequirements(): void {
+    console.log('Navigate to requirements page');
+  }
 }

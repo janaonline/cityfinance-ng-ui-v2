@@ -1,0 +1,146 @@
+<div class="pv-overlay">
+  <div class="pv-card">
+    <!-- Header -->
+    <div class="pv-card__header">
+      <p class="pv-tag">16th Finance Commission · Grant Portal</p>
+      <h2>Welcome back. Please verify your profile.</h2>
+      <p class="pv-subtitle">
+        This is a new portal for the 16th FC cycle. Confirm that your contact details are correct
+        before you continue.
+      </p>
+    </div>
+
+    <!-- Body -->
+    <div class="pv-card__body">
+      @if (isLoading) {
+        <div class="pv-loading">
+          <div class="pv-spinner"></div>
+          <span>Loading your profile…</span>
+        </div>
+      } @else {
+        @if (errorMessage) {
+          <div class="pv-error-banner">{{ errorMessage }}</div>
+        }
+
+        <!-- Info banner -->
+        <div class="pv-info-banner">
+          <svg class="pv-info-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7.5" stroke="#1d7a6b" stroke-width="1" />
+            <path d="M8 7v5" stroke="#1d7a6b" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="8" cy="5" r="0.75" fill="#1d7a6b" />
+          </svg>
+          <span>
+            Details below are pre-filled from 15th FC records. Review and correct anything that has
+            changed.
+          </span>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onConfirm()">
+
+          <!-- ULB-specific pre-filled fields -->
+          @if (role === 'ulb') {
+            <div class="pv-field">
+              <div class="pv-label-row">
+                <label class="pv-label" for="ulbName">ULB Name</label>
+                <span class="pv-badge">Prefilled</span>
+              </div>
+              <input id="ulbName" class="pv-input pv-input--readonly" type="text" [value]="ulbName" readonly />
+            </div>
+
+            <div class="pv-row">
+              <div class="pv-field">
+                <div class="pv-label-row">
+                  <label class="pv-label" for="ulbCode">ULB Code</label>
+                  <span class="pv-badge">Prefilled</span>
+                </div>
+                <input id="ulbCode" class="pv-input pv-input--readonly" type="text" [value]="ulbCode" readonly />
+              </div>
+              <div class="pv-field">
+                <div class="pv-label-row">
+                  <label class="pv-label" for="ulbType">ULB Type</label>
+                  <span class="pv-badge">Prefilled</span>
+                </div>
+                <input id="ulbType" class="pv-input pv-input--readonly" type="text" [value]="ulbType" readonly />
+              </div>
+            </div>
+          }
+
+          <!-- State field (shown for all roles) -->
+          <div class="pv-field">
+            <div class="pv-label-row">
+              <label class="pv-label" for="stateName">State</label>
+              <span class="pv-badge">Prefilled</span>
+            </div>
+            <input id="stateName" class="pv-input pv-input--readonly" type="text" [value]="stateName" readonly />
+          </div>
+
+          <!-- Contact details section -->
+          <p class="pv-section-title">Your Contact Details</p>
+
+          <div class="pv-field">
+            <label class="pv-label" for="contactPersonName">Contact Person Name</label>
+            <input
+              id="contactPersonName"
+              class="pv-input"
+              type="text"
+              formControlName="contactPersonName"
+              placeholder="Enter full name"
+            />
+          </div>
+
+          <div class="pv-field">
+            <label class="pv-label" for="designation">Designation</label>
+            <input
+              id="designation"
+              class="pv-input"
+              type="text"
+              formControlName="designation"
+              placeholder="Enter designation"
+            />
+          </div>
+
+          <div class="pv-row">
+            <div class="pv-field">
+              <label class="pv-label" for="officialEmail">Official Email</label>
+              <input
+                id="officialEmail"
+                class="pv-input"
+                type="email"
+                formControlName="officialEmail"
+                placeholder="Enter official email"
+              />
+            </div>
+            <div class="pv-field">
+              <label class="pv-label" for="mobileNumber">Mobile Number</label>
+              <input
+                id="mobileNumber"
+                class="pv-input"
+                type="tel"
+                formControlName="mobileNumber"
+                placeholder="+91 XXXXX XXXXX"
+              />
+            </div>
+          </div>
+
+          <p class="pv-note">
+            Please ensure these details are correct. This is where you will receive all
+            notifications, alerts, and reminders.
+          </p>
+
+          <div class="pv-footer">
+            <p class="pv-footer-text">
+              @if (role === 'ulb') {
+                You can update these details anytime from Accounts &amp; People.
+              } @else {
+                You can update these details anytime from your profile settings.
+              }
+            </p>
+            <button class="pv-confirm-btn" type="submit" [disabled]="form.invalid || isSubmitting">
+              {{ isSubmitting ? 'Saving…' : 'Confirm & Continue' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+</div>

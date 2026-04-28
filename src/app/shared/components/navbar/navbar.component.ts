@@ -114,7 +114,9 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   }
 
   loginLogout(type: string) {
-    localStorage.setItem('loginType', type);
+    if (type !== 'logout') {
+      localStorage.setItem('loginType', type);
+    }
 
     // if (type === '15thFC') {
     //   this._router.navigate(['/auth/login'], {
@@ -136,11 +138,12 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     // }
 
     if (type === 'logout') {
+      const loginType = localStorage.getItem('loginType') ?? '16thFC';
       this.authService.logout().subscribe({
         next: () => {
           this.removeSessionItem();
           this.isLoggedIn = false;
-          window.location.href = 'auth/login';
+          window.location.href = `auth/login?type=${loginType}`;
         },
       });
     } else if (type === 'ranking') {

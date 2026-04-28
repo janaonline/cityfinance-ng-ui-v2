@@ -1,10 +1,19 @@
-import { Component, Optional, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MatDialogRef } from '@angular/material/dialog';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+
+type ProfileRole = 'state' | 'ulb' | 'mohua';
+
+const ROLE_MAP: Record<string, ProfileRole> = {
+  STATE: 'state',
+  XVIFC_STATE: 'state',
+  ULB: 'ulb',
+  XVIFC: 'ulb',
+  MoHUA: 'mohua',
+};
 
 @Component({
   selector: 'app-years-selection',
@@ -15,10 +24,6 @@ import { MatCardModule } from '@angular/material/card';
 })
 export class YearsSelectionComponent {
   private readonly router = inject(Router);
-
-  constructor(
-    @Optional() private readonly dialogRef: MatDialogRef<YearsSelectionComponent> | null,
-  ) {}
 
   years: string[] = ['2026-27', '2027-28', '2028-29', '2029-30', '2030-31'];
 
@@ -32,14 +37,38 @@ export class YearsSelectionComponent {
     const year = this.selectedYear();
     if (!year) return;
 
-    const routeMap = {
-      state: 'state',
-      ulb: 'ulb',
-      mohua: 'mohua',
-    };
+    const standaloneKey = localStorage.getItem('isXVIFCProfileVerified');
+    const userDataRaw = localStorage.getItem('userData');
+    let userDataVerified = false;
+    try {
+      userDataVerified = userDataRaw ? JSON.parse(userDataRaw)?.isXVIFCProfileVerified === true : false;
+    } catch { /* ignore */ }
 
-    const role = routeMap['state']; // replace dynamically later
+    // console.log('[YearsSelection] isXVIFCProfileVerified key:', standaloneKey);
+    // console.log('[YearsSelection] userData.isXVIFCProfileVerified:', userDataVerified);
+    // console.log('[YearsSelection] userData raw:', userDataRaw);
 
-    this.router.navigate(['/xvifc', role, year, 'overview']);
+    const isVerified = standaloneKey === 'true' || userDataVerified;
+
+    if (isVerified) {
+      const role = this.getRoleFromLocalStorage();
+      // console.log('[YearsSelection] Verified — navigating to overview with role:', role, 'year:', year);
+      this.router.navigate(['/xvifc', role, year, 'overview'], { replaceUrl: true });
+      return;
+    }
+
+    // console.log('[YearsSelection] Not verified — redirecting to profile-verify');
+    this.router.navigate(['/xvifc', 'profile-verify'], { queryParams: { year }, replaceUrl: true });
+  }
+
+  private getRoleFromLocalStorage(): ProfileRole {
+    try {
+      const raw = localStorage.getItem('userData');
+      if (!raw) return 'state';
+      const user = JSON.parse(raw) as { role: string };
+      return ROLE_MAP[user.role] ?? 'state';
+    } catch {
+      return 'state';
+    }
   }
 }

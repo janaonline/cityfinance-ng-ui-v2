@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../../../../src/environments/environment';
 
@@ -16,11 +16,20 @@ import { OverviewData } from '../../shared/overview-card/overview-card.component
 export class OverviewService {
   private readonly http = inject(HttpClient);
 
-  private readonly baseUrl = 'http://localhost:3001/api/v2';
-  //   private readonly baseUrl = environment.api.url2;
+  // private readonly baseUrl = 'http://localhost:3001/api/v2';
+  private readonly baseUrl = environment.api.url2;
 
   getStateOverview(stateId: string): Observable<StateOverviewApiResponse> {
-    return this.http.get<StateOverviewApiResponse>(`${this.baseUrl}/xvi-fc/state/${stateId}`);
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('id_token') : null;
+    const headers = new HttpHeaders(
+      token ? { Authorization: `Bearer ${token}`, 'x-access-token': token } : {},
+    );
+    return this.http
+      .get<{ success: boolean; data: StateOverviewApiResponse; timestamp: string }>(
+        `${this.baseUrl}xvi-fc/state/${stateId}`,
+        { headers },
+      )
+      .pipe(map((wrapper) => wrapper.data));
   }
 
   getOverviewViewModel(stateId: string): Observable<{

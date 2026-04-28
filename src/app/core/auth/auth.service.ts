@@ -89,11 +89,12 @@ export class OtpAuthService {
         // Always clear state whether the server responds or not
         catchError(() => EMPTY),
         finalize(() => {
+          const loginType = localStorage.getItem('loginType');
           localStorage.removeItem(TOKEN_KEY);
           this.accessToken.set(null);
           this.currentUser.set(null);
           this.legacyAuth.clearLocalStorage();
-          void this.router.navigate(['/login']);
+          void this.router.navigate(['/auth/login'], { queryParams: { type: loginType } });
         }),
       );
   }
