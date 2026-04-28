@@ -37,15 +37,28 @@ export class YearsSelectionComponent {
     const year = this.selectedYear();
     if (!year) return;
 
-    const isVerified = localStorage.getItem('isXVIFCProfileVerified') === 'true';
+    const standaloneKey = localStorage.getItem('isXVIFCProfileVerified');
+    const userDataRaw = localStorage.getItem('userData');
+    let userDataVerified = false;
+    try {
+      userDataVerified = userDataRaw ? JSON.parse(userDataRaw)?.isXVIFCProfileVerified === true : false;
+    } catch { /* ignore */ }
+
+    // console.log('[YearsSelection] isXVIFCProfileVerified key:', standaloneKey);
+    // console.log('[YearsSelection] userData.isXVIFCProfileVerified:', userDataVerified);
+    // console.log('[YearsSelection] userData raw:', userDataRaw);
+
+    const isVerified = standaloneKey === 'true' || userDataVerified;
 
     if (isVerified) {
       const role = this.getRoleFromLocalStorage();
-      this.router.navigate(['/xvifc', role, year, 'overview']);
+      // console.log('[YearsSelection] Verified — navigating to overview with role:', role, 'year:', year);
+      this.router.navigate(['/xvifc', role, year, 'overview'], { replaceUrl: true });
       return;
     }
 
-    this.router.navigate(['/xvifc', 'profile-verify'], { queryParams: { year } });
+    // console.log('[YearsSelection] Not verified — redirecting to profile-verify');
+    this.router.navigate(['/xvifc', 'profile-verify'], { queryParams: { year }, replaceUrl: true });
   }
 
   private getRoleFromLocalStorage(): ProfileRole {

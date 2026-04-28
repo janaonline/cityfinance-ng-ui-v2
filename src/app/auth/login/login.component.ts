@@ -417,7 +417,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (this.typeKey() === '16thFC') {
       sessionStorage.removeItem('postLoginNavigationV2');
       sessionStorage.removeItem('postLoginNavigation');
-      await this._router.navigate(['/xvifc/year']);
+      await this._router.navigate(['/xvifc/year'], { replaceUrl: true });
       return;
     }
 
@@ -426,7 +426,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (postLoginNavigation) {
       sessionStorage.removeItem('postLoginNavigationV2');
       sessionStorage.removeItem('postLoginNavigation');
-      await this._router.navigateByUrl(postLoginNavigation);
+      await this._router.navigateByUrl(postLoginNavigation, { replaceUrl: true });
       return;
     }
     for (const route of this.routePages) {
@@ -437,14 +437,14 @@ export class LoginComponent implements OnInit, OnDestroy {
           window.location.href = environment.ui.urlV1 + route.link;
           // window.location.href = 'http://localhost:4200' + route.link;
         } else if (route.route) {
-          await this._router.navigate([route.route]);
+          await this._router.navigate([route.route], { replaceUrl: true });
         }
         return;
       }
     }
     if (this.typeKey() === 'XVIFC') {
       if (currentUser?.role === USER_TYPE.ULB) {
-        this._router.navigate(['/xvifc/year']);
+        this._router.navigate(['/xvifc/year'], { replaceUrl: true });
         return;
       }
 
@@ -453,11 +453,11 @@ export class LoginComponent implements OnInit, OnDestroy {
           currentUser?.role as USER_TYPE,
         )
       ) {
-        await this._router.navigate(['/admin']);
+        await this._router.navigate(['/admin'], { replaceUrl: true });
         return;
       }
 
-      await this._router.navigate(['/xvifc/year']);
+      await this._router.navigate(['/xvifc/year'], { replaceUrl: true });
     }
   }
   // routeToProperLocation(user: IUserLoggedInDetails) {

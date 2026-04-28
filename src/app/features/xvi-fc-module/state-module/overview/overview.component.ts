@@ -16,7 +16,10 @@ import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 export class OverviewComponent implements OnInit {
   private readonly overviewService = inject(OverviewService);
 
-  private readonly stateId = '5dcf9d7316a06aed41c748ec';
+  private get stateId(): string {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
+    return raw ? JSON.parse(raw)?.state ?? '' : '';
+  }
 
   currentRequirementYear = 'FY 2026-27';
   isLoading = false;

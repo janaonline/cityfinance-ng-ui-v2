@@ -9,16 +9,14 @@
             Members from the Product and PMU teams are available to help.
           </p>
         </div>
-
-        <button
-          type="button"
-          class="btn btn-outline-secondary btn-sm d-none"
-          (click)="simulateLoading()"
-        >
-          Test Skeleton
-        </button>
       </div>
     </div>
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger rounded-4" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
 
     @if (isLoading()) {
       <section class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
@@ -83,22 +81,17 @@
       @if (nextSupportHour(); as next) {
         <section class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
           <div class="support-hero-card p-3 p-lg-4">
-            <h2 class="hero-title mb-2">Next Support Hour — {{ next.fullDateLabel }}</h2>
+            <h2 class="hero-title mb-2">Next Support Hour — {{ next.date }}</h2>
 
-            <p class="hero-text mb-2">
-              {{ next.details }}
-            </p>
+            <p class="hero-text mb-2">{{ next.description }}</p>
 
             <p class="hero-meta mb-3">
               <span class="fw-semibold">Time:</span> {{ next.time }}
               <span class="mx-1">·</span>
-              <span class="fw-semibold">Hosted by:</span> {{ next.host }}
+              <span class="fw-semibold">Hosted by:</span> {{ next.hostedBy }}
             </p>
 
-            <a
-              class="btn btn-light d-inline-flex align-items-center gap-2 fw-semibold hero-btn"
-              [href]="next.joinUrl || '#'"
-            >
+            <a class="btn btn-light d-inline-flex align-items-center gap-2 fw-semibold hero-btn" href="#">
               <i class="bi bi-headset"></i>
               <span>Join Support Hour</span>
             </a>
@@ -123,15 +116,23 @@
               </thead>
 
               <tbody>
-                @for (item of supportHours(); track trackById($index, item)) {
+                @for (item of upcomingSupportHours(); track trackByDate($index, item)) {
                   <tr>
-                    <td class="fw-semibold text-dark py-2">{{ item.dateLabel }}</td>
+                    <td class="fw-semibold text-dark py-2">{{ item.date }}</td>
                     <td class="py-2">{{ item.details }}</td>
                     <td class="py-2">
                       <span [class]="getStatusClass(item.status)">
                         <span class="status-dot"></span>
-                        {{ item.status }}
+                        {{ normalizeStatus(item.status) }}
                       </span>
+                    </td>
+                  </tr>
+                }
+
+                @if (upcomingSupportHours().length === 0) {
+                  <tr>
+                    <td colspan="3" class="text-center text-secondary py-3">
+                      No upcoming support hours scheduled.
                     </td>
                   </tr>
                 }

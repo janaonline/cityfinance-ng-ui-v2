@@ -1,18 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
-
-type SupportHourStatus = 'UPCOMING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
-
-interface SupportHourItem {
-  id: string;
-  dateLabel: string;
-  fullDateLabel: string;
-  details: string;
-  status: SupportHourStatus;
-  time: string;
-  host: string;
-  joinUrl?: string;
-}
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  SupportHoursService,
+  NextSupportHour,
+  UpcomingSupportHour,
+} from './support-hours.service';
 
 @Component({
   selector: 'app-support-hours',
@@ -22,41 +14,43 @@ interface SupportHourItem {
   styleUrl: './support-hours.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SupportHoursComponent {
-  readonly isLoading = signal(false);
+export class SupportHoursComponent implements OnInit {
+  private readonly supportHoursService = inject(SupportHoursService);
 
-  // Dummy API data for now
-  readonly supportHours = signal<SupportHourItem[]>([
-    {
-      id: '1',
-      dateLabel: '6 Mar 2026',
-      fullDateLabel: 'Thursday, 6 Mar 2026',
-      details:
-        'Open Q&A session for ULB teams. Bring your questions about audited financial statements, submissions, or validation errors.',
-      status: 'UPCOMING',
-      time: '3:00 PM - 4:00 PM',
-      host: 'CityFinance Product & PMU Team',
-      joinUrl: '#',
-    },
-    {
-      id: '2',
-      dateLabel: '13 Mar 2026',
-      fullDateLabel: 'Thursday, 13 Mar 2026',
-      details: 'Open support hour',
-      status: 'SCHEDULED',
-      time: '3:00 PM - 4:00 PM',
-      host: 'CityFinance Product & PMU Team',
-    },
-  ]);
+  readonly isLoading = signal(true);
+  readonly errorMessage = signal('');
+  readonly nextSupportHour = signal<NextSupportHour | null>(null);
+  readonly upcomingSupportHours = signal<UpcomingSupportHour[]>([]);
 
-  readonly nextSupportHour = computed(() => this.supportHours()[0] ?? null);
-
-  trackById(_: number, item: SupportHourItem): string {
-    return item.id;
+  ngOnInit(): void {
+    this.loadSupportHours();
   }
 
-  getStatusClass(status: SupportHourStatus): string {
-    switch (status) {
+  loadSupportHours(): void {
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+
+    this.supportHoursService.getSupportHours().subscribe({
+      next: (data) => {
+        this.nextSupportHour.set(data.nextSupportHour);
+        this.upcomingSupportHours.set(data.upcomingSupportHours);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load support hours', err);
+        this.errorMessage.set('Failed to load support hours. Please try again later.');
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  normalizeStatus(status: string): string {
+    return status.replace('UPCOMMING', 'UPCOMING');
+  }
+
+  getStatusClass(status: string): string {
+    const normalized = this.normalizeStatus(status).toUpperCase();
+    switch (normalized) {
       case 'UPCOMING':
         return 'status-pill status-pill--upcoming';
       case 'SCHEDULED':
@@ -70,11 +64,7 @@ export class SupportHoursComponent {
     }
   }
 
-  simulateLoading(): void {
-    this.isLoading.set(true);
-
-    setTimeout(() => {
-      this.isLoading.set(false);
-    }, 2500);
+  trackByDate(_: number, item: UpcomingSupportHour): string {
+    return item.date;
   }
 }

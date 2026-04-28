@@ -47,9 +47,8 @@ export class ProfileVerificationService {
     return of(base);
   }
 
-  confirmProfile(payload: ProfileVerificationPayload): Observable<{ success: boolean }> {
-    console.log('Submitting profile verification payload:', payload);
-    return this.http.post<{ success: boolean }>(`${environment.api.url2}auth/update-profile`, payload);
+  confirmProfile(payload: ProfileVerificationPayload): Observable<{ success: boolean; message?: string }> {
+    return this.http.patch<{ success: boolean; message?: string }>(`${environment.api.url2}auth/update-profile`, payload);
   }
 
   private readStoredUser(): StoredUserData {

@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProfileVerificationService } from './profile-verification.service';
 import { ProfileVerificationPayload } from './profile-verification.models';
 
@@ -18,7 +19,7 @@ const ROLE_MAP: Record<string, ProfileRole> = {
 @Component({
   selector: 'app-profile-verification',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule],
   templateUrl: './profile-verification.component.html',
   styleUrl: './profile-verification.component.scss',
 })
@@ -27,6 +28,7 @@ export class ProfileVerificationComponent implements OnInit {
   private readonly profileService = inject(ProfileVerificationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly snackBar = inject(MatSnackBar);
 
   role: ProfileRole = 'state';
   stateName = '';
@@ -98,12 +100,21 @@ export class ProfileVerificationComponent implements OnInit {
     }
 
     this.profileService.confirmProfile(payload).subscribe({
-      next: () => {
+      next: (res) => {
         localStorage.setItem('isXVIFCProfileVerified', 'true');
-        this.router.navigate(['/xvifc', this.role, this.year, 'overview']);
+        try {
+          const raw = localStorage.getItem('userData');
+          if (raw) {
+            const userData = JSON.parse(raw);
+            userData.isXVIFCProfileVerified = true;
+            localStorage.setItem('userData', JSON.stringify(userData));
+          }
+        } catch { /* ignore */ }
+        this.snackBar.open(res.message ?? 'Profile verified successfully', 'Close', { duration: 3000 });
+        this.router.navigate(['/xvifc', this.role, this.year, 'overview'], { replaceUrl: true });
       },
-      error: () => {
-        this.errorMessage = 'Failed to save profile. Please try again.';
+      error: (err) => {
+        this.errorMessage = err?.error?.message ?? 'Failed to save profile. Please try again.';
         this.isSubmitting = false;
       },
     });
