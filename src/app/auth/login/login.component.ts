@@ -211,17 +211,6 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(({ type }) => {
-      const loginType: LoginType = LOGIN_TYPES.includes(type) ? type : '15thFC';
-      this.typeKey.set(loginType);
-      if (loginType === 'XVIFC') {
-        this.loginForm.controls.role.clearValidators();
-        this.loginForm.controls.role.updateValueAndValidity();
-      } else {
-        this.loginForm.controls.role.setValidators([Validators.required]);
-        this.loginForm.controls.role.updateValueAndValidity();
-      }
-    });
     this.setLoginType();
     this.xvifcService.clearResolvedContext();
     this.enablePasswordMode();
@@ -244,6 +233,12 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.route.paramMap.subscribe(params => {
       const type = params.get('type') as LoginType;
       if (LOGIN_TYPES.includes(type)) {
+        // Clear any saved post-login navigation to prevent unintended redirects when switching login types
+        if (type === '15thFC' || type === 'ranking' || type === 'state-dashboard') {
+          sessionStorage.removeItem('postLoginNavigationV2');
+        } else if (type === '16thFC' || type === 'XVIFC') {
+          sessionStorage.removeItem('postLoginNavigation');
+        }
         this.typeKey.set(type);
         if (type === 'XVIFC') {
           this.loginForm.controls.role.clearValidators();
