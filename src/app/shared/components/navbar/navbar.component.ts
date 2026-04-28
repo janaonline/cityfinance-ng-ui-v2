@@ -22,6 +22,7 @@ import { AuthService, AuthSessionState } from '../../../core/services/auth.servi
 import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
+import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 
 @Component({
   selector: 'app-navbar',
@@ -65,6 +66,8 @@ export class NavbarComponent implements OnInit, AfterViewInit {
 
   private elementPosition = 0;
   private ticking = false;
+
+  routePages = ROUTE_PAGES.filter((page) => page.isMenu);
 
   @ViewChild('stickyMenu') menuElement?: ElementRef;
 
