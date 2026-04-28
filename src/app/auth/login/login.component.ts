@@ -206,13 +206,24 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(({ type }) => {
-      const loginType: LoginType = LOGIN_TYPES.includes(type) ? type : '15thFC';
-      this.typeKey.set(loginType);
-    });
+    this.setLoginType();
     this.xvifcService.clearResolvedContext();
     this.enablePasswordMode();
     this.recaptchaService.loadScript();
+  }
+
+  setLoginType(): void {
+    this.route.queryParams.subscribe(({ type }) => {
+      if (LOGIN_TYPES.includes(type)) {
+        this.typeKey.set(type);
+      }
+    });
+    this.route.paramMap.subscribe(params => {
+      const type = params.get('type') as LoginType;
+      if (LOGIN_TYPES.includes(type)) {
+        this.typeKey.set(type);
+      }
+    });
   }
 
   ngOnDestroy(): void {
