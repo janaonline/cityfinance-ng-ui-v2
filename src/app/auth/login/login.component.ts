@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
@@ -110,12 +110,17 @@ export class LoginComponent implements OnInit, OnDestroy {
     { label: 'Year 1 Disbursement', value: '₹37,272 Cr' },
   ];
 
-  protected readonly roleOptions: readonly RoleOption[] = [
-    { id: 'ULB', label: 'ULB', icon: 'ulb' },
-    { id: 'STATE', label: 'State DMA', icon: 'state' },
-    { id: 'MOHUA', label: 'MoHUA', icon: 'mohua' },
-    { id: 'DOE', label: 'DoE', icon: 'doe', disabled: true, badge: 'SOON' },
-  ];
+  protected readonly roleOptions = computed<readonly RoleOption[]>(() => {
+    const is15thFC = this.typeKey() === '15thFC';
+    return [
+      { id: 'ULB', label: 'ULB', icon: 'ulb' },
+      { id: 'STATE', label: 'State DMA', icon: 'state' },
+      { id: 'MOHUA', label: 'MoHUA', icon: 'mohua' },
+      is15thFC
+        ? { id: 'DOE', label: 'DoE', icon: 'doe' }
+        : { id: 'DOE', label: 'DoE', icon: 'doe', disabled: true, badge: 'SOON' },
+    ] as const;
+  });
 
   protected readonly loginForm = new FormGroup<LoginFormModel>({
     role: new FormControl<LoginRole | ''>('', {
@@ -173,27 +178,27 @@ export class LoginComponent implements OnInit, OnDestroy {
   documents = [
     {
       title: 'ULB Nodal Officers Manual for Claiming XV FC ULB Grants for 2021-22',
-      file: './assets/files/ULB Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
+      file: 'assets/files/ULB Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
     },
     {
       title: 'State Nodal Officers Manual for Claiming XV FC ULB Grants for 2021-22',
-      file: './assets/files/State Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
+      file: 'assets/files/State Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
     },
     {
       title: 'XV-FC VOL I Main Report 2021-26',
-      file: './assets/files/XVFC VOL I Main Report 2021-26.pdf',
+      file: 'assets/files/XVFC VOL I Main Report 2021-26.pdf',
     },
     {
       title: 'XV-FC VOL II Annexes',
-      file: './assets/files/XV-FC -VOL II Annexes.pdf',
+      file: 'assets/files/XV-FC -VOL II Annexes.pdf',
     },
     {
       title: 'MoHUA Marking Scheme',
-      file: './assets/files/XV FC Marking Scheme Guidelines.pdf',
+      file: 'assets/files/XV FC Marking Scheme Guidelines.pdf',
     },
     {
       title: 'XV-FC Operational Guidelines 2021-26',
-      file: './assets/files/FC-XV recommended Urban Local Body Final Operational Guidelines for 2021-26.pdf',
+      file: 'assets/files/FC-XV recommended Urban Local Body Final Operational Guidelines for 2021-26.pdf',
     },
   ];
 
@@ -209,6 +214,13 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(({ type }) => {
       const loginType: LoginType = LOGIN_TYPES.includes(type) ? type : '15thFC';
       this.typeKey.set(loginType);
+      if (loginType === 'XVIFC') {
+        this.loginForm.controls.role.clearValidators();
+        this.loginForm.controls.role.updateValueAndValidity();
+      } else {
+        this.loginForm.controls.role.setValidators([Validators.required]);
+        this.loginForm.controls.role.updateValueAndValidity();
+      }
     });
     this.xvifcService.clearResolvedContext();
     this.enablePasswordMode();
