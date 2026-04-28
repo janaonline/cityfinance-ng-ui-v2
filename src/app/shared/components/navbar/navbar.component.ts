@@ -143,7 +143,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
         next: () => {
           this.removeSessionItem();
           this.isLoggedIn = false;
-          window.location.href = `auth/login?type=${loginType}`;
+          this._router.navigate(['/auth/login', loginType]);
         },
       });
       // } else if (type === 'ranking') {
