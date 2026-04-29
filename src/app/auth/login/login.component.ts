@@ -437,14 +437,16 @@ export class LoginComponent implements OnInit, OnDestroy {
         if (route.link) {
           // console.log('Navigating to link', route.link);
           window.location.href = environment.ui.urlV1 + route.link;
+          // return;
           // window.location.href = 'http://localhost:4200' + route.link;
         } else if (route.route) {
           await this._router.navigate([route.route], { replaceUrl: true });
+          // return;
         }
         return;
       }
       // redirect to home if no matching route found for the user's role and login type
-      window.location.href = '/'
+      // window.location.href = '/'
     }
     // if (this.typeKey() === 'XVIFC') {
     //   if (currentUser?.role === USER_TYPE.ULB) {
