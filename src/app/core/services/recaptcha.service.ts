@@ -10,10 +10,11 @@ declare const grecaptcha: {
 @Injectable({ providedIn: 'root' })
 export class RecaptchaService {
   private readonly siteKey = environment.recaptchaSiteKey;
+  private readonly enabled = environment.captchaEnabled;
   private scriptLoaded = false;
 
   loadScript(): void {
-    if (this.scriptLoaded || !this.siteKey) return;
+    if (!this.enabled || this.scriptLoaded || !this.siteKey) return;
     const script = document.createElement('script');
     script.src = `https://www.google.com/recaptcha/api.js?render=${this.siteKey}`;
     script.async = true;
@@ -22,7 +23,7 @@ export class RecaptchaService {
   }
 
   execute(action: string): Observable<string> {
-    if (!this.siteKey) return from(Promise.resolve(''));
+    if (!this.enabled || !this.siteKey) return from(Promise.resolve(''));
     return from(
       new Promise<string>((resolve, reject) => {
         grecaptcha.ready(() => {
