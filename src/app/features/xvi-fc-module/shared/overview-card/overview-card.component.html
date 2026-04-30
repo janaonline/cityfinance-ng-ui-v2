@@ -48,8 +48,8 @@
       <div class="mb-2">
         <h2
           class="title-with-badge"
-          [matBadge]="data.financialYear"
-          [matBadgeHidden]="!data.financialYear"
+          [matBadge]="selectedYear"
+          [matBadgeHidden]="!selectedYear"
           matBadgeOverlap="false"
           matBadgeColor="primary"
           matBadgePosition="above after"
@@ -59,12 +59,32 @@
       </div>
 
       <section class="ap-overview__hero mb-4">
+        <span class="hero-deco hero-deco--1" aria-hidden="true"></span>
+        <span class="hero-deco hero-deco--2" aria-hidden="true"></span>
+
         <div class="overview-container">
-          <div class="hero-band mt-1">
-            <p class="hero-band__eyebrow mb-1">{{ data.subHeader1 }}</p>
-            <h3 class="hero-band__amount mb-1">{{ data.totalAllocation }}</h3>
-            <p class="hero-band__meta mb-0">{{ data.financialYear }} · {{ data.subHeader2 }}</p>
-            <p class="hero-band__sub mb-0">{{ data.totalAllocationNote }}</p>
+          <div class="hero-layout">
+            <div class="hero-main">
+              <p class="hero-band__eyebrow mb-2">{{ data.subHeader1 }}</p>
+              <h3 class="hero-band__amount mb-2">{{ data.totalAllocation }}</h3>
+              <p class="hero-band__meta mb-1">
+                {{ data.financialYear }}&ensp;·&ensp;{{ data.subHeader2 }}
+              </p>
+              <p class="hero-band__sub mb-0">{{ data.totalAllocationNote }}</p>
+            </div>
+
+            <div class="hero-divider" aria-hidden="true"></div>
+
+            <div class="hero-chips">
+              @for (section of data.grantSections; track section.id) {
+                @if (section.id === 'basic' || section.id === 'performance') {
+                  <div class="hero-chip">
+                    <span class="hero-chip__label">{{ section.label }}</span>
+                    <span class="hero-chip__amount">{{ section.amount }}</span>
+                  </div>
+                }
+              }
+            </div>
           </div>
         </div>
       </section>

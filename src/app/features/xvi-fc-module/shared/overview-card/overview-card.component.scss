@@ -18,9 +18,9 @@
 
 .ap-overview__hero {
   border-radius: 1rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, #114551 0%, #0f4c4d 100%);
-  box-shadow: 0 10px 24px rgba(17, 69, 81, 0.18);
+  padding: 1.1rem 1.4rem;
+  background: linear-gradient(135deg, #114551 0%, #0f4c4d 60%, #0a5a56 100%);
+  box-shadow: 0 8px 24px rgba(17, 69, 81, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -29,10 +29,45 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-  background-size: 24px 24px;
-  opacity: 0.35;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.28;
   pointer-events: none;
+}
+
+.ap-overview__hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 100%);
+  border-radius: 4px 0 0 4px;
+}
+
+.hero-deco {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-deco--1 {
+  width: 180px;
+  height: 180px;
+  top: -60px;
+  right: -45px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.09);
+}
+
+.hero-deco--2 {
+  width: 100px;
+  height: 100px;
+  bottom: -36px;
+  right: 140px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
 }
 
 .overview-container {
@@ -40,35 +75,87 @@
   z-index: 1;
 }
 
-.hero-band {
+.hero-layout {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.hero-main {
+  flex: 1 1 0;
+  min-width: 0;
   color: #ffffff;
-  max-width: 34rem;
 }
 
 .hero-band__eyebrow {
-  font-size: 0.67rem;
+  font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.68);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .hero-band__amount {
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1;
+  font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+  line-height: 1.05;
   font-weight: 800;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
+  color: #ffffff;
 }
 
 .hero-band__meta {
-  font-size: 0.67rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .hero-band__sub {
-  font-size: 0.67rem;
+  font-size: 0.62rem;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hero-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.hero-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  width: 22rem;
+}
+
+.hero-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px);
+}
+
+.hero-chip__label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hero-chip__amount {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  line-height: 1.2;
 }
 
 .grant-details-card {
@@ -163,6 +250,19 @@
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .hero-layout {
+    flex-wrap: wrap;
+  }
+
+  .hero-divider {
+    display: none;
+  }
+
+  .hero-chips {
+    width: 100%;
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 575.98px) {
@@ -172,6 +272,14 @@
 
   .grant-content {
     padding: 1.25rem;
+  }
+
+  .ap-overview__hero {
+    padding: 1rem 1.1rem;
+  }
+
+  .hero-chips {
+    grid-template-columns: 1fr 1fr;
   }
 }
 /* Skeleton loading */

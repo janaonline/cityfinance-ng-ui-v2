@@ -1,11 +1,31 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { environment } from '../../../../../environments/environment';
 
 type ProfileRole = 'state' | 'ulb' | 'mohua';
+
+interface YearItem {
+  _id: string;
+  year: string;
+}
+
+interface YearsApiResponse {
+  success: boolean;
+  data: YearItem[];
+  timestamp: string;
+}
+
+interface StoredUser {
+  role?: string;
+  ulb?: string;
+  state?: string;
+  isXVIFCProfileVerified?: boolean;
+}
 
 const ROLE_MAP: Record<string, ProfileRole> = {
   STATE: 'state',
@@ -22,53 +42,83 @@ const ROLE_MAP: Record<string, ProfileRole> = {
   templateUrl: './years-selection.component.html',
   styleUrl: './years-selection.component.scss',
 })
-export class YearsSelectionComponent {
+export class YearsSelectionComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
 
-  years: string[] = ['2026-27', '2027-28', '2028-29', '2029-30', '2030-31'];
+  private yearItems: YearItem[] = [];
 
-  selectedYear = signal<string | null>(null);
+  readonly isLoading = signal(true);
+  readonly activeYear = signal<string>('');
+  readonly upcomingYears = signal<string[]>([]);
+
+  selectedYear = signal<string>('');
+
+  ngOnInit(): void {
+    this.http.get<YearsApiResponse>(`${environment.api.url2}xvi-fc/years`).subscribe({
+      next: (response) => {
+        if (response.success && response.data.length > 0) {
+          this.yearItems = response.data;
+          const [first, ...rest] = response.data;
+          this.activeYear.set(first.year);
+          this.upcomingYears.set(rest.map((y) => y.year));
+          this.selectedYear.set(first.year);
+        }
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+      },
+    });
+  }
 
   selectYear(year: string): void {
     this.selectedYear.set(year);
   }
 
   continue() {
-    const year = this.selectedYear();
-    if (!year) return;
+    const yearString = this.selectedYear();
+    if (!yearString) return;
+
+    const yearItem = this.yearItems.find((y) => y.year === yearString);
+    const yearId = yearItem?._id ?? yearString;
+    const entityId = this.getEntityId();
 
     const standaloneKey = localStorage.getItem('isXVIFCProfileVerified');
     const userDataRaw = localStorage.getItem('userData');
     let userDataVerified = false;
     try {
-      userDataVerified = userDataRaw ? JSON.parse(userDataRaw)?.isXVIFCProfileVerified === true : false;
+      userDataVerified = userDataRaw
+        ? (JSON.parse(userDataRaw) as StoredUser)?.isXVIFCProfileVerified === true
+        : false;
     } catch { /* ignore */ }
-
-    // console.log('[YearsSelection] isXVIFCProfileVerified key:', standaloneKey);
-    // console.log('[YearsSelection] userData.isXVIFCProfileVerified:', userDataVerified);
-    // console.log('[YearsSelection] userData raw:', userDataRaw);
 
     const isVerified = standaloneKey === 'true' || userDataVerified;
 
+    localStorage.setItem('xvifc_selectedYearString', `FY-${yearString}`);
+
     if (isVerified) {
-      const role = this.getRoleFromLocalStorage();
-      // console.log('[YearsSelection] Verified — navigating to overview with role:', role, 'year:', year);
-      this.router.navigate(['/xvifc', role, year, 'overview'], { replaceUrl: true });
+      this.router.navigate(['/xvifc', entityId, yearId, 'overview'], { replaceUrl: true });
       return;
     }
 
-    // console.log('[YearsSelection] Not verified — redirecting to profile-verify');
-    this.router.navigate(['/xvifc', 'profile-verify'], { queryParams: { year }, replaceUrl: true });
+    this.router.navigate(['/xvifc', 'profile-verify'], {
+      queryParams: { year: yearId, entityId },
+      replaceUrl: true,
+    });
   }
 
-  private getRoleFromLocalStorage(): ProfileRole {
+  private getEntityId(): string {
     try {
       const raw = localStorage.getItem('userData');
-      if (!raw) return 'state';
-      const user = JSON.parse(raw) as { role: string };
-      return ROLE_MAP[user.role] ?? 'state';
+      if (!raw) return '';
+      const user = JSON.parse(raw) as StoredUser;
+      const role = ROLE_MAP[user.role ?? ''] ?? 'state';
+      if (role === 'ulb') return user.ulb ?? '';
+      if (role === 'state') return user.state ?? '';
+      return user.state ?? user.ulb ?? '';
     } catch {
-      return 'state';
+      return '';
     }
   }
 }

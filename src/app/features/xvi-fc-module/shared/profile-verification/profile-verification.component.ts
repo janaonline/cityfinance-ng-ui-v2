@@ -39,6 +39,7 @@ export class ProfileVerificationComponent implements OnInit {
   isSubmitting = false;
   errorMessage = '';
   private year = '';
+  private entityId = '';
 
   form = this.fb.group({
     contactPersonName: [''],
@@ -49,6 +50,7 @@ export class ProfileVerificationComponent implements OnInit {
 
   ngOnInit(): void {
     this.year = this.route.snapshot.queryParamMap.get('year') ?? '';
+    this.entityId = this.route.snapshot.queryParamMap.get('entityId') ?? '';
     this.role = this.getRoleFromLocalStorage();
     this.loadProfile();
   }
@@ -111,7 +113,7 @@ export class ProfileVerificationComponent implements OnInit {
           }
         } catch { /* ignore */ }
         this.snackBar.open(res.message ?? 'Profile verified successfully', 'Close', { duration: 3000 });
-        this.router.navigate(['/xvifc', this.role, this.year, 'overview'], { replaceUrl: true });
+        this.router.navigate(['/xvifc', this.entityId, this.year, 'overview'], { replaceUrl: true });
       },
       error: (err) => {
         this.errorMessage = err?.error?.message ?? 'Failed to save profile. Please try again.';

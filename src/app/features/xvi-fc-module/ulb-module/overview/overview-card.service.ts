@@ -25,9 +25,26 @@ const DUMMY_ULB_RESPONSES: Record<string, UlbOverviewApiResponse> = {
   providedIn: 'root',
 })
 export class UlbOverviewService {
+  private readUserNames(): { ulbName: string; stateName: string } {
+    try {
+      const raw = localStorage.getItem('userData');
+      if (!raw) return { ulbName: '', stateName: '' };
+      const user = JSON.parse(raw) as { name?: string; stateName?: string };
+      return { ulbName: user.name ?? '', stateName: user.stateName ?? '' };
+    } catch {
+      return { ulbName: '', stateName: '' };
+    }
+  }
+
   getUlbOverview(ulbId: string): Observable<UlbOverviewApiResponse> {
     const data = DUMMY_ULB_RESPONSES[ulbId] ?? DUMMY_ULB_RESPONSES['default'];
-    return of({ ...data, ulbId }).pipe(delay(600));
+    const { ulbName, stateName } = this.readUserNames();
+    return of({
+      ...data,
+      ulbId,
+      ...(ulbName && { ulbName }),
+      ...(stateName && { stateName }),
+    }).pipe(delay(600));
   }
 
   getOverviewViewModel(ulbId: string): Observable<{
@@ -45,15 +62,12 @@ export class UlbOverviewService {
   }
 
   private mapToOverviewData(response: UlbOverviewApiResponse): OverviewData {
-    const totalBasic = response.tableData.reduce((sum, row) => sum + row.basic, 0);
-    const totalPerformance = response.tableData.reduce((sum, row) => sum + row.performance, 0);
-
     return {
       name: response.ulbName,
       financialYear: `FY-${response.years}`,
       subHeader1: 'TOTAL 5-YEAR ALLOCATION',
       subHeader2: 'BASIC + PERFORMANCE',
-      totalAllocation: this.formatCrore(response.totalAllocation),
+      totalAllocation: '₹___ crore',
       totalAllocationNote: `For ${response.ulbName}, ${response.stateName}`,
       grantSections: [
         {
@@ -61,7 +75,7 @@ export class UlbOverviewService {
           label: 'Basic Grants',
           componentLabel: 'Grant Component',
           title: 'Basic Grants',
-          amount: this.formatCrore(totalBasic),
+          amount: '₹___ crore',
           points: [
             'Supports delivery of core municipal services across eligible Urban Local Bodies.',
             'Focused on improving service continuity, maintenance, and local civic infrastructure.',
@@ -73,7 +87,7 @@ export class UlbOverviewService {
           label: 'Performance Grants',
           componentLabel: 'Grant Component',
           title: 'Performance Grants',
-          amount: this.formatCrore(totalPerformance),
+          amount: '₹___ crore',
           points: [
             'Linked to achievement of reform-linked performance indicators by eligible ULBs.',
             'Encourages stronger financial management, reporting, and governance outcomes.',
@@ -98,8 +112,8 @@ export class UlbOverviewService {
 
     response.tableData.forEach((row) => {
       const key = this.toColumnKey(row.year);
-      basicValues[key] = this.formatCrore(row.basic);
-      performanceValues[key] = row.performance > 0 ? this.formatCrore(row.performance) : '—';
+      basicValues[key] = '___';
+      performanceValues[key] = '___';
     });
 
     return [
@@ -110,9 +124,5 @@ export class UlbOverviewService {
 
   private toColumnKey(year: string): string {
     return year.toLowerCase().replace(/\s+/g, '').replace(/-/g, '_');
-  }
-
-  private formatCrore(value: number): string {
-    return `₹${new Intl.NumberFormat('en-IN').format(value)} crore`;
   }
 }

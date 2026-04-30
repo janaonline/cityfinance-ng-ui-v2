@@ -2,7 +2,7 @@
   display: block;
 }
 
-/* FULL SCREEN BLUR BACKGROUND */
+/* ── OVERLAY ── */
 .year-overlay {
   position: fixed;
   inset: 0;
@@ -12,199 +12,319 @@
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(circle at top, rgba(29, 111, 115, 0.12), transparent 40%),
-    linear-gradient(180deg, #f8fcff 0%, #eef7fb 50%, #f9fdff 100%);
-
-  backdrop-filter: blur(12px);
+    radial-gradient(ellipse at 30% 20%, rgba(29, 111, 115, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(15, 79, 79, 0.08) 0%, transparent 50%),
+    linear-gradient(160deg, #f0f7f8 0%, #e8f4f5 50%, #f5fbfc 100%);
 }
 
-/* CARD */
+/* ── CARD ── */
 .year-card {
   width: 100%;
-  max-width: 500px;
-  border-radius: 18px;
+  max-width: 460px;
+  border-radius: 20px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.96);
-  // border: 1px solid rgba(255, 255, 255, 0.45);
+  background: #ffffff;
   box-shadow:
-    0 24px 60px rgba(15, 23, 42, 0.18),
-    0 8px 24px rgba(15, 23, 42, 0.08);
+    0 32px 72px rgba(15, 23, 42, 0.16),
+    0 8px 24px rgba(15, 23, 42, 0.06);
   animation: cardFadeUp 0.35s ease;
 }
 
-/* HEADER */
+/* ── HEADER ── */
 .year-card__header {
-  background: linear-gradient(135deg, #0f4f4f, #1d6f73);
+  background: linear-gradient(135deg, #0d4545 0%, #1d6f73 60%, #247f84 100%);
   color: #ffffff;
-  padding: 22px 24px 20px;
+  padding: 24px 26px 22px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+  }
 
   .tag {
-    margin: 0 0 8px;
-    font-size: 11px;
+    margin: 0 0 10px;
+    font-size: 10.5px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    opacity: 0.82;
+    opacity: 0.75;
   }
 
   h2 {
     margin: 0;
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
   }
 
   .subtitle {
     margin: 8px 0 0;
-    max-width: 360px;
     font-size: 13px;
-    line-height: 1.55;
-    opacity: 0.92;
+    line-height: 1.6;
+    opacity: 0.85;
   }
 }
 
-/* BODY */
+/* ── BODY ── */
 .year-card__body {
-  padding: 24px 22px 22px;
+  padding: 22px 22px 22px;
 }
 
-/* YEAR GRID */
-.year-radio-group {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
+/* ── SECTION LABELS ── */
+.section-label {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b8f93;
+
+  &--upcoming {
+    margin-top: 18px;
+  }
 }
 
-/* YEAR TILE */
-.year-pill {
-  position: relative;
+/* ── ACTIVE YEAR TILE ── */
+.year-active-tile {
   display: block;
   cursor: pointer;
   user-select: none;
-  animation: tileFadeIn 0.3s ease;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
-.year-pill input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+.year-active-tile__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border: 1.5px solid #c8dee1;
+  border-radius: 14px;
+  background: #f9fdfd;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+
+  .year-active-tile:hover & {
+    border-color: #9fc2c7;
+    background: #f3fbfb;
+    box-shadow: 0 4px 16px rgba(29, 111, 115, 0.08);
+  }
 }
 
-.year-pill__label {
-  position: relative;
-  z-index: 2;
+.year-active-tile--selected .year-active-tile__inner {
+  border-color: #1d6f73;
+  background: #edf8f8;
+  box-shadow:
+    0 8px 24px rgba(21, 92, 94, 0.12),
+    0 0 0 3px rgba(29, 111, 115, 0.1);
+}
+
+.year-active-tile__left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.year-active-tile__year {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f4040;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.year-active-tile__sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a9fa3;
+}
+
+.year-active-tile__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.year-active-tile__radio svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+/* ── LIVE BADGE ── */
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(29, 111, 115, 0.1);
+  color: #1d6f73;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.badge-live__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1d6f73;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+/* ── UPCOMING GRID ── */
+.upcoming-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* ── LOCKED YEAR TILE ── */
+.year-locked-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 8px;
+  border: 1px solid #e4eced;
+  border-radius: 12px;
+  background: #f7fafa;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.lock-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.year-locked-tile__year {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #8aaeb2;
+  letter-spacing: 0.01em;
+}
+
+/* ── COMING SOON BADGE ── */
+.badge-soon {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a8c4c7;
+}
+
+/* ── CONTINUE BUTTON ── */
+.continue-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 50px;
-  padding: 0 16px;
-  border: 1px solid #d8e3e6;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #17353c;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  box-shadow:
-    0 6px 16px rgba(16, 24, 40, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition:
-    transform 0.22s ease,
-    box-shadow 0.22s ease,
-    border-color 0.22s ease,
-    background-color 0.22s ease,
-    color 0.22s ease;
-}
-
-.year-pill__glow {
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  opacity: 0;
-  transform: scale(0.96);
-  background: radial-gradient(circle, rgba(29, 111, 115, 0.12), transparent 72%);
-  pointer-events: none;
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-}
-
-.year-pill:hover .year-pill__label {
-  transform: translateY(-2px);
-  border-color: #9fc2c7;
-  background: #f6fbfb;
-  color: #155c5e;
-  box-shadow:
-    0 12px 24px rgba(21, 92, 94, 0.1),
-    0 0 0 1px rgba(29, 111, 115, 0.04);
-}
-
-.year-pill:hover .year-pill__glow {
-  opacity: 1;
-  transform: scale(1.03);
-}
-
-.year-pill:active .year-pill__label {
-  transform: translateY(0);
-}
-
-/* ACTIVE */
-.year-pill--active .year-pill__label {
-  border-color: #1d6f73;
-  background: #eef8f8;
-  color: #114f52;
-  box-shadow:
-    0 12px 24px rgba(21, 92, 94, 0.12),
-    0 0 0 3px rgba(29, 111, 115, 0.12);
-}
-
-.year-pill--active .year-pill__glow {
-  opacity: 1;
-  transform: scale(1.02);
-  background: radial-gradient(circle, rgba(29, 111, 115, 0.14), transparent 72%);
-}
-
-/* BUTTON */
-.continue-btn {
+  gap: 8px;
   width: 100%;
-  height: 48px;
+  height: 50px;
+  margin-top: 20px;
   border: none;
-  border-radius: 12px;
+  border-radius: 13px;
   background: linear-gradient(135deg, #1d6f73 0%, #155c5e 100%);
   color: #ffffff;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(21, 92, 94, 0.16);
+  box-shadow: 0 12px 28px rgba(21, 92, 94, 0.2);
   transition:
-    transform 0.22s ease,
-    box-shadow 0.22s ease,
-    opacity 0.22s ease,
-    background 0.22s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+
+  .btn-arrow {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #22797e 0%, #1a6668 100%);
+    box-shadow: 0 16px 32px rgba(21, 92, 94, 0.26);
+
+    .btn-arrow {
+      transform: translateX(3px);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 8px 16px rgba(21, 92, 94, 0.16);
+  }
+
+  &:disabled {
+    background: #cfd8dc;
+    color: #6b7f86;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
 }
 
-.continue-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: linear-gradient(135deg, #216f73 0%, #176568 100%);
-  box-shadow: 0 16px 28px rgba(21, 92, 94, 0.22);
+/* ── SKELETON LOADING ── */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to { background-position: 400px 0; }
 }
 
-.continue-btn:disabled {
-  background: #cfd8dc;
-  color: #6b7f86;
-  cursor: not-allowed;
-  box-shadow: none;
+%skeleton-base {
+  background: linear-gradient(90deg, #e8f0f1 25%, #d4e6e8 50%, #e8f0f1 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 12px;
 }
 
-/* ANIMATIONS */
+.skeleton-active {
+  @extend %skeleton-base;
+  height: 80px;
+  margin-bottom: 18px;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.skeleton-tile {
+  @extend %skeleton-base;
+  height: 80px;
+}
+
+.skeleton-btn {
+  @extend %skeleton-base;
+  height: 50px;
+}
+
+/* ── ANIMATIONS ── */
 @keyframes cardFadeUp {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(14px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -212,19 +332,19 @@
   }
 }
 
-@keyframes tileFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
+@keyframes pulse {
+  0%, 100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.75);
   }
 }
 
-/* RESPONSIVE */
-@media (max-width: 640px) {
+/* ── RESPONSIVE ── */
+@media (max-width: 520px) {
   .year-overlay {
     padding: 16px;
   }
@@ -234,35 +354,14 @@
   }
 
   .year-card__body {
-    padding: 20px 16px 18px;
+    padding: 18px 16px 18px;
   }
 
-  .year-radio-group {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+  .year-active-tile__year {
+    font-size: 20px;
   }
 
-  .year-pill__label {
-    min-height: 46px;
-    font-size: 15px;
-    border-radius: 10px;
-  }
-}
-
-@media (max-width: 420px) {
-  .year-radio-group {
-    grid-template-columns: 1fr;
-  }
-
-  .year-card__header {
-    padding: 20px 18px 18px;
-  }
-
-  .year-card__header h2 {
-    font-size: 22px;
-  }
-
-  .year-card__header .subtitle {
-    max-width: 100%;
+  .upcoming-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -11,11 +11,11 @@ import {
   Roles,
   XVIFC_LANDING_ROUTE,
   XvifcYearId,
-  YEAR_IDS,
 } from './xvi-fc-side-menu.config';
 
 export interface XvifcRouteContext {
   role: Roles;
+  entityId: string;
   yearId: XvifcYearId;
 }
 
@@ -35,9 +35,8 @@ export class XvifcModuleService {
   private readonly resolvedContext = signal<XvifcRouteContext | null>(null);
   private readonly lastMenuRequestKey = signal<string | null>(null);
 
-  readonly availableYearIds: readonly XvifcYearId[] = YEAR_IDS;
-
   readonly role = computed<Roles | null>(() => this.resolvedContext()?.role ?? null);
+  readonly entityId = computed<string>(() => this.resolvedContext()?.entityId ?? '');
   readonly yearId = computed<XvifcYearId | null>(() => this.resolvedContext()?.yearId ?? null);
 
   readonly sideMenuModel = signal<SideBarModel>(EMPTY_SIDE_MENU_MODEL);
@@ -93,7 +92,8 @@ export class XvifcModuleService {
       return null;
     }
 
-    return { role, yearId };
+    const entityId = this.resolveEntityId(snapshot);
+    return { role, entityId, yearId };
   }
 
   /**
@@ -124,8 +124,6 @@ export class XvifcModuleService {
 
   /**
    * Walks the nested route tree and returns the deepest `yearId` route param.
-   * This lets child routes inherit the shell path structure while still
-   * validating the final year against the supported set.
    */
   private resolveYearId(snapshot: ActivatedRouteSnapshot): XvifcYearId | null {
     let current: ActivatedRouteSnapshot | null = snapshot;
@@ -134,11 +132,7 @@ export class XvifcModuleService {
     while (current) {
       const routeYearId = current.paramMap.get('yearId');
 
-      if (routeYearId !== null) {
-        if (!this.isYearId(routeYearId)) {
-          return null;
-        }
-
+      if (routeYearId !== null && routeYearId.length > 0) {
         resolvedYearId = routeYearId;
       }
 
@@ -146,6 +140,22 @@ export class XvifcModuleService {
     }
 
     return resolvedYearId;
+  }
+
+  /** Walks the nested route tree and returns the deepest `entityId` route param. */
+  private resolveEntityId(snapshot: ActivatedRouteSnapshot): string {
+    let current: ActivatedRouteSnapshot | null = snapshot;
+    let resolvedEntityId = '';
+
+    while (current) {
+      const routeEntityId = current.paramMap.get('entityId');
+      if (routeEntityId !== null && routeEntityId.length > 0) {
+        resolvedEntityId = routeEntityId;
+      }
+      current = current.firstChild ?? null;
+    }
+
+    return resolvedEntityId;
   }
 
   /**
@@ -200,10 +210,5 @@ export class XvifcModuleService {
   /** Type guard for role values read from static route data. */
   private isRole(value: unknown): value is Roles {
     return ROLES.includes(value as Roles);
-  }
-
-  /** Type guard for year values read from route parameters. */
-  private isYearId(value: string | null): value is XvifcYearId {
-    return value !== null && YEAR_IDS.includes(value as XvifcYearId);
   }
 }
