@@ -193,16 +193,9 @@ function logoutRedirection(authService: AuthService, router: Router) {
 
   clearLocalStorage(authService);
 
-  // const loginType = localStorage.getItem('loginType');
-  // if (loginType === 'state-dashboard') {
-  //   void router.navigate(['login/state-dashboard']);
-  // } else if (loginType === 'XVIFC') {
-  //   void router.navigate(['login/xvi-fc']);
-  // } else {
-  //   void router.navigate(['fc_grant']);
-  // }
-  void router.navigate(['auth/login'], {
-    queryParams: { message: 'Your session expired. Please sign in again.' },
+  const loginType = localStorage.getItem('loginType');
+  void router.navigate(['auth/login', loginType], {
+    // queryParams: { message: 'Your session expired. Please sign in again.' },
   });
 }
 

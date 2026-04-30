@@ -22,6 +22,11 @@ export const routes: Routes = [
     loadChildren: () => import('./admin/admin.routes').then((mod) => mod.ADMIN_ROUTES),
     canActivate: [authGuard],
   },
+  // { path: 'login', component: LoginComponent },
+  // {
+  //   path: 'login',
+  //   loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
+  // },
   {
     path: '',
     children: [
@@ -48,17 +53,18 @@ export const routes: Routes = [
   },
   {
     path: 'afs-dashboard',
-    loadComponent: () =>
-      import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
-    // canActivate: [authGuard],
+    loadComponent: () => import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
+    canActivate: [authGuard],
   },
   {
     path: 'afs-old-dashboard',
-    loadComponent: () =>
-      import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then(
-        (m) => m.OldDashboardComponent,
-      ),
+    loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
     canActivate: [authGuard],
+  },
+
+  {
+    path: 'ocr',
+    loadChildren: () => import('./admin/ocr/ocr.routes').then((mod) => mod.OCR_ROUTES),
   },
   {
     path: 'events-dashboard',

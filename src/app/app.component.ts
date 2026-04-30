@@ -36,8 +36,10 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.gaService.init();
-    this.gtmService.initScript();
+    if (environment.isProduction && environment.googleAnalyticsId) {
+      this.gaService.init();
+      this.gtmService.initScript();
+    }
     // this.gaService.trackEvent('button click',{});
     this.getQueryParams();
 

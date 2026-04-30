@@ -16,6 +16,7 @@ import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetail
 import { USER_TYPE } from '../../core/models/user/userType';
 import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 import { environment } from '../../../environments/environment';
+import { IRoutePages, ROUTE_PAGES } from '../../core/constants/login-menu.constant';
 
 type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE';
 type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe';
@@ -140,42 +141,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     otp: new FormControl('', { nonNullable: true }),
   });
 
-  routePages: { type: string; label: string; link?: string; route?: string; roles: USER_TYPE[] }[] = [{
-    type: '15thFC',
-    label: '15th FC',
-    link: '/fc-home-page',
-    roles: [USER_TYPE.ULB, USER_TYPE.STATE, USER_TYPE.MoHUA, USER_TYPE.ADMIN]
-  }, {
-    type: '16thFC',
-    label: '16th FC',
-    route: '/xvifc/year',
-    roles: [USER_TYPE.ULB, USER_TYPE.STATE, USER_TYPE.MoHUA, USER_TYPE.ADMIN]
-  },
-  {
-    type: 'XVIFC',
-    label: 'XVI FC',
-    route: '/xvifc-form',
-    roles: [USER_TYPE.ULB]
-  },
-  {
-    type: 'XVIFC',
-    label: 'XVI FC',
-    route: '/admin/xvi-fc-review',
-    roles: [USER_TYPE.XVIFC_STATE, USER_TYPE.XVIFC]
-  },
-  {
-    type: 'ranking',
-    label: 'Ranking',
-    link: '/ranking',
-    roles: [USER_TYPE.ULB, USER_TYPE.STATE, USER_TYPE.MoHUA, USER_TYPE.ADMIN]
-  },
-  {
-    type: 'state-dashboard',
-    label: 'State Dashboard',
-    link: '/state-dashboard',
-    roles: [USER_TYPE.STATE, USER_TYPE.ADMIN]
-  }
-  ];
+  routePages: IRoutePages[] = ROUTE_PAGES;
 
   documents = [
     {
@@ -213,20 +179,44 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(({ type }) => {
-      const loginType: LoginType = LOGIN_TYPES.includes(type) ? type : '15thFC';
-      this.typeKey.set(loginType);
-      if (loginType === 'XVIFC') {
-        this.loginForm.controls.role.clearValidators();
-        this.loginForm.controls.role.updateValueAndValidity();
-      } else {
-        this.loginForm.controls.role.setValidators([Validators.required]);
-        this.loginForm.controls.role.updateValueAndValidity();
-      }
-    });
+    this.setLoginType();
     this.xvifcService.clearResolvedContext();
     this.enablePasswordMode();
     this.recaptchaService.loadScript();
+  }
+
+  setLoginType(): void {
+    this.route.queryParams.subscribe(({ type }) => {
+      if (LOGIN_TYPES.includes(type)) {
+        this.typeKey.set(type);
+        if (type === 'XVIFC') {
+          this.loginForm.controls.role.clearValidators();
+          this.loginForm.controls.role.updateValueAndValidity();
+        } else {
+          this.loginForm.controls.role.setValidators([Validators.required]);
+          this.loginForm.controls.role.updateValueAndValidity();
+        }
+      }
+    });
+    this.route.paramMap.subscribe(params => {
+      const type = params.get('type') as LoginType;
+      if (LOGIN_TYPES.includes(type)) {
+        // Clear any saved post-login navigation to prevent unintended redirects when switching login types
+        if (type === '15thFC' || type === 'ranking' || type === 'state-dashboard') {
+          sessionStorage.removeItem('postLoginNavigationV2');
+        } else if (type === '16thFC' || type === 'XVIFC') {
+          sessionStorage.removeItem('postLoginNavigation');
+        }
+        this.typeKey.set(type);
+        if (type === 'XVIFC') {
+          this.loginForm.controls.role.clearValidators();
+          this.loginForm.controls.role.updateValueAndValidity();
+        } else {
+          this.loginForm.controls.role.setValidators([Validators.required]);
+          this.loginForm.controls.role.updateValueAndValidity();
+        }
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -306,7 +296,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.authService.login({
             identifier: identifier.trim(),
             password,
-            type: this.typeKey() ?? '15thFC',
+            type: this.typeKey(),
             recaptchaToken,
           }),
         ),
@@ -445,34 +435,38 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
     for (const route of this.routePages) {
       // console.log('Checking route', route, this.typeKey(), currentUser?.role);
-      if (route.type === this.typeKey() && route.roles.includes(currentUser?.role as USER_TYPE)) {
+      if (route.type === this.typeKey() && (route.roles?.includes(currentUser?.role as USER_TYPE) || !route.roles)) {
         if (route.link) {
           // console.log('Navigating to link', route.link);
           window.location.href = environment.ui.urlV1 + route.link;
+          // return;
           // window.location.href = 'http://localhost:4200' + route.link;
         } else if (route.route) {
           await this._router.navigate([route.route], { replaceUrl: true });
+          // return;
         }
         return;
       }
+      // redirect to home if no matching route found for the user's role and login type
+      // window.location.href = '/'
     }
-    if (this.typeKey() === 'XVIFC') {
-      if (currentUser?.role === USER_TYPE.ULB) {
-        this._router.navigate(['/xvifc/year'], { replaceUrl: true });
-        return;
-      }
+    // if (this.typeKey() === 'XVIFC') {
+    //   if (currentUser?.role === USER_TYPE.ULB) {
+    //     this._router.navigate(['/xvifc/year'], { replaceUrl: true });
+    //     return;
+    //   }
 
-      if (
-        [USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE, USER_TYPE.STATE, USER_TYPE.MoHUA].includes(
-          currentUser?.role as USER_TYPE,
-        )
-      ) {
-        await this._router.navigate(['/admin'], { replaceUrl: true });
-        return;
-      }
+    //   if (
+    //     [USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE, USER_TYPE.STATE, USER_TYPE.MoHUA].includes(
+    //       currentUser?.role as USER_TYPE,
+    //     )
+    //   ) {
+    //     await this._router.navigate(['/admin'], { replaceUrl: true });
+    //     return;
+    //   }
 
-      await this._router.navigate(['/xvifc/year'], { replaceUrl: true });
-    }
+    //   await this._router.navigate(['/xvifc/year'], { replaceUrl: true });
+    // }
   }
   // routeToProperLocation(user: IUserLoggedInDetails) {
   //   if (this.loginType === 'XVIFC') {

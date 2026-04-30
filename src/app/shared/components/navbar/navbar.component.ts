@@ -22,6 +22,7 @@ import { AuthService, AuthSessionState } from '../../../core/services/auth.servi
 import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
+import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 
 @Component({
   selector: 'app-navbar',
@@ -65,6 +66,8 @@ export class NavbarComponent implements OnInit, AfterViewInit {
 
   private elementPosition = 0;
   private ticking = false;
+
+  routePages = ROUTE_PAGES.filter((page) => page.isMenu);
 
   @ViewChild('stickyMenu') menuElement?: ElementRef;
 
@@ -143,16 +146,17 @@ export class NavbarComponent implements OnInit, AfterViewInit {
         next: () => {
           this.removeSessionItem();
           this.isLoggedIn = false;
-          window.location.href = `auth/login?type=${loginType}`;
+          this._router.navigate(['/auth/login', loginType]);
         },
       });
-    } else if (type === 'ranking') {
-      window.location.href = '/rankings/login';
-      return;
+      // } else if (type === 'ranking') {
+      //   window.location.href = '/rankings/login';
+      //   return;
     } else {
-      this._router.navigate(['/auth/login'], {
-        queryParams: { type },
-      });
+      this._router.navigate(['/auth/login', type]);
+      // this._router.navigate(['/auth/login', { type }], {
+      //   queryParams: { type },
+      // });
     }
   }
 

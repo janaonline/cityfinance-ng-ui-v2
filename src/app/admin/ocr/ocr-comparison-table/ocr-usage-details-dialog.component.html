@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content class="usage-dialog-content">
+  <p class="usage-dialog-engine">{{ data.engine }}</p>
+
+  <div class="usage-details-table-shell">
+    <table class="usage-details-table">
+      <tbody>
+        @for (detail of data.details; track detail.label) {
+          <tr [class]="getRowClass(detail.status)">
+            <td class="usage-detail-label">
+              <div class="usage-detail-label-content">
+                <span>{{ detail.label }}:</span>
+                @if (detail.status) {
+                  <span [class]="getStatusClass(detail.status)">{{ detail.status }}</span>
+                }
+              </div>
+            </td>
+            <td class="usage-detail-value">{{ detail.value }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="close()">Close</button>
+</mat-dialog-actions>
