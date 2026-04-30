@@ -6,6 +6,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { environment } from '../../../../../environments/environment';
+import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
 
 type ProfileRole = 'state' | 'ulb' | 'mohua';
 
@@ -33,6 +34,14 @@ const ROLE_MAP: Record<string, ProfileRole> = {
   ULB: 'ulb',
   XVIFC: 'ulb',
   MoHUA: 'mohua',
+};
+
+const ROUTE_ROLE_MAP: Record<string, Roles> = {
+  STATE: 'STATE',
+  XVIFC_STATE: 'STATE',
+  ULB: 'ULB',
+  XVIFC: 'ULB',
+  MoHUA: 'MOHUA',
 };
 
 @Component({
@@ -83,6 +92,7 @@ export class YearsSelectionComponent implements OnInit {
     const yearItem = this.yearItems.find((y) => y.year === yearString);
     const yearId = yearItem?._id ?? yearString;
     const entityId = this.getEntityId();
+    const routeRole = this.getRouteRole();
 
     const standaloneKey = localStorage.getItem('isXVIFCProfileVerified');
     const userDataRaw = localStorage.getItem('userData');
@@ -91,19 +101,23 @@ export class YearsSelectionComponent implements OnInit {
       userDataVerified = userDataRaw
         ? (JSON.parse(userDataRaw) as StoredUser)?.isXVIFCProfileVerified === true
         : false;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     const isVerified = standaloneKey === 'true' || userDataVerified;
 
     localStorage.setItem('xvifc_selectedYearString', `FY-${yearString}`);
 
     if (isVerified) {
-      this.router.navigate(['/xvifc', entityId, yearId, 'overview'], { replaceUrl: true });
+      this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
+        replaceUrl: true,
+      });
       return;
     }
 
     this.router.navigate(['/xvifc', 'profile-verify'], {
-      queryParams: { year: yearId, entityId },
+      queryParams: { year: yearId },
       replaceUrl: true,
     });
   }
@@ -119,6 +133,17 @@ export class YearsSelectionComponent implements OnInit {
       return user.state ?? user.ulb ?? '';
     } catch {
       return '';
+    }
+  }
+
+  private getRouteRole(): Roles {
+    try {
+      const raw = localStorage.getItem('userData');
+      if (!raw) return 'STATE';
+      const user = JSON.parse(raw) as StoredUser;
+      return ROUTE_ROLE_MAP[user.role ?? ''] ?? 'STATE';
+    } catch {
+      return 'STATE';
     }
   }
 }

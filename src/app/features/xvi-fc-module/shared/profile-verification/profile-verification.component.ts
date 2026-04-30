@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProfileVerificationService } from './profile-verification.service';
 import { ProfileVerificationPayload } from './profile-verification.models';
+import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
 
 type ProfileRole = 'state' | 'ulb' | 'mohua';
 
@@ -14,6 +15,14 @@ const ROLE_MAP: Record<string, ProfileRole> = {
   ULB: 'ulb',
   XVIFC: 'ulb',
   MoHUA: 'mohua',
+};
+
+const ROUTE_ROLE_MAP: Record<string, Roles> = {
+  STATE: 'STATE',
+  XVIFC_STATE: 'STATE',
+  ULB: 'ULB',
+  XVIFC: 'ULB',
+  MoHUA: 'MOHUA',
 };
 
 @Component({
@@ -111,9 +120,21 @@ export class ProfileVerificationComponent implements OnInit {
             userData.isXVIFCProfileVerified = true;
             localStorage.setItem('userData', JSON.stringify(userData));
           }
-        } catch { /* ignore */ }
-        this.snackBar.open(res.message ?? 'Profile verified successfully', 'Close', { duration: 3000 });
-        this.router.navigate(['/xvifc', this.entityId, this.year, 'overview'], { replaceUrl: true });
+        } catch {
+          /* ignore */
+        }
+        this.snackBar.open(res.message ?? 'Profile verified successfully', 'Close', {
+          duration: 3000,
+        });
+        this.router.navigate(
+          buildXvifcFeatureLink(
+            this.getRouteRoleFromLocalStorage(),
+            this.entityId,
+            this.year,
+            'overview',
+          ),
+          { replaceUrl: true },
+        );
       },
       error: (err) => {
         this.errorMessage = err?.error?.message ?? 'Failed to save profile. Please try again.';
@@ -130,6 +151,17 @@ export class ProfileVerificationComponent implements OnInit {
       return ROLE_MAP[user.role] ?? 'state';
     } catch {
       return 'state';
+    }
+  }
+
+  private getRouteRoleFromLocalStorage(): Roles {
+    try {
+      const raw = localStorage.getItem('userData');
+      if (!raw) return 'STATE';
+      const user = JSON.parse(raw) as { role: string };
+      return ROUTE_ROLE_MAP[user.role] ?? 'STATE';
+    } catch {
+      return 'STATE';
     }
   }
 }

@@ -2,6 +2,7 @@ import { SideBarModel } from '../../shared/components/side-menu/interface';
 import { buildXvifcFeatureLink, Roles, XvifcYearId } from './xvi-fc-side-menu.config';
 
 type SideBarFactory = (yearId: XvifcYearId) => SideBarModel;
+const MOCK_ENTITY_ID = 'entity';
 
 // Temporary mock payload until the side-menu API is available.
 // Keep this file shaped around menu data so it can be swapped with API output later.
@@ -23,7 +24,7 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
       buildMenuItem(
         'Overview',
         'bi bi-speedometer2',
-        buildXvifcFeatureLink('ULB', yearId, 'overview'),
+        buildXvifcFeatureLink('ULB', '', yearId, 'overview'),
       ),
     ],
     bottomModel: [],
@@ -40,7 +41,7 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
       buildMenuItem(
         'Overview',
         'bi bi-speedometer2',
-        buildXvifcFeatureLink('STATE', yearId, 'overview'),
+        buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'overview'),
       ),
       {
         label: 'Review',
@@ -49,12 +50,12 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
           buildMenuItem(
             'ULB Submissions',
             'bi bi-upload',
-            buildXvifcFeatureLink('STATE', yearId, 'ulb-submissions'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'ulb-submissions'),
           ),
           buildMenuItem(
             'Insights',
             'bi bi-bar-chart-line',
-            buildXvifcFeatureLink('STATE', yearId, 'insights'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'insights'),
           ),
         ],
       },
@@ -65,22 +66,22 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
           buildMenuItem(
             'FY 2026-27 Requirements',
             'bi bi-list-check',
-            buildXvifcFeatureLink('STATE', yearId, 'requirements'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'requirements'),
           ),
           buildMenuItem(
             'SFC Status',
             'bi bi-building',
-            buildXvifcFeatureLink('STATE', yearId, 'sfc-status'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'sfc-status'),
           ),
           buildMenuItem(
             'Elected Body Status',
             'bi bi-person-badge',
-            buildXvifcFeatureLink('STATE', yearId, 'elected-body-status'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'elected-body-status'),
           ),
           buildMenuItem(
             'Devolution Formula',
             'bi bi-calculator',
-            buildXvifcFeatureLink('STATE', yearId, 'devolution-formula'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'devolution-formula'),
           ),
         ],
       },
@@ -91,12 +92,12 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
           buildMenuItem(
             'Special Infrastructure',
             'bi bi-hammer',
-            buildXvifcFeatureLink('STATE', yearId, 'special-infrastructure'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'special-infrastructure'),
           ),
           buildMenuItem(
             'Urbanisation Premium',
             'bi bi-buildings',
-            buildXvifcFeatureLink('STATE', yearId, 'urbanisation-premium'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'urbanisation-premium'),
           ),
         ],
       },
@@ -107,7 +108,7 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
           buildMenuItem(
             'DoE Status',
             'bi bi-check2-circle',
-            buildXvifcFeatureLink('STATE', yearId, 'doe-status'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'doe-status'),
           ),
         ],
       },
@@ -117,7 +118,7 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
         label: 'Give feedback',
         icon: 'bi bi-chat-square-text',
         expanded: false,
-        routerLink: buildXvifcFeatureLink('STATE', yearId, 'feedback'),
+        routerLink: buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'feedback'),
       },
     ],
   }),
@@ -130,7 +131,11 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
         icon: 'bi bi-bank',
       },
       { label: '_', separator: true },
-      buildMenuItem('Workspace', 'bi bi-building-gear', buildXvifcFeatureLink('MOHUA', yearId)),
+      buildMenuItem(
+        'Workspace',
+        'bi bi-building-gear',
+        buildXvifcFeatureLink('MOHUA', MOCK_ENTITY_ID, yearId),
+      ),
       {
         label: 'Review',
         icon: 'bi bi-clipboard-data',
@@ -138,12 +143,12 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
           buildMenuItem(
             'Review ULB Submissions',
             'bi bi-ui-checks-grid',
-            buildXvifcFeatureLink('MOHUA', yearId, 'review-ulb-submissions'),
+            buildXvifcFeatureLink('MOHUA', MOCK_ENTITY_ID, yearId, 'review-ulb-submissions'),
           ),
           buildMenuItem(
             'Review State Submissions',
             'bi bi-ui-checks-grid',
-            buildXvifcFeatureLink('MOHUA', yearId, 'review-state-submissions'),
+            buildXvifcFeatureLink('MOHUA', MOCK_ENTITY_ID, yearId, 'review-state-submissions'),
           ),
         ],
       },
@@ -159,7 +164,11 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
         icon: 'bi bi-bank',
       },
       { label: '_', separator: true },
-      buildMenuItem('Workspace', 'bi bi-building-gear', buildXvifcFeatureLink('DOE', yearId)),
+      buildMenuItem(
+        'Workspace',
+        'bi bi-building-gear',
+        buildXvifcFeatureLink('DOE', MOCK_ENTITY_ID, yearId),
+      ),
     ],
     bottomModel: [],
   }),

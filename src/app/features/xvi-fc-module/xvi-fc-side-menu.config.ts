@@ -6,7 +6,9 @@ export const XVIFC_LANDING_ROUTE = ['/xvifc'] as const;
 
 export const buildXvifcFeatureLink = (
   _role: Roles,
-  entityId: string,
+  _entityId: string,
   yearId: XvifcYearId,
   ...segments: string[]
-): string[] => ['/xvifc', entityId, yearId, ...segments];
+): string[] => {
+  return ['/xvifc', yearId, ...segments];
+};

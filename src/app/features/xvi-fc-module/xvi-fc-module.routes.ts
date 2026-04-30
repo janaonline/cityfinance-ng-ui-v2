@@ -39,20 +39,20 @@ export const XVIFC_ROUTES: Routes = [
     loadComponent: () => import('./xvi-fc-module.component').then((m) => m.XviFcModuleComponent),
     children: [
       {
-        path: ':entityId/:yearId',
+        path: ':yearId',
         canMatch: [isUlbRole],
         data: { role: 'ULB' },
         loadChildren: () => import('./ulb-module/ulb-module.routes').then((m) => m.ULB_ROUTES),
       },
       {
-        path: ':entityId/:yearId',
+        path: ':yearId',
         canMatch: [isStateRole],
         data: { role: 'STATE' },
         loadChildren: () =>
           import('./state-module/state-module.routes').then((m) => m.STATE_ROUTES),
       },
       {
-        path: ':entityId/:yearId',
+        path: ':yearId',
         canMatch: [isMohuaRole],
         data: { role: 'MOHUA' },
         loadChildren: () =>
