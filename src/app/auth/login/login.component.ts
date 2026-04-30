@@ -92,7 +92,9 @@ export class LoginComponent implements OnInit, OnDestroy {
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
   protected readonly isOtpLogin = signal(false);
-  protected readonly supportEmail = '16fcgrant@cityfinance.in';
+  protected readonly supportEmail = computed(() =>
+    this.typeKey() === '15thFC' ? '15fcgrant@cityfinance.in' : '16fcgrant@cityfinance.in',
+  );
   protected readonly brandName = 'CITY FINANCE';
   protected readonly otpLength = OTP_LENGTH;
 

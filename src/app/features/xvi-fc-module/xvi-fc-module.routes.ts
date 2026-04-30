@@ -1,4 +1,21 @@
-import { Routes } from '@angular/router';
+import { CanMatchFn, Routes } from '@angular/router';
+
+const ULB_ROLES = new Set(['ULB', 'XVIFC']);
+const STATE_ROLES = new Set(['STATE', 'XVIFC_STATE']);
+const MOHUA_ROLES = new Set(['MoHUA']);
+
+function readUserRole(): string {
+  try {
+    const raw = localStorage.getItem('userData');
+    return raw ? ((JSON.parse(raw) as { role?: string }).role ?? '') : '';
+  } catch {
+    return '';
+  }
+}
+
+const isUlbRole: CanMatchFn = () => ULB_ROLES.has(readUserRole());
+const isStateRole: CanMatchFn = () => STATE_ROLES.has(readUserRole());
+const isMohuaRole: CanMatchFn = () => MOHUA_ROLES.has(readUserRole());
 
 export const XVIFC_ROUTES: Routes = [
   {
@@ -22,18 +39,21 @@ export const XVIFC_ROUTES: Routes = [
     loadComponent: () => import('./xvi-fc-module.component').then((m) => m.XviFcModuleComponent),
     children: [
       {
-        path: 'ulb/:yearId',
+        path: ':yearId',
+        canMatch: [isUlbRole],
         data: { role: 'ULB' },
         loadChildren: () => import('./ulb-module/ulb-module.routes').then((m) => m.ULB_ROUTES),
       },
       {
-        path: 'state/:yearId',
+        path: ':yearId',
+        canMatch: [isStateRole],
         data: { role: 'STATE' },
         loadChildren: () =>
           import('./state-module/state-module.routes').then((m) => m.STATE_ROUTES),
       },
       {
-        path: 'mohua/:yearId',
+        path: ':yearId',
+        canMatch: [isMohuaRole],
         data: { role: 'MOHUA' },
         loadChildren: () =>
           import('./mohua-module/mohua-module.routes').then((m) => m.MOHUA_ROUTES),

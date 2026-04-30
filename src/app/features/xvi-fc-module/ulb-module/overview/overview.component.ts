@@ -16,6 +16,10 @@ import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 export class OverviewComponent implements OnInit {
   private readonly overviewService = inject(UlbOverviewService);
 
+  get selectedYear(): string | null {
+    return localStorage.getItem('xvifc_selectedYearString') ?? null;
+  }
+
   private get ulbId(): string {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
     return raw ? JSON.parse(raw)?.ulb ?? '' : '';

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, map, catchError, of } from 'rxjs';
+import { Observable, map, catchError } from 'rxjs';
 import { MenuItem, SideBarModel } from '../../shared/components/side-menu/interface';
 // import { SideBarModel } from '../../shared/components/side-menu/interface';
 import { XvifcRouteContext } from './xvi-fc-module.service';
@@ -65,7 +65,11 @@ export class XviFcSideMenuApiService {
     };
   }
 
-  private mapItems(items: ApiMenuItem[], context: XvifcRouteContext, isTopLevel = false): MenuItem[] {
+  private mapItems(
+    items: ApiMenuItem[],
+    context: XvifcRouteContext,
+    isTopLevel = false,
+  ): MenuItem[] {
     return items.map((item) => ({
       ...item,
       routerLink: this.resolveRouterLink(item, context, isTopLevel),
@@ -93,7 +97,12 @@ export class XviFcSideMenuApiService {
     }
 
     if (item.featureKey) {
-      return buildXvifcFeatureLink(context.role as Roles, context.yearId, item.featureKey);
+      return buildXvifcFeatureLink(
+        context.role as Roles,
+        context.entityId,
+        context.yearId,
+        item.featureKey,
+      );
     }
 
     return undefined;

@@ -92,7 +92,7 @@
 }
 
 .hero-description {
-  max-width: 510px;
+  // max-width: 510px;
   margin: 28px 0 0;
   font-size: 14px;
   line-height: 1.85;
@@ -107,7 +107,7 @@
   margin-top: 20px;
   padding-top: 20px;
   // border-top: 1px solid rgba(6, 42, 51, 0.1);
-  max-width: 540px;
+  // max-width: 540px;
 }
 
 .stats-grid {
@@ -566,16 +566,19 @@
 }
 
 .docs-item {
+  display: flex;
+  align-items: center;
   border: 1px solid #e1ebee;
-  margin-bottom: 10px;
-  // background: #ffffff;
-  padding: 6px 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  text-decoration: none;
   transition: all 0.2s ease;
+  min-width: 0;
 
   &:hover {
     background: #f4fbfb;
     border-color: #bcd3d8;
-    transform: translateY(-1px);
   }
 }
 
@@ -603,6 +606,10 @@
   font-weight: 600;
   color: #1f3f45;
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 @media (max-width: 1199px) {
   .left-panel {

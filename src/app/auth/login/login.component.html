@@ -98,31 +98,22 @@
             </p>
           </div>
 
-          <p>Reference Documents</p>
+          <!-- <p>Reference Documents</p> -->
 
           <div class="docs-section mt-3">
             <h5 class="docs-title mb-3">Reference Documents</h5>
 
-            <div class="list-group docs-list">
+            <div class="docs-list">
               @for (doc of documents; track doc.title) {
                 <a
                   [href]="doc.file"
                   target="_blank"
-                  class="list-group-item list-group-item-action d-flex align-items-start gap-3 docs-item"
+                  class="docs-item d-flex align-items-center gap-2"
                 >
-                  <div class="doc-icon">
+                  <div class="doc-icon flex-shrink-0">
                     <i class="bi bi-file-earmark-pdf-fill"></i>
                   </div>
-
-                  <div class="doc-content">
-                    <div class="doc-title">
-                      {{ doc.title }}
-                    </div>
-                  </div>
-
-                  <div class="ms-auto">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                  </div>
+                  <div class="doc-title text-truncate">{{ doc.title }}</div>
                 </a>
               }
             </div>
@@ -146,55 +137,55 @@
           @if (!isOtpLogin()) {
             <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
               @if (typeKey() !== 'XVIFC') {
-              <div class="role-grid" role="radiogroup" aria-label="User role">
-                @for (role of roleOptions(); track trackByRole($index, role)) {
-                  <button
-                    type="button"
-                    class="role-card"
-                    [class.role-card--active]="isRoleSelected(role.id)"
-                    [class.role-card--disabled]="role.disabled"
-                    [disabled]="role.disabled"
-                    role="radio"
-                    [attr.aria-checked]="isRoleSelected(role.id)"
-                    (click)="selectRole(role)"
-                  >
-                    @if (role.badge) {
-                      <span class="role-card__badge">{{ role.badge }}</span>
-                    }
-
-                    <span
-                      class="role-card__icon"
-                      [ngClass]="{
-                        'role-card__icon--ulb': role.icon === 'ulb',
-                        'role-card__icon--state': role.icon === 'state',
-                        'role-card__icon--mohua': role.icon === 'mohua',
-                        'role-card__icon--doe': role.icon === 'doe',
-                      }"
+                <div class="role-grid" role="radiogroup" aria-label="User role">
+                  @for (role of roleOptions(); track trackByRole($index, role)) {
+                    <button
+                      type="button"
+                      class="role-card"
+                      [class.role-card--active]="isRoleSelected(role.id)"
+                      [class.role-card--disabled]="role.disabled"
+                      [disabled]="role.disabled"
+                      role="radio"
+                      [attr.aria-checked]="isRoleSelected(role.id)"
+                      (click)="selectRole(role)"
                     >
-                      @switch (role.icon) {
-                        @case ('ulb') {
-                          <i class="bi bi-buildings-fill"></i>
-                        }
-                        @case ('state') {
-                          <i class="bi bi-bank"></i>
-                        }
-                        @case ('mohua') {
-                          <i class="bi bi-bullseye"></i>
-                        }
-                        @case ('doe') {
-                          <i class="bi bi-shield-lock"></i>
-                        }
+                      @if (role.badge) {
+                        <span class="role-card__badge">{{ role.badge }}</span>
                       }
-                    </span>
 
-                    <span class="role-card__label">{{ role.label }}</span>
-                  </button>
+                      <span
+                        class="role-card__icon"
+                        [ngClass]="{
+                          'role-card__icon--ulb': role.icon === 'ulb',
+                          'role-card__icon--state': role.icon === 'state',
+                          'role-card__icon--mohua': role.icon === 'mohua',
+                          'role-card__icon--doe': role.icon === 'doe',
+                        }"
+                      >
+                        @switch (role.icon) {
+                          @case ('ulb') {
+                            <i class="bi bi-buildings-fill"></i>
+                          }
+                          @case ('state') {
+                            <i class="bi bi-bank"></i>
+                          }
+                          @case ('mohua') {
+                            <i class="bi bi-bullseye"></i>
+                          }
+                          @case ('doe') {
+                            <i class="bi bi-shield-lock"></i>
+                          }
+                        }
+                      </span>
+
+                      <span class="role-card__label">{{ role.label }}</span>
+                    </button>
+                  }
+                </div>
+
+                @if (hasControlError('role', 'required')) {
+                  <div class="field-error field-error--role">Please select your role.</div>
                 }
-              </div>
-
-              @if (hasControlError('role', 'required')) {
-                <div class="field-error field-error--role">Please select your role.</div>
-              }
               }
 
               <div class="form-group mb-4">
@@ -213,7 +204,10 @@
                   <div class="field-error">Email or Census Code is required.</div>
                 }
 
-                @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'invalidIdentifier')) {
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  hasControlError('identifier', 'invalidIdentifier')
+                ) {
                   <div class="field-error">Enter a valid email address or numeric census code.</div>
                 }
               </div>
@@ -254,7 +248,8 @@
                 }
 
                 @if (
-                  !hasControlError('password', 'required') && hasControlError('password', 'minlength')
+                  !hasControlError('password', 'required') &&
+                  hasControlError('password', 'minlength')
                 ) {
                   <div class="field-error">Password must be at least 6 characters.</div>
                 }
@@ -277,11 +272,11 @@
                   Forgot password?
                 </button>
 
-                @if (roleControl.value === 'ULB') {
+                <!-- @if (roleControl.value === 'ULB') {
                   <button type="button" class="forgot-password-btn" (click)="onSignup()">
                     Not Registered?
                   </button>
-                }
+                } -->
               </div>
             </form>
 
@@ -299,13 +294,13 @@
               <i class="bi bi-phone"></i>
               Get OTP on your phone and email
             </button>
-
           } @else {
-
             <div class="otp-info">
               <p class="otp-info__text">
                 An OTP has been sent to
-                <strong>{{ otpCreds?.mobile && otpCreds.mobile + ' and ' }}{{ otpCreds?.email }}</strong>
+                <strong
+                  >{{ otpCreds?.mobile && otpCreds.mobile + ' and ' }}{{ otpCreds?.email }}</strong
+                >
               </p>
             </div>
 
@@ -360,29 +355,29 @@
               <span>Or</span>
             </div>
 
-            <button
-              mat-stroked-button
-              type="button"
-              class="otp-btn"
-              (click)="switchToPassword()"
-            >
+            <button mat-stroked-button type="button" class="otp-btn" (click)="switchToPassword()">
               Sign in with your password
             </button>
-
           }
         </mat-card>
 
         <p class="recaptcha-notice">
           This site is protected by reCAPTCHA and the Google
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a> and
-          <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Terms of Service</a> apply.
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener"
+            >Privacy Policy</a
+          >
+          and
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener"
+            >Terms of Service</a
+          >
+          apply.
         </p>
 
         <div class="help-card">
           <h3>Need Help?</h3>
           <p>
             For clarifications or questions, please email
-            <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a
+            <a [href]="'mailto:' + supportEmail()">{{ supportEmail() }}</a
             >. We will respond within 24 hours.
           </p>
         </div>

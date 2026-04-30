@@ -30,6 +30,7 @@ export class OverviewCardComponent implements OnChanges {
   @Input({ required: true }) overviewData: OverviewData | null = null;
   @Input() initialSelectedGrantId: string | null = null;
   @Input() isLoading = false;
+  @Input() selectedYear: string | null = null;
   selectedGrantId = '';
 
   ngOnChanges(changes: SimpleChanges): void {

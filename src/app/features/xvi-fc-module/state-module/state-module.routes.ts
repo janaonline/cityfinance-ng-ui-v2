@@ -63,6 +63,11 @@ const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     loadComponent: () =>
       import('./doe-status/doe-status.component').then((m) => m.DoeStatusComponent),
   },
+  {
+    path: 'support-hours',
+    loadComponent: () =>
+      import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
+  },
 ];
 
 // Keep deferred routes close to the live config so they can be reactivated in one place
