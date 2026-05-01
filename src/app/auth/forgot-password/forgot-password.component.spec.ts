@@ -25,10 +25,11 @@ describe('ForgotPasswordComponent', () => {
     authSpy = jasmine.createSpyObj('OtpAuthService', ['sendOtp', 'resetPassword']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
-    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
-        { provide: OtpAuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+    await TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
+      { provide: OtpAuthService, useValue: authSpy },
+      { provide: Router, useValue: routerSpy },
+      { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
       ],
     }).compileComponents();
 
@@ -77,25 +78,27 @@ describe('ForgotPasswordComponent', () => {
   });
 
   describe('ngOnInit – query params', () => {
-    it('should set typeKey to "xvifc" when type=xvifc', async () => {
+    it('should set typeKey to "16thFC" when type=16thFC', async () => {
       await TestBed.resetTestingModule();
-      await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
-          { provide: OtpAuthService, useValue: authSpy },
-          { provide: Router, useValue: routerSpy },
-          { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'xvifc' }) } },
+      await TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: OtpAuthService, useValue: authSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ type: '16thFC' }) } },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
       fix.detectChanges();
-      expect(fix.componentInstance.typeKey()).toBe('xvifc');
+      expect(fix.componentInstance.typeKey()).toBe('16thFC');
     });
 
     it('should set typeKey to "15thFC" when type=15thFC', async () => {
       await TestBed.resetTestingModule();
-      await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
-          { provide: OtpAuthService, useValue: authSpy },
-          { provide: Router, useValue: routerSpy },
-          { provide: ActivatedRoute, useValue: { queryParams: of({ type: '15thFC' }) } },
+      await TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: OtpAuthService, useValue: authSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ type: '15thFC' }) } },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -105,10 +108,11 @@ describe('ForgotPasswordComponent', () => {
 
     it('should set typeKey to null for unknown type values', async () => {
       await TestBed.resetTestingModule();
-      await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
-          { provide: OtpAuthService, useValue: authSpy },
-          { provide: Router, useValue: routerSpy },
-          { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'unknown' }) } },
+      await TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: OtpAuthService, useValue: authSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'unknown' }) } },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -140,16 +144,16 @@ describe('ForgotPasswordComponent', () => {
   });
 
   describe('onBackToLogin', () => {
-    it('should navigate to /login with empty queryParams when no typeKey', () => {
+    it('should navigate to /auth/login with empty queryParams when no typeKey', () => {
       component.typeKey.set(null);
       component.onBackToLogin();
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/login'], { queryParams: {} });
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login'], { queryParams: {} });
     });
 
-    it('should navigate to /login with type queryParam when typeKey is set', () => {
-      component.typeKey.set('xvifc');
+    it('should navigate to /auth/login with type queryParam when typeKey is set', () => {
+      component.typeKey.set('16thFC');
       component.onBackToLogin();
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/login'], { queryParams: { type: 'xvifc' } });
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login'], { queryParams: { type: '16thFC' } });
     });
   });
 

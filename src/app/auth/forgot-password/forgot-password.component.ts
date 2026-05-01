@@ -21,10 +21,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, finalize, timer } from 'rxjs';
 
 import { OtpAuthService } from '../../core/auth/auth.service';
+import { LOGIN_TYPES, LoginType } from '../login/login.component';
 
 type ForgotRole = 'ULB' | 'STATE' | 'MOHUA';
 type StepType = 'identify' | 'reset' | 'success';
-type LoginType = 'xvifc' | '15thFC';
+// type LoginType = 'xvifc' | '15thFC';
 
 interface IdentifiedUser {
   role: ForgotRole;
@@ -95,7 +96,7 @@ export class ForgotPasswordComponent implements OnInit {
     this.route.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ type }) => {
-        this.typeKey.set(type === 'xvifc' || type === '15thFC' ? type : null);
+        this.typeKey.set(LOGIN_TYPES.includes(type) ? (type as LoginType) : null);
       });
   }
 

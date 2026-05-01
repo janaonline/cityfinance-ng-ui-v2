@@ -35,7 +35,7 @@ interface RoleOption {
   badge?: string;
 }
 
-const LOGIN_TYPES = ['16thFC', '15thFC', 'XVIFC', 'ranking', 'state-dashboard'] as const;
+export const LOGIN_TYPES = ['16thFC', '15thFC', 'XVIFC', 'ranking', 'state-dashboard'] as const;
 
 // 2. Derive the type from the array
 export type LoginType = (typeof LOGIN_TYPES)[number];
