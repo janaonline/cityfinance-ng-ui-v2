@@ -14,6 +14,7 @@ import { of, throwError } from 'rxjs';
 
 import { USER_TYPE } from '../../core/models/user/userType';
 import { AuthService } from '../../core/services/auth.service';
+import { RecaptchaService } from '../../core/services/recaptcha.service';
 import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 import { LoginComponent } from './login.component';
 
@@ -21,6 +22,7 @@ describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let authSpy: jasmine.SpyObj<AuthService>;
+  let recaptchaSpy: jasmine.SpyObj<RecaptchaService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let xvifcSpy: jasmine.SpyObj<XvifcModuleService>;
 
@@ -32,6 +34,10 @@ describe('LoginComponent', () => {
       'otpSignIn',
       'otpVerify',
     ]);
+    recaptchaSpy = jasmine.createSpyObj<RecaptchaService>('RecaptchaService', [
+      'execute',
+      'loadScript',
+    ]);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
     xvifcSpy = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', [
       'clearResolvedContext',
@@ -40,13 +46,15 @@ describe('LoginComponent', () => {
     routerSpy.navigate.and.resolveTo(true);
     routerSpy.navigateByUrl.and.resolveTo(true);
     authSpy.getCurrentUserSnapshot.and.returnValue(null);
+    recaptchaSpy.execute.and.returnValue(of(''));
 
     await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, LoginComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
         provideNoopAnimations(),
         { provide: AuthService, useValue: authSpy },
+        { provide: RecaptchaService, useValue: recaptchaSpy },
         { provide: Router, useValue: routerSpy },
         { provide: XvifcModuleService, useValue: xvifcSpy },
-        { provide: ActivatedRoute, useValue: { queryParams: of({ type: '16thFC' }) } },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ type: '16thFC' }), paramMap: of({ get: (_: string) => null }) } },
       ],
     }).compileComponents();
 
@@ -65,26 +73,27 @@ describe('LoginComponent', () => {
     expect(xvifcSpy.clearResolvedContext).toHaveBeenCalledTimes(1);
   });
 
-  it('should ignore unsupported type query params', async () => {
+  it('should keep the default login type for unsupported query params', async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, LoginComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
         provideNoopAnimations(),
         { provide: AuthService, useValue: authSpy },
+        { provide: RecaptchaService, useValue: recaptchaSpy },
         { provide: Router, useValue: routerSpy },
         { provide: XvifcModuleService, useValue: xvifcSpy },
-        { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'ranking' }) } },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'unsupported' }), paramMap: of({ get: (_: string) => null }) } },
       ],
     }).compileComponents();
 
     const localFixture = TestBed.createComponent(LoginComponent);
     localFixture.detectChanges();
 
-    expect(localFixture.componentInstance['typeKey']()).toBeNull();
+    expect(localFixture.componentInstance['typeKey']()).toBe('15thFC');
   });
 
   it('should select enabled roles and ignore disabled roles', () => {
-    const [ulbRole] = component['roleOptions'];
-    const doeRole = component['roleOptions'].find((role) => role.id === 'DOE')!;
+    const [ulbRole] = component['roleOptions']();
+    const doeRole = component['roleOptions']().find((role) => role.id === 'DOE')!;
 
     component['selectRole'](ulbRole);
     expect(component['loginForm'].controls.role.value).toBe('ULB');
@@ -115,8 +124,7 @@ describe('LoginComponent', () => {
     expect(component['loginForm'].touched).toBeTrue();
   });
 
-  it('should submit password login with trimmed identifier and default login type', fakeAsync(() => {
-    component['typeKey'].set(null);
+  it('should submit password login with trimmed identifier and current login type', fakeAsync(() => {
     authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.ULB } }));
     authSpy.extractUser.and.returnValue({ role: USER_TYPE.ULB } as any);
     component['loginForm'].setValue({
@@ -132,15 +140,16 @@ describe('LoginComponent', () => {
     expect(authSpy.login).toHaveBeenCalledWith({
       identifier: 'ulb@example.com',
       password: 'secret1',
-      type: '15thFC',
+      type: '16thFC',
       recaptchaToken: '',
     });
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/xvifc/year']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/xvifc/year'], { replaceUrl: true });
   }));
 
-  it('should navigate admin users to the admin area after password login', fakeAsync(() => {
-    authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.MoHUA } }));
-    authSpy.extractUser.and.returnValue({ role: USER_TYPE.MoHUA } as any);
+  it('should navigate XVI FC reviewers to the admin review area after password login', fakeAsync(() => {
+    component['typeKey'].set('XVIFC');
+    authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.XVIFC } }));
+    authSpy.extractUser.and.returnValue({ role: USER_TYPE.XVIFC } as any);
     component['loginForm'].setValue({
       role: 'MOHUA',
       identifier: 'mohua@example.com',
@@ -151,10 +160,11 @@ describe('LoginComponent', () => {
     component['onSubmit']();
     tick();
 
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin/xvi-fc-review'], { replaceUrl: true });
   }));
 
   it('should honor stored post-login navigation before role-based redirects', fakeAsync(() => {
+    component['typeKey'].set('XVIFC');
     sessionStorage.setItem('postLoginNavigationV2', '/saved/path');
     authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.ULB } }));
     authSpy.extractUser.and.returnValue({ role: USER_TYPE.ULB } as any);
@@ -168,7 +178,7 @@ describe('LoginComponent', () => {
     component['onSubmit']();
     tick();
 
-    expect(routerSpy.navigateByUrl).toHaveBeenCalledWith('/saved/path');
+    expect(routerSpy.navigateByUrl).toHaveBeenCalledWith('/saved/path', { replaceUrl: true });
     expect(sessionStorage.getItem('postLoginNavigationV2')).toBeNull();
   }));
 
@@ -192,10 +202,10 @@ describe('LoginComponent', () => {
     component.onForgotPassword();
     component.onSignup();
 
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/forgot-password'], {
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/forgot-password'], {
       queryParams: { type: '16thFC' },
     });
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/signup'], {
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/signup'], {
       queryParams: { type: '16thFC', role: 'ULB' },
     });
   });
@@ -239,7 +249,7 @@ describe('LoginComponent', () => {
       identifier: 'state@example.com',
       otp: '1234',
     });
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/xvifc/year'], { replaceUrl: true });
   }));
 
   it('should switch back from OTP login to password login', fakeAsync(() => {

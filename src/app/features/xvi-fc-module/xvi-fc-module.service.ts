@@ -32,6 +32,8 @@ export class XvifcModuleService {
   private readonly authService = inject(AuthService);
   private readonly sideMenuApiService = inject(XviFcSideMenuApiService);
 
+  readonly availableYearIds: readonly XvifcYearId[] = ['2026-27', '2027-28', '2028-29', '2029-30'];
+
   private readonly resolvedContext = signal<XvifcRouteContext | null>(null);
   private readonly lastMenuRequestKey = signal<string | null>(null);
 
@@ -123,7 +125,8 @@ export class XvifcModuleService {
   }
 
   /**
-   * Walks the nested route tree and returns the deepest `yearId` route param.
+   * Walks the nested route tree and returns the deepest `yearId` route param,
+   * validating it against the configured list of available year IDs.
    */
   private resolveYearId(snapshot: ActivatedRouteSnapshot): XvifcYearId | null {
     let current: ActivatedRouteSnapshot | null = snapshot;
@@ -137,6 +140,10 @@ export class XvifcModuleService {
       }
 
       current = current.firstChild ?? null;
+    }
+
+    if (resolvedYearId !== null && !this.availableYearIds.includes(resolvedYearId)) {
+      return null;
     }
 
     return resolvedYearId;

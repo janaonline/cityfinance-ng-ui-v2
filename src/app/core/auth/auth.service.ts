@@ -94,7 +94,11 @@ export class OtpAuthService {
           this.accessToken.set(null);
           this.currentUser.set(null);
           this.legacyAuth.clearLocalStorage();
-          void this.router.navigate(['/auth/login'], { queryParams: { type: loginType } });
+          if (loginType) {
+            void this.router.navigate(['/auth/login'], { queryParams: { type: loginType } });
+          } else {
+            void this.router.navigate(['/auth/login']);
+          }
         }),
       );
   }
