@@ -142,9 +142,9 @@ export class XvifcModuleService {
       current = current.firstChild ?? null;
     }
 
-    if (resolvedYearId !== null && !this.availableYearIds.includes(resolvedYearId)) {
-      return null;
-    }
+    // if (resolvedYearId !== null && !this.availableYearIds.includes(resolvedYearId)) {
+    //   return null;
+    // }
 
     return resolvedYearId;
   }
