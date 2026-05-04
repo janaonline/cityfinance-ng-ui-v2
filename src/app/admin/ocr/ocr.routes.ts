@@ -19,10 +19,18 @@ export const OCR_ROUTES: Route[] = [
       ),
   },
   {
+    path: 'upload/gemini',
+    loadComponent: () =>
+      import('./upload-file-ocr/upload-file-ocr.component').then(
+        (mod) => mod.UploadFileOcrComponent,
+      ),
+  },
+  {
     path: 'details',
     loadComponent: () =>
       import('./get-ocr-details/get-ocr-details.component').then(
         (mod) => mod.GetOcrDetailsComponent,
       ),
   },
+
 ];
