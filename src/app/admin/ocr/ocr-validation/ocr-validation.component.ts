@@ -49,8 +49,6 @@ export class OcrValidationComponent implements OnInit {
 
   readonly models: ModelOption[] = [
     { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview' },
-    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
     { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
     { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
@@ -264,6 +262,267 @@ export class OcrValidationComponent implements OnInit {
   hasFinancialFigures(result: OcrValidationResult | null): boolean {
     if (!result?.financial_figures) return false;
     return Object.values(result.financial_figures).some((v) => v !== null);
+  }
+
+  downloadHtml(job: OcrValidationJobTracker): void {
+    const html = this.buildReportHtml(job);
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${job.filename.replace(/\.pdf$/i, '')}_validation_report.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private buildReportHtml(job: OcrValidationJobTracker): string {
+    const r = job.result!;
+    const esc = (s: unknown): string =>
+      String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const fmt = (n: number | null | undefined, decimals = 2): string =>
+      n == null ? '—' : n.toLocaleString('en-IN', { maximumFractionDigits: decimals });
+    const fmtKey = (k: string): string =>
+      k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const assessmentColor: Record<string, string> = {
+      PASS: '#166534', WARNING: '#92400e', FAIL: '#9f1239',
+      ERROR: '#9f1239', FAILED_EXTRACTION: '#9a3412',
+    };
+    const assessmentBg: Record<string, string> = {
+      PASS: '#dcfce7', WARNING: '#fef9c3', FAIL: '#fee2e2',
+      ERROR: '#fee2e2', FAILED_EXTRACTION: '#ffedd5',
+    };
+    const assessmentBorder: Record<string, string> = {
+      PASS: '#22c55e', WARNING: '#f59e0b', FAIL: '#f43f5e',
+      ERROR: '#f43f5e', FAILED_EXTRACTION: '#f97316',
+    };
+    const checkBadge: Record<string, string> = {
+      PASS: 'background:#dcfce7;color:#166534',
+      WARNING: 'background:#fef9c3;color:#92400e',
+      FAIL: 'background:#fee2e2;color:#b91c1c',
+    };
+
+    const renderVal = (v: unknown): string => {
+      if (v == null) return '<span style="color:#94a3b8">—</span>';
+      if (Array.isArray(v)) {
+        if (v.length === 0) return '<span style="color:#94a3b8">—</span>';
+        if (typeof v[0] === 'object' && v[0] !== null) {
+          const headers = Object.keys(v[0] as object);
+          const th = headers
+            .map((h) => `<th style="padding:.35rem .6rem;text-align:left;background:#f1f5f9;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">${esc(fmtKey(h))}</th>`)
+            .join('');
+          const rows = (v as Record<string, unknown>[])
+            .map(
+              (row, ri) =>
+                `<tr style="background:${ri % 2 === 0 ? '#fff' : '#f8fafc'}">${headers.map((h) => `<td style="padding:.35rem .6rem;border-top:1px solid #e2e8f0;vertical-align:top">${renderVal(row[h])}</td>`).join('')}</tr>`,
+            )
+            .join('');
+          return `<table style="width:100%;border-collapse:collapse;font-size:.85rem;margin:.25rem 0"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return (v as unknown[]).map((item) => esc(item)).join(', ');
+      }
+      if (typeof v === 'object') {
+        return Object.entries(v as Record<string, unknown>)
+          .map(
+            ([k, val]) =>
+              `<div style="display:flex;gap:.5rem;padding:.15rem 0"><span style="color:#64748b;white-space:nowrap;min-width:120px">${esc(fmtKey(k))}:</span><span style="font-weight:600">${renderVal(val)}</span></div>`,
+          )
+          .join('');
+      }
+      if (typeof v === 'number') return fmt(v, 2);
+      if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+      return esc(String(v));
+    };
+
+    const assessment = r.overall_assessment?.toUpperCase() ?? '';
+    const bannerColor = assessmentColor[assessment] ?? '#475569';
+    const bannerBg = assessmentBg[assessment] ?? '#f8fafc';
+    const bannerBorder = assessmentBorder[assessment] ?? '#94a3b8';
+
+    const metaRows = r.extraction
+      ? [
+          ['ULB Name', r.extraction.ulb_name],
+          ['Original ULB Name', r.extraction.original_ulb_name],
+          ['Document Type', r.extraction.document_type],
+          ['Financial Year', r.extraction.financial_year],
+          ['Language', r.extraction.language_detected],
+          ['Seal Present', r.extraction.seal_present == null ? null : r.extraction.seal_present ? 'Yes' : 'No'],
+          ['Page Count', r.extraction.page_count],
+        ]
+          .filter(([, v]) => v != null)
+          .map(([l, v]) => `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600">${esc(v)}</td></tr>`)
+          .join('')
+      : '';
+
+    const procRows = [
+      ['Total Time', r.processing_time_seconds != null ? `${fmt(r.processing_time_seconds, 1)} s` : null],
+      ...(r.step_timings ? Object.entries(r.step_timings).map(([k, v]) => [fmtKey(k), v != null ? `${fmt(v as number, 1)} s` : '—']) : []),
+      ['Extraction Model', r.extraction_model],
+      ['Validation Model', r.validation_model],
+    ]
+      .filter(([, v]) => v != null)
+      .map(([l, v]) => `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600;font-family:monospace">${esc(v)}</td></tr>`)
+      .join('');
+
+    const basicValidation = r.basic_validation
+      ? (() => {
+          const isPass = r.basic_validation.validation_status === 'PASS';
+          const bc = isPass ? '#22c55e' : '#f43f5e';
+          const bbg = isPass ? '#f0fdf4' : '#fff1f2';
+          const btxt = isPass ? '#166534' : '#991b1b';
+          const failedItems = r.basic_validation.failed_checks?.length
+            ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.basic_validation.failed_checks.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
+            : '';
+          const detail = r.basic_validation.validation_details
+            ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`
+            : '';
+          return `<section>
+            <h5 style="color:#1e3a5f;margin:0 0 .5rem">Basic Validation</h5>
+            <div style="padding:.85rem 1rem;border-radius:10px;border-left:4px solid ${bc};background:${bbg}">
+              <span style="font-weight:800;font-size:.82rem;letter-spacing:.04em;color:${btxt}">${esc(r.basic_validation.validation_status)}</span>
+              ${detail}${failedItems}
+            </div>
+          </section>`;
+        })()
+      : '';
+
+    const financialSection =
+      r.financial_figures && Object.values(r.financial_figures).some((v) => v != null)
+        ? (() => {
+            const entries = Object.entries(r.financial_figures as Record<string, unknown>).filter(
+              ([, v]) => v != null,
+            );
+            const simpleEntries = entries.filter(([, v]) => typeof v !== 'object' || v === null);
+            const complexEntries = entries.filter(([, v]) => typeof v === 'object' && v !== null);
+
+            const simpleTable =
+              simpleEntries.length > 0
+                ? `<table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
+                <thead><tr style="background:#f1f5f9">
+                  <th style="padding:.5rem .75rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Field</th>
+                  <th style="padding:.5rem .75rem;text-align:right;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Value</th>
+                </tr></thead>
+                <tbody>${simpleEntries
+                  .map(
+                    ([k, v], i) =>
+                      `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
+                      <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;color:#1e3a5f">${esc(fmtKey(k))}</td>
+                      <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${renderVal(v)}</td>
+                    </tr>`,
+                  )
+                  .join('')}</tbody>
+              </table>`
+                : '';
+
+            const complexBlocks = complexEntries
+              .map(
+                ([k, v]) =>
+                  `<div style="margin-bottom:1rem">
+                  <div style="font-weight:700;color:#1e3a5f;margin-bottom:.4rem;font-size:.9rem">${esc(fmtKey(k))}</div>
+                  ${renderVal(v)}
+                </div>`,
+              )
+              .join('');
+
+            return `<section>
+            <h5 style="color:#1e3a5f;margin:0 0 .75rem">Financial Figures</h5>
+            ${simpleTable}${complexBlocks}
+          </section>`;
+          })()
+        : '';
+
+    const validationsSection = r.validations?.length
+      ? `<section>
+        <h5 style="color:#1e3a5f;margin:0 0 .75rem">Validation Checks</h5>
+        <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+          <thead><tr style="background:#f1f5f9">
+            <th style="padding:.5rem .85rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Check</th>
+            <th style="padding:.5rem .85rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Status</th>
+            <th style="padding:.5rem .85rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Message</th>
+          </tr></thead>
+          <tbody>${r.validations
+            .map((v) => {
+              const bs = checkBadge[v.status?.toUpperCase()] ?? 'background:#f1f5f9;color:#475569';
+              return `<tr>
+                <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0;color:#1e3a5f;font-weight:500;min-width:180px">${esc(v.check)}</td>
+                <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0">
+                  <span style="display:inline-block;padding:.2rem .55rem;border-radius:6px;font-size:.78rem;font-weight:700;${bs}">${esc(v.status)}</span>
+                </td>
+                <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0;color:#374151;line-height:1.5">${esc(v.message)}</td>
+              </tr>`;
+            })
+            .join('')}</tbody>
+        </table>
+      </section>`
+      : '';
+
+    const ocrNotes = r.ocr_notes
+      ? `<section>
+        <h5 style="color:#1e3a5f;margin:0 0 .5rem">OCR Notes</h5>
+        <p style="margin:0;padding:.75rem 1rem;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:0 8px 8px 0;color:#475569;line-height:1.6">${esc(r.ocr_notes)}</p>
+      </section>`
+      : '';
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Validation Report — ${esc(job.filename)}</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;color:#0f172a;margin:0;padding:2rem;background:#f8fbff}
+    h1,h2,h3,h4,h5,h6{margin:0}
+    section{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    table{border-collapse:collapse}
+    @media print{body{padding:0}section{box-shadow:none;break-inside:avoid}}
+  </style>
+</head>
+<body>
+<div style="max-width:960px;margin:0 auto;display:grid;gap:1.5rem">
+
+  <!-- Header -->
+  <header style="background:linear-gradient(135deg,#123b69,#2563eb);border-radius:16px;padding:1.75rem;color:#fff">
+    <h1 style="font-size:1.4rem;margin:0 0 .5rem">OCR Validation Report</h1>
+    <p style="margin:0;opacity:.85;font-size:.92rem">${esc(job.filename)}</p>
+    <p style="margin:.25rem 0 0;opacity:.65;font-size:.8rem;font-family:monospace">Job ID: ${esc(job.jobId)} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString('en-IN')}</p>
+  </header>
+
+  ${
+    r.overall_assessment
+      ? `<section style="background:${bannerBg};border-left:5px solid ${bannerBorder};color:${bannerColor}">
+      <div style="display:flex;align-items:flex-start;gap:.75rem">
+        <span style="display:inline-block;padding:.25rem .65rem;border-radius:6px;font-size:.82rem;font-weight:800;letter-spacing:.04em;background:${bannerColor};color:#fff;flex-shrink:0">${esc(r.overall_assessment)}</span>
+        ${r.summary ? `<p style="margin:0;font-size:.92rem;line-height:1.5">${esc(r.summary)}</p>` : ''}
+      </div>
+    </section>`
+      : ''
+  }
+
+  <!-- Metadata + Processing side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+    ${
+      metaRows
+        ? `<section>
+        <h5 style="color:#1e3a5f;margin:0 0 .75rem">Document Metadata</h5>
+        <table style="width:100%;font-size:.88rem"><tbody>${metaRows}</tbody></table>
+      </section>`
+        : ''
+    }
+    <section>
+      <h5 style="color:#1e3a5f;margin:0 0 .75rem">Processing Info</h5>
+      <table style="width:100%;font-size:.88rem"><tbody>${procRows}</tbody></table>
+    </section>
+  </div>
+
+  ${basicValidation}
+  ${financialSection}
+  ${validationsSection}
+  ${ocrNotes}
+
+</div>
+</body>
+</html>`;
   }
 
   private addJob(job: OcrValidationJobTracker): void {

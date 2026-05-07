@@ -1,49 +1,54 @@
 <div class="wrapper app-wrapper">
-  <section class="ocr-validation-page">
+  <section class="ocr-validation-page d-grid gap-4 p-4">
+
     <!-- Hero -->
-    <div class="hero-card">
-      <h1>OCR Document Validation</h1>
-      <p class="subcopy">
+    <div class="hero-card rounded-4 p-4 text-white">
+      <h1 class="mb-0">OCR Document Validation</h1>
+      <p class="mt-2 mb-0 subcopy">
         Upload Indian ULB financial PDFs for async two-step Gemini validation: metadata extraction
         followed by arithmetic checks. Supports single and batch uploads.
       </p>
     </div>
 
     <!-- Upload form -->
-    <mat-card class="upload-card">
+    <mat-card class="upload-card rounded-4">
       <mat-card-content>
-        <form [formGroup]="form" class="upload-form">
-          <div class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Extraction model</mat-label>
-              <mat-select formControlName="extractionModel">
-                @for (m of models; track m.value) {
-                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+        <form [formGroup]="form" class="d-grid gap-3">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Extraction model</mat-label>
+                <mat-select formControlName="extractionModel">
+                  @for (m of models; track m.value) {
+                    <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                  }
+                </mat-select>
+                @if (form.controls.extractionModel.invalid && form.controls.extractionModel.touched) {
+                  <mat-error>Extraction model is required.</mat-error>
                 }
-              </mat-select>
-              @if (form.controls.extractionModel.invalid && form.controls.extractionModel.touched) {
-                <mat-error>Extraction model is required.</mat-error>
-              }
-            </mat-form-field>
+              </mat-form-field>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Validation model</mat-label>
-              <mat-select formControlName="validationModel">
-                @for (m of models; track m.value) {
-                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+            <div class="col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Validation model</mat-label>
+                <mat-select formControlName="validationModel">
+                  @for (m of models; track m.value) {
+                    <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                  }
+                </mat-select>
+                @if (form.controls.validationModel.invalid && form.controls.validationModel.touched) {
+                  <mat-error>Validation model is required.</mat-error>
                 }
-              </mat-select>
-              @if (form.controls.validationModel.invalid && form.controls.validationModel.touched) {
-                <mat-error>Validation model is required.</mat-error>
-              }
-            </mat-form-field>
+              </mat-form-field>
+            </div>
           </div>
 
           <!-- File picker -->
-          <div class="file-picker">
+          <div class="d-grid gap-2">
             <input
               #fileInput
-              class="file-input-hidden"
+              class="d-none"
               type="file"
               accept="application/pdf"
               multiple
@@ -51,40 +56,38 @@
             />
 
             <button type="button" class="file-drop-box" (click)="openFilePicker()">
-              <span class="file-picker__label">PDF files (single or batch)</span>
+              <span class="fw-semibold text-secondary small">PDF files (single or batch)</span>
               @if (selectedFiles.length > 0) {
-                <span class="file-box-name">{{ selectedFiles.length }} file(s) selected</span>
-                <span class="file-box-meta">Click to add more</span>
+                <span class="fw-semibold text-dark">{{ selectedFiles.length }} file(s) selected</span>
+                <span class="text-secondary small">Click to add more</span>
               } @else {
-                <span class="file-box-placeholder">Click to choose PDF file(s)</span>
-                <span class="file-box-meta">Multiple files supported for batch processing</span>
+                <span class="fw-medium text-secondary">Click to choose PDF file(s)</span>
+                <span class="text-secondary small">Multiple files supported for batch processing</span>
               }
             </button>
 
             @if (selectedFiles.length > 0) {
-              <ul class="file-list">
+              <ul class="list-unstyled d-grid gap-1 mb-0">
                 @for (file of selectedFiles; track $index) {
-                  <li class="file-list-item">
-                    <span class="file-list-name">{{ file.name }}</span>
-                    <span class="file-list-size">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
+                  <li class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 border border-primary-subtle bg-primary-subtle">
+                    <span class="flex-grow-1 fw-medium text-primary-emphasis small text-break">{{ file.name }}</span>
+                    <span class="text-secondary small text-nowrap">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
                     <button
                       type="button"
-                      class="file-remove-btn"
+                      class="btn-close btn-sm"
                       (click)="removeFile($index)"
                       aria-label="Remove file"
-                    >
-                      &times;
-                    </button>
+                    ></button>
                   </li>
                 }
               </ul>
             }
 
-            <p class="file-note">Accepted format: PDF. Max {{ maxFileSizeMb }} MB per file.</p>
+            <p class="mb-0 text-secondary small">Accepted format: PDF. Max {{ maxFileSizeMb }} MB per file.</p>
           </div>
 
           <!-- Actions -->
-          <div class="actions">
+          <div class="d-flex gap-2 justify-content-end">
             <button mat-stroked-button type="button" (click)="clearFiles()">Clear Files</button>
             <button
               mat-flat-button
@@ -108,22 +111,22 @@
 
     <!-- Jobs section -->
     @if (hasJobs()) {
-      <div class="jobs-section">
-        <div class="jobs-header">
-          <h2 class="jobs-title">Validation Jobs</h2>
+      <div class="d-grid gap-3">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+          <h2 class="fs-5 fw-semibold text-dark mb-0">Validation Jobs</h2>
           <button type="button" mat-stroked-button (click)="resetJobs()">Clear All</button>
         </div>
 
         @for (job of jobs(); track job.jobId) {
           <mat-card
-            class="job-card"
+            class="job-card rounded-4 overflow-hidden"
             [class.job-card--completed]="job.status === 'completed'"
             [class.job-card--failed]="job.status === 'failed'"
           >
             <mat-card-content>
               <!-- Job header -->
-              <div class="job-header">
-                <div class="job-header-left">
+              <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
                   <span
                     class="status-chip"
                     [class.status-chip--queued]="job.status === 'queued'"
@@ -136,16 +139,24 @@
                     }
                     {{ getStatusLabel(job.status) }}
                   </span>
-                  <div class="job-file-info">
-                    <span class="job-filename">{{ job.filename }}</span>
-                    <span class="job-id">ID: {{ job.jobId }}</span>
+                  <div class="d-grid gap-0">
+                    <span class="fw-semibold text-dark" style="word-break:break-all">{{ job.filename }}</span>
+                    <span class="text-secondary font-monospace" style="font-size:0.78rem">ID: {{ job.jobId }}</span>
                   </div>
                 </div>
-                <div class="job-header-actions">
+                <div class="d-flex gap-2 flex-shrink-0">
                   @if (job.status === 'completed' && job.result) {
                     <button
                       type="button"
-                      class="btn btn-sm btn-outline-primary response-action-btn"
+                      class="btn btn-sm btn-outline-secondary"
+                      title="Download validation report as HTML"
+                      (click)="downloadHtml(job)"
+                    >
+                      <i class="bi bi-download me-1"></i>HTML
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
                       (click)="toggleResult(job.jobId)"
                     >
                       {{ job.showResult ? 'Collapse' : 'Expand' }} Result
@@ -155,154 +166,163 @@
               </div>
 
               <!-- Progress message -->
-              <p class="job-message">
+              <p class="mb-0 text-secondary small">
                 {{ job.message }}
                 @if (job.progressStep) {
-                  <span class="progress-step">— {{ job.progressStep }}</span>
+                  <span class="text-primary fst-italic">— {{ job.progressStep }}</span>
                 }
               </p>
 
               <!-- Result panel (completed) -->
               @if (job.status === 'completed' && job.result && job.showResult) {
-                <div class="result-panel">
+                <div class="d-grid gap-4 mt-3 pt-3 border-top">
+
                   <!-- Overall assessment banner -->
                   @if (job.result.overall_assessment) {
                     <div
-                      class="assessment-banner"
+                      class="assessment-banner d-flex align-items-start gap-3 p-3 rounded-3"
                       [ngClass]="getAssessmentClass(job.result.overall_assessment)"
                     >
-                      <span class="assessment-badge">{{ job.result.overall_assessment }}</span>
+                      <span class="badge badge-success">{{ job.result.overall_assessment }}</span>
                       @if (job.result.summary) {
-                        <p class="assessment-summary">{{ job.result.summary }}</p>
+                        <p class="mb-0 assessment-summary small">{{ job.result.summary }}</p>
                       }
                     </div>
                   }
 
-                  <div class="result-grid">
+                  <div class="row g-3">
                     <!-- Extraction metadata -->
                     @if (job.result.extraction) {
-                      <div class="info-card">
-                        <h4 class="info-card-title">Document Metadata</h4>
-                        <table class="info-table">
-                          <tbody>
-                            @if (job.result.extraction.ulb_name) {
-                              <tr>
-                                <td class="info-label">ULB Name</td>
-                                <td class="info-value">{{ job.result.extraction.ulb_name }}</td>
-                              </tr>
-                            }
-                            @if (job.result.extraction.original_ulb_name) {
-                              <tr>
-                                <td class="info-label">Original ULB Name</td>
-                                <td class="info-value">{{ job.result.extraction.original_ulb_name }}</td>
-                              </tr>
-                            }
-                            @if (job.result.extraction.document_type) {
-                              <tr>
-                                <td class="info-label">Document Type</td>
-                                <td class="info-value">{{ job.result.extraction.document_type }}</td>
-                              </tr>
-                            }
-                            @if (job.result.extraction.financial_year) {
-                              <tr>
-                                <td class="info-label">Financial Year</td>
-                                <td class="info-value">{{ job.result.extraction.financial_year }}</td>
-                              </tr>
-                            }
-                            @if (job.result.extraction.language_detected) {
-                              <tr>
-                                <td class="info-label">Language</td>
-                                <td class="info-value">{{ job.result.extraction.language_detected }}</td>
-                              </tr>
-                            }
-                            @if (job.result.extraction.seal_present !== null) {
-                              <tr>
-                                <td class="info-label">Seal Present</td>
-                                <td class="info-value">
-                                  <span
-                                    class="bool-badge"
-                                    [class.bool-badge--yes]="job.result.extraction.seal_present"
-                                    [class.bool-badge--no]="!job.result.extraction.seal_present"
-                                  >
-                                    {{ job.result.extraction.seal_present ? 'Yes' : 'No' }}
-                                  </span>
-                                </td>
-                              </tr>
-                            }
-                            @if (job.result.extraction.page_count !== null) {
-                              <tr>
-                                <td class="info-label">Page Count</td>
-                                <td class="info-value">{{ job.result.extraction.page_count }}</td>
-                              </tr>
-                            }
-                          </tbody>
-                        </table>
+                      <div class="col-md-6">
+                        <div class="card h-100 border rounded-3">
+                          <div class="card-body">
+                            <h6 class="card-title fw-bold text-primary-emphasis mb-3">Document Metadata</h6>
+                            <table class="table table-sm table-borderless mb-0 small">
+                              <tbody>
+                                @if (job.result.extraction.ulb_name) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0" style="width:45%">ULB Name</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.ulb_name }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.original_ulb_name) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Original ULB Name</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.original_ulb_name }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.document_type) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Document Type</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.document_type }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.financial_year) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Financial Year</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.financial_year }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.language_detected) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Language</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.language_detected }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.seal_present !== null) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Seal Present</td>
+                                    <td class="pe-0">
+                                      <span
+                                        class="badge"
+                                        [class.text-bg-success]="job.result.extraction.seal_present"
+                                        [class.text-bg-danger]="!job.result.extraction.seal_present"
+                                      >
+                                        {{ job.result.extraction.seal_present ? 'Yes' : 'No' }}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.page_count !== null) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Page Count</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.page_count }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       </div>
                     }
 
                     <!-- Processing info -->
-                    <div class="info-card">
-                      <h4 class="info-card-title">Processing Info</h4>
-                      <table class="info-table">
-                        <tbody>
-                          @if (job.result.processing_time_seconds !== null) {
-                            <tr>
-                              <td class="info-label">Total Time</td>
-                              <td class="info-value">
-                                {{ job.result.processing_time_seconds | number: '1.1-1' }} s
-                              </td>
-                            </tr>
-                          }
-                          @if (job.result.step_timings) {
-                            @for (entry of getFinancialFigureEntries(job.result.step_timings); track entry.key) {
-                              <tr>
-                                <td class="info-label">{{ formatKey(entry.key) }}</td>
-                                <td class="info-value">
-                                  {{ entry.value !== null ? ((entry.value | number: '1.1-1') + ' s') : '—' }}
-                                </td>
-                              </tr>
-                            }
-                          }
-                          @if (job.result.extraction_model) {
-                            <tr>
-                              <td class="info-label">Extraction Model</td>
-                              <td class="info-value model-value">{{ job.result.extraction_model }}</td>
-                            </tr>
-                          }
-                          @if (job.result.validation_model) {
-                            <tr>
-                              <td class="info-label">Validation Model</td>
-                              <td class="info-value model-value">{{ job.result.validation_model }}</td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
+                    <div class="col-md-6">
+                      <div class="card h-100 border rounded-3">
+                        <div class="card-body">
+                          <h6 class="card-title fw-bold text-primary-emphasis mb-3">Processing Info</h6>
+                          <table class="table table-sm table-borderless mb-0 small">
+                            <tbody>
+                              @if (job.result.processing_time_seconds !== null) {
+                                <tr>
+                                  <td class="text-secondary fw-medium ps-0" style="width:45%">Total Time</td>
+                                  <td class="fw-medium pe-0">{{ job.result.processing_time_seconds | number: '1.1-1' }} s</td>
+                                </tr>
+                              }
+                              @if (job.result.step_timings) {
+                                @for (entry of getFinancialFigureEntries(job.result.step_timings); track entry.key) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">{{ formatKey(entry.key) }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ entry.value !== null ? ((entry.value | number: '1.1-1') + ' s') : '—' }}
+                                    </td>
+                                  </tr>
+                                }
+                              }
+                              @if (job.result.extraction_model) {
+                                <tr>
+                                  <td class="text-secondary fw-medium ps-0">Extraction Model</td>
+                                  <td class="font-monospace text-primary pe-0" style="font-size:0.82rem">{{ job.result.extraction_model }}</td>
+                                </tr>
+                              }
+                              @if (job.result.validation_model) {
+                                <tr>
+                                  <td class="text-secondary fw-medium ps-0">Validation Model</td>
+                                  <td class="font-monospace text-primary pe-0" style="font-size:0.82rem">{{ job.result.validation_model }}</td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <!-- Basic validation -->
                   @if (job.result.basic_validation) {
-                    <div class="basic-validation-section">
-                      <h4 class="section-title">Basic Validation</h4>
+                    <div>
+                      <h6 class="fw-bold text-primary-emphasis mb-2">Basic Validation</h6>
                       <div
-                        class="basic-validation-box"
-                        [class.basic-validation-box--pass]="
-                          job.result.basic_validation.validation_status === 'PASS'
-                        "
-                        [class.basic-validation-box--fail]="
-                          job.result.basic_validation.validation_status !== 'PASS'
-                        "
+                        class="p-3 rounded-3 border-start border-4"
+                        [class.bg-success-subtle]="job.result.basic_validation.validation_status === 'PASS'"
+                        [class.border-success]="job.result.basic_validation.validation_status === 'PASS'"
+                        [class.bg-danger-subtle]="job.result.basic_validation.validation_status !== 'PASS'"
+                        [class.border-danger]="job.result.basic_validation.validation_status !== 'PASS'"
                       >
-                        <span class="basic-validation-status">
+                        <span
+                          class="fw-bold small text-uppercase"
+                          [class.text-success]="job.result.basic_validation.validation_status === 'PASS'"
+                          [class.text-danger]="job.result.basic_validation.validation_status !== 'PASS'"
+                        >
                           {{ job.result.basic_validation.validation_status }}
                         </span>
                         @if (job.result.basic_validation.validation_details) {
-                          <p class="basic-validation-detail">
+                          <p class="mb-0 mt-1 small text-body-secondary">
                             {{ job.result.basic_validation.validation_details }}
                           </p>
                         }
-                        @if (job.result.basic_validation.failed_checks?.length) {
-                          <ul class="failed-checks-list">
+                        @if (job.result.basic_validation.failed_checks.length) {
+                          <ul class="mb-0 mt-2 ps-4 text-danger small">
                             @for (check of job.result.basic_validation.failed_checks; track check) {
                               <li>{{ check }}</li>
                             }
@@ -314,18 +334,20 @@
 
                   <!-- Financial figures -->
                   @if (hasFinancialFigures(job.result)) {
-                    <div class="financial-section">
-                      <h4 class="section-title">Financial Figures</h4>
-                      <div class="financial-grid">
+                    <div>
+                      <h6 class="fw-bold text-primary-emphasis mb-2">Financial Figures</h6>
+                      <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2">
                         @for (
                           entry of getFinancialFigureEntries(job.result.financial_figures!);
                           track entry.key
                         ) {
-                          <div class="financial-item">
-                            <span class="financial-label">{{ formatKey(entry.key) }}</span>
-                            <span class="financial-value">
-                              {{ entry.value !== null ? (entry.value | number: '1.0-2') : '—' }}
-                            </span>
+                          <div class="col">
+                            <div class="p-2 border rounded-3 bg-light h-100">
+                              <div class="text-secondary small">{{ formatKey(entry.key) }}</div>
+                              <div class="fw-bold">
+                                {{ entry.value !== null ? (entry.value | number: '1.0-2') : '—' }}
+                              </div>
+                            </div>
                           </div>
                         }
                       </div>
@@ -334,30 +356,30 @@
 
                   <!-- Validation checks -->
                   @if (job.result.validations?.length) {
-                    <div class="validations-section">
-                      <h4 class="section-title">Validation Checks</h4>
-                      <div class="validations-table-wrapper">
-                        <table class="validations-table">
-                          <thead>
+                    <div>
+                      <h6 class="fw-bold text-primary-emphasis mb-2">Validation Checks</h6>
+                      <div class="table-responsive rounded-3 border">
+                        <table class="table table-sm table-hover mb-0" style="font-size:0.88rem">
+                          <thead class="table-light">
                             <tr>
-                              <th>Check</th>
-                              <th>Status</th>
-                              <th>Message</th>
+                              <th class="text-uppercase text-secondary fw-bold small">Check</th>
+                              <th class="text-uppercase text-secondary fw-bold small">Status</th>
+                              <th class="text-uppercase text-secondary fw-bold small">Message</th>
                             </tr>
                           </thead>
                           <tbody>
                             @for (v of job.result.validations; track v.check) {
                               <tr>
-                                <td class="check-name">{{ v.check }}</td>
+                                <td class="fw-medium text-primary-emphasis" style="min-width:200px">{{ v.check }}</td>
                                 <td>
                                   <span
-                                    class="check-status"
+                                    class="badge"
                                     [ngClass]="getCheckStatusClass(v.status)"
                                   >
                                     {{ v.status }}
                                   </span>
                                 </td>
-                                <td class="check-message">{{ v.message }}</td>
+                                <td class="text-body-secondary" style="line-height:1.5">{{ v.message }}</td>
                               </tr>
                             }
                           </tbody>
@@ -368,23 +390,27 @@
 
                   <!-- OCR notes -->
                   @if (job.result.ocr_notes) {
-                    <div class="ocr-notes-section">
-                      <h4 class="section-title">OCR Notes</h4>
-                      <p class="ocr-notes-text">{{ job.result.ocr_notes }}</p>
+                    <div>
+                      <h6 class="fw-bold text-primary-emphasis mb-2">OCR Notes</h6>
+                      <p class="mb-0 small text-secondary lh-lg p-3 bg-light rounded-3 border-start border-3 border-secondary">
+                        {{ job.result.ocr_notes }}
+                      </p>
                     </div>
                   }
 
                   <!-- Raw response toggle -->
-                  <div class="raw-section">
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary response-action-btn"
-                      (click)="toggleRaw(job.jobId)"
-                    >
-                      {{ job.showRaw ? 'Hide Raw Response' : 'Show Raw Response' }}
-                    </button>
+                  <div class="d-grid gap-2">
+                    <div>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        (click)="toggleRaw(job.jobId)"
+                      >
+                        {{ job.showRaw ? 'Hide Raw Response' : 'Show Raw Response' }}
+                      </button>
+                    </div>
                     @if (job.showRaw) {
-                      <pre class="raw-json">{{ toJsonString(job.rawResult) }}</pre>
+                      <pre class="raw-json p-3 rounded-3 small mb-0">{{ toJsonString(job.rawResult) }}</pre>
                     }
                   </div>
                 </div>
@@ -392,9 +418,9 @@
 
               <!-- Failed state -->
               @if (job.status === 'failed') {
-                <div class="failure-box">
-                  <h4 class="failure-title">Validation Failed</h4>
-                  <p class="failure-text">{{ job.message }}</p>
+                <div class="alert alert-danger border-0 mt-2 mb-0 rounded-3">
+                  <h6 class="fw-bold mb-1">Validation Failed</h6>
+                  <p class="mb-0 small">{{ job.message }}</p>
                 </div>
               }
             </mat-card-content>
