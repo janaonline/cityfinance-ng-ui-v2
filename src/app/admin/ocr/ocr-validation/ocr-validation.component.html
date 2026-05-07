@@ -1,54 +1,114 @@
 <div class="wrapper app-wrapper">
-  <section class="ocr-validation-page d-grid gap-4 p-4">
+  <section class="ocr-validation-page">
 
     <!-- Hero -->
-    <div class="hero-card rounded-4 p-4 text-white">
-      <h1 class="mb-0">OCR Document Validation</h1>
-      <p class="mt-2 mb-0 subcopy">
+    <div class="hero-card">
+      <h1>OCR Document Validation</h1>
+      <p class="subcopy">
         Upload Indian ULB financial PDFs for async two-step Gemini validation: metadata extraction
         followed by arithmetic checks. Supports single and batch uploads.
       </p>
     </div>
 
     <!-- Upload form -->
-    <mat-card class="upload-card rounded-4">
+    <mat-card class="upload-card">
       <mat-card-content>
-        <form [formGroup]="form" class="d-grid gap-3">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label>Extraction model</mat-label>
-                <mat-select formControlName="extractionModel">
-                  @for (m of models; track m.value) {
-                    <mat-option [value]="m.value">{{ m.label }}</mat-option>
-                  }
-                </mat-select>
-                @if (form.controls.extractionModel.invalid && form.controls.extractionModel.touched) {
-                  <mat-error>Extraction model is required.</mat-error>
+        <form [formGroup]="form" class="upload-form">
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Extraction model</mat-label>
+              <mat-select formControlName="extractionModel">
+                @for (m of models; track m.value) {
+                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
                 }
-              </mat-form-field>
-            </div>
+              </mat-select>
+              @if (form.controls.extractionModel.invalid && form.controls.extractionModel.touched) {
+                <mat-error>Extraction model is required.</mat-error>
+              }
+            </mat-form-field>
 
-            <div class="col-md-6">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label>Validation model</mat-label>
-                <mat-select formControlName="validationModel">
-                  @for (m of models; track m.value) {
-                    <mat-option [value]="m.value">{{ m.label }}</mat-option>
-                  }
-                </mat-select>
-                @if (form.controls.validationModel.invalid && form.controls.validationModel.touched) {
-                  <mat-error>Validation model is required.</mat-error>
+            <mat-form-field appearance="outline">
+              <mat-label>Validation model</mat-label>
+              <mat-select formControlName="validationModel">
+                @for (m of models; track m.value) {
+                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
                 }
-              </mat-form-field>
-            </div>
+              </mat-select>
+              @if (form.controls.validationModel.invalid && form.controls.validationModel.touched) {
+                <mat-error>Validation model is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Document type</mat-label>
+              <mat-select formControlName="docType">
+                @for (dt of documentTypes; track dt.value) {
+                  <mat-option [value]="dt.value">{{ dt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Financial year</mat-label>
+              <mat-select formControlName="financialYear">
+                @for (y of financialYears; track y.value) {
+                  <mat-option [value]="y.value">{{ y.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>ULB</mat-label>
+              <input
+                type="text"
+                matInput
+                formControlName="ulb"
+                placeholder="Search ULB name or code"
+                autocomplete="off"
+                [matAutocomplete]="ulbAuto"
+              />
+              <mat-autocomplete
+                #ulbAuto="matAutocomplete"
+                [displayWith]="displayUlbName"
+                (optionSelected)="onUlbSelected($event)"
+              >
+                @for (ulb of filteredUlbs(); track ulb._id) {
+                  <mat-option [value]="ulb">{{ ulb.name }} ({{ ulb.code }})</mat-option>
+                }
+                @if (ulbSearchInProgress()) {
+                  <mat-option disabled>Searching...</mat-option>
+                } @else if (form.controls.ulb.value && filteredUlbs().length === 0) {
+                  <mat-option disabled>No matching ULB found.</mat-option>
+                }
+              </mat-autocomplete>
+              @if (selectedUlb()) {
+                <mat-hint>{{ selectedUlb()?.code }}</mat-hint>
+              } @else if (
+                (form.controls.ulb.value ?? '').toString().length > 0 &&
+                (form.controls.ulb.value ?? '').toString().length < 2
+              ) {
+                <mat-hint>Type at least 2 characters to search.</mat-hint>
+              }
+              @if (form.controls.ulb.invalid && form.controls.ulb.touched) {
+                <mat-error>Please select a valid ULB from the list.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Enable orientation check</mat-label>
+              <mat-select formControlName="enableOrientationCheck">
+                @for (opt of orientationCheckOptions; track opt.label) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <!-- File picker -->
-          <div class="d-grid gap-2">
+          <div class="file-picker">
             <input
               #fileInput
-              class="d-none"
+              class="file-input-hidden"
               type="file"
               accept="application/pdf"
               multiple
@@ -56,22 +116,22 @@
             />
 
             <button type="button" class="file-drop-box" (click)="openFilePicker()">
-              <span class="fw-semibold text-secondary small">PDF files (single or batch)</span>
+              <span class="file-picker__label">PDF files (single or batch)</span>
               @if (selectedFiles.length > 0) {
-                <span class="fw-semibold text-dark">{{ selectedFiles.length }} file(s) selected</span>
-                <span class="text-secondary small">Click to add more</span>
+                <span class="file-box-name">{{ selectedFiles.length }} file(s) selected</span>
+                <span class="file-box-meta">Click to add more</span>
               } @else {
-                <span class="fw-medium text-secondary">Click to choose PDF file(s)</span>
-                <span class="text-secondary small">Multiple files supported for batch processing</span>
+                <span class="file-box-placeholder">Click to choose PDF file(s)</span>
+                <span class="file-box-meta">Multiple files supported for batch processing</span>
               }
             </button>
 
             @if (selectedFiles.length > 0) {
-              <ul class="list-unstyled d-grid gap-1 mb-0">
+              <ul class="file-list">
                 @for (file of selectedFiles; track $index) {
-                  <li class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 border border-primary-subtle bg-primary-subtle">
-                    <span class="flex-grow-1 fw-medium text-primary-emphasis small text-break">{{ file.name }}</span>
-                    <span class="text-secondary small text-nowrap">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
+                  <li class="file-list__item">
+                    <span class="file-list__name">{{ file.name }}</span>
+                    <span class="file-list__size">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
                     <button
                       type="button"
                       class="btn-close btn-sm"
@@ -83,11 +143,11 @@
               </ul>
             }
 
-            <p class="mb-0 text-secondary small">Accepted format: PDF. Max {{ maxFileSizeMb }} MB per file.</p>
+            <p class="file-note">Accepted format: PDF. Max {{ maxFileSizeMb }} MB per file.</p>
           </div>
 
           <!-- Actions -->
-          <div class="d-flex gap-2 justify-content-end">
+          <div class="actions">
             <button mat-stroked-button type="button" (click)="clearFiles()">Clear Files</button>
             <button
               mat-flat-button
@@ -111,22 +171,22 @@
 
     <!-- Jobs section -->
     @if (hasJobs()) {
-      <div class="d-grid gap-3">
-        <div class="d-flex align-items-center justify-content-between gap-3">
-          <h2 class="fs-5 fw-semibold text-dark mb-0">Validation Jobs</h2>
+      <div class="jobs-list">
+        <div class="jobs-header">
+          <h2 class="jobs-title">Validation Jobs</h2>
           <button type="button" mat-stroked-button (click)="resetJobs()">Clear All</button>
         </div>
 
         @for (job of jobs(); track job.jobId) {
           <mat-card
-            class="job-card rounded-4 overflow-hidden"
+            class="job-card"
             [class.job-card--completed]="job.status === 'completed'"
             [class.job-card--failed]="job.status === 'failed'"
           >
             <mat-card-content>
               <!-- Job header -->
-              <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
-                <div class="d-flex align-items-center gap-3 flex-wrap">
+              <div class="job-header">
+                <div class="job-header__info">
                   <span
                     class="status-chip"
                     [class.status-chip--queued]="job.status === 'queued'"
@@ -139,12 +199,12 @@
                     }
                     {{ getStatusLabel(job.status) }}
                   </span>
-                  <div class="d-grid gap-0">
-                    <span class="fw-semibold text-dark" style="word-break:break-all">{{ job.filename }}</span>
-                    <span class="text-secondary font-monospace" style="font-size:0.78rem">ID: {{ job.jobId }}</span>
+                  <div class="job-header__meta">
+                    <span class="job-header__filename">{{ job.filename }}</span>
+                    <span class="job-header__id">ID: {{ job.jobId }}</span>
                   </div>
                 </div>
-                <div class="d-flex gap-2 flex-shrink-0">
+                <div class="job-header__actions">
                   @if (job.status === 'completed' && job.result) {
                     <button
                       type="button"
@@ -166,10 +226,10 @@
               </div>
 
               <!-- Progress message -->
-              <p class="mb-0 text-secondary small">
+              <p class="job-message">
                 {{ job.message }}
                 @if (job.progressStep) {
-                  <span class="text-primary fst-italic">— {{ job.progressStep }}</span>
+                  <span class="job-message__step">— {{ job.progressStep }}</span>
                 }
               </p>
 
@@ -399,11 +459,11 @@
                   }
 
                   <!-- Raw response toggle -->
-                  <div class="d-grid gap-2">
+                  <div class="raw-response-section">
                     <div>
                       <button
                         type="button"
-                        class="btn btn-sm btn-outline-primary"
+                        class="btn btn-sm btn-outline-primary raw-toggle-btn"
                         (click)="toggleRaw(job.jobId)"
                       >
                         {{ job.showRaw ? 'Hide Raw Response' : 'Show Raw Response' }}
@@ -418,9 +478,9 @@
 
               <!-- Failed state -->
               @if (job.status === 'failed') {
-                <div class="alert alert-danger border-0 mt-2 mb-0 rounded-3">
-                  <h6 class="fw-bold mb-1">Validation Failed</h6>
-                  <p class="mb-0 small">{{ job.message }}</p>
+                <div class="failure-box mt-2">
+                  <h6 class="failure-title">Validation Failed</h6>
+                  <p class="failure-text">{{ job.message }}</p>
                 </div>
               }
             </mat-card-content>

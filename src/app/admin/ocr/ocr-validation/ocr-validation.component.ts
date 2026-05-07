@@ -9,11 +9,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { ActivatedRoute } from '@angular/router';
-import { finalize, switchMap, takeWhile, tap, timer } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, startWith, switchMap, takeWhile, tap, timer } from 'rxjs';
 import { MaterialModule } from '../../../material.module';
+import { IULB } from '../../../core/models/ulb';
+import { CommonService } from '../../../core/services/common.service';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../core/services/utility.service';
 import { OcrService } from '../ocr.service';
@@ -25,6 +28,11 @@ import {
 
 interface ModelOption {
   value: string;
+  label: string;
+}
+
+interface SelectOption<T = string> {
+  value: T;
   label: string;
 }
 
@@ -42,6 +50,7 @@ export class OcrValidationComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly ocrService = inject(OcrService);
+  private readonly commonService = inject(CommonService);
   private readonly utilityService = inject(UtilityService);
   readonly globalLoader = inject(GlobalLoaderService);
 
@@ -55,24 +64,61 @@ export class OcrValidationComponent implements OnInit {
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
   ];
 
+  readonly documentTypes: SelectOption[] = [
+    { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
+    { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
+    { value: 'INCOME_EXPENDITURE', label: 'Income and Expenditure' },
+    { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'Income and Expenditure Schedule' },
+    { value: 'CASH_FLOW', label: 'Cash Flow Statement' },
+    { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
+  ];
+
+  readonly financialYears: SelectOption[] = [
+    { value: '2025-26', label: '2025-26' },
+    { value: '2024-25', label: '2024-25' },
+    { value: '2023-24', label: '2023-24' },
+    { value: '2022-23', label: '2022-23' },
+    { value: '2021-22', label: '2021-22' },
+    { value: '2020-21', label: '2020-21' },
+    { value: '2019-20', label: '2019-20' },
+  ];
+
+  readonly orientationCheckOptions: SelectOption<boolean>[] = [
+    { value: false, label: 'False' },
+    { value: true, label: 'True' },
+  ];
+
   readonly form = this.fb.group({
     extractionModel: this.fb.nonNullable.control(
       'gemini-3.1-flash-lite-preview',
       Validators.required,
     ),
     validationModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
+    docType: this.fb.control<string | null>(null),
+    financialYear: this.fb.control<string | null>(null),
+    ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
+    enableOrientationCheck: this.fb.control<boolean | null>(null),
   });
 
   selectedFiles: File[] = [];
   readonly isSubmitting = signal(false);
   readonly jobs = signal<OcrValidationJobTracker[]>([]);
   readonly hasJobs = computed(() => this.jobs().length > 0);
+  readonly filteredUlbs = signal<IULB[]>([]);
+  readonly ulbSearchInProgress = signal(false);
+  readonly selectedUlb = toSignal(
+    this.form.controls.ulb.valueChanges.pipe(
+      startWith(this.form.controls.ulb.value),
+      map((value) => (value && typeof value !== 'string' ? value : undefined)),
+    ),
+  );
 
   constructor() {
     this.globalLoader.hideLayout();
   }
 
   ngOnInit(): void {
+    this.setupUlbAutocomplete();
     const jobId = this.route.snapshot.queryParamMap.get('jobId');
     if (jobId) {
       this.loadJobById(jobId);
@@ -133,12 +179,22 @@ export class OcrValidationComponent implements OnInit {
       return;
     }
 
-    const { extractionModel, validationModel } = this.form.getRawValue();
+    const { extractionModel, validationModel, docType, financialYear, ulb, enableOrientationCheck } =
+      this.form.getRawValue();
+    const ulbName = this.selectedUlb()?.name ?? (typeof ulb === 'string' ? ulb : null);
     this.isSubmitting.set(true);
-
     if (this.selectedFiles.length === 1) {
       this.ocrService
-        .submitOcrValidationJob(this.selectedFiles[0], extractionModel, validationModel)
+        .submitOcrValidationJob(
+          this.selectedFiles[0],
+          extractionModel,
+          validationModel,
+          this.selectedUlb(),
+          financialYear,
+          docType,
+          null,
+          enableOrientationCheck ?? undefined,
+        )
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({
           next: (response) => {
@@ -167,7 +223,15 @@ export class OcrValidationComponent implements OnInit {
     } else {
       const files = [...this.selectedFiles];
       this.ocrService
-        .submitOcrValidationBatch(files, extractionModel, validationModel)
+        .submitOcrValidationBatch(
+          files,
+          extractionModel,
+          validationModel,
+          ulbName,
+          financialYear,
+          docType,
+          enableOrientationCheck ?? undefined,
+        )
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({
           next: (response) => {
@@ -341,17 +405,17 @@ export class OcrValidationComponent implements OnInit {
 
     const metaRows = r.extraction
       ? [
-          ['ULB Name', r.extraction.ulb_name],
-          ['Original ULB Name', r.extraction.original_ulb_name],
-          ['Document Type', r.extraction.document_type],
-          ['Financial Year', r.extraction.financial_year],
-          ['Language', r.extraction.language_detected],
-          ['Seal Present', r.extraction.seal_present == null ? null : r.extraction.seal_present ? 'Yes' : 'No'],
-          ['Page Count', r.extraction.page_count],
-        ]
-          .filter(([, v]) => v != null)
-          .map(([l, v]) => `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600">${esc(v)}</td></tr>`)
-          .join('')
+        ['ULB Name', r.extraction.ulb_name],
+        ['Original ULB Name', r.extraction.original_ulb_name],
+        ['Document Type', r.extraction.document_type],
+        ['Financial Year', r.extraction.financial_year],
+        ['Language', r.extraction.language_detected],
+        ['Seal Present', r.extraction.seal_present == null ? null : r.extraction.seal_present ? 'Yes' : 'No'],
+        ['Page Count', r.extraction.page_count],
+      ]
+        .filter(([, v]) => v != null)
+        .map(([l, v]) => `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600">${esc(v)}</td></tr>`)
+        .join('')
       : '';
 
     const procRows = [
@@ -366,69 +430,69 @@ export class OcrValidationComponent implements OnInit {
 
     const basicValidation = r.basic_validation
       ? (() => {
-          const isPass = r.basic_validation.validation_status === 'PASS';
-          const bc = isPass ? '#22c55e' : '#f43f5e';
-          const bbg = isPass ? '#f0fdf4' : '#fff1f2';
-          const btxt = isPass ? '#166534' : '#991b1b';
-          const failedItems = r.basic_validation.failed_checks?.length
-            ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.basic_validation.failed_checks.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
-            : '';
-          const detail = r.basic_validation.validation_details
-            ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`
-            : '';
-          return `<section>
+        const isPass = r.basic_validation.validation_status === 'PASS';
+        const bc = isPass ? '#22c55e' : '#f43f5e';
+        const bbg = isPass ? '#f0fdf4' : '#fff1f2';
+        const btxt = isPass ? '#166534' : '#991b1b';
+        const failedItems = r.basic_validation.failed_checks?.length
+          ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.basic_validation.failed_checks.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
+          : '';
+        const detail = r.basic_validation.validation_details
+          ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`
+          : '';
+        return `<section>
             <h5 style="color:#1e3a5f;margin:0 0 .5rem">Basic Validation</h5>
             <div style="padding:.85rem 1rem;border-radius:10px;border-left:4px solid ${bc};background:${bbg}">
               <span style="font-weight:800;font-size:.82rem;letter-spacing:.04em;color:${btxt}">${esc(r.basic_validation.validation_status)}</span>
               ${detail}${failedItems}
             </div>
           </section>`;
-        })()
+      })()
       : '';
 
     const financialSection =
       r.financial_figures && Object.values(r.financial_figures).some((v) => v != null)
         ? (() => {
-            const entries = Object.entries(r.financial_figures as Record<string, unknown>).filter(
-              ([, v]) => v != null,
-            );
-            const simpleEntries = entries.filter(([, v]) => typeof v !== 'object' || v === null);
-            const complexEntries = entries.filter(([, v]) => typeof v === 'object' && v !== null);
+          const entries = Object.entries(r.financial_figures as Record<string, unknown>).filter(
+            ([, v]) => v != null,
+          );
+          const simpleEntries = entries.filter(([, v]) => typeof v !== 'object' || v === null);
+          const complexEntries = entries.filter(([, v]) => typeof v === 'object' && v !== null);
 
-            const simpleTable =
-              simpleEntries.length > 0
-                ? `<table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
+          const simpleTable =
+            simpleEntries.length > 0
+              ? `<table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
                 <thead><tr style="background:#f1f5f9">
                   <th style="padding:.5rem .75rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Field</th>
                   <th style="padding:.5rem .75rem;text-align:right;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Value</th>
                 </tr></thead>
                 <tbody>${simpleEntries
-                  .map(
-                    ([k, v], i) =>
-                      `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
+                .map(
+                  ([k, v], i) =>
+                    `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
                       <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;color:#1e3a5f">${esc(fmtKey(k))}</td>
                       <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${renderVal(v)}</td>
                     </tr>`,
-                  )
-                  .join('')}</tbody>
+                )
+                .join('')}</tbody>
               </table>`
-                : '';
+              : '';
 
-            const complexBlocks = complexEntries
-              .map(
-                ([k, v]) =>
-                  `<div style="margin-bottom:1rem">
+          const complexBlocks = complexEntries
+            .map(
+              ([k, v]) =>
+                `<div style="margin-bottom:1rem">
                   <div style="font-weight:700;color:#1e3a5f;margin-bottom:.4rem;font-size:.9rem">${esc(fmtKey(k))}</div>
                   ${renderVal(v)}
                 </div>`,
-              )
-              .join('');
+            )
+            .join('');
 
-            return `<section>
+          return `<section>
             <h5 style="color:#1e3a5f;margin:0 0 .75rem">Financial Figures</h5>
             ${simpleTable}${complexBlocks}
           </section>`;
-          })()
+        })()
         : '';
 
     const validationsSection = r.validations?.length
@@ -441,17 +505,17 @@ export class OcrValidationComponent implements OnInit {
             <th style="padding:.5rem .85rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Message</th>
           </tr></thead>
           <tbody>${r.validations
-            .map((v) => {
-              const bs = checkBadge[v.status?.toUpperCase()] ?? 'background:#f1f5f9;color:#475569';
-              return `<tr>
+        .map((v) => {
+          const bs = checkBadge[v.status?.toUpperCase()] ?? 'background:#f1f5f9;color:#475569';
+          return `<tr>
                 <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0;color:#1e3a5f;font-weight:500;min-width:180px">${esc(v.check)}</td>
                 <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0">
                   <span style="display:inline-block;padding:.2rem .55rem;border-radius:6px;font-size:.78rem;font-weight:700;${bs}">${esc(v.status)}</span>
                 </td>
                 <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0;color:#374151;line-height:1.5">${esc(v.message)}</td>
               </tr>`;
-            })
-            .join('')}</tbody>
+        })
+        .join('')}</tbody>
         </table>
       </section>`
       : '';
@@ -488,27 +552,25 @@ export class OcrValidationComponent implements OnInit {
     <p style="margin:.25rem 0 0;opacity:.65;font-size:.8rem;font-family:monospace">Job ID: ${esc(job.jobId)} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString('en-IN')}</p>
   </header>
 
-  ${
-    r.overall_assessment
-      ? `<section style="background:${bannerBg};border-left:5px solid ${bannerBorder};color:${bannerColor}">
+  ${r.overall_assessment
+        ? `<section style="background:${bannerBg};border-left:5px solid ${bannerBorder};color:${bannerColor}">
       <div style="display:flex;align-items:flex-start;gap:.75rem">
         <span style="display:inline-block;padding:.25rem .65rem;border-radius:6px;font-size:.82rem;font-weight:800;letter-spacing:.04em;background:${bannerColor};color:#fff;flex-shrink:0">${esc(r.overall_assessment)}</span>
         ${r.summary ? `<p style="margin:0;font-size:.92rem;line-height:1.5">${esc(r.summary)}</p>` : ''}
       </div>
     </section>`
-      : ''
-  }
+        : ''
+      }
 
   <!-- Metadata + Processing side by side -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
-    ${
-      metaRows
+    ${metaRows
         ? `<section>
         <h5 style="color:#1e3a5f;margin:0 0 .75rem">Document Metadata</h5>
         <table style="width:100%;font-size:.88rem"><tbody>${metaRows}</tbody></table>
       </section>`
         : ''
-    }
+      }
     <section>
       <h5 style="color:#1e3a5f;margin:0 0 .75rem">Processing Info</h5>
       <table style="width:100%;font-size:.88rem"><tbody>${procRows}</tbody></table>
@@ -523,6 +585,57 @@ export class OcrValidationComponent implements OnInit {
 </div>
 </body>
 </html>`;
+  }
+
+  onUlbSelected(event: MatAutocompleteSelectedEvent): void {
+    this.form.controls.ulb.setValue(event.option.value as IULB);
+  }
+
+  displayUlbName(ulb: IULB | string | null): string {
+    if (!ulb) return '';
+    return typeof ulb === 'string' ? ulb : ulb.name;
+  }
+
+  private setupUlbAutocomplete(): void {
+    this.form.controls.ulb.valueChanges
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        map((value) => (typeof value === 'string' ? value : value?.name ?? '').trim()),
+        tap((searchText) => {
+          if (!searchText) {
+            this.filteredUlbs.set([]);
+            this.ulbSearchInProgress.set(false);
+          }
+        }),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((searchText) => {
+          if (!searchText || searchText.length < 2) return of<IULB[]>([]);
+          this.ulbSearchInProgress.set(true);
+          return this.commonService.searchUlb({ matchingWord: searchText }, 'ulb').pipe(
+            map((response: any) => this.extractUlbs(response).slice(0, 50)),
+            catchError(() => of<IULB[]>([])),
+            finalize(() => this.ulbSearchInProgress.set(false)),
+          );
+        }),
+      )
+      .subscribe((ulbs) => this.filteredUlbs.set(ulbs));
+  }
+
+  private ulbSelectionValidator(): ValidatorFn {
+    return (control) => {
+      const value = control.value;
+      if (!value) return null;
+      return typeof value === 'object' ? null : { invalidUlb: true };
+    };
+  }
+
+  private extractUlbs(response: any): IULB[] {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.ulbs)) return response.ulbs;
+    if (Array.isArray(response?.data?.ulbs)) return response.data.ulbs;
+    return [];
   }
 
   private addJob(job: OcrValidationJobTracker): void {

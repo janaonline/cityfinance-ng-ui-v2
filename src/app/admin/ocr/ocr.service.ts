@@ -102,23 +102,68 @@ export class OcrService {
       { params: queryParams },
     );
   }
+  getulb(ulb: IULB | string | null | undefined): string {
+    if (ulb && typeof ulb === 'object') {
+      const ulbKeys: string[] = [ulb?.name];
 
-  submitOcrValidationJob(file: File, extractionModel: string, validationModel: string) {
+      if (ulb?.slug) ulbKeys.push(ulb.slug);
+      if (ulb?.keywords) ulbKeys.push(ulb.keywords);
+      const ulbKey = ulbKeys.join('|');
+      return ulbKey;
+    } else {
+      return ulb ? ulb.trim() : '';
+    }
+  }
+  submitOcrValidationJob(
+    file: File,
+    extractionModel: string,
+    validationModel: string,
+    ulb?: IULB | string | null,
+    financialYear?: string | null,
+    docType?: string | null,
+    tableExists?: boolean | null,
+    enableOrientationCheck?: boolean,
+  ) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('extraction_model', extractionModel);
     formData.append('validation_model', validationModel);
+    const ulbName = this.getulb(ulb);
+    if (ulbName) formData.append('ulb_name', ulbName);
+    if (financialYear) formData.append('financial_year', financialYear);
+    if (docType) formData.append('doc_type', docType);
+    if (tableExists !== null && tableExists !== undefined) {
+      formData.append('table_exists', String(tableExists));
+    }
+    if (enableOrientationCheck !== undefined) {
+      formData.append('enable_orientation_check', String(enableOrientationCheck));
+    }
     return this.http.post<OcrValidationJobSubmitResponse>(
       environment.api.url3 + 'ocr-validation/jobs',
       formData,
     );
   }
 
-  submitOcrValidationBatch(files: File[], extractionModel: string, validationModel: string) {
+  submitOcrValidationBatch(
+    files: File[],
+    extractionModel: string,
+    validationModel: string,
+    ulb?: IULB | string | null,
+    financialYear?: string | null,
+    docType?: string | null,
+    enableOrientationCheck?: boolean,
+  ) {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
     formData.append('extraction_model', extractionModel);
     formData.append('validation_model', validationModel);
+    const ulbName = this.getulb(ulb);
+    if (ulbName) formData.append('ulb_name', ulbName);
+    if (financialYear) formData.append('financial_year', financialYear);
+    if (docType) formData.append('doc_type', docType);
+    if (enableOrientationCheck !== undefined) {
+      formData.append('enable_orientation_check', String(enableOrientationCheck));
+    }
     return this.http.post<OcrValidationBatchSubmitResponse>(
       environment.api.url3 + 'ocr-validation/jobs/batch',
       formData,
