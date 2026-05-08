@@ -358,6 +358,132 @@
                     </div>
                   </div>
 
+                  <!-- Job Info + Expected & Match -->
+                  @if (job.rawResult) {
+                    <div class="row g-3">
+                      <!-- Job Info -->
+                      <div class="col-md-6">
+                        <div class="card h-100 border rounded-3">
+                          <div class="card-body">
+                            <h6 class="card-title fw-bold text-primary-emphasis mb-3">Job Info</h6>
+                            <table class="table table-sm table-borderless mb-0 small">
+                              <tbody>
+                                @if (job.rawResult.batch_id) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0" style="width:45%">Batch ID</td>
+                                    <td class="font-monospace pe-0" style="font-size:0.8rem">{{ job.rawResult.batch_id }}</td>
+                                  </tr>
+                                }
+                                @if (job.rawResult.file_info) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">File Size</td>
+                                    <td class="fw-medium pe-0">{{ job.rawResult.file_info.size_kb | number: '1.0-2' }} KB</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Page Count</td>
+                                    <td class="fw-medium pe-0">{{ job.rawResult.file_info.page_count }}</td>
+                                  </tr>
+                                }
+                                @if (job.rawResult.enable_orientation_check !== null) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Orientation Check</td>
+                                    <td class="pe-0">
+                                      <span class="badge" [class.text-bg-success]="job.rawResult.enable_orientation_check" [class.text-bg-secondary]="!job.rawResult.enable_orientation_check">
+                                        {{ job.rawResult.enable_orientation_check ? 'Enabled' : 'Disabled' }}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                }
+                                @if (job.rawResult.created_at) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Created</td>
+                                    <td class="fw-medium pe-0">{{ formatDateTime(job.rawResult.created_at) }}</td>
+                                  </tr>
+                                }
+                                @if (job.rawResult.started_at) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Started</td>
+                                    <td class="fw-medium pe-0">{{ formatDateTime(job.rawResult.started_at) }}</td>
+                                  </tr>
+                                }
+                                @if (job.rawResult.completed_at) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Completed</td>
+                                    <td class="fw-medium pe-0">{{ formatDateTime(job.rawResult.completed_at) }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Expected & Match Status -->
+                      @if (job.rawResult.expected) {
+                        <div class="col-md-6">
+                          <div class="card h-100 border rounded-3">
+                            <div class="card-body">
+                              <h6 class="card-title fw-bold text-primary-emphasis mb-3">Expected vs Extracted</h6>
+                              <table class="table table-sm table-borderless mb-2 small">
+                                <thead class="table-light">
+                                  <tr>
+                                    <th class="text-secondary fw-bold small ps-0" style="width:35%">Field</th>
+                                    <th class="text-secondary fw-bold small">Expected</th>
+                                    <th class="text-secondary fw-bold small text-center" style="width:60px">Match</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  @if (job.rawResult.expected.ulb_name) {
+                                    <tr>
+                                      <td class="text-secondary ps-0">ULB Name</td>
+                                      <td class="fw-medium text-break" style="max-width:160px;font-size:0.8rem">{{ job.rawResult.expected.ulb_name }}</td>
+                                      <td class="text-center">
+                                        <i class="bi" [ngClass]="[getMatchIcon(job.rawResult.match_status?.ulb_name ?? null), getMatchClass(job.rawResult.match_status?.ulb_name ?? null)]"></i>
+                                      </td>
+                                    </tr>
+                                  }
+                                  @if (job.rawResult.expected.financial_year) {
+                                    <tr>
+                                      <td class="text-secondary ps-0">Financial Year</td>
+                                      <td class="fw-medium">{{ job.rawResult.expected.financial_year }}</td>
+                                      <td class="text-center">
+                                        <i class="bi" [ngClass]="[getMatchIcon(job.rawResult.match_status?.financial_year ?? null), getMatchClass(job.rawResult.match_status?.financial_year ?? null)]"></i>
+                                      </td>
+                                    </tr>
+                                  }
+                                  @if (job.rawResult.expected.doc_type) {
+                                    <tr>
+                                      <td class="text-secondary ps-0">Document Type</td>
+                                      <td class="fw-medium">{{ job.rawResult.expected.doc_type }}</td>
+                                      <td class="text-center">
+                                        <i class="bi" [ngClass]="[getMatchIcon(job.rawResult.match_status?.doc_type ?? null), getMatchClass(job.rawResult.match_status?.doc_type ?? null)]"></i>
+                                      </td>
+                                    </tr>
+                                  }
+                                  @if (job.rawResult.expected.table_exists !== null) {
+                                    <tr>
+                                      <td class="text-secondary ps-0">Table Exists</td>
+                                      <td class="fw-medium">{{ job.rawResult.expected.table_exists ? 'Yes' : 'No' }}</td>
+                                      <td class="text-center text-secondary"><i class="bi bi-dash-circle"></i></td>
+                                    </tr>
+                                  }
+                                </tbody>
+                              </table>
+                              @if (job.rawResult.match_status) {
+                                <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                                  <span class="text-secondary small fw-medium">Overall:</span>
+                                  <span class="badge" [class.text-bg-success]="job.rawResult.match_status.overall" [class.text-bg-danger]="!job.rawResult.match_status.overall">
+                                    {{ job.rawResult.match_status.overall ? 'MATCH' : 'MISMATCH' }}
+                                  </span>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+
                   <!-- Basic validation -->
                   @if (job.result.basic_validation) {
                     <div>
@@ -396,21 +522,48 @@
                   @if (hasFinancialFigures(job.result)) {
                     <div>
                       <h6 class="fw-bold text-primary-emphasis mb-2">Financial Figures</h6>
-                      <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2">
-                        @for (
-                          entry of getFinancialFigureEntries(job.result.financial_figures!);
-                          track entry.key
-                        ) {
-                          <div class="col">
-                            <div class="p-2 border rounded-3 bg-light h-100">
-                              <div class="text-secondary small">{{ formatKey(entry.key) }}</div>
-                              <div class="fw-bold">
-                                {{ entry.value !== null ? (entry.value | number: '1.0-2') : '—' }}
+
+                      <!-- Summary stats -->
+                      @if (job.result.financial_figures!.summary) {
+                        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2 mb-3">
+                          @for (entry of getSummaryEntries(job.result.financial_figures!.summary); track entry.key) {
+                            @if (entry.value !== null) {
+                              <div class="col">
+                                <div class="p-2 border rounded-3 bg-light h-100">
+                                  <div class="text-secondary small">{{ formatKey(entry.key) }}</div>
+                                  <div class="fw-bold font-monospace" style="font-size:0.9rem">{{ entry.value | number: '1.0-2' }}</div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        }
-                      </div>
+                            }
+                          }
+                        </div>
+                      }
+
+                      <!-- Extracted line items table -->
+                      @if (job.result.financial_figures!.extracted_items?.length) {
+                        <div class="table-responsive rounded-3 border">
+                          <table class="table table-sm table-hover mb-0" style="font-size:0.85rem">
+                            <thead class="table-light">
+                              <tr>
+                                <th class="text-uppercase text-secondary fw-bold small">Line Item</th>
+                                <th class="text-uppercase text-secondary fw-bold small">Category</th>
+                                <th class="text-uppercase text-secondary fw-bold small text-end">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (item of job.result.financial_figures!.extracted_items; track item.line_item) {
+                                <tr>
+                                  <td class="text-primary-emphasis fw-medium">{{ item.line_item }}</td>
+                                  <td class="text-secondary">{{ item.category }}</td>
+                                  <td class="text-end font-monospace fw-semibold">
+                                    {{ item.amount !== null ? (item.amount | number: '1.0-2') : '—' }}
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      }
                     </div>
                   }
 
