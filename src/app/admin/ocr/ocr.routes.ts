@@ -25,4 +25,19 @@ export const OCR_ROUTES: Route[] = [
         (mod) => mod.GetOcrDetailsComponent,
       ),
   },
+  {
+    path: 'validation',
+    loadComponent: () =>
+      import('./ocr-validation/ocr-validation.component').then(
+        (mod) => mod.OcrValidationComponent,
+      ),
+  },
+  {
+    path: 'validation-list',
+    loadComponent: () =>
+      import('./ocr-validation-list/ocr-validation-list.component').then(
+        (mod) => mod.OcrValidationListComponent,
+      ),
+  },
+
 ];

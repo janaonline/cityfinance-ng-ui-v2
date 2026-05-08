@@ -62,10 +62,11 @@ describe('OtpAuthService', () => {
     routerSpy.navigate.and.returnValue(Promise.resolve(true));
     legacySpy = jasmine.createSpyObj('LegacyAuthService', ['storeTokens', 'clearLocalStorage']);
 
-    TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
         OtpAuthService,
-        { provide: Router, useValue: routerSpy },
-        { provide: LegacyAuthService, useValue: legacySpy },
+      { provide: Router, useValue: routerSpy },
+      { provide: LegacyAuthService, useValue: legacySpy },
       ],
     });
 
@@ -88,10 +89,11 @@ describe('OtpAuthService', () => {
     it('should be logged in when a token already exists in localStorage', () => {
       localStorage.setItem('cf_access_token', 'pre-existing-token');
       TestBed.resetTestingModule();
-      TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
+      TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule, RouterTestingModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
           OtpAuthService,
-          { provide: Router, useValue: routerSpy },
-          { provide: LegacyAuthService, useValue: legacySpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: LegacyAuthService, useValue: legacySpy },
         ],
       });
       const svc = TestBed.inject(OtpAuthService);
@@ -230,7 +232,7 @@ describe('OtpAuthService', () => {
       httpMock.expectOne(`${API}auth/logout`).flush(null);
       tick();
 
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
     }));
 
     it('should call legacyAuth.clearLocalStorage', fakeAsync(() => {
@@ -248,7 +250,7 @@ describe('OtpAuthService', () => {
 
       expect(localStorage.getItem('cf_access_token')).toBeNull();
       expect(service.isLoggedIn()).toBeFalse();
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
     }));
   });
 

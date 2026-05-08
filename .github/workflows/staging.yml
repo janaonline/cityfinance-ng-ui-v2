@@ -11,8 +11,26 @@ on:
       - "staging"
  
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.14.0]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - name: Install dependencies
+      run: npm install --force
+    - name: Run unit tests
+      run: npm run test -- --code-coverage --watch=false --browsers=ChromeHeadless
+
   build:
     runs-on: ubuntu-latest
+    needs: test
     strategy:
       matrix:
         node-version: [22.14.0]

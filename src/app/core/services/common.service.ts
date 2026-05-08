@@ -110,8 +110,18 @@ export class CommonService {
 
   public getWebsiteVisitCount() {
     return this.http
-      .get(`${environment.api.url}visit_count`)
+      .get(`${environment.api.url2}auth/visit_count`)
       .pipe(map((res: any) => (res && res['data'] ? res['data'] : 0)));
+  }
+
+  public startSession(): Observable<string> {
+    return this.http
+      .get<{ data: { _id: string } }>(`${environment.api.url2}auth/start_session`)
+      .pipe(map((res) => res?.data?._id ?? ''));
+  }
+
+  public endSession(id: string): void {
+    fetch(`${environment.api.url2}auth/end_session/${id}`, { keepalive: true });
   }
 
   // we are loading states while loading dashboard

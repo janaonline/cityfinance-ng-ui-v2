@@ -1,6 +1,6 @@
 import { ViewportScroller } from '@angular/common';
 // import {} from '@angular/common/http';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { environment } from '../environments/environment';
@@ -9,6 +9,7 @@ import { HeaderComponent } from './shared/components/header/header.component';
 import { GtmService } from './core/services/gtm.service';
 import { GlobalLoaderService } from './core/services/loaders/global-loader.service';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { CommonService } from './core/services/common.service';
 
 @Component({
   selector: 'app-root',
@@ -32,6 +33,7 @@ export class AppComponent implements OnInit {
     private _viewportScroller: ViewportScroller,
     private gaService: GoogleAnalyticsService,
     private gtmService: GtmService,
+    private commonService: CommonService,
   ) {
   }
 
@@ -42,11 +44,30 @@ export class AppComponent implements OnInit {
     }
     // this.gaService.trackEvent('button click',{});
     this.getQueryParams();
+    this.initVisitSession();
 
     this._router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this._viewportScroller.scrollToPosition([0, 0]);
       }
+    });
+  }
+
+  @HostListener('window:beforeunload')
+  onBeforeUnload(): void {
+    const sessionID = sessionStorage.getItem('sessionID');
+    if (sessionID) {
+      this.commonService.endSession(sessionID);
+    }
+  }
+
+  private initVisitSession(): void {
+    if (sessionStorage.getItem('sessionID')) return;
+    this.commonService.startSession().subscribe({
+      next: (id) => {
+        if (id) sessionStorage.setItem('sessionID', id);
+      },
+      error: (err) => console.error('Failed to start visit session', err),
     });
   }
 
