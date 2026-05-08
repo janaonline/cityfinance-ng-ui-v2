@@ -21,6 +21,13 @@ interface OcrValidationListRow {
   errorMessage: string;
   createdAt: string;
   completedAt: string;
+  fileSizeKb: string;
+  filePageCount: string;
+  fileType: string;
+  expectedUlbName: string;
+  expectedFinancialYear: string;
+  expectedDocType: string;
+  expectedTableExists: string;
 }
 
 @Component({
@@ -49,14 +56,17 @@ export class OcrValidationListComponent implements OnInit {
     'batchId',
     'models',
     'status',
-    'createdAt',
-    'completedAt',
+    'expected',
+    'dates',
     'action',
   ];
 
   readonly filterForm = this.fb.nonNullable.group({
     status: [''],
     batchId: [''],
+    jobId: [''],
+    filename: [''],
+    ulbName: [''],
   });
 
   readonly dataSource = new MatTableDataSource<OcrValidationListRow>([]);
@@ -78,7 +88,7 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterForm.reset({ status: '', batchId: '' });
+    this.filterForm.reset({ status: '', batchId: '', jobId: '', filename: '', ulbName: '' });
     this.pageIndex = 0;
     this.paginator?.firstPage();
     this.loadJobs();
@@ -130,13 +140,16 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   private loadJobs(): void {
-    const { status, batchId } = this.filterForm.getRawValue();
+    const { status, batchId, jobId, filename, ulbName } = this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.ocrService
       .listOcrValidationJobs({
         status: status || undefined,
         batch_id: batchId.trim() || undefined,
+        job_id: jobId.trim() || undefined,
+        filename: filename.trim() || undefined,
+        ulb_name: ulbName.trim() || undefined,
         skip: this.pageIndex * this.pageSize,
         limit: this.pageSize,
       })
@@ -170,13 +183,20 @@ export class OcrValidationListComponent implements OnInit {
       errorMessage: job.error_message || '—',
       createdAt: this.formatDate(job.created_at),
       completedAt: this.formatDate(job.completed_at),
+      fileSizeKb: job.file_info ? `${job.file_info.size_kb.toFixed(1)} KB` : '—',
+      filePageCount: job.file_info ? `${job.file_info.page_count}` : '—',
+      fileType: job.file_info?.file_type || '—',
+      expectedUlbName: job.expected?.ulb_name || '—',
+      expectedFinancialYear: job.expected?.financial_year || '—',
+      expectedDocType: job.expected?.doc_type || '—',
+      expectedTableExists: job.expected?.table_exists != null ? (job.expected.table_exists ? 'Yes' : 'No') : '—',
     };
   }
 
   private formatDate(value?: string | null): string {
     if (!value) return '—';
     try {
-      return formatDate(value, 'dd/MM/yyyy, hh:mm a', 'en-IN');
+      return formatDate(value, 'dd/MM/yyyy, hh:mm a', 'en-IN', 'Asia/Kolkata');
     } catch {
       return value;
     }

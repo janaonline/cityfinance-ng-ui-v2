@@ -21,6 +21,7 @@ import { GlobalLoaderService } from '../../../core/services/loaders/global-loade
 import { UtilityService } from '../../../core/services/utility.service';
 import { OcrService } from '../ocr.service';
 import {
+  OcrFinancialSummary,
   OcrValidationJobTracker,
   OcrValidationResult,
   OcrValidationStatus,
@@ -34,6 +35,42 @@ interface ModelOption {
 interface SelectOption<T = string> {
   value: T;
   label: string;
+}
+
+interface UsageStep {
+  name: string;
+  model: string | null;
+  promptTokens: number | null;
+  candidatesTokens: number | null;
+  thoughtsTokens: number | null;
+  totalTokens: number | null;
+  promptDetails: Array<{ modality: string; token_count: number }>;
+  estimatedCostUsd: number | null;
+  estimatedCostInr: number | null;
+  pricing: GeminiPricing | null;
+}
+
+const USD_TO_INR = 93.5; // Example conversion rate, should be updated with real-time data in production
+
+interface GeminiPricing {
+  inputPerM: number;
+  outputPerM: number;
+  thinkingPerM: number;
+}
+
+const GEMINI_PRICING: Array<{ pattern: RegExp; pricing: GeminiPricing }> = [
+  { pattern: /gemini-3\.1-flash-lite/i, pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 } },
+  { pattern: /gemini-3\.1-pro/i, pricing: { inputPerM: 2.50, outputPerM: 15.00, thinkingPerM: 15.00 } },
+  { pattern: /gemini-2\.5-pro/i, pricing: { inputPerM: 1.25, outputPerM: 10.00, thinkingPerM: 10.00 } },
+  { pattern: /gemini-2\.5-flash/i, pricing: { inputPerM: 0.15, outputPerM: 0.60, thinkingPerM: 3.50 } },
+  { pattern: /gemini-2\.0-flash/i, pricing: { inputPerM: 0.10, outputPerM: 0.40, thinkingPerM: 0.40 } },
+  { pattern: /gemini-1\.5-pro/i, pricing: { inputPerM: 1.25, outputPerM: 5.00, thinkingPerM: 5.00 } },
+  { pattern: /gemini-1\.5-flash/i, pricing: { inputPerM: 0.075, outputPerM: 0.30, thinkingPerM: 0.30 } },
+];
+
+function resolveGeminiPricing(model: string | null | undefined): GeminiPricing | null {
+  if (!model) return null;
+  return GEMINI_PRICING.find((p) => p.pattern.test(model))?.pricing ?? null;
 }
 
 @Component({
@@ -319,13 +356,69 @@ export class OcrValidationComponent implements OnInit {
     return Object.entries(figures).map(([key, value]) => ({ key, value }));
   }
 
+  getSummaryEntries(summary: OcrFinancialSummary): Array<{ key: string; value: number | null }> {
+    return Object.entries(summary).map(([key, value]) => ({ key, value: value as number | null }));
+  }
+
+  getUsageSteps(
+    meta: Record<string, unknown>,
+    extractionModel?: string | null,
+    validationModel?: string | null,
+  ): UsageStep[] {
+    return Object.entries(meta)
+      .filter(([, v]) => v !== null && typeof v === 'object')
+      .map(([key, v]) => {
+        const s = v as Record<string, unknown>;
+        const model = key.startsWith('extraction') ? extractionModel : validationModel;
+        const pricing = resolveGeminiPricing(model);
+        const prompt = (s['prompt_token_count'] as number) ?? 0;
+        const output = (s['candidates_token_count'] as number) ?? 0;
+        const thoughts = (s['thoughts_token_count'] as number) ?? 0;
+        const estimatedCostUsd = pricing
+          ? (prompt * pricing.inputPerM + output * pricing.outputPerM + thoughts * pricing.thinkingPerM) / 1_000_000
+          : null;
+        const estimatedCostInr = estimatedCostUsd !== null ? estimatedCostUsd * USD_TO_INR : null;
+        return {
+          name: key,
+          model: model ?? null,
+          promptTokens: (s['prompt_token_count'] as number) ?? null,
+          candidatesTokens: (s['candidates_token_count'] as number) ?? null,
+          thoughtsTokens: (s['thoughts_token_count'] as number) ?? null,
+          totalTokens: (s['total_token_count'] as number) ?? null,
+          promptDetails: (s['prompt_tokens_details'] as Array<{ modality: string; token_count: number }> | null) ?? [],
+          estimatedCostUsd,
+          estimatedCostInr,
+          pricing,
+        };
+      });
+  }
+
+  getMatchClass(matched: boolean | null): string {
+    if (matched === true) return 'text-success';
+    if (matched === false) return 'text-danger';
+    return 'text-secondary';
+  }
+
+  getMatchIcon(matched: boolean | null): string {
+    if (matched === true) return 'bi-check-circle-fill';
+    if (matched === false) return 'bi-x-circle-fill';
+    return 'bi-dash-circle';
+  }
+
+  formatDateTime(d: string | null): string {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' } as Intl.DateTimeFormatOptions);
+  }
+
   toJsonString(value: unknown): string {
     return JSON.stringify(value, null, 2);
   }
 
   hasFinancialFigures(result: OcrValidationResult | null): boolean {
     if (!result?.financial_figures) return false;
-    return Object.values(result.financial_figures).some((v) => v !== null);
+    const ff = result.financial_figures;
+    if (ff.extracted_items?.length > 0) return true;
+    return Object.values(ff.summary ?? {}).some((v) => v !== null);
   }
 
   downloadHtml(job: OcrValidationJobTracker): void {
@@ -450,50 +543,59 @@ export class OcrValidationComponent implements OnInit {
       })()
       : '';
 
-    const financialSection =
-      r.financial_figures && Object.values(r.financial_figures).some((v) => v != null)
-        ? (() => {
-          const entries = Object.entries(r.financial_figures as Record<string, unknown>).filter(
-            ([, v]) => v != null,
-          );
-          const simpleEntries = entries.filter(([, v]) => typeof v !== 'object' || v === null);
-          const complexEntries = entries.filter(([, v]) => typeof v === 'object' && v !== null);
-
-          const simpleTable =
-            simpleEntries.length > 0
-              ? `<table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
+    const financialSection = r.financial_figures
+      ? (() => {
+        const ff = r.financial_figures!;
+        const summaryEntries = (
+          Object.entries(ff.summary ?? {}) as [string, number | null][]
+        ).filter(([, v]) => v != null) as [string, number][];
+        const summaryTable =
+          summaryEntries.length > 0
+            ? `<table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
                 <thead><tr style="background:#f1f5f9">
-                  <th style="padding:.5rem .75rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Field</th>
-                  <th style="padding:.5rem .75rem;text-align:right;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Value</th>
+                  <th style="padding:.5rem .75rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Summary</th>
+                  <th style="padding:.5rem .75rem;text-align:right;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Amount</th>
                 </tr></thead>
-                <tbody>${simpleEntries
-                .map(
-                  ([k, v], i) =>
-                    `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
-                      <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;color:#1e3a5f">${esc(fmtKey(k))}</td>
-                      <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${renderVal(v)}</td>
-                    </tr>`,
-                )
-                .join('')}</tbody>
+                <tbody>${summaryEntries
+              .map(
+                ([k, v], i) =>
+                  `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
+                        <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;color:#1e3a5f">${esc(fmtKey(k))}</td>
+                        <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(v)}</td>
+                      </tr>`,
+              )
+              .join('')}</tbody>
               </table>`
-              : '';
-
-          const complexBlocks = complexEntries
-            .map(
-              ([k, v]) =>
-                `<div style="margin-bottom:1rem">
-                  <div style="font-weight:700;color:#1e3a5f;margin-bottom:.4rem;font-size:.9rem">${esc(fmtKey(k))}</div>
-                  ${renderVal(v)}
-                </div>`,
-            )
-            .join('');
-
-          return `<section>
-            <h5 style="color:#1e3a5f;margin:0 0 .75rem">Financial Figures</h5>
-            ${simpleTable}${complexBlocks}
-          </section>`;
-        })()
-        : '';
+            : '';
+        const itemsTable =
+          ff.extracted_items?.length > 0
+            ? `<div style="font-weight:700;color:#1e3a5f;margin-bottom:.4rem;font-size:.9rem">Extracted Line Items</div>
+               <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+                <thead><tr style="background:#f1f5f9">
+                  <th style="padding:.4rem .6rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Line Item</th>
+                  <th style="padding:.4rem .6rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Category</th>
+                  <th style="padding:.4rem .6rem;text-align:right;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Amount</th>
+                </tr></thead>
+                <tbody>${ff.extracted_items
+              .map(
+                (item, i) =>
+                  `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
+                        <td style="padding:.35rem .6rem;border-top:1px solid #e2e8f0;color:#1e3a5f">${esc(item.line_item)}</td>
+                        <td style="padding:.35rem .6rem;border-top:1px solid #e2e8f0;color:#64748b">${esc(item.category ?? '')}</td>
+                        <td style="padding:.35rem .6rem;border-top:1px solid #e2e8f0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${item.amount != null ? fmt(item.amount) : '<span style="color:#94a3b8">—</span>'}</td>
+                      </tr>`,
+              )
+              .join('')}</tbody>
+              </table>`
+            : '';
+        return summaryTable || itemsTable
+          ? `<section>
+                <h5 style="color:#1e3a5f;margin:0 0 .75rem">Financial Figures</h5>
+                ${summaryTable}${itemsTable}
+              </section>`
+          : '';
+      })()
+      : '';
 
     const validationsSection = r.validations?.length
       ? `<section>
