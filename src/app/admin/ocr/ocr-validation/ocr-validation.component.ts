@@ -39,6 +39,7 @@ interface SelectOption<T = string> {
 
 interface UsageStep {
   name: string;
+  model: string | null;
   promptTokens: number | null;
   candidatesTokens: number | null;
   thoughtsTokens: number | null;
@@ -379,6 +380,7 @@ export class OcrValidationComponent implements OnInit {
         const estimatedCostInr = estimatedCostUsd !== null ? estimatedCostUsd * USD_TO_INR : null;
         return {
           name: key,
+          model: model ?? null,
           promptTokens: (s['prompt_token_count'] as number) ?? null,
           candidatesTokens: (s['candidates_token_count'] as number) ?? null,
           thoughtsTokens: (s['thoughts_token_count'] as number) ?? null,

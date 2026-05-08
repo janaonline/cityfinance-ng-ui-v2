@@ -618,7 +618,12 @@
                       <div class="usage-steps-grid">
                         @for (step of getUsageSteps(job.result.usage_metadata, job.rawResult?.extraction_model, job.rawResult?.validation_model); track step.name) {
                           <div class="usage-step-card">
-                            <div class="usage-step-title">{{ formatKey(step.name) }}</div>
+                            <div class="usage-step-header">
+                              <div class="usage-step-title">{{ formatKey(step.name) }}</div>
+                              @if (step.model) {
+                                <div class="usage-step-model">{{ step.model }}</div>
+                              }
+                            </div>
 
                             <div class="usage-token-row">
                               <span class="usage-token-label">Prompt</span>
