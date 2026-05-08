@@ -185,12 +185,18 @@ export class OcrService {
   listOcrValidationJobs(params?: {
     status?: string;
     batch_id?: string;
+    job_id?: string;
+    filename?: string;
+    ulb_name?: string;
     skip?: number;
     limit?: number;
   }) {
     const queryParams: Record<string, string | number> = {};
     if (params?.status) queryParams['status'] = params.status;
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.job_id) queryParams['job_id'] = params.job_id;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.skip !== undefined) queryParams['skip'] = params.skip;
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
     return this.http.get<OcrValidationJobsListResponse>(

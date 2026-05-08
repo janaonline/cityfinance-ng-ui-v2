@@ -24,7 +24,7 @@
       <div class="section-header">
         <div>
           <h2>Jobs</h2>
-          <p>Filter by status or batch ID and paginate through all jobs.</p>
+          <p>Filter by status, batch ID, job ID, filename, or ULB name and paginate through all jobs.</p>
         </div>
         <div class="section-header-right">
           @if (loading()) {
@@ -40,7 +40,7 @@
 
       <!-- Filters -->
       <form [formGroup]="filterForm" class="filter-grid">
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Status</mat-label>
           <mat-select formControlName="status">
             <mat-option value="">All</mat-option>
@@ -51,9 +51,24 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Batch ID</mat-label>
           <input matInput formControlName="batchId" placeholder="Enter batch ID" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Job ID</mat-label>
+          <input matInput formControlName="jobId" placeholder="Enter job ID" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Filename</mat-label>
+          <input matInput formControlName="filename" placeholder="Search filename" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>ULB Name</mat-label>
+          <input matInput formControlName="ulbName" placeholder="Search ULB name" />
         </mat-form-field>
 
         <div class="filter-actions">
@@ -100,6 +115,13 @@
                   <mat-icon>{{ isCopied('File', row.filename) ? 'check' : 'content_copy' }}</mat-icon>
                 </button>
               </div>
+              @if (row.fileSizeKb !== '—') {
+                <div class="file-meta-row">
+                  <span class="file-meta-chip">{{ row.fileType }}</span>
+                  <span class="file-meta-chip">{{ row.fileSizeKb }}</span>
+                  <span class="file-meta-chip">{{ row.filePageCount }} pg</span>
+                </div>
+              }
             </td>
           </ng-container>
 
@@ -160,16 +182,59 @@
             </td>
           </ng-container>
 
-          <!-- Created At -->
-          <ng-container matColumnDef="createdAt">
-            <th mat-header-cell *matHeaderCellDef>Created</th>
-            <td mat-cell *matCellDef="let row">{{ row.createdAt }}</td>
+          <!-- Expected -->
+          <ng-container matColumnDef="expected">
+            <th mat-header-cell *matHeaderCellDef>Expected</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="expected-cell">
+                @if (row.expectedUlbName !== '—') {
+                  <div>
+                    <span class="cell-label">ULB</span>
+                    <span class="cell-value" [title]="row.expectedUlbName">{{ truncate(row.expectedUlbName, 20) }}</span>
+                  </div>
+                }
+                @if (row.expectedFinancialYear !== '—') {
+                  <div>
+                    <span class="cell-label">FY</span>
+                    <span class="cell-value">{{ row.expectedFinancialYear }}</span>
+                  </div>
+                }
+                @if (row.expectedDocType !== '—') {
+                  <div>
+                    <span class="cell-label">Type</span>
+                    <span class="cell-value">{{ row.expectedDocType }}</span>
+                  </div>
+                }
+                @if (row.expectedTableExists !== '—') {
+                  <div>
+                    <span class="cell-label">Table</span>
+                    <span class="cell-value">{{ row.expectedTableExists }}</span>
+                  </div>
+                }
+                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—' && row.expectedTableExists === '—') {
+                  <span class="dim">—</span>
+                }
+              </div>
+            </td>
           </ng-container>
 
-          <!-- Completed At -->
-          <ng-container matColumnDef="completedAt">
-            <th mat-header-cell *matHeaderCellDef>Completed</th>
-            <td mat-cell *matCellDef="let row">{{ row.completedAt }}</td>
+          <!-- Dates -->
+          <ng-container matColumnDef="dates">
+            <th mat-header-cell *matHeaderCellDef>Dates</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="dates-cell">
+                <div>
+                  <span class="cell-label">Created</span>
+                  <span class="cell-value">{{ row.createdAt }}</span>
+                </div>
+                @if (row.completedAt !== '—') {
+                  <div>
+                    <span class="cell-label">Done</span>
+                    <span class="cell-value">{{ row.completedAt }}</span>
+                  </div>
+                }
+              </div>
+            </td>
           </ng-container>
 
           <!-- Action -->

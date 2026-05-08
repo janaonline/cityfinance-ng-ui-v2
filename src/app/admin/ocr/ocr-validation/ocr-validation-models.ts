@@ -21,6 +21,8 @@ export interface OcrValidationJobStatusResponse {
   filename: string;
   extraction_model: string;
   validation_model: string;
+  file_info: OcrFileInfo | null;
+  expected: OcrExpectedFields | null;
   progress_step: string | null;
   error_message: string | null;
   created_at: string;

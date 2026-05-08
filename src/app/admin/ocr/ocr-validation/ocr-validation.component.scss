@@ -288,6 +288,123 @@
 .check-status--fail    { background: #fee2e2 !important; color: #b91c1c !important; }
 .check-status--unknown { background: #f1f5f9 !important; color: #475569 !important; }
 
+/* Usage metadata */
+
+.usage-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.usage-step-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.usage-step-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1d4ed8;
+  margin-bottom: 0.25rem;
+}
+
+.usage-token-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+
+  &--total {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 0.3rem;
+    margin-top: 0.1rem;
+    font-weight: 700;
+  }
+}
+
+.usage-token-label {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.usage-token-value {
+  font-family: Consolas, 'Courier New', monospace;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.usage-modality-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.usage-cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.3rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.usage-cost-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.usage-cost-value {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+.usage-cost-na {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.usage-cost-inr {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #4d7c0f;
+  margin-left: 0.3rem;
+}
+
+.usage-cost-formula {
+  margin: 0.2rem 0 0;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.usage-modality-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 /* Raw response */
 
 .raw-response-section {
