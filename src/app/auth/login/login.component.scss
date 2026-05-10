@@ -213,6 +213,31 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 14px;
+
+  &--five {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+
+    .role-card {
+      min-height: 74px;
+      gap: 6px;
+      padding: 8px 4px;
+    }
+
+    .role-card__icon {
+      width: 24px;
+      height: 24px;
+
+      i {
+        font-size: 12px;
+      }
+    }
+
+    .role-card__label {
+      font-size: 10px;
+      line-height: 1.15;
+    }
+  }
 }
 
 .role-card {
@@ -283,6 +308,11 @@
 .role-card__icon--doe {
   color: #88979c;
   background: #eef2f3;
+}
+
+.role-card__icon--institutional {
+  color: #6d5bd0;
+  background: #f0edff;
 }
 
 .role-card__label {

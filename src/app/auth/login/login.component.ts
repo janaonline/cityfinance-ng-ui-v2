@@ -18,8 +18,8 @@ import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.s
 import { environment } from '../../../environments/environment';
 import { IRoutePages, ROUTE_PAGES } from '../../core/constants/login-menu.constant';
 
-type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE';
-type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe';
+type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE' | 'PARTNER';
+type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe' | 'institutional';
 type LoginControlName = 'role' | 'identifier' | 'password' | 'otp';
 
 interface StatItem {
@@ -115,14 +115,23 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   protected readonly roleOptions = computed<readonly RoleOption[]>(() => {
     const is15thFC = this.typeKey() === '15thFC';
-    return [
+    const options: RoleOption[] = [
       { id: 'ULB', label: 'ULB', icon: 'ulb' },
       { id: 'STATE', label: 'State DMA', icon: 'state' },
       { id: 'MOHUA', label: 'MoHUA', icon: 'mohua' },
+    ];
+
+    if (is15thFC) {
+      options.push({ id: 'PARTNER', label: 'Institutional', icon: 'institutional' });
+    }
+
+    options.push(
       is15thFC
         ? { id: 'DOE', label: 'DoE', icon: 'doe' }
         : { id: 'DOE', label: 'DoE', icon: 'doe', disabled: true, badge: 'SOON' },
-    ] as const;
+    );
+
+    return options;
   });
 
   protected readonly loginForm = new FormGroup<LoginFormModel>({
@@ -189,7 +198,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(({ type }) => {
       if (LOGIN_TYPES.includes(type)) {
         this.typeKey.set(type);
-        if (type === 'XVIFC') {
+        if (this.shouldHideRoleSelection(type)) {
           this.loginForm.controls.role.clearValidators();
           this.loginForm.controls.role.updateValueAndValidity();
         } else {
@@ -208,7 +217,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           sessionStorage.removeItem('postLoginNavigation');
         }
         this.typeKey.set(type);
-        if (type === 'XVIFC') {
+        if (this.shouldHideRoleSelection(type)) {
           this.loginForm.controls.role.clearValidators();
           this.loginForm.controls.role.updateValueAndValidity();
         } else {
@@ -221,6 +230,10 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearCountdown();
+  }
+
+  private shouldHideRoleSelection(type: LoginType | null): boolean {
+    return type === 'XVIFC' || type === 'state-dashboard';
   }
 
   protected trackByRole(_: number, role: RoleOption): string {
