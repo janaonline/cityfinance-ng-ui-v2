@@ -8,6 +8,7 @@ import {
   DisbursementRow,
   StateOverviewApiResponse,
 } from './overview-card.models';
+import { getEligibleCitiesLabel } from './eligible-cities.data';
 import { OverviewData } from '../../shared/overview-card/overview-card.component';
 
 @Injectable({
@@ -98,7 +99,7 @@ export class OverviewService {
           points: [
             'Covers 60% of project cost',
             'Remaining cost to be shared by state governments and ULBs',
-            'Eligible cities in AP: Visakhapatnam, Vijayawada',
+            getEligibleCitiesLabel(response.stateName) ?? '',
           ],
         },
         {

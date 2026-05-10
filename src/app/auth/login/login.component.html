@@ -9,7 +9,8 @@
 
           <div class="brand-title">{{ brandName }}</div>
         </div>
-        @if (typeKey() === '16thFC') {
+        @switch (typeKey()) {
+          @case ('16thFC') {
           <h1 class="hero-title">
             16th Finance Commission
             <br />
@@ -62,19 +63,71 @@
               <span>Guidelines</span>
             </button>
           </div>
-        } @else if (typeKey() === 'XVIFC') {
-          <h1 class="hero-title">
-            Welcome to XVI FC
-            <br />
-            Data Collection Portal
-          </h1>
+          }
 
-          <p class="hero-description">
-            This portal is used for collecting financial data from Urban Local Bodies (ULBs) as part
-            of the Sixteenth Finance Commission (XVI-FC) grant process. Please sign in with your
-            registered credentials to continue.
-          </p>
-        } @else if (typeKey() === '15thFC') {
+          @case ('ranking') {
+            <h1 class="hero-title">
+              City Finance
+              <br />
+              Rankings 2022
+            </h1>
+
+            <p class="hero-description">
+              Rankings 2022 is now closed. New submissions are no longer accepted.
+            </p>
+
+            <p class="hero-description hero-description--secondary">
+              The City Finance Rankings evaluated all 4,500+ Urban Local Bodies on resource
+              mobilisation, expenditure performance, and fiscal governance, recognizing cities that
+              delivered transparent, accountable urban finance.
+            </p>
+
+            <p class="hero-description hero-description--secondary">
+              Rankings were managed end-to-end on
+              <a href="http://cityfinance.in/" target="_blank" rel="noopener">cityfinance.in</a>
+              using audited accounts, approved budgets, and self-reported financial data.
+            </p>
+          }
+
+          @case ('XVIFC') {
+            <h1 class="hero-title">
+              XVI-FC
+              <br />
+              Data Collection Portal
+            </h1>
+
+            <p class="hero-description">
+              This portal was used to collect standardised financial data from Urban Local Bodies as
+              part of the Sixteenth Finance Commission's report submission process.
+            </p>
+
+            <p class="hero-description hero-description--secondary">
+              The next phase, including grant management, ULB submissions under XVI-FC, and fund
+              release, will go live on
+              <a href="http://cityfinance.in/" target="_blank" rel="noopener">cityfinance.in</a>
+              in June 2026.
+            </p>
+          }
+
+          @case ('state-dashboard') {
+            <h1 class="hero-title">
+              State
+              <br />
+              Dashboard
+            </h1>
+
+            <p class="hero-description">
+              This dashboard presents revenue and expenditure data for Urban Local Bodies from FY
+              2019-20 to FY 2022-23, enabling trend-based and comparative analysis across cities and
+              states.
+            </p>
+
+            <p class="hero-description hero-description--secondary">
+              Access is available to State Urban Development Departments and State DMA officers.
+            </p>
+          }
+
+          @case ('15thFC') {
           <h1 class="hero-title">
             15th Finance Commission
             <br />
@@ -118,6 +171,7 @@
               }
             </div>
           </div>
+          }
         }
       </div>
     </div>
@@ -129,15 +183,20 @@
         <mat-card class="login-card" appearance="outlined">
           <div class="login-card__header">
             <h2>Sign In</h2>
-            @if (typeKey() !== 'XVIFC') {
+            @if (typeKey() !== 'XVIFC' && typeKey() !== 'state-dashboard') {
               <p>Select your role to continue</p>
             }
           </div>
 
           @if (!isOtpLogin()) {
             <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
-              @if (typeKey() !== 'XVIFC') {
-                <div class="role-grid" role="radiogroup" aria-label="User role">
+              @if (typeKey() !== 'XVIFC' && typeKey() !== 'state-dashboard') {
+                <div
+                  class="role-grid"
+                  [class.role-grid--five]="roleOptions().length === 5"
+                  role="radiogroup"
+                  aria-label="User role"
+                >
                   @for (role of roleOptions(); track trackByRole($index, role)) {
                     <button
                       type="button"
@@ -160,6 +219,7 @@
                           'role-card__icon--state': role.icon === 'state',
                           'role-card__icon--mohua': role.icon === 'mohua',
                           'role-card__icon--doe': role.icon === 'doe',
+                          'role-card__icon--institutional': role.icon === 'institutional',
                         }"
                       >
                         @switch (role.icon) {
@@ -174,6 +234,9 @@
                           }
                           @case ('doe') {
                             <i class="bi bi-shield-lock"></i>
+                          }
+                          @case ('institutional') {
+                            <i class="bi bi-building-check"></i>
                           }
                         }
                       </span>
