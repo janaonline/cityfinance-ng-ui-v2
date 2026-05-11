@@ -35,6 +35,19 @@
           <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
             <mat-icon>refresh</mat-icon>
           </button>
+          <button
+            type="button"
+            mat-icon-button
+            [disabled]="loading() || exporting()"
+            (click)="exportToExcel()"
+            title="Export to Excel"
+          >
+            @if (exporting()) {
+              <mat-icon>hourglass_empty</mat-icon>
+            } @else {
+              <mat-icon>download</mat-icon>
+            }
+          </button>
         </div>
       </div>
 
