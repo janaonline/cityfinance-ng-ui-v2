@@ -414,7 +414,19 @@ export class OcrValidationComponent implements OnInit {
 
   formatDateTime(d: string | null): string {
     if (!d) return '—';
-    return new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' } as Intl.DateTimeFormatOptions);
+    // Append 'Z' if no timezone info so the string is parsed as UTC, not local time
+    const normalized = /[Z+]/.test(d.slice(-6)) ? d : d + 'Z';
+    return new Date(normalized).toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata',
+      timeZoneName: 'short',
+    } as Intl.DateTimeFormatOptions);
   }
 
   toJsonString(value: unknown): string {
