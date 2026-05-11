@@ -102,6 +102,15 @@
                 }
               </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Enable financial validation</mat-label>
+              <mat-select formControlName="enableFinancialValidation">
+                @for (opt of financialValidationOptions; track opt.label) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <!-- File picker -->
@@ -540,7 +549,7 @@
                       }
 
                       <!-- Extracted line items table -->
-                      @if (job.result.financial_figures!.extracted_items?.length) {
+                      @if (job.result.financial_figures!.extracted_items.length) {
                         <div class="table-responsive rounded-3 border">
                           <table class="table table-sm table-hover mb-0" style="font-size:0.85rem">
                             <thead class="table-light">
