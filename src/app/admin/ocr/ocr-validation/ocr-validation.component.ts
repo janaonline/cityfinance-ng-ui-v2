@@ -124,6 +124,10 @@ export class OcrValidationComponent implements OnInit {
     { value: false, label: 'False' },
     { value: true, label: 'True' },
   ];
+  readonly financialValidationOptions: SelectOption<boolean>[] = [
+    { value: false, label: 'False' },
+    { value: true, label: 'True' },
+  ];
 
   readonly form = this.fb.group({
     extractionModel: this.fb.nonNullable.control(
@@ -135,6 +139,7 @@ export class OcrValidationComponent implements OnInit {
     financialYear: this.fb.control<string | null>(null),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
     enableOrientationCheck: this.fb.control<boolean | null>(null),
+    enableFinancialValidation: this.fb.control<boolean | null>(false),
   });
 
   selectedFiles: File[] = [];
@@ -216,7 +221,7 @@ export class OcrValidationComponent implements OnInit {
       return;
     }
 
-    const { extractionModel, validationModel, docType, financialYear, ulb, enableOrientationCheck } =
+    const { extractionModel, validationModel, docType, financialYear, ulb, enableOrientationCheck, enableFinancialValidation } =
       this.form.getRawValue();
     const ulbName = this.selectedUlb()?.name ?? (typeof ulb === 'string' ? ulb : null);
     this.isSubmitting.set(true);
@@ -231,6 +236,7 @@ export class OcrValidationComponent implements OnInit {
           docType,
           null,
           enableOrientationCheck ?? undefined,
+          enableFinancialValidation ?? undefined,
         )
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({
@@ -268,6 +274,7 @@ export class OcrValidationComponent implements OnInit {
           financialYear,
           docType,
           enableOrientationCheck ?? undefined,
+          enableFinancialValidation ?? undefined,
         )
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({

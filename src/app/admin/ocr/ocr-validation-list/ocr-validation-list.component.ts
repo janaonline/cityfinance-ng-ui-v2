@@ -4,7 +4,9 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { finalize } from 'rxjs';
+import { finalize, expand, reduce, EMPTY } from 'rxjs';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { MaterialModule } from '../../../material.module';
 import { UtilityService } from '../../../core/services/utility.service';
 import { OcrService } from '../ocr.service';
@@ -71,6 +73,7 @@ export class OcrValidationListComponent implements OnInit {
 
   readonly dataSource = new MatTableDataSource<OcrValidationListRow>([]);
   readonly loading = signal(false);
+  readonly exporting = signal(false);
   readonly copiedKey = signal<string | null>(null);
 
   pageSize = 10;
@@ -104,6 +107,76 @@ export class OcrValidationListComponent implements OnInit {
     this.loadJobs();
   }
 
+  exportToExcel(): void {
+    const { status, batchId, jobId, filename, ulbName } = this.filterForm.getRawValue();
+    const PAGE_SIZE = 10000;
+    const EXPORT_LIMIT = 10000;
+    let fetched = 0;
+
+    const baseParams = {
+      status: status || undefined,
+      batch_id: batchId.trim() || undefined,
+      job_id: jobId.trim() || undefined,
+      filename: filename.trim() || undefined,
+      ulb_name: ulbName.trim() || undefined,
+    };
+
+    this.exporting.set(true);
+
+    this.ocrService.listOcrValidationJobs({ ...baseParams, skip: 0, limit: PAGE_SIZE })
+      .pipe(
+        expand((resp) => {
+          fetched += resp.jobs?.length ?? 0;
+          return fetched < Math.min(resp.total ?? 0, EXPORT_LIMIT)
+            ? this.ocrService.listOcrValidationJobs({ ...baseParams, skip: fetched, limit: PAGE_SIZE })
+            : EMPTY;
+        }),
+        reduce(
+          (acc, resp) => [...acc, ...(resp.jobs ?? [])],
+          [] as OcrValidationJobStatusResponse[],
+        ),
+        finalize(() => this.exporting.set(false)),
+      )
+      .subscribe({
+        next: (allJobs) => {
+          const sheetData = allJobs.map((j) => this.mapRow(j)).map((r) => ({
+            'Job ID': r.jobId,
+            'Batch ID': r.batchId,
+            'Filename': r.filename,
+            'File Type': r.fileType,
+            'File Size': r.fileSizeKb,
+            'Page Count': r.filePageCount,
+            'Extraction Model': r.extractionModel,
+            'Validation Model': r.validationModel,
+            'Status': r.status,
+            'Progress Step': r.progressStep,
+            'Error Message': r.errorMessage,
+            'Expected ULB': r.expectedUlbName,
+            'Expected FY': r.expectedFinancialYear,
+            'Expected Doc Type': r.expectedDocType,
+            'Expected Table Exists': r.expectedTableExists,
+            'Created At': r.createdAt,
+            'Completed At': r.completedAt,
+          }));
+
+          const ws = XLSX.utils.json_to_sheet(sheetData);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'OCR Jobs');
+          const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+          const blob = new Blob([buf], { type: 'application/octet-stream' });
+          const timestamp = formatDate(new Date(), 'yyyyMMdd_HHmmss', 'en-IN', 'Asia/Kolkata');
+          saveAs(blob, `ocr_validation_jobs_${timestamp}.xlsx`);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Export failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
   copyValue(label: string, value: string): void {
     if (!value || value === '—') return;
 
@@ -128,9 +201,9 @@ export class OcrValidationListComponent implements OnInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'completed': return 'status-badge--completed';
-      case 'failed':    return 'status-badge--failed';
+      case 'failed': return 'status-badge--failed';
       case 'processing': return 'status-badge--processing';
-      default:          return 'status-badge--queued';
+      default: return 'status-badge--queued';
     }
   }
 

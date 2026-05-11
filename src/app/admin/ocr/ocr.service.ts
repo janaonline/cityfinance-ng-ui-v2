@@ -123,6 +123,7 @@ export class OcrService {
     docType?: string | null,
     tableExists?: boolean | null,
     enableOrientationCheck?: boolean,
+    enableFinancialValidation?: boolean,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -138,6 +139,9 @@ export class OcrService {
     if (enableOrientationCheck !== undefined) {
       formData.append('enable_orientation_check', String(enableOrientationCheck));
     }
+    if (enableFinancialValidation !== undefined) {
+      formData.append('enable_financial_validation', String(enableFinancialValidation));
+    }
     return this.http.post<OcrValidationJobSubmitResponse>(
       environment.api.url3 + 'ocr-validation/jobs',
       formData,
@@ -152,6 +156,7 @@ export class OcrService {
     financialYear?: string | null,
     docType?: string | null,
     enableOrientationCheck?: boolean,
+    enableFinancialValidation?: boolean,
   ) {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
@@ -163,6 +168,9 @@ export class OcrService {
     if (docType) formData.append('doc_type', docType);
     if (enableOrientationCheck !== undefined) {
       formData.append('enable_orientation_check', String(enableOrientationCheck));
+    }
+    if (enableFinancialValidation !== undefined) {
+      formData.append('enable_financial_validation', String(enableFinancialValidation));
     }
     return this.http.post<OcrValidationBatchSubmitResponse>(
       environment.api.url3 + 'ocr-validation/jobs/batch',
