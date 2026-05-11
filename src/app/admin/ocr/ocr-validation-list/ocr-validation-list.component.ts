@@ -269,7 +269,9 @@ export class OcrValidationListComponent implements OnInit {
   private formatDate(value?: string | null): string {
     if (!value) return '—';
     try {
-      return formatDate(value, 'dd/MM/yyyy, hh:mm a', 'en-IN', 'Asia/Kolkata');
+      // Append 'Z' if no timezone info so the string is parsed as UTC, not local time
+      const normalized = /[Z+]/.test(value.slice(-6)) ? value : value + 'Z';
+      return formatDate(normalized, 'dd/MM/yyyy, hh:mm:ss a', 'en-IN', 'Asia/Kolkata');
     } catch {
       return value;
     }
