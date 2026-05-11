@@ -82,6 +82,21 @@ export const routes: Routes = [
   },
 
   {
+    path: 'v1',
+    children: [
+      {
+        path: 'fc_grant',
+        canActivate: [
+          () => {
+            window.location.href = window.location.origin;
+            return false;
+          },
+        ],
+        component: ErrorComponent,
+      },
+    ],
+  },
+  {
     path: 'maintenance',
     component: MaintenanceComponent,
   },
