@@ -5,7 +5,6 @@ import { RouterLink } from '@angular/router';
 import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { finalize } from 'rxjs';
-import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { MaterialModule } from '../../../material.module';
 import { UtilityService } from '../../../core/services/utility.service';
@@ -121,32 +120,7 @@ export class OcrValidationListComponent implements OnInit {
     })
       .pipe(finalize(() => this.exporting.set(false)))
       .subscribe({
-        next: (response) => {
-          const sheetData = (response.jobs ?? []).map((j) => this.mapRow(j)).map((r) => ({
-            'Job ID': r.jobId,
-            'Batch ID': r.batchId,
-            'Filename': r.filename,
-            'File Type': r.fileType,
-            'File Size': r.fileSizeKb,
-            'Page Count': r.filePageCount,
-            'Extraction Model': r.extractionModel,
-            'Validation Model': r.validationModel,
-            'Status': r.status,
-            'Progress Step': r.progressStep,
-            'Error Message': r.errorMessage,
-            'Expected ULB': r.expectedUlbName,
-            'Expected FY': r.expectedFinancialYear,
-            'Expected Doc Type': r.expectedDocType,
-            'Expected Table Exists': r.expectedTableExists,
-            'Created At': r.createdAt,
-            'Completed At': r.completedAt,
-          }));
-
-          const ws = XLSX.utils.json_to_sheet(sheetData);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, 'OCR Jobs');
-          const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-          const blob = new Blob([buf], { type: 'application/octet-stream' });
+        next: (blob) => {
           const timestamp = formatDate(new Date(), 'yyyyMMdd_HHmmss', 'en-IN', 'Asia/Kolkata');
           saveAs(blob, `ocr_validation_jobs_${timestamp}.xlsx`);
         },
