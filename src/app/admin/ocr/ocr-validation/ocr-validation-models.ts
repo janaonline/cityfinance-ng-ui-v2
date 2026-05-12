@@ -29,6 +29,7 @@ export interface OcrValidationJobStatusResponse {
   updated_at: string;
   started_at: string | null;
   completed_at: string | null;
+  detail_page_url: string | null;
   message: string;
 }
 
@@ -37,15 +38,27 @@ export interface OcrValidationExtraction {
   original_ulb_name: string | null;
   document_type: string | null;
   financial_year: string | null;
+  as_on_date: string | null;
   language_detected: string | null;
   seal_present: boolean | null;
-  page_count: number | null;
+  auditor_name: string | null;
+  auditor_firm: string | null;
+  audited_date: string | null;
 }
 
 export interface OcrValidationBasicCheck {
   validation_status: string | null;
   validation_details: string | null;
   failed_checks: string[];
+  pdf_readability_status: string | null;
+  pdf_quality_status: string | null;
+  quality_issues: string[];
+  table_present: boolean | null;
+  table_required: boolean | null;
+  table_detection_status: string | null;
+  table_issues: string[];
+  multiple_documents_detected: boolean | null;
+  detected_document_types: string[];
 }
 
 export interface OcrValidationCheck {
