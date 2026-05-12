@@ -213,6 +213,25 @@ export class OcrService {
     );
   }
 
+  dumpOcrValidationJobs(params?: {
+    status?: string;
+    batch_id?: string;
+    job_id?: string;
+    filename?: string;
+    ulb_name?: string;
+  }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.job_id) queryParams['job_id'] = params.job_id;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    return this.http.get<OcrValidationJobsListResponse>(
+      environment.api.url3 + 'ocr-validation/jobs/dump',
+      { params: queryParams },
+    );
+  }
+
   getOcrTasks(params: {
     jobId?: string;
     filename?: string;

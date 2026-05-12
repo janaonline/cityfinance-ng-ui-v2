@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { finalize, expand, reduce, EMPTY } from 'rxjs';
+import { finalize } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { MaterialModule } from '../../../material.module';
@@ -109,37 +109,20 @@ export class OcrValidationListComponent implements OnInit {
 
   exportToExcel(): void {
     const { status, batchId, jobId, filename, ulbName } = this.filterForm.getRawValue();
-    const PAGE_SIZE = 10000;
-    const EXPORT_LIMIT = 10000;
-    let fetched = 0;
 
-    const baseParams = {
+    this.exporting.set(true);
+
+    this.ocrService.dumpOcrValidationJobs({
       status: status || undefined,
       batch_id: batchId.trim() || undefined,
       job_id: jobId.trim() || undefined,
       filename: filename.trim() || undefined,
       ulb_name: ulbName.trim() || undefined,
-    };
-
-    this.exporting.set(true);
-
-    this.ocrService.listOcrValidationJobs({ ...baseParams, skip: 0, limit: PAGE_SIZE })
-      .pipe(
-        expand((resp) => {
-          fetched += resp.jobs?.length ?? 0;
-          return fetched < Math.min(resp.total ?? 0, EXPORT_LIMIT)
-            ? this.ocrService.listOcrValidationJobs({ ...baseParams, skip: fetched, limit: PAGE_SIZE })
-            : EMPTY;
-        }),
-        reduce(
-          (acc, resp) => [...acc, ...(resp.jobs ?? [])],
-          [] as OcrValidationJobStatusResponse[],
-        ),
-        finalize(() => this.exporting.set(false)),
-      )
+    })
+      .pipe(finalize(() => this.exporting.set(false)))
       .subscribe({
-        next: (allJobs) => {
-          const sheetData = allJobs.map((j) => this.mapRow(j)).map((r) => ({
+        next: (response) => {
+          const sheetData = (response.jobs ?? []).map((j) => this.mapRow(j)).map((r) => ({
             'Job ID': r.jobId,
             'Batch ID': r.batchId,
             'Filename': r.filename,
