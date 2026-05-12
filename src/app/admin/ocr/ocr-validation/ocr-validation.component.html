@@ -312,10 +312,28 @@
                                     </td>
                                   </tr>
                                 }
-                                @if (job.result.extraction.page_count !== null) {
+                                @if (job.result.extraction.as_on_date) {
                                   <tr>
-                                    <td class="text-secondary fw-medium ps-0">Page Count</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.page_count }}</td>
+                                    <td class="text-secondary fw-medium ps-0">As On Date</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.as_on_date }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.auditor_name) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Auditor Name</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.auditor_name }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.auditor_firm) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Auditor Firm</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.auditor_firm }}</td>
+                                  </tr>
+                                }
+                                @if (job.result.extraction.audited_date) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Audited Date</td>
+                                    <td class="fw-medium pe-0">{{ job.result.extraction.audited_date }}</td>
                                   </tr>
                                 }
                               </tbody>
@@ -524,6 +542,125 @@
                           </ul>
                         }
                       </div>
+
+                      <!-- PDF quality + table detection + multi-doc details -->
+                      @if (
+                        job.result.basic_validation.pdf_readability_status ||
+                        job.result.basic_validation.pdf_quality_status ||
+                        job.result.basic_validation.table_detection_status ||
+                        job.result.basic_validation.multiple_documents_detected !== null
+                      ) {
+                        <div class="row g-3 mt-1">
+                          <!-- PDF Quality -->
+                          @if (job.result.basic_validation.pdf_readability_status || job.result.basic_validation.pdf_quality_status || job.result.basic_validation.quality_issues.length) {
+                            <div class="col-md-4">
+                              <div class="card h-100 border rounded-3">
+                                <div class="card-body">
+                                  <h6 class="card-title fw-bold text-primary-emphasis mb-2" style="font-size:0.82rem">PDF Quality</h6>
+                                  <table class="table table-sm table-borderless mb-0 small">
+                                    <tbody>
+                                      @if (job.result.basic_validation.pdf_readability_status) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Readability</td>
+                                          <td class="fw-medium pe-0">{{ job.result.basic_validation.pdf_readability_status }}</td>
+                                        </tr>
+                                      }
+                                      @if (job.result.basic_validation.pdf_quality_status) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Quality</td>
+                                          <td class="fw-medium pe-0">{{ job.result.basic_validation.pdf_quality_status }}</td>
+                                        </tr>
+                                      }
+                                    </tbody>
+                                  </table>
+                                  @if (job.result.basic_validation.quality_issues.length) {
+                                    <ul class="mb-0 ps-3 text-warning-emphasis small mt-1">
+                                      @for (issue of job.result.basic_validation.quality_issues; track issue) {
+                                        <li>{{ issue }}</li>
+                                      }
+                                    </ul>
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          }
+
+                          <!-- Table Detection -->
+                          @if (job.result.basic_validation.table_detection_status || job.result.basic_validation.table_present !== null) {
+                            <div class="col-md-4">
+                              <div class="card h-100 border rounded-3">
+                                <div class="card-body">
+                                  <h6 class="card-title fw-bold text-primary-emphasis mb-2" style="font-size:0.82rem">Table Detection</h6>
+                                  <table class="table table-sm table-borderless mb-0 small">
+                                    <tbody>
+                                      @if (job.result.basic_validation.table_detection_status) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Status</td>
+                                          <td class="fw-medium pe-0">{{ job.result.basic_validation.table_detection_status }}</td>
+                                        </tr>
+                                      }
+                                      @if (job.result.basic_validation.table_present !== null) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Present</td>
+                                          <td class="pe-0">
+                                            <span class="badge" [class.text-bg-success]="job.result.basic_validation.table_present" [class.text-bg-danger]="!job.result.basic_validation.table_present">
+                                              {{ job.result.basic_validation.table_present ? 'Yes' : 'No' }}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      }
+                                      @if (job.result.basic_validation.table_required !== null) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Required</td>
+                                          <td class="pe-0">{{ job.result.basic_validation.table_required ? 'Yes' : 'No' }}</td>
+                                        </tr>
+                                      }
+                                    </tbody>
+                                  </table>
+                                  @if (job.result.basic_validation.table_issues.length) {
+                                    <ul class="mb-0 ps-3 text-warning-emphasis small mt-1">
+                                      @for (issue of job.result.basic_validation.table_issues; track issue) {
+                                        <li>{{ issue }}</li>
+                                      }
+                                    </ul>
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          }
+
+                          <!-- Multi-document Detection -->
+                          @if (job.result.basic_validation.multiple_documents_detected !== null) {
+                            <div class="col-md-4">
+                              <div class="card h-100 border rounded-3">
+                                <div class="card-body">
+                                  <h6 class="card-title fw-bold text-primary-emphasis mb-2" style="font-size:0.82rem">Document Detection</h6>
+                                  <table class="table table-sm table-borderless mb-0 small">
+                                    <tbody>
+                                      <tr>
+                                        <td class="text-secondary ps-0">Multiple Docs</td>
+                                        <td class="pe-0">
+                                          <span class="badge" [class.text-bg-warning]="job.result.basic_validation.multiple_documents_detected" [class.text-bg-success]="!job.result.basic_validation.multiple_documents_detected">
+                                            {{ job.result.basic_validation.multiple_documents_detected ? 'Yes' : 'No' }}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  @if (job.result.basic_validation.detected_document_types.length) {
+                                    <div class="mt-1 small text-secondary">Detected types:</div>
+                                    <ul class="mb-0 ps-3 small">
+                                      @for (dt of job.result.basic_validation.detected_document_types; track dt) {
+                                        <li>{{ dt }}</li>
+                                      }
+                                    </ul>
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
                     </div>
                   }
 

@@ -521,9 +521,12 @@ export class OcrValidationComponent implements OnInit {
         ['Original ULB Name', r.extraction.original_ulb_name],
         ['Document Type', r.extraction.document_type],
         ['Financial Year', r.extraction.financial_year],
+        ['As On Date', r.extraction.as_on_date],
         ['Language', r.extraction.language_detected],
         ['Seal Present', r.extraction.seal_present == null ? null : r.extraction.seal_present ? 'Yes' : 'No'],
-        ['Page Count', r.extraction.page_count],
+        ['Auditor Name', r.extraction.auditor_name],
+        ['Auditor Firm', r.extraction.auditor_firm],
+        ['Audited Date', r.extraction.audited_date],
       ]
         .filter(([, v]) => v != null)
         .map(([l, v]) => `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600">${esc(v)}</td></tr>`)
@@ -552,12 +555,56 @@ export class OcrValidationComponent implements OnInit {
         const detail = r.basic_validation.validation_details
           ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`
           : '';
+
+        const bv = r.basic_validation;
+        const qualityRows = [
+          bv.pdf_readability_status ? `<tr><td style="color:#64748b">Readability</td><td style="font-weight:600">${esc(bv.pdf_readability_status)}</td></tr>` : '',
+          bv.pdf_quality_status ? `<tr><td style="color:#64748b">Quality</td><td style="font-weight:600">${esc(bv.pdf_quality_status)}</td></tr>` : '',
+        ].filter(Boolean).join('');
+        const qualityIssues = bv.quality_issues?.length
+          ? `<ul style="margin:.25rem 0 0;padding-left:1.25rem;color:#92400e;font-size:.82rem">${bv.quality_issues.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
+          : '';
+        const tableRows = [
+          bv.table_detection_status ? `<tr><td style="color:#64748b">Status</td><td style="font-weight:600">${esc(bv.table_detection_status)}</td></tr>` : '',
+          bv.table_present != null ? `<tr><td style="color:#64748b">Present</td><td style="font-weight:600">${bv.table_present ? 'Yes' : 'No'}</td></tr>` : '',
+          bv.table_required != null ? `<tr><td style="color:#64748b">Required</td><td style="font-weight:600">${bv.table_required ? 'Yes' : 'No'}</td></tr>` : '',
+        ].filter(Boolean).join('');
+        const tableIssues = bv.table_issues?.length
+          ? `<ul style="margin:.25rem 0 0;padding-left:1.25rem;color:#92400e;font-size:.82rem">${bv.table_issues.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
+          : '';
+        const multiDocSection = bv.multiple_documents_detected != null
+          ? `<div style="padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+              <div style="font-size:.78rem;text-transform:uppercase;color:#475569;font-weight:700;margin-bottom:.4rem">Document Detection</div>
+              <div>Multiple docs: <strong>${bv.multiple_documents_detected ? 'Yes' : 'No'}</strong></div>
+              ${bv.detected_document_types?.length ? `<div style="margin-top:.25rem;font-size:.82rem;color:#64748b">Types: ${bv.detected_document_types.map(esc).join(', ')}</div>` : ''}
+            </div>`
+          : '';
+
+        const detailCards = [
+          (qualityRows || qualityIssues)
+            ? `<div style="flex:1;min-width:160px;padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+                <div style="font-size:.78rem;text-transform:uppercase;color:#475569;font-weight:700;margin-bottom:.4rem">PDF Quality</div>
+                <table style="font-size:.85rem;width:100%"><tbody>${qualityRows}</tbody></table>
+                ${qualityIssues}
+              </div>`
+            : '',
+          (tableRows || tableIssues)
+            ? `<div style="flex:1;min-width:160px;padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+                <div style="font-size:.78rem;text-transform:uppercase;color:#475569;font-weight:700;margin-bottom:.4rem">Table Detection</div>
+                <table style="font-size:.85rem;width:100%"><tbody>${tableRows}</tbody></table>
+                ${tableIssues}
+              </div>`
+            : '',
+          multiDocSection,
+        ].filter(Boolean).join('');
+
         return `<section>
             <h5 style="color:#1e3a5f;margin:0 0 .5rem">Basic Validation</h5>
             <div style="padding:.85rem 1rem;border-radius:10px;border-left:4px solid ${bc};background:${bbg}">
               <span style="font-weight:800;font-size:.82rem;letter-spacing:.04em;color:${btxt}">${esc(r.basic_validation.validation_status)}</span>
               ${detail}${failedItems}
             </div>
+            ${detailCards ? `<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.75rem">${detailCards}</div>` : ''}
           </section>`;
       })()
       : '';
