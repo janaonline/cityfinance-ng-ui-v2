@@ -190,6 +190,13 @@ export class OcrService {
     );
   }
 
+  downloadOcrJobFile(jobId: string) {
+    return this.http.get(
+      environment.api.url3 + `ocr-validation/jobs/${jobId}/download`,
+      { responseType: 'blob' },
+    );
+  }
+
   listOcrValidationJobs(params?: {
     status?: string;
     batch_id?: string;
