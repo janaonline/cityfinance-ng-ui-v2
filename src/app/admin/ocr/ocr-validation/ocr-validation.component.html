@@ -214,6 +214,16 @@
                   </div>
                 </div>
                 <div class="job-header__actions">
+                  @if (job.rawResult?.s3_key) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      title="Download original PDF from S3"
+                      (click)="downloadPdf(job)"
+                    >
+                      <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                    </button>
+                  }
                   @if (job.status === 'completed' && job.result) {
                     <button
                       type="button"

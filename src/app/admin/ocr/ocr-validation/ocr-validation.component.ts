@@ -451,6 +451,22 @@ export class OcrValidationComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
+  downloadPdf(job: OcrValidationJobTracker): void {
+    this.ocrService.downloadOcrJobFile(job.jobId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = job.filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.utilityService.swalPopup('Download failed', 'Could not download the PDF from S3.', 'error');
+      },
+    });
+  }
+
   private buildReportHtml(job: OcrValidationJobTracker): string {
     const r = job.result!;
     const esc = (s: unknown): string =>

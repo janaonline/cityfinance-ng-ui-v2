@@ -141,6 +141,7 @@ export interface OcrValidationJobResult {
   updated_at: string | null;
   started_at: string | null;
   completed_at: string | null;
+  s3_key: string | null;
   result: OcrValidationResult | null;
   message: string;
 }
