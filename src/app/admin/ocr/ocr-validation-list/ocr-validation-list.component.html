@@ -182,10 +182,14 @@
             <th mat-header-cell *matHeaderCellDef>Status</th>
             <td mat-cell *matCellDef="let row">
               <span class="status-badge" [ngClass]="getStatusClass(row.status)">
+                <span class="status-job-label">Job:</span>
                 {{ row.status | titlecase }}
               </span>
-              @if (row.status === 'processing' && row.progressStep !== '—') {
-                <p class="progress-step-text">{{ row.progressStep }}</p>
+              @if (row.progressStep !== '—') {
+                <p class="progress-step-chip">
+                  <span class="progress-step-label">Step</span>
+                  {{ row.progressStep }}
+                </p>
               }
               @if (row.status === 'failed' && row.errorMessage !== '—') {
                 <p class="error-text" [title]="row.errorMessage">
