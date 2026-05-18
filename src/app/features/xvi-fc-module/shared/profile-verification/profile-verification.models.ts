@@ -1,10 +1,26 @@
+export interface ProfileItem {
+  id?: string;
+  name: string;
+  designation: string;
+  designantion?: string; // API variant (typo handled in service)
+  email: string;
+  mobile: string;
+}
+
+export interface EntityProfilesResponse {
+  entityName: string;
+  entityCode?: string;
+  entityType?: string;
+  stateName: string;
+  profiles: ProfileItem[];
+}
+
 export interface ProfileVerificationApiResponse {
   stateName: string;
   contactPersonName: string;
   designation: string;
   officialEmail: string;
   mobileNumber: string;
-  // ULB-only pre-filled fields
   ulbName?: string;
   ulbCode?: string;
   ulbType?: string;
@@ -16,4 +32,5 @@ export interface ProfileVerificationPayload {
   designation?: string;
   officialEmail?: string;
   mobileNumber?: string;
+  otp?: string;
 }

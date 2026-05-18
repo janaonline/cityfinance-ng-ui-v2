@@ -1,10 +1,16 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { ProfileVerificationService } from './profile-verification.service';
-import { ProfileVerificationPayload } from './profile-verification.models';
+import {
+  EntityProfilesResponse,
+  ProfileItem,
+  ProfileVerificationPayload,
+} from './profile-verification.models';
 import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
 
 type ProfileRole = 'state' | 'ulb' | 'mohua';
@@ -28,7 +34,14 @@ const ROUTE_ROLE_MAP: Record<string, Roles> = {
 @Component({
   selector: 'app-profile-verification',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+  ],
   templateUrl: './profile-verification.component.html',
   styleUrl: './profile-verification.component.scss',
 })
@@ -37,113 +50,246 @@ export class ProfileVerificationComponent implements OnInit {
   private readonly profileService = inject(ProfileVerificationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly snackBar = inject(MatSnackBar);
 
   role: ProfileRole = 'state';
-  stateName = '';
-  ulbName = '';
-  ulbCode = '';
-  ulbType = '';
-  isLoading = false;
-  isSubmitting = false;
-  errorMessage = '';
   private year = '';
   private entityId = '';
 
-  form = this.fb.group({
-    contactPersonName: [''],
-    designation: [''],
-    officialEmail: ['', Validators.email],
-    mobileNumber: [''],
+  readonly entityInfo = signal<EntityProfilesResponse | null>(null);
+  readonly isLoading = signal(true);
+  readonly errorMsg = signal('');
+
+  // OTP flow per-profile
+  readonly expandedKey = signal<string | null>(null);
+  readonly sendingOtpKey = signal<string | null>(null);
+  readonly otpSentKey = signal<string | null>(null);
+  readonly verifyingKey = signal<string | null>(null);
+  readonly editedMobiles = signal<Record<string, string>>({});
+  readonly otpValues = signal<Partial<Record<string, string>>>({});
+
+  // Add-form
+  readonly showAddForm = signal(false);
+  readonly addFormSubmitting = signal(false);
+
+  readonly skeletonRows = [1, 2, 3];
+
+  addForm = this.fb.group({
+    name: ['', Validators.required],
+    designation: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    mobile: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
   });
 
   ngOnInit(): void {
     this.year = this.route.snapshot.queryParamMap.get('year') ?? '';
     this.entityId = this.route.snapshot.queryParamMap.get('entityId') ?? '';
-    this.role = this.getRoleFromLocalStorage();
-    this.loadProfile();
+    this.role = this.getRoleFromStorage();
+
+    if (this.isAlreadyVerified()) {
+      void this.navigateToHome();
+      return;
+    }
+
+    this.loadProfiles();
   }
 
-  loadProfile(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-
-    this.profileService.getProfile(this.role).subscribe({
-      next: (profile) => {
-        this.stateName = profile.stateName;
-        this.ulbName = profile.ulbName ?? '';
-        this.ulbCode = profile.ulbCode ?? '';
-        this.ulbType = profile.ulbType ?? '';
-        this.form.patchValue({
-          contactPersonName: profile.contactPersonName,
-          designation: profile.designation,
-          officialEmail: profile.officialEmail,
-          mobileNumber: profile.mobileNumber,
-        });
-        this.form.markAsPristine();
-        this.isLoading = false;
+  loadProfiles(): void {
+    this.isLoading.set(true);
+    this.errorMsg.set('');
+    this.profileService.getEntityProfiles(this.role).subscribe({
+      next: (data) => {
+        this.entityInfo.set(data);
+        this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage = 'Failed to load profile. Please try again.';
-        this.isLoading = false;
+        this.errorMsg.set('Failed to load profiles. Please try again.');
+        this.isLoading.set(false);
       },
     });
   }
 
-  onConfirm(): void {
-    if (this.form.invalid) return;
+  // ── Profile key ──────────────────────────────────────────────
+  getProfileKey(profile: ProfileItem): string {
+    return profile.id ?? profile.email ?? profile.mobile;
+  }
 
-    this.isSubmitting = true;
-    const controls = this.form.controls;
+  // ── Mobile edit ───────────────────────────────────────────────
+  getMobile(profile: ProfileItem): string {
+    return this.editedMobiles()[this.getProfileKey(profile)] ?? profile.mobile;
+  }
 
-    const payload: ProfileVerificationPayload = { isXVIFCProfileVerified: true };
-    if (controls.contactPersonName.dirty) {
-      payload.contactPersonName = controls.contactPersonName.value as string;
-    }
-    if (controls.designation.dirty) {
-      payload.designation = controls.designation.value as string;
-    }
-    if (controls.officialEmail.dirty) {
-      payload.officialEmail = controls.officialEmail.value as string;
-    }
-    if (controls.mobileNumber.dirty) {
-      payload.mobileNumber = controls.mobileNumber.value as string;
-    }
+  onMobileInput(key: string, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.editedMobiles.update((m) => ({ ...m, [key]: val }));
+  }
 
-    this.profileService.confirmProfile(payload).subscribe({
-      next: (res) => {
-        localStorage.setItem('isXVIFCProfileVerified', 'true');
-        try {
-          const raw = localStorage.getItem('userData');
-          if (raw) {
-            const userData = JSON.parse(raw);
-            userData.isXVIFCProfileVerified = true;
-            localStorage.setItem('userData', JSON.stringify(userData));
-          }
-        } catch {
-          /* ignore */
-        }
-        this.snackBar.open(res.message ?? 'Profile verified successfully', 'Close', {
-          duration: 3000,
-        });
-        this.router.navigate(
-          buildXvifcFeatureLink(
-            this.getRouteRoleFromLocalStorage(),
-            this.entityId,
-            this.year,
-            'overview',
-          ),
-          { replaceUrl: true },
+  onOtpInput(key: string, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.otpValues.update((v) => ({ ...v, [key]: val }));
+  }
+
+  // ── OTP flow ──────────────────────────────────────────────────
+  toggleExpand(key: string): void {
+    this.expandedKey.update((k) => (k === key ? null : key));
+    if (this.expandedKey() !== key) {
+      this.otpSentKey.set(null);
+    }
+    this.errorMsg.set('');
+  }
+
+  sendOtp(profile: ProfileItem): void {
+    const key = this.getProfileKey(profile);
+    const mobile = this.getMobile(profile);
+    if (!mobile || mobile.length < 10) {
+      this.errorMsg.set('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    this.sendingOtpKey.set(key);
+    this.errorMsg.set('');
+    this.profileService.sendProfileOtp(mobile).subscribe({
+      next: () => {
+        this.otpSentKey.set(key);
+        this.sendingOtpKey.set(null);
+      },
+      error: (err: unknown) => {
+        this.errorMsg.set(
+          (err as { error?: { message?: string } })?.error?.message ??
+            'Failed to send OTP. Please try again.',
         );
-      },
-      error: (err) => {
-        this.errorMessage = err?.error?.message ?? 'Failed to save profile. Please try again.';
-        this.isSubmitting = false;
+        this.sendingOtpKey.set(null);
       },
     });
   }
 
-  private getRoleFromLocalStorage(): ProfileRole {
+  confirmVerify(profile: ProfileItem): void {
+    const key = this.getProfileKey(profile);
+    const otp = this.otpValues()[key] ?? '';
+    if (!otp || otp.length < 4) {
+      this.errorMsg.set('Please enter the OTP sent to your mobile.');
+      return;
+    }
+    this.verifyingKey.set(key);
+    this.errorMsg.set('');
+    const payload: ProfileVerificationPayload = {
+      isXVIFCProfileVerified: true,
+      contactPersonName: profile.name,
+      designation: profile.designation,
+      officialEmail: profile.email,
+      mobileNumber: this.getMobile(profile),
+      otp,
+    };
+    this.profileService.confirmProfile(payload).subscribe({
+      next: () => {
+        this.markVerifiedInStorage();
+        void this.navigateToHome();
+      },
+      error: (err: unknown) => {
+        this.errorMsg.set(
+          (err as { error?: { message?: string } })?.error?.message ??
+            'Verification failed. Please try again.',
+        );
+        this.verifyingKey.set(null);
+      },
+    });
+  }
+
+  // ── Add form ──────────────────────────────────────────────────
+  toggleAddForm(): void {
+    this.showAddForm.update((v) => !v);
+  }
+
+  submitAddForm(): void {
+    if (this.addForm.invalid) {
+      this.addForm.markAllAsTouched();
+      return;
+    }
+    const val = this.addForm.value;
+    this.addFormSubmitting.set(true);
+    const payload: ProfileVerificationPayload = {
+      isXVIFCProfileVerified: true,
+      contactPersonName: val.name ?? '',
+      designation: val.designation ?? '',
+      officialEmail: val.email ?? '',
+      mobileNumber: val.mobile ?? '',
+    };
+    this.profileService.confirmProfile(payload).subscribe({
+      next: () => {
+        this.markVerifiedInStorage();
+        void this.navigateToHome();
+      },
+      error: (err: unknown) => {
+        this.errorMsg.set(
+          (err as { error?: { message?: string } })?.error?.message ??
+            'Submission failed. Please try again.',
+        );
+        this.addFormSubmitting.set(false);
+      },
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  getInitials(name: string): string {
+    return name
+      .split(' ')
+      .slice(0, 2)
+      .map((p) => p[0] ?? '')
+      .join('')
+      .toUpperCase();
+  }
+
+  getEntityInitials(): string {
+    return this.getInitials(this.entityInfo()?.entityName ?? '');
+  }
+
+  getRoleBadgeLabel(): string {
+    if (this.role === 'ulb') return 'ULB';
+    if (this.role === 'mohua') return 'MoHUA';
+    return 'State';
+  }
+
+  getRoleIcon(): string {
+    if (this.role === 'ulb') return 'bi-bank2';
+    if (this.role === 'mohua') return 'bi-buildings-fill';
+    return 'bi-geo-alt-fill';
+  }
+
+  // ── Storage helpers ───────────────────────────────────────────
+  private isAlreadyVerified(): boolean {
+    try {
+      if (localStorage.getItem('isXVIFCProfileVerified') === 'true') return true;
+      const raw = localStorage.getItem('userData');
+      if (raw) {
+        const user = JSON.parse(raw) as { isXVIFCProfileVerified?: boolean };
+        return user.isXVIFCProfileVerified === true;
+      }
+    } catch {
+      /* ignore */
+    }
+    return false;
+  }
+
+  private markVerifiedInStorage(): void {
+    localStorage.setItem('isXVIFCProfileVerified', 'true');
+    try {
+      const raw = localStorage.getItem('userData');
+      if (raw) {
+        const user = JSON.parse(raw) as Record<string, unknown>;
+        user['isXVIFCProfileVerified'] = true;
+        localStorage.setItem('userData', JSON.stringify(user));
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private navigateToHome(): Promise<boolean> {
+    return this.router.navigate(
+      buildXvifcFeatureLink(this.getRouteRoleFromStorage(), this.entityId, this.year, 'overview'),
+      { replaceUrl: true },
+    );
+  }
+
+  private getRoleFromStorage(): ProfileRole {
     try {
       const raw = localStorage.getItem('userData');
       if (!raw) return 'state';
@@ -154,7 +300,7 @@ export class ProfileVerificationComponent implements OnInit {
     }
   }
 
-  private getRouteRoleFromLocalStorage(): Roles {
+  private getRouteRoleFromStorage(): Roles {
     try {
       const raw = localStorage.getItem('userData');
       if (!raw) return 'STATE';

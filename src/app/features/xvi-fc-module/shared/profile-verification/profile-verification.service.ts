@@ -1,8 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { ProfileVerificationApiResponse, ProfileVerificationPayload } from './profile-verification.models';
+import {
+  EntityProfilesResponse,
+  ProfileItem,
+  ProfileVerificationApiResponse,
+  ProfileVerificationPayload,
+} from './profile-verification.models';
 
 interface StoredUserData {
   name?: string;
@@ -19,23 +24,47 @@ interface StoredUserData {
   providedIn: 'root',
 })
 export class ProfileVerificationService {
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
+
+  getEntityProfiles(role: 'state' | 'ulb' | 'mohua'): Observable<EntityProfilesResponse> {
+    const user = this.readStoredUser();
+    return this.http
+      .get<ProfileItem[]>(`${environment.api.url2}auth/entity-profiles?role=${role}`)
+      .pipe(
+        map((profiles) => ({
+          entityName: role === 'ulb' ? (user.name ?? '') : (user.stateName ?? ''),
+          entityCode: user.ulbCode,
+          entityType: user.ulbType,
+          stateName: user.stateName ?? '',
+          profiles: profiles.map((p, i) => ({
+            ...p,
+            id: p.id ?? p.email ?? `profile-${i}`,
+            designation: p.designation || p.designantion || '',
+          })),
+        })),
+        catchError(() => of(this.buildFallbackProfiles(role))),
+      );
+  }
+
+  sendProfileOtp(mobile: string): Observable<{ message?: string }> {
+    return this.http.post<{ message?: string }>(
+      `${environment.api.url2}auth/send-verification-otp`,
+      { mobile },
+    );
+  }
+
   getProfile(role: 'state' | 'ulb' | 'mohua'): Observable<ProfileVerificationApiResponse> {
     const user = this.readStoredUser();
-
     const base: ProfileVerificationApiResponse = {
       stateName: user.stateName ?? '',
       designation: user.designation ?? '',
       officialEmail: user.email ?? '',
       mobileNumber: user.mobile ?? '',
-      // For STATE/MOHUA, name is the admin/contact person name
       contactPersonName: user.name ?? '',
     };
-
     if (role === 'ulb') {
       return of({
         ...base,
-        // For ULB, name holds the organisation name, not the contact person
         ulbName: user.name ?? '',
         ulbCode: user.ulbCode ?? '',
         ulbType: user.ulbType ?? '',
@@ -43,12 +72,34 @@ export class ProfileVerificationService {
         designation: user.designation ?? '',
       });
     }
-
     return of(base);
   }
 
-  confirmProfile(payload: ProfileVerificationPayload): Observable<{ success: boolean; message?: string }> {
-    return this.http.patch<{ success: boolean; message?: string }>(`${environment.api.url2}auth/update-profile`, payload);
+  confirmProfile(
+    payload: ProfileVerificationPayload,
+  ): Observable<{ success: boolean; message?: string }> {
+    return this.http.patch<{ success: boolean; message?: string }>(
+      `${environment.api.url2}auth/update-profile`,
+      payload,
+    );
+  }
+
+  private buildFallbackProfiles(role: 'state' | 'ulb' | 'mohua'): EntityProfilesResponse {
+    const user = this.readStoredUser();
+    const profile: ProfileItem = {
+      id: '1',
+      name: user.name ?? '',
+      designation: user.designation ?? '',
+      email: user.email ?? '',
+      mobile: user.mobile ?? '',
+    };
+    return {
+      entityName: role === 'ulb' ? (user.name ?? '') : (user.stateName ?? ''),
+      entityCode: user.ulbCode,
+      entityType: user.ulbType,
+      stateName: user.stateName ?? '',
+      profiles: profile.name ? [profile] : [],
+    };
   }
 
   private readStoredUser(): StoredUserData {
