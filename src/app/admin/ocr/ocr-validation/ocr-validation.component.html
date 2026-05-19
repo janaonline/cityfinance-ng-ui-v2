@@ -575,10 +575,36 @@
                                           <td class="fw-medium pe-0">{{ job.result.basic_validation.pdf_readability_status }}</td>
                                         </tr>
                                       }
+                                      @if (job.result.basic_validation.readability_score !== null) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Readability Score</td>
+                                          <td class="pe-0">
+                                            <span
+                                              class="fw-bold"
+                                              [class.text-success]="(job.result.basic_validation.readability_score ?? 0) >= 75"
+                                              [class.text-warning]="(job.result.basic_validation.readability_score ?? 0) >= 50 && (job.result.basic_validation.readability_score ?? 0) < 75"
+                                              [class.text-danger]="(job.result.basic_validation.readability_score ?? 0) < 50"
+                                            >{{ job.result.basic_validation.readability_score }}/100</span>
+                                          </td>
+                                        </tr>
+                                      }
                                       @if (job.result.basic_validation.pdf_quality_status) {
                                         <tr>
                                           <td class="text-secondary ps-0">Quality</td>
                                           <td class="fw-medium pe-0">{{ job.result.basic_validation.pdf_quality_status }}</td>
+                                        </tr>
+                                      }
+                                      @if (job.result.basic_validation.orientation_status) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Orientation</td>
+                                          <td class="pe-0">
+                                            <span
+                                              class="badge"
+                                              [class.text-bg-success]="job.result.basic_validation.orientation_status === 'CORRECT'"
+                                              [class.text-bg-warning]="job.result.basic_validation.orientation_status === 'MINOR_SKEW'"
+                                              [class.text-bg-danger]="job.result.basic_validation.orientation_status === 'INCORRECT' || job.result.basic_validation.orientation_status === 'UNCERTAIN'"
+                                            >{{ job.result.basic_validation.orientation_status }}</span>
+                                          </td>
                                         </tr>
                                       }
                                     </tbody>
@@ -655,6 +681,22 @@
                                           </span>
                                         </td>
                                       </tr>
+                                      @if (job.result.basic_validation.expected_document_type) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Expected Type</td>
+                                          <td class="fw-medium pe-0">{{ job.result.basic_validation.expected_document_type }}</td>
+                                        </tr>
+                                      }
+                                      @if (job.result.basic_validation.document_type_matches_expected !== null) {
+                                        <tr>
+                                          <td class="text-secondary ps-0">Type Match</td>
+                                          <td class="pe-0">
+                                            <span class="badge" [class.text-bg-success]="job.result.basic_validation.document_type_matches_expected" [class.text-bg-danger]="!job.result.basic_validation.document_type_matches_expected">
+                                              {{ job.result.basic_validation.document_type_matches_expected ? 'Yes' : 'No' }}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      }
                                     </tbody>
                                   </table>
                                   @if (job.result.basic_validation.detected_document_types.length) {
