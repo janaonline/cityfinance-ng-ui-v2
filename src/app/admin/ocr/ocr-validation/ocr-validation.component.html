@@ -581,9 +581,9 @@
                                           <td class="pe-0">
                                             <span
                                               class="fw-bold"
-                                              [class.text-success]="(job.result.basic_validation.readability_score ?? 0) >= 75"
-                                              [class.text-warning]="(job.result.basic_validation.readability_score ?? 0) >= 50 && (job.result.basic_validation.readability_score ?? 0) < 75"
-                                              [class.text-danger]="(job.result.basic_validation.readability_score ?? 0) < 50"
+                                              [class.text-success]="job.result.basic_validation.readability_score >= 75"
+                                              [class.text-warning]="job.result.basic_validation.readability_score >= 50 && job.result.basic_validation.readability_score < 75"
+                                              [class.text-danger]="job.result.basic_validation.readability_score < 50"
                                             >{{ job.result.basic_validation.readability_score }}/100</span>
                                           </td>
                                         </tr>
