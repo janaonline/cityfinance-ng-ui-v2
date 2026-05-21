@@ -124,6 +124,7 @@ export class OcrService {
     tableExists?: boolean | null,
     enableOrientationCheck?: boolean,
     enableFinancialValidation?: boolean,
+    enableQualityCheck?: boolean,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -141,6 +142,9 @@ export class OcrService {
     }
     if (enableFinancialValidation !== undefined) {
       formData.append('enable_financial_validation', String(enableFinancialValidation));
+    }
+    if (enableQualityCheck !== undefined) {
+      formData.append('enable_quality_check', String(enableQualityCheck));
     }
     return this.http.post<OcrValidationJobSubmitResponse>(
       environment.api.url3 + 'ocr-validation/jobs',

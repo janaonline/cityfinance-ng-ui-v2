@@ -19,7 +19,15 @@
               <mat-label>Extraction model</mat-label>
               <mat-select formControlName="extractionModel">
                 @for (m of models; track m.value) {
-                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                  <mat-option [value]="m.value" [disabled]="m.deprecated" class="model-option">
+                    <div class="model-option-label">
+                      {{ m.label }}
+                      @if (m.deprecated) { <span class="model-option-badge deprecated">Deprecated</span> }
+                    </div>
+                    @if (m.pricing) {
+                      <div class="model-option-pricing">In ${{ m.pricing.inputPerM }} · Out ${{ m.pricing.outputPerM }} · Think ${{ m.pricing.thinkingPerM }} per 1M tokens</div>
+                    }
+                  </mat-option>
                 }
               </mat-select>
               @if (form.controls.extractionModel.invalid && form.controls.extractionModel.touched) {
@@ -31,7 +39,15 @@
               <mat-label>Validation model</mat-label>
               <mat-select formControlName="validationModel">
                 @for (m of models; track m.value) {
-                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                  <mat-option [value]="m.value" [disabled]="m.deprecated" class="model-option">
+                    <div class="model-option-label">
+                      {{ m.label }}
+                      @if (m.deprecated) { <span class="model-option-badge deprecated">Deprecated</span> }
+                    </div>
+                    @if (m.pricing) {
+                      <div class="model-option-pricing">In ${{ m.pricing.inputPerM }} · Out ${{ m.pricing.outputPerM }} · Think ${{ m.pricing.thinkingPerM }} per 1M tokens</div>
+                    }
+                  </mat-option>
                 }
               </mat-select>
               @if (form.controls.validationModel.invalid && form.controls.validationModel.touched) {
@@ -110,6 +126,16 @@
                   <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
                 }
               </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Enable quality check</mat-label>
+              <mat-select formControlName="enableQualityCheck">
+                @for (opt of qualityCheckOptions; track opt.label) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Single file only — validates PDF blur &amp; orientation before queuing.</mat-hint>
             </mat-form-field>
           </div>
 
