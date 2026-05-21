@@ -4,6 +4,8 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { finalize } from 'rxjs';
 import { saveAs } from 'file-saver';
 import { MaterialModule } from '../../../material.module';
@@ -31,6 +33,38 @@ interface OcrValidationListRow {
   expectedTableExists: string;
 }
 
+const DOC_TYPE_OPTIONS = [
+  { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
+  { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
+  { value: 'INCOME_EXPENDITURE', label: 'Income & Expenditure' },
+  { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'I&E Schedule' },
+  { value: 'CASH_FLOW', label: 'Cash Flow' },
+  { value: 'AUDITOR_REPORT', label: 'Auditor Report' },
+  { value: 'UNKNOWN', label: 'Unknown' },
+];
+
+const PROGRESS_STEP_OPTIONS = [
+  { value: 'uploading_to_gemini', label: 'Uploading to Gemini' },
+  { value: 'extracting_metadata', label: 'Extracting Metadata' },
+  { value: 'validating_financials', label: 'Validating Financials' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'extracting_metadata_failed', label: 'Extraction Failed' },
+  { value: 'financial_validation_failed', label: 'Financial Validation Failed' },
+];
+
+const VALIDATION_MODEL_OPTIONS = [
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3.1-flash-image-preview',
+  'gemini-3-pro-image-preview',
+  'gemini-3-flash-preview',
+  'gemini-3.5-flash',
+];
+
 @Component({
   standalone: true,
   selector: 'app-ocr-validation-list',
@@ -41,6 +75,8 @@ interface OcrValidationListRow {
     MaterialModule,
     MatTableModule,
     MatPaginatorModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
   ],
   templateUrl: './ocr-validation-list.component.html',
   styleUrl: './ocr-validation-list.component.scss',
@@ -62,12 +98,21 @@ export class OcrValidationListComponent implements OnInit {
     'action',
   ];
 
+  readonly docTypeOptions = DOC_TYPE_OPTIONS;
+  readonly progressStepOptions = PROGRESS_STEP_OPTIONS;
+  readonly validationModelOptions = VALIDATION_MODEL_OPTIONS;
+
   readonly filterForm = this.fb.nonNullable.group({
     status: [''],
     batchId: [''],
     jobId: [''],
     filename: [''],
     ulbName: [''],
+    docType: [''],
+    progressStep: [''],
+    validationModel: [''],
+    dateFrom: this.fb.control<Date | null>(null),
+    dateTo: this.fb.control<Date | null>(null),
   });
 
   readonly dataSource = new MatTableDataSource<OcrValidationListRow>([]);
@@ -90,7 +135,10 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterForm.reset({ status: '', batchId: '', jobId: '', filename: '', ulbName: '' });
+    this.filterForm.reset({
+      status: '', batchId: '', jobId: '', filename: '', ulbName: '',
+      docType: '', progressStep: '', validationModel: '', dateFrom: null, dateTo: null,
+    });
     this.pageIndex = 0;
     this.paginator?.firstPage();
     this.loadJobs();
@@ -107,7 +155,8 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    const { status, batchId, jobId, filename, ulbName } = this.filterForm.getRawValue();
+    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel, dateFrom, dateTo } =
+      this.filterForm.getRawValue();
 
     this.exporting.set(true);
 
@@ -117,6 +166,11 @@ export class OcrValidationListComponent implements OnInit {
       job_id: jobId.trim() || undefined,
       filename: filename.trim() || undefined,
       ulb_name: ulbName.trim() || undefined,
+      doc_type: docType || undefined,
+      progress_step: progressStep.trim() || undefined,
+      validation_model: validationModel || undefined,
+      date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
+      date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
     })
       .pipe(finalize(() => this.exporting.set(false)))
       .subscribe({
@@ -170,7 +224,8 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   private loadJobs(): void {
-    const { status, batchId, jobId, filename, ulbName } = this.filterForm.getRawValue();
+    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel, dateFrom, dateTo } =
+      this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.ocrService
@@ -180,6 +235,11 @@ export class OcrValidationListComponent implements OnInit {
         job_id: jobId.trim() || undefined,
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
+        doc_type: docType || undefined,
+        progress_step: progressStep.trim() || undefined,
+        validation_model: validationModel || undefined,
+        date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
+        date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
         skip: this.pageIndex * this.pageSize,
         limit: this.pageSize,
       })
@@ -232,5 +292,17 @@ export class OcrValidationListComponent implements OnInit {
     } catch {
       return value;
     }
+  }
+
+  private toStartOfDay(date: Date): string {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }
+
+  private toEndOfDay(date: Date): string {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
   }
 }

@@ -86,13 +86,13 @@
 
 .filter-grid {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 
   mat-form-field {
-    flex: 1 1 0;
-    min-width: 100px;
+    flex: 1 1 160px;
+    min-width: 140px;
   }
 }
 
@@ -100,6 +100,7 @@
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+  align-self: center;
 }
 
 ::ng-deep .filter-grid {
@@ -379,11 +380,6 @@
 }
 
 /* Responsive */
-
-@media (max-width: 992px) {
-  .filter-grid { flex-wrap: wrap; }
-  .filter-grid mat-form-field { flex: 1 1 140px; }
-}
 
 @media (max-width: 640px) {
   .ocr-validation-list-page { padding: 1rem; }

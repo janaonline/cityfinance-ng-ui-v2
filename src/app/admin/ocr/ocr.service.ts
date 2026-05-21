@@ -207,6 +207,11 @@ export class OcrService {
     job_id?: string;
     filename?: string;
     ulb_name?: string;
+    doc_type?: string;
+    progress_step?: string;
+    validation_model?: string;
+    date_from?: string;
+    date_to?: string;
     skip?: number;
     limit?: number;
   }) {
@@ -216,6 +221,11 @@ export class OcrService {
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
+    if (params?.progress_step) queryParams['progress_step'] = params.progress_step;
+    if (params?.validation_model) queryParams['validation_model'] = params.validation_model;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
     if (params?.skip !== undefined) queryParams['skip'] = params.skip;
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
     return this.http.get<OcrValidationJobsListResponse>(
@@ -230,6 +240,11 @@ export class OcrService {
     job_id?: string;
     filename?: string;
     ulb_name?: string;
+    doc_type?: string;
+    progress_step?: string;
+    validation_model?: string;
+    date_from?: string;
+    date_to?: string;
   }) {
     const queryParams: Record<string, string> = {};
     if (params?.status) queryParams['status'] = params.status;
@@ -237,6 +252,11 @@ export class OcrService {
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
+    if (params?.progress_step) queryParams['progress_step'] = params.progress_step;
+    if (params?.validation_model) queryParams['validation_model'] = params.validation_model;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
     return this.http.get(
       environment.api.url3 + 'ocr-validation/jobs/dump',
       { params: queryParams, responseType: 'blob' },
