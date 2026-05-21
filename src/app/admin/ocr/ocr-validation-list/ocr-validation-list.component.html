@@ -53,6 +53,8 @@
 
       <!-- Filters -->
       <form [formGroup]="filterForm" class="filter-grid">
+
+        <!-- Row 1: status, doc type, validation model, progress step, actions -->
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Status</mat-label>
           <mat-select formControlName="status">
@@ -61,9 +63,41 @@
             <mat-option value="processing">Processing</mat-option>
             <mat-option value="completed">Completed</mat-option>
             <mat-option value="failed">Failed</mat-option>
+            <mat-option value="cancelled">Cancelled</mat-option>
           </mat-select>
         </mat-form-field>
 
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Document Type</mat-label>
+          <mat-select formControlName="docType">
+            <mat-option value="">All</mat-option>
+            @for (opt of docTypeOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Validation Model</mat-label>
+          <mat-select formControlName="validationModel">
+            <mat-option value="">All</mat-option>
+            @for (model of validationModelOptions; track model) {
+              <mat-option [value]="model">{{ model }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Step Status</mat-label>
+          <mat-select formControlName="progressStep">
+            <mat-option value="">All</mat-option>
+            @for (step of progressStepOptions; track step.value) {
+              <mat-option [value]="step.value">{{ step.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Row 2: identifiers, ULB, dates -->
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Batch ID</mat-label>
           <input matInput formControlName="batchId" placeholder="Enter batch ID" />
@@ -82,6 +116,20 @@
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>ULB Name</mat-label>
           <input matInput formControlName="ulbName" placeholder="Search ULB name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Created From</mat-label>
+          <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom" placeholder="DD/MM/YYYY" readonly />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerFrom" />
+          <mat-datepicker #pickerFrom />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Created To</mat-label>
+          <input matInput [matDatepicker]="pickerTo" formControlName="dateTo" placeholder="DD/MM/YYYY" readonly />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerTo" />
+          <mat-datepicker #pickerTo />
         </mat-form-field>
 
         <div class="filter-actions">
