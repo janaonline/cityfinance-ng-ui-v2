@@ -43,6 +43,11 @@ const DOC_TYPE_OPTIONS = [
   { value: 'UNKNOWN', label: 'Unknown' },
 ];
 
+const ERROR_CODE_OPTIONS = [
+  { value: '429', label: '429 — Rate Limited' },
+  { value: '503', label: '503 — Service Unavailable' },
+];
+
 const PROGRESS_STEP_OPTIONS = [
   { value: 'uploading_to_gemini', label: 'Uploading to Gemini' },
   { value: 'extracting_metadata', label: 'Extracting Metadata' },
@@ -99,6 +104,7 @@ export class OcrValidationListComponent implements OnInit {
   ];
 
   readonly docTypeOptions = DOC_TYPE_OPTIONS;
+  readonly errorCodeOptions = ERROR_CODE_OPTIONS;
   readonly progressStepOptions = PROGRESS_STEP_OPTIONS;
   readonly validationModelOptions = VALIDATION_MODEL_OPTIONS;
 
@@ -111,6 +117,7 @@ export class OcrValidationListComponent implements OnInit {
     docType: [''],
     progressStep: [''],
     validationModel: [''],
+    matchStatus: [''],
     dateFrom: this.fb.control<Date | null>(null),
     dateTo: this.fb.control<Date | null>(null),
   });
@@ -137,7 +144,8 @@ export class OcrValidationListComponent implements OnInit {
   resetFilters(): void {
     this.filterForm.reset({
       status: '', batchId: '', jobId: '', filename: '', ulbName: '',
-      docType: '', progressStep: '', validationModel: '', dateFrom: null, dateTo: null,
+      docType: '', progressStep: '', validationModel: '',
+      matchStatus: '', dateFrom: null, dateTo: null,
     });
     this.pageIndex = 0;
     this.paginator?.firstPage();
@@ -155,20 +163,22 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel, dateFrom, dateTo } =
+    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
+            matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
 
     this.exporting.set(true);
 
     this.ocrService.dumpOcrValidationJobs({
-      status: status || undefined,
       batch_id: batchId.trim() || undefined,
       job_id: jobId.trim() || undefined,
       filename: filename.trim() || undefined,
       ulb_name: ulbName.trim() || undefined,
       doc_type: docType || undefined,
-      progress_step: progressStep.trim() || undefined,
+      progress_step: progressStep || undefined,
       validation_model: validationModel || undefined,
+      ...this.parseStatusField(status),
+      ...this.parseMatchFilter(matchStatus),
       date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
       date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
     })
@@ -223,21 +233,47 @@ export class OcrValidationListComponent implements OnInit {
     return `${value.slice(0, 9)}...${value.slice(-9)}`;
   }
 
+  private parseStatusField(value: string): { status?: string; error_code?: string } {
+    if (!value) return {};
+    const [status, errorCode] = value.split(':');
+    return { status, ...(errorCode ? { error_code: errorCode } : {}) };
+  }
+
+  private parseMatchFilter(value: string): {
+    match_status_overall?: boolean;
+    match_ulb_name?: boolean;
+    match_financial_year?: boolean;
+    match_doc_type?: boolean;
+  } {
+    if (!value) return {};
+    const [field, boolStr] = value.split(':');
+    const bool = boolStr === 'true';
+    switch (field) {
+      case 'overall': return { match_status_overall: bool };
+      case 'ulb_name': return { match_ulb_name: bool };
+      case 'financial_year': return { match_financial_year: bool };
+      case 'doc_type': return { match_doc_type: bool };
+      default: return {};
+    }
+  }
+
   private loadJobs(): void {
-    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel, dateFrom, dateTo } =
+    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
+            matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.ocrService
       .listOcrValidationJobs({
-        status: status || undefined,
         batch_id: batchId.trim() || undefined,
         job_id: jobId.trim() || undefined,
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
         doc_type: docType || undefined,
-        progress_step: progressStep.trim() || undefined,
+        progress_step: progressStep || undefined,
         validation_model: validationModel || undefined,
+        ...this.parseStatusField(status),
+        ...this.parseMatchFilter(matchStatus),
         date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
         date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
         skip: this.pageIndex * this.pageSize,

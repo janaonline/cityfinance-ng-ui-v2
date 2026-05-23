@@ -63,6 +63,8 @@
             <mat-option value="processing">Processing</mat-option>
             <mat-option value="completed">Completed</mat-option>
             <mat-option value="failed">Failed</mat-option>
+            <mat-option value="failed:429">Failed — 429 Rate Limited</mat-option>
+            <mat-option value="failed:503">Failed — 503 Unavailable</mat-option>
             <mat-option value="cancelled">Cancelled</mat-option>
           </mat-select>
         </mat-form-field>
@@ -94,6 +96,21 @@
             @for (step of progressStepOptions; track step.value) {
               <mat-option [value]="step.value">{{ step.label }}</mat-option>
             }
+          </mat-select>
+        </mat-form-field>
+
+<mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Match Status</mat-label>
+          <mat-select formControlName="matchStatus">
+            <mat-option value="">All</mat-option>
+            <mat-option value="ulb_name:true">ULB: Matched</mat-option>
+            <mat-option value="ulb_name:false">ULB: Not Matched</mat-option>
+            <mat-option value="financial_year:true">Year: Matched</mat-option>
+            <mat-option value="financial_year:false">Year: Not Matched</mat-option>
+            <mat-option value="doc_type:true">Doc Type: Matched</mat-option>
+            <mat-option value="doc_type:false">Doc Type: Not Matched</mat-option>
+            <mat-option value="overall:true">Overall: Matched</mat-option>
+            <mat-option value="overall:false">Overall: Not Matched</mat-option>
           </mat-select>
         </mat-form-field>
 
