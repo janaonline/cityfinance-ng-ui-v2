@@ -210,8 +210,13 @@ export class OcrService {
     doc_type?: string;
     progress_step?: string;
     validation_model?: string;
+    error_code?: string;
     date_from?: string;
     date_to?: string;
+    match_status_overall?: boolean;
+    match_ulb_name?: boolean;
+    match_financial_year?: boolean;
+    match_doc_type?: boolean;
     skip?: number;
     limit?: number;
   }) {
@@ -224,8 +229,13 @@ export class OcrService {
     if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
     if (params?.progress_step) queryParams['progress_step'] = params.progress_step;
     if (params?.validation_model) queryParams['validation_model'] = params.validation_model;
+    if (params?.error_code) queryParams['error_code'] = params.error_code;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.match_status_overall !== undefined) queryParams['match_status_overall'] = String(params.match_status_overall);
+    if (params?.match_ulb_name !== undefined) queryParams['match_ulb_name'] = String(params.match_ulb_name);
+    if (params?.match_financial_year !== undefined) queryParams['match_financial_year'] = String(params.match_financial_year);
+    if (params?.match_doc_type !== undefined) queryParams['match_doc_type'] = String(params.match_doc_type);
     if (params?.skip !== undefined) queryParams['skip'] = params.skip;
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
     return this.http.get<OcrValidationJobsListResponse>(
@@ -243,8 +253,13 @@ export class OcrService {
     doc_type?: string;
     progress_step?: string;
     validation_model?: string;
+    error_code?: string;
     date_from?: string;
     date_to?: string;
+    match_status_overall?: boolean;
+    match_ulb_name?: boolean;
+    match_financial_year?: boolean;
+    match_doc_type?: boolean;
   }) {
     const queryParams: Record<string, string> = {};
     if (params?.status) queryParams['status'] = params.status;
@@ -255,8 +270,13 @@ export class OcrService {
     if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
     if (params?.progress_step) queryParams['progress_step'] = params.progress_step;
     if (params?.validation_model) queryParams['validation_model'] = params.validation_model;
+    if (params?.error_code) queryParams['error_code'] = params.error_code;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.match_status_overall !== undefined) queryParams['match_status_overall'] = String(params.match_status_overall);
+    if (params?.match_ulb_name !== undefined) queryParams['match_ulb_name'] = String(params.match_ulb_name);
+    if (params?.match_financial_year !== undefined) queryParams['match_financial_year'] = String(params.match_financial_year);
+    if (params?.match_doc_type !== undefined) queryParams['match_doc_type'] = String(params.match_doc_type);
     return this.http.get(
       environment.api.url3 + 'ocr-validation/jobs/dump',
       { params: queryParams, responseType: 'blob' },
