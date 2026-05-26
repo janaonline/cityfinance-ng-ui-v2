@@ -299,22 +299,18 @@
          REQUEST ACCESS
     ════════════════════════════════════════════════════ -->
         <div class="pv-request" [class.pv-request--open]="showAddForm()">
-          <button mat-button class="pv-request__trigger" type="button" (click)="toggleAddForm()">
+          <button class="pv-request__trigger" type="button" (click)="toggleAddForm()">
             <div class="pv-request__icon">
               <i class="bi bi-person-plus-fill"></i>
             </div>
-            <div class="pv-request__trigger-text">
-              <strong>Not seeing your name?</strong>
-              <span>Fill in your details to request access</span>
-            </div>
-            <div class="pv-request__trigger-right">
-              <span class="pv-request__badge">Request Access</span>
-              <i
-                class="bi pv-request__chevron"
-                [class.bi-chevron-down]="!showAddForm()"
-                [class.bi-chevron-up]="showAddForm()"
-              ></i>
-            </div>
+            <strong class="pv-request__title">Not seeing your name?</strong>
+            <span class="pv-request__sub">Fill in your details to request access</span>
+            <span class="pv-request__badge">Request Access</span>
+            <i
+              class="bi pv-request__chevron"
+              [class.bi-chevron-down]="!showAddForm()"
+              [class.bi-chevron-up]="showAddForm()"
+            ></i>
           </button>
 
           <div class="pv-request__body">

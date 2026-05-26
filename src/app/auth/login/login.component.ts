@@ -21,7 +21,6 @@ import { IRoutePages, ROUTE_PAGES } from '../../core/constants/login-menu.consta
 type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE' | 'PARTNER';
 type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe' | 'institutional';
 type LoginControlName = 'role' | 'identifier' | 'password' | 'otp';
-type FC16Step = 'role-id' | 'password' | 'otp';
 
 interface StatItem {
   label: string;
@@ -114,12 +113,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   protected readonly otpCountdownActive = signal(false);
   private countdownSub: Subscription | null = null;
 
-  // 16th FC multi-step flow signals
-  protected readonly fc16Step = signal<FC16Step>('role-id');
+  // 16th FC flow signals
   protected readonly identifierType16 = signal<'mobile' | 'censusCode' | null>(null);
   protected readonly isIdentifierValid16 = signal(false);
   protected readonly isLeftPanelAnimating = signal(false);
-  protected readonly fc16TransitionDir = signal<'forward' | 'back'>('forward');
 
   protected readonly stats: readonly StatItem[] = [
     { label: 'Eligible Urban Local Bodies', value: '4,485' },
@@ -244,10 +241,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     if (type === '16thFC') {
       this.loginForm.controls.identifier.setValidators([Validators.required, mobileOrCensusCode]);
-      this.fc16Step.set('role-id');
       this.identifierType16.set(null);
       this.isIdentifierValid16.set(false);
-      this.fc16TransitionDir.set('forward');
     } else {
       this.loginForm.controls.identifier.setValidators([Validators.required, emailOrCensusCode]);
     }
@@ -307,7 +302,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     console.log('Guidelines clicked');
   }
 
-  // ─── 16th FC multi-step flow ─────────────────────────────────────────────────
+  // ─── 16th FC identifier hint ─────────────────────────────────────────────────
 
   private detectIdentifierType(value: string): 'mobile' | 'censusCode' | null {
     if (!value) return null;
@@ -321,104 +316,6 @@ export class LoginComponent implements OnInit, OnDestroy {
     const type = this.detectIdentifierType(value);
     this.identifierType16.set(type);
     this.isIdentifierValid16.set(type !== null);
-  }
-
-  protected onContinue16thFC(): void {
-    this.loginForm.controls.role.markAsTouched();
-    this.loginForm.controls.identifier.markAsTouched();
-
-    if (this.roleControl.invalid || !this.isIdentifierValid16()) return;
-
-    const type = this.identifierType16();
-
-    this.isLeftPanelAnimating.set(true);
-    setTimeout(() => this.isLeftPanelAnimating.set(false), 900);
-    this.fc16TransitionDir.set('forward');
-
-    if (type === 'censusCode') {
-      this.enablePasswordMode();
-      this.loginForm.controls.password.setValue('');
-      this.loginForm.controls.password.markAsUntouched();
-      this.isSubmitted = false;
-      this.errorMessage.set('');
-      this.fc16Step.set('password');
-    } else if (type === 'mobile') {
-      const identifier = this.loginForm.controls.identifier.value.trim();
-      this.isSubmitting.set(true);
-      this.errorMessage.set('');
-
-      this.authService
-        .otpSignIn({ identifier })
-        .pipe(finalize(() => this.isSubmitting.set(false)))
-        .subscribe({
-          next: (res) => {
-            this.otpCreds = res;
-            this.enableOtpMode();
-            this.loginForm.controls.otp.setValue('');
-            this.loginForm.controls.otp.markAsUntouched();
-            this.startCountdown();
-            this.fc16Step.set('otp');
-            void this.show16thFCOtpAlert(identifier);
-          },
-          error: (err: unknown) => {
-            this.errorMessage.set(
-              this.apiErr(err, 'User not found or failed to send OTP. Please check your number.'),
-            );
-          },
-        });
-    }
-  }
-
-  protected onBack16thFC(): void {
-    this.fc16TransitionDir.set('back');
-    this.fc16Step.set('role-id');
-    this.errorMessage.set('');
-    this.loginForm.controls.password.setValue('');
-    this.loginForm.controls.password.markAsUntouched();
-    this.loginForm.controls.otp.setValue('');
-    this.loginForm.controls.otp.markAsUntouched();
-    this.clearCountdown();
-    this.enablePasswordMode();
-    this.isSubmitted = false;
-    // Recalculate validity for the restored identifier
-    const value = this.loginForm.controls.identifier.value.trim();
-    this.identifierType16.set(this.detectIdentifierType(value));
-    this.isIdentifierValid16.set(this.detectIdentifierType(value) !== null);
-  }
-
-  protected onResend16thFCOtp(): void {
-    if (this.otpCountdownActive()) return;
-    const identifier = this.loginForm.controls.identifier.value.trim();
-    this.isSubmitting.set(true);
-    this.errorMessage.set('');
-
-    this.authService
-      .otpSignIn({ identifier })
-      .pipe(finalize(() => this.isSubmitting.set(false)))
-      .subscribe({
-        next: (res) => {
-          this.otpCreds = res;
-          this.startCountdown();
-          void this.show16thFCOtpAlert(identifier);
-        },
-        error: (err: unknown) => {
-          this.errorMessage.set(this.apiErr(err, 'Failed to resend OTP. Please try again.'));
-        },
-      });
-  }
-
-  private async show16thFCOtpAlert(mobile: string): Promise<void> {
-    const { default: Swal } = await import('sweetalert2');
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'success',
-      title: 'OTP Sent!',
-      html: `A ${OTP_LENGTH}-digit OTP has been sent to <strong>${mobile}</strong>`,
-      showConfirmButton: false,
-      timer: 4000,
-      timerProgressBar: true,
-    });
   }
 
   // ─── Password login ───────────────────────────────────────────────────────────
@@ -533,12 +430,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.errorMessage.set('');
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  private apiErr(err: unknown, fallback: string): string {
-    const e = err as { error?: { message?: string } };
-    return e?.error?.message || fallback;
-  }
 
   private enablePasswordMode(): void {
     this.loginForm.controls.password.setValidators([Validators.required, Validators.minLength(6)]);

@@ -246,351 +246,172 @@
       <div class="login-section">
 
         @if (typeKey() === '16thFC') {
-          <!-- ─── 16th FC multi-step login ───────────────────────────────────────── -->
+          <!-- ─── 16th FC single-page login ────────────────────────────────────────── -->
           <mat-card class="login-card" appearance="outlined">
 
             <!-- Header -->
             <div class="login-card__header">
-              <div class="d-flex align-items-center gap-2">
-                @if (fc16Step() !== 'role-id') {
-                  <button
-                    type="button"
-                    class="fc16-back-btn"
-                    (click)="onBack16thFC()"
-                    aria-label="Go back"
-                  >
-                    <i class="bi bi-arrow-left-circle-fill"></i>
-                  </button>
-                }
-                <h2>Sign In</h2>
-              </div>
-              <p class="mt-1 mb-0">
-                @if (fc16Step() === 'role-id') { Select your role and enter your identifier }
-                @if (fc16Step() === 'password') { Enter your password to sign in }
-                @if (fc16Step() === 'otp') { Enter the OTP sent to your mobile number }
-              </p>
+              <h2>Sign In</h2>
+              <p class="mt-1 mb-0">Select your role, then enter your credentials below</p>
             </div>
 
-            <!-- Step Progress Indicator -->
-            <div class="fc16-progress">
-              <div class="fc16-progress__step fc16-progress__step--active"
-                [class.fc16-progress__step--completed]="fc16Step() !== 'role-id'">
-                <div class="fc16-progress__dot">
-                  @if (fc16Step() !== 'role-id') {
-                    <i class="bi bi-check-lg"></i>
-                  } @else {
-                    <i class="bi bi-person-fill"></i>
-                  }
-                </div>
-                <span class="fc16-progress__label">Identify</span>
-              </div>
-              <div class="fc16-progress__bar"
-                [class.fc16-progress__bar--active]="fc16Step() !== 'role-id'">
-              </div>
-              <div class="fc16-progress__step"
-                [class.fc16-progress__step--active]="fc16Step() !== 'role-id'">
-                <div class="fc16-progress__dot">
-                  @if (identifierType16() === 'mobile') {
-                    <i class="bi bi-phone-fill"></i>
-                  } @else if (identifierType16() === 'censusCode') {
-                    <i class="bi bi-lock-fill"></i>
-                  } @else {
-                    <span>2</span>
-                  }
-                </div>
-                <span class="fc16-progress__label">
-                  @if (identifierType16() === 'mobile') { OTP Verify }
-                  @else if (identifierType16() === 'censusCode') { Password }
-                  @else { Authenticate }
-                </span>
-              </div>
-            </div>
+            <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
 
-            <!-- ── Step 1: Role + Identifier ────────────────────────────────────── -->
-            @if (fc16Step() === 'role-id') {
-              <div [class.fc16-step-enter-right]="fc16TransitionDir() === 'forward'"
-                   [class.fc16-step-enter-left]="fc16TransitionDir() === 'back'">
-                <form class="login-form" [formGroup]="loginForm" novalidate>
-
-                  <!-- Role selection (16thFC redesigned cards) -->
-                  <div class="fc16-role-grid">
-                    <div
-                      class="role-grid"
-                      [class.role-grid--five]="roleOptions().length === 5"
-                      role="radiogroup"
-                      aria-label="User role"
-                    >
-                      @for (role of roleOptions(); track trackByRole($index, role)) {
-                        <button
-                          type="button"
-                          class="role-card"
-                          [attr.data-role]="role.icon"
-                          [class.role-card--active]="isRoleSelected(role.id)"
-                          [class.role-card--disabled]="role.disabled"
-                          [disabled]="role.disabled"
-                          role="radio"
-                          [attr.aria-checked]="isRoleSelected(role.id)"
-                          (click)="selectRole(role)"
-                        >
-                          @if (role.badge) {
-                            <span class="role-card__badge">{{ role.badge }}</span>
-                          }
-                          @if (isRoleSelected(role.id)) {
-                            <span class="fc16-role-check">
-                              <i class="bi bi-check-lg"></i>
-                            </span>
-                          }
-                          <span
-                            class="role-card__icon"
-                            [ngClass]="{
-                              'role-card__icon--ulb': role.icon === 'ulb',
-                              'role-card__icon--state': role.icon === 'state',
-                              'role-card__icon--mohua': role.icon === 'mohua',
-                              'role-card__icon--doe': role.icon === 'doe',
-                              'role-card__icon--institutional': role.icon === 'institutional',
-                            }"
-                          >
-                            @switch (role.icon) {
-                              @case ('ulb') { <i class="bi bi-buildings-fill"></i> }
-                              @case ('state') { <i class="bi bi-bank"></i> }
-                              @case ('mohua') { <i class="bi bi-bullseye"></i> }
-                              @case ('doe') { <i class="bi bi-shield-lock"></i> }
-                              @case ('institutional') { <i class="bi bi-building-check"></i> }
-                            }
-                          </span>
-                          <span class="role-card__label">{{ role.label }}</span>
-                        </button>
-                      }
-                    </div>
-                  </div>
-
-                  @if (hasControlError('role', 'required')) {
-                    <div class="field-error field-error--role">Please select your role.</div>
-                  }
-
-                  <!-- Mobile / Census Code field -->
-                  <div class="form-group mt-3 mb-0">
-                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
-                      <mat-label>Mobile Number / Census Code</mat-label>
-                      <input
-                        matInput
-                        type="text"
-                        inputmode="numeric"
-                        formControlName="identifier"
-                        (input)="onIdentifierInput16thFC()"
-                        autocomplete="username"
-                        placeholder="10-digit mobile or census code"
-                      />
-                      @if (identifierType16() !== null) {
-                        <span matSuffix class="fc16-id-suffix me-1">
-                          @if (identifierType16() === 'mobile') {
-                            <i class="bi bi-phone-fill text-success"></i>
-                          } @else {
-                            <i class="bi bi-building-fill text-primary"></i>
-                          }
-                        </span>
-                      }
-                    </mat-form-field>
-
-                    @if (identifierType16() === 'mobile') {
-                      <p class="fc16-input-hint fc16-input-hint--ok">
-                        <i class="bi bi-check-circle-fill"></i> Valid mobile number
-                      </p>
-                    } @else if (identifierType16() === 'censusCode') {
-                      <p class="fc16-input-hint fc16-input-hint--ok">
-                        <i class="bi bi-check-circle-fill"></i> Census code detected
-                      </p>
-                    }
-
-                    @if (hasControlError('identifier', 'required')) {
-                      <div class="field-error">Mobile number or Census Code is required.</div>
-                    }
-                    @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'invalidInput')) {
-                      <div class="field-error">
-                        Enter a valid 10-digit mobile number (starting 6–9) or numeric census code.
-                      </div>
-                    }
-                  </div>
-
-                  @if (errorMessage()) {
-                    <div class="api-error mt-2">{{ errorMessage() }}</div>
-                  }
-
-                  <!-- Continue button — animated reveal when identifier is valid -->
-                  <div class="fc16-continue-wrapper"
-                    [class.fc16-continue-wrapper--visible]="isIdentifierValid16()">
+              <!-- Role Selection Cards -->
+              <div class="fc16-role-grid">
+                <div
+                  class="role-grid"
+                  [class.role-grid--five]="roleOptions().length === 5"
+                  role="radiogroup"
+                  aria-label="User role"
+                >
+                  @for (role of roleOptions(); track trackByRole($index, role)) {
                     <button
-                      mat-flat-button
                       type="button"
-                      class="signin-btn fc16-continue-btn"
-                      [disabled]="isSubmitting()"
-                      (click)="onContinue16thFC()"
+                      class="role-card"
+                      [attr.data-role]="role.icon"
+                      [class.role-card--active]="isRoleSelected(role.id)"
+                      [class.role-card--disabled]="role.disabled"
+                      [disabled]="role.disabled"
+                      role="radio"
+                      [attr.aria-checked]="isRoleSelected(role.id)"
+                      (click)="selectRole(role)"
                     >
-                      @if (isSubmitting()) {
-                        <span class="d-flex align-items-center justify-content-center gap-2">
-                          <span class="fc16-spinner"></span>
-                          Checking...
-                        </span>
-                      } @else {
-                        <span class="d-flex align-items-center justify-content-center gap-2">
-                          Continue
-                          <i class="bi bi-arrow-right-circle-fill"></i>
+                      @if (role.badge) {
+                        <span class="role-card__badge">{{ role.badge }}</span>
+                      }
+                      @if (isRoleSelected(role.id)) {
+                        <span class="fc16-role-check">
+                          <i class="bi bi-check-lg"></i>
                         </span>
                       }
-                    </button>
-                  </div>
-
-                </form>
-              </div>
-            }
-
-            <!-- ── Step 2a: Password (census code path) ─────────────────────────── -->
-            @if (fc16Step() === 'password') {
-              <div class="fc16-step-enter-right">
-
-                <!-- User identity badge -->
-                <div class="fc16-user-badge">
-                  <div class="fc16-user-badge__avatar">
-                    <i class="bi bi-building-fill"></i>
-                  </div>
-                  <div class="fc16-user-badge__info">
-                    <div class="fc16-user-badge__id">{{ loginForm.controls.identifier.value }}</div>
-                    <div class="fc16-user-badge__role">
-                      <i class="bi bi-person-badge-fill me-1"></i>{{ roleControl.value }}
-                    </div>
-                  </div>
-                  <i class="bi bi-check-circle-fill fc16-user-badge__check ms-auto"></i>
-                </div>
-
-                <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
-                  <div class="form-group mb-3">
-                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
-                      <mat-label>Password</mat-label>
-                      <input
-                        id="password"
-                        matInput
-                        [type]="isPasswordVisible ? 'text' : 'password'"
-                        formControlName="password"
-                        autocomplete="current-password"
-                      />
-                      <button
-                        mat-icon-button
-                        matSuffix
-                        type="button"
-                        class="password-toggle-btn"
-                        (click)="togglePasswordVisibility()"
-                        [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+                      <span
+                        class="role-card__icon"
+                        [ngClass]="{
+                          'role-card__icon--ulb': role.icon === 'ulb',
+                          'role-card__icon--state': role.icon === 'state',
+                          'role-card__icon--mohua': role.icon === 'mohua',
+                          'role-card__icon--doe': role.icon === 'doe',
+                          'role-card__icon--institutional': role.icon === 'institutional',
+                        }"
                       >
-                        <i
-                          class="bi"
-                          [class.bi-eye]="!isPasswordVisible"
-                          [class.bi-eye-slash]="isPasswordVisible"
-                        ></i>
-                      </button>
-                    </mat-form-field>
-
-                    @if (hasControlError('password', 'required')) {
-                      <div class="field-error">Password is required.</div>
-                    }
-                    @if (!hasControlError('password', 'required') && hasControlError('password', 'minlength')) {
-                      <div class="field-error">Password must be at least 6 characters.</div>
-                    }
-                  </div>
-
-                  @if (errorMessage()) {
-                    <div class="api-error">{{ errorMessage() }}</div>
-                  }
-
-                  <button mat-flat-button type="submit" class="signin-btn" [disabled]="isSubmitting()">
-                    @if (isSubmitting()) { Signing in... }
-                    @else {
-                      <span class="d-flex align-items-center justify-content-center gap-2">
-                        Sign In <i class="bi bi-box-arrow-in-right"></i>
+                        @switch (role.icon) {
+                          @case ('ulb') { <i class="bi bi-buildings-fill"></i> }
+                          @case ('state') { <i class="bi bi-bank"></i> }
+                          @case ('mohua') { <i class="bi bi-bullseye"></i> }
+                          @case ('doe') { <i class="bi bi-shield-lock"></i> }
+                          @case ('institutional') { <i class="bi bi-building-check"></i> }
+                        }
                       </span>
-                    }
-                  </button>
-
-                  <div class="d-flex justify-content-between align-items-center w-100 mt-2">
-                    <button type="button" class="forgot-password-btn" (click)="onForgotPassword()">
-                      Forgot password?
+                      <span class="role-card__label">{{ role.label }}</span>
                     </button>
-                  </div>
-                </form>
-              </div>
-            }
-
-            <!-- ── Step 2b: OTP (mobile path) ───────────────────────────────────── -->
-            @if (fc16Step() === 'otp') {
-              <div class="fc16-step-enter-right">
-
-                <!-- OTP sent banner -->
-                <div class="fc16-otp-banner">
-                  <div class="fc16-otp-banner__icon">
-                    <i class="bi bi-check-circle-fill"></i>
-                  </div>
-                  <div>
-                    <div class="fc16-otp-banner__title">OTP Sent Successfully!</div>
-                    <div class="fc16-otp-banner__text">
-                      A {{ otpLength }}-digit OTP has been sent to
-                      <strong>{{ loginForm.controls.identifier.value }}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submitOtp()" novalidate>
-                  <div class="form-group mb-3">
-                    <div class="otp-resend-row">
-                      @if (otpCountdownActive()) {
-                        <span class="otp-countdown">
-                          <i class="bi bi-clock me-1"></i>Resend OTP in {{ otpCountdown() }}s
-                        </span>
-                      } @else {
-                        <button type="button" class="forgot-password-btn" (click)="onResend16thFCOtp()">
-                          <i class="bi bi-arrow-clockwise me-1"></i>Resend OTP
-                        </button>
-                      }
-                    </div>
-
-                    <mat-form-field subscriptSizing="dynamic" appearance="outline">
-                      <mat-label>Enter OTP</mat-label>
-                      <input
-                        matInput
-                        type="text"
-                        inputmode="numeric"
-                        formControlName="otp"
-                        [placeholder]="'Enter ' + otpLength + '-digit OTP'"
-                        [attr.maxlength]="otpLength"
-                      />
-                      <span matPrefix class="ms-1 me-1">
-                        <i class="bi bi-shield-lock-fill" style="color: #1f7273; font-size: 16px;"></i>
-                      </span>
-                    </mat-form-field>
-
-                    @if (otpControl.invalid && (otpControl.dirty || otpControl.touched)) {
-                      <div class="field-error">Enter a valid {{ otpLength }}-digit OTP.</div>
-                    }
-                  </div>
-
-                  @if (errorMessage()) {
-                    <div class="api-error">{{ errorMessage() }}</div>
                   }
-
-                  <button
-                    mat-flat-button
-                    type="submit"
-                    class="signin-btn"
-                    [disabled]="isSubmitting() || otpControl.invalid"
-                  >
-                    @if (isSubmitting()) { Verifying... }
-                    @else {
-                      <span class="d-flex align-items-center justify-content-center gap-2">
-                        Verify &amp; Sign In <i class="bi bi-shield-check"></i>
-                      </span>
-                    }
-                  </button>
-                </form>
+                </div>
               </div>
-            }
+
+              @if (hasControlError('role', 'required')) {
+                <div class="field-error field-error--role">Please select your role.</div>
+              }
+
+              <!-- Mobile Number / Census Code -->
+              <div class="form-group mt-3 mb-0">
+                <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                  <mat-label>Mobile Number / Census Code</mat-label>
+                  <input
+                    matInput
+                    type="text"
+                    inputmode="numeric"
+                    formControlName="identifier"
+                    (input)="onIdentifierInput16thFC()"
+                    autocomplete="username"
+                    placeholder="10-digit mobile or census code"
+                  />
+                  @if (identifierType16() !== null) {
+                    <span matSuffix class="fc16-id-suffix me-1">
+                      @if (identifierType16() === 'mobile') {
+                        <i class="bi bi-phone-fill text-success"></i>
+                      } @else {
+                        <i class="bi bi-building-fill text-primary"></i>
+                      }
+                    </span>
+                  }
+                </mat-form-field>
+
+                @if (identifierType16() === 'mobile') {
+                  <p class="fc16-input-hint fc16-input-hint--ok">
+                    <i class="bi bi-check-circle-fill"></i> Valid mobile number
+                  </p>
+                } @else if (identifierType16() === 'censusCode') {
+                  <p class="fc16-input-hint fc16-input-hint--ok">
+                    <i class="bi bi-check-circle-fill"></i> Census code detected
+                  </p>
+                }
+
+                @if (hasControlError('identifier', 'required')) {
+                  <div class="field-error">Mobile number or Census Code is required.</div>
+                }
+                @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'invalidInput')) {
+                  <div class="field-error">
+                    Enter a valid 10-digit mobile number (starting 6–9) or numeric census code.
+                  </div>
+                }
+              </div>
+
+              <!-- Password -->
+              <div class="form-group mt-3 mb-3">
+                <mat-form-field subscriptSizing="dynamic" appearance="outline">
+                  <mat-label>Password</mat-label>
+                  <input
+                    id="password"
+                    matInput
+                    [type]="isPasswordVisible ? 'text' : 'password'"
+                    formControlName="password"
+                    autocomplete="current-password"
+                  />
+                  <button
+                    mat-icon-button
+                    matSuffix
+                    type="button"
+                    class="password-toggle-btn"
+                    (click)="togglePasswordVisibility()"
+                    [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+                  >
+                    <i
+                      class="bi"
+                      [class.bi-eye]="!isPasswordVisible"
+                      [class.bi-eye-slash]="isPasswordVisible"
+                    ></i>
+                  </button>
+                </mat-form-field>
+
+                @if (hasControlError('password', 'required')) {
+                  <div class="field-error">Password is required.</div>
+                }
+                @if (!hasControlError('password', 'required') && hasControlError('password', 'minlength')) {
+                  <div class="field-error">Password must be at least 6 characters.</div>
+                }
+              </div>
+
+              @if (errorMessage()) {
+                <div class="api-error">{{ errorMessage() }}</div>
+              }
+
+              <button mat-flat-button type="submit" class="signin-btn" [disabled]="isSubmitting()">
+                @if (isSubmitting()) { Signing in... }
+                @else {
+                  <span class="d-flex align-items-center justify-content-center gap-2">
+                    Sign In <i class="bi bi-box-arrow-in-right"></i>
+                  </span>
+                }
+              </button>
+
+              <div class="d-flex justify-content-center align-items-center w-100 mt-2">
+                <button type="button" class="forgot-password-btn" (click)="onForgotPassword()">
+                  Forgot password?
+                </button>
+              </div>
+
+            </form>
 
           </mat-card>
 

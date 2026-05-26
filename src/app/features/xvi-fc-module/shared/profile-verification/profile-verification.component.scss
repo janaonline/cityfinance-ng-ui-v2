@@ -761,72 +761,75 @@ $accents: (
 //  REQUEST ACCESS
 // ═══════════════════════════════════════════════════════════════
 .pv-request {
-  background: $white;
-  border-radius: 14px;
-  border: 1.5px solid $border;
-  border-left: 4px solid $c1;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   margin-bottom: 20px;
   position: relative;
   z-index: 1;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  border-radius: 14px;
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
 
   &--open {
-    border-color: $c1;
+    background: $white;
+    border: 1.5px solid $c1;
+    border-left: 4px solid $c1;
     box-shadow: 0 6px 28px rgba($c1, 0.12);
   }
 }
 
 .pv-request__trigger {
-  width: 100%; display: flex; align-items: center; gap: 14px;
-  padding: 18px 20px; background: none; border: none;
+  width: 100%; display: flex; flex-direction: row; align-items: center; gap: 10px;
+  padding: 12px 14px; background: none; border: none;
   font-family: inherit; cursor: pointer; text-align: left;
+  border-radius: 14px;
   transition: background 0.18s;
 
-  &:hover { background: rgba($c1, 0.03); }
+  &:hover { background: rgba($white, 0.06); }
 }
 
 .pv-request__icon {
-  width: 44px; height: 44px; border-radius: 10px;
-  background: linear-gradient(135deg, rgba($c1, 0.1), rgba($c1, 0.05));
-  border: 1px solid rgba($c1, 0.18);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: rgba($white, 0.1);
+  border: 1px solid rgba($white, 0.2);
+  display: flex; align-items: center; justify-content: center;
 
-  i { font-size: 18px; color: $c1; }
+  i { font-size: 14px; color: rgba($white, 0.85); }
 }
 
-.pv-request__trigger-text {
-  flex: 1;
-  display: flex; flex-direction: column; gap: 2px;
-
-  strong { font-size: 14.5px; font-weight: 700; color: $text; }
-  span   { font-size: 12px; color: $muted; }
+.pv-request__title {
+  font-size: 14px; font-weight: 700; color: rgba($white, 0.92); white-space: nowrap; flex-shrink: 0;
 }
 
-.pv-request__trigger-right {
-  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+.pv-request__sub {
+  font-size: 12px; color: rgba($white, 0.55); flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .pv-request__badge {
-  padding: 3px 10px; border-radius: 20px;
+  padding: 3px 10px; border-radius: 20px; flex-shrink: 0;
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
-  background: rgba($c1, 0.08); color: $c1; border: 1px solid rgba($c1, 0.2);
+  background: rgba($c1, 0.35); color: rgba($white, 0.9); border: 1px solid rgba($c1, 0.5);
 }
 
 .pv-request__chevron {
-  font-size: 13px; color: $muted; transition: transform 0.3s ease;
+  font-size: 13px; color: rgba($white, 0.5); transition: transform 0.3s ease; flex-shrink: 0;
 }
 
 .pv-request--open .pv-request__chevron { transform: rotate(180deg); }
 
+// When card is open (white bg), flip trigger text back to dark
+.pv-request--open .pv-request__title   { color: $text; }
+.pv-request--open .pv-request__sub     { color: $muted; }
+.pv-request--open .pv-request__chevron { color: $muted; }
+.pv-request--open .pv-request__icon    { background: linear-gradient(135deg, rgba($c1, 0.1), rgba($c1, 0.05)); border-color: rgba($c1, 0.18); i { color: $c1; } }
+.pv-request--open .pv-request__badge   { background: rgba($c1, 0.08); color: $c1; border-color: rgba($c1, 0.2); }
+.pv-request--open .pv-request__trigger:hover { background: rgba($c1, 0.04); }
+
 .pv-request__body {
   max-height: 0; overflow: hidden;
   transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1);
-  border-top: 0 solid $border;
 }
 
-.pv-request--open .pv-request__body { max-height: 540px; border-top-width: 1px; }
+.pv-request--open .pv-request__body { max-height: 540px; border-top: 1px solid $border; }
 
 .pv-request__notice {
   display: flex; align-items: flex-start; gap: 8px;

@@ -36,7 +36,8 @@ ul {
   white-space: nowrap;
 }
 
-a.menu-item {
+a.menu-item,
+button.menu-item--command {
   // border: 2px solid pink;
   border-radius: var(--radius-split-rouned);
   display: flex;
@@ -55,6 +56,15 @@ a.menu-item {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
+}
+
+button.menu-item--command {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-primary-accent);
+  cursor: pointer;
+  text-align: left;
 }
 
 a.menu-item.active {

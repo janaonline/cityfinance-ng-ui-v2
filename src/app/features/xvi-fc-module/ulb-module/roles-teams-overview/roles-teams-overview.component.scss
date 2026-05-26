@@ -385,15 +385,11 @@
 }
 
 .team-table .mat-column-status {
-  width: 130px;
-}
-
-.team-table .mat-column-lastActive {
-  width: 135px;
+  width: 145px;
 }
 
 .team-table .mat-column-action {
-  width: 105px;
+  width: 160px;
 }
 
 .permission-table .mat-column-permission {
@@ -493,17 +489,25 @@
   border: 1px solid #ccebd9;
 }
 
+.last-active-sub {
+  display: block;
+  margin-top: 5px;
+  color: #8b95a3;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-pill--inactive {
+  color: #92370d;
+  background: #fff3eb;
+  border-color: #fcd5b0;
+}
+
 .status-pill--invited {
   color: var(--roles-orange);
   background: #fff1e5;
   border-color: #f8d7bc;
-}
-
-.status-pill__dot {
-  width: 6px;
-  height: 6px;
-  background: currentColor;
-  border-radius: 50%;
 }
 
 .role-field {
@@ -542,9 +546,32 @@
   font-weight: 500;
 }
 
+.action-btns {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.activate-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--roles-green), var(--roles-teal)) !important;
+  border-radius: 6px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  min-height: 28px;
+  padding: 0 12px !important;
+  line-height: 28px;
+  box-shadow: 0 4px 12px rgba(15, 111, 73, 0.2);
+}
+
 .table-link {
   color: var(--roles-teal) !important;
   font-weight: 600;
+}
+
+.table-link--danger {
+  color: var(--roles-red) !important;
 }
 
 .muted-dash {
@@ -638,10 +665,10 @@
 ::ng-deep .roles-dialog-panel .mat-mdc-dialog-container .mdc-dialog__surface {
   overflow: hidden;
   border-radius: 16px;
-  background:
-    linear-gradient(180deg, #ffffff 0%, #fbfffd 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfffd 100%);
   box-shadow: 0 32px 90px rgba(17, 24, 39, 0.28);
 }
+
 
 .add-dialog {
   display: flex;
@@ -748,23 +775,43 @@
 }
 
 .add-dialog__actions .send-action {
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   min-width: 150px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
   color: #ffffff !important;
-  background: linear-gradient(135deg, var(--roles-green), var(--roles-teal)) !important;
-  opacity: 1 !important;
-  box-shadow: 0 14px 26px rgba(15, 111, 73, 0.24) !important;
+  // Use literal hex values — CSS variables from .roles-page are unavailable in dialog overlay
+  background: linear-gradient(135deg, #0f6f49, #087b7f) !important;
+  box-shadow: 0 10px 22px rgba(15, 111, 73, 0.26);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px rgba(15, 111, 73, 0.34);
+  }
+
+  &:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
 }
 
 .add-dialog__actions .send-action mat-icon {
   width: 18px;
   height: 18px;
-  color: inherit !important;
   font-size: 18px;
   line-height: 18px;
+  color: #ffffff;
 }
 
 .dialog-field {
@@ -843,6 +890,102 @@
 .loading-block--meta {
   width: min(280px, 54vw);
   height: 14px;
+}
+
+// ── Activate preview ─────────────────────────────────────────────────────
+.activate-preview {
+  display: grid;
+  gap: 0;
+  background: #f5f8f7;
+  border: 1px solid #e2ebe8;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.activate-preview__field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid #e2ebe8;
+
+  &:last-child { border-bottom: none; }
+
+  span {
+    color: #728092;
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  strong {
+    color: #172033;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: right;
+  }
+}
+
+.otp-sent-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #e6f6ed;
+  border: 1px solid #ccebd9;
+  border-radius: 8px;
+  color: #0c5c3b;
+  font-size: 0.82rem;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+    color: #0f6f49;
+  }
+
+  strong { color: #0c5c3b; }
+}
+
+.otp-resend-btn {
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--roles-teal);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+// ── Role confirm dialog ───────────────────────────────────────────────────
+.role-confirm-copy {
+  color: #384450;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.role-tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 5px;
+  background: #eef2f3;
+  color: #384450;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.role-tag--new {
+  background: #e3f7ec;
+  color: var(--roles-green);
 }
 
 @keyframes rise-in {

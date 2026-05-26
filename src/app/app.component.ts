@@ -49,6 +49,9 @@ export class AppComponent implements OnInit {
     this._router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this._viewportScroller.scrollToPosition([0, 0]);
+        const url = event.urlAfterRedirects;
+        const hideFooter = /^\/(auth|xvifc)(\/|$)/.test(url);
+        this.loaderService.isFooterVisible.set(!hideFooter);
       }
     });
   }

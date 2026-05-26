@@ -6,7 +6,9 @@
 
     <router-outlet></router-outlet>
   </div>
-  <app-footer></app-footer>
+  @if (loaderService.isFooterVisible()) {
+    <app-footer></app-footer>
+  }
 } @else {
   <router-outlet></router-outlet>
 }
