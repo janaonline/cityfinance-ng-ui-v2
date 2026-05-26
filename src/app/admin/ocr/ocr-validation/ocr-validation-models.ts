@@ -51,7 +51,9 @@ export interface OcrValidationBasicCheck {
   validation_details: string | null;
   failed_checks: string[];
   pdf_readability_status: string | null;
+  readability_score: number | null;
   pdf_quality_status: string | null;
+  orientation_status: string | null;
   quality_issues: string[];
   table_present: boolean | null;
   table_required: boolean | null;
@@ -59,6 +61,8 @@ export interface OcrValidationBasicCheck {
   table_issues: string[];
   multiple_documents_detected: boolean | null;
   detected_document_types: string[];
+  expected_document_type: string | null;
+  document_type_matches_expected: boolean | null;
 }
 
 export interface OcrValidationCheck {
