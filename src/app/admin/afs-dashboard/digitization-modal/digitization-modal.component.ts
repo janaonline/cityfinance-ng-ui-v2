@@ -69,7 +69,9 @@ export class DigitizationModalComponent implements OnInit {
       }
 
       const ulbFile = row[`${this.filters.docType}`]?.url;
+      const ulbFile_signed = row[`${this.filters.docType}`]?.url_signed;
       const afsFile = row.afsFiles?.afsFile ? row.afsFiles?.afsFile.pdfUrl : null;
+      const afsFile_signed = row.afsFiles?.afsFile ? row.afsFiles?.afsFile.pdfUrl_signed : null;
       // console.log('Processing row:', row._id, { ulbFile, afsFile });
       if (afsFile) {
         // this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
@@ -79,7 +81,7 @@ export class DigitizationModalComponent implements OnInit {
           ++alreadyDigitizedFiles;
           this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsFiles?.afsFile?.noOfPages || 0);
         } else {
-          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile);
+          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(afsFile_signed);
         }
       } else if (ulbFile) {
         ++this.selectedFilesCount;
@@ -89,7 +91,7 @@ export class DigitizationModalComponent implements OnInit {
           ++alreadyDigitizedFiles;
           this.totalSelectedPages = alreadyDigitizedPages = alreadyDigitizedPages + (row.afsFiles?.ulbFile?.noOfPages || 0);
         } else {
-          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(ulbFile);
+          this.totalSelectedPages = this.totalSelectedPages + await this.getPdfPageCount(ulbFile_signed);
         }
       }
 
