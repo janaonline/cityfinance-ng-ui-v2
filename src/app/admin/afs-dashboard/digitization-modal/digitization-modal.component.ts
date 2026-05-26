@@ -44,7 +44,7 @@ export class DigitizationModalComponent implements OnInit {
 
   async getPdfPageCount(url: string): Promise<number> {
     try {
-      const response = await fetch(environment.STORAGE_BASEURL + url);
+      const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       return pdfDoc.getPageCount();
