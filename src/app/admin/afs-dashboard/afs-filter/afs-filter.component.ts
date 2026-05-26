@@ -151,12 +151,9 @@ export class AfsFilterComponent implements OnInit {
         this.filters = res.data;
         if (resData) {
           this.filteredStates = this.states = resData.states;
-          // this.populationCategories = resData.populationCategories;
-          // this.allCities = res.filters.cities; // Store full list
-          this.cities = resData.ulbs;     // Default: show all
-          // this.filteredCities = this.cities.slice(0, 100);
-          // this.filters.years = resData.years;
-          // this.filters.documentTypes = resData.documentTypes;
+          this.cities = resData.ulbs;
+          this.statePopFilteredCities = this.cities;
+          this.filteredCities = this.cities.slice(0, 100);
 
         }
       },
@@ -287,8 +284,11 @@ export class AfsFilterComponent implements OnInit {
       limit: 10,
       digitizationStatus: DEFAULT_DIGITIZATION_STATUS
     });
+    this.statePopFilteredCities = this.cities;
+    this.filteredCities = this.cities.slice(0, 100);
+    this.filteredStates = [...this.states];
     this.filtersChanged.emit(this.filterForm.value);
-    localStorage.removeItem(AFS_FILTER_KEY)
+    localStorage.removeItem(AFS_FILTER_KEY);
     localStorage.removeItem(AFS_PAGINATION_KEY);
   }
 
