@@ -336,6 +336,37 @@ export class AuthService {
       );
   }
 
+  checkUser(identifier: string, role: string): Observable<{
+    success: boolean;
+    data: {
+      status?: string;
+      isXVIFCProfileVerified?: boolean;
+      maskedContact?: string;
+      message?: string;
+    };
+  }> {
+    return this.http.post<{
+      success: boolean;
+      data: {
+        status?: string;
+        isXVIFCProfileVerified?: boolean;
+        maskedContact?: string;
+        message?: string;
+      };
+    }>(`${environment.api.url2}auth/check-user`, { identifier, role });
+  }
+
+  setPassword(identifier: string, newPassword: string, confirmPassword: string): Observable<{
+    success: boolean;
+    data: { message: string };
+  }> {
+    return this.http.post<{ success: boolean; data: { message: string } }>(
+      `${environment.api.url2}auth/set-password`,
+      { identifier, newPassword, confirmPassword },
+      { withCredentials: true },
+    );
+  }
+
   clearLocalStorage(excludeKeys = ['userInfo']) {
     this.clearAccessToken();
 

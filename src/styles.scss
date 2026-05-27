@@ -152,6 +152,13 @@ html {
   }
 }
 
+// ----- Snackbar variants ----- //
+.snack-success {
+  --mdc-snackbar-container-color: #1b5e20;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #a5d6a7;
+}
+
 // ----- Common buttons. ----- //
 .primary-btn-1 {
   font-family: var(--ff-base);

@@ -21,6 +21,13 @@ export const ULB_ROUTES: Routes = [
           import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
       },
       {
+        path: 'roles-teams-unified-view',
+        loadComponent: () =>
+          import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+            (m) => m.RolesTeamsOverviewComponent,
+          ),
+      },
+      {
         path: '**',
         redirectTo: '/xvifc',
       },

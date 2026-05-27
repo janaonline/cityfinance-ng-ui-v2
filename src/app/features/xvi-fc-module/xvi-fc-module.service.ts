@@ -82,6 +82,11 @@ export class XvifcModuleService {
     this.resolvedContext.set(null);
   }
 
+  /** Executes the module's logout contract. */
+  logout(): void {
+    this.clearAuthDetailsAndRedirectToLandingPage();
+  }
+
   /**
    * Resolves the route context required to render a XVI-FC workspace.
    * Both role and year are mandatory for any in-feature route.
@@ -187,7 +192,18 @@ export class XvifcModuleService {
 
     try {
       const menu = await this.buildSideMenuItems(context);
-      this.sideMenuModel.set(menu);
+      this.sideMenuModel.set({
+        ...menu,
+        bottomModel: [
+          ...menu.bottomModel,
+          { label: '', separator: true },
+          {
+            label: 'Sign Out',
+            icon: 'bi bi-box-arrow-right',
+            command: () => this.logout(),
+          },
+        ],
+      });
     } catch (error) {
       console.error('Failed to load side menu', error);
       this.sideMenuModel.set(EMPTY_SIDE_MENU_MODEL);

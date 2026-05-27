@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { environment } from '../../../../../../src/environments/environment';
+import { catchError, map, Observable, of, forkJoin } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 
 import {
   DisbursementColumn,
@@ -33,21 +33,32 @@ export class OverviewService {
       .pipe(map((wrapper) => wrapper.data));
   }
 
+  getStateName(stateId: string): Observable<string> {
+    return this.http
+      .get<{ success: boolean; data: { stateName: string } }>(
+        `${this.baseUrl}xvi-fc/state-info/${stateId}`,
+      )
+      .pipe(
+        map((res) => res.data.stateName),
+        catchError(() => of('')),
+      );
+  }
+
   getOverviewViewModel(stateId: string): Observable<{
     stateOverviewData: OverviewData;
     disbursementColumns: DisbursementColumn[];
     disbursementRows: DisbursementRow[];
   }> {
-    return this.getStateOverview(stateId).pipe(
-      map((response) => {
-        const stateOverviewData = this.mapToOverviewData(response);
-        const disbursementColumns = this.mapToDisbursementColumns(response);
-        const disbursementRows = this.mapToDisbursementRows(response);
-
+    return forkJoin({
+      overview: this.getStateOverview(stateId),
+      stateName: this.getStateName(stateId),
+    }).pipe(
+      map(({ overview, stateName }) => {
+        const merged = { ...overview, stateName: stateName || overview.stateName };
         return {
-          stateOverviewData,
-          disbursementColumns,
-          disbursementRows,
+          stateOverviewData: this.mapToOverviewData(merged),
+          disbursementColumns: this.mapToDisbursementColumns(merged),
+          disbursementRows: this.mapToDisbursementRows(merged),
         };
       }),
     );

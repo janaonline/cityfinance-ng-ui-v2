@@ -28,21 +28,21 @@ interface StoredUser {
   isXVIFCProfileVerified?: boolean;
 }
 
-const ROLE_MAP: Record<string, ProfileRole> = {
-  STATE: 'state',
-  XVIFC_STATE: 'state',
-  ULB: 'ulb',
-  XVIFC: 'ulb',
-  MoHUA: 'mohua',
-};
+function resolveProfileRole(userRole: string): ProfileRole {
+  const r = userRole.toUpperCase();
+  if (r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-')) return 'state';
+  if (r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-')) return 'ulb';
+  if (r === 'MOHUA') return 'mohua';
+  return 'state';
+}
 
-const ROUTE_ROLE_MAP: Record<string, Roles> = {
-  STATE: 'STATE',
-  XVIFC_STATE: 'STATE',
-  ULB: 'ULB',
-  XVIFC: 'ULB',
-  MoHUA: 'MOHUA',
-};
+function resolveRouteRole(userRole: string): Roles {
+  const r = userRole.toUpperCase();
+  if (r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-')) return 'STATE';
+  if (r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-')) return 'ULB';
+  if (r === 'MOHUA') return 'MOHUA';
+  return 'STATE';
+}
 
 @Component({
   selector: 'app-years-selection',
@@ -127,9 +127,9 @@ export class YearsSelectionComponent implements OnInit {
       const raw = localStorage.getItem('userData');
       if (!raw) return '';
       const user = JSON.parse(raw) as StoredUser;
-      const role = ROLE_MAP[user.role ?? ''] ?? 'state';
-      if (role === 'ulb') return user.ulb ?? '';
-      if (role === 'state') return user.state ?? '';
+      const profileRole = resolveProfileRole(user.role ?? '');
+      if (profileRole === 'ulb') return user.ulb ?? '';
+      if (profileRole === 'state') return user.state ?? '';
       return user.state ?? user.ulb ?? '';
     } catch {
       return '';
@@ -141,7 +141,7 @@ export class YearsSelectionComponent implements OnInit {
       const raw = localStorage.getItem('userData');
       if (!raw) return 'STATE';
       const user = JSON.parse(raw) as StoredUser;
-      return ROUTE_ROLE_MAP[user.role ?? ''] ?? 'STATE';
+      return resolveRouteRole(user.role ?? '');
     } catch {
       return 'STATE';
     }

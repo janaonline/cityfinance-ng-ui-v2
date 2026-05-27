@@ -23,6 +23,16 @@ import { Subscription, finalize, timer } from 'rxjs';
 import { OtpAuthService } from '../../core/auth/auth.service';
 import { LOGIN_TYPES, LoginType } from '../login/login.component';
 
+function mobileOrCensusCodeValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = (control.value as string)?.trim();
+    if (!value) return null;
+    if (/^[6-9]\d{9}$/.test(value)) return null;
+    if (/^\d{2,}$/.test(value)) return null;
+    return { invalidMobileOrCode: true };
+  };
+}
+
 type ForgotRole = 'ULB' | 'STATE' | 'MOHUA';
 type StepType = 'identify' | 'reset' | 'success';
 // type LoginType = 'xvifc' | '15thFC';
@@ -55,6 +65,7 @@ export class ForgotPasswordComponent implements OnInit {
   readonly typeKey = signal<LoginType | null>(null);
   readonly currentStep = signal<StepType>('identify');
   readonly selectedRole = signal<ForgotRole>('ULB');
+  readonly is16FCType = computed(() => this.typeKey() === '16thFC');
 
   readonly isSubmitting = signal(false);
   readonly otpSent = signal(false);
@@ -117,7 +128,11 @@ export class ForgotPasswordComponent implements OnInit {
 
     const role = this.selectedRole();
 
-    if (role === 'ULB') {
+    if (this.is16FCType()) {
+      this.identifyForm.controls.email.clearValidators();
+      this.identifyForm.controls.email.setValue('');
+      this.identifyForm.controls.code.setValidators([Validators.required, mobileOrCensusCodeValidator()]);
+    } else if (role === 'ULB') {
       this.identifyForm.controls.email.clearValidators();
       this.identifyForm.controls.email.setValue('');
       this.identifyForm.controls.code.setValidators([Validators.required]);
@@ -240,6 +255,9 @@ export class ForgotPasswordComponent implements OnInit {
   }
 
   private getIdentifier(): string {
+    if (this.is16FCType()) {
+      return this.identifyForm.controls.code.value.trim();
+    }
     const role = this.selectedRole();
     return role === 'ULB'
       ? this.identifyForm.controls.code.value.trim()

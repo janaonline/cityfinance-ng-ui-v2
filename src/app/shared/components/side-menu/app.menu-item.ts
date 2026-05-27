@@ -18,11 +18,16 @@ export class AppMenuItemComponent {
   readonly hasChildren = computed(() => !!this.item().items?.length);
   readonly isExternalLink = computed(() => !!this.item().url);
   readonly isInternalLink = computed(() => !!this.item().routerLink);
+  readonly isCommandItem = computed(() => !!this.item().command && !this.item().routerLink && !this.item().url);
 
   expanded = linkedSignal(() => this.item().expanded ?? true);
 
   toggle() {
     this.expanded.update((v) => !v);
+  }
+
+  executeCommand() {
+    this.item().command?.();
   }
 
   trackByLabel(idx: number, item: MenuItem): string {

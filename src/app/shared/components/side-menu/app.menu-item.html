@@ -55,6 +55,26 @@
         }
       </a>
       }
+
+      <!-- Command Button (e.g. logout) -->
+      @if (isCommandItem()) {
+      <button
+        type="button"
+        class="menu-item menu-item--command"
+        [class.icon-only]="collapsed()"
+        [class.disabled]="item().disabled"
+        [ngClass]="item().class"
+        [title]="item().label"
+        (click)="executeCommand()"
+      >
+        @if (item().icon) {
+        <i [class]="item().icon"></i>
+        }
+        @if (!collapsed()) {
+        <span class="menu-label">{{ item().label }}</span>
+        }
+      </button>
+      }
     }
   }
 
