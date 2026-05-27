@@ -337,23 +337,21 @@ export class AuthService {
   }
 
   checkUser(identifier: string, role: string): Observable<{
-    success: boolean;
-    data: {
-      status?: string;
-      isXVIFCProfileVerified?: boolean;
-      maskedContact?: string;
-      message?: string;
-    };
+    status?: string;
+    isXVIFCProfileVerified?: boolean;
+    maskedContact?: string;
+    loginFlow?: string;
+    message?: string;
   }> {
-    return this.http.post<{
-      success: boolean;
-      data: {
+    return this.http.post<any>(`${environment.api.url2}auth/check-user`, { identifier, role }).pipe(
+      map((res: any) => (res?.data ?? res) as {
         status?: string;
         isXVIFCProfileVerified?: boolean;
         maskedContact?: string;
+        loginFlow?: string;
         message?: string;
-      };
-    }>(`${environment.api.url2}auth/check-user`, { identifier, role });
+      }),
+    );
   }
 
   setPassword(identifier: string, newPassword: string, confirmPassword: string): Observable<{
