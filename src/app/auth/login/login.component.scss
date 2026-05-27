@@ -1819,3 +1819,105 @@
     margin-bottom: 18px;
   }
 }
+
+// ─── 16th FC multi-step new elements ─────────────────────────────────────────
+
+.fc16-identifier-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f4f7fb;
+  border: 1px solid #d8e2ef;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 600;
+
+  i {
+    font-size: 18px;
+    color: #6b7280;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.fc16-change-btn {
+  background: none;
+  border: none;
+  color: #0d7a6e;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #065f52;
+  }
+}
+
+.fc16-otp-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #f0f9ff;
+  border: 1px solid #bae0fd;
+  font-size: 0.875rem;
+  color: #0c4a6e;
+  line-height: 1.5;
+
+  &--success {
+    background: linear-gradient(135deg, #f0fbf9 0%, #e6f7f5 100%);
+    border-color: #a8ddd6;
+    color: #0d4a50;
+  }
+
+  p {
+    color: inherit;
+  }
+}
+
+.fc16-otp-notice__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+
+  i {
+    font-size: 22px;
+    color: #0284c7;
+  }
+
+  .fc16-otp-notice--success & i {
+    color: #0d9488;
+  }
+}
+
+.fc16-otp-sent-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #166534;
+
+  i {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  strong {
+    color: #14532d;
+  }
+}

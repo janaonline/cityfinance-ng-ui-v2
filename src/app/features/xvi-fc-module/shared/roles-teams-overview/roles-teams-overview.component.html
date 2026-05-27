@@ -1,0 +1,683 @@
+<main class="roles-page container-fluid py-4 py-lg-5">
+  @if (errorMessage) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+  }
+
+  <mat-card class="profile-hero mat-elevation-z0 mb-4">
+    <div class="profile-hero__grid" aria-hidden="true"></div>
+
+    @if (isLoading) {
+      <div class="profile-card profile-card--loading d-flex align-items-center gap-3">
+        <span class="loading-block loading-block--logo"></span>
+        <div class="flex-grow-1">
+          <span class="loading-block loading-block--title"></span>
+          <span class="loading-block loading-block--meta"></span>
+        </div>
+      </div>
+    } @else {
+      @if (profile) {
+        <div class="profile-card row align-items-center gy-3">
+          <div class="col-12 col-lg">
+            <p class="profile-card__eyebrow mb-2">{{ profileEyebrow }}</p>
+            <div class="d-flex align-items-center gap-3">
+              <div class="profile-card__logo">{{ profile.initials }}</div>
+              <div class="profile-card__copy">
+                <h1>{{ profile.name }}</h1>
+                <p class="mb-0">
+                  {{ profile.code }} <span aria-hidden="true">&middot;</span> {{ profile.category }}
+                  @if (entityType === 'ulb') {
+                    <span aria-hidden="true">&middot;</span> {{ profile.state }}
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-auto">
+            <div class="profile-card__facts">
+              <div class="profile-fact">
+                <span>{{ entityType === 'ulb' ? 'ULB Code' : 'State Code' }}</span>
+                <strong>{{ profile.code }}</strong>
+              </div>
+              @if (entityType === 'ulb') {
+                <div class="profile-fact">
+                  <span>State</span>
+                  <strong>{{ profile.state }}</strong>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </mat-card>
+
+  <section class="roles-toolbar row gy-3 align-items-end mb-4" aria-label="People and roles actions">
+    <div class="col-12 col-lg">
+      <h2 id="people-roles-title" class="mb-1">People &amp; Roles</h2>
+      <p class="mb-0">Manage who has access and what they can do.</p>
+    </div>
+
+    <div class="col-12 col-lg-auto">
+      <div class="d-grid d-sm-flex gap-2 align-items-center justify-content-lg-end">
+        <button
+          mat-stroked-button
+          type="button"
+          class="matrix-action"
+          [class.matrix-action--active]="showPermissionMatrix"
+          (click)="onOpenPermissionMatrix()"
+        >
+          <mat-icon aria-hidden="true">shield</mat-icon>
+          Permission matrix
+        </button>
+
+        <div class="add-member-wrap">
+          <button
+            mat-flat-button
+            type="button"
+            class="add-action"
+            [disabled]="memberLimitReached"
+            [title]="memberLimitReached ? 'Maximum 5 members allowed' : 'Add a new member'"
+            (click)="onAddMember()"
+          >
+            <mat-icon aria-hidden="true">add</mat-icon>
+            Add Member
+          </button>
+          <span class="member-count-badge" [class.member-count-badge--full]="memberLimitReached">
+            {{ members.length }}/5
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  @if (showPermissionMatrix) {
+    <mat-card class="permission-card mat-elevation-z0 mb-4">
+      <mat-card-header class="permission-card__header">
+        <mat-card-title>Role permission matrix</mat-card-title>
+        <mat-card-subtitle>What each role can do across the platform.</mat-card-subtitle>
+        <button
+          mat-icon-button
+          type="button"
+          class="permission-card__close"
+          aria-label="Hide permission matrix"
+          (click)="onOpenPermissionMatrix()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </mat-card-header>
+
+      <mat-card-content class="p-0">
+        <div class="table-responsive">
+          <table mat-table [dataSource]="permissionMatrix" class="permission-table w-100">
+            <ng-container matColumnDef="permission">
+              <th mat-header-cell *matHeaderCellDef>Permission</th>
+              <td mat-cell *matCellDef="let row">{{ row.permission }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="submitter">
+              <th mat-header-cell *matHeaderCellDef class="text-center">Submitter</th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <span
+                  class="permission-dot"
+                  [class.permission-dot--off]="!row.submitter"
+                  [attr.aria-label]="row.submitter ? 'Allowed' : 'Not allowed'"
+                ></span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="editor">
+              <th mat-header-cell *matHeaderCellDef class="text-center">Editor</th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <span
+                  class="permission-dot"
+                  [class.permission-dot--off]="!row.editor"
+                  [attr.aria-label]="row.editor ? 'Allowed' : 'Not allowed'"
+                ></span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="viewer">
+              <th mat-header-cell *matHeaderCellDef class="text-center">Viewer</th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <span
+                  class="permission-dot"
+                  [class.permission-dot--off]="!row.viewer"
+                  [attr.aria-label]="row.viewer ? 'Allowed' : 'Not allowed'"
+                ></span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="permissionColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: permissionColumns"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="team-card mat-elevation-z0 mb-4">
+    <div class="d-none d-md-block table-responsive">
+      <table mat-table [dataSource]="members" class="team-table w-100">
+        <ng-container matColumnDef="member">
+          <th mat-header-cell *matHeaderCellDef>Name &amp; Phone</th>
+          <td mat-cell *matCellDef="let member">
+            <div class="member-cell d-flex align-items-center gap-2">
+              <span class="member-avatar">{{ member.initials }}</span>
+              <div>
+                <strong>{{ member.name }}</strong>
+                <span>{{ member.phone }}</span>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="designation">
+          <th mat-header-cell *matHeaderCellDef>Designation</th>
+          <td mat-cell *matCellDef="let member">{{ member.designation }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let member">
+            @if (member.role === 'Submitter') {
+              <span class="role-badge">
+                <mat-icon aria-hidden="true">how_to_reg</mat-icon>
+                Submitter
+              </span>
+            } @else if (member.role && member.status === 'active') {
+              <mat-form-field appearance="outline" class="role-field compact-field">
+                <mat-select
+                  aria-label="Role"
+                  [ngModel]="memberRoleSelections[member.id]"
+                  (ngModelChange)="onRoleChangeRequest(member.id, $event)"
+                >
+                  @for (role of getRolesForMember(member); track role) {
+                    <mat-option [value]="role">{{ role }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="muted-dash">-</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let member">
+            <span
+              class="status-pill"
+              [class.status-pill--inactive]="member.status === 'inactive'"
+              [class.status-pill--pending]="member.status === 'invited' || member.status === 'pending'"
+            >
+              {{ member.status === 'active' ? 'Active' : member.status === 'inactive' ? 'Inactive' : 'Pending' }}
+            </span>
+            @if (member.lastActive) {
+              <span class="last-active-sub">{{ member.lastActive }}</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef class="text-end">Action</th>
+          <td mat-cell *matCellDef="let member" class="text-end">
+            @if (member.role === 'Submitter') {
+              <span class="muted-dash">-</span>
+            } @else {
+              <div class="action-btns">
+                @if (member.status === 'inactive') {
+                  <button mat-flat-button type="button" class="activate-btn" (click)="onActivate(member)">
+                    Activate
+                  </button>
+                } @else {
+                  <button mat-button type="button" class="table-link table-link--danger" (click)="onDisable(member)">
+                    Disable
+                  </button>
+                }
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="delete-icon-btn"
+                  aria-label="Delete member"
+                  title="Delete member"
+                  (click)="onDelete(member)"
+                >
+                  <mat-icon aria-hidden="true">delete_outline</mat-icon>
+                </button>
+              </div>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="memberColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: memberColumns"></tr>
+      </table>
+    </div>
+
+    <div class="member-cards d-grid d-md-none gap-3">
+      @for (member of members; track member.id) {
+        <mat-card class="member-card mat-elevation-z0">
+          <div class="d-flex justify-content-between gap-3 mb-3">
+            <div class="member-cell d-flex align-items-center gap-2">
+              <span class="member-avatar">{{ member.initials }}</span>
+              <div>
+                <strong>{{ member.name }}</strong>
+                <span>{{ member.phone }}</span>
+              </div>
+            </div>
+            <span
+              class="status-pill"
+              [class.status-pill--inactive]="member.status === 'inactive'"
+              [class.status-pill--pending]="member.status === 'invited' || member.status === 'pending'"
+            >
+              {{ member.status === 'active' ? 'Active' : member.status === 'inactive' ? 'Inactive' : 'Pending' }}
+            </span>
+          </div>
+
+          <div class="member-card__meta">
+            <div>
+              <span>Designation</span>
+              <strong>{{ member.designation }}</strong>
+            </div>
+            <div>
+              <span>Role</span>
+              @if (member.role === 'Submitter') {
+                <strong class="role-badge">
+                  <mat-icon aria-hidden="true">how_to_reg</mat-icon>
+                  Submitter
+                </strong>
+              } @else if (member.role && member.status === 'active') {
+                <mat-form-field appearance="outline" class="role-field compact-field">
+                  <mat-select
+                    aria-label="Role"
+                    [ngModel]="memberRoleSelections[member.id]"
+                    (ngModelChange)="onRoleChangeRequest(member.id, $event)"
+                  >
+                    @for (role of getRolesForMember(member); track role) {
+                      <mat-option [value]="role">{{ role }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              } @else {
+                <strong class="muted-dash">-</strong>
+              }
+            </div>
+          </div>
+
+          @if (member.role !== 'Submitter') {
+            <div class="d-flex gap-2 mt-3">
+              @if (member.status === 'inactive') {
+                <button mat-flat-button type="button" class="activate-btn flex-grow-1" (click)="onActivate(member)">
+                  Activate
+                </button>
+              } @else {
+                <button mat-stroked-button type="button" class="mobile-member-action flex-grow-1" (click)="onDisable(member)">
+                  Disable access
+                </button>
+              }
+              <button
+                mat-icon-button
+                type="button"
+                class="delete-icon-btn"
+                aria-label="Delete member"
+                title="Delete member"
+                (click)="onDelete(member)"
+              >
+                <mat-icon aria-hidden="true">delete_outline</mat-icon>
+              </button>
+            </div>
+          }
+        </mat-card>
+      }
+    </div>
+  </mat-card>
+
+  <mat-card class="transfer-card mat-elevation-z0">
+    <div class="row align-items-center gy-3">
+      <div class="col-auto">
+        <span class="transfer-card__icon">
+          <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+        </span>
+      </div>
+      <div class="col-12 col-md">
+        <h3>Transfer Ownership</h3>
+        <p class="mb-0">
+          Transfer full Submitter access to another team member. This action is irreversible and
+          moves the current Submitter to Editor after confirmation.
+        </p>
+      </div>
+      <div class="col-12 col-md-auto">
+        <button mat-stroked-button type="button" class="transfer-card__button" (click)="onTransferOwnership()">
+          Transfer
+        </button>
+      </div>
+    </div>
+  </mat-card>
+</main>
+
+<!-- ─── Add Member Dialog ──────────────────────────────────────────────── -->
+<ng-template #addMemberDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Add Member</h3>
+        <p class="add-dialog__copy mb-0">
+          Fill in the details below. A welcome message will be sent to the user's mobile number.
+        </p>
+      </div>
+      <button
+        mat-icon-button
+        type="button"
+        class="add-dialog__close"
+        aria-label="Close add member dialog"
+        (click)="onCloseAddMemberDialog()"
+      >
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      <form id="addMemberForm" class="add-member-form d-grid gap-3" (submit)="$event.preventDefault(); onAddMemberSubmit()">
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Role</mat-label>
+          <mat-select [(ngModel)]="addMemberRole" name="addRole" required>
+            @for (role of inviteRoles; track role.value) {
+              <mat-option [value]="role.value">{{ role.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Full Name</mat-label>
+          <input matInput required placeholder="e.g. Priya Nair" [(ngModel)]="addMemberName" name="addName" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Phone Number</mat-label>
+          <input matInput required type="tel" inputmode="numeric" maxlength="10"
+            placeholder="10-digit mobile number" [(ngModel)]="addMemberPhone" name="addPhone" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Email ID <span class="optional-label">optional</span></mat-label>
+          <input matInput type="email" placeholder="user@example.gov.in" [(ngModel)]="addMemberEmail" name="addEmail" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Designation <span class="optional-label">optional</span></mat-label>
+          <input matInput placeholder="e.g. Accounts Officer" [(ngModel)]="addMemberDesignation" name="addDesignation" />
+        </mat-form-field>
+      </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCloseAddMemberDialog()">Cancel</button>
+      <button
+        type="button"
+        class="send-action"
+        [disabled]="addingMember || !addMemberName || addMemberPhone.length < 10 || !addMemberRole"
+        (click)="onAddMemberSubmit()"
+      >
+        {{ addingMember ? 'Adding…' : 'Add Member' }}
+        @if (!addingMember) {
+          <mat-icon aria-hidden="true">person_add</mat-icon>
+        }
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ─── Send Invite Dialog ────────────────────────────────────────────── -->
+<ng-template #activateDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Send Invite</h3>
+        <p class="add-dialog__copy mb-0">
+          Fill in the details below. A welcome message will be sent to the user's mobile number.
+        </p>
+      </div>
+      <button mat-icon-button type="button" class="add-dialog__close" aria-label="Close" (click)="onCloseActivateDialog()">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      @if (activatingMember) {
+        <div class="d-grid gap-3">
+          <div class="activate-preview">
+            <div class="activate-preview__field">
+              <span>Full Name</span>
+              <strong>{{ activatingMember.name }}</strong>
+            </div>
+          </div>
+
+          <mat-form-field appearance="outline" class="dialog-field">
+            <mat-label>Designation</mat-label>
+            <input matInput placeholder="e.g. Accounts Officer" [(ngModel)]="activateDesignation" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="dialog-field">
+            <mat-label>Mobile Number</mat-label>
+            <input
+              matInput
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              placeholder="10-digit mobile"
+              [(ngModel)]="activateMobile"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="dialog-field">
+            <mat-label>Role</mat-label>
+            <mat-select [(ngModel)]="activateRole">
+              @for (role of inviteRoles; track role.value) {
+                <mat-option [value]="role.value">{{ role.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCloseActivateDialog()">Cancel</button>
+      <button
+        type="button"
+        class="send-action"
+        [disabled]="sendingInvite || activateMobile.length < 10 || !activateRole"
+        (click)="onSendActivationInvite()"
+      >
+        {{ sendingInvite ? 'Sending…' : 'Send Invite' }}
+        @if (!sendingInvite) {
+          <mat-icon aria-hidden="true">send</mat-icon>
+        }
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ─── Role Change Confirm Dialog ────────────────────────────────────── -->
+<ng-template #roleConfirmDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Confirm Role Change</h3>
+        <p class="add-dialog__copy mb-0">This will update their access permissions immediately.</p>
+      </div>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      @if (pendingRoleChange) {
+        <p class="role-confirm-copy">
+          Change <strong>{{ pendingRoleChange.memberName }}</strong>'s role from
+          <span class="role-tag">{{ pendingRoleChange.currentRole }}</span>
+          to
+          <span class="role-tag role-tag--new">{{ pendingRoleChange.newRole }}</span>?
+        </p>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCancelRoleChange()">Cancel</button>
+      <button type="button" class="send-action" (click)="onConfirmRoleChange()">
+        Confirm
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ─── Disable Confirm Dialog ───────────────────────────────────────── -->
+<ng-template #disableConfirmDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Disable Member</h3>
+        <p class="add-dialog__copy mb-0">This will revoke their access immediately.</p>
+      </div>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      @if (disablingMember) {
+        <p class="role-confirm-copy">
+          Are you sure you want to disable access for
+          <strong>{{ disablingMember.name }}</strong>?
+          They will no longer be able to log in.
+        </p>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCancelDisable()">Cancel</button>
+      <button type="button" class="send-action send-action--danger" (click)="onConfirmDisable()">
+        Disable
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ─── Delete Confirm Dialog ────────────────────────────────────────── -->
+<ng-template #deleteConfirmDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Remove Member</h3>
+        <p class="add-dialog__copy mb-0">This will permanently remove them from the team.</p>
+      </div>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      @if (deletingMember) {
+        <p class="role-confirm-copy">
+          Are you sure you want to remove
+          <strong>{{ deletingMember.name }}</strong>
+          from the team? This frees up a member slot.
+        </p>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCancelDelete()">Cancel</button>
+      <button type="button" class="send-action send-action--danger" (click)="onConfirmDelete()">
+        Remove
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ─── Transfer Ownership Dialog ────────────────────────────────────── -->
+<ng-template #transferDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Transfer Ownership</h3>
+        <p class="add-dialog__copy mb-0">
+          @if (transferStep === 'select') {
+            Select who should become the new Submitter. An OTP will be sent to your registered mobile number to confirm.
+          } @else {
+            Enter the OTP sent to {{ submitter?.phone ? ('XXXXXX' + submitter!.phone.slice(-4)) : 'your mobile' }} to confirm the transfer.
+          }
+        </p>
+      </div>
+      <button mat-icon-button type="button" class="add-dialog__close" aria-label="Close" (click)="onCloseTransferDialog()">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      @if (transferStep === 'select') {
+        <!-- Warning banner -->
+        <div class="transfer-warning">
+          <mat-icon aria-hidden="true">warning_amber</mat-icon>
+          <p class="mb-0">
+            <strong>This is an irreversible handover.</strong>
+            You will lose Submitter access and be moved to Editor immediately after confirmation.
+          </p>
+        </div>
+
+        <!-- Transfer to selector -->
+        <p class="dialog-field-label mt-3 mb-1">Transfer to</p>
+        @if (transferableMembers.length === 0) {
+          <p class="transfer-no-members">No active Editor or Viewer members available to transfer to.</p>
+        } @else {
+          <mat-form-field appearance="outline" class="dialog-field">
+            <mat-select
+              placeholder="Select a member"
+              [(ngModel)]="transferToMemberId"
+              aria-label="Transfer to"
+            >
+              @for (m of transferableMembers; track m.id) {
+                <mat-option [value]="m.id">{{ m.name }} ({{ m.role }})</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      } @else {
+        <!-- OTP step -->
+        <div class="otp-sent-notice">
+          <mat-icon aria-hidden="true">sms</mat-icon>
+          <span>OTP sent successfully. Please check your mobile.</span>
+        </div>
+        <p class="dialog-field-label mt-3 mb-1">Enter OTP</p>
+        <mat-form-field appearance="outline" class="dialog-field">
+          <input
+            matInput
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            placeholder="6-digit OTP"
+            [(ngModel)]="transferOtp"
+          />
+        </mat-form-field>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCloseTransferDialog()">Cancel</button>
+      @if (transferStep === 'select') {
+        <button
+          type="button"
+          class="send-action"
+          [disabled]="!transferToMemberId || transferSending"
+          (click)="onSendTransferOtp()"
+        >
+          {{ transferSending ? 'Sending OTP…' : 'Send OTP' }}
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="send-action"
+          [disabled]="transferOtp.length < 4 || transferVerifying"
+          (click)="onVerifyTransferOtp()"
+        >
+          {{ transferVerifying ? 'Verifying…' : 'Verify & Transfer' }}
+        </button>
+      }
+    </mat-dialog-actions>
+  </div>
+</ng-template>

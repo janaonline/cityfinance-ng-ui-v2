@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { switchMap } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProfileVerificationService } from './profile-verification.service';
 import {
   EntityProfilesResponse,
@@ -50,6 +52,7 @@ export class ProfileVerificationComponent implements OnInit {
   private readonly profileService = inject(ProfileVerificationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly snackBar = inject(MatSnackBar);
 
   role: ProfileRole = 'state';
   private year = '';
@@ -110,7 +113,7 @@ export class ProfileVerificationComponent implements OnInit {
 
   // ── Profile key ──────────────────────────────────────────────
   getProfileKey(profile: ProfileItem): string {
-    return profile.id ?? profile.email ?? profile.mobile;
+    return profile.id ?? `${profile.email ?? ''}_${profile.mobile ?? ''}`;
   }
 
   // ── Mobile edit ───────────────────────────────────────────────
@@ -130,15 +133,19 @@ export class ProfileVerificationComponent implements OnInit {
 
   // ── OTP flow ──────────────────────────────────────────────────
   toggleExpand(key: string): void {
+    const prev = this.expandedKey();
     this.expandedKey.update((k) => (k === key ? null : key));
-    if (this.expandedKey() !== key) {
+    // Reset OTP state whenever we collapse OR switch to a different card
+    if (prev !== this.expandedKey()) {
       this.otpSentKey.set(null);
+      this.sendingOtpKey.set(null);
     }
     this.errorMsg.set('');
   }
 
   sendOtp(profile: ProfileItem): void {
     const key = this.getProfileKey(profile);
+    if (this.expandedKey() !== key) return;
     const mobile = this.getMobile(profile);
     if (!mobile || mobile.length < 10) {
       this.errorMsg.set('Please enter a valid 10-digit mobile number.');
@@ -163,34 +170,41 @@ export class ProfileVerificationComponent implements OnInit {
 
   confirmVerify(profile: ProfileItem): void {
     const key = this.getProfileKey(profile);
+    if (this.expandedKey() !== key) return;
     const otp = this.otpValues()[key] ?? '';
     if (!otp || otp.length < 4) {
       this.errorMsg.set('Please enter the OTP sent to your mobile.');
       return;
     }
+    const mobile = this.getMobile(profile);
     this.verifyingKey.set(key);
     this.errorMsg.set('');
-    const payload: ProfileVerificationPayload = {
-      isXVIFCProfileVerified: true,
-      contactPersonName: profile.name,
-      designation: profile.designation,
-      officialEmail: profile.email,
-      mobileNumber: this.getMobile(profile),
-      otp,
-    };
-    this.profileService.confirmProfile(payload).subscribe({
-      next: () => {
-        this.markVerifiedInStorage();
-        void this.navigateToHome();
-      },
-      error: (err: unknown) => {
-        this.errorMsg.set(
-          (err as { error?: { message?: string } })?.error?.message ??
-            'Verification failed. Please try again.',
-        );
-        this.verifyingKey.set(null);
-      },
-    });
+    this.profileService
+      .verifyOtp(mobile, otp)
+      .pipe(
+        switchMap(() =>
+          this.profileService.updateProfileContacts(profile.name, profile.email, mobile),
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.markVerifiedInStorage();
+          this.snackBar.open('Profile verified successfully!', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
+          void this.navigateToHome();
+        },
+        error: (err: unknown) => {
+          this.errorMsg.set(
+            (err as { error?: { message?: string } })?.error?.message ??
+              'Verification failed. Please try again.',
+          );
+          this.verifyingKey.set(null);
+        },
+      });
   }
 
   // ── Add form ──────────────────────────────────────────────────

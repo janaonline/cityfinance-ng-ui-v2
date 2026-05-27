@@ -68,6 +68,13 @@ const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     loadComponent: () =>
       import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
   },
+  {
+    path: 'roles-teams-unified-view',
+    loadComponent: () =>
+      import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+        (m) => m.RolesTeamsOverviewComponent,
+      ),
+  },
 ];
 
 // Keep deferred routes close to the live config so they can be reactivated in one place

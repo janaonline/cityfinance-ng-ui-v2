@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
@@ -10,6 +10,10 @@ import {
 } from './profile-verification.models';
 
 interface StoredUserData {
+  _id?: string;
+  id?: string;
+  ulb?: string;
+  state?: string;
   name?: string;
   email?: string;
   mobile?: string | null;
@@ -20,6 +24,15 @@ interface StoredUserData {
   [key: string]: unknown;
 }
 
+interface UsersListResponse {
+  success: boolean;
+  data: {
+    ulbDetails?: { name?: string; code?: string; stateName?: string };
+    stateDetails?: { name?: string; code?: string; stateName?: string };
+    data: ProfileItem[];
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -28,28 +41,54 @@ export class ProfileVerificationService {
 
   getEntityProfiles(role: 'state' | 'ulb' | 'mohua'): Observable<EntityProfilesResponse> {
     const user = this.readStoredUser();
+    const paramKey = role === 'state' ? 'stateId' : 'ulbId';
+    const entityId = role === 'state' ? (user.state ?? '') : (user.ulb ?? '');
+    const params = new HttpParams().set(paramKey, entityId);
+
     return this.http
-      .get<ProfileItem[]>(`${environment.api.url2}auth/entity-profiles?role=${role}`)
+      .get<UsersListResponse>(`${environment.api.url2}users/list`, { params })
       .pipe(
-        map((profiles) => ({
-          entityName: role === 'ulb' ? (user.name ?? '') : (user.stateName ?? ''),
-          entityCode: user.ulbCode,
-          entityType: user.ulbType,
-          stateName: user.stateName ?? '',
-          profiles: profiles.map((p, i) => ({
+        map((resp) => {
+          const details = resp.data?.ulbDetails ?? resp.data?.stateDetails;
+          const profiles = (resp.data?.data ?? []).map((p, i) => ({
             ...p,
-            id: p.id ?? p.email ?? `profile-${i}`,
+            id: p.id ?? `profile-${i}`,
             designation: p.designation || p.designantion || '',
-          })),
-        })),
+          }));
+          return {
+            entityName: details?.name ?? user.name ?? '',
+            entityCode: details?.code ?? user.ulbCode,
+            entityType: user.ulbType,
+            stateName: details?.stateName ?? user.stateName ?? '',
+            profiles,
+          };
+        }),
         catchError(() => of(this.buildFallbackProfiles(role))),
       );
   }
 
   sendProfileOtp(mobile: string): Observable<{ message?: string }> {
     return this.http.post<{ message?: string }>(
-      `${environment.api.url2}auth/send-verification-otp`,
-      { mobile },
+      `${environment.api.url2}auth/sendOtp`,
+      { identifier: mobile, purpose: 'login' },
+    );
+  }
+
+  verifyOtp(mobile: string, otp: string): Observable<{ success?: boolean; message?: string }> {
+    return this.http.post<{ success?: boolean; message?: string }>(
+      `${environment.api.url2}auth/verifyOtp`,
+      { identifier: mobile, otp },
+    );
+  }
+
+  updateProfileContacts(
+    name: string,
+    email: string,
+    mobile: string,
+  ): Observable<{ success: boolean }> {
+    return this.http.patch<{ success: boolean }>(
+      `${environment.api.url2}users/update-profile-contacts`,
+      { name, email, mobile, isXVIFCProfileVerified: true },
     );
   }
 
