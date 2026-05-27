@@ -524,25 +524,19 @@ export class LoginComponent implements OnInit, OnDestroy {
           const verified = !!data.isXVIFCProfileVerified;
           const approved = data.status?.toUpperCase() === 'APPROVED';
 
-          if (verified && approved) {
-            // Approved user → straight to password
+          // Email users always go directly to password — no OTP
+          if (this.identifierType16() === 'email') {
             this.fc16MaskedContact.set(data.maskedContact ?? '');
             this.enablePasswordMode();
             this.fc16Step.set('password');
             return;
           }
 
-          // Not yet verified — OTP flow only when the contact is a mobile number
-          // maskedContact from API is "XXXXXX2506" (masked phone) for mobile users
-          const isMobileContact =
-            /^X+\d{4}$/.test(data.maskedContact ?? '') ||
-            this.identifierType16() === 'mobile' ||
-            this.identifierType16() === 'censusCode'; // census code resolves to a ULB's mobile
-
-          if (!isMobileContact) {
-            this.errorMessage.set(
-              'OTP verification is only available for mobile numbers. Please sign in with your registered mobile number.',
-            );
+          if (verified && approved) {
+            // Approved user → straight to password
+            this.fc16MaskedContact.set(data.maskedContact ?? '');
+            this.enablePasswordMode();
+            this.fc16Step.set('password');
             return;
           }
 
