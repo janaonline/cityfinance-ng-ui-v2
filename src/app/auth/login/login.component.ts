@@ -520,27 +520,27 @@ export class LoginComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.fc16CheckingUser.set(false)))
       .subscribe({
         next: (res) => {
-          const data = res.data;
-          const verified = !!data.isXVIFCProfileVerified;
-          const approved = data.status?.toUpperCase() === 'APPROVED';
+          const verified = !!res.isXVIFCProfileVerified;
+          const approved = res.status?.toUpperCase() === 'APPROVED';
+          const loginFlow = res.loginFlow?.toUpperCase();
 
           // Email users always go directly to password — no OTP
           if (this.identifierType16() === 'email') {
-            this.fc16MaskedContact.set(data.maskedContact ?? '');
+            this.fc16MaskedContact.set(res.maskedContact ?? '');
             this.enablePasswordMode();
             this.fc16Step.set('password');
             return;
           }
 
-          if (verified && approved) {
-            // Approved user → straight to password
-            this.fc16MaskedContact.set(data.maskedContact ?? '');
+          // Backend signals PASSWORD flow, or user is approved + verified
+          if (loginFlow === 'PASSWORD' || (verified && approved)) {
+            this.fc16MaskedContact.set(res.maskedContact ?? '');
             this.enablePasswordMode();
             this.fc16Step.set('password');
             return;
           }
 
-          this.fc16MaskedContact.set(data.maskedContact ?? identifier);
+          this.fc16MaskedContact.set(res.maskedContact ?? identifier);
           this.fc16Step.set('otp-send');
         },
         error: (err) => {
