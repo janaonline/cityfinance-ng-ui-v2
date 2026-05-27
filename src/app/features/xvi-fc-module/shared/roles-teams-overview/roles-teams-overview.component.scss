@@ -693,6 +693,28 @@
   font-weight: 600;
 }
 
+.readonly-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  background: #fff8e6;
+  border: 1px solid #f5c842;
+  border-radius: 10px;
+  color: #7a4f00;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #c47f00;
+    flex-shrink: 0;
+  }
+}
+
 ::ng-deep .roles-dialog-panel .mat-mdc-dialog-container .mdc-dialog__surface {
   overflow: hidden;
   border-radius: 16px;

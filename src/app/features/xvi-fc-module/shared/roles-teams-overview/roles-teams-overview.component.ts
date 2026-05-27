@@ -124,6 +124,12 @@ export class RolesTeamsOverviewComponent implements OnInit {
   entityId = '';
   ulbId = '';
   stateId = '';
+  userRole = '';
+
+  get isReadOnly(): boolean {
+    const r = this.userRole.toUpperCase();
+    return r.endsWith('-EDITOR') || r.endsWith('-VIEWER');
+  }
 
   profile: EntityTeamProfile | null = null;
   members: TeamMember[] = [];
@@ -217,6 +223,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
         email?: string;
       };
       const role = user.role ?? '';
+      this.userRole = role;
       this.ulbId = user.ulb ?? '';
       this.stateId = user.state ?? '';
       if (role === 'STATE' || role === 'XVIFC_STATE') {

@@ -6,6 +6,13 @@
     </div>
   }
 
+  @if (isReadOnly) {
+    <div class="readonly-notice" role="status">
+      <mat-icon aria-hidden="true">lock_outline</mat-icon>
+      <span>You have view-only access. Only the admin (Submitter) can manage team members.</span>
+    </div>
+  }
+
   <mat-card class="profile-hero mat-elevation-z0 mb-4">
     <div class="profile-hero__grid" aria-hidden="true"></div>
 
@@ -79,8 +86,8 @@
             mat-flat-button
             type="button"
             class="add-action"
-            [disabled]="memberLimitReached"
-            [title]="memberLimitReached ? 'Maximum 5 members allowed' : 'Add a new member'"
+            [disabled]="memberLimitReached || isReadOnly"
+            [title]="isReadOnly ? 'Only admin can add members' : memberLimitReached ? 'Maximum 5 members allowed' : 'Add a new member'"
             (click)="onAddMember()"
           >
             <mat-icon aria-hidden="true">add</mat-icon>
@@ -193,6 +200,7 @@
                 <mat-select
                   aria-label="Role"
                   [ngModel]="memberRoleSelections[member.id]"
+                  [disabled]="isReadOnly"
                   (ngModelChange)="onRoleChangeRequest(member.id, $event)"
                 >
                   @for (role of getRolesForMember(member); track role) {
@@ -225,7 +233,7 @@
         <ng-container matColumnDef="action">
           <th mat-header-cell *matHeaderCellDef class="text-end">Action</th>
           <td mat-cell *matCellDef="let member" class="text-end">
-            @if (member.role === 'Submitter') {
+            @if (member.role === 'Submitter' || isReadOnly) {
               <span class="muted-dash">-</span>
             } @else {
               <div class="action-btns">
@@ -308,7 +316,7 @@
             </div>
           </div>
 
-          @if (member.role !== 'Submitter') {
+          @if (member.role !== 'Submitter' && !isReadOnly) {
             <div class="d-flex gap-2 mt-3">
               @if (member.status === 'inactive') {
                 <button mat-flat-button type="button" class="activate-btn flex-grow-1" (click)="onActivate(member)">
@@ -351,7 +359,7 @@
         </p>
       </div>
       <div class="col-12 col-md-auto">
-        <button mat-stroked-button type="button" class="transfer-card__button" (click)="onTransferOwnership()">
+        <button mat-stroked-button type="button" class="transfer-card__button" [disabled]="isReadOnly" (click)="onTransferOwnership()">
           Transfer
         </button>
       </div>

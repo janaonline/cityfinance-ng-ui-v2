@@ -626,8 +626,8 @@ export class LoginComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.fc16OtpVerifying.set(false)))
       .subscribe({
         next: () => {
-          // Store OTP so forgot-password/reset can use it alongside new passwords
           this.fc16VerifiedOtp = otpValue;
+          localStorage.setItem('isXVIFCProfileVerified', 'true');
           this.clearFc16Countdown();
           this.loginForm.controls.newPassword.setValue('');
           this.loginForm.controls.confirmPassword.setValue('');
