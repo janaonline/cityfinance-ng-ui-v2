@@ -1,13 +1,21 @@
 import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatBadgeModule } from '@angular/material/badge';
+export interface GrantPoint {
+  text: string;
+  subPoints?: string[];
+}
+
 export interface GrantSection {
   id: string;
   label: string;
   componentLabel: string;
   title: string;
-  amount: string;
-  points: string[];
+  amount?: string;
+  amountSuffix?: string;
+  description?: string;
+  points: Array<string | GrantPoint>;
+  note?: string;
 }
 
 export interface OverviewData {
@@ -52,6 +60,10 @@ export class OverviewCardComponent implements OnChanges {
 
   isSelected(id: string): boolean {
     return this.selectedGrantId === id;
+  }
+
+  isGrantPoint(p: string | GrantPoint): p is GrantPoint {
+    return typeof p === 'object';
   }
 
   private syncSelectedGrant(): void {

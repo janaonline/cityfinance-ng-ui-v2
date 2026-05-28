@@ -401,23 +401,48 @@
 
         <mat-form-field appearance="outline" class="dialog-field">
           <mat-label>Full Name</mat-label>
-          <input matInput required placeholder="e.g. Priya Nair" [(ngModel)]="addMemberName" name="addName" />
+          <input
+            matInput
+            required
+            placeholder="e.g. Priya Nair"
+            [ngModel]="addMemberName"
+            (ngModelChange)="addMemberName = sanitizeName($event)"
+            name="addName"
+            autocomplete="off"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="dialog-field">
           <mat-label>Phone Number</mat-label>
-          <input matInput required type="tel" inputmode="numeric" maxlength="10"
-            placeholder="10-digit mobile number" [(ngModel)]="addMemberPhone" name="addPhone" />
+          <input
+            matInput
+            required
+            type="tel"
+            inputmode="numeric"
+            maxlength="10"
+            placeholder="10-digit mobile number"
+            [ngModel]="addMemberPhone"
+            (ngModelChange)="addMemberPhone = sanitizePhone($event)"
+            name="addPhone"
+            autocomplete="off"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="dialog-field">
           <mat-label>Email ID <span class="optional-label">optional</span></mat-label>
-          <input matInput type="email" placeholder="user@example.gov.in" [(ngModel)]="addMemberEmail" name="addEmail" />
+          <input matInput type="email" placeholder="user@example.gov.in" [(ngModel)]="addMemberEmail" name="addEmail" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="dialog-field">
           <mat-label>Designation <span class="optional-label">optional</span></mat-label>
-          <input matInput placeholder="e.g. Accounts Officer" [(ngModel)]="addMemberDesignation" name="addDesignation" />
+          <input
+            matInput
+            placeholder="e.g. Accounts Officer"
+            [ngModel]="addMemberDesignation"
+            (ngModelChange)="addMemberDesignation = sanitizeDesignation($event)"
+            name="addDesignation"
+            autocomplete="off"
+          />
         </mat-form-field>
       </form>
     </mat-dialog-content>
@@ -466,7 +491,12 @@
 
           <mat-form-field appearance="outline" class="dialog-field">
             <mat-label>Designation</mat-label>
-            <input matInput placeholder="e.g. Accounts Officer" [(ngModel)]="activateDesignation" />
+            <input
+              matInput
+              placeholder="e.g. Accounts Officer"
+              [ngModel]="activateDesignation"
+              (ngModelChange)="activateDesignation = sanitizeDesignation($event)"
+            />
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="dialog-field">
@@ -477,7 +507,8 @@
               inputmode="numeric"
               maxlength="10"
               placeholder="10-digit mobile"
-              [(ngModel)]="activateMobile"
+              [ngModel]="activateMobile"
+              (ngModelChange)="activateMobile = sanitizePhone($event)"
             />
           </mat-form-field>
 
