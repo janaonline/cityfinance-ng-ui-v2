@@ -15,11 +15,6 @@ interface YearItem {
   year: string;
 }
 
-interface YearsApiResponse {
-  success: boolean;
-  data: YearItem[];
-  timestamp: string;
-}
 
 interface StoredUser {
   role?: string;
@@ -64,11 +59,15 @@ export class YearsSelectionComponent implements OnInit {
   selectedYear = signal<string>('');
 
   ngOnInit(): void {
-    this.http.get<YearsApiResponse>(`${environment.api.url2}xvi-fc/years`).subscribe({
+    this.http.get<any>(`${environment.api.url2}xvi-fc/years`).subscribe({
       next: (response) => {
-        if (response.success && response.data.length > 0) {
-          this.yearItems = response.data;
-          const [first, ...rest] = response.data;
+        // Handle both a plain array and a wrapped { success, data } response
+        const items: YearItem[] = Array.isArray(response)
+          ? response
+          : (response?.data ?? []);
+        if (items.length > 0) {
+          this.yearItems = items;
+          const [first, ...rest] = items;
           this.activeYear.set(first.year);
           this.upcomingYears.set(rest.map((y) => y.year));
           this.selectedYear.set(first.year);
