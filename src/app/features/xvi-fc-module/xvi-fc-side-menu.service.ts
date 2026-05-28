@@ -37,7 +37,7 @@ export class XviFcSideMenuApiService {
       token ? { Authorization: `Bearer ${token}`, 'x-access-token': token } : {},
     );
     return this.http
-      .get<{ success: boolean; data: ApiSideMenuResponse; timestamp: string }>(
+      .get<any>(
         `${this.baseUrl}xvi-fc/sidebar/${context.role}`,
         {
           headers,
@@ -47,7 +47,12 @@ export class XviFcSideMenuApiService {
         },
       )
       .pipe(
-        map((wrapper) => this.mapApiResponseToSideBarModel(wrapper.data, context)),
+        map((wrapper: any) => {
+          // Handle both wrapped { success, data: { topModel, bottomModel } }
+          // and flat { topModel, bottomModel } responses
+          const apiData: ApiSideMenuResponse = wrapper?.data ?? wrapper;
+          return this.mapApiResponseToSideBarModel(apiData, context);
+        }),
         catchError((error) => {
           console.error('Failed to load side menu API.', error);
           throw error;

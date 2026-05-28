@@ -46,11 +46,15 @@ export class ProfileVerificationService {
     const params = new HttpParams().set(paramKey, entityId);
 
     return this.http
-      .get<UsersListResponse>(`${environment.api.url2}users/list`, { params })
+      .get<any>(`${environment.api.url2}users/list`, { params })
       .pipe(
         map((resp) => {
-          const details = resp.data?.ulbDetails ?? resp.data?.stateDetails;
-          const profiles = (resp.data?.data ?? []).map((p, i) => ({
+          const payload: UsersListResponse['data'] =
+            resp?.data && !Array.isArray(resp.data) && typeof resp.data === 'object'
+              ? resp.data
+              : (resp as unknown as UsersListResponse['data']);
+          const details = payload?.ulbDetails ?? payload?.stateDetails;
+          const profiles = (payload?.data ?? []).map((p: ProfileItem, i: number) => ({
             ...p,
             id: p.id ?? `profile-${i}`,
             designation: p.designation || p.designantion || '',

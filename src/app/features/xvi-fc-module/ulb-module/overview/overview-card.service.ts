@@ -26,12 +26,13 @@ export class UlbOverviewService {
     disbursementRows: DisbursementRow[];
   }> {
     return this.http
-      .get<{ success: boolean; data: { ulbName: string; stateName: string } }>(
+      .get<any>(
         `${environment.api.url2}xvi-fc/ulb/${ulbId}`,
       )
       .pipe(
         map((res) => {
-          const { ulbName, stateName } = res.data;
+          const d = res?.data ?? res;
+          const { ulbName, stateName } = d as { ulbName: string; stateName: string };
           return this.buildViewModel(ulbId, ulbName, stateName);
         }),
         catchError(() => of(this.buildViewModel(ulbId, '', ''))),
