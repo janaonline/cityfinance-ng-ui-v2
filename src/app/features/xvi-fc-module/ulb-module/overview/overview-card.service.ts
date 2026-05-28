@@ -26,9 +26,7 @@ export class UlbOverviewService {
     disbursementRows: DisbursementRow[];
   }> {
     return this.http
-      .get<any>(
-        `${environment.api.url2}xvi-fc/ulb/${ulbId}`,
-      )
+      .get<any>(`${environment.api.url2}xvi-fc/ulb/${ulbId}`)
       .pipe(
         map((res) => {
           const d = res?.data ?? res;
@@ -66,34 +64,52 @@ export class UlbOverviewService {
   private mapToOverviewData(response: UlbOverviewApiResponse): OverviewData {
     return {
       name: response.ulbName,
-      financialYear: `FY-${response.years}`,
-      subHeader1: 'TOTAL 5-YEAR ALLOCATION',
-      subHeader2: 'BASIC + PERFORMANCE',
+      financialYear: 'FY 2026-27',
+      subHeader1: 'BASIC GRANT ONLY',
+      subHeader2: 'Based on SFC data, population figures, and CF calculations',
       totalAllocation: '₹___ crore',
       totalAllocationNote: `For ${response.ulbName}, ${response.stateName}`,
       grantSections: [
         {
-          id: 'basic',
-          label: 'Basic Grants',
+          id: 'grantEstimate',
+          label: 'Grant Estimate',
           componentLabel: 'Grant Component',
-          title: 'Basic Grants',
+          title: 'Grant Estimate for FY 2026-27',
           amount: '₹___ crore',
+          description: 'Grant structure:',
           points: [
-            'Supports delivery of core municipal services across eligible Urban Local Bodies.',
-            'Focused on improving service continuity, maintenance, and local civic infrastructure.',
-            "Released as part of the state's overall grant support framework.",
+            '₹___ crore — Tied grant (SWM & Water)',
+            '₹___ crore — Untied grant (General use)',
+          ],
+          note: 'Grants cannot be used for salaries or establishment expenditure. Untied: max 20% on roads (₹___ crore).',
+        },
+        {
+          id: 'eligibilityRequirements',
+          label: 'Eligibility Requirements',
+          componentLabel: 'Entry Conditions',
+          title: 'Eligibility Requirements for FY 2026-27',
+          description: 'The following conditions must be met:',
+          points: [
+            'State confirmation of SFC status and submission of the ATR report',
+            'State confirmation of elected body status for the ULB',
+            {
+              text: 'ULB submission of financial statements:',
+              subPoints: [
+                'FY 2024-25 audited statements',
+                'FY 2025-26 provisional statements',
+              ],
+            },
           ],
         },
         {
-          id: 'performance',
-          label: 'Performance Grants',
-          componentLabel: 'Grant Component',
-          title: 'Performance Grants',
-          amount: '₹___ crore',
+          id: 'grantRelease',
+          label: 'Grant Release and Usage Guidelines',
+          componentLabel: 'Release Process',
+          title: 'Grant Release and Usage Guidelines',
           points: [
-            'Linked to achievement of reform-linked performance indicators by eligible ULBs.',
-            'Encourages stronger financial management, reporting, and governance outcomes.',
-            'Designed to reward measurable improvements in urban administration.',
+            'In the first year (FY 2026-27), only basic grants will apply. Performance-linked grants to begin from FY 2027-28.',
+            'Funds will be released in two installments.',
+            'Submissions are reviewed by MoHUA on a rolling basis, and funds are released by DoE after approvals are completed.',
           ],
         },
       ],

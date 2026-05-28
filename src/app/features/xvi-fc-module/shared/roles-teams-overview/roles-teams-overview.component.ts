@@ -183,13 +183,30 @@ export class RolesTeamsOverviewComponent implements OnInit {
     { value: 'Editor', label: 'Editor - prepares, uploads and verifies documents' },
     { value: 'Viewer', label: 'Viewer - can view status and reports' },
   ];
-  readonly permissionMatrix: PermissionMatrixRow[] = [
+  private readonly ulbPermissionMatrix: PermissionMatrixRow[] = [
     { permission: 'View status and reports', submitter: true, editor: true, viewer: true },
     { permission: 'Upload documents', submitter: true, editor: true, viewer: false },
     { permission: 'Message users', submitter: true, editor: true, viewer: false },
     { permission: 'Final submit to State DMA', submitter: true, editor: false, viewer: false },
     { permission: 'Manage users', submitter: true, editor: false, viewer: false },
   ];
+
+  private readonly statePermissionMatrix: PermissionMatrixRow[] = [
+    { permission: 'View status and reports', submitter: true, editor: true, viewer: true },
+    { permission: 'View dashboards', submitter: true, editor: true, viewer: true },
+    { permission: 'Upload state-level documents', submitter: true, editor: true, viewer: false },
+    { permission: 'Review ULB submissions', submitter: true, editor: true, viewer: false },
+    { permission: 'Message users', submitter: true, editor: true, viewer: false },
+    { permission: 'Approve ULB submissions', submitter: true, editor: false, viewer: false },
+    { permission: 'Prepare grant letters', submitter: true, editor: false, viewer: false },
+    { permission: 'Recommend exemptions', submitter: true, editor: false, viewer: false },
+    { permission: 'Final submit to MoHUA', submitter: true, editor: false, viewer: false },
+    { permission: 'Manage users', submitter: true, editor: false, viewer: false },
+  ];
+
+  get permissionMatrix(): PermissionMatrixRow[] {
+    return this.entityType === 'state' ? this.statePermissionMatrix : this.ulbPermissionMatrix;
+  }
 
   ngOnInit(): void {
     this.resolveEntityFromStorage();
@@ -518,11 +535,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
   onAddMemberSubmit(): void {
     if (this.addingMember || !this.addMemberName || this.addMemberPhone.length < 10 || !this.addMemberRole) return;
     this.addingMember = true;
+    this.submitAddMember(false);
+  }
 
-    const payload = {
+  private submitAddMember(skipEmail: boolean): void {
+    const payload: Record<string, unknown> = {
       name: this.addMemberName,
       username: this.addMemberName,
-      email: this.addMemberEmail,
       mobile: this.addMemberPhone,
       role: this.mapRoleToApiRole(this.addMemberRole),
       designation: this.addMemberDesignation,
@@ -531,11 +550,12 @@ export class RolesTeamsOverviewComponent implements OnInit {
       status: 'PENDING',
     };
 
+    if (!skipEmail && this.addMemberEmail) {
+      payload['email'] = this.addMemberEmail;
+    }
+
     this.http
-      .post<any>(
-        `${this.baseUrl}users/create-user`,
-        payload,
-      )
+      .post<any>(`${this.baseUrl}users/create-user`, payload)
       .subscribe({
         next: (res) => {
           const resData = res?.data ?? res;
@@ -543,7 +563,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
             id: resData?._id ?? `new_${this.addMemberPhone}_${Date.now()}`,
             initials: this.getInitials(this.addMemberName),
             name: this.addMemberName,
-            email: this.addMemberEmail,
+            email: skipEmail ? '' : this.addMemberEmail,
             phone: this.addMemberPhone,
             designation: this.addMemberDesignation,
             role: this.addMemberRole as TeamMemberRole,
@@ -560,6 +580,12 @@ export class RolesTeamsOverviewComponent implements OnInit {
           this.onCloseAddMemberDialog();
         },
         error: (err) => {
+          const msg: string = (err?.error?.message ?? '').toLowerCase();
+          if (!skipEmail && this.addMemberEmail && msg.includes('email')) {
+            // Email is already registered — retry without it
+            this.submitAddMember(true);
+            return;
+          }
           this.addingMember = false;
           this.snackBar.open(
             err?.error?.message ?? 'Failed to add member. Please try again.',
@@ -687,5 +713,20 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   private isAssignableRole(role: string): role is Exclude<TeamMemberRole, 'Submitter' | null> {
     return role === 'Editor' || role === 'Viewer';
+  }
+
+  // ── Input sanitizers ─────────────────────────────────────────────────────
+  sanitizeName(value: string): string {
+    // Letters (including Indian script characters), spaces, hyphens, apostrophes only
+    return value.replace(/[^a-zA-Zऀ-ॿ਀-੿\s'\-]/g, '');
+  }
+
+  sanitizePhone(value: string): string {
+    return value.replace(/\D/g, '').slice(0, 10);
+  }
+
+  sanitizeDesignation(value: string): string {
+    // Letters, spaces, dots, hyphens, commas — typical for job titles
+    return value.replace(/[^a-zA-Zऀ-ॿ਀-੿\s.\-,]/g, '');
   }
 }
