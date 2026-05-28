@@ -520,28 +520,29 @@ export class LoginComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.fc16CheckingUser.set(false)))
       .subscribe({
         next: (res) => {
+          const identType = this.identifierType16();
           const verified = !!res.isXVIFCProfileVerified;
-          const approved = res.status?.toUpperCase() === 'APPROVED';
-          const loginFlow = res.loginFlow?.toUpperCase();
+          const isPending = res.status?.toUpperCase() === 'PENDING';
 
-          // Email users always go directly to password — no OTP
-          if (this.identifierType16() === 'email') {
+          // Census code or email → always password, no OTP
+          if (identType === 'censusCode' || identType === 'email') {
             this.fc16MaskedContact.set(res.maskedContact ?? '');
             this.enablePasswordMode();
             this.fc16Step.set('password');
             return;
           }
 
-          // Backend signals PASSWORD flow, or user is approved + verified
-          if (loginFlow === 'PASSWORD' || (verified && approved)) {
-            this.fc16MaskedContact.set(res.maskedContact ?? '');
-            this.enablePasswordMode();
-            this.fc16Step.set('password');
+          // Mobile + status PENDING + not yet verified → OTP flow
+          if (identType === 'mobile' && isPending && !verified) {
+            this.fc16MaskedContact.set(res.maskedContact ?? identifier);
+            this.fc16Step.set('otp-send');
             return;
           }
 
-          this.fc16MaskedContact.set(res.maskedContact ?? identifier);
-          this.fc16Step.set('otp-send');
+          // All other mobile cases (approved, or already verified) → password
+          this.fc16MaskedContact.set(res.maskedContact ?? '');
+          this.enablePasswordMode();
+          this.fc16Step.set('password');
         },
         error: (err) => {
           this.errorMessage.set(
