@@ -482,6 +482,11 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="dialog-field">
+            <mat-label>Email ID (optional)</mat-label>
+            <input matInput type="email" placeholder="user@example.gov.in" [(ngModel)]="activateEmail" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="dialog-field">
             <mat-label>Role</mat-label>
             <mat-select [(ngModel)]="activateRole">
               @for (role of inviteRoles; track role.value) {

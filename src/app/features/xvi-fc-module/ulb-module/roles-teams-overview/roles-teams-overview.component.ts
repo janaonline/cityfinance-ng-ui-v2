@@ -26,6 +26,7 @@ interface TeamMember {
   initials: string;
   name: string;
   phone: string;
+  email: string;
   designation: string;
   role: TeamMemberRole;
   status: TeamMemberStatus;
@@ -92,6 +93,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   // Activate flow state
   activatingMember: TeamMember | null = null;
   activateMobile = '';
+  activateEmail = '';
   activateOtpSent = false;
   activateOtp = '';
   sendingOtp = false;
@@ -181,6 +183,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   onActivate(member: TeamMember): void {
     this.activatingMember = { ...member };
     this.activateMobile = member.phone.replace(/\D/g, '').slice(-10);
+    this.activateEmail = member.email ?? '';
     this.activateOtpSent = false;
     this.activateOtp = '';
     this.sendingOtp = false;
@@ -276,6 +279,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
           initials: 'RK',
           name: 'Ravi Kumar',
           phone: '+91 98765 43210',
+          email: '',
           designation: 'Municipal Commissioner',
           role: 'Submitter',
           status: 'active',
@@ -286,6 +290,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
           initials: 'PN',
           name: 'Priya Nair',
           phone: '+91 98765 43211',
+          email: '',
           designation: 'Accounts Officer',
           role: 'Editor',
           status: 'inactive',
