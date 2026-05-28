@@ -151,6 +151,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   // ── Activate / invite state ────────────────────────────────────────────────
   activatingMember: TeamMember | null = null;
   activateMobile = '';
+  activateEmail = '';
   activateDesignation = '';
   activateRole = '';
   sendingInvite = false;
@@ -362,6 +363,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   onActivate(member: TeamMember): void {
     this.activatingMember = { ...member };
     this.activateMobile = member.phone.replace(/\D/g, '').slice(-10);
+    this.activateEmail = member.email ?? '';
     this.activateDesignation = member.designation;
     this.activateRole = '';
     this.sendingInvite = false;
@@ -385,12 +387,11 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.sendingInvite = true;
     const memberName = this.activatingMember.name;
     const memberId = this.activatingMember.id;
-    const memberEmail = this.activatingMember.email;
 
     const payload = {
       name: memberName,
       username: memberName,
-      email: memberEmail,
+      email: this.activateEmail,
       mobile: this.activateMobile,
       role: this.mapRoleToApiRole(this.activateRole),
       designation: this.activateDesignation,
