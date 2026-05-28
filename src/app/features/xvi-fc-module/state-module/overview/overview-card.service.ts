@@ -26,20 +26,20 @@ export class OverviewService {
       token ? { Authorization: `Bearer ${token}`, 'x-access-token': token } : {},
     );
     return this.http
-      .get<{ success: boolean; data: StateOverviewApiResponse; timestamp: string }>(
+      .get<any>(
         `${this.baseUrl}xvi-fc/state/${stateId}`,
         { headers },
       )
-      .pipe(map((wrapper) => wrapper.data));
+      .pipe(map((wrapper) => (wrapper?.data ?? wrapper) as StateOverviewApiResponse));
   }
 
   getStateName(stateId: string): Observable<string> {
     return this.http
-      .get<{ success: boolean; data: { stateName: string } }>(
+      .get<any>(
         `${this.baseUrl}xvi-fc/state-info/${stateId}`,
       )
       .pipe(
-        map((res) => res.data.stateName),
+        map((res) => ((res?.data ?? res) as { stateName: string }).stateName),
         catchError(() => of('')),
       );
   }

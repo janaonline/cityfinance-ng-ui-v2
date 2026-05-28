@@ -262,7 +262,12 @@ export class RolesTeamsOverviewComponent implements OnInit {
           ),
         }),
       );
-      const entityDetails = res.data?.ulbDetails ?? res.data?.stateDetails;
+      // Normalise: handle both { success, data: { ulbDetails, data: [] } } and flat { ulbDetails, data: [] }
+      const payload: ApiUsersListResponse['data'] =
+        res?.data && !Array.isArray(res.data) && typeof res.data === 'object'
+          ? res.data
+          : (res as unknown as ApiUsersListResponse['data']);
+      const entityDetails = payload?.ulbDetails ?? payload?.stateDetails;
       if (entityDetails) {
         this.profile = {
           type: this.entityType,
@@ -273,7 +278,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
           state: entityDetails.stateName,
         };
       }
-      const members = (res.data?.data ?? []).map((u) => this.mapApiUser(u));
+      const members = (payload?.data ?? []).map((u) => this.mapApiUser(u));
       this.members = members;
       this.memberRoleSelections = Object.fromEntries(
         members
@@ -526,14 +531,15 @@ export class RolesTeamsOverviewComponent implements OnInit {
     };
 
     this.http
-      .post<{ success?: boolean; data?: { _id?: string }; message?: string }>(
+      .post<any>(
         `${this.baseUrl}users/create-user`,
         payload,
       )
       .subscribe({
         next: (res) => {
+          const resData = res?.data ?? res;
           const newMember: TeamMember = {
-            id: res.data?._id ?? `new_${this.addMemberPhone}_${Date.now()}`,
+            id: resData?._id ?? `new_${this.addMemberPhone}_${Date.now()}`,
             initials: this.getInitials(this.addMemberName),
             name: this.addMemberName,
             email: this.addMemberEmail,

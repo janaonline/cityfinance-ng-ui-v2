@@ -15,10 +15,10 @@ export class SupportHoursService {
       token ? { Authorization: `Bearer ${token}`, 'x-access-token': token } : {},
     );
     return this.http
-      .get<{ success: boolean; data: SupportHoursApiResponse; timestamp: string }>(
+      .get<any>(
         `${this.baseUrl}xvi-fc/support-hours`,
         { headers },
       )
-      .pipe(map((wrapper) => wrapper.data));
+      .pipe(map((wrapper) => (wrapper?.data ?? wrapper) as SupportHoursApiResponse));
   }
 }
