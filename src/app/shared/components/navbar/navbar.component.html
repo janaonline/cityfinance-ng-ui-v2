@@ -93,8 +93,17 @@
           </button>
           <mat-menu #loginMenu="matMenu">
             @for (routePage of routePages; track routePage) {
-              <button mat-menu-item class="border-bottom" [routerLink]="['auth/login', routePage.type]">
-                <i class="bi bi-box-arrow-in-right"></i> {{ routePage.label }}
+              <button
+                mat-menu-item
+                class="border-bottom"
+                [class.login-menu-item--new]="routePage.isNew"
+                [routerLink]="['auth/login', routePage.type]"
+              >
+                <i class="bi bi-box-arrow-in-right" style="margin-right: 8px"></i>
+                <span [class.login-menu-label--new]="routePage.isNew">{{ routePage.label }}</span>
+                @if (routePage.isNew) {
+                  <span class="login-menu-new-badge">NEW</span>
+                }
               </button>
             }
             <!-- <button mat-menu-item class="border-bottom" (click)="loginLogout('16thFC')">

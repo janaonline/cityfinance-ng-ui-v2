@@ -68,6 +68,7 @@ export class ProfileVerificationComponent implements OnInit {
   readonly otpSentKey = signal<string | null>(null);
   readonly verifyingKey = signal<string | null>(null);
   readonly editedMobiles = signal<Record<string, string>>({});
+  readonly editedEmails = signal<Record<string, string>>({});
   readonly otpValues = signal<Partial<Record<string, string>>>({});
 
   // Add-form
@@ -121,9 +122,18 @@ export class ProfileVerificationComponent implements OnInit {
     return this.editedMobiles()[this.getProfileKey(profile)] ?? profile.mobile;
   }
 
+  getEmail(profile: ProfileItem): string {
+    return this.editedEmails()[this.getProfileKey(profile)] ?? profile.email ?? '';
+  }
+
   onMobileInput(key: string, event: Event): void {
     const val = (event.target as HTMLInputElement).value;
     this.editedMobiles.update((m) => ({ ...m, [key]: val }));
+  }
+
+  onEmailInput(key: string, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.editedEmails.update((e) => ({ ...e, [key]: val }));
   }
 
   onOtpInput(key: string, event: Event): void {
@@ -147,8 +157,13 @@ export class ProfileVerificationComponent implements OnInit {
     const key = this.getProfileKey(profile);
     if (this.expandedKey() !== key) return;
     const mobile = this.getMobile(profile);
+    const email = this.getEmail(profile);
     if (!mobile || mobile.length < 10) {
       this.errorMsg.set('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.errorMsg.set('Please enter a valid email address.');
       return;
     }
     this.sendingOtpKey.set(key);
@@ -177,13 +192,14 @@ export class ProfileVerificationComponent implements OnInit {
       return;
     }
     const mobile = this.getMobile(profile);
+    const email = this.getEmail(profile);
     this.verifyingKey.set(key);
     this.errorMsg.set('');
     this.profileService
       .verifyOtp(mobile, otp)
       .pipe(
         switchMap(() =>
-          this.profileService.updateProfileContacts(profile.name, profile.email, mobile),
+          this.profileService.updateProfileContacts(profile.name, email, mobile),
         ),
       )
       .subscribe({

@@ -429,11 +429,6 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="dialog-field">
-          <mat-label>Email ID <span class="optional-label">optional</span></mat-label>
-          <input matInput type="email" placeholder="user@example.gov.in" [(ngModel)]="addMemberEmail" name="addEmail" autocomplete="off" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="dialog-field">
           <mat-label>Designation <span class="optional-label">optional</span></mat-label>
           <input
             matInput
@@ -510,11 +505,6 @@
               [ngModel]="activateMobile"
               (ngModelChange)="activateMobile = sanitizePhone($event)"
             />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="dialog-field">
-            <mat-label>Email ID (optional)</mat-label>
-            <input matInput type="email" placeholder="user@example.gov.in" [(ngModel)]="activateEmail" />
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="dialog-field">
