@@ -208,8 +208,22 @@
                       <div class="pv-otp-step">
                         <p class="pv-otp-hint">
                           <i class="bi bi-phone-vibrate-fill"></i>
-                          We'll send a one-time password to this mobile number.
+                          Confirm your mobile and email. An OTP will be sent to your mobile number.
                         </p>
+
+                        <div class="pv-mobile-field pv-contact-field">
+                          <i class="bi bi-envelope-fill pv-mobile-field__icon"></i>
+                          <input
+                            class="pv-mobile-input"
+                            type="email"
+                            inputmode="email"
+                            [value]="getEmail(profile)"
+                            (input)="onEmailInput(getProfileKey(profile), $event)"
+                            placeholder="Official email address"
+                          />
+                          <span class="pv-edit-tag"><i class="bi bi-pencil-fill"></i> edit</span>
+                        </div>
+
                         <div class="pv-mobile-row">
                           <div class="pv-mobile-field">
                             <i class="bi bi-phone-fill pv-mobile-field__icon"></i>

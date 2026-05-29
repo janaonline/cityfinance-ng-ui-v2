@@ -155,14 +155,16 @@ export class LoginComponent implements OnInit, OnDestroy {
   ];
 
   protected readonly roleOptions = computed<readonly RoleOption[]>(() => {
-    const is15thFC = this.typeKey() === '15thFC';
+    const type = this.typeKey();
+    const is15thFC = type === '15thFC';
+    const is16thFC = type === '16thFC';
     const options: RoleOption[] = [
       { id: 'ULB', label: 'ULB', icon: 'ulb' },
       { id: 'STATE', label: 'State DMA', icon: 'state' },
       { id: 'MOHUA', label: 'MoHUA', icon: 'mohua' },
     ];
 
-    if (is15thFC) {
+    if (is15thFC || is16thFC) {
       options.push({ id: 'PARTNER', label: 'Institutional', icon: 'institutional' });
     }
 
@@ -329,7 +331,11 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   protected openReferenceDocuments(): void {
-    console.log('Reference documents clicked');
+    window.open(
+      'https://www.cityfinance.in/api/v1/resourceDashboard/download/698472008670dfe40327596d',
+      '_blank',
+      'noopener,noreferrer',
+    );
   }
 
   protected openGuidelines(): void {

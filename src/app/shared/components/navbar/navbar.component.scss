@@ -111,3 +111,27 @@ a {
     padding-block: 0.35rem;
   }
 }
+
+.login-menu-item--new {
+  font-weight: 700 !important;
+}
+
+.login-menu-label--new {
+  font-weight: 700;
+  color: #0f3540;
+}
+
+.login-menu-new-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #e8530a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  vertical-align: middle;
+}

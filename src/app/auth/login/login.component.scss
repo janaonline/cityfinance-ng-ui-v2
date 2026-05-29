@@ -1485,18 +1485,17 @@
 // ─── 16th FC redesigned role selector ────────────────────────────────────────
 
 .fc16-role-grid {
-  // Grid override: always 4-column, full-width
   .role-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 7px;
     margin-bottom: 0;
   }
 
   .role-card {
     position: relative;
-    min-height: 116px;
-    padding: 18px 8px 14px;
-    border-radius: 16px;
+    min-height: 100px;
+    padding: 14px 6px 12px;
+    border-radius: 14px;
     border: 1.5px solid #dce7ea;
     background: #ffffff;
     gap: 12px;
@@ -1614,6 +1613,31 @@
     }
   }
 
+  [data-role='institutional'].role-card--active {
+    background: linear-gradient(145deg, #f3f0ff 0%, #ddd6fe 100%) !important;
+    border-color: #7c3aed !important;
+    box-shadow:
+      0 4px 22px rgba(109, 91, 208, 0.26),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+
+    &::before {
+      background: #7c3aed !important;
+    }
+
+    .role-card__label {
+      color: #4c1d95;
+    }
+
+    .role-card__icon--institutional {
+      background: #6d5bd0;
+      color: #ffffff;
+    }
+
+    .fc16-role-check {
+      background: #7c3aed;
+    }
+  }
+
   [data-role='doe'].role-card--active {
     background: linear-gradient(145deg, #f3f6f8 0%, #dfe6ea 100%) !important;
     border-color: #7b9aa2 !important;
@@ -1637,22 +1661,22 @@
   // ─── Icon sizing ──────────────────────────────────────────────────────────
 
   .role-card__icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 13px;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
     transition:
       background 0.22s ease,
       color 0.22s ease;
 
     i {
-      font-size: 19px;
+      font-size: 17px;
     }
   }
 
   // ─── Label ────────────────────────────────────────────────────────────────
 
   .role-card__label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     transition: color 0.22s ease;
   }

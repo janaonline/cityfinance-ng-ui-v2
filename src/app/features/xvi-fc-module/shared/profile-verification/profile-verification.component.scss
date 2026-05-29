@@ -642,6 +642,8 @@ $accents: (
 
 .pv-mobile-row { display: flex; gap: 10px; align-items: center; }
 
+.pv-contact-field { width: 100%; margin-bottom: 10px; flex: none; }
+
 .pv-mobile-field {
   flex: 1;
   display: flex; align-items: center; gap: 8px;
