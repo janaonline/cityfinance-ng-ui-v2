@@ -8,4 +8,5 @@ export enum USER_TYPE {
   'XVIFC' = 'XVIFC',
   'PARTNER' = 'PARTNER',
   'PMU' = 'PMU',
+  'STATE_DASHBOARD' = 'STATE_DASHBOARD',
 }

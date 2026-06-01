@@ -13,6 +13,7 @@ import { VersionCheckService } from './core/services/version-check.service';
 // import { APP_BASE_HREF } from '@angular/common';
 import { provideClientHydration } from '@angular/platform-browser';
 import { customHttpInterceptor } from './core/security/custom-http.interceptor';
+import { otpAuthInterceptor } from './core/auth/auth.interceptor';
 import { firstValueFrom } from 'rxjs';
 
 export const appConfig: ApplicationConfig = {
@@ -25,7 +26,10 @@ export const appConfig: ApplicationConfig = {
     // importProvidersFrom(HttpClientModule),
     // CustomHttpInterceptor,
     provideHttpClient(
-      withInterceptors([customHttpInterceptor])
+      // customHttpInterceptor runs first (attaches legacy id_token, handles 401 refresh).
+      // otpAuthInterceptor is a fallback that attaches cf_access_token when the
+      // Authorization header hasn't been set yet (e.g. fresh OTP session with no legacy token).
+      withInterceptors([customHttpInterceptor, otpAuthInterceptor])
     ),
     // {
     //   provide: HTTP_INTERCEPTORS,

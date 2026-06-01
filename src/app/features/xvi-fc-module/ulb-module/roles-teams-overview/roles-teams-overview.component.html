@@ -1,0 +1,526 @@
+<main class="roles-page container-fluid py-4 py-lg-5">
+  @if (errorMessage) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+  }
+
+  <mat-card class="profile-hero mat-elevation-z0 mb-4">
+    <div class="profile-hero__grid" aria-hidden="true"></div>
+
+    @if (isLoading) {
+      <div class="profile-card profile-card--loading d-flex align-items-center gap-3">
+        <span class="loading-block loading-block--logo"></span>
+        <div class="flex-grow-1">
+          <span class="loading-block loading-block--title"></span>
+          <span class="loading-block loading-block--meta"></span>
+        </div>
+      </div>
+    } @else {
+      @if (profile) {
+        <div class="profile-card row align-items-center gy-3">
+          <div class="col-12 col-lg">
+            <p class="profile-card__eyebrow mb-2">ULB PROFILE</p>
+            <div class="d-flex align-items-center gap-3">
+              <div class="profile-card__logo">{{ profile.initials }}</div>
+              <div class="profile-card__copy">
+                <h1>{{ profile.name }}</h1>
+                <p class="mb-0">
+                  {{ profile.code }} <span aria-hidden="true">&middot;</span> {{ profile.category }}
+                  <span aria-hidden="true">&middot;</span> {{ profile.state }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-auto">
+            <div class="profile-card__facts">
+              <div class="profile-fact">
+                <span>ULB Code</span>
+                <strong>{{ profile.code }}</strong>
+              </div>
+              <div class="profile-fact">
+                <span>State</span>
+                <strong>{{ profile.state }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </mat-card>
+
+  <section class="roles-toolbar row gy-3 align-items-end mb-4" aria-label="People and roles actions">
+    <div class="col-12 col-lg">
+      <h2 id="people-roles-title" class="mb-1">People &amp; Roles</h2>
+      <p class="mb-0">Manage who has access and what they can do.</p>
+    </div>
+
+    <div class="col-12 col-lg-auto">
+      <div class="d-grid d-sm-flex gap-2 justify-content-lg-end">
+        <button
+          mat-stroked-button
+          type="button"
+          class="matrix-action"
+          [class.matrix-action--active]="showPermissionMatrix"
+          (click)="onOpenPermissionMatrix()"
+        >
+          <mat-icon aria-hidden="true">shield</mat-icon>
+          Permission matrix
+        </button>
+
+        <button mat-flat-button type="button" class="add-action" (click)="onAddMember()">
+          <mat-icon aria-hidden="true">add</mat-icon>
+          Add Member
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (showPermissionMatrix) {
+    <mat-card class="permission-card mat-elevation-z0 mb-4">
+      <mat-card-header class="permission-card__header">
+        <mat-card-title>Role permission matrix</mat-card-title>
+        <mat-card-subtitle>What each role can do across the platform.</mat-card-subtitle>
+        <button
+          mat-icon-button
+          type="button"
+          class="permission-card__close"
+          aria-label="Hide permission matrix"
+          (click)="onOpenPermissionMatrix()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </mat-card-header>
+
+      <mat-card-content class="p-0">
+        <div class="table-responsive">
+          <table mat-table [dataSource]="permissionMatrix" class="permission-table w-100">
+            <ng-container matColumnDef="permission">
+              <th mat-header-cell *matHeaderCellDef>Permission</th>
+              <td mat-cell *matCellDef="let row">{{ row.permission }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="submitter">
+              <th mat-header-cell *matHeaderCellDef class="text-center">Submitter</th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <span
+                  class="permission-dot"
+                  [class.permission-dot--off]="!row.submitter"
+                  [attr.aria-label]="row.submitter ? 'Allowed' : 'Not allowed'"
+                ></span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="editor">
+              <th mat-header-cell *matHeaderCellDef class="text-center">Editor</th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <span
+                  class="permission-dot"
+                  [class.permission-dot--off]="!row.editor"
+                  [attr.aria-label]="row.editor ? 'Allowed' : 'Not allowed'"
+                ></span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="viewer">
+              <th mat-header-cell *matHeaderCellDef class="text-center">Viewer</th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <span
+                  class="permission-dot"
+                  [class.permission-dot--off]="!row.viewer"
+                  [attr.aria-label]="row.viewer ? 'Allowed' : 'Not allowed'"
+                ></span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="permissionColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: permissionColumns"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="team-card mat-elevation-z0 mb-4">
+    <div class="d-none d-md-block table-responsive">
+      <table mat-table [dataSource]="members" class="team-table w-100">
+        <ng-container matColumnDef="member">
+          <th mat-header-cell *matHeaderCellDef>Name &amp; Phone</th>
+          <td mat-cell *matCellDef="let member">
+            <div class="member-cell d-flex align-items-center gap-2">
+              <span class="member-avatar">{{ member.initials }}</span>
+              <div>
+                <strong>{{ member.name }}</strong>
+                <span>{{ member.phone }}</span>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="designation">
+          <th mat-header-cell *matHeaderCellDef>Designation</th>
+          <td mat-cell *matCellDef="let member">{{ member.designation }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let member">
+            @if (member.role === 'Submitter') {
+              <span class="role-badge">
+                <mat-icon aria-hidden="true">how_to_reg</mat-icon>
+                Submitter
+              </span>
+            } @else if (member.role) {
+              <mat-form-field appearance="outline" class="role-field compact-field">
+                <mat-select
+                  aria-label="Role"
+                  [ngModel]="memberRoleSelections[member.id]"
+                  (ngModelChange)="onRoleChangeRequest(member.id, $event)"
+                >
+                  @for (role of availableRoles; track role) {
+                    <mat-option [value]="role">{{ role }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="muted-dash">-</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let member">
+            <span
+              class="status-pill"
+              [class.status-pill--inactive]="member.status === 'inactive'"
+              [class.status-pill--invited]="member.status === 'invited'"
+            >
+              {{ member.status === 'active' ? 'Active' : member.status === 'inactive' ? 'Inactive' : 'Invited' }}
+            </span>
+            @if (member.lastActive) {
+              <span class="last-active-sub">{{ member.lastActive }}</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef class="text-end">Action</th>
+          <td mat-cell *matCellDef="let member" class="text-end">
+            @if (member.role === 'Submitter') {
+              <span class="muted-dash">-</span>
+            } @else if (member.status === 'invited') {
+              <button mat-button type="button" class="table-link" (click)="onResend(member)">
+                Resend
+              </button>
+            } @else {
+              <div class="action-btns">
+                @if (member.status === 'inactive') {
+                  <button mat-flat-button type="button" class="activate-btn" (click)="onActivate(member)">
+                    Activate
+                  </button>
+                }
+                <button mat-button type="button" class="table-link table-link--danger" (click)="onDisable(member)">
+                  Disable
+                </button>
+              </div>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="memberColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: memberColumns"></tr>
+      </table>
+    </div>
+
+    <div class="member-cards d-grid d-md-none gap-3">
+      @for (member of members; track member.id) {
+        <mat-card class="member-card mat-elevation-z0">
+          <div class="d-flex justify-content-between gap-3 mb-3">
+            <div class="member-cell d-flex align-items-center gap-2">
+              <span class="member-avatar">{{ member.initials }}</span>
+              <div>
+                <strong>{{ member.name }}</strong>
+                <span>{{ member.phone }}</span>
+              </div>
+            </div>
+            <span
+              class="status-pill"
+              [class.status-pill--inactive]="member.status === 'inactive'"
+              [class.status-pill--invited]="member.status === 'invited'"
+            >
+              {{ member.status === 'active' ? 'Active' : member.status === 'inactive' ? 'Inactive' : 'Invited' }}
+            </span>
+          </div>
+
+          <div class="member-card__meta">
+            <div>
+              <span>Designation</span>
+              <strong>{{ member.designation }}</strong>
+            </div>
+            <div>
+              <span>Role</span>
+              @if (member.role === 'Submitter') {
+                <strong class="role-badge">
+                  <mat-icon aria-hidden="true">how_to_reg</mat-icon>
+                  Submitter
+                </strong>
+              } @else if (member.role) {
+                <mat-form-field appearance="outline" class="role-field compact-field">
+                  <mat-select
+                    aria-label="Role"
+                    [ngModel]="memberRoleSelections[member.id]"
+                    (ngModelChange)="onRoleChangeRequest(member.id, $event)"
+                  >
+                    @for (role of availableRoles; track role) {
+                      <mat-option [value]="role">{{ role }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              } @else {
+                <strong class="muted-dash">-</strong>
+              }
+            </div>
+          </div>
+
+          @if (member.status === 'invited') {
+            <button mat-stroked-button type="button" class="mobile-member-action mt-3" (click)="onResend(member)">
+              Resend invite
+            </button>
+          } @else if (member.role !== 'Submitter' && member.role !== null) {
+            <div class="d-flex gap-2 mt-3">
+              @if (member.status === 'inactive') {
+                <button mat-flat-button type="button" class="activate-btn flex-grow-1" (click)="onActivate(member)">
+                  Activate
+                </button>
+              }
+              <button mat-stroked-button type="button" class="mobile-member-action flex-grow-1" (click)="onDisable(member)">
+                Disable access
+              </button>
+            </div>
+          }
+        </mat-card>
+      }
+    </div>
+  </mat-card>
+
+  <mat-card class="transfer-card mat-elevation-z0">
+    <div class="row align-items-center gy-3">
+      <div class="col-auto">
+        <span class="transfer-card__icon">
+          <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+        </span>
+      </div>
+      <div class="col-12 col-md">
+        <h3>Transfer Ownership</h3>
+        <p class="mb-0">
+          Transfer full Submitter access to another team member. This action is irreversible and
+          moves the current Submitter to Editor after confirmation.
+        </p>
+      </div>
+      <div class="col-12 col-md-auto">
+        <button mat-stroked-button type="button" class="transfer-card__button" (click)="onTransferOwnership()">
+          Transfer
+        </button>
+      </div>
+    </div>
+  </mat-card>
+</main>
+
+<!-- ─── Add Member Dialog ──────────────────────────────────────────────── -->
+<ng-template #addMemberDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Add Member</h3>
+        <p class="add-dialog__copy mb-0">
+          An OTP will be sent to the phone number below. The member can sign in once they verify it.
+        </p>
+      </div>
+      <button
+        mat-icon-button
+        type="button"
+        class="add-dialog__close"
+        aria-label="Close add member dialog"
+        (click)="onCloseAddMemberDialog()"
+      >
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      <form id="addMemberForm" class="add-member-form d-grid gap-3" (submit)="$event.preventDefault(); onSendInvite()">
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Role</mat-label>
+          <mat-select [value]="inviteRoles[0].value" required>
+            @for (role of inviteRoles; track role.value) {
+              <mat-option [value]="role.value">{{ role.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Full Name</mat-label>
+          <input matInput required placeholder="e.g. Priya Nair" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Phone Number</mat-label>
+          <input matInput required type="tel" placeholder="10-digit mobile number" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Email ID optional</mat-label>
+          <input matInput type="email" placeholder="user@example.gov.in" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="dialog-field">
+          <mat-label>Designation optional</mat-label>
+          <input matInput placeholder="e.g. Accounts Officer" />
+        </mat-form-field>
+
+        <div class="invite-note">
+          <strong>Note:</strong> New members must verify their phone number via OTP to activate their account.
+          Use Resend if the verification code is not received within 2 minutes.
+        </div>
+      </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCloseAddMemberDialog()">Cancel</button>
+      <button type="button" class="send-action" (click)="onSendInvite()">
+        Send OTP
+        <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ─── Activate Member Dialog ────────────────────────────────────────── -->
+<ng-template #activateDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Activate Member</h3>
+        <p class="add-dialog__copy mb-0">
+          Review the details below. Only the mobile number can be edited. An OTP will be sent to confirm.
+        </p>
+      </div>
+      <button mat-icon-button type="button" class="add-dialog__close" aria-label="Close" (click)="onCloseActivateDialog()">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      @if (activatingMember) {
+        <div class="d-grid gap-3">
+          <div class="activate-preview">
+            <div class="activate-preview__field">
+              <span>Full Name</span>
+              <strong>{{ activatingMember.name }}</strong>
+            </div>
+            <div class="activate-preview__field">
+              <span>Designation</span>
+              <strong>{{ activatingMember.designation }}</strong>
+            </div>
+          </div>
+
+          <mat-form-field appearance="outline" class="dialog-field">
+            <mat-label>Mobile Number</mat-label>
+            <input
+              matInput
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              placeholder="10-digit mobile"
+              [(ngModel)]="activateMobile"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="dialog-field">
+            <mat-label>Email ID <span class="optional-label">optional</span></mat-label>
+            <input matInput type="email" placeholder="user@example.gov.in" [(ngModel)]="activateEmail" />
+          </mat-form-field>
+
+          @if (activateOtpSent) {
+            <div class="otp-sent-notice">
+              <mat-icon aria-hidden="true">check_circle</mat-icon>
+              OTP sent to <strong>+91 {{ activateMobile }}</strong>
+              <button type="button" class="otp-resend-btn" (click)="onSendActivateOtp()">Resend</button>
+            </div>
+
+            <mat-form-field appearance="outline" class="dialog-field">
+              <mat-label>Enter OTP</mat-label>
+              <input
+                matInput
+                type="tel"
+                inputmode="numeric"
+                maxlength="6"
+                placeholder="6-digit OTP"
+                [(ngModel)]="activateOtp"
+              />
+            </mat-form-field>
+          }
+        </div>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCloseActivateDialog()">Cancel</button>
+      @if (!activateOtpSent) {
+        <button
+          type="button"
+          class="send-action"
+          [disabled]="sendingOtp || activateMobile.length < 10"
+          (click)="onSendActivateOtp()"
+        >
+          {{ sendingOtp ? 'Sending…' : 'Send OTP' }}
+          @if (!sendingOtp) {
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          }
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="send-action"
+          [disabled]="confirmingActivate || activateOtp.length < 6"
+          (click)="onConfirmActivate()"
+        >
+          {{ confirmingActivate ? 'Verifying…' : 'Confirm & Activate' }}
+        </button>
+      }
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- ─── Role Change Confirm Dialog ────────────────────────────────────── -->
+<ng-template #roleConfirmDialog>
+  <div class="add-dialog">
+    <div class="add-dialog__header">
+      <div class="add-dialog__heading">
+        <h3 mat-dialog-title class="m-0">Confirm Role Change</h3>
+        <p class="add-dialog__copy mb-0">This will update their access permissions immediately.</p>
+      </div>
+    </div>
+
+    <mat-dialog-content class="add-dialog__content p-0">
+      @if (pendingRoleChange) {
+        <p class="role-confirm-copy">
+          Change <strong>{{ pendingRoleChange.memberName }}</strong>'s role from
+          <span class="role-tag">{{ pendingRoleChange.currentRole }}</span>
+          to
+          <span class="role-tag role-tag--new">{{ pendingRoleChange.newRole }}</span>?
+        </p>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+      <button mat-stroked-button type="button" (click)="onCancelRoleChange()">Cancel</button>
+      <button type="button" class="send-action" (click)="onConfirmRoleChange()">
+        Confirm
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>

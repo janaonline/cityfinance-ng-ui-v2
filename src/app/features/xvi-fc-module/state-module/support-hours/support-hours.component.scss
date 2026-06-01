@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+.sh-page-title {
+  font-size: clamp(1.35rem, 1.8vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.sh-page-subtitle {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #667085;
+  max-width: 760px;
+}

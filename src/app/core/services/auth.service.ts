@@ -19,9 +19,9 @@ export interface AuthSessionState {
 export class AuthService {
   private readonly accessTokenStorageKey = 'id_token';
   private readonly sessionHintStorageKey = 'auth_session_hint';
-  private readonly loginUrl = `${environment.api.url}login`;
-  private readonly logoutUrl = `${environment.api.url}logout`;
-  private readonly refreshTokenUrl = `${environment.api.url}refresh`;
+  private readonly loginUrl = `${environment.api.url2}auth/login`;
+  private readonly logoutUrl = `${environment.api.url2}auth/logout`;
+  private readonly refreshTokenUrl = `${environment.api.url2}auth/refresh`;
   private readonly jwtHelper = new JwtHelperService();
 
   private accessToken: string | null = this.readStoredAccessToken();
@@ -284,7 +284,7 @@ export class AuthService {
   }
 
   shouldAttachAccessToken(url: string) {
-    return this.isApiRequest(url) && !this.isAuthRequest(url);
+    return this.isApiRequest(url) && (!this.isAuthRequest(url) || this.isLogoutRequest(url));
   }
 
   shouldSendCredentials(url: string) {
@@ -318,15 +318,51 @@ export class AuthService {
   }
 
   otpSignIn(body: any) {
-    return this.http.post(`${environment.api.url}sendOtp`, body, {
+    return this.http.post(`${environment.api.url2}auth/sendOtp`, body, {
       withCredentials: true,
     });
   }
 
   otpVerify(body: any) {
-    return this.http.post(`${environment.api.url}verifyOtp`, body, {
-      withCredentials: true,
-    });
+    return this.http
+      .post(`${environment.api.url2}auth/verifyOtp`, body, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((response: any) => {
+          this.applyAuthResponse(response);
+          return response;
+        }),
+      );
+  }
+
+  checkUser(identifier: string, role: string): Observable<{
+    status?: string;
+    isXVIFCProfileVerified?: boolean;
+    maskedContact?: string;
+    loginFlow?: string;
+    message?: string;
+  }> {
+    return this.http.post<any>(`${environment.api.url2}auth/check-user`, { identifier, role }).pipe(
+      map((res: any) => (res?.data ?? res) as {
+        status?: string;
+        isXVIFCProfileVerified?: boolean;
+        maskedContact?: string;
+        loginFlow?: string;
+        message?: string;
+      }),
+    );
+  }
+
+  setPassword(identifier: string, newPassword: string, confirmPassword: string): Observable<{
+    success: boolean;
+    data: { message: string };
+  }> {
+    return this.http.post<{ success: boolean; data: { message: string } }>(
+      `${environment.api.url2}auth/set-password`,
+      { identifier, newPassword, confirmPassword },
+      { withCredentials: true },
+    );
   }
 
   clearLocalStorage(excludeKeys = ['userInfo']) {

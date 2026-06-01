@@ -17,6 +17,7 @@ export class GoogleAnalyticsService {
   constructor(private router: Router, private gtmService: GtmService) { }
 
   init() {
+    if (!environment.googleAnalyticsId) return;
     this.appendScript();
     this.onPageView();
   }
@@ -50,6 +51,7 @@ export class GoogleAnalyticsService {
    * Set user ID for tracking logged-in users.
    */
   public setUserId(): void {
+    if (!environment.googleAnalyticsId) return;
     const user = this.loggedInUserDetails;
     let args = {};
     if (user && user._id) {
@@ -61,6 +63,7 @@ export class GoogleAnalyticsService {
   }
 
   trackEvent(action: string, params?: any) {
+    if (!environment.googleAnalyticsId) return;
     gtag('event', action, params);
     const gtmTag = {
       event: 'button_click',

@@ -33,13 +33,13 @@
     }
     @default {
       @if (displayLabel && !displayInlineLabel) {
-        <label class="fw-bold"
+        <label [for]="field.key" class="fw-bold"
           >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label
           >
       }
       <mat-form-field
         [appearance]="readonly ? 'fill' : 'outline'"
-        class="demo-full-width mt-2"
+        class="demo-full-width"
         [formGroup]="group"
         >
         @if (displayInlineLabel) {
@@ -69,6 +69,7 @@
                 [id]="field.key"
                 [type]="field.formFieldType"
                 [readonly]="readonly"
+                appTrimOnBlur
                 />
               }
 

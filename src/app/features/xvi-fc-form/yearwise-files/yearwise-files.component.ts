@@ -1,6 +1,7 @@
-import { Component, Input, TemplateRef, ViewChild, OnInit } from '@angular/core';
+import { Component, Input, TemplateRef, ViewChild, ViewContainerRef, inject } from '@angular/core';
 import { FormGroup, FormArray } from '@angular/forms';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MATERIAL_THEME_CLASS } from '../../../core/theming/material-theme.providers';
 import { MaterialModule } from '../../../material.module';
 import { FileComponent } from '../../../shared/dynamic-form/components/file/file.component';
 import { FieldConfig } from '../../../shared/dynamic-form/field.interface';
@@ -22,7 +23,10 @@ export enum FileVerifyStatus {
     templateUrl: './yearwise-files.component.html',
     styleUrl: './yearwise-files.component.scss'
 })
-export class YearwiseFilesComponent implements OnInit {
+export class YearwiseFilesComponent {
+  readonly materialThemeClass = inject(MATERIAL_THEME_CLASS, { optional: true }) ?? undefined;
+  private readonly viewContainerRef = inject(ViewContainerRef);
+
   @Input() field!: any;
   @Input() group!: FormArray;
   collapsed = false;
@@ -61,6 +65,8 @@ export class YearwiseFilesComponent implements OnInit {
         group: this.getYearGroup(sectionIndex, i, year.key),
         verifyForm,
       },
+      viewContainerRef: this.viewContainerRef,
+      ...(this.materialThemeClass ? { panelClass: this.materialThemeClass } : {}),
     });
 
     dialogRef.afterClosed().subscribe((result) => {
