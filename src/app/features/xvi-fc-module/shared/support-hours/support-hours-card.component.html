@@ -1,0 +1,88 @@
+@if (errorMessage) {
+  <div class="alert alert-danger rounded-4 mb-3" role="alert">{{ errorMessage }}</div>
+}
+
+@if (isLoading) {
+  <div class="sh-card sh-card--skeleton mb-3">
+    <div class="placeholder-glow sh-skeleton-body">
+      <span class="placeholder rounded sh-ph sh-ph--tag mb-3"></span>
+      <span class="placeholder rounded sh-ph sh-ph--title mb-2"></span>
+      <span class="placeholder rounded sh-ph sh-ph--text mb-1"></span>
+      <span class="placeholder rounded sh-ph sh-ph--text-sm mb-3"></span>
+      <span class="placeholder rounded-pill sh-ph sh-ph--btn"></span>
+    </div>
+    <div class="sh-skeleton-side placeholder-glow">
+      <span class="placeholder rounded sh-ph sh-ph--time-box mb-2"></span>
+      <span class="placeholder rounded sh-ph sh-ph--host mb-1"></span>
+    </div>
+  </div>
+} @else {
+  @if (nextSupportHour; as next) {
+    <div class="sh-card mb-3">
+      <span class="sh-deco sh-deco--1" aria-hidden="true"></span>
+      <span class="sh-deco sh-deco--2" aria-hidden="true"></span>
+
+      <div class="sh-body">
+        <div class="sh-main">
+          <span class="sh-tag">Next Support Hour</span>
+          <h2 class="sh-date mb-1">{{ next.date }}</h2>
+          <p class="sh-desc mb-0">{{ next.description }}</p>
+        </div>
+
+        <div class="sh-divider" aria-hidden="true"></div>
+
+        <div class="sh-side">
+          <div class="sh-time-box">
+            <span class="sh-time-box__label">Time</span>
+            <span class="sh-time-box__value">{{ next.time }}</span>
+          </div>
+          <p class="sh-host mb-3">
+            <span class="sh-host__label">Hosted by</span>
+            {{ next.hostedBy }}
+          </p>
+          <a
+            class="sh-btn"
+            href="https://tally.so/r/ZjRePA"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i class="bi bi-camera-video-fill sh-btn__icon" aria-hidden="true"></i>
+            <span>Join Session</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (upcomingSupportHours.length > 0) {
+    <div class="sh-table-card">
+      <h3 class="sh-table-title">Upcoming Support Hours</h3>
+
+      <div class="table-responsive">
+        <table class="table sh-table align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Details</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of upcomingSupportHours; track trackByDate($index, item)) {
+              <tr>
+                <td class="sh-table__date">{{ item.date }}</td>
+                <td>{{ item.details }}</td>
+                <td>
+                  <span [class]="getStatusClass(item.status)">
+                    <span [class]="getDotClass(item.status)"></span>
+                    {{ normalizeStatus(item.status) }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+}

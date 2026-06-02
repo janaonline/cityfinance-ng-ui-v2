@@ -22,6 +22,7 @@ import { AuthService, AuthSessionState } from '../../../core/services/auth.servi
 import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
+import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 
 @Component({
   selector: 'app-navbar',
@@ -58,13 +59,15 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   btnName = 'Login for 15th FC Grants';
   sticky = false;
   isCollapsed = true;
-  prefixUrl = environment.prefixUrl;
+  prefixUrl = environment.ui.urlV2;
   menus: any[] = [...this.defaultMenus];
   showMobileNav = false;
   isSticky = false;
 
   private elementPosition = 0;
   private ticking = false;
+
+  routePages = ROUTE_PAGES.filter((page) => page.isMenu);
 
   @ViewChild('stickyMenu') menuElement?: ElementRef;
 
@@ -100,7 +103,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   }
 
   removeSessionItem() {
-    const postLoginNavigation = sessionStorage.getItem('postLoginNavigation');
+    const postLoginNavigation = sessionStorage.getItem('postLoginNavigationV2');
     const sessionID = sessionStorage.getItem('sessionID');
 
     sessionStorage.clear();
@@ -109,36 +112,51 @@ export class NavbarComponent implements OnInit, AfterViewInit {
       sessionStorage.setItem('sessionID', sessionID);
     }
     if (postLoginNavigation) {
-      sessionStorage.setItem('postLoginNavigation', postLoginNavigation);
+      sessionStorage.setItem('postLoginNavigationV2', postLoginNavigation);
     }
   }
 
   loginLogout(type: string) {
-    localStorage.setItem('loginType', type);
-
-    if (type === '15thFC') {
-      window.location.href = '/fc_grant';
-      return;
+    if (type !== 'logout') {
+      localStorage.setItem('loginType', type);
     }
 
-    if (type === 'XVIFC') {
-      window.location.href = '/login/xvi-fc';
-      return;
-    }
-
-    if (type === 'ranking') {
-      window.location.href = '/rankings/login';
-      return;
-    }
+    // if (type === '15thFC') {
+    //   this._router.navigate(['/auth/login'], {
+    //     queryParams: { type },
+    //   });
+    //   // window.location.href = '/fc_grant';
+    //   // return;
+    // }
+    // if (type == 'xvifc') {
+    //   this._router.navigate(['/login'], {
+    //     queryParams: { type },
+    //   });
+    //   // this._router.navigateByUrl("/login/xvi-fc");
+    //   // window.location.href = '/login';
+    // }
+    // if (type === 'XVIFC') {
+    //   window.location.href = '/login/16thFC';
+    //   return;
+    // }
 
     if (type === 'logout') {
+      const loginType = localStorage.getItem('loginType') ?? '16thFC';
       this.authService.logout().subscribe({
         next: () => {
           this.removeSessionItem();
           this.isLoggedIn = false;
-          window.location.href = '/';
+          this._router.navigate(['/auth/login', loginType]);
         },
       });
+      // } else if (type === 'ranking') {
+      //   window.location.href = '/rankings/login';
+      //   return;
+    } else {
+      this._router.navigate(['/auth/login', type]);
+      // this._router.navigate(['/auth/login', { type }], {
+      //   queryParams: { type },
+      // });
     }
   }
 
@@ -161,10 +179,7 @@ export class NavbarComponent implements OnInit, AfterViewInit {
       });
   }
 
-  private applySessionState(
-    sessionState: AuthSessionState,
-    user: IUserLoggedInDetails | null,
-  ) {
+  private applySessionState(sessionState: AuthSessionState, user: IUserLoggedInDetails | null) {
     this.isAuthResolved = sessionState.isReady;
     this.isLoggedIn = sessionState.isAuthenticated;
     this.user = sessionState.isAuthenticated ? user : null;
@@ -184,11 +199,13 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     this.menus = [
       ...(role === USER_TYPE.ULB ? [{ name: 'XVI FC Data Collection', link: '/xvifc-form' }] : []),
       ...(role === USER_TYPE.ULB
-        ? [{
-          name: 'User Manual',
-          href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
-          target: '_blank',
-        }]
+        ? [
+          {
+            name: 'User Manual',
+            href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
+            target: '_blank',
+          },
+        ]
         : []),
       ...(this.inRole([USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE])
         ? [{ name: 'Review XVI FC', link: '/admin/xvi-fc-review' }]

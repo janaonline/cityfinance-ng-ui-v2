@@ -3,6 +3,7 @@ export interface IULB {
   amrut: 'Yes' | 'No' | undefined;
   _id: string;
   slug?: string;
+  keywords?: string;
   area: number;
   code: string;
   name: string;

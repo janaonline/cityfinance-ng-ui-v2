@@ -1,0 +1,416 @@
+<div class="pv-page">
+  <!-- Ambient background orbs -->
+  <div class="pv-orb pv-orb--a"></div>
+  <div class="pv-orb pv-orb--b"></div>
+  <div class="pv-orb pv-orb--c"></div>
+
+  <div class="pv-container">
+    <!-- ════════════════════════════════════════════════════
+         IDENTITY CARD  (entity info + welcome merged)
+    ════════════════════════════════════════════════════ -->
+    <div class="pv-layout">
+      <div class="pv-id-card">
+        <!-- Decorative rings -->
+        <div class="pv-id-card__ring pv-id-card__ring--1"></div>
+        <div class="pv-id-card__ring pv-id-card__ring--2"></div>
+
+        <div class="pv-id-card__body">
+          <!-- LEFT: Seal column -->
+          <div class="pv-id-card__seal-col">
+            <div class="pv-seal-wrap">
+              <div class="pv-seal-ring"></div>
+              <div class="pv-seal">
+                @if (isLoading()) {
+                  <span class="pv-seal__pulse"></span>
+                } @else {
+                  <span class="pv-seal__text">{{ getEntityInitials() || '?' }}</span>
+                }
+              </div>
+            </div>
+            <div class="pv-lock-badge">
+              <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            @if (!isLoading()) {
+              <div class="pv-id-count">
+                <span class="pv-id-count__num">{{ (entityInfo()?.profiles ?? []).length }}</span>
+                <span class="pv-id-count__label">contacts</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="pv-content-stack">
+        <!-- RIGHT: Content column -->
+        <div class="pv-id-card__content-col">
+          <!-- Entity info -->
+          <div class="pv-id-card__info">
+            <p class="pv-id-card__fc-label">
+              <i class="bi bi-award-fill"></i>
+              16<sup>th</sup> Finance Commission · Grant Portal
+            </p>
+            @if (entityInfo(); as info) {
+              <h1 class="pv-id-card__name">{{ info.entityName || '—' }}</h1>
+              <div class="pv-id-card__chips">
+                <span class="pv-chip pv-chip--role">
+                  <i class="bi {{ getRoleIcon() }}"></i> {{ getRoleBadgeLabel() }}
+                </span>
+                @if (info.stateName) {
+                  <span class="pv-chip pv-chip--state">
+                    <i class="bi bi-map-fill"></i> {{ info.stateName }}
+                  </span>
+                }
+                @if (info.entityCode) {
+                  <span class="pv-chip pv-chip--code">
+                    <i class="bi bi-upc-scan"></i> {{ info.entityCode }}
+                  </span>
+                }
+                @if (info.entityType) {
+                  <span class="pv-chip pv-chip--type">
+                    <i class="bi bi-tag-fill"></i> {{ info.entityType }}
+                  </span>
+                }
+              </div>
+            } @else {
+              <div class="pv-sk pv-sk--name-hero"></div>
+              <div class="pv-sk-chips-hero">
+                <div class="pv-sk pv-sk--chip"></div>
+                <div class="pv-sk pv-sk--chip"></div>
+              </div>
+            }
+          </div>
+
+          <!-- Divider with gradient -->
+          <div class="pv-id-card__divider"></div>
+
+          <!-- Welcome copy -->
+          <div class="pv-id-card__welcome">
+            <div class="pv-id-card__welcome-text">
+              <h2 class="pv-id-card__welcome-title">Welcome back. Please verify your profile.</h2>
+              <p class="pv-id-card__welcome-sub">
+                Find your name in the list below and click <strong>Verify</strong> to receive an
+                OTP. Details are pre-filled from 15th FC records — only one person needs to verify.
+              </p>
+            </div>
+            <div class="pv-id-card__step-pills">
+              <span class="pv-step-pill pv-step-pill--active">
+                <span class="pv-step-pill__num">1</span> Find your name
+              </span>
+              <i class="bi bi-arrow-right pv-step-arrow"></i>
+              <span class="pv-step-pill">
+                <span class="pv-step-pill__num">2</span> Verify with OTP
+              </span>
+              <i class="bi bi-arrow-right pv-step-arrow"></i>
+              <span class="pv-step-pill">
+                <span class="pv-step-pill__num">3</span> Access portal
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error bar -->
+        @if (errorMsg()) {
+          <div class="pv-error-bar" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ errorMsg() }}</span>
+            <button class="pv-error-bar__close" type="button" (click)="errorMsg.set('')">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        }
+
+        <!-- Section label -->
+        <div class="pv-section-head">
+          <span class="pv-section-head__label">
+            <i class="bi bi-people-fill"></i> Registered Contacts
+          </span>
+          @if (!isLoading()) {
+            <span class="pv-section-head__count">
+              {{ (entityInfo()?.profiles ?? []).length }} found
+            </span>
+          }
+        </div>
+
+        <!-- ── Loading skeletons ── -->
+        @if (isLoading()) {
+          <div class="pv-cards">
+            @for (_ of skeletonRows; track $index) {
+              <div class="pv-card pv-card--skeleton">
+                <div class="pv-sk pv-sk--avatar"></div>
+                <div class="pv-sk-body">
+                  <div class="pv-sk pv-sk--line"></div>
+                  <div class="pv-sk pv-sk--line pv-sk--short"></div>
+                  <div class="pv-sk pv-sk--line pv-sk--xshort"></div>
+                </div>
+                <div class="pv-sk pv-sk--btn"></div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ── Profile cards ── -->
+        @else if ((entityInfo()?.profiles ?? []).length > 0) {
+          <div class="pv-cards">
+            @for (profile of entityInfo()!.profiles; track getProfileKey(profile); let i = $index) {
+              <div
+                class="pv-card pv-card--{{ i % 4 }}"
+                [class.pv-card--expanded]="expandedKey() === getProfileKey(profile)"
+              >
+                <div class="pv-card__accent"></div>
+
+                <div class="pv-card__main">
+                  <div class="pv-avatar pv-avatar--{{ i % 4 }}">
+                    {{ getInitials(profile.name) }}
+                  </div>
+
+                  <div class="pv-card__info">
+                    <div class="pv-card__name-row">
+                      <span class="pv-card__name">{{ profile.name }}</span>
+                      <span class="pv-card__num">#{{ i + 1 }}</span>
+                    </div>
+                    <span class="pv-card__designation">{{ profile.designation }}</span>
+                    <div class="pv-card__contacts">
+                      @if (profile.email) {
+                        <span class="pv-contact-chip">
+                          <i class="bi bi-envelope-fill"></i>{{ profile.email }}
+                        </span>
+                      }
+                      @if (getMobile(profile)) {
+                        <span class="pv-contact-chip">
+                          <i class="bi bi-phone-fill"></i>{{ getMobile(profile) }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <button
+                    mat-flat-button
+                    class="pv-verify-btn pv-verify-btn--{{ i % 4 }}"
+                    [class.pv-verify-btn--cancel]="expandedKey() === getProfileKey(profile)"
+                    [disabled]="
+                      verifyingKey() !== null && verifyingKey() !== getProfileKey(profile)
+                    "
+                    (click)="toggleExpand(getProfileKey(profile))"
+                    type="button"
+                  >
+                    @if (expandedKey() === getProfileKey(profile)) {
+                      <i class="bi bi-x-lg"></i> Cancel
+                    } @else {
+                      Verify <i class="bi bi-arrow-right-circle-fill"></i>
+                    }
+                  </button>
+                </div>
+
+                <!-- OTP Expand -->
+                <div class="pv-card__expand">
+                  <div class="pv-otp-panel">
+                    @if (otpSentKey() !== getProfileKey(profile)) {
+                      <div class="pv-otp-step">
+                        <p class="pv-otp-hint">
+                          <i class="bi bi-phone-vibrate-fill"></i>
+                          Confirm your mobile and email. An OTP will be sent to your mobile number.
+                        </p>
+
+                        <div class="pv-mobile-field pv-contact-field">
+                          <i class="bi bi-envelope-fill pv-mobile-field__icon"></i>
+                          <input
+                            class="pv-mobile-input"
+                            type="email"
+                            inputmode="email"
+                            [value]="getEmail(profile)"
+                            (input)="onEmailInput(getProfileKey(profile), $event)"
+                            placeholder="Official email address"
+                          />
+                          <span class="pv-edit-tag"><i class="bi bi-pencil-fill"></i> edit</span>
+                        </div>
+
+                        <div class="pv-mobile-row">
+                          <div class="pv-mobile-field">
+                            <i class="bi bi-phone-fill pv-mobile-field__icon"></i>
+                            <input
+                              class="pv-mobile-input"
+                              type="tel"
+                              inputmode="numeric"
+                              maxlength="10"
+                              [value]="getMobile(profile)"
+                              (input)="onMobileInput(getProfileKey(profile), $event)"
+                              placeholder="10-digit mobile"
+                            />
+                            <span class="pv-edit-tag"><i class="bi bi-pencil-fill"></i> edit</span>
+                          </div>
+                          <button
+                            mat-flat-button
+                            class="pv-send-btn"
+                            type="button"
+                            [disabled]="sendingOtpKey() === getProfileKey(profile)"
+                            (click)="sendOtp(profile)"
+                          >
+                            @if (sendingOtpKey() === getProfileKey(profile)) {
+                              <span class="pv-spin"></span> Sending…
+                            } @else {
+                              <i class="bi bi-send-fill"></i> Send OTP
+                            }
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="pv-otp-step">
+                        <div class="pv-otp-sent-notice">
+                          <i class="bi bi-check-circle-fill"></i>
+                          OTP sent to <strong>{{ getMobile(profile) }}</strong>
+                          <button class="pv-resend-btn" type="button" (click)="sendOtp(profile)">
+                            Resend
+                          </button>
+                        </div>
+                        <div class="pv-otp-row">
+                          <div class="pv-otp-field">
+                            <i class="bi bi-key-fill pv-otp-field__icon"></i>
+                            <input
+                              class="pv-otp-input"
+                              type="tel"
+                              inputmode="numeric"
+                              maxlength="4"
+                              placeholder="Enter 4-digit OTP"
+                              [value]="otpValues()[getProfileKey(profile)] ?? ''"
+                              (input)="onOtpInput(getProfileKey(profile), $event)"
+                            />
+                          </div>
+                          <button
+                            mat-flat-button
+                            class="pv-confirm-btn"
+                            type="button"
+                            [disabled]="verifyingKey() === getProfileKey(profile)"
+                            (click)="confirmVerify(profile)"
+                          >
+                            @if (verifyingKey() === getProfileKey(profile)) {
+                              <span class="pv-spin pv-spin--light"></span> Verifying…
+                            } @else {
+                              <i class="bi bi-shield-check"></i> Confirm Identity
+                            }
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ── Empty state ── -->
+        @else {
+          <div class="pv-empty">
+            <div class="pv-empty__icon-wrap">
+              <i class="bi bi-person-x pv-empty__icon"></i>
+            </div>
+            <p class="pv-empty__title">No contacts found</p>
+            <p class="pv-empty__sub">No profiles in records. Add yourself using the form below.</p>
+          </div>
+        }
+
+        <!-- ════════════════════════════════════════════════════
+         REQUEST ACCESS
+    ════════════════════════════════════════════════════ -->
+        <div class="pv-request" [class.pv-request--open]="showAddForm()">
+          <button class="pv-request__trigger" type="button" (click)="toggleAddForm()">
+            <div class="pv-request__icon">
+              <i class="bi bi-person-plus-fill"></i>
+            </div>
+            <strong class="pv-request__title">Not seeing your name?</strong>
+            <span class="pv-request__sub">Fill in your details to request access</span>
+            <span class="pv-request__badge">Request Access</span>
+            <i
+              class="bi pv-request__chevron"
+              [class.bi-chevron-down]="!showAddForm()"
+              [class.bi-chevron-up]="showAddForm()"
+            ></i>
+          </button>
+
+          <div class="pv-request__body">
+            <div class="pv-request__notice">
+              <i class="bi bi-info-circle-fill"></i>
+              Your details will be added and sent for verification. You'll receive portal access
+              once confirmed.
+            </div>
+
+            <form [formGroup]="addForm" (ngSubmit)="submitAddForm()" class="pv-add-form">
+              <p class="pv-add-form__section-label">
+                <i class="bi bi-person-vcard-fill"></i> Personal Info
+              </p>
+              <div class="pv-add-form__row">
+                <mat-form-field appearance="outline" class="pv-mat-field">
+                  <mat-label>Full Name</mat-label>
+                  <input matInput formControlName="name" placeholder="Your full name" />
+                  @if (addForm.controls.name.invalid && addForm.controls.name.touched) {
+                    <mat-error>Name is required</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="pv-mat-field">
+                  <mat-label>Designation</mat-label>
+                  <input
+                    matInput
+                    formControlName="designation"
+                    placeholder="e.g. Deputy Commissioner"
+                  />
+                  @if (
+                    addForm.controls.designation.invalid && addForm.controls.designation.touched
+                  ) {
+                    <mat-error>Designation is required</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <p class="pv-add-form__section-label">
+                <i class="bi bi-envelope-at-fill"></i> Contact Details
+              </p>
+              <div class="pv-add-form__row">
+                <mat-form-field appearance="outline" class="pv-mat-field">
+                  <mat-label>Official Email</mat-label>
+                  <input matInput type="email" formControlName="email" placeholder="name@gov.in" />
+                  @if (addForm.controls.email.invalid && addForm.controls.email.touched) {
+                    <mat-error>Valid email is required</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="pv-mat-field">
+                  <mat-label>Mobile Number</mat-label>
+                  <input
+                    matInput
+                    type="tel"
+                    formControlName="mobile"
+                    placeholder="10-digit number"
+                    inputmode="numeric"
+                  />
+                  @if (addForm.controls.mobile.invalid && addForm.controls.mobile.touched) {
+                    <mat-error>Valid 10-digit mobile required</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="pv-add-form__footer">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="submit"
+                  class="pv-submit-btn"
+                  [disabled]="addFormSubmitting()"
+                >
+                  @if (addFormSubmitting()) {
+                    <span class="pv-spin pv-spin--light"></span> Submitting…
+                  } @else {
+                    <i class="bi bi-send-check-fill"></i> Submit &amp; Request Access
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="pv-footer">
+          <i class="bi bi-shield-check"></i>
+          16th Finance Commission Grant Portal &nbsp;·&nbsp; Secure &amp; Encrypted
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

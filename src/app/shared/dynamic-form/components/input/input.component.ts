@@ -4,15 +4,16 @@ import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 import { NoUpDownDirective } from '../../../../core/directives/no-up-down.directive';
 import { DecimalLimitDirective } from '../../../../core/directives/decimal-limit.directive';
+import { TrimOnBlurDirective } from '../../../../core/directives/trim-on-blur.directive';
 @Component({
   selector: 'app-input',
-  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective],
+  imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, TrimOnBlurDirective],
   templateUrl: './input.component.html',
   styles: [
     `
-    * {
-        font-family: var(--ff-base) !important;
-    }
+    // * {
+    //     font-family: var(--ff-base) !important;
+    // }
     .warning-hint {
         display: block;
         color: orange;

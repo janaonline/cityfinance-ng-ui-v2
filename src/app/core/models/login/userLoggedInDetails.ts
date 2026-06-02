@@ -8,4 +8,5 @@ export interface IUserLoggedInDetails {
   role: USER_TYPE;
   state?: ObjectID;
   ulb?: ObjectID;
+  isXVIFCProfileVerified?: boolean;
 }

@@ -1,0 +1,306 @@
+<div class="wrapper app-wrapper">
+  <section class="ocr-validation-list-page">
+    <!-- Hero -->
+    <div class="hero-card">
+      <h3>OCR Validation Jobs</h3>
+      <p class="subcopy">
+        Browse all past validation jobs. Filter by status or batch ID, then view results.
+      </p>
+    </div>
+
+    <!-- Quick nav -->
+    <div class="card-grid">
+      <article class="menu-card">
+        <div>
+          <h2>New Validation</h2>
+          <p>Upload PDF(s) and start a new Gemini validation job.</p>
+        </div>
+        <a class="btn btn-outline-primary menu-btn" routerLink="/ocr/validation">New Job</a>
+      </article>
+    </div>
+
+    <!-- List section -->
+    <section class="list-section">
+      <div class="section-header">
+        <div>
+          <h2>Jobs</h2>
+          <p>Filter by status, batch ID, job ID, filename, or ULB name and paginate through all jobs.</p>
+        </div>
+        <div class="section-header-right">
+          @if (loading()) {
+            <span class="results-meta">Loading...</span>
+          } @else {
+            <span class="results-meta">{{ totalItems }} result{{ totalItems === 1 ? '' : 's' }}</span>
+          }
+          <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
+            <mat-icon>refresh</mat-icon>
+          </button>
+          <button
+            type="button"
+            mat-icon-button
+            [disabled]="loading() || exporting()"
+            (click)="exportToExcel()"
+            title="Export to Excel"
+          >
+            @if (exporting()) {
+              <mat-icon>hourglass_empty</mat-icon>
+            } @else {
+              <mat-icon>download</mat-icon>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <form [formGroup]="filterForm" class="filter-grid">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">All</mat-option>
+            <mat-option value="queued">Queued</mat-option>
+            <mat-option value="processing">Processing</mat-option>
+            <mat-option value="completed">Completed</mat-option>
+            <mat-option value="failed">Failed</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Batch ID</mat-label>
+          <input matInput formControlName="batchId" placeholder="Enter batch ID" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Job ID</mat-label>
+          <input matInput formControlName="jobId" placeholder="Enter job ID" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Filename</mat-label>
+          <input matInput formControlName="filename" placeholder="Search filename" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>ULB Name</mat-label>
+          <input matInput formControlName="ulbName" placeholder="Search ULB name" />
+        </mat-form-field>
+
+        <div class="filter-actions">
+          <button type="button" class="btn btn-primary" (click)="applyFilters()">Apply</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="resetFilters()">
+            Reset
+          </button>
+        </div>
+      </form>
+
+      <!-- Table -->
+      <div class="table-shell">
+        <table mat-table [dataSource]="dataSource" class="val-table">
+
+          <!-- Job / File -->
+          <ng-container matColumnDef="jobAndFile">
+            <th mat-header-cell *matHeaderCellDef>Job / File</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="identity-cell">
+                <div class="cell-inline">
+                  <span class="cell-label">Job</span>
+                  <span class="cell-value mono" [title]="row.jobId">{{ truncate(row.jobId, 20) }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="copy-btn"
+                  [title]="isCopied('Job', row.jobId) ? 'Copied!' : 'Copy job ID'"
+                  (click)="copyValue('Job', row.jobId)"
+                >
+                  <mat-icon>{{ isCopied('Job', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                </button>
+              </div>
+              <div class="identity-cell">
+                <div class="cell-inline">
+                  <span class="cell-label">File</span>
+                  <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 24) }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="copy-btn"
+                  [title]="isCopied('File', row.filename) ? 'Copied!' : 'Copy file name'"
+                  (click)="copyValue('File', row.filename)"
+                >
+                  <mat-icon>{{ isCopied('File', row.filename) ? 'check' : 'content_copy' }}</mat-icon>
+                </button>
+              </div>
+              @if (row.fileSizeKb !== '—') {
+                <div class="file-meta-row">
+                  <span class="file-meta-chip">{{ row.fileType }}</span>
+                  <span class="file-meta-chip">{{ row.fileSizeKb }}</span>
+                  <span class="file-meta-chip">{{ row.filePageCount }} pg</span>
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Batch ID -->
+          <ng-container matColumnDef="batchId">
+            <th mat-header-cell *matHeaderCellDef>Batch ID</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.batchId !== '—') {
+                <div class="identity-cell">
+                  <span class="cell-value mono" [title]="row.batchId">{{ truncate(row.batchId, 18) }}</span>
+                  <button
+                    type="button"
+                    class="copy-btn"
+                    [title]="isCopied('Batch', row.batchId) ? 'Copied!' : 'Copy batch ID'"
+                    (click)="copyValue('Batch', row.batchId)"
+                  >
+                    <mat-icon>{{ isCopied('Batch', row.batchId) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                </div>
+              } @else {
+                <span class="dim">—</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Models -->
+          <ng-container matColumnDef="models">
+            <th mat-header-cell *matHeaderCellDef>Models</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="model-cell">
+                <div>
+                  <span class="model-label">Extract</span>
+                  <span class="model-value">{{ row.extractionModel }}</span>
+                </div>
+                <div>
+                  <span class="model-label">Validate</span>
+                  <span class="model-value">{{ row.validationModel }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="getStatusClass(row.status)">
+                <span class="status-job-label">Job:</span>
+                {{ row.status | titlecase }}
+              </span>
+              @if (row.progressStep !== '—') {
+                <p class="progress-step-chip">
+                  <span class="progress-step-label">Step</span>
+                  {{ row.progressStep }}
+                </p>
+              }
+              @if (row.status === 'failed' && row.errorMessage !== '—') {
+                <p class="error-text" [title]="row.errorMessage">
+                  {{ truncate(row.errorMessage, 40) }}
+                </p>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Expected -->
+          <ng-container matColumnDef="expected">
+            <th mat-header-cell *matHeaderCellDef>Expected</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="expected-cell">
+                @if (row.expectedUlbName !== '—') {
+                  <div>
+                    <span class="cell-label">ULB</span>
+                    <span class="cell-value" [title]="row.expectedUlbName">{{ truncate(row.expectedUlbName, 20) }}</span>
+                  </div>
+                }
+                @if (row.expectedFinancialYear !== '—') {
+                  <div>
+                    <span class="cell-label">FY</span>
+                    <span class="cell-value">{{ row.expectedFinancialYear }}</span>
+                  </div>
+                }
+                @if (row.expectedDocType !== '—') {
+                  <div>
+                    <span class="cell-label">Type</span>
+                    <span class="cell-value">{{ row.expectedDocType }}</span>
+                  </div>
+                }
+                @if (row.expectedTableExists !== '—') {
+                  <div>
+                    <span class="cell-label">Table</span>
+                    <span class="cell-value">{{ row.expectedTableExists }}</span>
+                  </div>
+                }
+                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—' && row.expectedTableExists === '—') {
+                  <span class="dim">—</span>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Dates -->
+          <ng-container matColumnDef="dates">
+            <th mat-header-cell *matHeaderCellDef>Dates</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="dates-cell">
+                <div>
+                  <span class="cell-label">Created</span>
+                  <span class="cell-value">{{ row.createdAt }}</span>
+                </div>
+                @if (row.completedAt !== '—') {
+                  <div>
+                    <span class="cell-label">Done</span>
+                    <span class="cell-value">{{ row.completedAt }}</span>
+                  </div>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Action -->
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="action-cell">
+                <button
+                  type="button"
+                  class="copy-btn copy-btn--lg"
+                  [title]="isCopied('ID', row.jobId) ? 'Copied!' : 'Copy job ID'"
+                  (click)="copyValue('ID', row.jobId)"
+                >
+                  <mat-icon>{{ isCopied('ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                </button>
+                <a
+                  class="btn btn-sm btn-outline-primary"
+                  routerLink="/ocr/validation"
+                  [queryParams]="{ jobId: row.jobId }"
+                  title="View result"
+                >
+                  View
+                </a>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
+              @if (loading()) {
+                Loading jobs...
+              } @else {
+                No validation jobs found. Adjust filters or submit a new job.
+              }
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalItems"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50, 100]"
+        showFirstLastButtons
+        (page)="onPageChange($event)"
+      />
+    </section>
+  </section>
+</div>

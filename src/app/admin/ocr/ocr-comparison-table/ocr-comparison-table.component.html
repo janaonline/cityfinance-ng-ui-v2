@@ -1,0 +1,231 @@
+@if (comparisonRows().length > 0) {
+  <div class="summary-grid mb-2">
+    @for (item of summaryItems(); track item.label) {
+      <div
+        class="summary-card border rounded-3 bg-white p-2"
+        [class.summary-card--wide]="item.fullWidth"
+      >
+        <div class="summary-line">
+          <span class="text-uppercase text-secondary summary-label">{{ item.label }}:</span>
+          <span
+            class="summary-value"
+            [attr.title]="item.label === 'Job ID' || item.label === 'File Name' ? item.value : null"
+          >
+            {{ item.label === 'Job ID' ? formatMiddleEllipsis(item.value) : item.value }}
+          </span>
+          @if (item.label === 'Job ID' || item.label === 'File Name') {
+            <button
+              type="button"
+              class="copy-btn"
+              [attr.aria-label]="copiedSummaryLabel() === item.label ? 'Copied' : 'Copy ' + item.label"
+              [attr.title]="copiedSummaryLabel() === item.label ? 'Copied' : 'Copy ' + item.label"
+              (click)="copySummaryValue(item.label, item.value)"
+            >
+              <span aria-hidden="true">{{ copiedSummaryLabel() === item.label ? '✓' : '⧉' }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- @if (agreementSummary().length > 0) {
+    <div class="d-flex flex-wrap gap-1 mb-2">
+      @for (agreement of agreementSummary(); track agreement.label) {
+        <div
+          class="badge rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1 agreement-badge"
+          [class.text-bg-danger]="agreement.value === false"
+          [class.text-bg-success]="agreement.value !== false"
+        >
+          <span>{{ agreement.label }}</span>
+          <strong>
+            {{ agreement.value === true ? 'Yes' : agreement.value === false ? 'No' : '-' }}
+          </strong>
+        </div>
+      }
+    </div>
+  } -->
+
+  <div class="table-responsive border rounded-3 mb-2 comparison-table-shell">
+    <table class="table table-sm table-hover align-middle mb-0 comparison-table">
+      <thead>
+        <tr>
+          <th>Engine</th>
+          <!-- <th>JOB Status</th> -->
+          <th>Doc Type</th>
+          <th>FY</th>
+          <th>Language</th>
+          @if (showAuditorInfo()) {
+            <th>Auditor Info</th>
+          }
+          <!-- <th>As On Date</th> -->
+          <th>ULB Name</th>
+          <th>Table</th>
+          <th>Confidence</th>
+          <th>Usage</th>
+          <th>Issues</th>
+          <th>Timings</th>
+          <th>Files</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of comparisonRows(); track row.engine) {
+          <tr>
+            <td class="fw-semibold text-nowrap">
+              <div>{{ row.engine }}</div>
+              @if (row.model !== '-') {
+                <div class="text-muted small mt-1">
+                  <strong>Model:</strong> {{ row.model }}
+                </div>
+              }
+              <div class="mt-1">
+                <strong>Overall:</strong>
+                <span [class]="getMatchClass(row.overallMatch)">{{ row.overallMatch }}</span>
+              </div>
+            </td>
+            <!-- <td>
+              <span [class]="getStatusClass(row.status)">{{ row.status }}</span>
+            </td> -->
+            <td>
+              <div><strong>Expected:</strong> {{ row.docType.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.docType.extracted }}</div>
+              <div>
+                <!-- <strong>Matched:</strong> -->
+                <span [class]="getMatchClass(row.docType.matched)">{{ row.docType.matched }}</span>
+              </div>
+            </td>
+            <td>
+              <div><strong>Expected:</strong> {{ row.financialYear.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.financialYear.extracted }}</div>
+              <div>
+                <!-- <strong>Matched:</strong> -->
+                <span [class]="getMatchClass(row.financialYear.matched)">{{
+                  row.financialYear.matched
+                }}</span>
+              </div>
+            </td>
+            <td>{{ row.languageTag }}</td>
+            @if (showAuditorInfo()) {
+              <td>
+                @for (info of row.auditorInfo; track info) {
+                  <div>{{ info }}</div>
+                }
+              </td>
+            }
+            <!-- <td>{{ row.asOnDate }}</td> -->
+            <td>
+              <div><strong>Expected:</strong> {{ row.ulbName.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.ulbName.extracted }}</div>
+              <div>
+                <!-- <strong>Matched:</strong> -->
+                <span [class]="getMatchClass(row.ulbName.matched)">{{ row.ulbName.matched }}</span>
+              </div>
+            </td>
+            <td>
+              <div><strong>Expected:</strong> {{ row.table.expected }}</div>
+              <div><strong>Extracted:</strong> {{ row.table.extracted }}</div>
+              <div>
+                <span [class]="getMatchClass(row.table.matched)">{{ row.table.matched }}</span>
+              </div>
+              @if (row.table.extra) {
+                <div>
+                  <strong>{{ row.table.extra }}</strong>
+                </div>
+              }
+            </td>
+            <td>{{ row.confidence }}</td>
+            <td>
+              @for (usage of getUsageSummaryItems(row.usageMetadata); track usage.label) {
+                <div>
+                  @if (usage.label === 'Total' && row.usageMetadata) {
+                    <button
+                      type="button"
+                      class="usage-link-btn"
+                      [attr.title]="'Open full usage metadata for ' + row.engine"
+                      (click)="openUsageDetails(row.engine, row.usageMetadata)"
+                    >
+                      {{ usage.label }}: {{ usage.value }}
+                    </button>
+                  } @else {
+                    <span>{{ usage.label }}: {{ usage.value }}</span>
+                  }
+                </div>
+              }
+            </td>
+            <td>
+              <span class="issue-text" [attr.title]="row.issues !== 'None' ? row.issues : null">
+                {{ row.issues }}
+              </span>
+            </td>
+            <td>
+              @for (timing of row.timings; track timing) {
+                <div>{{ timing }}</div>
+              }
+            </td>
+            <td>
+              @if (row.ocrUrl) {
+                <a
+                  class="btn btn-sm btn-outline-primary py-0 px-1 me-1 mb-1 file-link-btn"
+                  [href]="row.ocrUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  OCR
+                </a>
+              }
+              @if (row.excelUrl) {
+                <a
+                  class="btn btn-sm btn-outline-success py-0 px-1 mb-1 file-link-btn"
+                  [href]="row.excelUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Excel
+                </a>
+              }
+              @if (row.ocrNotes.length || row.validations?.length || row.extractedData.length) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-info py-0 px-1 mb-1 ms-1 file-link-btn"
+                  (click)="
+                    openExtractedDataDetails(
+                      row.engine,
+                      row.ocrNotes,
+                      row.validations,
+                      row.extractedData
+                    )
+                  "
+                >
+                  Details
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-dark py-0 px-1 mb-1 ms-1 file-link-btn"
+                  (click)="
+                    downloadExtractedDataHtml(
+                      row
+                    )
+                  "
+                >
+                  HTML
+                </button>
+              }
+              @if (row.engineKey === 'gemini_vision' && row.financialFigures) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary py-0 px-1 mb-1 ms-1 file-link-btn"
+                  (click)="openFinancialFigures(row.engine, row.financialFigures)"
+                >
+                  Info
+                </button>
+              }
+              @if (!row.ocrUrl && !row.excelUrl) {
+                <span class="text-muted">-</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
