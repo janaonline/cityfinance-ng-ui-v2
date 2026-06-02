@@ -30,6 +30,8 @@ import {
 interface ModelOption {
   value: string;
   label: string;
+  pricing?: { inputPerM: number; outputPerM: number; thinkingPerM: number };
+  deprecated?: boolean;
 }
 
 interface SelectOption<T = string> {
@@ -58,20 +60,6 @@ interface GeminiPricing {
   thinkingPerM: number;
 }
 
-const GEMINI_PRICING: Array<{ pattern: RegExp; pricing: GeminiPricing }> = [
-  { pattern: /gemini-3\.1-flash-lite/i, pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 } },
-  { pattern: /gemini-3\.1-pro/i, pricing: { inputPerM: 2.50, outputPerM: 15.00, thinkingPerM: 15.00 } },
-  { pattern: /gemini-2\.5-pro/i, pricing: { inputPerM: 1.25, outputPerM: 10.00, thinkingPerM: 10.00 } },
-  { pattern: /gemini-2\.5-flash/i, pricing: { inputPerM: 0.15, outputPerM: 0.60, thinkingPerM: 3.50 } },
-  { pattern: /gemini-2\.0-flash/i, pricing: { inputPerM: 0.10, outputPerM: 0.40, thinkingPerM: 0.40 } },
-  { pattern: /gemini-1\.5-pro/i, pricing: { inputPerM: 1.25, outputPerM: 5.00, thinkingPerM: 5.00 } },
-  { pattern: /gemini-1\.5-flash/i, pricing: { inputPerM: 0.075, outputPerM: 0.30, thinkingPerM: 0.30 } },
-];
-
-function resolveGeminiPricing(model: string | null | undefined): GeminiPricing | null {
-  if (!model) return null;
-  return GEMINI_PRICING.find((p) => p.pattern.test(model))?.pricing ?? null;
-}
 
 @Component({
   standalone: true,
@@ -94,11 +82,15 @@ export class OcrValidationComponent implements OnInit {
   readonly maxFileSizeMb = 50;
 
   readonly models: ModelOption[] = [
-    { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview' },
-    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
-    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', pricing: { inputPerM: 1.50, outputPerM: 9.00, thinkingPerM: 9.00 } },
+    { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 } },
+    { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 }, deprecated: true },
+    { value: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
+    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
+    { value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
+    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', pricing: { inputPerM: 1.25, outputPerM: 10.00, thinkingPerM: 10.00 } },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', pricing: { inputPerM: 0.15, outputPerM: 0.60, thinkingPerM: 3.50 } },
   ];
 
   readonly documentTypes: SelectOption[] = [
@@ -128,10 +120,14 @@ export class OcrValidationComponent implements OnInit {
     { value: false, label: 'False' },
     { value: true, label: 'True' },
   ];
+  readonly qualityCheckOptions: SelectOption<boolean>[] = [
+    { value: false, label: 'False' },
+    { value: true, label: 'True' },
+  ];
 
   readonly form = this.fb.group({
     extractionModel: this.fb.nonNullable.control(
-      'gemini-3.1-flash-lite-preview',
+      'gemini-3.1-flash-lite',
       Validators.required,
     ),
     validationModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
@@ -140,6 +136,7 @@ export class OcrValidationComponent implements OnInit {
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
     enableOrientationCheck: this.fb.control<boolean | null>(null),
     enableFinancialValidation: this.fb.control<boolean | null>(false),
+    enableQualityCheck: this.fb.control<boolean | null>(false),
   });
 
   selectedFiles: File[] = [];
@@ -221,7 +218,7 @@ export class OcrValidationComponent implements OnInit {
       return;
     }
 
-    const { extractionModel, validationModel, docType, financialYear, ulb, enableOrientationCheck, enableFinancialValidation } =
+    const { extractionModel, validationModel, docType, financialYear, ulb, enableOrientationCheck, enableFinancialValidation, enableQualityCheck } =
       this.form.getRawValue();
     const ulbName = this.selectedUlb()?.name ?? (typeof ulb === 'string' ? ulb : null);
     this.isSubmitting.set(true);
@@ -237,6 +234,7 @@ export class OcrValidationComponent implements OnInit {
           null,
           enableOrientationCheck ?? undefined,
           enableFinancialValidation ?? undefined,
+          enableQualityCheck ?? undefined,
         )
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({
@@ -377,7 +375,7 @@ export class OcrValidationComponent implements OnInit {
       .map(([key, v]) => {
         const s = v as Record<string, unknown>;
         const model = key.startsWith('extraction') ? extractionModel : validationModel;
-        const pricing = resolveGeminiPricing(model);
+        const pricing = this.models.find(m => m.value === model)?.pricing ?? null;
         const prompt = (s['prompt_token_count'] as number) ?? 0;
         const output = (s['candidates_token_count'] as number) ?? 0;
         const thoughts = (s['thoughts_token_count'] as number) ?? 0;
