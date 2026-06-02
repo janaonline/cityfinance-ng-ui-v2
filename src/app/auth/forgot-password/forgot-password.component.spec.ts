@@ -8,6 +8,9 @@ import { of, throwError } from 'rxjs';
 import { OtpAuthService } from '../../core/auth/auth.service';
 import { ForgotPasswordComponent } from './forgot-password.component';
 
+const MOCK_PASSWORD = 'Test@1234';
+const MOCK_PASSWORD_ALT = 'Other@1234';
+
 const mockSendOtpResponse = {
   success: true as const,
   message: 'OTP sent',
@@ -26,10 +29,13 @@ describe('ForgotPasswordComponent', () => {
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
-      { provide: OtpAuthService, useValue: authSpy },
-      { provide: Router, useValue: routerSpy },
-      { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+      imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent],
+      providers: [
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: OtpAuthService, useValue: authSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
       ],
     }).compileComponents();
 
@@ -81,10 +87,13 @@ describe('ForgotPasswordComponent', () => {
     it('should set typeKey to "16thFC" when type=16thFC', async () => {
       await TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
-        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
-        { provide: OtpAuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: { queryParams: of({ type: '16thFC' }) } },
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent],
+        providers: [
+          { provide: MatDialogRef, useValue: { close: () => undefined } },
+          { provide: MAT_DIALOG_DATA, useValue: {} },
+          { provide: OtpAuthService, useValue: authSpy },
+          { provide: Router, useValue: routerSpy },
+          { provide: ActivatedRoute, useValue: { queryParams: of({ type: '16thFC' }) } },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -95,10 +104,13 @@ describe('ForgotPasswordComponent', () => {
     it('should set typeKey to "15thFC" when type=15thFC', async () => {
       await TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
-        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
-        { provide: OtpAuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: { queryParams: of({ type: '15thFC' }) } },
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent],
+        providers: [
+          { provide: MatDialogRef, useValue: { close: () => undefined } },
+          { provide: MAT_DIALOG_DATA, useValue: {} },
+          { provide: OtpAuthService, useValue: authSpy },
+          { provide: Router, useValue: routerSpy },
+          { provide: ActivatedRoute, useValue: { queryParams: of({ type: '15thFC' }) } },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -109,10 +121,13 @@ describe('ForgotPasswordComponent', () => {
     it('should set typeKey to null for unknown type values', async () => {
       await TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
-        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} },
-        { provide: OtpAuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'unknown' }) } },
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent],
+        providers: [
+          { provide: MatDialogRef, useValue: { close: () => undefined } },
+          { provide: MAT_DIALOG_DATA, useValue: {} },
+          { provide: OtpAuthService, useValue: authSpy },
+          { provide: Router, useValue: routerSpy },
+          { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'unknown' }) } },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -303,7 +318,7 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should not submit when already submitting', () => {
-      component.resetForm.patchValue({ otp: '1234', newPassword: 'pass123', confirmPassword: 'pass123' });
+      component.resetForm.patchValue({ otp: '1234', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
       component.isSubmitting.set(true);
       component.onResetPassword();
       expect(authSpy.resetPassword).not.toHaveBeenCalled();
@@ -311,7 +326,7 @@ describe('ForgotPasswordComponent', () => {
 
     it('should call resetPassword with the correct payload', fakeAsync(() => {
       authSpy.resetPassword.and.returnValue(of({ success: true as const, message: 'Reset OK' }));
-      component.resetForm.patchValue({ otp: '1234', newPassword: 'pass123', confirmPassword: 'pass123' });
+      component.resetForm.patchValue({ otp: '1234', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
 
       component.onResetPassword();
       tick();
@@ -319,14 +334,14 @@ describe('ForgotPasswordComponent', () => {
       expect(authSpy.resetPassword).toHaveBeenCalledWith({
         identifier: 'ABC123',
         otp: '1234',
-        newPassword: 'pass123',
-        confirmPassword: 'pass123',
+        newPassword: MOCK_PASSWORD,
+        confirmPassword: MOCK_PASSWORD,
       });
     }));
 
     it('should advance to success step on success', fakeAsync(() => {
       authSpy.resetPassword.and.returnValue(of({ success: true as const, message: 'Reset OK' }));
-      component.resetForm.patchValue({ otp: '1234', newPassword: 'pass123', confirmPassword: 'pass123' });
+      component.resetForm.patchValue({ otp: '1234', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
 
       component.onResetPassword();
       tick();
@@ -336,7 +351,7 @@ describe('ForgotPasswordComponent', () => {
 
     it('should set resetError and stay on reset step on failure', fakeAsync(() => {
       authSpy.resetPassword.and.returnValue(throwError(() => ({ error: { message: 'Invalid OTP' } })));
-      component.resetForm.patchValue({ otp: '9999', newPassword: 'pass123', confirmPassword: 'pass123' });
+      component.resetForm.patchValue({ otp: '9999', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
 
       component.onResetPassword();
       tick();
@@ -347,7 +362,7 @@ describe('ForgotPasswordComponent', () => {
 
     it('should reset isSubmitting after success', fakeAsync(() => {
       authSpy.resetPassword.and.returnValue(of({ success: true as const, message: 'OK' }));
-      component.resetForm.patchValue({ otp: '1234', newPassword: 'pass123', confirmPassword: 'pass123' });
+      component.resetForm.patchValue({ otp: '1234', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
 
       component.onResetPassword();
       tick();
@@ -469,7 +484,7 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should have passwordMismatch error when passwords differ', () => {
-      component.resetForm.patchValue({ otp: '1234', newPassword: 'myPass', confirmPassword: 'other' });
+      component.resetForm.patchValue({ otp: '1234', newPassword: 'myPass', confirmPassword: MOCK_PASSWORD_ALT });
       expect(component.resetForm.hasError('passwordMismatch')).toBeTrue();
     });
 
