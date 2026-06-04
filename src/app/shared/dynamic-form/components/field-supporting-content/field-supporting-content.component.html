@@ -44,11 +44,17 @@
     @if (item.title) {
       <div class="fw-semibold mb-2">{{ item.title }}</div>
     }
-    <ul class="mb-0 ps-4">
-      @for (col of item.columns; track col) {
-        <li>{{ col }}</li>
+
+    <p class="mb-0 text-secondary">
+      &#91;
+      @for (col of item.columns; track col; let last = $last) {
+        <code>{{ col }}</code>
+        @if (!last) {
+          <span>&nbsp;|&nbsp;</span>
+        }
       }
-    </ul>
+      &#93;
+    </p>
   </div>
 }
 

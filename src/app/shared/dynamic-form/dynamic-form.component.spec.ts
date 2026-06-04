@@ -115,6 +115,41 @@ describe('DynamicFormComponent — supporting content integration', () => {
 
     expect(fixture.debugElement.query(By.css('app-textarea'))).toBeTruthy();
   });
+
+  it('renders app-input-card when formFieldType is input-card', () => {
+    component.field = { formFieldType: 'input-card', key: 'testField', label: 'Test Card' };
+    component.group = group;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('app-input-card'))).toBeTruthy();
+  });
+
+  it('existing textarea renderer is unaffected by adding input-card', () => {
+    component.field = { formFieldType: 'textarea', key: 'testField', label: 'Notes' };
+    component.group = group;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('app-textarea'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('app-input-card'))).toBeNull();
+  });
+
+  it('renders app-input-card inside the right column in inline layout', () => {
+    component.field = {
+      formFieldType: 'input-card',
+      key: 'testField',
+      label: 'Test Card',
+      layout: { variant: 'inline' },
+    };
+    component.group = group;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.row'))).toBeTruthy();
+    // The control column carries the containment class
+    const controlCol = fixture.debugElement.query(By.css('.dfc-col-control'));
+    expect(controlCol).toBeTruthy();
+    // The input-card is rendered inside that column
+    expect(controlCol.query(By.css('app-input-card'))).toBeTruthy();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -180,7 +215,7 @@ describe('DynamicFormComponent — inline layout', () => {
     component.group = group;
     fixture.detectChanges();
 
-    const label = fixture.debugElement.query(By.css('label.col-form-label'));
+    const label = fixture.debugElement.query(By.css('label.fw-semibold'));
     expect(label).toBeTruthy();
     expect(label.nativeElement.textContent.trim()).toContain('My Question');
   });

@@ -8,6 +8,7 @@ import { ChildFormComponent } from './components/child-form/child-form.component
 import { DateComponent } from './components/date/date.component';
 import { DynamicFieldSupportingContentComponent } from './components/field-supporting-content/field-supporting-content.component';
 import { FileComponent } from './components/file/file.component';
+import { InputCardComponent } from './components/input-card/input-card.component';
 import { InputComponent } from './components/input/input.component';
 import { RadiobuttonComponent } from './components/radiobutton/radiobutton.component';
 import { SelectComponent } from './components/select/select.component';
@@ -29,6 +30,7 @@ import { TextareaComponent } from './components/textarea/textarea.component';
     ChildFormComponent,
     TableComponent,
     FileComponent,
+    InputCardComponent,
     TextareaComponent,
     DynamicFieldSupportingContentComponent,
   ],

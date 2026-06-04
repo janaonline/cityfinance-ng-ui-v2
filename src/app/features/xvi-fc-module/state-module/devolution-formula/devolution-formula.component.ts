@@ -334,4 +334,40 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
       },
     ],
   },
+  // --- Temporary input-card test fields (remove before pushing) ---
+  {
+    formFieldType: 'input-card',
+    label: 'Grant formula base value',
+    key: 'testingInputCardBaseValue',
+    placeholder: 'Enter base value',
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'Base value is required.',
+      },
+    ],
+    inputCardConfig: {
+      title: 'Formula Base Value',
+      description:
+        'Temporary test card. Uses the normal dynamic form control and will be removed before pushing.',
+      prefixText: '₹',
+      suffixText: 'Cr',
+    },
+  },
+  {
+    formFieldType: 'input-card',
+    label: 'Inline Input Card',
+    key: 'testingInlineInputCard',
+    placeholder: 'Enter value',
+    layout: {
+      variant: 'inline',
+      labelWidth: 'md',
+    },
+    inputCardConfig: {
+      title: 'Inline Card Answer',
+      description: 'This card should appear on the right side in inline layout.',
+      suffixText: '%',
+    },
+  },
 ];
