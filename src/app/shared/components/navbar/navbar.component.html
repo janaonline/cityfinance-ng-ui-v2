@@ -1,9 +1,4 @@
-<nav
-  #stickyMenu
-  [class.sticky]="isSticky"
-  [ngClass]="{ 'position-relative': !isSticky }"
-  class="bg-white shadow-bottom"
->
+<nav class="bg-white shadow-bottom">
   <div class="container d-flex justify-content-between align-items-center bg-white">
     <!-- Hamburger Menu -->
     <button
@@ -43,9 +38,7 @@
         @for (menu of menus; track $index) {
           @if (menu.child?.length) {
             <li class="active" [matMenuTriggerFor]="DashboardMenu">
-              <a class="nav-link" routerLinkActive="active">
-                {{ menu.name }}<i class="bi bi-caret-down-fill"></i>
-              </a>
+              <a class="nav-link" routerLinkActive="active"> {{ menu.name }}<i class="bi bi-caret-down-fill"></i> </a>
             </li>
             <mat-menu #DashboardMenu="matMenu">
               @for (childMenu of menu.child; track childMenu) {
@@ -83,9 +76,7 @@
       <!-- Login/ Logout -->
       <div class="ms-2">
         @if (!isAuthResolved) {
-          <button class="btn btn-cfPrimary fw-bold" type="button" disabled>
-            Checking session...
-          </button>
+          <button class="btn btn-cfPrimary fw-bold" type="button" disabled>Checking session...</button>
         }
         @if (isAuthResolved && !isLoggedIn) {
           <button class="btn btn-cfPrimary fw-bold" [matMenuTriggerFor]="loginMenu">
@@ -121,7 +112,7 @@
           </mat-menu>
         }
         @if (isAuthResolved && isLoggedIn) {
-          <button class="btn btn-cfPrimary fw-bold" [matMenuTriggerFor]="logoutMenu">
+          <button class="btn btn-sm btn-cfPrimary fw-bold" [matMenuTriggerFor]="logoutMenu">
             <i class="bi bi-person-circle fs-5 text-white"></i>&nbsp;
             <i class="bi bi-caret-down-fill"></i>
           </button>
@@ -136,9 +127,7 @@
               </div>
             </div>
 
-            <button mat-menu-item class="text-center" (click)="loginLogout('logout')">
-              Logout
-            </button>
+            <button mat-menu-item class="text-center" (click)="loginLogout('logout')">Logout</button>
           </mat-menu>
         }
       </div>

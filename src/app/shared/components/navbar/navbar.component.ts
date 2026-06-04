@@ -1,14 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  AfterViewInit,
-  Component,
-  DestroyRef,
-  ElementRef,
-  HostListener,
-  OnInit,
-  ViewChild,
-  inject,
-} from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterModule } from '@angular/router';
@@ -31,7 +22,7 @@ import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
   styleUrl: './navbar.component.scss',
   standalone: true,
 })
-export class NavbarComponent implements OnInit, AfterViewInit {
+export class NavbarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly accessChecker = new AccessChecker();
 
@@ -57,19 +48,12 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   isAuthResolved = false;
   user: IUserLoggedInDetails | null = null;
   btnName = 'Login for 15th FC Grants';
-  sticky = false;
   isCollapsed = true;
   prefixUrl = environment.ui.urlV2;
   menus: any[] = [...this.defaultMenus];
   showMobileNav = false;
-  isSticky = false;
-
-  private elementPosition = 0;
-  private ticking = false;
 
   routePages = ROUTE_PAGES.filter((page) => page.isMenu);
-
-  @ViewChild('stickyMenu') menuElement?: ElementRef;
 
   constructor(
     public _router: Router,
@@ -81,14 +65,6 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.isProd = environment?.isProduction;
     this.bindAuthState();
-  }
-
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      if (this.menuElement) {
-        this.elementPosition = this.menuElement.nativeElement.offsetTop;
-      }
-    });
   }
 
   initializeAccessChecking() {
@@ -160,17 +136,6 @@ export class NavbarComponent implements OnInit, AfterViewInit {
     }
   }
 
-  @HostListener('window:scroll')
-  onScroll(): void {
-    if (!this.ticking) {
-      window.requestAnimationFrame(() => {
-        this.updateStickyState();
-        this.ticking = false;
-      });
-      this.ticking = true;
-    }
-  }
-
   private bindAuthState() {
     combineLatest([this.authService.sessionState$, this.authService.currentUser$])
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -216,13 +181,5 @@ export class NavbarComponent implements OnInit, AfterViewInit {
   private inRole(roles: string[]) {
     const role = this.user ? this.user.role : '';
     return roles.includes(role);
-  }
-
-  private updateStickyState(): void {
-    if (!this.menuElement) {
-      return;
-    }
-
-    this.isSticky = window.scrollY >= this.elementPosition;
   }
 }

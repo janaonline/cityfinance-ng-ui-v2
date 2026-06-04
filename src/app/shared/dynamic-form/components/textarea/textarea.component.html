@@ -9,7 +9,7 @@
       matInput
       [formControlName]="field.key"
       [readonly]="readonly()"
-      placeholder=""
+      [placeholder]="field.placeholder || ''"
       data-testid="field-textarea"
       appTrimOnBlur
       [id]="field.key"
