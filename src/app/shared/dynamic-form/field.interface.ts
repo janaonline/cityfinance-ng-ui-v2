@@ -6,6 +6,14 @@ export interface Validator {
 
 export type DateConfigValue = Date | string | null;
 
+export type FieldLayoutVariant = 'stacked' | 'inline';
+export type FieldLayoutLabelWidth = 'sm' | 'md' | 'lg';
+
+export interface FieldLayoutConfig {
+  variant?: FieldLayoutVariant;
+  labelWidth?: FieldLayoutLabelWidth;
+}
+
 export type FieldSupportingContentPosition = 'before' | 'after';
 
 export type FieldSupportingContent =
@@ -89,6 +97,8 @@ export interface FieldConfig {
   maxDate?: DateConfigValue;
   placeholder?: string;
   supportingContent?: FieldSupportingContent[];
+  layout?: FieldLayoutConfig;
+  hideLabel?: boolean;
 }
 
 export interface JsonFieldConfig {

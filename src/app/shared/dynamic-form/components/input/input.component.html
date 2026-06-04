@@ -8,7 +8,9 @@
       class="mat-form-field-warning"
       >
       <!-- <mat-form-field [formGroup]="group"> -->
-      <mat-label>{{ field.label }}</mat-label>
+      @if (!field.hideLabel) {
+        <mat-label>{{ field.label }}</mat-label>
+      }
       <input
         onwheel="this.blur()"
         matInput
@@ -32,8 +34,8 @@
       </mat-form-field>
     }
     @default {
-      @if (displayLabel && !displayInlineLabel) {
-        <label [for]="field.key" class="fw-bold"
+      @if (displayLabel && !displayInlineLabel && !field.hideLabel) {
+        <label [for]="field.key" class="fw-semibold"
           >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label
           >
       }
@@ -42,7 +44,7 @@
         class="demo-full-width"
         [formGroup]="group"
         >
-        @if (displayInlineLabel) {
+        @if (displayInlineLabel && !field.hideLabel) {
           <mat-label for="field.key"
             >{{ field.label
             }}@if (field.showAsterisk) {

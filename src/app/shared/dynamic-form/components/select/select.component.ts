@@ -5,14 +5,14 @@ import { MaterialModule } from '../../../../material.module';
 @Component({
     selector: 'app-select',
     imports: [MaterialModule],
-    template: ` @if (displayLabel && !displayInlineLabel) {
-  <label class="fw-bold"
+    template: ` @if (displayLabel && !displayInlineLabel && !field.hideLabel) {
+  <label class="fw-semibold"
     >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
     <!-- <span class="text-danger" *ngIf="field.required">*&nbsp;</span> -->
   </label>
 }
 <mat-form-field appearance="outline" class="demo-full-width" [formGroup]="group">
-  @if (displayInlineLabel) {
+  @if (displayInlineLabel && !field.hideLabel) {
     <mat-label>{{ field.label }}</mat-label>
   }
   <mat-select

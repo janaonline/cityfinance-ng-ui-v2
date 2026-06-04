@@ -6,9 +6,9 @@ import { MaterialModule } from '../../../../material.module';
     selector: 'app-radiobutton',
     imports: [MaterialModule],
     template: ` <fieldset class="demo-full-width margin-top" [formGroup]="group">
-      @if (field.label) {
+      @if (field.label && !field.hideLabel) {
         <div>
-          <legend class="fw-bold m-0 custom-font-size-6"
+          <legend class="fw-semibold m-0 custom-font-size-6"
             >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
             <!-- <span class="text-danger">*&nbsp;</span> -->
           </legend>

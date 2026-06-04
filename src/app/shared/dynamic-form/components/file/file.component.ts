@@ -193,7 +193,9 @@ export class FileComponent implements OnInit {
   /** Shows the label only for standalone file fields to avoid duplicate labels in legacy flows. */
   readonly showStandaloneLabel = computed(
     () =>
-      !!this.standaloneFileControl() && !!this.utilityService.getNonEmptyString(this.field().label),
+      !this.field().hideLabel &&
+      !!this.standaloneFileControl() &&
+      !!this.utilityService.getNonEmptyString(this.field().label),
   );
 
   /** Final label text, including optional field numbering. (year-wise component) */

@@ -143,8 +143,7 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
         position: 'before',
         label: 'Download the template',
         url: '/assets/templates/devolution-formula-template.xlsx',
-        description:
-          'Fill in the grant amount and formula for each ULB, then re-upload as a single Excel file.',
+        description: 'Fill in the grant amount and formula for each ULB, then re-upload as a single Excel file.',
       },
       {
         type: 'sample-columns',
@@ -233,6 +232,48 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
         position: 'before',
         title: 'Sample columns',
         columns: ['Column A', 'Column B', 'Column C'],
+      },
+    ],
+  },
+  // --- Temporary inline-layout test fields (remove before pushing) ---
+  {
+    formFieldType: 'text',
+    label: 'label width sm Testing inline text field',
+    key: 'testingInlineText',
+    placeholder: 'This should appear on the right side',
+    layout: {
+      variant: 'inline',
+      labelWidth: 'sm',
+    },
+  },
+  {
+    formFieldType: 'textarea',
+    label: 'label width md Testing inline textarea',
+    key: 'testingInlineTextarea',
+    placeholder: 'Textarea should appear on the right side',
+    layout: {
+      variant: 'inline',
+      labelWidth: 'md',
+    },
+  },
+  {
+    formFieldType: 'file',
+    label: 'label width lg Testing inline file upload',
+    key: 'testingInlineFileUpload',
+    fileViewType: 'dropzone',
+    allowedFileTypes: ['pdf'],
+    maxFileSize: 5,
+    folderPath: '',
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+    supportingContent: [
+      {
+        type: 'info',
+        position: 'before',
+        title: 'Inline upload example',
+        description: 'This info block should appear above the upload area in the right column.',
       },
     ],
   },

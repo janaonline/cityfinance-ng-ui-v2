@@ -188,4 +188,38 @@ describe('FileComponent', () => {
     expect(group.valid).toBeTrue();
     expect(component.showError()).toBeFalse();
   });
+
+  describe('hideLabel', () => {
+    it('shows the label when hideLabel is not set', () => {
+      const field = createField({ label: 'Upload Document' });
+      const group = createGroup(null);
+
+      setup(field, group);
+
+      expect(component.showStandaloneLabel()).toBeTrue();
+      expect(fixture.nativeElement.querySelector('label')).toBeTruthy();
+      expect(
+        (fixture.nativeElement.querySelector('label') as HTMLElement).textContent?.trim(),
+      ).toContain('Upload Document');
+    });
+
+    it('hides the label when hideLabel is true', () => {
+      const field = createField({ label: 'Upload Document', hideLabel: true });
+      const group = createGroup(null);
+
+      setup(field, group);
+
+      expect(component.showStandaloneLabel()).toBeFalse();
+      expect(fixture.nativeElement.querySelector('label')).toBeNull();
+    });
+
+    it('shows the label when hideLabel is explicitly false', () => {
+      const field = createField({ label: 'Upload Document', hideLabel: false });
+      const group = createGroup(null);
+
+      setup(field, group);
+
+      expect(component.showStandaloneLabel()).toBeTrue();
+    });
+  });
 });

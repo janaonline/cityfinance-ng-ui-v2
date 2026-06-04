@@ -1,5 +1,5 @@
 @if (showStandaloneLabel()) {
-  <label [for]="fileInputId" class="fw-bold m-0">{{ fieldLabel() }}</label>
+  <label [for]="fileInputId" class="fw-semibold m-0">{{ fieldLabel() }}</label>
 }
 
 @if (!isReadonly()) {
@@ -98,7 +98,7 @@
       (fileDropped)="onFileDropped($event)"
     >
       <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
-      <p class="fw-bold m-0">{{ uploadPromptLabel() }}</p>
+      <p class="fw-semibold m-0">{{ uploadPromptLabel() }}</p>
       <small class="text-secondary">Drag and drop the file here.</small>
     </div>
   }
