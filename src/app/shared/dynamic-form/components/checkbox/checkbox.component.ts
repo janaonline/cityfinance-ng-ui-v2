@@ -7,7 +7,7 @@ import { MaterialModule } from '../../../../material.module';
     imports: [MaterialModule],
     template: `
     <div class="demo-full-width margin-top" [formGroup]="group">
-      <mat-checkbox [formControlName]="field.key">{{ !field.hideLabel ? field.label : '' }}</mat-checkbox>
+      <mat-checkbox [formControlName]="field.key" [attr.data-cy]="field.key ? field.key + '-test' : null">{{ !field.hideLabel ? field.label : '' }}</mat-checkbox>
     </div>
     <!-- <div class="demo-full-width margin-top" [formGroup]="group.value">
     	<mat-checkbox formControlName="value">{{ getValue('label') }}</mat-checkbox>

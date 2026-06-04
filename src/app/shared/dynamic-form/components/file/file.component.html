@@ -12,6 +12,7 @@
     tabindex="-1"
     aria-hidden="true"
     (change)="fileBrowseHandler($event)"
+    [attr.data-cy]="field().key ? field().key + '-file-input-test' : null"
   />
 }
 
@@ -28,6 +29,7 @@
           [attr.aria-busy]="isUploading()"
           [attr.aria-describedby]="showError() ? fileInputId + '-error' : null"
           (click)="openFileBrowser()"
+          [attr.data-cy]="field().key ? field().key + '-test' : null"
         >
           @if (showButtonUploadedState()) {
             <i class="bi bi-check2"></i>
@@ -55,6 +57,7 @@
             target="_blank"
             rel="noopener noreferrer"
             [attr.aria-label]="'View file ' + uploadedFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
           >
             <i class="bi bi-eye fs-5 mx-1 text-dark" title="View file"></i>
           </a>
@@ -66,6 +69,7 @@
             class="file-icon-button m-0 p-0 border-0 bg-transparent"
             [attr.aria-label]="'Remove file ' + uploadedFile.name"
             (click)="deleteFile()"
+            [attr.data-cy]="field().key ? field().key + '-remove-test' : null"
           >
             <i class="bi bi-x-circle fs-5 mx-1 text-danger" title="Remove file"></i>
           </button>
@@ -96,6 +100,7 @@
       (click)="openFileBrowser()"
       (keydown)="onDropzoneKeydown($event)"
       (fileDropped)="onFileDropped($event)"
+      [attr.data-cy]="field().key ? field().key + '-test' : null"
     >
       <i [class]="fileIconClass() + ' fs-4 ' + fileIconColorClass()"></i>
       <p class="fw-semibold m-0">{{ uploadPromptLabel() }}</p>
@@ -139,6 +144,7 @@
             target="_blank"
             rel="noopener noreferrer"
             [attr.aria-label]="'View file ' + displayFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
           >
             <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
           </a>
@@ -150,6 +156,7 @@
             class="file-icon-button align-self-center"
             [attr.aria-label]="'Remove file ' + displayFile.name"
             (click)="deleteFile()"
+            [attr.data-cy]="field().key ? field().key + '-remove-test' : null"
           >
             <mat-icon class="text-danger fs-3 me-1" title="Remove file">delete_forever</mat-icon>
           </button>
@@ -169,7 +176,7 @@
 }
 
 @if (showError()) {
-  <div [id]="fileInputId + '-error'" class="text-danger small mt-2" role="alert">
+  <div [id]="fileInputId + '-error'" class="text-danger small mt-2" role="alert" [attr.data-cy]="field().key ? field().key + '-error-test' : null">
     {{ errorMessage() }}
   </div>
 }

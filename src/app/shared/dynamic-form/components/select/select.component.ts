@@ -20,6 +20,7 @@ import { MaterialModule } from '../../../../material.module';
     [multiple]="field.multiple"
     placeholder="Select an Option"
     [panelWidth]="parentField ? 400 : 'auto'"
+    [attr.data-cy]="field.key ? field.key + '-test' : null"
     >
     <!-- <mat-option value="">Select an Option</mat-option> -->
     @if (parentField?.options) {

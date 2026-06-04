@@ -303,6 +303,28 @@ describe('SfcStatusComponent', () => {
     );
   });
 
+  it('cancel button has data-cy="sfc-status-cancel-test"', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-cy="sfc-status-cancel-test"]',
+    );
+    expect(btn).toBeTruthy();
+    expect(btn.type).toBe('button');
+  }));
+
+  it('submit button has data-cy="sfc-status-submit-test"', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-cy="sfc-status-submit-test"]',
+    );
+    expect(btn).toBeTruthy();
+    expect(btn.type).toBe('submit');
+  }));
+
   it('stops control creation and reports invalid field configuration', () => {
     createComponent();
 

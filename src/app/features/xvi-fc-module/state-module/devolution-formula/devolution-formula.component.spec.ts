@@ -22,4 +22,20 @@ describe('DevolutionFormulaComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('cancel button has data-cy="devolution-formula-cancel-test"', () => {
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-cy="devolution-formula-cancel-test"]',
+    );
+    expect(btn).toBeTruthy();
+    expect(btn.type).toBe('button');
+  });
+
+  it('submit button has data-cy="devolution-formula-submit-test"', () => {
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-cy="devolution-formula-submit-test"]',
+    );
+    expect(btn).toBeTruthy();
+    expect(btn.type).toBe('submit');
+  });
 });

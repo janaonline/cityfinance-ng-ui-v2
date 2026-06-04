@@ -13,6 +13,7 @@
       data-testid="field-textarea"
       appTrimOnBlur
       [id]="field.key"
+      [attr.data-cy]="field.key ? field.key + '-test' : null"
     ></textarea>
     @for (validation of validations(); track $index) {
       <ng-container ngProjectAs="mat-error">

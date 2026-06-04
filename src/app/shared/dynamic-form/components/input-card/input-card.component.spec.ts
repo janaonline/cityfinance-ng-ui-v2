@@ -202,4 +202,19 @@ describe('InputCardComponent', () => {
     const card = fixture.nativeElement.querySelector('.card') as HTMLElement;
     expect(card.classList).toContain('w-100');
   });
+
+  // ── data-cy selectors ─────────────────────────────────────────────────────────
+
+  it('input has data-cy set to field.key + -test', () => {
+    setup(createField({ key: 'grantAmount' }), new FormBuilder().group({ grantAmount: [''] }));
+    const input = fixture.nativeElement.querySelector('[data-cy="grantAmount-test"]') as HTMLInputElement | null;
+    expect(input).toBeTruthy();
+    expect(input?.tagName.toLowerCase()).toBe('input');
+  });
+
+  it('does not set data-cy when field.key is empty string', () => {
+    const field = createField({ key: '' });
+    setup(field, new FormBuilder().group({}));
+    expect(fixture.nativeElement.querySelector('[data-cy]')).toBeNull();
+  });
 });

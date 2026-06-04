@@ -40,6 +40,7 @@ type DateConstraintKey = 'minDate' | 'maxDate';
         [readonly]="isReadonly"
         [min]="minDate"
         [max]="maxDate"
+        [attr.data-cy]="field.key ? field.key + '-test' : null"
       />
 
       <mat-datepicker-toggle

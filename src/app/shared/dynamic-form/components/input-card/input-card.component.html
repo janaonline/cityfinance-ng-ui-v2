@@ -27,6 +27,7 @@
         [class.is-invalid]="showError"
         [attr.aria-describedby]="showError ? field.key + '-error' : null"
         data-testid="card-input"
+        [attr.data-cy]="field.key ? field.key + '-test' : null"
       />
 
       @if (field.inputCardConfig?.suffixText) {

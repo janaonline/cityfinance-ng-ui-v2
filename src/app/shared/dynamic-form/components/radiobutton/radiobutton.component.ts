@@ -14,9 +14,9 @@ import { MaterialModule } from '../../../../material.module';
           </legend>
         </div>
       }
-      <mat-radio-group [formControlName]="field.key">
+      <mat-radio-group [formControlName]="field.key" [attr.data-cy]="field.key ? field.key + '-test' : null">
         @for (opt of options; track opt) {
-          <mat-radio-button [value]="opt.id || opt" color="primary">{{
+          <mat-radio-button [value]="opt.id || opt" color="primary" [attr.data-cy]="field.key && opt.id ? field.key + '-' + opt.id + '-test' : null">{{
             opt.label || opt
           }}</mat-radio-button>
         }

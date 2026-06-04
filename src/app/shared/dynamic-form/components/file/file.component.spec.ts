@@ -406,6 +406,49 @@ describe('FileComponent', () => {
     });
   });
 
+  describe('data-cy selectors', () => {
+    it('dropzone mode: main dropzone has field.key + -test selector', () => {
+      setup(createField({ key: 'devolutionExcelFile', fileViewType: 'dropzone' }), createGroup(null));
+      const dropzone = fixture.nativeElement.querySelector('[data-cy="devolutionExcelFile-test"]') as HTMLElement | null;
+      expect(dropzone).toBeTruthy();
+      expect(dropzone?.classList).toContain('file-dropzone');
+    });
+
+    it('button mode: upload button has field.key + -test selector', () => {
+      setup(createField({ key: 'devolutionExcelFile', fileViewType: 'button' }), createGroup(null));
+      const button = fixture.nativeElement.querySelector('[data-cy="devolutionExcelFile-test"]') as HTMLElement | null;
+      expect(button).toBeTruthy();
+      expect(button?.tagName.toLowerCase()).toBe('button');
+    });
+
+    it('hidden file input has field.key + -file-input-test selector', () => {
+      setup(createField({ key: 'devolutionExcelFile' }), createGroup(null));
+      const input = fixture.nativeElement.querySelector('[data-cy="devolutionExcelFile-file-input-test"]') as HTMLInputElement | null;
+      expect(input).toBeTruthy();
+      expect(input?.type).toBe('file');
+    });
+
+    it('error block has field.key + -error-test selector when error is shown', () => {
+      const field = createField({ key: 'devolutionExcelFile', validations: [requiredValidation] });
+      const group = createGroup(null, [Validators.required]);
+
+      setup(field, group);
+      group.markAllAsTouched();
+      fixture.detectChanges();
+
+      const errorEl = fixture.nativeElement.querySelector('[data-cy="devolutionExcelFile-error-test"]') as HTMLElement | null;
+      expect(errorEl).toBeTruthy();
+      expect(errorEl?.getAttribute('role')).toBe('alert');
+    });
+
+    it('does not set data-cy when field.key is empty string', () => {
+      const field = createField({ key: '' });
+      setup(field, createGroup(null));
+
+      expect(fixture.nativeElement.querySelector('[data-cy]')).toBeNull();
+    });
+  });
+
   describe('hideLabel', () => {
     it('shows the label when hideLabel is not set', () => {
       const field = createField({ label: 'Upload Document' });
