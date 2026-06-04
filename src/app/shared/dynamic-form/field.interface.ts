@@ -6,6 +6,15 @@ export interface Validator {
 
 export type DateConfigValue = Date | string | null;
 
+export type FieldAppearanceColor = 'primary' | 'success' | 'warning' | 'danger' | 'secondary';
+export type FieldAppearanceVariant = 'default' | 'soft' | 'outlined';
+
+export interface FieldAppearanceConfig {
+  color?: FieldAppearanceColor;
+  variant?: FieldAppearanceVariant;
+  icon?: string;
+}
+
 export type FieldLayoutVariant = 'stacked' | 'inline';
 export type FieldLayoutLabelWidth = 'sm' | 'md' | 'lg';
 
@@ -99,6 +108,7 @@ export interface FieldConfig {
   supportingContent?: FieldSupportingContent[];
   layout?: FieldLayoutConfig;
   hideLabel?: boolean;
+  appearance?: FieldAppearanceConfig;
 }
 
 export interface JsonFieldConfig {

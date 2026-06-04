@@ -23,7 +23,7 @@
       @if (!isReadonly()) {
         <button
           type="button"
-          class="btn btn-success d-inline-flex align-items-center gap-2"
+          [class]="'btn ' + fileColorClass() + ' d-inline-flex align-items-center gap-2'"
           [disabled]="isUploading()"
           [attr.aria-busy]="isUploading()"
           [attr.aria-describedby]="showError() ? fileInputId + '-error' : null"
@@ -33,13 +33,13 @@
             <i class="bi bi-check2"></i>
             <span>Uploaded</span>
           } @else {
-            <i class="bi bi-upload"></i>
+            <i [class]="field().appearance?.icon ? fileIconClass() : 'bi bi-upload'"></i>
             <span>{{ uploadPromptLabel() }}</span>
           }
         </button>
       } @else if (showButtonUploadedState()) {
         <span
-          class="btn btn-success disabled d-inline-flex align-items-center gap-2"
+          [class]="'btn ' + fileColorClass() + ' disabled d-inline-flex align-items-center gap-2'"
           aria-disabled="true"
         >
           <i class="bi bi-check2"></i>
@@ -85,7 +85,7 @@
 } @else {
   @if (!isReadonly()) {
     <div
-      class="file-dropzone mb-1"
+      [class]="'file-dropzone mb-1 ' + fileDropzoneClass()"
       appDnd
       role="button"
       [attr.tabindex]="canSelectFile() ? 0 : -1"
@@ -97,7 +97,7 @@
       (keydown)="onDropzoneKeydown($event)"
       (fileDropped)="onFileDropped($event)"
     >
-      <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
+      <i [class]="fileIconClass() + ' fs-4 ' + fileIconColorClass()"></i>
       <p class="fw-semibold m-0">{{ uploadPromptLabel() }}</p>
       <small class="text-secondary">Drag and drop the file here.</small>
     </div>

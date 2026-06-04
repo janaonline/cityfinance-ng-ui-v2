@@ -235,6 +235,63 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
       },
     ],
   },
+  // --- Temporary appearance test fields (remove before pushing) ---
+  {
+    formFieldType: 'file',
+    label: 'Default Orange Upload',
+    key: 'defaultOrangeUpload',
+    fileViewType: 'dropzone',
+    allowedFileTypes: ['pdf'],
+    folderPath: '',
+    // No appearance config — should show CityFinance orange style
+  },
+  {
+    formFieldType: 'file',
+    label: 'Bootstrap Primary Upload',
+    key: 'primaryUploadExample',
+    fileViewType: 'dropzone',
+    allowedFileTypes: ['pdf'],
+    folderPath: '',
+    appearance: {
+      color: 'primary',
+    },
+  },
+  {
+    formFieldType: 'file',
+    label: 'Success Soft Upload',
+    key: 'successUploadExample',
+    fileViewType: 'dropzone',
+    allowedFileTypes: ['pdf'],
+    folderPath: '',
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
+  },
+  {
+    formFieldType: 'file',
+    label: 'Warning Outlined Upload',
+    key: 'warningUploadExample',
+    fileViewType: 'button',
+    allowedFileTypes: ['pdf'],
+    folderPath: '',
+    appearance: {
+      color: 'warning',
+      variant: 'outlined',
+    },
+  },
+  {
+    formFieldType: 'file',
+    label: 'Danger Soft Upload',
+    key: 'dangerUploadExample',
+    fileViewType: 'dropzone',
+    allowedFileTypes: ['pdf'],
+    folderPath: '',
+    appearance: {
+      color: 'danger',
+      variant: 'soft',
+    },
+  },
   // --- Temporary inline-layout test fields (remove before pushing) ---
   {
     formFieldType: 'text',

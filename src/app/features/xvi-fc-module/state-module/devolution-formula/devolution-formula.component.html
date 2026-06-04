@@ -37,7 +37,11 @@
 
           <form [formGroup]="form">
             @for (item of visibleFields(); track item.key) {
-              <app-dynamic-form class="d-block my-2" [field]="item" [group]="form"></app-dynamic-form>
+              <app-dynamic-form
+                class="border-bottom border-success border-opacity-25 p-2 d-block my-2"
+                [field]="item"
+                [group]="form"
+              ></app-dynamic-form>
             }
           </form>
         </div>

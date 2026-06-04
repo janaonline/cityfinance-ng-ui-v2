@@ -1,9 +1,14 @@
+<app-field-supporting-content
+  [supportingContent]="fieldForRenderer.supportingContent"
+  position="before"
+></app-field-supporting-content>
+
 @if (isInlineLayout) {
-  <div class="row g-3 align-items-start">
-    <label [for]="field.key" [class]="'col-12 col-form-label fw-semibold ' + labelColClass">
+  <div class="row g-3 my-2 align-items-start">
+    <label [for]="field.key" [class]="'col-12 m-0 fw-semibold ' + labelColClass">
       {{ field.label }}
     </label>
-    <div [class]="'col-12 ' + controlColClass">
+    <div [class]="'col-12 m-0 ' + controlColClass">
       <ng-container [ngTemplateOutlet]="fieldContent"></ng-container>
     </div>
   </div>
@@ -11,12 +16,12 @@
   <ng-container [ngTemplateOutlet]="fieldContent"></ng-container>
 }
 
-<ng-template #fieldContent>
-  <app-field-supporting-content
-    [supportingContent]="fieldForRenderer.supportingContent"
-    position="before"
-  ></app-field-supporting-content>
+<app-field-supporting-content
+  [supportingContent]="fieldForRenderer.supportingContent"
+  position="after"
+></app-field-supporting-content>
 
+<ng-template #fieldContent>
   <!-- <ng-container *ngFor="let field of fields;"> -->
   @switch (this.formFieldType) {
     @case ('input') {
@@ -60,9 +65,4 @@
   }
   <!-- </ng-container> -->
   <!-- </form> -->
-
-  <app-field-supporting-content
-    [supportingContent]="fieldForRenderer.supportingContent"
-    position="after"
-  ></app-field-supporting-content>
 </ng-template>
