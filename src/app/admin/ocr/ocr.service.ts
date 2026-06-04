@@ -217,6 +217,7 @@ export class OcrService {
     match_ulb_name?: boolean;
     match_financial_year?: boolean;
     match_doc_type?: boolean;
+    sort_order?: 'asc' | 'desc';
     skip?: number;
     limit?: number;
   }) {
@@ -236,6 +237,7 @@ export class OcrService {
     if (params?.match_ulb_name !== undefined) queryParams['match_ulb_name'] = String(params.match_ulb_name);
     if (params?.match_financial_year !== undefined) queryParams['match_financial_year'] = String(params.match_financial_year);
     if (params?.match_doc_type !== undefined) queryParams['match_doc_type'] = String(params.match_doc_type);
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
     if (params?.skip !== undefined) queryParams['skip'] = params.skip;
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
     return this.http.get<OcrValidationJobsListResponse>(

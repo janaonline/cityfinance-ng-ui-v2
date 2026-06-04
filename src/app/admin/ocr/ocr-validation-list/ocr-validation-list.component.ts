@@ -122,6 +122,8 @@ export class OcrValidationListComponent implements OnInit {
     dateTo: this.fb.control<Date | null>(null),
   });
 
+  readonly sortOrder = signal<'asc' | 'desc'>('desc');
+
   readonly dataSource = new MatTableDataSource<OcrValidationListRow>([]);
   readonly loading = signal(false);
   readonly exporting = signal(false);
@@ -159,6 +161,13 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   refresh(): void {
+    this.loadJobs();
+  }
+
+  toggleSortOrder(): void {
+    this.sortOrder.set(this.sortOrder() === 'desc' ? 'asc' : 'desc');
+    this.pageIndex = 0;
+    this.paginator?.firstPage();
     this.loadJobs();
   }
 
@@ -274,6 +283,7 @@ export class OcrValidationListComponent implements OnInit {
         validation_model: validationModel || undefined,
         ...this.parseStatusField(status),
         ...this.parseMatchFilter(matchStatus),
+        sort_order: this.sortOrder(),
         date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
         date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
         skip: this.pageIndex * this.pageSize,

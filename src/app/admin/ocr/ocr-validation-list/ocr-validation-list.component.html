@@ -302,7 +302,12 @@
 
           <!-- Dates -->
           <ng-container matColumnDef="dates">
-            <th mat-header-cell *matHeaderCellDef>Dates</th>
+            <th mat-header-cell *matHeaderCellDef>
+              <button type="button" class="sort-header-btn" (click)="toggleSortOrder()" [title]="sortOrder() === 'desc' ? 'Newest first — click for oldest first' : 'Oldest first — click for newest first'">
+                Dates
+                <mat-icon class="sort-icon">{{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}</mat-icon>
+              </button>
+            </th>
             <td mat-cell *matCellDef="let row">
               <div class="dates-cell">
                 <div>
