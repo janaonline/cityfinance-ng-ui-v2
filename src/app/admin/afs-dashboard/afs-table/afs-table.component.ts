@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { AsyncPipe, DatePipe, NgClass } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
-import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, Output, QueryList, ViewChild, ViewChildren, OnInit } from '@angular/core';
+import { AfterViewInit, Component, effect, ElementRef, EventEmitter, inject, input, OnInit, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -20,12 +20,10 @@ import { environment } from '../../../../environments/environment';
 import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
 import { MaterialModule } from "../../../material.module";
 import { FileService } from '../../../shared/dynamic-form/components/file/file.service';
+import { AfsArApproveModalComponent } from '../afs-ar-approve-modal/afs-ar-approve-modal.component';
 import { AfsLogModalComponent } from '../afs-log-modal/afs-log-modal.component';
 import { AfsExcelFile, AfsService, FilterValues, ResponseData } from '../afs.service';
 import { DigitizationModalComponent } from '../digitization-modal/digitization-modal.component';
-import { AfsArApproveModalComponent } from '../afs-ar-approve-modal/afs-ar-approve-modal.component';
-import { SignedUrlDirective } from '../../../core/directives/storage-url.directive';
-import { ToStorageUrlPipe } from "../../../core/pipes/to-storage-url.pipe";
 export const AFS_PAGINATION_KEY = 'afsPagination';
 
 // raw row interface
@@ -157,14 +155,12 @@ export interface RawRow {
     MatProgressSpinnerModule,
     MatDialogModule,
     MatTooltipModule,
-    SignedUrlDirective,
     DatePipe,
     NgClass,
     AsyncPipe,
     PdfPageCountPipe,
     MaterialModule,
-    ToStorageUrlPipe
-],
+  ],
   templateUrl: './afs-table.component.html',
   styleUrl: './afs-table.component.scss'
 })
@@ -507,12 +503,13 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
 
   downloadAFSFile(row: any, type: string = 'ulb') {
     console.log('Download AFS Excel for row:', row);
-    let filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.excelUrl : row.afsFiles?.afsFile?.excelUrl;
+    let filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.excelUrl_signed : row.afsFiles?.afsFile?.excelUrl_signed;
     if (row.doctType === 'Auditors report') {
-      filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.digitizedFileUrl : row.afsFiles?.afsFile?.digitizedFileUrl;
+      filePath = type === 'ULB' ? row.afsFiles?.ulbFile?.digitizedFileUrl_signed : row.afsFiles?.afsFile?.digitizedFileUrl_signed;
     }
     if (filePath) {
-      const fullUrl = `${this.storageUrl}/${filePath}`;
+      // const fullUrl = `${this.storageUrl}/${filePath}`;
+      const fullUrl = filePath;
       window.open(fullUrl, '_blank');
     } else {
       this._snackBar.open('AFS Excel file not available for this record.', 'Close', { duration: 5000 });
