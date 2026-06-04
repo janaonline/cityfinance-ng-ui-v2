@@ -1,0 +1,50 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+// Chip input — focus ring
+.chip-wrap:focus-within {
+  outline: 2px solid #1976d2;
+  outline-offset: -1px;
+}
+
+// Template body preview — clamp height + fade
+.tpl-body {
+  max-height: 72px;
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 24px;
+    background: linear-gradient(transparent, #f8f9fa);
+  }
+
+  p { margin-bottom: 0.2rem; }
+  a { color: #1976d2; }
+}
+
+// Compact action buttons inside template cards
+.btn-sm-mat {
+  font-size: .75rem !important;
+  line-height: 1 !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+  min-width: 0 !important;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    margin-right: 3px;
+  }
+}
+
+// Keep accordion expansion panels flush
+mat-expansion-panel { border-radius: 8px !important; }

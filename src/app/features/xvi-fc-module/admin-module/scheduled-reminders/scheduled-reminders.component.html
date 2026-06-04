@@ -1,0 +1,368 @@
+<div class="container-fluid px-3 px-md-4 py-4" style="max-width:100%;overflow-x:hidden;">
+
+  <!-- PAGE HEADER -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <mat-icon class="text-secondary" style="font-size:28px;width:28px;height:28px;">notifications_active</mat-icon>
+    <div>
+      <h1 class="h5 fw-bold mb-0">Scheduled Reminders</h1>
+      <p class="text-muted small mb-0">Manage automated notifications for ULBs and States</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       ACCORDION — Templates + Send Email
+  ════════════════════════════════════════════════ -->
+  <mat-accordion class="mb-4" multi>
+
+    <!-- ── PANEL 1 · EMAIL TEMPLATES (expanded by default) ── -->
+    <mat-expansion-panel [expanded]="true" class="border mb-2 rounded shadow-sm">
+      <mat-expansion-panel-header class="py-2">
+        <mat-panel-title class="d-flex align-items-center gap-2 fw-semibold">
+          <mat-icon class="text-secondary" style="font-size:18px;width:18px;height:18px;">mail_outline</mat-icon>
+          Email Templates
+          @if (templates().length > 0) {
+            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1" style="font-size:.68rem;">
+              {{ templates().length }}
+            </span>
+          }
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <!-- Loading -->
+      @if (tplLoading()) {
+        <div class="d-flex align-items-center gap-2 py-4 justify-content-center">
+          <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
+          <span class="text-muted small">Loading templates…</span>
+        </div>
+      }
+
+      <!-- Error -->
+      @else if (tplError()) {
+        <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mx-1 small">
+          <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>
+          {{ tplError() }}
+          <button mat-stroked-button class="ms-auto" (click)="loadTemplates()">Retry</button>
+        </div>
+      }
+
+      <!-- Empty -->
+      @else if (templates().length === 0) {
+        <div class="text-center py-5 text-muted">
+          <mat-icon style="font-size:36px;width:36px;height:36px;opacity:.3;">mail_off</mat-icon>
+          <p class="small mt-2 mb-0">No email templates found.</p>
+        </div>
+      }
+
+      <!-- Template cards -->
+      @else {
+        <div class="row g-3 py-2">
+          @for (tpl of templates(); track tpl._id) {
+            <div class="col-12 col-md-6 col-xl-4">
+              <div class="card h-100 border" [class.opacity-50]="!tpl.isActive" style="transition:box-shadow .18s;" onmouseenter="this.style.boxShadow='0 4px 14px rgba(0,0,0,.1)'" onmouseleave="this.style.boxShadow=''">
+
+                <!-- Top row: name + slug + status pill -->
+                <div class="card-header bg-white border-bottom d-flex align-items-start justify-content-between gap-2 py-2 px-3">
+                  <div class="min-w-0">
+                    <p class="fw-semibold mb-0 small text-truncate" [matTooltip]="tpl.name">{{ tpl.name }}</p>
+                    <code class="text-muted" style="font-size:.68rem;">{{ tpl.slug }}</code>
+                  </div>
+                  <!-- Fixed active pill: Bootstrap 5 text-bg-* classes -->
+                  <span class="badge rounded-pill flex-shrink-0"
+                        [class.text-bg-success]="tpl.isActive"
+                        [class.text-bg-secondary]="!tpl.isActive">
+                    {{ tpl.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+
+                <!-- Subject -->
+                <div class="px-3 pt-2">
+                  <p class="small text-muted text-truncate mb-1 d-flex align-items-center gap-1" [matTooltip]="tpl.subject">
+                    <mat-icon style="font-size:13px;width:13px;height:13px;flex-shrink:0;">subject</mat-icon>
+                    {{ tpl.subject || '(no subject)' }}
+                  </p>
+                </div>
+
+                <!-- Body preview -->
+                <div class="px-3 pb-1 flex-grow-1">
+                  <div class="rounded p-2 bg-light tpl-body small lh-base text-muted"
+                       [innerHTML]="safe(tpl.body || '<em>No content</em>')"></div>
+                </div>
+
+                <!-- Updated date -->
+                <div class="px-3 pb-2">
+                  <span class="text-muted" style="font-size:.68rem;">Updated {{ fmtDate(tpl.updatedAt) }}</span>
+                </div>
+
+                <!-- Actions -->
+                <div class="card-footer bg-white border-top d-flex gap-2 py-2 px-3">
+                  <button mat-stroked-button class="flex-grow-1 btn-sm-mat" (click)="openEdit(tpl)" matTooltip="Edit template">
+                    <mat-icon>edit</mat-icon> Edit
+                  </button>
+                  <button mat-stroked-button class="flex-grow-1 btn-sm-mat"
+                          [color]="tpl.isActive ? 'warn' : 'primary'"
+                          (click)="toggleActive(tpl)"
+                          [matTooltip]="tpl.isActive ? 'Disable template' : 'Enable template'">
+                    <mat-icon>{{ tpl.isActive ? 'toggle_off' : 'toggle_on' }}</mat-icon>
+                    {{ tpl.isActive ? 'Disable' : 'Enable' }}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <mat-action-row>
+        <button mat-stroked-button (click)="loadTemplates()" [disabled]="tplLoading()">
+          <mat-icon>refresh</mat-icon> Refresh
+        </button>
+      </mat-action-row>
+    </mat-expansion-panel>
+
+    <!-- ── PANEL 2 · SEND EMAIL MANUALLY (collapsed by default) ── -->
+    <mat-expansion-panel class="border rounded shadow-sm">
+      <mat-expansion-panel-header class="py-2">
+        <mat-panel-title class="d-flex align-items-center gap-2 fw-semibold">
+          <mat-icon class="text-secondary" style="font-size:18px;width:18px;height:18px;">send</mat-icon>
+          Send Email Manually
+        </mat-panel-title>
+        <mat-panel-description class="text-muted small">
+          Trigger an email immediately to specific recipients
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="py-2">
+        @if (sendError()) {
+          <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mb-3 small">
+            <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>
+            {{ sendError() }}
+          </div>
+        }
+
+        <form [formGroup]="sendForm" (ngSubmit)="onSend()" novalidate>
+
+          <!-- Recipients chip input -->
+          <div class="mb-3">
+            <label for="chipInput" class="form-label small fw-semibold text-muted text-uppercase" style="letter-spacing:.04em;">
+              Recipients <span class="text-danger">*</span>
+            </label>
+            <div class="chip-wrap d-flex flex-wrap gap-1 align-items-center p-2 border rounded bg-white"
+                 [class.border-danger]="chipErr()">
+              @for (email of chips(); track email) {
+                <span class="badge d-inline-flex align-items-center gap-1 px-2 py-1"
+                      style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;font-weight:500;font-size:.74rem;">
+                  {{ email }}
+                  <button type="button" class="btn-close ms-1" style="font-size:.5rem;" (click)="removeChip(email)" aria-label="remove"></button>
+                </span>
+              }
+              <input #chipInput id="chipInput"
+                     class="border-0 flex-grow-1 bg-transparent small"
+                     style="min-width:180px;outline:none;"
+                     [placeholder]="chips().length ? 'Add another email…' : 'Type email and press Enter or comma…'"
+                     (keydown.enter)="addChip(chipInput); $event.preventDefault()"
+                     (keydown.comma)="addChip(chipInput); $event.preventDefault()"
+                     (paste)="pasteEmails($event)" />
+            </div>
+            @if (chipErr()) {
+              <div class="text-danger small mt-1">{{ chipErr() }}</div>
+            } @else {
+              <div class="text-muted small mt-1">Press Enter or comma to confirm each address.</div>
+            }
+          </div>
+
+          <!-- Template + Subject -->
+          <div class="row g-3 mb-1">
+            <div class="col-12 col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Email Template (optional)</mat-label>
+                <mat-select formControlName="templateId">
+                  <mat-option [value]="null">— No template —</mat-option>
+                  @for (t of activeTpls(); track t._id) {
+                    <mat-option [value]="t._id">{{ t.name }}</mat-option>
+                  }
+                </mat-select>
+                <mat-hint>Auto-fills subject &amp; body</mat-hint>
+              </mat-form-field>
+            </div>
+            <div class="col-12 col-md-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Subject <span class="text-danger">*</span></mat-label>
+                <input matInput formControlName="subject" placeholder="Email subject line" />
+                @if (sendForm.get('subject')?.hasError('required') && sendForm.get('subject')?.touched) {
+                  <mat-error>Subject is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <mat-form-field appearance="outline" class="w-100 mb-1">
+            <mat-label>Body (HTML) <span class="text-danger">*</span></mat-label>
+            <textarea matInput formControlName="body" rows="4" placeholder="Enter HTML body content here"></textarea>
+            @if (sendForm.get('body')?.hasError('required') && sendForm.get('body')?.touched) {
+              <mat-error>Body is required</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Variables -->
+          <p class="small fw-semibold text-muted text-uppercase mt-2 mb-2" style="letter-spacing:.04em;">
+            Variables <span class="fw-normal" style="text-transform:none;">(optional)</span>
+          </p>
+          <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>name</mat-label>
+                <input matInput formControlName="varName" />
+              </mat-form-field>
+            </div>
+            <div class="col-6 col-md-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>fy</mat-label>
+                <input matInput formControlName="varFy" placeholder="2026-27" />
+              </mat-form-field>
+            </div>
+            <div class="col-6 col-md-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>deadline</mat-label>
+                <input matInput formControlName="varDeadline" placeholder="30 June 2026" />
+              </mat-form-field>
+            </div>
+            <div class="col-6 col-md-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>dashboardUrl</mat-label>
+                <input matInput formControlName="varDashUrl" placeholder="https://…" />
+                @if (sendForm.get('varDashUrl')?.hasError('invalidUrl')) {
+                  <mat-error>Invalid URL</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end pt-2 border-top">
+            <button mat-flat-button color="warn" type="submit"
+                    [disabled]="sending() || sendForm.invalid || chips().length === 0"
+                    class="d-flex align-items-center gap-2">
+              <mat-progress-spinner diameter="16" mode="indeterminate" [hidden]="!sending()"></mat-progress-spinner>
+              <mat-icon [hidden]="sending()">send</mat-icon>
+              {{ sending() ? 'Sending…' : 'Send Email Now' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </mat-expansion-panel>
+  </mat-accordion>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION · AUTOMATED SCHEDULED EMAILS
+  ════════════════════════════════════════════════ -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3 flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <mat-icon class="text-secondary" style="font-size:18px;width:18px;height:18px;">timer</mat-icon>
+        <div>
+          <p class="fw-semibold mb-0 small">Automated Scheduled Emails</p>
+          <p class="text-muted mb-0" style="font-size:.72rem;">All reminders queued to fire automatically</p>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="loadReminders()" [disabled]="remLoading()">
+        <mat-icon>refresh</mat-icon> Refresh
+      </button>
+    </div>
+
+    @if (remLoading()) {
+      <div class="card-body d-flex align-items-center justify-content-center gap-2 py-5">
+        <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
+        <span class="text-muted small">Loading reminders…</span>
+      </div>
+    } @else if (remError()) {
+      <div class="card-body">
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-0">
+          <mat-icon>error_outline</mat-icon><span>{{ remError() }}</span>
+          <button mat-stroked-button class="ms-auto" (click)="loadReminders()">Retry</button>
+        </div>
+      </div>
+    } @else if (reminders().length === 0) {
+      <div class="card-body text-center py-5 text-muted">
+        <mat-icon style="font-size:40px;width:40px;height:40px;opacity:.25;">event_busy</mat-icon>
+        <p class="small mt-2 mb-0">No automated reminders scheduled yet.</p>
+      </div>
+    } @else {
+      <!-- Scrollable table — table-responsive provides horizontal scroll when needed -->
+      <div class="table-responsive w-100">
+        <table class="table table-hover align-middle mb-0" style="font-size:.78rem;min-width:700px;">
+          <thead class="table-light">
+            <tr>
+              <th style="min-width:140px;">Name</th>
+              <th style="min-width:130px;">Template</th>
+              <th>Category</th>
+              <th>Deadline</th>
+              <th class="text-center">Days</th>
+              <th>Time (IST)</th>
+              <th>Status</th>
+              <th class="text-center">Sent / Failed</th>
+              <th class="text-center">Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rem of reminders(); track rem._id) {
+              <tr [class.opacity-50]="!rem.isActive">
+                <!-- Name -->
+                <td style="max-width:160px;">
+                  <span class="d-block text-truncate fw-medium" [matTooltip]="rem.name">{{ rem.name }}</span>
+                  <span class="text-muted d-block" style="font-size:.68rem;">{{ fmtDateTime(rem.reminderDate) }}</span>
+                </td>
+                <!-- Template -->
+                <td style="max-width:140px;">
+                  @if (rem.templateId) {
+                    <span class="d-block text-truncate" [matTooltip]="rem.templateId.subject" style="max-width:130px;">{{ rem.templateId.name }}</span>
+                  } @else {
+                    <em class="text-muted small">Deleted</em>
+                  }
+                </td>
+                <!-- Category -->
+                <td>
+                  <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis" style="font-size:.67rem;font-weight:700;">
+                    {{ rem.recipientCategory }}
+                  </span>
+                </td>
+                <!-- Deadline -->
+                <td class="text-nowrap text-muted small">{{ fmtDate(rem.deadlineDate) }}</td>
+                <!-- Days before -->
+                <td class="text-center text-muted small">{{ rem.reminderDaysBefore }}</td>
+                <!-- Time -->
+                <td class="text-nowrap text-muted small">{{ rem.reminderTime }}</td>
+                <!-- Status -->
+                <td>
+                  <span class="badge rounded-pill" [class]="getStatusCfg(rem.status).cls" style="font-size:.68rem;">
+                    {{ getStatusCfg(rem.status).label }}
+                  </span>
+                  @if (rem.status === 'FAILED' && rem.lastError) {
+                    <mat-icon class="ms-1 text-danger" style="font-size:13px;width:13px;height:13px;vertical-align:middle;cursor:default;"
+                              [matTooltip]="rem.lastError">info</mat-icon>
+                  }
+                </td>
+                <!-- Sent / Failed -->
+                <td class="text-center">
+                  <span class="text-success fw-semibold">{{ rem.sentCount }}</span>
+                  <span class="text-muted mx-1">/</span>
+                  <span [class.text-danger]="rem.failedCount > 0" [class.fw-semibold]="rem.failedCount > 0" class="text-muted">{{ rem.failedCount }}</span>
+                </td>
+                <!-- Active -->
+                <td class="text-center">
+                  @if (rem.isActive) {
+                    <mat-icon class="text-success" style="font-size:17px;width:17px;height:17px;">check_circle</mat-icon>
+                  } @else {
+                    <mat-icon class="text-secondary" style="font-size:17px;width:17px;height:17px;">cancel</mat-icon>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+</div>

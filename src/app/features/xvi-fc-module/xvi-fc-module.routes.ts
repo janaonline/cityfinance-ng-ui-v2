@@ -22,6 +22,7 @@ function isStateUserRole(role: string): boolean {
 const isUlbRole: CanMatchFn = () => isUlbUserRole(readUserRole());
 const isStateRole: CanMatchFn = () => isStateUserRole(readUserRole());
 const isMohuaRole: CanMatchFn = () => readUserRole() === 'MoHUA';
+const isAdminRole: CanMatchFn = () => readUserRole().toUpperCase() === 'ADMIN';
 
 export const XVIFC_ROUTES: Routes = [
   {
@@ -63,6 +64,13 @@ export const XVIFC_ROUTES: Routes = [
         data: { role: 'MOHUA' },
         loadChildren: () =>
           import('./mohua-module/mohua-module.routes').then((m) => m.MOHUA_ROUTES),
+      },
+      {
+        path: ':yearId',
+        canMatch: [isAdminRole],
+        data: { role: 'ADMIN' },
+        loadChildren: () =>
+          import('./admin-module/admin-module.routes').then((m) => m.ADMIN_ROUTES),
       },
       {
         path: '**',
