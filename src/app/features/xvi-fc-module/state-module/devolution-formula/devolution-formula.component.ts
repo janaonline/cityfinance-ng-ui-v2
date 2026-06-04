@@ -137,6 +137,22 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     maxFileSize: 5,
     // fileViewType: 'button',
     allowedFileTypes: ['xlsx', 'xls'],
+    supportingContent: [
+      {
+        type: 'template-download',
+        position: 'before',
+        label: 'Download the template',
+        url: '/assets/templates/devolution-formula-template.xlsx',
+        description:
+          'Fill in the grant amount and formula for each ULB, then re-upload as a single Excel file.',
+      },
+      {
+        type: 'sample-columns',
+        position: 'before',
+        title: 'Expected Excel columns',
+        columns: ['ULB Code', 'ULB Name', 'Grant Amount (₹ Cr)', 'Formula Used'],
+      },
+    ],
   },
   {
     formFieldType: 'textarea',
@@ -157,5 +173,67 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
       'I hereby certify that the information provided above is true and correct to the best of my knowledge and is provided for the purpose of 16th Finance Commission grant eligibility.',
     key: 'checkboxConfirmation',
     value: false,
+  },
+  // --- Temporary UI test fields (remove before pushing) ---
+  {
+    formFieldType: 'text',
+    label: 'Testing info content',
+    key: 'testingInfoContent',
+    placeholder: 'Temporary test field',
+    supportingContent: [
+      {
+        type: 'info',
+        position: 'before',
+        title: 'Helpful information',
+        description: 'This is an example info block shown before a question.',
+      },
+    ],
+  },
+  {
+    formFieldType: 'textarea',
+    label: 'Testing warning content',
+    key: 'testingWarningContent',
+    placeholder: 'Temporary test textarea',
+    supportingContent: [
+      {
+        type: 'warning',
+        position: 'after',
+        title: 'Important note',
+        description: 'This is an example warning block shown after a question.',
+      },
+    ],
+  },
+  {
+    formFieldType: 'text',
+    label: 'Testing readonly card content',
+    key: 'testingReadonlyCardContent',
+    placeholder: 'Temporary test field',
+    supportingContent: [
+      {
+        type: 'readonly-card',
+        position: 'before',
+        title: 'Grant summary',
+        description: 'This is a sample read-only content card.',
+        rows: [
+          { label: 'Financial Year', value: '2026-27' },
+          { label: 'State', value: 'Andhra Pradesh' },
+          { label: 'Total ULBs', value: '123' },
+        ],
+      },
+    ],
+  },
+  {
+    formFieldType: 'text',
+    label: 'Testing sample columns content',
+    key: 'testingSampleColumnsContent',
+    placeholder: 'Temporary test field',
+    supportingContent: [
+      {
+        type: 'sample-columns',
+        position: 'before',
+        title: 'Sample columns',
+        columns: ['Column A', 'Column B', 'Column C'],
+      },
+    ],
   },
 ];

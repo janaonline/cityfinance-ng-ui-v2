@@ -11,6 +11,7 @@ import { RadiobuttonComponent } from './components/radiobutton/radiobutton.compo
 import { SelectComponent } from './components/select/select.component';
 import { TableComponent } from './components/table/table.component';
 import { TextareaComponent } from './components/textarea/textarea.component';
+import { DynamicFieldSupportingContentComponent } from './components/field-supporting-content/field-supporting-content.component';
 
 @Component({
   // exportAs: "dynamicForm",
@@ -30,6 +31,7 @@ import { TextareaComponent } from './components/textarea/textarea.component';
     TableComponent,
     FileComponent,
     TextareaComponent,
+    DynamicFieldSupportingContentComponent,
   ],
   // styles: []
   styleUrl: './dynamic-form.component.scss',

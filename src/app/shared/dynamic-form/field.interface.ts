@@ -6,6 +6,42 @@ export interface Validator {
 
 export type DateConfigValue = Date | string | null;
 
+export type FieldSupportingContentPosition = 'before' | 'after';
+
+export type FieldSupportingContent =
+  | {
+      type: 'template-download';
+      position?: FieldSupportingContentPosition;
+      label: string;
+      url: string;
+      description?: string;
+    }
+  | {
+      type: 'info';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      description: string;
+    }
+  | {
+      type: 'warning';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      description: string;
+    }
+  | {
+      type: 'sample-columns';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      columns: string[];
+    }
+  | {
+      type: 'readonly-card';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      description?: string;
+      rows?: { label: string; value: string }[];
+    };
+
 export type UploadedFileValue = {
   fileName: string;
   fileUrl: string;
@@ -52,6 +88,7 @@ export interface FieldConfig {
   minDate?: DateConfigValue;
   maxDate?: DateConfigValue;
   placeholder?: string;
+  supportingContent?: FieldSupportingContent[];
 }
 
 export interface JsonFieldConfig {

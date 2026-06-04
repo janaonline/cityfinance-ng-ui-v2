@@ -1,3 +1,8 @@
+<app-field-supporting-content
+  [supportingContent]="field.supportingContent"
+  position="before"
+></app-field-supporting-content>
+
 <!-- <ng-container *ngFor="let field of fields;"> -->
 @switch (this.formFieldType) {
   @case ('input') {
@@ -41,3 +46,8 @@
 }
 <!-- </ng-container> -->
 <!-- </form> -->
+
+<app-field-supporting-content
+  [supportingContent]="field.supportingContent"
+  position="after"
+></app-field-supporting-content>
