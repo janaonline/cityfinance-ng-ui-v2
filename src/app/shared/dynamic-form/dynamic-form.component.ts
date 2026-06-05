@@ -37,7 +37,6 @@ import { TextareaComponent } from './components/textarea/textarea.component';
   styleUrl: './dynamic-form.component.scss',
 })
 export class DynamicFormComponent implements OnInit, OnChanges {
-  // @Input() field!: FieldConfig;
   @Input() field!: any;
   @Input() group!: FormGroup;
   @Input() formArray!: FormArray;
@@ -59,26 +58,38 @@ export class DynamicFormComponent implements OnInit, OnChanges {
     }
   }
 
+  /** Returns `true` when the field is configured to render in an inline (label + control side-by-side) layout. */
   get isInlineLayout(): boolean {
     return this.field?.layout?.variant === 'inline';
   }
 
+  /** Bootstrap column class for the label cell, driven by `layout.labelWidth`. */
   get labelColClass(): string {
     const map: Record<string, string> = { sm: 'col-md-3', md: 'col-md-4', lg: 'col-md-5' };
     return map[this.field?.layout?.labelWidth ?? 'md'] ?? 'col-md-4';
   }
 
+  /** Bootstrap column class for the control cell, complementary to `labelColClass`. */
   get controlColClass(): string {
     const map: Record<string, string> = { sm: 'col-md-9', md: 'col-md-8', lg: 'col-md-7' };
     return map[this.field?.layout?.labelWidth ?? 'md'] ?? 'col-md-8';
   }
 
+  /**
+   * Normalizes text-like field types (`text`, `url`, `email`, `number`, `amount`)
+   * to `'input'` so they are all rendered through `InputComponent`.
+   */
   private resolveFormFieldType(): string {
     return ['text', 'url', 'email', 'number', 'amount'].includes(this.field?.formFieldType)
       ? 'input'
       : this.field?.formFieldType;
   }
 
+  /**
+   * Returns a renderer-safe field config.
+   * In inline layout, `hideLabel` is set to `true` so the child component
+   * does not render its own label (the layout template renders it instead).
+   */
   private buildFieldForRenderer(): any {
     return this.isInlineLayout ? { ...this.field, hideLabel: true } : this.field;
   }
