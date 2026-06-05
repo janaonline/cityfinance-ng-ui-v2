@@ -122,10 +122,13 @@ export class OcrValidationListComponent implements OnInit {
     dateTo: this.fb.control<Date | null>(null),
   });
 
+  readonly sortOrder = signal<'asc' | 'desc'>('desc');
+
   readonly dataSource = new MatTableDataSource<OcrValidationListRow>([]);
   readonly loading = signal(false);
   readonly exporting = signal(false);
   readonly copiedKey = signal<string | null>(null);
+  readonly retryingJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -159,6 +162,13 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   refresh(): void {
+    this.loadJobs();
+  }
+
+  toggleSortOrder(): void {
+    this.sortOrder.set(this.sortOrder() === 'desc' ? 'asc' : 'desc');
+    this.pageIndex = 0;
+    this.paginator?.firstPage();
     this.loadJobs();
   }
 
@@ -233,6 +243,25 @@ export class OcrValidationListComponent implements OnInit {
     return `${value.slice(0, 9)}...${value.slice(-9)}`;
   }
 
+  retryJob(row: OcrValidationListRow): void {
+    if (this.retryingJobId()) return;
+    this.retryingJobId.set(row.jobId);
+    this.ocrService.retryOcrValidationJob(row.jobId).subscribe({
+      next: () => {
+        this.retryingJobId.set(null);
+        this.loadJobs();
+      },
+      error: (err) => {
+        this.retryingJobId.set(null);
+        this.utilityService.swalPopup(
+          'Retry failed',
+          err?.error?.detail || err?.error?.message || 'Could not retry job. The original file may not be available.',
+          'error',
+        );
+      },
+    });
+  }
+
   private parseStatusField(value: string): { status?: string; error_code?: string } {
     if (!value) return {};
     const [status, errorCode] = value.split(':');
@@ -274,6 +303,7 @@ export class OcrValidationListComponent implements OnInit {
         validation_model: validationModel || undefined,
         ...this.parseStatusField(status),
         ...this.parseMatchFilter(matchStatus),
+        sort_order: this.sortOrder(),
         date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
         date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
         skip: this.pageIndex * this.pageSize,
