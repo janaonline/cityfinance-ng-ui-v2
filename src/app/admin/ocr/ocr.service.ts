@@ -194,6 +194,13 @@ export class OcrService {
     );
   }
 
+  retryOcrValidationJob(jobId: string) {
+    return this.http.post<OcrValidationJobSubmitResponse>(
+      environment.api.url3 + `ocr-validation/jobs/${jobId}/retry`,
+      {},
+    );
+  }
+
   downloadOcrJobFile(jobId: string) {
     return this.http.get(
       environment.api.url3 + `ocr-validation/jobs/${jobId}/download`,

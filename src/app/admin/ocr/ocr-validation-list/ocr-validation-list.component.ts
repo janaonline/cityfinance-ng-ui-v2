@@ -128,6 +128,7 @@ export class OcrValidationListComponent implements OnInit {
   readonly loading = signal(false);
   readonly exporting = signal(false);
   readonly copiedKey = signal<string | null>(null);
+  readonly retryingJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -240,6 +241,25 @@ export class OcrValidationListComponent implements OnInit {
   truncate(value: string, max = 22): string {
     if (!value || value === '—' || value.length <= max) return value;
     return `${value.slice(0, 9)}...${value.slice(-9)}`;
+  }
+
+  retryJob(row: OcrValidationListRow): void {
+    if (this.retryingJobId()) return;
+    this.retryingJobId.set(row.jobId);
+    this.ocrService.retryOcrValidationJob(row.jobId).subscribe({
+      next: () => {
+        this.retryingJobId.set(null);
+        this.loadJobs();
+      },
+      error: (err) => {
+        this.retryingJobId.set(null);
+        this.utilityService.swalPopup(
+          'Retry failed',
+          err?.error?.detail || err?.error?.message || 'Could not retry job. The original file may not be available.',
+          'error',
+        );
+      },
+    });
   }
 
   private parseStatusField(value: string): { status?: string; error_code?: string } {
