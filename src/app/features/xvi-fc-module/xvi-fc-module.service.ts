@@ -4,14 +4,9 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { Login_Logout } from '../../core/util/logout.util';
-import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { SideBarModel } from '../../shared/components/side-menu';
 import { XviFcSideMenuApiService } from './xvi-fc-side-menu.service';
-import {
-  ROLES,
-  Roles,
-  XVIFC_LANDING_ROUTE,
-  XvifcYearId,
-} from './xvi-fc-side-menu.config';
+import { ROLES, Roles, XVIFC_LANDING_ROUTE, XvifcYearId } from './xvi-fc-side-menu.config';
 
 export interface XvifcRouteContext {
   role: Roles;
@@ -196,7 +191,7 @@ export class XvifcModuleService {
         ...menu,
         bottomModel: [
           ...menu.bottomModel,
-          { label: '', separator: true },
+          // { label: '', separator: true },
           {
             label: 'Sign Out',
             icon: 'bi bi-box-arrow-right',

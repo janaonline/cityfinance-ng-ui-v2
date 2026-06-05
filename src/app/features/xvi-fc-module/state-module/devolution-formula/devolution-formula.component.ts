@@ -169,12 +169,12 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
         url: '/assets/templates/devolution-formula-template.xlsx',
         description: 'Fill in the grant amount and formula for each ULB, then re-upload as a single Excel file.',
       },
-      {
-        type: 'sample-columns',
-        position: 'before',
-        title: 'Expected Excel columns',
-        columns: ['ULB Code', 'ULB Name', 'Grant Amount (₹ Cr)', 'Formula Used'],
-      },
+      // {
+      //   type: 'sample-columns',
+      //   position: 'before',
+      //   title: 'Expected Excel columns',
+      //   columns: ['ULB Code', 'ULB Name', 'Grant Amount (₹ Cr)', 'Formula Used'],
+      // },
     ],
     appearance: {
       color: 'success',

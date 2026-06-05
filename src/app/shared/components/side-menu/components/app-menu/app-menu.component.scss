@@ -1,0 +1,243 @@
+// ─── Sidebar shell layout ────────────────────────────────────────────────────
+// Item-level styles (link colours, hover, active, icon-only) live in
+// app-menu-item.component.scss.  This file owns the wrapper dimensions, panel
+// transitions, the desktop edge-toggle, the mobile drawer + backdrop,
+// and the mobile open button.
+
+hr {
+  margin-block: 0.5rem;
+  opacity: 0.35;
+}
+
+// ─── Wrapper ─────────────────────────────────────────────────────────────────
+// display:block so the toggle button (position:absolute) doesn't add width.
+// The wrapper IS the sidebar column — its width drives the parent flex layout.
+
+.menu-wrapper {
+  position: relative;
+  display: block; // NOT flex — toggle must not add layout width
+  height: 0; // zero layout height — sidebar must NOT force the row to 100vh
+  width: var(--nav-width);
+  flex-shrink: 0;
+  overflow: visible; // layout-menu and toggle both overflow this intentionally
+  transition: width 0.3s ease;
+}
+
+// ─── Sidebar panel ───────────────────────────────────────────────────────────
+
+.layout-menu {
+  font-size: var(--fs-6);
+  background-color: var(--color-primary);
+  border-radius: 0 0 5px 0;
+  width: 100%;
+  height: 100dvh; // overflows the 0-height wrapper; fills the viewport visually
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  transition:
+    width 0.3s ease,
+    transform 0.3s ease,
+    opacity 0.2s ease;
+
+  &:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+}
+
+.layout-menu-ul {
+  padding: 0;
+}
+
+.layout-menu-ul-pimary {
+  flex-grow: 1;
+  margin: 0.25rem 0.5rem 0.5rem;
+}
+
+.layout-menu-ul-secondary {
+  margin-bottom: 0;
+  padding: 0.5rem;
+  box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-split-squared);
+  background-color: var(--color-primary);
+  position: sticky;
+  bottom: 0;
+  left: 0;
+}
+
+// ─── Desktop: icon-rail (collapsed) ──────────────────────────────────────────
+
+.sidebar--collapsed {
+  width: var(--nav-icon-width, 3.5rem);
+
+  .layout-menu-ul-pimary {
+    margin: 0.25rem;
+    padding-left: 0;
+  }
+
+  .layout-menu ul {
+    padding-left: 0;
+  }
+}
+
+// ─── Desktop: edge-toggle button ─────────────────────────────────────────────
+// Absolutely positioned on the right edge of the sidebar panel.
+// Does NOT participate in block layout, so zero extra width is consumed.
+
+.sidebar-toggle {
+  position: absolute;
+  top: 4rem;
+  right: -14px; // half outside the panel — creates a "tab" effect
+  z-index: 15;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 14px;
+  padding: 0.6rem 0;
+
+  color: var(--color-primary-accent);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-primary-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-accent);
+    outline-offset: 2px;
+  }
+}
+
+// ─── Mobile overlay (≤ 991.98px) ─────────────────────────────────────────────
+
+@media (max-width: 991.98px) {
+  // Wrapper collapses to zero width — the drawer is position:fixed (viewport-relative).
+  .sidebar--overlay.menu-wrapper {
+    width: 0;
+    height: 0;
+    overflow: visible;
+  }
+
+  // Drawer panel: fixed to the left edge of the viewport.
+  // Starts hidden (translated left), slides in when open.
+  .sidebar--overlay .layout-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(var(--nav-width), calc(100vw - 4.5rem));
+    height: 100%;
+    border-radius: 0 var(--radius-split-squared, 8px) var(--radius-split-squared, 8px) 0;
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.22);
+    transform: translateX(calc(-100% - 1px));
+    opacity: 0;
+    pointer-events: none;
+    z-index: 45;
+    transition:
+      transform 0.28s ease,
+      opacity 0.2s ease;
+  }
+
+  .sidebar--overlay-open .layout-menu {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  // Compact header row inside the drawer (mobile only).
+  .mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+  }
+
+  .mobile-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: var(--color-primary-accent);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  // Hamburger tab: fixed pill at the left viewport edge when drawer is closed.
+  .mobile-open-btn {
+    position: fixed;
+    top: 4rem;
+    left: 0;
+    z-index: 46;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 16px;
+    padding: 0.6rem 0;
+
+    color: var(--color-primary-accent);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+
+    transition:
+      background-color 0.15s ease,
+      opacity 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-accent);
+      outline-offset: 2px;
+    }
+  }
+}
+
+// ─── Backdrop (mobile only) ───────────────────────────────────────────────────
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 35;
+  cursor: pointer;
+}
