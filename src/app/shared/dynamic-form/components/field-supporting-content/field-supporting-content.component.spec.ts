@@ -161,9 +161,7 @@ describe('DynamicFieldSupportingContentComponent', () => {
     });
 
     it('has role="note"', () => {
-      componentRef.setInput('supportingContent', [
-        { type: 'info', description: 'x' } satisfies FieldSupportingContent,
-      ]);
+      componentRef.setInput('supportingContent', [{ type: 'info', description: 'x' } satisfies FieldSupportingContent]);
       fixture.detectChanges();
       expect(fixture.debugElement.query(By.css('[role="note"]'))).toBeTruthy();
     });
@@ -191,7 +189,7 @@ describe('DynamicFieldSupportingContentComponent', () => {
   });
 
   describe('sample-columns', () => {
-    it('renders the column list', () => {
+    it('renders each column as a badge chip', () => {
       componentRef.setInput('supportingContent', [
         {
           type: 'sample-columns',
@@ -203,10 +201,23 @@ describe('DynamicFieldSupportingContentComponent', () => {
       const el = fixture.debugElement.query(By.css('.sc-sample-columns'));
       expect(el).toBeTruthy();
       expect(el.nativeElement.textContent).toContain('Expected columns');
-      const items = el.queryAll(By.css('li'));
-      expect(items.length).toBe(3);
-      expect(items[0].nativeElement.textContent.trim()).toBe('Col A');
-      expect(items[2].nativeElement.textContent.trim()).toBe('Col C');
+      const badges = el.queryAll(By.css('.badge'));
+      expect(badges.length).toBe(3);
+      expect(badges[0].nativeElement.textContent.trim()).toBe('Col A');
+      expect(badges[2].nativeElement.textContent.trim()).toBe('Col C');
+    });
+
+    it('badges use Bootstrap light background and border', () => {
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'sample-columns',
+          columns: ['ULB Code', 'Grant Amount (₹ Cr)'],
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+      const badges = fixture.debugElement.queryAll(By.css('.badge.text-bg-light.border'));
+      expect(badges.length).toBe(2);
+      expect(badges[1].nativeElement.textContent.trim()).toBe('Grant Amount (₹ Cr)');
     });
 
     it('renders without a title', () => {
@@ -215,6 +226,14 @@ describe('DynamicFieldSupportingContentComponent', () => {
       ]);
       fixture.detectChanges();
       expect(fixture.debugElement.query(By.css('.sc-sample-columns'))).toBeTruthy();
+    });
+
+    it('does not render any li elements', () => {
+      componentRef.setInput('supportingContent', [
+        { type: 'sample-columns', columns: ['X', 'Y'] } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+      expect(fixture.debugElement.query(By.css('li'))).toBeNull();
     });
   });
 

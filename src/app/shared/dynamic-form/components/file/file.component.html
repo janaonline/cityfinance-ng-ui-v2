@@ -105,6 +105,9 @@
       <i [class]="fileIconClass() + ' fs-4 ' + fileIconColorClass()"></i>
       <p class="fw-semibold m-0">{{ uploadPromptLabel() }}</p>
       <small class="text-secondary">Drag and drop the file here.</small>
+      @if (fileRequirementText()) {
+        <small class="text-secondary">{{ fileRequirementText() }}</small>
+      }
     </div>
   }
 
@@ -176,7 +179,12 @@
 }
 
 @if (showError()) {
-  <div [id]="fileInputId + '-error'" class="text-danger small mt-2" role="alert" [attr.data-cy]="field().key ? field().key + '-error-test' : null">
+  <div
+    [id]="fileInputId + '-error'"
+    class="text-danger small mt-2"
+    role="alert"
+    [attr.data-cy]="field().key ? field().key + '-error-test' : null"
+  >
     {{ errorMessage() }}
   </div>
 }

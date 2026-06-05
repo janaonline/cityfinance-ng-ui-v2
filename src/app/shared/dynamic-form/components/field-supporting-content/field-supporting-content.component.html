@@ -4,7 +4,7 @@
       [href]="item.url"
       target="_blank"
       rel="noopener noreferrer"
-      class="d-inline-flex align-items-center gap-2 fw-semibold text-decoration-none link-primary small"
+      class="d-inline-flex align-items-center gap-2 fw-semibold link-primary small"
     >
       <i class="bi bi-file-earmark-arrow-down"></i>
       {{ item.label }}
@@ -45,16 +45,11 @@
       <div class="fw-semibold mb-2">{{ item.title }}</div>
     }
 
-    <p class="mb-0 text-secondary">
-      &#91;
-      @for (col of item.columns; track col; let last = $last) {
-        <code>{{ col }}</code>
-        @if (!last) {
-          <span>&nbsp;|&nbsp;</span>
-        }
+    <div class="">
+      @for (col of item.columns; track col) {
+        <span class="border p-1">{{ col }}</span>
       }
-      &#93;
-    </p>
+    </div>
   </div>
 }
 

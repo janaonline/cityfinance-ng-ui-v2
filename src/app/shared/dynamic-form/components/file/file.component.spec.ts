@@ -429,14 +429,15 @@ describe('FileComponent', () => {
     });
 
     it('error block has field.key + -error-test selector when error is shown', () => {
-      const field = createField({ key: 'devolutionExcelFile', validations: [requiredValidation] });
+      // Use the default key ('attachment') so it matches the control name in createGroup.
+      const field = createField({ validations: [requiredValidation] });
       const group = createGroup(null, [Validators.required]);
 
       setup(field, group);
       group.markAllAsTouched();
       fixture.detectChanges();
 
-      const errorEl = fixture.nativeElement.querySelector('[data-cy="devolutionExcelFile-error-test"]') as HTMLElement | null;
+      const errorEl = fixture.nativeElement.querySelector('[data-cy="attachment-error-test"]') as HTMLElement | null;
       expect(errorEl).toBeTruthy();
       expect(errorEl?.getAttribute('role')).toBe('alert');
     });
@@ -446,6 +447,39 @@ describe('FileComponent', () => {
       setup(field, createGroup(null));
 
       expect(fixture.nativeElement.querySelector('[data-cy]')).toBeNull();
+    });
+  });
+
+  describe('fileRequirementText', () => {
+    it('shows accepted formats and max file size when both are configured', () => {
+      setup(
+        createField({ allowedFileTypes: ['xlsx', 'xls'], maxFileSize: 20 }),
+        createGroup(null),
+      );
+      expect(component.fileRequirementText()).toBe(
+        'Accepted formats: .xlsx, .xls · Max file size: 20 MB',
+      );
+      const el: HTMLElement | null = fixture.nativeElement.querySelector('.file-dropzone small:last-child');
+      expect(el?.textContent?.trim()).toBe('Accepted formats: .xlsx, .xls · Max file size: 20 MB');
+    });
+
+    it('shows only accepted formats when only allowedFileTypes is configured', () => {
+      setup(createField({ allowedFileTypes: ['pdf'] }), createGroup(null));
+      expect(component.fileRequirementText()).toBe('Accepted formats: .pdf');
+    });
+
+    it('shows only max file size when only maxFileSize is configured', () => {
+      setup(createField({ allowedFileTypes: [], maxFileSize: 10 }), createGroup(null));
+      expect(component.fileRequirementText()).toBe('Max file size: 10 MB');
+    });
+
+    it('returns empty string and renders no requirement line when neither is configured', () => {
+      setup(createField({ allowedFileTypes: [] }), createGroup(null));
+      expect(component.fileRequirementText()).toBe('');
+      const smalls = fixture.nativeElement.querySelectorAll('.file-dropzone small');
+      const texts = Array.from(smalls).map((el) => (el as HTMLElement).textContent?.trim());
+      expect(texts).not.toContain('Accepted formats:');
+      expect(texts).not.toContain('Max file size:');
     });
   });
 

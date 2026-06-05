@@ -6,7 +6,7 @@
       <div class="content-stack d-flex flex-column gap-4">
         <div>
           <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
-            16th Finance Commission &nbsp;&middot;&nbsp; Andhra Pradesh
+            16th Finance Commission &nbsp;&middot;&nbsp; {{ stateName() }}
           </div>
 
           <h1 class="page-title mb-2">Devolution Formula - ULB Grant Allocation</h1>
@@ -35,10 +35,15 @@
             </li>
           </ul>
 
+          <hr class="my-0 text-body-tertiary" />
+
           <form [formGroup]="form">
-            @for (item of visibleFields(); track item.key) {
+            @for (item of visibleFields(); track item.key; let isLast = $last) {
               <app-dynamic-form
-                class="border-bottom border-success border-opacity-25 p-2 d-block my-2"
+                class="p-2 d-block my-2"
+                [class.border-bottom]="!isLast"
+                [class.border-success]="!isLast"
+                [class.border-opacity-25]="!isLast"
                 [field]="item"
                 [group]="form"
               ></app-dynamic-form>
@@ -50,8 +55,12 @@
 
     <div class="acknowledgement border-top px-3 py-3">
       <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
-        <button type="button" matButton="outlined" (click)="onCancel()" data-cy="devolution-formula-cancel-test">Cancel</button>
-        <button type="submit" matButton="filled" (click)="onSubmit()" data-cy="devolution-formula-submit-test">Submit</button>
+        <button type="button" matButton="outlined" (click)="onCancel()" data-cy="devolution-formula-cancel-test">
+          Cancel
+        </button>
+        <button type="submit" matButton="filled" (click)="onSubmit()" data-cy="devolution-formula-submit-test">
+          Submit
+        </button>
       </div>
     </div>
   </div>

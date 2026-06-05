@@ -179,6 +179,23 @@ export class FileComponent implements OnInit {
   /** Button UI: dropzone or button */
   readonly isButtonView = computed(() => this.field().fileViewType === 'button');
 
+  /** Helper text shown in the dropzone listing accepted formats and max file size. Empty string when neither is configured. */
+  readonly fileRequirementText = computed(() => {
+    const parts: string[] = [];
+
+    const allowedFileTypes = this.field().allowedFileTypes ?? [];
+    if (allowedFileTypes.length) {
+      parts.push(` Accepted formats: ${allowedFileTypes.map((type) => `.${type}`).join(', ')}`);
+    }
+
+    const maxFileSize = this.field().maxFileSize;
+    if (maxFileSize) {
+      parts.push(`Max file size: ${maxFileSize} MB`);
+    }
+
+    return parts.join(' | ');
+  });
+
   /**
    * Converts configured file extensions into a comma-separated MIME string for the native input
    * `accept` attribute.
