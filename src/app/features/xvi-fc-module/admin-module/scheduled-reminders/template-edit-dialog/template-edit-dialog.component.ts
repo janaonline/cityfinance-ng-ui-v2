@@ -10,13 +10,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { finalize } from 'rxjs/operators';
 
-import { DialogComponent } from '../../../../../shared/components/dialog/dialog.component';
-import { IDialogConfiguration } from '../../../../../shared/components/dialog/models/dialogConfiguration';
-import { EmailTemplate, UpdateTemplatePayload } from '../scheduled-reminders.models';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/confirm-dialog.component';
+import { CreateTemplatePayload, EmailTemplate, UpdateTemplatePayload } from '../scheduled-reminders.models';
 import { ScheduledRemindersService } from '../scheduled-reminders.service';
 
-export interface EditDialogData { template: EmailTemplate; }
-export interface EditDialogResult { updated: EmailTemplate; }
+export type TemplateDialogMode = 'create' | 'edit';
+export interface EditDialogData { mode?: TemplateDialogMode; template?: EmailTemplate; }
+export interface EditDialogResult { created?: EmailTemplate; updated?: EmailTemplate; }
 
 @Component({
   selector: 'app-template-edit-dialog',
@@ -44,6 +44,30 @@ export class TemplateEditDialogComponent implements OnInit {
 
   form!: FormGroup;
 
+  get isCreateMode(): boolean {
+    return (this.data.mode ?? 'edit') === 'create';
+  }
+
+  get dialogTitle(): string {
+    return this.isCreateMode ? 'Add Template' : 'Edit Template';
+  }
+
+  get confirmMessage(): string {
+    return this.isCreateMode ? 'Create this template?' : 'Save changes to this template?';
+  }
+
+  get confirmText(): string {
+    return this.isCreateMode ? 'Create' : 'Save';
+  }
+
+  get saveText(): string {
+    return this.isCreateMode ? 'Create Template' : 'Save Changes';
+  }
+
+  get savingText(): string {
+    return this.isCreateMode ? 'Creating...' : 'Saving...';
+  }
+
   get preview(): SafeHtml {
     return this.san.bypassSecurityTrustHtml(this.form?.get('body')?.value ?? '');
   }
@@ -51,11 +75,11 @@ export class TemplateEditDialogComponent implements OnInit {
   ngOnInit(): void {
     const t = this.data.template;
     this.form = this.fb.group({
-      name:     [t.name,     [Validators.required, Validators.maxLength(120)]],
-      slug:     [t.slug,     [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
-      subject:  [t.subject,  [Validators.required, Validators.maxLength(256)]],
-      body:     [t.body,      Validators.required],
-      isActive: [t.isActive],
+      name:     [t?.name ?? '',     [Validators.required, Validators.maxLength(120)]],
+      slug:     [t?.slug ?? '',     [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
+      subject:  [t?.subject ?? '',  [Validators.required, Validators.maxLength(256)]],
+      body:     [t?.body ?? '',      Validators.required],
+      isActive: [t?.isActive ?? true],
     });
   }
 
@@ -63,26 +87,31 @@ export class TemplateEditDialogComponent implements OnInit {
 
   onSave(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    const cfg: IDialogConfiguration = {
-      message: 'Save changes to this template?',
-      buttons: { confirm: { text: 'Save' }, cancel: { text: 'Cancel' } },
+    const cfg: ConfirmDialogData = {
+      title: this.isCreateMode ? 'Create Template' : 'Save Template',
+      message: this.confirmMessage,
+      confirmText: this.confirmText,
     };
     this.matDialog
-      .open(DialogComponent, { data: cfg, width: '380px', panelClass: 'xvifc-theme' })
+      .open(ConfirmDialogComponent, { data: cfg, width: '400px', panelClass: 'xvifc-theme' })
       .afterClosed()
-      .subscribe((r: { buttonClicked: string }) => {
-        if (r?.buttonClicked === 'confirm') this.save();
+      .subscribe((ok: boolean) => {
+        if (ok) this.save();
       });
   }
 
   private save(): void {
     this.saving.set(true);
     this.saveError.set('');
-    const payload: UpdateTemplatePayload = this.form.getRawValue();
-    this.svc.updateTemplate(this.data.template._id, payload)
+    const payload: CreateTemplatePayload | UpdateTemplatePayload = this.form.getRawValue();
+    const request = this.isCreateMode
+      ? this.svc.createTemplate(payload)
+      : this.svc.updateTemplate(this.data.template!._id, payload);
+
+    request
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
-        next: updated => this.ref.close({ updated } as EditDialogResult),
+        next: template => this.ref.close(this.isCreateMode ? { created: template } : { updated: template }),
         error: (e: Error) => this.saveError.set(e.message),
       });
   }

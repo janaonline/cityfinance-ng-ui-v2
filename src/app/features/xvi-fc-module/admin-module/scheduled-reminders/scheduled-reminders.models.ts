@@ -33,6 +33,8 @@ export interface UpdateTemplatePayload {
   isActive: boolean;
 }
 
+export type CreateTemplatePayload = UpdateTemplatePayload;
+
 export interface SendEmailPayload {
   to: string[];
   templateId?: string;
@@ -46,6 +48,16 @@ export interface SendEmailPayload {
 
 export type ReminderStatus = 'PENDING' | 'SENT' | 'FAILED' | 'CANCELLED';
 export type RecipientCategory = 'ONLY_ME' | 'ULB' | 'STATE' | 'ALL';
+
+export interface CreateReminderPayload {
+  name: string;
+  templateId: string;
+  deadlineDate: string;
+  reminderDaysBefore: number;
+  reminderTime: string;
+  recipientCategory: RecipientCategory;
+  variables?: Record<string, string>;
+}
 
 export interface ReminderTemplateRef {
   _id: string;

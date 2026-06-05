@@ -18,6 +18,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -31,7 +33,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { finalize } from 'rxjs/operators';
 
 import { ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog/confirm-dialog.component';
-import { EmailReminder, EmailTemplate, ReminderStatus, SendEmailPayload } from './scheduled-reminders.models';
+import { CreateReminderPayload, EmailReminder, EmailTemplate, RecipientCategory, ReminderStatus, SendEmailPayload } from './scheduled-reminders.models';
 import { ScheduledRemindersService } from './scheduled-reminders.service';
 import { EditDialogData, EditDialogResult, TemplateEditDialogComponent } from './template-edit-dialog/template-edit-dialog.component';
 
@@ -58,6 +60,7 @@ const STATUS_CONFIG: Record<ReminderStatus, { label: string; cls: string }> = {
     ReactiveFormsModule,
     MatExpansionModule,
     MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatDatepickerModule, MatNativeDateModule,
     MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
     MatDialogModule, MatSnackBarModule,
   ],
@@ -73,24 +76,37 @@ export class ScheduledRemindersComponent implements OnInit {
   private readonly destroy = inject(DestroyRef);
 
   // ── Signals ──────────────────────────────────────────────────────────────
-  readonly templates    = signal<EmailTemplate[]>([]);
-  readonly tplLoading   = signal(false);
-  readonly tplError     = signal('');
+  readonly templates      = signal<EmailTemplate[]>([]);
+  readonly tplLoading     = signal(false);
+  readonly tplError       = signal('');
+  readonly sendTemplates  = signal<EmailTemplate[]>([]);
+  readonly sendTplLoading = signal(false);
+  readonly sendTplError   = signal('');
 
   readonly reminders    = signal<EmailReminder[]>([]);
   readonly remLoading   = signal(false);
   readonly remError     = signal('');
 
-  readonly sending      = signal(false);
-  readonly sendError    = signal('');
-  readonly chips        = signal<string[]>([]);
-  readonly chipErr      = signal('');
+  readonly sending          = signal(false);
+  readonly sendError        = signal('');
+  readonly chips            = signal<string[]>([]);
+  readonly chipErr          = signal('');
+  readonly creatingReminder = signal(false);
+  readonly triggerError     = signal('');
 
-  readonly activeTpls = computed(() => this.templates().filter(t => t.isActive && !t.isDeleted));
+  readonly sendTpls    = computed(() => this.sendTemplates().filter(t => !t.isDeleted));
   readonly statusConfig = STATUS_CONFIG;
+
+  readonly recipientCategories: ReadonlyArray<{ value: RecipientCategory; label: string }> = [
+    { value: 'ONLY_ME', label: 'Only Me' },
+    { value: 'ULB',     label: 'ULB'     },
+    { value: 'STATE',   label: 'State'   },
+    { value: 'ALL',     label: 'All'     },
+  ];
 
   // ── Form ─────────────────────────────────────────────────────────────────
   sendForm!: FormGroup;
+  triggerForm!: FormGroup;
 
   ngOnInit(): void {
     this.sendForm = this.fb.group({
@@ -101,6 +117,18 @@ export class ScheduledRemindersComponent implements OnInit {
       varFy:       [''],
       varDeadline: [''],
       varDashUrl:  ['', urlValidator()],
+    });
+
+    this.triggerForm = this.fb.group({
+      name:               ['', [Validators.required, Validators.maxLength(160)]],
+      templateId:         [null, Validators.required],
+      deadlineDate:       ['', Validators.required],
+      reminderDaysBefore: [1, [Validators.required, Validators.min(0)]],
+      reminderTime:       ['', Validators.required],
+      recipientCategory:  ['ONLY_ME' satisfies RecipientCategory, Validators.required],
+      varFy:              [''],
+      varDeadline:        [''],
+      varDashUrl:         ['', urlValidator()],
     });
 
     this.sendForm.get('templateId')!.valueChanges
@@ -117,9 +145,29 @@ export class ScheduledRemindersComponent implements OnInit {
   // ── Data loaders ─────────────────────────────────────────────────────────
   loadTemplates(): void {
     this.tplLoading.set(true); this.tplError.set('');
-    this.svc.getTemplates()
+    this.svc.getTemplates(1, 20)
       .pipe(finalize(() => this.tplLoading.set(false)), takeUntilDestroyed(this.destroy))
-      .subscribe({ next: d => this.templates.set(d), error: (e: Error) => this.tplError.set(e.message) });
+      .subscribe({
+        next: d => {
+          this.templates.set(d);
+          this.sendTemplates.set(d);
+        },
+        error: (e: Error) => this.tplError.set(e.message),
+      });
+  }
+
+  loadSendTemplates(): void {
+    this.sendTplLoading.set(true); this.sendTplError.set('');
+    this.svc.getTemplates(1, 20)
+      .pipe(finalize(() => this.sendTplLoading.set(false)), takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: d => this.sendTemplates.set(d),
+        error: (e: Error) => this.sendTplError.set(e.message),
+      });
+  }
+
+  onTemplateSelectOpen(opened: boolean): void {
+    if (opened) this.loadSendTemplates();
   }
 
   loadReminders(): void {
@@ -161,41 +209,126 @@ export class ScheduledRemindersComponent implements OnInit {
     this.sending.set(true); this.sendError.set('');
     const f = this.sendForm.getRawValue();
     const vars: Record<string, string> = {};
-    if (f.varName)     vars['name']        = f.varName;
-    if (f.varFy)       vars['fy']           = f.varFy;
-    if (f.varDeadline) vars['deadline']     = f.varDeadline;
-    if (f.varDashUrl)  vars['dashboardUrl'] = f.varDashUrl;
+    if (f.varName)     vars['name']         = f.varName;
+    if (f.varFy)       vars['fy']            = f.varFy;
+    if (f.varDeadline) vars['deadline']      = f.varDeadline;
+    if (f.varDashUrl)  vars['dashboardUrl']  = f.varDashUrl;
     const tpl = this.templates().find(t => t._id === f.templateId);
     const payload: SendEmailPayload = {
       to: this.chips(), subject: f.subject, body: f.body,
       ...(tpl && { templateId: tpl._id, templateSlug: tpl.slug }),
       ...(Object.keys(vars).length && { variables: vars }),
     };
-    this.svc.sendEmail(payload).pipe(finalize(() => this.sending.set(false))).subscribe({
-      next: () => { this.toast('Email sent successfully'); this.sendForm.reset(); this.chips.set([]); },
-      error: (e: Error) => this.sendError.set(e.message),
-    });
+    this.svc.sendEmail(payload)
+      .pipe(finalize(() => this.sending.set(false)), takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: () => { this.toast('Email sent successfully'); this.sendForm.reset(); this.chips.set([]); },
+        error: (e: Error) => this.sendError.set(e.message),
+      });
+  }
+
+  onCreateReminder(): void {
+    if (this.triggerForm.invalid) { this.triggerForm.markAllAsTouched(); return; }
+    const f = this.triggerForm.getRawValue();
+    const tpl = this.sendTemplates().find(t => t._id === f.templateId);
+    this.confirm({
+      message: `Create scheduled email trigger${tpl ? ` for "<strong>${tpl.name}</strong>"` : ''}?`,
+      confirmText: 'Create Trigger',
+    }, () => this.doCreateReminder());
+  }
+
+  private doCreateReminder(): void {
+    this.creatingReminder.set(true);
+    this.triggerError.set('');
+    const f = this.triggerForm.getRawValue();
+    const variables: Record<string, string> = {};
+    if (f.varFy)       variables['fy']           = f.varFy;
+    if (f.varDeadline) variables['deadline']     = f.varDeadline;
+    if (f.varDashUrl)  variables['dashboardUrl'] = f.varDashUrl;
+
+    const payload: CreateReminderPayload = {
+      name: f.name,
+      templateId: f.templateId,
+      deadlineDate: this.toDateOnly(f.deadlineDate),
+      reminderDaysBefore: Number(f.reminderDaysBefore),
+      reminderTime: f.reminderTime,
+      recipientCategory: f.recipientCategory,
+      ...(Object.keys(variables).length && { variables }),
+    };
+
+    this.svc.createReminder(payload)
+      .pipe(finalize(() => this.creatingReminder.set(false)), takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: reminder => {
+          this.reminders.update(l => [reminder, ...l]);
+          this.triggerForm.reset({
+            name: '',
+            templateId: null,
+            deadlineDate: '',
+            reminderDaysBefore: 1,
+            reminderTime: '',
+            recipientCategory: 'ONLY_ME',
+            varFy: '',
+            varDeadline: '',
+            varDashUrl: '',
+          });
+          this.toast('Email trigger created');
+        },
+        error: (e: Error) => this.triggerError.set(e.message),
+      });
   }
 
   // ── Template actions ─────────────────────────────────────────────────────
+  openAddTemplate(): void {
+    const data: EditDialogData = { mode: 'create' };
+    this.dialog
+      .open(TemplateEditDialogComponent, { data, width: '700px', maxWidth: '95vw', disableClose: true, panelClass: 'xvifc-theme' })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe((r: EditDialogResult | undefined) => {
+        if (r?.created) {
+          const created = r.created;
+          this.templates.update(l => [created, ...l]);
+          this.sendTemplates.update(l => [created, ...l.filter(t => t._id !== created._id)]);
+          this.toast('Template created');
+        }
+      });
+  }
+
   openEdit(tpl: EmailTemplate): void {
-    const data: EditDialogData = { template: tpl };
-    this.dialog.open(TemplateEditDialogComponent, { data, width: '700px', maxWidth: '95vw', disableClose: true, panelClass: 'xvifc-theme' })
-      .afterClosed().subscribe((r: EditDialogResult | undefined) => {
-        if (r?.updated) { this.templates.update(l => l.map(t => t._id === r.updated._id ? r.updated : t)); this.toast('Template updated'); }
+    const data: EditDialogData = { mode: 'edit', template: tpl };
+    this.dialog
+      .open(TemplateEditDialogComponent, { data, width: '700px', maxWidth: '95vw', disableClose: true, panelClass: 'xvifc-theme' })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe((r: EditDialogResult | undefined) => {
+        if (r?.updated) {
+          const updated = r.updated;
+          this.templates.update(l => l.map(t => t._id === updated._id ? updated : t));
+          this.sendTemplates.update(l => l.map(t => t._id === updated._id ? updated : t));
+          this.toast('Template updated');
+        }
       });
   }
 
   toggleActive(tpl: EmailTemplate): void {
     const enable = !tpl.isActive;
     this.confirm({
-      message: enable ? `Enable "<strong>${tpl.name}</strong>"?` : `Disable "<strong>${tpl.name}</strong>"? It will no longer be available for selection.`,
+      message: enable
+        ? `Enable "<strong>${tpl.name}</strong>"?`
+        : `Disable "<strong>${tpl.name}</strong>"? It will no longer be available for selection.`,
       confirmText: enable ? 'Enable' : 'Disable',
       confirmColor: enable ? 'primary' : 'warn',
     }, () => {
-      this.svc.updateTemplate(tpl._id, { name: tpl.name, slug: tpl.slug, subject: tpl.subject, body: tpl.body, isActive: enable })
+      this.svc
+        .updateTemplate(tpl._id, { name: tpl.name, slug: tpl.slug, subject: tpl.subject, body: tpl.body, isActive: enable })
+        .pipe(takeUntilDestroyed(this.destroy))
         .subscribe({
-          next: u => { this.templates.update(l => l.map(t => t._id === u._id ? u : t)); this.toast(enable ? 'Template enabled' : 'Template disabled'); },
+          next: u => {
+            this.templates.update(l => l.map(t => t._id === u._id ? u : t));
+            this.sendTemplates.update(l => l.map(t => t._id === u._id ? u : t));
+            this.toast(enable ? 'Template enabled' : 'Template disabled');
+          },
           error: (e: Error) => this.toast(e.message, true),
         });
     });
@@ -218,11 +351,22 @@ export class ScheduledRemindersComponent implements OnInit {
     return new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
   }
 
-  trackId(_: number, t: { _id: string }) { return t._id; }
+  private toDateOnly(value: Date | string): string {
+    if (value instanceof Date) {
+      const year  = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, '0');
+      const day   = String(value.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return value;
+  }
 
   private confirm(data: ConfirmDialogData, onConfirm: () => void): void {
-    this.dialog.open(ConfirmDialogComponent, { data, width: '400px', panelClass: 'xvifc-theme' })
-      .afterClosed().subscribe((ok: boolean) => { if (ok) onConfirm(); });
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '400px', panelClass: 'xvifc-theme' })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe((ok: boolean) => { if (ok) onConfirm(); });
   }
 
   private toast(msg: string, err = false): void {

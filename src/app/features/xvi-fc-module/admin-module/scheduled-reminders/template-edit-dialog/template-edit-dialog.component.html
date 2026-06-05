@@ -2,9 +2,11 @@
 
   <!-- Header -->
   <div mat-dialog-title class="d-flex align-items-center gap-2 px-1">
-    <mat-icon class="text-primary">edit_note</mat-icon>
-    <span class="fw-semibold">Edit Template</span>
-    <span class="badge bg-light text-secondary ms-auto font-monospace fw-normal small">{{ data.template.slug }}</span>
+    <mat-icon class="text-primary">{{ isCreateMode ? 'add_circle' : 'edit_note' }}</mat-icon>
+    <span class="fw-semibold">{{ dialogTitle }}</span>
+    @if (!isCreateMode && data.template?.slug) {
+      <span class="badge bg-light text-secondary ms-auto font-monospace fw-normal small">{{ data.template?.slug }}</span>
+    }
   </div>
 
   <!-- Content -->
@@ -96,7 +98,7 @@
       @if (saving()) {
         <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
       }
-      {{ saving() ? 'Saving…' : 'Save Changes' }}
+      {{ saving() ? savingText : saveText }}
     </button>
   </mat-dialog-actions>
 

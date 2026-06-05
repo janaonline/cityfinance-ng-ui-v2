@@ -5,6 +5,8 @@ import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 import {
   ApiEnvelope,
+  CreateReminderPayload,
+  CreateTemplatePayload,
   EmailReminder,
   EmailTemplate,
   PagedData,
@@ -42,6 +44,18 @@ export class ScheduledRemindersService {
       );
   }
 
+  createTemplate(payload: CreateTemplatePayload): Observable<EmailTemplate> {
+    return this.http
+      .post<ApiEnvelope<EmailTemplate>>(`${this.base}email-templates`, payload)
+      .pipe(
+        map(res => {
+          if (!res.success) throw new Error(res.message ?? 'Failed to create template');
+          return res.data;
+        }),
+        catchError(this.handle),
+      );
+  }
+
   getReminders(page = 1, limit = 20): Observable<EmailReminder[]> {
     const params = new HttpParams().set('page', page).set('limit', limit);
     return this.http
@@ -50,6 +64,18 @@ export class ScheduledRemindersService {
         map(res => {
           if (!res.success) throw new Error(res.message ?? 'Failed to load reminders');
           return res.data.data;
+        }),
+        catchError(this.handle),
+      );
+  }
+
+  createReminder(payload: CreateReminderPayload): Observable<EmailReminder> {
+    return this.http
+      .post<ApiEnvelope<EmailReminder>>(`${this.base}email-reminders`, payload)
+      .pipe(
+        map(res => {
+          if (!res.success) throw new Error(res.message ?? 'Failed to create reminder');
+          return res.data;
         }),
         catchError(this.handle),
       );
