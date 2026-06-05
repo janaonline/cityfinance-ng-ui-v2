@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
-import { CONFIRM_DIALOG_DEFAULTS, ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog.component';
+import { CANCEL_CONFIRM_DIALOG_DEFAULTS, ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog.component';
 
 function setup(data: ConfirmDialogData): {
   fixture: ComponentFixture<ConfirmDialogComponent>;
@@ -28,7 +28,7 @@ function setup(data: ConfirmDialogData): {
 function getConfirmButton(fixture: ComponentFixture<ConfirmDialogComponent>): HTMLButtonElement {
   const buttons = fixture.debugElement.queryAll(By.css('mat-dialog-actions button'));
   return buttons.find((b) =>
-    (b.nativeElement as HTMLButtonElement).textContent?.includes(CONFIRM_DIALOG_DEFAULTS.confirmText),
+    (b.nativeElement as HTMLButtonElement).textContent?.includes(CANCEL_CONFIRM_DIALOG_DEFAULTS.confirmText),
   )!.nativeElement as HTMLButtonElement;
 }
 
@@ -38,10 +38,10 @@ describe('ConfirmDialogComponent', () => {
       const { fixture } = setup({});
       const text = fixture.nativeElement.textContent as string;
 
-      expect(text).toContain(CONFIRM_DIALOG_DEFAULTS.title);
-      expect(text).toContain(CONFIRM_DIALOG_DEFAULTS.message);
-      expect(text).toContain(CONFIRM_DIALOG_DEFAULTS.cancelText);
-      expect(text).toContain(CONFIRM_DIALOG_DEFAULTS.confirmText);
+      expect(text).toContain(CANCEL_CONFIRM_DIALOG_DEFAULTS.title);
+      expect(text).toContain(CANCEL_CONFIRM_DIALOG_DEFAULTS.message);
+      expect(text).toContain(CANCEL_CONFIRM_DIALOG_DEFAULTS.cancelText);
+      expect(text).toContain(CANCEL_CONFIRM_DIALOG_DEFAULTS.confirmText);
     });
 
     it('applies warn as the default confirmButtonColor', () => {
@@ -57,8 +57,8 @@ describe('ConfirmDialogComponent', () => {
 
       // Only button labels should appear — no raw 'warn' string
       expect(actionsText).not.toContain('warn');
-      expect(actionsText).toContain(CONFIRM_DIALOG_DEFAULTS.cancelText);
-      expect(actionsText).toContain(CONFIRM_DIALOG_DEFAULTS.confirmText);
+      expect(actionsText).toContain(CANCEL_CONFIRM_DIALOG_DEFAULTS.cancelText);
+      expect(actionsText).toContain(CANCEL_CONFIRM_DIALOG_DEFAULTS.confirmText);
     });
   });
 
@@ -81,6 +81,60 @@ describe('ConfirmDialogComponent', () => {
     it('applies custom confirmButtonColor to resolved config', () => {
       const { component } = setup({ confirmButtonColor: 'primary' });
       expect(component.resolved.confirmButtonColor).toBe('primary');
+    });
+  });
+
+  describe('icon rendering', () => {
+    it('renders a Bootstrap icon element when icon is provided', () => {
+      const { fixture } = setup({ icon: 'bi-exclamation-triangle-fill' });
+      const icon = fixture.nativeElement.querySelector('i.bi') as HTMLElement | null;
+      expect(icon).toBeTruthy();
+    });
+
+    it('applies the configured Bootstrap icon class', () => {
+      const { fixture } = setup({ icon: 'bi-exclamation-triangle-fill' });
+      const icon = fixture.nativeElement.querySelector('i.bi') as HTMLElement | null;
+      expect(icon?.classList).toContain('bi-exclamation-triangle-fill');
+    });
+
+    it('applies the fs-5 sizing class', () => {
+      const { fixture } = setup({ icon: 'bi-check-circle-fill' });
+      const icon = fixture.nativeElement.querySelector('i.bi') as HTMLElement | null;
+      expect(icon?.classList).toContain('fs-5');
+    });
+
+    it('does not render an icon element when icon is empty string', () => {
+      const { fixture } = setup({ icon: '' });
+      const icon = fixture.nativeElement.querySelector('i.bi') as HTMLElement | null;
+      expect(icon).toBeNull();
+    });
+
+    it('does not render any mat-icon element', () => {
+      const { fixture } = setup({ icon: 'bi-exclamation-triangle-fill' });
+      const matIcon = fixture.nativeElement.querySelector('mat-icon') as HTMLElement | null;
+      expect(matIcon).toBeNull();
+    });
+
+    it('default cancel constant uses the Bootstrap warning icon', () => {
+      expect(CANCEL_CONFIRM_DIALOG_DEFAULTS.icon).toBe('bi-exclamation-triangle-fill');
+    });
+
+    it('applies confirm-dialog-icon--warn class when confirmButtonColor is warn', () => {
+      const { fixture } = setup({ icon: 'bi-exclamation-triangle-fill', confirmButtonColor: 'warn' });
+      const icon = fixture.nativeElement.querySelector('i.bi') as HTMLElement | null;
+      expect(icon?.classList).toContain('confirm-dialog-icon--warn');
+    });
+
+    it('applies confirm-dialog-icon--primary class when confirmButtonColor is primary', () => {
+      const { fixture } = setup({ icon: 'bi-check-circle-fill', confirmButtonColor: 'primary' });
+      const icon = fixture.nativeElement.querySelector('i.bi') as HTMLElement | null;
+      expect(icon?.classList).toContain('confirm-dialog-icon--primary');
+    });
+
+    it('applies confirm-dialog-icon--accent class when confirmButtonColor is accent', () => {
+      const { fixture } = setup({ icon: 'bi-info-circle-fill', confirmButtonColor: 'accent' });
+      const icon = fixture.nativeElement.querySelector('i.bi') as HTMLElement | null;
+      expect(icon?.classList).toContain('confirm-dialog-icon--accent');
     });
   });
 
@@ -113,7 +167,7 @@ describe('ConfirmDialogComponent', () => {
       const { fixture, dialogRef } = setup({});
       const buttons = fixture.debugElement.queryAll(By.css('mat-dialog-actions button'));
       const confirmBtn = buttons.find((b) =>
-        (b.nativeElement as HTMLButtonElement).textContent?.includes(CONFIRM_DIALOG_DEFAULTS.confirmText),
+        (b.nativeElement as HTMLButtonElement).textContent?.includes(CANCEL_CONFIRM_DIALOG_DEFAULTS.confirmText),
       )!;
 
       confirmBtn.triggerEventHandler('click', null);
@@ -125,7 +179,7 @@ describe('ConfirmDialogComponent', () => {
       const { fixture, dialogRef } = setup({});
       const buttons = fixture.debugElement.queryAll(By.css('mat-dialog-actions button'));
       const cancelBtn = buttons.find((b) =>
-        (b.nativeElement as HTMLButtonElement).textContent?.includes(CONFIRM_DIALOG_DEFAULTS.cancelText),
+        (b.nativeElement as HTMLButtonElement).textContent?.includes(CANCEL_CONFIRM_DIALOG_DEFAULTS.cancelText),
       )!;
 
       cancelBtn.triggerEventHandler('click', null);

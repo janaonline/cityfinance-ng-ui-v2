@@ -13,6 +13,7 @@ import {
   DynamicFormVisibilityService,
 } from '../../dynamic-form-visibility.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 
 @Component({
@@ -114,17 +115,7 @@ export class SfcStatusComponent implements OnInit {
 
     const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(
-        {
-          title: 'Submit form?',
-          message: 'Please confirm that you want to submit this form. You may not be able to edit it after submission.',
-          confirmText: 'Yes, submit',
-          cancelText: 'No, review again',
-          confirmButtonColor: 'primary',
-          icon: 'check_circle',
-        },
-        config,
-      )
+      .confirm(SUBMIT_CONFIRM_DIALOG_DEFAULTS, config)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;

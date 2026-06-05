@@ -11,6 +11,7 @@ import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-fo
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../dynamic-form-visibility.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { SfcStatusComponent } from './sfc-status.component';
 
 @Component({
@@ -181,14 +182,7 @@ describe('SfcStatusComponent', () => {
 
     expect(confirmDialogService.confirm).toHaveBeenCalledTimes(1);
     const dialogData = confirmDialogService.confirm.calls.mostRecent().args[0];
-    expect(dialogData).toEqual(
-      jasmine.objectContaining({
-        title: 'Submit form?',
-        confirmText: 'Yes, submit',
-        cancelText: 'No, review again',
-        confirmButtonColor: 'primary',
-      }),
-    );
+    expect(dialogData).toEqual(SUBMIT_CONFIRM_DIALOG_DEFAULTS);
   }));
 
   it('submits the full visible payload and serializes date values when sfcActive stays yes', fakeAsync(() => {
