@@ -1,239 +1,128 @@
-// ─── Palette ──────────────────────────────────────────────────
-$c0: #0ea5a0;   // teal
-$c1: #7c3aed;   // purple
-$c2: #f97316;   // orange
-$c3: #3b82f6;   // blue
+// ─── XVI FC Theme palette ─────────────────────────────────────
+$primary:        #114551;   // palette-25
+$primary-30:     #1b4d59;
+$primary-40:     #366571;
+$primary-80:     #9fcedc;   // light accent on dark bg
+$primary-accent: #f1fbff;   // palette-98 (very light teal bg)
+$primary-shadow: rgba(17, 69, 81, 0.16);
 
-$dark:    #0f2637;
-$surface: #f0f4f8;
-$white:   #ffffff;
-$border:  #e2ecf3;
-$text:    #0c1d2c;
-$sub:     #5a7282;
-$muted:   #8fa5b2;
+// Card accent colors (kept for contact differentiation)
+$c0: #114551;
+$c1: #295965;
+$c2: #1b4d59;
+$c3: #366571;
 
-// ─── Accent maps ──────────────────────────────────────────────
-// card-0 = teal, card-1 = purple, card-2 = orange, card-3 = blue
-$accents: (
-  0: (#0ea5a0, #0d9190, #d1f2f1, #0a7a76),
-  1: (#7c3aed, #6d28d9, #ede9fe, #5b21b6),
-  2: (#f97316, #ea6c0a, #ffedd5, #c2570c),
-  3: (#3b82f6, #2563eb, #dbeafe, #1d4ed8),
-);
+$text-dark:  #111827;
+$text-mid:   #4b5563;
+$text-muted: #9ca3af;
+$border:     #e5e7eb;
+$surface:    #f9fafb;
 
 :host { display: block; }
 
-// ─── Page & ambient orbs ─────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────
 .pv-page {
   min-height: 100vh;
-  background: linear-gradient(145deg, #e8f3f7 0%, #eef4ef 40%, #f0eef8 100%);
-  position: relative;
-  overflow-x: hidden;
-  animation: pvIn 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  background: #f0f4f5;
 }
 
-.pv-orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(90px);
-  pointer-events: none;
-  z-index: 0;
-
-  &--a {
-    width: 500px; height: 500px;
-    top: -160px; right: -120px;
-    background: rgba($c0, 0.1);
-    animation: pvOrbFloat 14s ease-in-out infinite;
-  }
-  &--b {
-    width: 380px; height: 380px;
-    top: 40%; left: -100px;
-    background: rgba($c1, 0.07);
-    animation: pvOrbFloat 18s ease-in-out infinite reverse;
-  }
-  &--c {
-    width: 300px; height: 300px;
-    bottom: 10%; right: 5%;
-    background: rgba($c2, 0.06);
-    animation: pvOrbFloat 12s ease-in-out infinite 3s;
-  }
-}
-
-.pv-container {
-  position: relative;
-  z-index: 1;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 28px 24px 48px;
-}
-
-.pv-layout {
-  display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
-  align-items: start;
-  gap: 24px;
-}
-
-.pv-content-stack {
-  min-width: 0;
-  padding: 30px 34px 28px;
-  border-radius: 26px;
-  background:
-    radial-gradient(circle at 88% 0%, rgba($c0, 0.12), transparent 38%),
-    linear-gradient(135deg, #0f2637 0%, #0a3d4a 34%, #162050 72%, #1e1060 100%);
-  box-shadow:
-    0 20px 60px rgba(15, 38, 55, 0.35),
-    0 4px 16px rgba(15, 38, 55, 0.2);
-  box-sizing: border-box;
-  position: relative;
+// ══════════════════════════════════════════════════════════════
+//  LEFT HERO CARD  — XVI FC dark teal theme
+// ══════════════════════════════════════════════════════════════
+.pv-hero {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #114551 0%, #0f4c4d 60%, #0a5a56 100%);
+  box-shadow: 0 8px 32px $primary-shadow;
+  padding: 20px 22px 22px;
   overflow: hidden;
-}
 
-// ═══════════════════════════════════════════════════════════════
-//  IDENTITY CARD
-// ═══════════════════════════════════════════════════════════════
-.pv-id-card {
-  border-radius: 24px;
-  background: transparent;
-  padding: 0;
-  margin-bottom: 0;
-  position: relative;
-  overflow: visible;
-}
-
-// Decorative rings
-.pv-id-card__ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  pointer-events: none;
-
-  &--1 {
-    width: 380px; height: 380px;
-    top: -160px; right: -60px;
-    animation: pvRingSpin 30s linear infinite;
+  // Subtle dot-grid overlay — matches XVI FC overview card
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events: none;
   }
-  &--2 {
-    width: 240px; height: 240px;
-    top: -90px; right: 80px;
-    border-style: dashed;
-    border-color: rgba($c0, 0.15);
-    animation: pvRingSpin 20s linear infinite reverse;
+
+  // Left shine strip — matches XVI FC overview card
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.06) 100%);
+    border-radius: 14px 0 0 14px;
+  }
+
+  > * { position: relative; z-index: 1; }
+
+  &__fc-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.62);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+
+    i   { color: $primary-80; font-size: 11px; }
+    sup { font-size: 7px; }
+  }
+
+  &__name {
+    font-size: clamp(17px, 2.4vw, 21px);
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 10px;
+  }
+
+  &__divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 13px 0 12px;
+  }
+
+  &__welcome-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.94);
+    margin: 0 0 5px;
+  }
+
+  &__welcome-sub {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.56);
+    line-height: 1.58;
+    margin: 0 0 16px;
+
+    strong { color: $primary-80; font-weight: 700; }
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.38);
+
+    i { color: $primary-80; font-size: 12px; }
   }
 }
 
-// Two-column body
-.pv-id-card__body {
-  display: block;
-  position: relative;
-  z-index: 1;
-}
-
-// LEFT: Seal column
-.pv-id-card__seal-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  width: 100%;
-  min-height: 300px;
-  padding: 30px 22px;
-  border-radius: 24px;
-  background: linear-gradient(150deg, #0f2637 0%, #0a4d5a 58%, #102949 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 20px 54px rgba(15, 38, 55, 0.28),
-    0 4px 16px rgba(15, 38, 55, 0.16);
-  box-sizing: border-box;
-  position: relative;
-  overflow: hidden;
-}
-
-// RIGHT: Content column
-.pv-id-card__content-col {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 0;
-  margin-bottom: 24px;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  box-sizing: border-box;
-  position: relative;
-  overflow: hidden;
-}
-
-// Seal
-.pv-seal-wrap {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  flex-shrink: 0;
-}
-
-.pv-seal-ring {
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  border: 1.5px dashed rgba($c0, 0.35);
-  animation: pvRingSpin 22s linear infinite;
-}
-
-.pv-seal {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, $c0 0%, #0a4d5a 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 8px 28px rgba(0, 0, 0, 0.4),
-    0 0 40px rgba($c0, 0.2);
-  animation: pvFloat 4.5s ease-in-out infinite;
-}
-
-.pv-seal__text { font-size: 30px; font-weight: 800; color: $white; letter-spacing: -0.03em; }
-
-.pv-seal__pulse {
-  display: block; width: 26px; height: 26px;
-  border: 2.5px solid rgba($white, 0.2);
-  border-top-color: lighten($c0, 20%);
-  border-radius: 50%;
-  animation: pvSpin 0.8s linear infinite;
-}
-
-// Entity info
-.pv-id-card__info { min-width: 0; }
-
-.pv-id-card__fc-label {
-  margin: 0 0 5px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba($white, 0.45);
-
-  i { color: lighten($c0, 20%); margin-right: 4px; font-size: 11px; }
-  sup { font-size: 7.5px; }
-}
-
-.pv-id-card__name {
-  margin: 0 0 10px;
-  font-size: 22px;
-  font-weight: 800;
-  color: #e6f5f3;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-
-.pv-id-card__chips { display: flex; flex-wrap: wrap; gap: 6px; }
-
+// ─── Entity chips (glass style on dark bg) ───────────────────
 .pv-chip {
   display: inline-flex;
   align-items: center;
@@ -242,695 +131,526 @@ $accents: (
   border-radius: 20px;
   font-size: 11.5px;
   font-weight: 600;
-  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.88);
 
-  i { font-size: 10.5px; }
-
-  &--role  { background: rgba($c0, 0.18); border-color: rgba($c0, 0.3); color: lighten($c0, 28%); }
-  &--state { background: rgba($c3, 0.18); border-color: rgba($c3, 0.3); color: lighten($c3, 30%); }
-  &--code  { background: rgba($c1, 0.18); border-color: rgba($c1, 0.3); color: lighten($c1, 32%); }
-  &--type  { background: rgba($c2, 0.18); border-color: rgba($c2, 0.3); color: lighten($c2, 24%); }
+  i { font-size: 10.5px; color: $primary-80; }
 }
 
-.pv-lock-badge {
-  width: 52px; height: 52px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+// ─── Step indicator (on dark bg) ─────────────────────────────
+.pv-steps { display: flex; align-items: center; }
+
+.pv-step {
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  i { font-size: 22px; color: lighten($c0, 20%); }
-}
-
-.pv-id-count {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 16px;
-  border-radius: 12px;
-  background: rgba($c0, 0.12);
-  border: 1px solid rgba($c0, 0.22);
-
-  &__num   { font-size: 22px; font-weight: 800; color: $white; line-height: 1; }
-  &__label { font-size: 10px; font-weight: 600; color: rgba($white, 0.5); letter-spacing: 0.05em; text-transform: uppercase; margin-top: 1px; }
-}
-
-// Divider — rainbow gradient line
-.pv-id-card__divider {
-  height: 1px;
-  background: linear-gradient(90deg, rgba($c0, 0.5), rgba($c1, 0.4), rgba($c2, 0.3), rgba($c3, 0.4), transparent);
-  margin: 18px 0;
-  position: relative;
-  z-index: 1;
-}
-
-// Welcome bottom
-.pv-id-card__welcome {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  position: relative;
-  z-index: 1;
-}
-
-.pv-id-card__welcome-text { min-width: 0; }
-
-.pv-id-card__welcome-title {
-  margin: 0 0 7px;
-  font-size: 17px;
-  font-weight: 700;
-  color: rgba($white, 0.92);
-  line-height: 1.3;
-}
-
-.pv-id-card__welcome-sub {
-  margin: 0;
-  font-size: 13px;
-  color: rgba($white, 0.52);
-  line-height: 1.6;
-
-  strong { color: lighten($c0, 20%); font-weight: 700; }
-}
-
-// Step pills
-.pv-id-card__step-pills {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 7px;
   flex-shrink: 0;
-}
 
-.pv-step-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 600;
-  background: rgba($white, 0.06);
-  border: 1px solid rgba($white, 0.1);
-  color: rgba($white, 0.5);
-  white-space: nowrap;
+  &__dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  &__lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.48);
+    white-space: nowrap;
+  }
 
   &--active {
-    background: rgba($c0, 0.2);
-    border-color: rgba($c0, 0.35);
-    color: lighten($c0, 22%);
-
-    .pv-step-pill__num {
-      background: $c0;
-      color: $white;
+    .pv-step__dot {
+      background: $primary-80;
+      border-color: $primary-80;
+      color: $primary;
+      box-shadow: 0 2px 8px rgba($primary-80, 0.4);
     }
+    .pv-step__lbl { color: rgba(255, 255, 255, 0.92); font-weight: 700; }
   }
 }
 
-.pv-step-pill__num {
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: rgba($white, 0.12);
+.pv-step__line {
+  flex: 1;
+  min-width: 14px;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 0 5px;
+}
+
+// ─── Skeleton on dark background ─────────────────────────────
+.pv-sk-dark {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.07) 25%,
+    rgba(255,255,255,0.14) 50%,
+    rgba(255,255,255,0.07) 75%);
+  background-size: 200% 100%;
+  animation: pvShimmer 1.6s infinite;
+  border-radius: 6px;
+  display: block;
+}
+
+// ─── Section heading ──────────────────────────────────────────
+.pv-section-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba($primary, 0.08);
+  border: 1px solid rgba($primary, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+
+  i { font-size: 12px; color: $primary; }
+}
+
+.pv-section-title {
+  font-size: 11.5px;
   font-weight: 700;
-  flex-shrink: 0;
-  color: rgba($white, 0.6);
-}
-
-.pv-step-arrow { font-size: 11px; color: rgba($white, 0.2); }
-
-// ─── Error bar ────────────────────────────────────────────────
-.pv-error-bar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 11px 14px;
-  border-radius: 10px;
-  background: #fff3f3;
-  border: 1px solid #f5bebe;
-  color: #c0392b;
-  font-size: 13.5px;
-  margin-bottom: 18px;
-  animation: pvFadeUp 0.25s ease;
-
-  span { flex: 1; }
-}
-
-.pv-error-bar__close {
-  background: none; border: none; cursor: pointer;
-  color: #c0392b; opacity: 0.55; font-size: 12px;
-  padding: 2px 4px; border-radius: 4px; transition: opacity 0.15s;
-  &:hover { opacity: 1; }
-}
-
-// ─── Section heading ─────────────────────────────────────────
-.pv-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.pv-section-head__label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
+  color: $text-dark;
   text-transform: uppercase;
-  color: rgba($white, 0.58);
-
-  i { margin-right: 5px; color: lighten($c0, 18%); font-size: 12px; }
+  letter-spacing: 0.07em;
 }
 
-.pv-section-head__count {
-  padding: 2px 10px;
+.pv-count-badge {
+  padding: 3px 12px;
   border-radius: 20px;
-  background: rgba($white, 0.12);
-  border: 1px solid rgba($white, 0.18);
-  font-size: 11px;
+  background: #fff;
+  border: 1px solid $border;
+  font-size: 12px;
   font-weight: 700;
-  color: lighten($c0, 22%);
+  color: $primary;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
-.pv-section-head__actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.pv-add-contact-btn {
-  min-height: 30px;
-  padding: 0 12px !important;
-  border-radius: 999px !important;
-  border-color: rgba($white, 0.24) !important;
-  color: lighten($c0, 22%) !important;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
-
-  i {
-    margin-right: 5px;
-    font-size: 12px;
-  }
-
-  &:hover {
-    transform: translateY(-1px);
-    background: rgba($white, 0.1) !important;
-    border-color: rgba($c0, 0.46) !important;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 //  PROFILE CARDS
-// ═══════════════════════════════════════════════════════════════
-.pv-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 1;
+// ══════════════════════════════════════════════════════════════
+.pv-card-shell {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid $border;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
 }
 
 .pv-card {
-  background: $white;
-  border-radius: 14px;
-  border: 1.5px solid $border;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid $border;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   overflow: hidden;
-  position: relative;
-  transition: border-color 0.22s, box-shadow 0.22s, transform 0.18s;
-  animation: pvCardIn 0.38s ease both;
-
-  @for $i from 1 through 10 {
-    &:nth-child(#{$i}) { animation-delay: #{$i * 0.05}s; }
-  }
+  transition: box-shadow 0.22s ease, transform 0.18s ease;
 
   &:hover {
+    box-shadow: 0 6px 24px $primary-shadow;
     transform: translateY(-2px);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
   }
 
-  // Colored left accent per variant
-  &--0 { border-left: 4px solid $c0; &:hover { border-color: $c0; box-shadow: 0 8px 28px rgba($c0, 0.15); } }
-  &--1 { border-left: 4px solid $c1; &:hover { border-color: $c1; box-shadow: 0 8px 28px rgba($c1, 0.12); } }
-  &--2 { border-left: 4px solid $c2; &:hover { border-color: $c2; box-shadow: 0 8px 28px rgba($c2, 0.12); } }
-  &--3 { border-left: 4px solid $c3; &:hover { border-color: $c3; box-shadow: 0 8px 28px rgba($c3, 0.12); } }
-
-  &--expanded {
-    transform: translateY(-2px);
-
-    &.pv-card--0 { border-color: $c0; box-shadow: 0 8px 32px rgba($c0, 0.2); }
-    &.pv-card--1 { border-color: $c1; box-shadow: 0 8px 32px rgba($c1, 0.15); }
-    &.pv-card--2 { border-color: $c2; box-shadow: 0 8px 32px rgba($c2, 0.15); }
-    &.pv-card--3 { border-color: $c3; box-shadow: 0 8px 32px rgba($c3, 0.15); }
-  }
-
-  &--skeleton {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    pointer-events: none;
-    border-left: 4px solid $border;
-    &:hover { transform: none; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); }
-  }
+  // Top accent stripe per card
+  &--0 { border-top: 3px solid $c0; }
+  &--1 { border-top: 3px solid $c1; }
+  &--2 { border-top: 3px solid $c2; }
+  &--3 { border-top: 3px solid $c3; }
 }
 
-.pv-card__accent {
-  height: 3px;
-
-  .pv-card--0 & { background: linear-gradient(90deg, $c0 0%, rgba($c0, 0) 100%); }
-  .pv-card--1 & { background: linear-gradient(90deg, $c1 0%, rgba($c1, 0) 100%); }
-  .pv-card--2 & { background: linear-gradient(90deg, $c2 0%, rgba($c2, 0) 100%); }
-  .pv-card--3 & { background: linear-gradient(90deg, $c3 0%, rgba($c3, 0) 100%); }
-}
-
+// ─── Card layout: avatar | info | verify-btn ─────────────────
 .pv-card__main {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
 }
 
-// Avatars with per-variant gradient
-.pv-avatar {
-  width: 48px; height: 48px;
-  border-radius: 50%;
-  color: $white;
+.pv-card__action {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  font-weight: 800;
+  padding: 14px 14px;
+  background: $primary-accent;
+  border-right: 1px solid $border;
+  align-self: stretch;
   flex-shrink: 0;
-  letter-spacing: 0.04em;
-
-  &--0 { background: linear-gradient(135deg, $c0 0%, darken($c0, 18%) 100%); box-shadow: 0 4px 12px rgba($c0, 0.3); }
-  &--1 { background: linear-gradient(135deg, $c1 0%, darken($c1, 14%) 100%); box-shadow: 0 4px 12px rgba($c1, 0.3); }
-  &--2 { background: linear-gradient(135deg, $c2 0%, darken($c2, 14%) 100%); box-shadow: 0 4px 12px rgba($c2, 0.25); }
-  &--3 { background: linear-gradient(135deg, $c3 0%, darken($c3, 14%) 100%); box-shadow: 0 4px 12px rgba($c3, 0.28); }
 }
 
-.pv-card__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pv-card__info {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+}
 
-.pv-card__name-row {
+.pv-card__btn-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  flex-shrink: 0;
+  border-left: 1px solid $border;
+  align-self: stretch;
+}
+
+// ─── Avatar initials ──────────────────────────────────────────
+.pv-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+
+  &--0 { background: linear-gradient(135deg, $c0, darken($c0, 10%)); box-shadow: 0 3px 8px rgba($c0, 0.3); }
+  &--1 { background: linear-gradient(135deg, $c1, darken($c1, 10%)); box-shadow: 0 3px 8px rgba($c1, 0.3); }
+  &--2 { background: linear-gradient(135deg, $c2, darken($c2, 10%)); box-shadow: 0 3px 8px rgba($c2, 0.3); }
+  &--3 { background: linear-gradient(135deg, $c3, darken($c3, 10%)); box-shadow: 0 3px 8px rgba($c3, 0.3); }
+}
+
+// ─── Card text ────────────────────────────────────────────────
+.pv-card__name        { font-size: 14px; font-weight: 700; color: $text-dark; }
+.pv-card__num         { font-size: 10px; font-weight: 700; color: $text-muted; background: $surface; padding: 2px 7px; border-radius: 20px; border: 1px solid $border; }
+.pv-card__designation { font-size: 12.5px; color: $text-mid; }
+
+.pv-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: $text-muted;
+
+  i { font-size: 10.5px; color: $primary-40; }
+}
+
+// ─── Verify button (right-panel action) ──────────────────────
+.pv-verify-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.15s;
+
+  &--0 { background: $c0; box-shadow: 0 2px 8px rgba($c0, 0.35); }
+  &--1 { background: $c1; box-shadow: 0 2px 8px rgba($c1, 0.32); }
+  &--2 { background: $c2; box-shadow: 0 2px 8px rgba($c2, 0.3);  }
+  &--3 { background: $c3; box-shadow: 0 2px 8px rgba($c3, 0.3);  }
+
+  &:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+  &:disabled             { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
+
+  &--cancel {
+    background: #e9ecef !important;
+    color: #6c757d !important;
+    box-shadow: none !important;
+  }
+}
+
+// ─── Card expand / collapse ───────────────────────────────────
+.pv-card__expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pv-card--expanded .pv-card__expand { max-height: 480px; }
+
+// ─── OTP panel ────────────────────────────────────────────────
+.pv-otp-panel {
+  padding: 14px 16px;
+  background: $surface;
+  border-top: 1px solid $border;
+}
+
+.pv-otp-hint {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 13px;
+  color: $text-mid;
+  margin: 0 0 12px;
+
+  i { color: $primary; flex-shrink: 0; }
 }
 
-.pv-card__name {
-  font-size: 15px; font-weight: 700; color: $text;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.pv-otp-sent-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-bottom: 12px;
+
+  i { color: #10b981; }
+  strong { font-weight: 700; }
 }
 
-.pv-card__num {
-  font-size: 10.5px;
+.pv-resend-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: $primary;
+  font-size: 12px;
   font-weight: 700;
-  color: $muted;
-  background: #f0f4f8;
-  padding: 1px 7px;
-  border-radius: 20px;
-  flex-shrink: 0;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.pv-card__designation { font-size: 12.5px; color: $sub; font-weight: 500; }
-
-.pv-card__contacts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
-
-.pv-contact-chip {
+.pv-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: $muted;
-
-  i { font-size: 10.5px; color: $c0; }
-}
-
-// Verify buttons with per-variant color
-.pv-verify-btn {
-  flex-shrink: 0;
+  gap: 7px;
   height: 40px;
   padding: 0 18px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
   font-family: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  white-space: nowrap;
-  transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
-  color: $white;
   border: none;
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.15s;
 
-  i { transition: transform 0.2s; }
+  &:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+  &:disabled             { opacity: 0.48; cursor: not-allowed; transform: none; }
 
-  &--0 { background: linear-gradient(135deg, $c0, darken($c0, 12%)); box-shadow: 0 4px 14px rgba($c0, 0.35); }
-  &--1 { background: linear-gradient(135deg, $c1, darken($c1, 10%)); box-shadow: 0 4px 14px rgba($c1, 0.32); }
-  &--2 { background: linear-gradient(135deg, $c2, darken($c2, 10%)); box-shadow: 0 4px 14px rgba($c2, 0.3); }
-  &--3 { background: linear-gradient(135deg, $c3, darken($c3, 12%)); box-shadow: 0 4px 14px rgba($c3, 0.3); }
+  &--send    { background: $primary;    box-shadow: 0 3px 10px $primary-shadow; }
+  &--confirm { background: $primary-30; box-shadow: 0 3px 10px $primary-shadow; }
+}
 
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    i { transform: translateX(3px); }
+// ─── Inline input fields ──────────────────────────────────────
+.pv-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.18s, box-shadow 0.18s;
+
+  &:focus-within {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.08);
   }
-
-  &--cancel {
-    background: #f0f4f8 !important;
-    color: $muted !important;
-    box-shadow: none !important;
-
-    &:hover:not(:disabled) {
-      background: #e8ecf0 !important;
-      transform: none;
-    }
-  }
-
-  &:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 }
 
-// ─── OTP expand ───────────────────────────────────────────────
-.pv-card__expand {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1);
-  border-top: 0 solid #eef2f7;
-}
+.pv-input-icon { font-size: 12px; color: $primary; flex-shrink: 0; }
 
-.pv-card--expanded .pv-card__expand { max-height: 220px; border-top-width: 1px; }
-
-.pv-otp-panel { padding: 16px 20px; background: #f8fbfd; }
-
-.pv-otp-step { animation: pvFadeUp 0.28s ease; }
-
-.pv-otp-hint {
-  display: flex; align-items: center; gap: 7px;
-  margin: 0 0 12px; font-size: 13px; color: $sub;
-  i { color: $c0; font-size: 14px; flex-shrink: 0; }
-}
-
-.pv-mobile-row { display: flex; gap: 10px; align-items: center; }
-
-.pv-contact-field { width: 100%; margin-bottom: 10px; flex: none; }
-
-.pv-mobile-field {
+.pv-bare-input {
   flex: 1;
-  display: flex; align-items: center; gap: 8px;
-  height: 42px; padding: 0 12px;
-  border: 1.5px solid $border; border-radius: 8px; background: $white;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13.5px;
+  color: $text-dark;
+  min-width: 0;
 
-  &:focus-within { border-color: $c0; box-shadow: 0 0 0 3px rgba($c0, 0.1); }
+  &::placeholder { color: $text-muted; font-size: 12.5px; }
 }
 
-.pv-mobile-field__icon { font-size: 12px; color: $c0; flex-shrink: 0; }
-
-.pv-mobile-input {
-  flex: 1; border: none; outline: none;
-  font-size: 14px; font-family: inherit; color: $text; background: transparent; min-width: 0;
-  &::placeholder { color: $muted; font-size: 13px; }
-}
+.pv-otp-input { font-family: monospace; letter-spacing: 0.2em; font-size: 16px; }
 
 .pv-edit-tag {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 10px; color: $muted; white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: $text-muted;
+  white-space: nowrap;
+
   i { font-size: 9px; }
-}
-
-.pv-send-btn {
-  flex-shrink: 0;
-  height: 42px; padding: 0 20px; border: none; border-radius: 8px;
-  background: linear-gradient(135deg, #f97316 0%, #ea6c0a 100%);
-  color: $white; font-size: 13px; font-weight: 700; font-family: inherit;
-  cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
-  white-space: nowrap; box-shadow: 0 4px 14px rgba(#f97316, 0.35);
-  transition: transform 0.15s, box-shadow 0.15s;
-
-  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(#f97316, 0.45); }
-  &:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; transform: none; }
-}
-
-.pv-otp-sent-notice {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px; border-radius: 8px;
-  background: #e8f7f0; border: 1px solid #a8d8be;
-  color: #167050; font-size: 13px; font-weight: 500; margin-bottom: 12px;
-
-  i { font-size: 14px; flex-shrink: 0; }
-  strong { font-weight: 700; }
-}
-
-.pv-resend-btn {
-  margin-left: auto; background: none; border: none;
-  color: $c0; font-size: 12px; font-weight: 700;
-  cursor: pointer; font-family: inherit; padding: 0;
-  text-decoration: underline; text-underline-offset: 2px;
-}
-
-.pv-otp-row { display: flex; gap: 10px; align-items: center; }
-
-.pv-otp-field {
-  flex: 1; display: flex; align-items: center; gap: 8px;
-  height: 42px; padding: 0 12px;
-  border: 1.5px solid $border; border-radius: 8px; background: $white;
-  transition: border-color 0.2s, box-shadow 0.2s;
-
-  &:focus-within { border-color: $c1; box-shadow: 0 0 0 3px rgba($c1, 0.08); }
-}
-
-.pv-otp-field__icon { font-size: 12px; color: $c1; flex-shrink: 0; }
-
-.pv-otp-input {
-  flex: 1; border: none; outline: none;
-  font-size: 16px; font-family: monospace; letter-spacing: 0.18em;
-  color: $text; background: transparent; min-width: 0;
-  &::placeholder { font-family: inherit; letter-spacing: normal; color: $muted; font-size: 13px; }
-}
-
-.pv-confirm-btn {
-  flex-shrink: 0;
-  height: 42px; padding: 0 20px; border: none; border-radius: 8px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: $white; font-size: 13px; font-weight: 700; font-family: inherit;
-  cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
-  white-space: nowrap; box-shadow: 0 4px 14px rgba(#10b981, 0.35);
-  transition: transform 0.15s, box-shadow 0.15s;
-
-  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(#10b981, 0.45); }
-  &:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; transform: none; }
-}
-
-// Spinners
-.pv-spin {
-  display: inline-block; width: 14px; height: 14px;
-  border: 2px solid rgba(#0ea5a0, 0.25); border-top-color: #0ea5a0;
-  border-radius: 50%; animation: pvSpin 0.7s linear infinite;
-
-  &--light { border-color: rgba($white, 0.3); border-top-color: $white; }
 }
 
 // ─── Empty state ──────────────────────────────────────────────
 .pv-empty {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 40px 24px; background: $white; border-radius: 14px;
-  border: 1.5px dashed $border; margin-bottom: 20px; text-align: center;
-  position: relative;
-  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1.5px dashed $border;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+
+  &__icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: $primary-accent;
+    border: 2px solid rgba($primary, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: $primary-40;
+    margin-bottom: 14px;
+  }
+
+  &__title { font-size: 14.5px; font-weight: 700; color: $text-dark; margin: 0 0 6px; }
+  &__sub   { font-size: 13px; color: $text-muted; line-height: 1.6; margin: 0; }
 }
 
-.pv-empty__icon-wrap {
-  width: 64px; height: 64px; border-radius: 50%;
-  background: linear-gradient(135deg, rgba($c0, 0.08), rgba($c1, 0.08));
-  display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
-}
-
-.pv-empty__icon  { font-size: 28px; color: $muted; }
-.pv-empty__title { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #3a5060; }
-.pv-empty__sub   { margin: 0; font-size: 13px; color: $muted; line-height: 1.55; }
-
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 //  REQUEST ACCESS
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 .pv-request {
+  background: #fff;
+  border-radius: 12px;
+  border: 1.5px solid $border;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   overflow: hidden;
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 1;
-  border-radius: 14px;
-  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+  transition: border-color 0.22s, box-shadow 0.22s;
 
   &--open {
-    background: $white;
-    border: 1.5px solid $c1;
-    border-left: 4px solid $c1;
-    box-shadow: 0 6px 28px rgba($c1, 0.12);
+    border-color: rgba($primary, 0.35);
+    box-shadow: 0 4px 20px $primary-shadow;
   }
 }
 
 .pv-request__trigger {
-  width: 100%; display: flex; flex-direction: row; align-items: center; gap: 10px;
-  padding: 12px 14px; background: none; border: none;
-  font-family: inherit; cursor: pointer; text-align: left;
-  border-radius: 14px;
-  transition: background 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s;
 
-  &:hover { background: rgba($white, 0.06); }
+  &:hover { background: $primary-accent; }
+
+  > .bi { font-size: 13px; color: $text-muted; flex-shrink: 0; }
 }
 
-.pv-request__icon {
-  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
-  background: rgba($white, 0.1);
-  border: 1px solid rgba($white, 0.2);
-  display: flex; align-items: center; justify-content: center;
+.pv-req-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: rgba($primary, 0.08);
+  border: 1px solid rgba($primary, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  i { font-size: 14px; color: rgba($white, 0.85); }
+  i { font-size: 13px; color: $primary; }
 }
 
-.pv-request__title {
-  font-size: 14px; font-weight: 700; color: rgba($white, 0.92); white-space: nowrap; flex-shrink: 0;
+.pv-request__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
-.pv-request__sub {
-  font-size: 12px; color: rgba($white, 0.55); flex: 1;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.pv-request__title { font-size: 13.5px; font-weight: 700; color: $text-dark; }
+.pv-request__sub   { font-size: 11.5px; color: $text-muted; }
 
 .pv-request__badge {
-  padding: 3px 10px; border-radius: 20px; flex-shrink: 0;
-  font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
-  background: rgba($c1, 0.35); color: rgba($white, 0.9); border: 1px solid rgba($c1, 0.5);
+  flex-shrink: 0;
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba($primary, 0.08);
+  color: $primary;
+  border: 1px solid rgba($primary, 0.22);
 }
-
-.pv-request__chevron {
-  font-size: 13px; color: rgba($white, 0.5); transition: transform 0.3s ease; flex-shrink: 0;
-}
-
-.pv-request--open .pv-request__chevron { transform: rotate(180deg); }
-
-// When card is open (white bg), flip trigger text back to dark
-.pv-request--open .pv-request__title   { color: $text; }
-.pv-request--open .pv-request__sub     { color: $muted; }
-.pv-request--open .pv-request__chevron { color: $muted; }
-.pv-request--open .pv-request__icon    { background: linear-gradient(135deg, rgba($c1, 0.1), rgba($c1, 0.05)); border-color: rgba($c1, 0.18); i { color: $c1; } }
-.pv-request--open .pv-request__badge   { background: rgba($c1, 0.08); color: $c1; border-color: rgba($c1, 0.2); }
-.pv-request--open .pv-request__trigger:hover { background: rgba($c1, 0.04); }
 
 .pv-request__body {
-  max-height: 0; overflow: hidden;
+  max-height: 0;
+  overflow: hidden;
   transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.pv-request--open .pv-request__body { max-height: 540px; border-top: 1px solid $border; }
+.pv-request--open .pv-request__body { max-height: 640px; }
 
-.pv-request__notice {
-  display: flex; align-items: flex-start; gap: 8px;
-  margin: 16px 20px 0; padding: 10px 13px;
-  border-radius: 8px; background: rgba($c3, 0.06); border: 1px solid rgba($c3, 0.18);
-  font-size: 13px; color: darken($c3, 20%); line-height: 1.5;
-
-  i { font-size: 14px; color: $c3; flex-shrink: 0; margin-top: 1px; }
+.pv-request__inner {
+  padding: 0 18px 20px;
+  border-top: 1px solid $border;
 }
 
-// Add form
-.pv-add-form { padding: 16px 20px 20px; }
+.pv-info-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 13px;
+  border-radius: 8px;
+  background: $primary-accent;
+  border: 1px solid rgba($primary, 0.14);
+  font-size: 12.5px;
+  color: $primary;
+  line-height: 1.5;
+  margin: 14px 0;
 
-.pv-add-form__section-label {
-  display: flex; align-items: center; gap: 6px; margin: 0 0 10px;
-  font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em;
-  text-transform: uppercase; color: $muted;
-
-  i { font-size: 11px; color: $c1; }
+  i { color: $primary-40; flex-shrink: 0; font-size: 14px; margin-top: 1px; }
 }
 
-.pv-add-form__row {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px; margin-bottom: 16px;
+.pv-form-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-muted;
+  margin: 0 0 8px;
+
+  i { color: $primary; font-size: 11px; }
 }
-
-.pv-mat-field { width: 100%; }
-
-.pv-add-form__footer { display: flex; justify-content: flex-end; margin-top: 4px; }
 
 .pv-submit-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 42px; padding: 0 22px;
-  font-weight: 700; font-family: inherit; font-size: 13.5px;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  height: 40px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
 }
 
-// ─── Skeletons ────────────────────────────────────────────────
-%sk-base {
-  background: linear-gradient(90deg, #dde8ef 25%, #edf3f7 50%, #dde8ef 75%);
+// ─── Skeleton shimmer (light bg) ─────────────────────────────
+.pv-sk {
+  background: linear-gradient(90deg, #e0eaed 25%, #eef4f6 50%, #e0eaed 75%);
   background-size: 200% 100%;
   animation: pvShimmer 1.5s infinite;
   border-radius: 6px;
-}
+  display: block;
 
-.pv-sk {
-  @extend %sk-base;
-
-  &--avatar  { width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0; }
-  &--line    { height: 12px; }
-  &--short   { width: 60%; }
-  &--xshort  { width: 38%; }
-  &--btn     { width: 88px; height: 38px; border-radius: 8px; }
-  &--name-hero { width: 180px; height: 22px; border-radius: 6px; margin-bottom: 10px; background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.08) 75%); background-size: 200% 100%; animation: pvShimmer 1.6s infinite; }
-  &--chip    { width: 72px; height: 26px; border-radius: 20px; background: rgba(255,255,255,0.07); animation: pvShimmer 1.6s infinite; }
-}
-
-.pv-sk-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.pv-sk-chips-hero { display: flex; gap: 7px; }
-
-// ─── Footer ───────────────────────────────────────────────────
-.pv-footer {
-  display: flex; align-items: center; justify-content: center; gap: 7px;
-  font-size: 11px; color: rgba($white, 0.48); padding: 4px 0 0; letter-spacing: 0.03em;
-  position: relative;
-  z-index: 1;
-
-  i { font-size: 12px; color: lighten($c0, 18%); }
-}
-
-// ─── Skeleton hero placeholders ───────────────────────────────
-
-// ─── Animations ───────────────────────────────────────────────
-@keyframes pvIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pvCardIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pvFadeUp {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pvFloat {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-7px); }
-}
-
-@keyframes pvRingSpin { to { transform: rotate(360deg); } }
-@keyframes pvSpin     { to { transform: rotate(360deg); } }
-
-@keyframes pvOrbFloat {
-  0%, 100% { transform: scale(1) translate(0, 0); }
-  33%       { transform: scale(1.08) translate(10px, -10px); }
-  66%       { transform: scale(0.96) translate(-8px, 6px); }
+  &--avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
 }
 
 @keyframes pvShimmer {
@@ -938,272 +658,41 @@ $accents: (
   to   { background-position: -200% center; }
 }
 
-.pv-container {
-  max-width: 980px;
-  padding-top: 30px;
+// ─── Spinner ──────────────────────────────────────────────────
+.pv-spin {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  border: 2px solid rgba($primary, 0.2);
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: pvSpin 0.7s linear infinite;
+
+  &--light { border-color: rgba(#fff, 0.3); border-top-color: #fff; }
 }
 
-.pv-layout {
-  display: block;
-}
-
-.pv-id-card {
-  display: none;
-}
-
-.pv-content-stack {
-  width: min(100%, 900px);
-  margin: 0 auto;
-  padding: 34px 38px 30px;
-  border-radius: 28px;
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.08), transparent 26%),
-    radial-gradient(circle at 100% 0%, rgba($c0, 0.18), transparent 34%),
-    linear-gradient(135deg, #0c3442 0%, #12385b 46%, #20105f 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 26px 70px rgba(15, 38, 55, 0.34),
-    0 8px 24px rgba(12, 29, 44, 0.18);
-  animation: pvPanelIntro 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
-  isolation: isolate;
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background:
-      linear-gradient(90deg, rgba($c0, 0.18), transparent 32%),
-      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    background-size: auto, 100% 42px;
-    opacity: 0.6;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  > * {
-    position: relative;
-    z-index: 1;
-  }
-}
-
-.pv-id-card__content-col {
-  overflow: visible;
-  animation: pvFadeUp 0.44s ease 0.08s both;
-}
-
-.pv-id-card__fc-label i {
-  animation: pvIconPulse 1.8s ease-in-out infinite;
-}
-
-.pv-id-card__name {
-  font-size: clamp(22px, 3vw, 30px);
-}
-
-.pv-id-card__welcome {
-  gap: 16px;
-}
-
-.pv-id-card__step-pills {
-  flex-wrap: wrap;
-}
-
-.pv-step-pill {
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-  animation: pvFadeUp 0.38s ease both;
-
-  &:hover {
-    transform: translateY(-2px);
-    background: rgba($white, 0.11);
-    border-color: rgba($white, 0.18);
-  }
-
-  &:nth-child(1) { animation-delay: 0.14s; }
-  &:nth-child(3) { animation-delay: 0.2s; }
-  &:nth-child(5) { animation-delay: 0.26s; }
-}
-
-.pv-section-head {
-  margin-top: 6px;
-}
-
-.pv-card,
-.pv-request,
-.pv-empty,
-.pv-error-bar {
-  backdrop-filter: blur(8px);
-}
-
-.pv-card {
-  border: 1px solid rgba(255, 255, 255, 0.74);
-  box-shadow: 0 12px 34px rgba(10, 21, 35, 0.12);
-  transform-origin: center top;
-
-  &:hover {
-    transform: translateY(-4px) scale(1.005);
-  }
-}
-
-.pv-card__accent {
-  height: 4px;
-}
-
-.pv-avatar {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.pv-card:hover .pv-avatar {
-  transform: scale(1.06);
-}
-
-.pv-verify-btn,
-.pv-send-btn,
-.pv-confirm-btn,
-.pv-submit-btn {
-  min-height: 40px;
-  border-radius: 10px !important;
-  text-transform: none;
-}
-
-.pv-verify-btn {
-  overflow: hidden;
-}
-
-.pv-request {
-  border-radius: 16px;
-  transition: transform 0.22s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 36px rgba($c1, 0.17);
-  }
-}
-
-.pv-request__trigger.mat-mdc-button {
-  height: auto;
-  justify-content: flex-start;
-  border-radius: 0;
-}
-
-.pv-request__body {
-  transition: max-height 0.46s cubic-bezier(0.22, 1, 0.36, 1), border-top-width 0.2s ease;
-}
-
-.pv-mobile-field,
-.pv-otp-field {
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:focus-within {
-    transform: translateY(-1px);
-  }
-}
-
-@keyframes pvPanelIntro {
-  from { opacity: 0; transform: translateY(14px) scale(0.985); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes pvIconPulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba($c0, 0)); }
-  50% { transform: scale(1.14); filter: drop-shadow(0 0 8px rgba($c0, 0.5)); }
-}
+@keyframes pvSpin { to { transform: rotate(360deg); } }
 
 // ─── Responsive ───────────────────────────────────────────────
-@media (max-width: 700px) {
-  .pv-container { padding: 16px 14px 36px; }
+@media (max-width: 576px) {
+  .pv-hero { padding: 16px 16px 18px; }
 
-  .pv-layout {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
+  .pv-step__lbl  { display: none; }
+  .pv-step__line { min-width: 10px; }
 
-  .pv-content-stack {
-    padding: 20px;
-    border-radius: 18px;
-  }
+  .pv-card__action  { padding: 12px 10px; }
+  .pv-card__btn-col { padding: 10px 12px; border-left: none; border-top: 1px solid $border; align-self: auto; }
+  .pv-card__main    { flex-wrap: wrap; }
+  .pv-card__info    { flex-basis: 100%; order: 2; }
+  .pv-card__btn-col { flex-basis: 100%; order: 3; }
 
-  .pv-id-card { padding: 0; border-radius: 16px; }
+  .pv-verify-btn { width: 100%; justify-content: center; }
 
-  .pv-id-card__body {
-    display: block;
-  }
+  .pv-submit-btn { width: 100% !important; justify-content: center; }
+  .pv-action-btn { width: 100%; justify-content: center; }
 
-  .pv-id-card__seal-col {
-    flex-direction: row;
-    width: auto;
-    border-right: none;
-    min-height: auto;
-    padding: 18px;
-    margin: 0;
-    justify-content: flex-start;
-    gap: 14px;
-    border-radius: 16px;
-  }
-
-  .pv-id-card__content-col {
-    padding: 0;
-    margin-bottom: 14px;
-  }
-
-  .pv-seal-wrap { width: 64px; height: 64px; }
-  .pv-seal      { width: 64px; height: 64px; }
-  .pv-seal__text { font-size: 20px; }
-  .pv-seal-ring  { display: none; }
-
-  .pv-id-card__name { font-size: 17px; }
-
-  .pv-id-card__welcome { flex-direction: column; gap: 14px; }
-  .pv-id-card__step-pills { flex-wrap: wrap; }
-
-  .pv-section-head {
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .pv-section-head__actions {
-    align-items: flex-end;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .pv-card__main { flex-wrap: wrap; }
-  .pv-verify-btn { width: 100%; justify-content: center; margin-top: 8px; }
-
-  .pv-mobile-row, .pv-otp-row { flex-direction: column; gap: 8px; }
-  .pv-send-btn, .pv-confirm-btn { width: 100%; justify-content: center; }
-
-  .pv-add-form__row { grid-template-columns: 1fr; }
-  .pv-submit-btn { width: 100%; justify-content: center; }
-
-  .pv-request__trigger-right { display: none; }
-
-  .pv-card--expanded .pv-card__expand { max-height: 340px; }
-}
-
-@media (max-width: 480px) {
-  .pv-container { padding: 12px 10px 28px; }
-  .pv-content-stack { padding: 18px 14px; border-radius: 16px; }
-  .pv-id-card__chips { gap: 5px; }
-  .pv-chip { font-size: 10.5px; padding: 3px 9px; }
-  .pv-id-card__welcome-title { font-size: 15px; }
-  .pv-id-card__step-pills {
-    display: flex;
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .pv-step-arrow { display: none; }
-  .pv-step-pill { width: 100%; justify-content: flex-start; }
-  .pv-card__main { padding: 14px; gap: 12px; }
-  .pv-section-head {
-    flex-direction: column;
-  }
-  .pv-section-head__actions {
-    width: 100%;
-    align-items: stretch;
-  }
-  .pv-add-contact-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  .pv-request__trigger { padding: 15px 14px; }
+  .pv-request__trigger { padding: 12px 14px; }
+  .pv-otp-panel        { padding: 12px 14px; }
+  .pv-request__badge   { display: none; }
 }

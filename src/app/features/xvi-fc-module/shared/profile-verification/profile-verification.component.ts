@@ -8,11 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProfileVerificationService } from './profile-verification.service';
-import {
-  EntityProfilesResponse,
-  ProfileItem,
-  ProfileVerificationPayload,
-} from './profile-verification.models';
+import { EntityProfilesResponse, ProfileItem } from './profile-verification.models';
 import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
 
 type ProfileRole = 'state' | 'ulb' | 'mohua';
@@ -117,7 +113,7 @@ export class ProfileVerificationComponent implements OnInit {
     return profile.id ?? `${profile.email ?? ''}_${profile.mobile ?? ''}`;
   }
 
-  // ── Mobile edit ───────────────────────────────────────────────
+  // ── Mobile / email edit ───────────────────────────────────────
   getMobile(profile: ProfileItem): string {
     return this.editedMobiles()[this.getProfileKey(profile)] ?? profile.mobile;
   }
@@ -199,7 +195,7 @@ export class ProfileVerificationComponent implements OnInit {
       .verifyOtp(mobile, otp)
       .pipe(
         switchMap(() =>
-          this.profileService.updateProfileContacts(profile.name, email, mobile),
+          this.profileService.updateProfileContacts(profile.id!, email, mobile),
         ),
       )
       .subscribe({
@@ -235,26 +231,34 @@ export class ProfileVerificationComponent implements OnInit {
     }
     const val = this.addForm.value;
     this.addFormSubmitting.set(true);
-    const payload: ProfileVerificationPayload = {
-      isXVIFCProfileVerified: true,
-      contactPersonName: val.name ?? '',
-      designation: val.designation ?? '',
-      officialEmail: val.email ?? '',
-      mobileNumber: val.mobile ?? '',
-    };
-    this.profileService.confirmProfile(payload).subscribe({
-      next: () => {
-        this.markVerifiedInStorage();
-        void this.navigateToHome();
-      },
-      error: (err: unknown) => {
-        this.errorMsg.set(
-          (err as { error?: { message?: string } })?.error?.message ??
-            'Submission failed. Please try again.',
-        );
-        this.addFormSubmitting.set(false);
-      },
-    });
+    this.profileService
+      .createManagedUser({
+        name: val.name ?? '',
+        username: val.name ?? '',
+        designation: val.designation ?? '',
+        email: val.email ?? '',
+        mobile: val.mobile ?? '',
+        role: 'ULB',
+      })
+      .subscribe({
+        next: () => {
+          this.markVerifiedInStorage();
+          this.snackBar.open('Account created successfully!', 'Close', {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
+          void this.navigateToHome();
+        },
+        error: (err: unknown) => {
+          this.errorMsg.set(
+            (err as { error?: { message?: string } })?.error?.message ??
+              'Submission failed. Please try again.',
+          );
+          this.addFormSubmitting.set(false);
+        },
+      });
   }
 
   // ── Helpers ───────────────────────────────────────────────────
@@ -265,10 +269,6 @@ export class ProfileVerificationComponent implements OnInit {
       .map((p) => p[0] ?? '')
       .join('')
       .toUpperCase();
-  }
-
-  getEntityInitials(): string {
-    return this.getInitials(this.entityInfo()?.entityName ?? '');
   }
 
   getRoleBadgeLabel(): string {

@@ -14,23 +14,3 @@ export interface EntityProfilesResponse {
   stateName: string;
   profiles: ProfileItem[];
 }
-
-export interface ProfileVerificationApiResponse {
-  stateName: string;
-  contactPersonName: string;
-  designation: string;
-  officialEmail: string;
-  mobileNumber: string;
-  ulbName?: string;
-  ulbCode?: string;
-  ulbType?: string;
-}
-
-export interface ProfileVerificationPayload {
-  isXVIFCProfileVerified: true;
-  contactPersonName?: string;
-  designation?: string;
-  officialEmail?: string;
-  mobileNumber?: string;
-  otp?: string;
-}
