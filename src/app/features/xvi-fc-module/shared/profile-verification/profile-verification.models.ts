@@ -1,5 +1,6 @@
 export interface ProfileItem {
   id?: string;
+  _id?: string;
   name: string;
   designation: string;
   designantion?: string; // API variant (typo handled in service)

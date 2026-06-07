@@ -191,11 +191,12 @@ export class ProfileVerificationComponent implements OnInit {
     const email = this.getEmail(profile);
     this.verifyingKey.set(key);
     this.errorMsg.set('');
+    const loggedInUserId = this.getLoggedInUserId();
     this.profileService
       .verifyOtp(mobile, otp)
       .pipe(
         switchMap(() =>
-          this.profileService.updateProfileContacts(profile.id!, email, mobile),
+          this.profileService.updateProfileContacts(loggedInUserId, email, mobile),
         ),
       )
       .subscribe({
@@ -317,6 +318,17 @@ export class ProfileVerificationComponent implements OnInit {
       buildXvifcFeatureLink(this.getRouteRoleFromStorage(), this.entityId, this.year, 'overview'),
       { replaceUrl: true },
     );
+  }
+
+  private getLoggedInUserId(): string {
+    try {
+      const raw = localStorage.getItem('userData');
+      if (!raw) return '';
+      const user = JSON.parse(raw) as { _id?: string; id?: string };
+      return user._id ?? user.id ?? '';
+    } catch {
+      return '';
+    }
   }
 
   private getRoleFromStorage(): ProfileRole {

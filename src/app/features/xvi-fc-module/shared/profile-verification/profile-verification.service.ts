@@ -49,11 +49,14 @@ export class ProfileVerificationService {
               ? resp.data
               : (resp as unknown as UsersListResponse['data']);
           const details = payload?.ulbDetails ?? payload?.stateDetails;
-          const profiles = (payload?.data ?? []).map((p: ProfileItem & { _id?: string }, i: number) => ({
-            ...p,
-            id: p.id ?? p._id ?? `profile-${i}`,
-            designation: p.designation || p.designantion || '',
-          }));
+          const profiles = (payload?.data ?? []).map((p: ProfileItem, i: number) => {
+            const raw = p as unknown as Record<string, unknown>;
+            const id =
+              (raw['_id'] as string | undefined) ??
+              (raw['id'] as string | undefined) ??
+              `profile-${i}`;
+            return { ...p, id, designation: p.designation || p.designantion || '' };
+          });
           return {
             entityName: details?.name ?? user.name ?? '',
             entityCode: details?.code ?? user.ulbCode,
