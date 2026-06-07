@@ -1,9 +1,13 @@
 export enum USER_TYPE {
   'USER' = 'USER',
   'ULB' = 'ULB',
+  'ULB-EDITOR' = 'ULB-EDITOR',
+  'ULB-VIEWER' = 'ULB-VIEWER',
   'ADMIN' = 'ADMIN',
   'MoHUA' = 'MoHUA',
   'STATE' = 'STATE',
+  'STATE-EDITOR' = 'STATE-EDITOR',
+  'STATE-VIEWER' = 'STATE-VIEWER',
   'XVIFC_STATE' = 'XVIFC_STATE',
   'XVIFC' = 'XVIFC',
   'PARTNER' = 'PARTNER',

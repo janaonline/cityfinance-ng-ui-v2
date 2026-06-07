@@ -195,13 +195,13 @@ export class XvifcModuleService {
       this.sideMenuModel.set({
         ...menu,
         bottomModel: [
-          ...menu.bottomModel,
-          { label: '', separator: true },
-          {
-            label: 'Sign Out',
-            icon: 'bi bi-box-arrow-right',
-            command: () => this.logout(),
-          },
+          // ...menu.bottomModel,
+          // { label: '', separator: true },
+          // {
+          //   label: 'Sign Out',
+          //   icon: 'bi bi-box-arrow-right',
+          //   command: () => this.logout(),
+          // },
         ],
       });
     } catch (error) {

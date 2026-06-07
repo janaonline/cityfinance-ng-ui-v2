@@ -51,6 +51,7 @@ export interface FieldConfig {
   maxFileSize?: number;
   minDate?: DateConfigValue;
   maxDate?: DateConfigValue;
+  placeholder?: string;
 }
 
 export interface JsonFieldConfig {

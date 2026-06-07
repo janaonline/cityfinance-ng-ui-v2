@@ -2,12 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import {
-  EntityProfilesResponse,
-  ProfileItem,
-  ProfileVerificationApiResponse,
-  ProfileVerificationPayload,
-} from './profile-verification.models';
+import { EntityProfilesResponse, ProfileItem } from './profile-verification.models';
 
 interface StoredUserData {
   _id?: string;
@@ -54,11 +49,14 @@ export class ProfileVerificationService {
               ? resp.data
               : (resp as unknown as UsersListResponse['data']);
           const details = payload?.ulbDetails ?? payload?.stateDetails;
-          const profiles = (payload?.data ?? []).map((p: ProfileItem, i: number) => ({
-            ...p,
-            id: p.id ?? `profile-${i}`,
-            designation: p.designation || p.designantion || '',
-          }));
+          const profiles = (payload?.data ?? []).map((p: ProfileItem, i: number) => {
+            const raw = p as unknown as Record<string, unknown>;
+            const id =
+              (raw['_id'] as string | undefined) ??
+              (raw['id'] as string | undefined) ??
+              `profile-${i}`;
+            return { ...p, id, designation: p.designation || p.designantion || '' };
+          });
           return {
             entityName: details?.name ?? user.name ?? '',
             entityCode: details?.code ?? user.ulbCode,
@@ -86,43 +84,26 @@ export class ProfileVerificationService {
   }
 
   updateProfileContacts(
-    name: string,
+    id: string,
     email: string,
     mobile: string,
   ): Observable<{ success: boolean }> {
     return this.http.patch<{ success: boolean }>(
-      `${environment.api.url2}users/update-profile-contacts`,
-      { name, email, mobile, isXVIFCProfileVerified: true },
+      `${environment.api.url2}users/${id}/profile-contacts`,
+      { email, mobile, isXVIFCProfileVerified: true },
     );
   }
 
-  getProfile(role: 'state' | 'ulb' | 'mohua'): Observable<ProfileVerificationApiResponse> {
-    const user = this.readStoredUser();
-    const base: ProfileVerificationApiResponse = {
-      stateName: user.stateName ?? '',
-      designation: user.designation ?? '',
-      officialEmail: user.email ?? '',
-      mobileNumber: user.mobile ?? '',
-      contactPersonName: user.name ?? '',
-    };
-    if (role === 'ulb') {
-      return of({
-        ...base,
-        ulbName: user.name ?? '',
-        ulbCode: user.ulbCode ?? '',
-        ulbType: user.ulbType ?? '',
-        contactPersonName: user.name ?? '',
-        designation: user.designation ?? '',
-      });
-    }
-    return of(base);
-  }
-
-  confirmProfile(
-    payload: ProfileVerificationPayload,
-  ): Observable<{ success: boolean; message?: string }> {
-    return this.http.patch<{ success: boolean; message?: string }>(
-      `${environment.api.url2}auth/update-profile`,
+  createManagedUser(payload: {
+    name: string;
+    username: string;
+    designation: string;
+    email: string;
+    mobile: string;
+    role: string;
+  }): Observable<{ success: boolean; message?: string }> {
+    return this.http.post<{ success: boolean; message?: string }>(
+      `${environment.api.url2}users/create-user`,
       payload,
     );
   }

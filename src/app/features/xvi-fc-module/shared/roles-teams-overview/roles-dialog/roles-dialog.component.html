@@ -1,0 +1,117 @@
+<div class="add-dialog">
+  <div class="add-dialog__header">
+    <div class="add-dialog__heading">
+      <h3 mat-dialog-title class="m-0">{{ config.title }}</h3>
+      @if (config.subtitle) {
+        <p class="add-dialog__copy mb-0">{{ config.subtitle }}</p>
+      }
+    </div>
+    <button
+      mat-icon-button
+      type="button"
+      class="add-dialog__close"
+      aria-label="Close dialog"
+      (click)="onCancel()"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="add-dialog__content p-0">
+    <div class="d-grid gap-3">
+      @for (field of config.fields; track field.key) {
+        @switch (field.type) {
+          @case ('confirm-message') {
+            <p class="role-confirm-copy">{{ field.content }}</p>
+          }
+          @case ('role-change') {
+            @if (field.roleChange) {
+              <p class="role-confirm-copy">
+                Change <strong>{{ field.roleChange.memberName }}</strong>'s role from
+                <span class="role-tag">{{ field.roleChange.fromRole }}</span>
+                to
+                <span class="role-tag role-tag--new">{{ field.roleChange.toRole }}</span>?
+              </p>
+            }
+          }
+          @case ('readonly') {
+            <div class="activate-preview">
+              <div class="activate-preview__field">
+                <span>{{ field.label }}</span>
+                <strong>{{ field.content }}</strong>
+              </div>
+            </div>
+          }
+          @case ('select') {
+            <mat-form-field appearance="outline" class="dialog-field">
+              <mat-label>{{ field.label }}</mat-label>
+              <mat-select
+                [ngModel]="formValues[field.key]"
+                (ngModelChange)="onFieldChange(field, $event)"
+                [required]="field.required ?? false"
+                [name]="field.key"
+              >
+                @for (opt of field.options ?? []; track opt.value) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+          @case ('text') {
+            <mat-form-field appearance="outline" class="dialog-field">
+              <mat-label>
+                {{ field.label }}
+                @if (field.optional) {
+                  <span class="optional-label">optional</span>
+                }
+              </mat-label>
+              <input
+                matInput
+                [required]="field.required ?? false"
+                [placeholder]="field.placeholder ?? ''"
+                [ngModel]="formValues[field.key]"
+                (ngModelChange)="onFieldChange(field, $event)"
+                [name]="field.key"
+                autocomplete="off"
+              />
+            </mat-form-field>
+          }
+          @case ('tel') {
+            <mat-form-field appearance="outline" class="dialog-field">
+              <mat-label>{{ field.label }}</mat-label>
+              <input
+                matInput
+                [required]="field.required ?? false"
+                type="tel"
+                inputmode="numeric"
+                [maxlength]="field.maxlength ?? 10"
+                [placeholder]="field.placeholder ?? ''"
+                [ngModel]="formValues[field.key]"
+                (ngModelChange)="onFieldChange(field, $event)"
+                [name]="field.key"
+                autocomplete="off"
+              />
+            </mat-form-field>
+          }
+        }
+      }
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="add-dialog__actions px-0 pb-0">
+    <button mat-stroked-button type="button" (click)="onCancel()">
+      {{ config.cancelLabel ?? 'Cancel' }}
+    </button>
+    <button
+      type="button"
+      [class]="confirmBtnClass"
+      [disabled]="isConfirmDisabled"
+      (click)="onConfirm()"
+    >
+      {{ config.confirmLabel }}
+      @if (config.confirmIcon) {
+        <mat-icon aria-hidden="true">{{ config.confirmIcon }}</mat-icon>
+      }
+    </button>
+  </mat-dialog-actions>
+</div>
