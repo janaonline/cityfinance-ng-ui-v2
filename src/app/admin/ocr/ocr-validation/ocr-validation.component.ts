@@ -100,6 +100,7 @@ export class OcrValidationComponent implements OnInit {
     { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'Income and Expenditure Schedule' },
     { value: 'CASH_FLOW', label: 'Cash Flow Statement' },
     { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
+    { value: 'RECEIPTS_AND_PAYMENTS', label: 'Receipts and Payments' },
   ];
 
   readonly financialYears: SelectOption[] = [

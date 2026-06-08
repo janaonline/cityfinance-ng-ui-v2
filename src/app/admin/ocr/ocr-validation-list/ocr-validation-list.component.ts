@@ -40,6 +40,7 @@ const DOC_TYPE_OPTIONS = [
   { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'I&E Schedule' },
   { value: 'CASH_FLOW', label: 'Cash Flow' },
   { value: 'AUDITOR_REPORT', label: 'Auditor Report' },
+  { value: 'RECEIPTS_AND_PAYMENTS', label: 'Receipts and Payments' },
   { value: 'UNKNOWN', label: 'Unknown' },
 ];
 
@@ -174,7 +175,7 @@ export class OcrValidationListComponent implements OnInit {
 
   exportToExcel(): void {
     const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
-            matchStatus, dateFrom, dateTo } =
+      matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
 
     this.exporting.set(true);
@@ -288,7 +289,7 @@ export class OcrValidationListComponent implements OnInit {
 
   private loadJobs(): void {
     const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
-            matchStatus, dateFrom, dateTo } =
+      matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
     this.loading.set(true);
 
