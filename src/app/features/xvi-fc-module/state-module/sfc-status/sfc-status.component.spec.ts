@@ -4,14 +4,14 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
+import { of } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
-import {
-  ConditionalFieldConfig,
-  DynamicFormVisibilityService,
-} from '../../dynamic-form-visibility.service';
+import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../dynamic-form-visibility.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { SfcStatusComponent } from './sfc-status.component';
 
 @Component({
@@ -35,14 +35,22 @@ describe('SfcStatusComponent', () => {
   let fixture: ComponentFixture<SfcStatusComponent>;
   let component: SfcStatusComponent;
   let utilityService: jasmine.SpyObj<UtilityService>;
+  let confirmDialogService: jasmine.SpyObj<ConfirmDialogService>;
 
   beforeEach(async () => {
     utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
+    confirmDialogService = jasmine.createSpyObj<ConfirmDialogService>('ConfirmDialogService', ['confirm']);
+    confirmDialogService.confirm.and.returnValue(of(false));
 
-    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, SfcStatusComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
+    await TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule, SfcStatusComponent],
+      providers: [
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: {} },
         DynamicFormService,
         DynamicFormVisibilityService,
         { provide: UtilityService, useValue: utilityService },
+        { provide: ConfirmDialogService, useValue: confirmDialogService },
       ],
     })
       .overrideComponent(SfcStatusComponent, {
@@ -140,6 +148,7 @@ describe('SfcStatusComponent', () => {
 
     component.onSubmit();
 
+    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
     expect(getControl('actionTakenReport')?.touched).toBeTrue();
     expect(getControl('sfcTerm')?.touched).toBeTrue();
     expect(getControl('sfcTerm')?.invalid).toBeTrue();
@@ -151,11 +160,37 @@ describe('SfcStatusComponent', () => {
     );
   }));
 
+  it('opens confirmation dialog with submit-specific content when form is valid', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    getControl('actionTakenReport')?.setValue({
+      fileName: 'action-taken-report.pdf',
+      fileUrl: '/objects/action-taken-report.pdf',
+      fileSize: 2048,
+      mimeType: 'application/pdf',
+    });
+    getControl('applicableSfcGrantCalculation')?.setValue(new Date(2026, 5, 15));
+    getControl('applicableSfcReportSubmissionDate')?.setValue('19-01-2024');
+    getControl('sfcTerm')?.setValue('Sixth SFC');
+    getControl('sfcReportStatus')?.setValue('Submitted');
+    fixture.detectChanges();
+
+    expect(component.form.valid).toBeTrue();
+
+    component.onSubmit();
+
+    expect(confirmDialogService.confirm).toHaveBeenCalledTimes(1);
+    const dialogData = confirmDialogService.confirm.calls.mostRecent().args[0];
+    expect(dialogData).toEqual(SUBMIT_CONFIRM_DIALOG_DEFAULTS);
+  }));
+
   it('submits the full visible payload and serializes date values when sfcActive stays yes', fakeAsync(() => {
     createComponent();
     completeInitialLoad();
 
     const logSpy = spyOn(console, 'log');
+    confirmDialogService.confirm.and.returnValue(of(true));
 
     getControl('actionTakenReport')?.setValue({
       fileName: 'action-taken-report.pdf',
@@ -196,6 +231,7 @@ describe('SfcStatusComponent', () => {
     completeInitialLoad();
 
     const logSpy = spyOn(console, 'log');
+    confirmDialogService.confirm.and.returnValue(of(true));
 
     getControl('actionTakenReport')?.setValue({
       fileName: 'action-taken-report.pdf',
@@ -225,6 +261,33 @@ describe('SfcStatusComponent', () => {
     expect(payload['sfcTerm']).toBeUndefined();
     expect(payload['sfcReportStatus']).toBeUndefined();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submitted successfully!');
+  }));
+
+  it('does not submit or show success snackbar when dialog is dismissed', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const logSpy = spyOn(console, 'log');
+    confirmDialogService.confirm.and.returnValue(of(false));
+
+    getControl('actionTakenReport')?.setValue({
+      fileName: 'action-taken-report.pdf',
+      fileUrl: '/objects/action-taken-report.pdf',
+      fileSize: 2048,
+      mimeType: 'application/pdf',
+    });
+    getControl('applicableSfcGrantCalculation')?.setValue(new Date(2026, 5, 15));
+    getControl('applicableSfcReportSubmissionDate')?.setValue('19-01-2024');
+    getControl('sfcTerm')?.setValue('Sixth SFC');
+    getControl('sfcReportStatus')?.setValue('Submitted');
+    fixture.detectChanges();
+
+    expect(component.form.valid).toBeTrue();
+
+    component.onSubmit();
+
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalled();
   }));
 
   it('applies the configured min and max date validation to applicableSfcGrantCalculation', fakeAsync(() => {
@@ -292,16 +355,49 @@ describe('SfcStatusComponent', () => {
     expect(control?.disabled).toBeFalse();
   });
 
-  it('shows a cancellation message when onCancel is called', () => {
+  it('opens the confirmation dialog when onCancel is called', () => {
     createComponent();
 
     component.onCancel();
 
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-      'Form submission cancelled.',
-      'snackbar-danger',
-    );
+    expect(confirmDialogService.confirm).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a cancellation message when cancel is confirmed', () => {
+    confirmDialogService.confirm.and.returnValue(of(true));
+    createComponent();
+
+    component.onCancel();
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submission cancelled.', 'snackbar-danger');
+  });
+
+  it('does not show cancellation message when cancel dialog is dismissed', () => {
+    confirmDialogService.confirm.and.returnValue(of(false));
+    createComponent();
+
+    component.onCancel();
+
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalled();
+  });
+
+  it('cancel button has data-cy="sfc-status-cancel-test"', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[data-cy="sfc-status-cancel-test"]');
+    expect(btn).toBeTruthy();
+    expect(btn.type).toBe('button');
+  }));
+
+  it('submit button has data-cy="sfc-status-submit-test"', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[data-cy="sfc-status-submit-test"]');
+    expect(btn).toBeTruthy();
+    expect(btn.type).toBe('submit');
+  }));
 
   it('stops control creation and reports invalid field configuration', () => {
     createComponent();
@@ -317,9 +413,6 @@ describe('SfcStatusComponent', () => {
 
     expect(Object.keys(component.form.controls)).toEqual([]);
     expect(component.isLoading()).toBeFalse();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-      'Invalid field configuration.',
-      'snackbar-danger',
-    );
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Invalid field configuration.', 'snackbar-danger');
   });
 });

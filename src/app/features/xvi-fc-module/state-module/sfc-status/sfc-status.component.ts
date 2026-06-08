@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
@@ -11,16 +12,13 @@ import {
   DependencyIndex,
   DynamicFormVisibilityService,
 } from '../../dynamic-form-visibility.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 
 @Component({
   selector: 'app-sfc-status',
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    DynamicFormComponent,
-    PreLoaderComponent,
-    MatButtonModule,
-  ],
+  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
 })
@@ -30,6 +28,8 @@ export class SfcStatusComponent implements OnInit {
   private utilityService = inject(UtilityService);
   private dynamicService = inject(DynamicFormService);
   private visibilityService = inject(DynamicFormVisibilityService);
+  private confirmDialogService = inject(ConfirmDialogService);
+  private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
 
   form = this.fb.group({});
   fields = signal<ConditionalFieldConfig[]>([]);
@@ -72,12 +72,8 @@ export class SfcStatusComponent implements OnInit {
       }
 
       // If field is readonly but has no value, make it editable to allow user input
-      const hasInitialValue =
-        field.value !== null && field.value !== undefined && field.value !== '';
-      field.readonly =
-        !hasInitialValue && field.readonly && field.formFieldType !== 'date'
-          ? false
-          : field.readonly;
+      const hasInitialValue = field.value !== null && field.value !== undefined && field.value !== '';
+      field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
 
       // Create form control with validations and readonly state
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
@@ -117,6 +113,17 @@ export class SfcStatusComponent implements OnInit {
       return;
     }
 
+    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
+    this.confirmDialogService
+      .confirm(SUBMIT_CONFIRM_DIALOG_DEFAULTS, config)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.submitForm();
+      });
+  }
+
+  private submitForm(): void {
     // Use this instead of getRawValue() - without hidden fields
     const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
 
@@ -128,7 +135,14 @@ export class SfcStatusComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
+    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
+    this.confirmDialogService
+      .confirm(undefined, config)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
+      });
   }
 }
 

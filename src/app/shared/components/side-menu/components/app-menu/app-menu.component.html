@@ -1,0 +1,102 @@
+<nav
+  aria-label="XVI Finance Commission navigation"
+  class="menu-wrapper"
+  [class.sidebar--collapsed]="effectiveCollapsed()"
+  [class.sidebar--overlay]="isOverlayMode()"
+  [class.sidebar--overlay-open]="isOverlayMode() && isMobileDrawerOpen()"
+>
+  <!-- Backdrop: fixed overlay rendered only when mobile drawer is open -->
+  @if (isOverlayMode() && isMobileDrawerOpen()) {
+    <div class="sidebar-backdrop" aria-hidden="true" (click)="closeMobileDrawer()"></div>
+  }
+
+  <!-- Sidebar panel -->
+  <div class="layout-menu">
+    <!-- Mobile only: compact drawer header with integrated close button -->
+    @if (isOverlayMode()) {
+      <div class="mobile-drawer-header">
+        <button
+          type="button"
+          class="mobile-close-btn"
+          aria-label="Close navigation"
+          title="Close menu"
+          (click)="closeMobileDrawer()"
+        >
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </div>
+    }
+
+    <!-- Top model -->
+    @if (topModel().length > 0) {
+      <ul class="layout-menu-ul layout-menu-ul-pimary">
+        @for (item of topModel(); track item.label) {
+          @if (item.separator) {
+            @if (!effectiveCollapsed()) {
+              <hr />
+            }
+          } @else {
+            <app-menu-item
+              [item]="item"
+              [root]="true"
+              [collapsed]="effectiveCollapsed()"
+              (itemActivated)="onMenuItemActivated()"
+            ></app-menu-item>
+          }
+        }
+      </ul>
+    }
+
+    <!-- Bottom model -->
+    @if (bottomModel().length > 0) {
+      <ul class="layout-menu-ul layout-menu-ul-secondary">
+        @for (item of bottomModel(); track item.label) {
+          @if (item.separator) {
+            @if (!effectiveCollapsed()) {
+              <hr />
+            }
+          } @else {
+            <app-menu-item
+              [item]="item"
+              [root]="false"
+              [collapsed]="effectiveCollapsed()"
+              (itemActivated)="onMenuItemActivated()"
+            ></app-menu-item>
+          }
+        }
+      </ul>
+    }
+  </div>
+
+  <!-- Desktop only: edge tab to collapse / expand the sidebar -->
+  @if (!isOverlayMode()) {
+    <button
+      type="button"
+      class="sidebar-toggle"
+      [attr.aria-expanded]="!isDesktopCollapsed()"
+      [attr.aria-label]="isDesktopCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      [title]="isDesktopCollapsed() ? 'Expand menu' : 'Collapse menu'"
+      (click)="toggleDesktopCollapsed()"
+    >
+      <i
+        class="bi fs-6"
+        [class.bi-chevron-right]="isDesktopCollapsed()"
+        [class.bi-chevron-left]="!isDesktopCollapsed()"
+        aria-hidden="true"
+      ></i>
+    </button>
+  }
+
+  <!-- Mobile only: fixed hamburger tab visible when the drawer is closed -->
+  @if (isOverlayMode() && !isMobileDrawerOpen()) {
+    <button
+      type="button"
+      class="mobile-open-btn"
+      aria-label="Open navigation"
+      title="Open menu"
+      (click)="openMobileDrawer()"
+    >
+      <i class="bi bi-list fs-6" aria-hidden="true"></i>
+    </button>
+  }
+</nav>

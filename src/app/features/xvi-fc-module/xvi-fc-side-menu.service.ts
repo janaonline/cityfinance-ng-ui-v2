@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map, catchError } from 'rxjs';
-import { MenuItem, SideBarModel } from '../../shared/components/side-menu/interface';
-// import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { MenuItem, SideBarModel } from '../../shared/components/side-menu';
+// import { SideBarModel } from '../../shared/components/side-menu';
 import { XvifcRouteContext } from './xvi-fc-module.service';
 import { buildXvifcFeatureLink, Roles } from './xvi-fc-side-menu.config';
 import { environment } from '../../../environments/environment';

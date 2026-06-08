@@ -6,17 +6,17 @@ import { MaterialModule } from '../../../../material.module';
     selector: 'app-radiobutton',
     imports: [MaterialModule],
     template: ` <fieldset class="demo-full-width margin-top" [formGroup]="group">
-      @if (field.label) {
+      @if (field.label && !field.hideLabel) {
         <div>
-          <legend class="fw-bold m-0 custom-font-size-6"
+          <legend class="fw-semibold m-0 custom-font-size-6"
             >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
             <!-- <span class="text-danger">*&nbsp;</span> -->
           </legend>
         </div>
       }
-      <mat-radio-group [formControlName]="field.key">
+      <mat-radio-group [formControlName]="field.key" [attr.data-cy]="field.key ? field.key + '-test' : null">
         @for (opt of options; track opt) {
-          <mat-radio-button [value]="opt.id || opt" color="primary">{{
+          <mat-radio-button [value]="opt.id || opt" color="primary" [attr.data-cy]="field.key && opt.id ? field.key + '-' + opt.id + '-test' : null">{{
             opt.label || opt
           }}</mat-radio-button>
         }

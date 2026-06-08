@@ -208,6 +208,9 @@ export class DynamicFormService {
           case 'required':
             validators.push(Validators.required);
             break;
+          case 'requiredTrue':
+            validators.push(Validators.requiredTrue);
+            break;
           case 'nullValidator':
             validators.push(Validators.nullValidator);
             break;
@@ -270,7 +273,7 @@ export class DynamicFormService {
     fields.forEach((field: any) => {
       const fieldFormArrays = field.data || field.formArrays;
       if (fieldFormArrays && fieldFormArrays.length) {
-        let formArrays: any[] = [];
+        const formArrays: any[] = [];
         const validators: any = [];
         fieldFormArrays.forEach((childField: any) => {
           const compareValid = childField.validations?.find(

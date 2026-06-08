@@ -1,4 +1,4 @@
-import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { SideBarModel } from '../../shared/components/side-menu';
 import { buildXvifcFeatureLink, Roles, XvifcYearId } from './xvi-fc-side-menu.config';
 
 type SideBarFactory = (yearId: XvifcYearId) => SideBarModel;
