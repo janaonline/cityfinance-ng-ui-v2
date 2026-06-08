@@ -1,3 +1,27 @@
+// Confirm dialog button color variants.
+// Uses CSS custom property tokens because the CDK overlay renders outside the
+// Angular component tree, making ViewEncapsulation-scoped styles ineffective.
+//
+// Angular Material 20 filled buttons (.mat-mdc-unelevated-button) read:
+//   background-color: var(--mat-button-filled-container-color, var(--mat-sys-primary))
+//   color:            var(--mat-button-filled-label-text-color, var(--mat-sys-on-primary))
+//
+// A class selector (specificity 0,1,0) beats the html element selector (0,0,1)
+// used by mat.theme(), so these overrides reliably win without !important.
+.confirm-dialog-btn--warn {
+  --mat-button-filled-container-color: var(--mat-sys-error, #b91c1c);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error, #ffffff);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-error, #ffffff);
+  --mat-button-filled-ripple-color: color-mix(in srgb, var(--mat-sys-on-error, #ffffff) 12%, transparent);
+}
+
+.confirm-dialog-btn--accent {
+  --mat-button-filled-container-color: var(--mat-sys-tertiary, #7d5260);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-tertiary, #ffffff);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-tertiary, #ffffff);
+  --mat-button-filled-ripple-color: color-mix(in srgb, var(--mat-sys-on-tertiary, #ffffff) 12%, transparent);
+}
+
 .custom-snackbar-success {
   --mat-snackbar-container-color: green;
   --mat-mdc-snack-bar-button-color: white;

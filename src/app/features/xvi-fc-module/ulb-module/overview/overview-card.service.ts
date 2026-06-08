@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 import { DisbursementColumn, DisbursementRow, UlbOverviewApiResponse } from './overview-card.models';
 import { OverviewData } from '../../shared/overview-card/overview-card.component';
@@ -28,6 +28,15 @@ export class UlbOverviewService {
     return this.http
       .get<any>(`${environment.api.url2}xvi-fc/ulb/${ulbId}`)
       .pipe(
+        tap((res) => {
+          const d = res?.data ?? res;
+          const raw = localStorage.getItem('xvifc_selectedYearString') ?? '';
+          const selectedYear = raw.replace(/^FY-/, 'FY ');
+          localStorage.setItem(
+            'xvifc_ulb_details',
+            JSON.stringify({ ulbName: d.ulbName, stateName: d.stateName, selectedYear }),
+          );
+        }),
         map((res) => {
           const d = res?.data ?? res;
           const { ulbName, stateName } = d as { ulbName: string; stateName: string };

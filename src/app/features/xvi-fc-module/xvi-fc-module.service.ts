@@ -4,19 +4,15 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { Login_Logout } from '../../core/util/logout.util';
-import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { SideBarModel } from '../../shared/components/side-menu';
 import { XviFcSideMenuApiService } from './xvi-fc-side-menu.service';
-import {
-  ROLES,
-  Roles,
-  XVIFC_LANDING_ROUTE,
-  XvifcYearId,
-} from './xvi-fc-side-menu.config';
+import { ROLES, Roles, XVIFC_LANDING_ROUTE, XvifcYearId } from './xvi-fc-side-menu.config';
 
 export interface XvifcRouteContext {
   role: Roles;
   entityId: string;
   yearId: XvifcYearId;
+  yearString: string;
 }
 
 const EMPTY_SIDE_MENU_MODEL: SideBarModel = {
@@ -100,7 +96,8 @@ export class XvifcModuleService {
     }
 
     const entityId = this.resolveEntityId(snapshot);
-    return { role, entityId, yearId };
+    const yearString = this.resolveYearString();
+    return { role, entityId, yearId, yearString };
   }
 
   /**
@@ -152,6 +149,13 @@ export class XvifcModuleService {
     // }
 
     return resolvedYearId;
+  }
+
+  private resolveYearString(): string {
+    const stored = typeof localStorage !== 'undefined'
+      ? localStorage.getItem('xvifc_selectedYearString')
+      : null;
+    return stored ? stored.replace(/^FY-/, '') : '';
   }
 
   /** Walks the nested route tree and returns the deepest `entityId` route param. */

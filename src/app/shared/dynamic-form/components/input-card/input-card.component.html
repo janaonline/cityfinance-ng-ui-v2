@@ -1,0 +1,51 @@
+<div class="card w-100">
+  <div class="card-body p-3" [formGroup]="group">
+    @if (cardTitle) {
+      <div class="fw-semibold mb-1" data-testid="card-title">{{ cardTitle }}</div>
+    }
+
+    @if (field.inputCardConfig?.description) {
+      <p class="text-body-secondary small mb-3" data-testid="card-description">
+        {{ field.inputCardConfig?.description }}
+      </p>
+    }
+
+    <div class="input-group">
+      @if (field.inputCardConfig?.prefixText) {
+        <span class="input-group-text" data-testid="input-prefix">
+          {{ field.inputCardConfig?.prefixText }}
+        </span>
+      }
+
+      <input
+        [id]="field.key"
+        type="text"
+        class="form-control"
+        [formControlName]="field.key"
+        [placeholder]="field.placeholder || ''"
+        [attr.readonly]="field.readonly || null"
+        [class.is-invalid]="showError"
+        [attr.aria-describedby]="showError ? field.key + '-error' : null"
+        data-testid="card-input"
+        [attr.data-cy]="field.key ? field.key + '-test' : null"
+      />
+
+      @if (field.inputCardConfig?.suffixText) {
+        <span class="input-group-text" data-testid="input-suffix">
+          {{ field.inputCardConfig?.suffixText }}
+        </span>
+      }
+    </div>
+
+    @if (showError) {
+      <div
+        [id]="field.key + '-error'"
+        class="invalid-feedback d-block mt-1 small"
+        role="alert"
+        data-testid="card-error"
+      >
+        {{ errorMessage }}
+      </div>
+    }
+  </div>
+</div>

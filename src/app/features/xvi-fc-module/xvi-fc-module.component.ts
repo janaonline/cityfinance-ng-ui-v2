@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
 import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
-import { AppMenuComponent } from '../../shared/components/side-menu/app.menu';
+import { AppMenuComponent } from '../../shared/components/side-menu';
 import { XvifcModuleService } from './xvi-fc-module.service';
 
 const XVIFC_THEME_CLASS = 'xvifc-theme';

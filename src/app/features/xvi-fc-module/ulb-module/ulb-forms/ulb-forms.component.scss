@@ -1,0 +1,248 @@
+:host { display: block; }
+
+.ulb-forms-page {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+// ── Typography utilities ──────────────────────────────────────────────────────
+.page-title    { font-size: 1rem; }
+.page-subtitle { font-size: 0.75rem; }
+.section-title { font-size: 0.85rem; }
+.body-sm       { font-size: 0.78rem; line-height: 1.5; }
+.body-xs       { font-size: 0.72rem; line-height: 1.5; }
+
+// ── Grant band ────────────────────────────────────────────────────────────────
+.grant-band {
+  background:
+    radial-gradient(circle at 96% 0%, rgba(139, 218, 205, 0.16), transparent 22%),
+    radial-gradient(circle at 82% 92%, rgba(24, 90, 157, 0.22), transparent 20%),
+    linear-gradient(135deg, #073d43 0%, #0d615a 58%, #08515a 100%);
+  box-shadow: 0 16px 36px rgba(7, 61, 67, 0.2);
+  animation: rise-in 420ms ease-out both;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+      linear-gradient(110deg, transparent 0 74%, rgba(255, 255, 255, 0.08) 74% 100%);
+    background-size: 18px 18px, auto;
+  }
+}
+
+.grant-band__dots {
+  opacity: 0.7;
+  background:
+    radial-gradient(circle at 95% 15%, transparent 0 86px, rgba(255, 255, 255, 0.14) 87px 88px, transparent 89px),
+    radial-gradient(circle at 82% 96%, transparent 0 72px, rgba(255, 255, 255, 0.1) 73px 74px, transparent 75px);
+}
+
+.grant-band__eyebrow { color: #a8d8d2; font-size: 0.65rem; letter-spacing: 0.1em; }
+.grant-band__amount  { color: #ffffff; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.1; }
+.grant-band__tag     { color: #d6e8e8; font-size: 0.72rem; letter-spacing: 0.04em; }
+.grant-band__note    { color: rgba(255, 255, 255, 0.65); font-size: 0.72rem; }
+
+// ── What-if simulator ─────────────────────────────────────────────────────────
+.simulator-card {
+  border: 1.5px solid #fcd34d;
+  background: linear-gradient(135deg, #fffdf5 0%, #fffbeb 100%);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+  animation: rise-in 480ms 60ms ease-out both;
+}
+
+.simulator-subtitle { color: #d97706; }
+
+.simulator-field {
+  --mat-form-field-subscript-text-size: 0px;
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+  ::ng-deep .mat-mdc-text-field-wrapper { background: #ffffff; border-radius: 8px; }
+}
+
+.simulator-grant-label {
+  color: #6b7280;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.progress-wrap {
+  --mdc-linear-progress-track-color: #e5e7eb;
+  --mdc-linear-progress-track-height: 7px;
+  --mdc-linear-progress-active-indicator-height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.simulator-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+
+  &.simulator-badge--critical { color: #991b1b; background: #fee2e2; border: 1px solid #fca5a5; }
+  &.simulator-badge--high     { color: #9a3412; background: #ffedd5; border: 1px solid #fdba74; }
+  &.simulator-badge--medium   { color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; }
+}
+
+.simulator-desc {
+  color: #374151;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  line-height: 1.55;
+}
+
+// ── Conditions Progress ───────────────────────────────────────────────────────
+.conditions-progress-wrap {
+  --mdc-linear-progress-active-indicator-color: #16a34a;
+  --mdc-linear-progress-track-color: #e5e7eb;
+  --mdc-linear-progress-track-height: 8px;
+  --mdc-linear-progress-active-indicator-height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.conditions-meta-label {
+  color: #6b7280;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.conditions-deadline-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.conditions-card {
+  background: #ffffff;
+  border-color: #e5e7eb !important;
+
+  .border-bottom { border-color: #f3f4f6 !important; }
+}
+
+.condition-row { min-height: 52px; }
+
+.condition-title    { font-size: 0.8rem; }
+.condition-subtitle { font-size: 0.7rem; line-height: 1.4; }
+
+.condition-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &--complete {
+    background: #15803d;
+    color: #ffffff;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
+  }
+
+  &--locked {
+    border: 2px dashed #d1d5db;
+    background: #f9fafb;
+  }
+
+  &--pending {
+    border: 2px solid #f97316;
+    background: #ffffff;
+    position: relative;
+    animation: pending-pulse 1.6s ease-in-out infinite;
+
+    &::after {
+      content: '';
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #f97316;
+    }
+  }
+}
+
+.no-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.no-action-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9ca3af;
+  flex-shrink: 0;
+}
+
+.condition-action-btn {
+  background: #15803d !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  font-size: 0.74rem !important;
+  font-weight: 600 !important;
+  min-height: 30px;
+  line-height: 30px;
+  padding: 0 14px !important;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(21, 128, 61, 0.25) !important;
+}
+
+.not-yet-open-btn {
+  border-color: #d1d5db !important;
+  color: #9ca3af !important;
+  border-radius: 999px !important;
+  font-size: 0.74rem !important;
+  font-weight: 600 !important;
+  min-height: 30px;
+  line-height: 30px;
+  padding: 0 14px !important;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.conditions-footer-note {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+
+  &__icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    color: #94a3b8;
+    margin-top: 1px;
+  }
+}
+
+@keyframes pending-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); border-color: #f97316; }
+  50%       { box-shadow: 0 0 0 5px rgba(249, 115, 22, 0); border-color: rgba(249, 115, 22, 0.5); }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

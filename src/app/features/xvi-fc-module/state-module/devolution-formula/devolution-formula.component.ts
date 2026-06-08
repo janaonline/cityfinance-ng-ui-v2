@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { InrCurrencyPipe } from '../../../../core/directives/inr-currency.pipe';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +12,9 @@ import {
 } from '../../dynamic-form-visibility.service';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 
 @Component({
   selector: 'app-devolution-formula',
@@ -24,12 +28,15 @@ export class DevolutionFormulaComponent implements OnInit {
   private utilityService = inject(UtilityService);
   private visibilityService = inject(DynamicFormVisibilityService);
   private dynamicService = inject(DynamicFormService);
+  private confirmDialogService = inject(ConfirmDialogService);
+  private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
 
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
 
   inrCurrencyOptions = { currencyTypeInUser: 10000000 as const };
   grantAmount = signal(15_62_00_00_000);
   ulbCount = signal(123);
+  stateName = signal('Andhra Pradesh');
 
   form = this.fb.group({});
   fields = signal<ConditionalFieldConfig[]>([]);
@@ -104,28 +111,46 @@ export class DevolutionFormulaComponent implements OnInit {
       return;
     }
 
+    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
+    this.confirmDialogService
+      .confirm(SUBMIT_CONFIRM_DIALOG_DEFAULTS, config)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.submitForm();
+      });
+  }
+
+  private submitForm(): void {
     const payload = this.form.getRawValue();
     console.log('Form submitted:', payload);
     this.utilityService.triggerSnackbar('Form submitted successfully!');
   }
 
   onCancel(): void {
-    this.form.reset();
-    this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
+    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
+    this.confirmDialogService
+      .confirm(undefined, config)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.form.reset();
+        this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
+      });
   }
 }
 
 const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
   {
     formFieldType: 'file',
-    label: 'Upload devolution data',
+    label: 'Upload completed devolution Excel file',
     key: 'devolutionExcelFile',
     validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
+      // {
+      //   name: 'required',
+      //   validator: null,
+      //   message: 'This field is required.',
+      // },
     ],
     value: {
       fileName: '',
@@ -133,10 +158,28 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
       fileSize: null,
       mimeType: '',
     },
-    folderPath: '',
-    maxFileSize: 5,
-    // fileViewType: 'button',
+    folderPath: 'state/devolution-formula-uploads',
+    maxFileSize: 20,
     allowedFileTypes: ['xlsx', 'xls'],
+    supportingContent: [
+      {
+        type: 'template-download',
+        position: 'before',
+        label: 'Download the template',
+        url: '/assets/templates/devolution-formula-template.xlsx',
+        description: 'Fill in the grant amount and formula for each ULB, then re-upload as a single Excel file.',
+      },
+      // {
+      //   type: 'sample-columns',
+      //   position: 'before',
+      //   title: 'Expected Excel columns',
+      //   columns: ['ULB Code', 'ULB Name', 'Grant Amount (₹ Cr)', 'Formula Used'],
+      // },
+    ],
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
   },
   {
     formFieldType: 'textarea',
@@ -157,5 +200,12 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
       'I hereby certify that the information provided above is true and correct to the best of my knowledge and is provided for the purpose of 16th Finance Commission grant eligibility.',
     key: 'checkboxConfirmation',
     value: false,
+    validations: [
+      {
+        name: 'requiredTrue',
+        validator: null,
+        message: 'Please confirm before submitting.',
+      },
+    ],
   },
 ];

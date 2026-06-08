@@ -1,5 +1,5 @@
-@if (field && field.label) {
-  <label [for]="field.key" data-testid="field-label" class="fw-bold">{{ field.label }}</label>
+@if (field && field.label && !field.hideLabel) {
+  <label [for]="field.key" data-testid="field-label" class="fw-semibold">{{ field.label }}</label>
 }
 
 @if (field && field.key) {
@@ -13,6 +13,7 @@
       data-testid="field-textarea"
       appTrimOnBlur
       [id]="field.key"
+      [attr.data-cy]="field.key ? field.key + '-test' : null"
     ></textarea>
     @for (validation of validations(); track $index) {
       <ng-container ngProjectAs="mat-error">

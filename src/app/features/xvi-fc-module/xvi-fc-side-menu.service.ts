@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map, catchError } from 'rxjs';
-import { MenuItem, SideBarModel } from '../../shared/components/side-menu/interface';
-// import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { MenuItem, SideBarModel } from '../../shared/components/side-menu';
+// import { SideBarModel } from '../../shared/components/side-menu';
 import { XvifcRouteContext } from './xvi-fc-module.service';
 import { buildXvifcFeatureLink, Roles } from './xvi-fc-side-menu.config';
 import { environment } from '../../../environments/environment';
@@ -77,9 +77,17 @@ export class XviFcSideMenuApiService {
   ): MenuItem[] {
     return items.map((item) => ({
       ...item,
+      label: this.transformLabel(item.label, context),
       routerLink: this.resolveRouterLink(item, context, isTopLevel),
       items: item.items ? this.mapItems(item.items, context) : undefined,
     }));
+  }
+
+  private transformLabel(label: string, context: XvifcRouteContext): string {
+    if (context.yearString && label?.includes(context.yearId)) {
+      return label.replace(context.yearId, context.yearString);
+    }
+    return label;
   }
 
   private resolveRouterLink(

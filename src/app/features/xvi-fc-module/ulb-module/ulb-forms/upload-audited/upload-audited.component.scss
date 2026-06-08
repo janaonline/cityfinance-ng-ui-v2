@@ -1,0 +1,139 @@
+:host {
+  display: block;
+}
+
+.page-heading {
+  font-size: 1.5rem;
+}
+
+.page-subtitle {
+  font-size: 0.82rem;
+}
+
+.upload-description {
+  font-size: 0.82rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.body-sm {
+  font-size: 0.82rem;
+}
+
+.body-xs {
+  font-size: 0.75rem;
+}
+
+.back-btn {
+  font-size: 0.82rem;
+  color: #374151;
+  border-radius: 0 !important;
+
+  ::ng-deep .mat-mdc-button-persistent-ripple,
+  ::ng-deep .mat-mdc-button-ripple {
+    display: none;
+  }
+
+  &:hover {
+    background: transparent !important;
+    color: #111827;
+  }
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: middle;
+  }
+}
+
+.save-later-btn {
+  font-size: 0.78rem;
+  color: #2563eb;
+  text-decoration: underline;
+  min-width: unset;
+  padding: 0;
+  line-height: 1.4;
+
+  &:hover {
+    background: transparent;
+  }
+}
+
+.documents-card {
+  border-color: #e5e7eb;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 4px 6px 0 rgba(0, 0, 0, 0.07), 0 1px 10px 0 rgba(0, 0, 0, 0.06);
+}
+
+.doc-row {
+  background: #fff;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f9fafb;
+  }
+}
+
+.doc-title {
+  font-size: 0.875rem;
+}
+
+.doc-subtitle {
+  font-size: 0.75rem;
+}
+
+.doc-filename {
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.15rem;
+}
+
+.doc-filename-icon {
+  font-size: 0.85rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  line-height: 0.85rem;
+}
+
+.upload-btn {
+  font-size: 0.78rem;
+  min-width: 90px;
+  border-color: #1e3a8a;
+  color: #1e3a8a;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &--done {
+    border-color: #16a34a;
+    color: #16a34a;
+  }
+}
+
+.confirm-btn {
+  font-size: 0.82rem;
+  background-color: #1e3a8a;
+  color: #fff;
+
+  &[disabled] {
+    background-color: #e5e7eb;
+    color: #9ca3af;
+  }
+}
+
+.footer-note {
+  max-width: 420px;
+  text-align: right;
+}
+
+mat-progress-bar {
+  --mdc-linear-progress-active-indicator-color: #1e3a8a;
+  --mdc-linear-progress-track-color: #e5e7eb;
+  border-radius: 4px;
+  height: 6px;
+}

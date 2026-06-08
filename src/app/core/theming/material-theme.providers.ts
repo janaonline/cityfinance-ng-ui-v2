@@ -1,8 +1,6 @@
 import { InjectionToken, Provider, inject } from '@angular/core';
-import {
-  MAT_AUTOCOMPLETE_DEFAULT_OPTIONS,
-  MatAutocompleteDefaultOptions,
-} from '@angular/material/autocomplete';
+import { MAT_AUTOCOMPLETE_DEFAULT_OPTIONS, MatAutocompleteDefaultOptions } from '@angular/material/autocomplete';
+import { MAT_DIALOG_DEFAULT_OPTIONS, MatDialogConfig } from '@angular/material/dialog';
 import { MAT_MENU_DEFAULT_OPTIONS, MatMenuDefaultOptions } from '@angular/material/menu';
 import { MAT_SELECT_CONFIG, MatSelectConfig } from '@angular/material/select';
 import { MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions } from '@angular/material/tooltip';
@@ -127,6 +125,26 @@ export function provideMaterialThemeScope(themeClass: string): Provider[] {
           ...parentDefaults,
           tooltipClass: themeClass,
         };
+      },
+    },
+
+    /**
+     * Applies the theme class to Material dialog panels.
+     *
+     * This takes effect when `MatDialog` is resolved from this same DI scope
+     * (i.e. provided at component level). For dialogs opened via a root-level
+     * service, callers should forward the theme class explicitly via the
+     * `panelClass` option at call time — inject `MATERIAL_THEME_CLASS` from
+     * the component's DI tree and pass `{ panelClass: themeClass }` to the
+     * dialog service to ensure the overlay inherits the scoped theme.
+     */
+    {
+      provide: MAT_DIALOG_DEFAULT_OPTIONS,
+      useFactory: (): MatDialogConfig => {
+        const parentDefaults = inject(MAT_DIALOG_DEFAULT_OPTIONS, { optional: true, skipSelf: true }) ?? {};
+        const existing = parentDefaults.panelClass;
+        const panelClass: string[] = [...(Array.isArray(existing) ? existing : existing ? [existing] : []), themeClass];
+        return { ...parentDefaults, panelClass };
       },
     },
   ];

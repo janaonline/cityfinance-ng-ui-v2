@@ -8,7 +8,9 @@
       class="mat-form-field-warning"
       >
       <!-- <mat-form-field [formGroup]="group"> -->
-      <mat-label>{{ field.label }}</mat-label>
+      @if (!field.hideLabel) {
+        <mat-label>{{ field.label }}</mat-label>
+      }
       <input
         onwheel="this.blur()"
         matInput
@@ -18,6 +20,7 @@
         [appDecimalLimit]="decimal"
         placeholder=""
         appNoUpDown
+        [attr.data-cy]="field.key ? field.key + '-test' : null"
         />
         <!-- onKeyPress="if(this.value.length==5) return false;"  -->
         <span matTextPrefix>&#8377;&nbsp;</span>
@@ -32,8 +35,8 @@
       </mat-form-field>
     }
     @default {
-      @if (displayLabel && !displayInlineLabel) {
-        <label [for]="field.key" class="fw-bold"
+      @if (displayLabel && !displayInlineLabel && !field.hideLabel) {
+        <label [for]="field.key" class="fw-semibold"
           >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label
           >
       }
@@ -42,7 +45,7 @@
         class="demo-full-width"
         [formGroup]="group"
         >
-        @if (displayInlineLabel) {
+        @if (displayInlineLabel && !field.hideLabel) {
           <mat-label for="field.key"
             >{{ field.label
             }}@if (field.showAsterisk) {
@@ -60,6 +63,7 @@
               [appDecimalLimit]="decimal"
               [readonly]="readonly"
               appNoUpDown
+              [attr.data-cy]="field.key ? field.key + '-test' : null"
               />
             } @else {
               <input
@@ -70,6 +74,7 @@
                 [type]="field.formFieldType"
                 [readonly]="readonly"
                 appTrimOnBlur
+                [attr.data-cy]="field.key ? field.key + '-test' : null"
                 />
               }
 
