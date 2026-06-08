@@ -21,6 +21,32 @@ export const ULB_ROUTES: Routes = [
           import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
       },
       {
+        path: 'ulb-forms',
+        loadComponent: () =>
+          import('./ulb-forms/ulb-forms.component').then((m) => m.UlbFormsComponent),
+      },
+      {
+        path: 'upload-audited',
+        loadComponent: () =>
+          import('./ulb-forms/upload-audited/upload-audited.component').then(
+            (m) => m.UploadAuditedComponent,
+          ),
+      },
+      {
+        path: 'upload-provisional',
+        loadComponent: () =>
+          import('./ulb-forms/upload-provisional/upload-provisional.component').then(
+            (m) => m.UploadProvisionalComponent,
+          ),
+      },
+      {
+        path: 'fill-disclosure',
+        loadComponent: () =>
+          import('./ulb-forms/fill-disclosure/fill-disclosure.component').then(
+            (m) => m.FillDisclosureComponent,
+          ),
+      },
+      {
         path: 'roles-teams-unified-view',
         loadComponent: () =>
           import('../shared/roles-teams-overview/roles-teams-overview.component').then(
