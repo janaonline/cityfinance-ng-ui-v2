@@ -11,6 +11,18 @@ import {
   OcrValidationJobsListResponse,
 } from './ocr-validation/ocr-validation-models';
 
+export interface SelectOption<T = string> {
+  value: T;
+  label: string;
+}
+
+export interface ModelOption {
+  value: string;
+  label: string;
+  pricing?: { inputPerM: number; outputPerM: number; thinkingPerM: number };
+  deprecated?: boolean;
+}
+
 export interface OcrTaskListItem {
   job_id?: string;
   filename?: string;
@@ -48,6 +60,39 @@ export interface OcrTaskListResponse {
 })
 export class OcrService {
   private readonly http = inject(HttpClient);
+
+  readonly models: ModelOption[] = [
+    { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', pricing: { inputPerM: 1.50, outputPerM: 9.00, thinkingPerM: 9.00 } },
+    { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 } },
+    { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 }, deprecated: true },
+    { value: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
+    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
+    { value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
+    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', pricing: { inputPerM: 1.25, outputPerM: 10.00, thinkingPerM: 10.00 } },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', pricing: { inputPerM: 0.15, outputPerM: 0.60, thinkingPerM: 3.50 } },
+  ];
+
+  readonly documentTypes: SelectOption[] = [
+    { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
+    { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
+    { value: 'INCOME_EXPENDITURE', label: 'Income and Expenditure' },
+    { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'Income and Expenditure Schedule' },
+    { value: 'CASH_FLOW', label: 'Cash Flow Statement' },
+    { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
+    { value: 'RECEIPTS_AND_PAYMENTS', label: 'Receipts and Payments' },
+    { value: 'UNKNOWN', label: 'Unknown' },
+  ];
+
+  readonly financialYears: SelectOption[] = [
+    { value: '2025-26', label: '2025-26' },
+    { value: '2024-25', label: '2024-25' },
+    { value: '2023-24', label: '2023-24' },
+    { value: '2022-23', label: '2022-23' },
+    { value: '2021-22', label: '2021-22' },
+    { value: '2020-21', label: '2020-21' },
+    { value: '2019-20', label: '2019-20' },
+  ];
 
   uploadOcrFile(
     file: File,
