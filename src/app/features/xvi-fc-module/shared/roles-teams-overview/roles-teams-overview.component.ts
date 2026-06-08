@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
@@ -93,6 +94,7 @@ interface PermissionMatrixRow {
     MatSelectModule,
     MatSnackBarModule,
     MatTableModule,
+    MatTooltipModule,
   ],
   templateUrl: './roles-teams-overview.component.html',
   styleUrl: './roles-teams-overview.component.scss',
@@ -399,24 +401,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
     }
 
     this.http.post<{ success?: boolean; data?: { _id?: string }; message?: string }>(`${this.baseUrl}users/create-user`, payload).subscribe({
-      next: (res) => {
-        const newMember: TeamMember = {
-          id: res?.data?._id ?? `new_${params.phone}_${Date.now()}`,
-          initials: this.getInitials(params.name),
-          name: params.name,
-          email: skipEmail ? '' : params.email,
-          phone: params.phone,
-          designation: params.designation,
-          role: params.role as TeamMemberRole,
-          status: 'invited',
-          lastActive: null,
-        };
-        this.members = [...this.members, newMember];
+      next: () => {
         this.snackBar.open(
-          `Invite sent to ${newMember.name}. A welcome message will be sent to their mobile number.`,
+          `Invite sent to ${params.name}. A welcome message will be sent to their mobile number.`,
           'Dismiss',
           { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
         );
+        void this.loadRolesTeamsOverview();
       },
       error: (err) => {
         const msg: string = (err?.error?.message ?? '').toLowerCase();
@@ -505,16 +496,12 @@ export class RolesTeamsOverviewComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.members = this.members.map((m) =>
-            m.id === member.id
-              ? { ...m, status: 'invited' as TeamMemberStatus, designation: params.designation, role: params.role as TeamMemberRole }
-              : m,
-          );
           this.snackBar.open(
             `Invite sent to ${member.name}. A welcome message will be sent to their mobile number.`,
             'Dismiss',
             { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
           );
+          void this.loadRolesTeamsOverview();
         },
         error: (err) => {
           this.snackBar.open(err?.error?.message ?? 'Failed to send invite. Please try again.', 'Dismiss', {

@@ -177,7 +177,7 @@
             <div class="member-cell d-flex align-items-center gap-2">
               <span class="member-avatar">{{ member.initials }}</span>
               <div>
-                <strong>{{ member.name }}</strong>
+                <strong [matTooltip]="member.name" matTooltipShowDelay="400">{{ member.name }}</strong>
                 <span>{{ member.phone }}</span>
               </div>
             </div>
@@ -278,7 +278,7 @@
             <div class="member-cell d-flex align-items-center gap-2">
               <span class="member-avatar">{{ member.initials }}</span>
               <div>
-                <strong>{{ member.name }}</strong>
+                <strong [matTooltip]="member.name" matTooltipShowDelay="400">{{ member.name }}</strong>
                 <span>{{ member.phone }}</span>
               </div>
             </div>

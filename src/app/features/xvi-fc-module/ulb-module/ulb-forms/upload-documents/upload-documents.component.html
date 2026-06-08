@@ -1,6 +1,6 @@
 <input #fileInput type="file" accept=".pdf" class="d-none" (change)="onFileSelected($event)" />
 
-<div class="upload-provisional-page container py-3">
+<div class="upload-documents-page container py-3">
 
   <button mat-button class="back-btn mb-3 ps-0" type="button" (click)="goBack()">
     <mat-icon>arrow_back</mat-icon>
@@ -16,10 +16,7 @@
     </p>
   }
 
-  <p class="upload-description body-sm mb-3">
-    Upload your provisional financial statement for FY 2025-26. You may upload documents in any order.
-    The system will automatically verify that each document is readable and meets the required checks.
-  </p>
+  <p class="upload-description body-sm mb-3">{{ config.description }}</p>
 
   <div class="d-flex align-items-center gap-3 mb-1">
     <div class="flex-grow-1">
@@ -29,7 +26,7 @@
   </div>
 
   <div class="d-flex justify-content-end mb-3 mt-2">
-    <button mat-button class="save-later-btn" type="button">Save and continue later</button>
+    <button mat-stroked-button class="save-later-btn" type="button">Save and continue later</button>
   </div>
 
   <div class="documents-card rounded-3 border overflow-hidden mb-4">
@@ -39,24 +36,35 @@
         <div class="flex-grow-1 min-w-0">
           <p class="doc-title fw-semibold mb-0">{{ doc.title }}</p>
           <p class="doc-subtitle text-muted mb-0">{{ doc.subtitle }}</p>
-          @if (doc.status === 'uploaded' && doc.fileName) {
-            <p class="doc-filename text-success mb-0">
-              <mat-icon class="doc-filename-icon">check_circle</mat-icon>
-              {{ doc.fileName }}
-            </p>
-          }
         </div>
 
-        <button
-          mat-stroked-button
-          class="upload-btn flex-shrink-0"
-          [ngClass]="{ 'upload-btn--done': doc.status === 'uploaded' }"
-          type="button"
-          (click)="triggerUpload(doc.id)"
-        >
-          <mat-icon>upload</mat-icon>
-          {{ doc.status === 'uploaded' ? 'Replace' : 'Upload' }}
-        </button>
+        <div class="doc-right-col flex-shrink-0">
+          @if (doc.status === 'uploaded' && doc.fileName) {
+            <div class="file-chip d-flex align-items-center justify-content-center gap-1">
+              <mat-icon class="doc-check-icon">check_circle</mat-icon>
+              <span class="doc-filename">{{ doc.fileName }}</span>
+              <button
+                mat-icon-button
+                class="doc-preview-btn"
+                type="button"
+                matTooltip="Preview"
+                (click)="previewFile(doc.previewUrl!)"
+              >
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </div>
+          }
+          <button
+            mat-stroked-button
+            class="upload-btn w-100"
+            [ngClass]="{ 'upload-btn--done': doc.status === 'uploaded' }"
+            type="button"
+            (click)="triggerUpload(doc.id)"
+          >
+            <mat-icon>upload</mat-icon>
+            {{ doc.status === 'uploaded' ? 'Replace' : 'Upload' }}
+          </button>
+        </div>
 
       </div>
     }
@@ -71,7 +79,7 @@
         [disabled]="!allReady()"
         (click)="confirmDocuments()"
       >
-        Confirm Provisional Documents
+        {{ config.confirmLabel }}
       </button>
       <p class="footer-note body-xs text-muted mb-0">
         Once confirmed, documents are locked. Changes are only possible if the State DMA rejects the submission.

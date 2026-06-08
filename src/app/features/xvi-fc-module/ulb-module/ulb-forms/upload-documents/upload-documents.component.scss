@@ -49,15 +49,11 @@
 
 .save-later-btn {
   font-size: 0.78rem;
-  color: #2563eb;
-  text-decoration: underline;
-  min-width: unset;
-  padding: 0;
-  line-height: 1.4;
-
-  &:hover {
-    background: transparent;
-  }
+  color: #374151;
+  border-color: #d1d5db;
+  padding: 0 1rem;
+  height: 32px;
+  line-height: 32px;
 }
 
 .documents-card {
@@ -82,19 +78,55 @@
   font-size: 0.75rem;
 }
 
-.doc-filename {
-  font-size: 0.72rem;
+.doc-right-col {
+  min-width: 148px;
   display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  margin-top: 0.15rem;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.doc-filename-icon {
+.file-chip {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  min-width: 0;
+}
+
+.doc-check-icon {
   font-size: 0.85rem;
   width: 0.85rem;
   height: 0.85rem;
   line-height: 0.85rem;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.doc-filename {
+  font-size: 0.72rem;
+  color: #15803d;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-preview-btn {
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  flex-shrink: 0;
+  color: #2563eb;
+
+  mat-icon {
+    font-size: 0.85rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    line-height: 0.85rem;
+  }
+
+  &:hover { color: #1d4ed8; }
 }
 
 .upload-btn {
