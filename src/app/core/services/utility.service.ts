@@ -41,13 +41,13 @@ export class UtilityService {
     });
   }
 
-  public swalPopup(title: string, text: string, icon: SweetAlertIcon = 'success'): void {
+  public swalPopup(title: string, text: string, icon: SweetAlertIcon = 'success', confirmButton = false): void {
     Swal.fire({
       icon: icon,
       title: title,
       text: text,
-      showConfirmButton: false,
-      timer: 2000,
+      showConfirmButton: confirmButton,
+      ...(confirmButton ? {} : { timer: 2000 }),
     });
   }
 

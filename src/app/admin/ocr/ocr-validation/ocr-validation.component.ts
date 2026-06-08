@@ -256,8 +256,9 @@ export class OcrValidationComponent implements OnInit {
           error: (err) => {
             this.utilityService.swalPopup(
               'Submission failed',
-              err?.error?.detail || err?.error?.message || 'Failed to submit job.',
+              this.parseApiError(err),
               'error',
+              true,
             );
           },
         });
@@ -296,8 +297,9 @@ export class OcrValidationComponent implements OnInit {
           error: (err) => {
             this.utilityService.swalPopup(
               'Submission failed',
-              err?.error?.detail || err?.error?.message || 'Failed to submit batch.',
+              this.parseApiError(err),
               'error',
+              true,
             );
           },
         });
@@ -876,6 +878,16 @@ export class OcrValidationComponent implements OnInit {
         this.updateJob(jobId, { message: 'Job completed but result could not be fetched.' });
       },
     });
+  }
+
+  private parseApiError(err: unknown): string {
+    const error = (err as any)?.error;
+    const detail = error?.detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      return detail.map((e: any) => e.msg ?? JSON.stringify(e)).join('; ');
+    }
+    if (typeof detail === 'string') return detail;
+    return error?.message ?? 'An unexpected error occurred.';
   }
 
   private loadJobById(jobId: string): void {
