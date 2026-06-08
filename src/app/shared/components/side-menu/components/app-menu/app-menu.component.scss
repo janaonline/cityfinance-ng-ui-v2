@@ -27,7 +27,17 @@ hr {
 
 .layout-menu {
   font-size: var(--fs-6);
+  // base teal + dot-grid + arc-ring decorations (mirrors the grant-band design)
   background-color: var(--color-primary);
+  background-image:
+    radial-gradient(circle at 95% 8%, transparent 0 76px, rgba(255, 255, 255, 0.13) 77px 78px, transparent 79px),
+    radial-gradient(circle at 112% 22%, transparent 0 54px, rgba(255, 255, 255, 0.09) 55px 56px, transparent 57px),
+    radial-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+    linear-gradient(110deg, transparent 0 74%, rgba(255, 255, 255, 0.06) 74% 100%),
+    radial-gradient(circle at 96% 0%, rgba(139, 218, 205, 0.14), transparent 25%),
+    radial-gradient(circle at 30% 100%, rgba(24, 90, 157, 0.18), transparent 20%);
+  background-size: auto, auto, 18px 18px, auto, auto, auto;
+  background-attachment: scroll;
   border-radius: 0 0 5px 0;
   width: 100%;
   height: 100dvh; // overflows the 0-height wrapper; fills the viewport visually
@@ -64,7 +74,8 @@ hr {
   padding: 0.5rem;
   box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-split-squared);
-  background-color: var(--color-primary);
+  background: linear-gradient(180deg, rgba(7, 61, 67, 0.85) 0%, rgba(7, 61, 67, 0.97) 100%);
+  backdrop-filter: blur(2px);
   position: sticky;
   bottom: 0;
   left: 0;
