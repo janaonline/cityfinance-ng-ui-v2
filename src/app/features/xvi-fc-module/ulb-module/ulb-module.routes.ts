@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { UPLOAD_CONFIGS } from './ulb-forms/upload-documents/upload-documents.component';
 
 export const ULB_ROUTES: Routes = [
   {
@@ -28,16 +29,18 @@ export const ULB_ROUTES: Routes = [
       {
         path: 'upload-audited',
         loadComponent: () =>
-          import('./ulb-forms/upload-audited/upload-audited.component').then(
-            (m) => m.UploadAuditedComponent,
+          import('./ulb-forms/upload-documents/upload-documents.component').then(
+            (m) => m.UploadDocumentsComponent,
           ),
+        data: { config: UPLOAD_CONFIGS.audited },
       },
       {
         path: 'upload-provisional',
         loadComponent: () =>
-          import('./ulb-forms/upload-provisional/upload-provisional.component').then(
-            (m) => m.UploadProvisionalComponent,
+          import('./ulb-forms/upload-documents/upload-documents.component').then(
+            (m) => m.UploadDocumentsComponent,
           ),
+        data: { config: UPLOAD_CONFIGS.provisional },
       },
       {
         path: 'fill-disclosure',

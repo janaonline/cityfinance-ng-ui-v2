@@ -8,7 +8,7 @@
       <p class="page-subtitle text-muted mb-0">{{ details.ulbName }} · {{ details.selectedYear }}</p>
     </div>
 
-    <div class="grant-band position-relative overflow-hidden rounded-3 p-3 mb-3">
+    <div class="grant-band position-relative overflow-hidden rounded-3 p-3 mb-3 mat-elevation-z3">
       <div class="grant-band__dots position-absolute top-0 start-0 w-100 h-100" aria-hidden="true"></div>
       <div class="position-relative">
         <p class="grant-band__eyebrow text-uppercase fw-bold mb-1">{{ band.eyebrow }}</p>
@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <div class="simulator-card rounded-3 p-3 mb-3">
+    <div class="simulator-card rounded-3 p-3 mb-3 mat-elevation-z2">
       <p class="section-title fw-bold mb-1">Try the "What if" simulator</p>
       <p class="simulator-subtitle body-sm mb-2">
         Select a scenario to understand how it affects your grant eligibility and what actions can improve your chances.
@@ -72,7 +72,7 @@
           <span class="conditions-deadline-badge">{{ group.deadline }}</span>
         </div>
 
-        <div class="conditions-card rounded-3 border overflow-hidden mb-2">
+        <div class="conditions-card rounded-3 overflow-hidden mb-2 mat-elevation-z2">
           @for (condition of group.conditions; track condition.id; let last = $last) {
             <div class="condition-row d-flex align-items-center gap-3 px-3 py-2" [class.border-bottom]="!last">
 
