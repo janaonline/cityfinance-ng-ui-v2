@@ -22,11 +22,12 @@ export class ScheduledRemindersService {
   getTemplates(page = 1, limit = 20): Observable<EmailTemplate[]> {
     const params = new HttpParams().set('page', page).set('limit', limit);
     return this.http
-      .get<ApiEnvelope<PagedData<EmailTemplate>>>(`${this.base}email-templates`, { params })
+      .get<any>(`${this.base}email-templates`, { params })
       .pipe(
         map(res => {
-          if (!res.success) throw new Error(res.message ?? 'Failed to load templates');
-          return res.data.data;
+          if (res?.success === false) throw new Error(res.message ?? 'Failed to load templates');
+          const payload = res?.data ?? res;
+          return (Array.isArray(payload) ? payload : (payload?.data ?? [])) as EmailTemplate[];
         }),
         catchError(this.handle),
       );
@@ -34,11 +35,11 @@ export class ScheduledRemindersService {
 
   updateTemplate(id: string, payload: UpdateTemplatePayload): Observable<EmailTemplate> {
     return this.http
-      .patch<ApiEnvelope<EmailTemplate>>(`${this.base}email-templates/${id}`, payload)
+      .patch<any>(`${this.base}email-templates/${id}`, payload)
       .pipe(
         map(res => {
-          if (!res.success) throw new Error(res.message ?? 'Failed to update template');
-          return res.data;
+          if (res?.success === false) throw new Error(res.message ?? 'Failed to update template');
+          return (res?.data ?? res) as EmailTemplate;
         }),
         catchError(this.handle),
       );
@@ -46,11 +47,11 @@ export class ScheduledRemindersService {
 
   createTemplate(payload: CreateTemplatePayload): Observable<EmailTemplate> {
     return this.http
-      .post<ApiEnvelope<EmailTemplate>>(`${this.base}email-templates`, payload)
+      .post<any>(`${this.base}email-templates`, payload)
       .pipe(
         map(res => {
-          if (!res.success) throw new Error(res.message ?? 'Failed to create template');
-          return res.data;
+          if (res?.success === false) throw new Error(res.message ?? 'Failed to create template');
+          return (res?.data ?? res) as EmailTemplate;
         }),
         catchError(this.handle),
       );
@@ -59,11 +60,12 @@ export class ScheduledRemindersService {
   getReminders(page = 1, limit = 20): Observable<EmailReminder[]> {
     const params = new HttpParams().set('page', page).set('limit', limit);
     return this.http
-      .get<ApiEnvelope<PagedData<EmailReminder>>>(`${this.base}email-reminders`, { params })
+      .get<any>(`${this.base}email-reminders`, { params })
       .pipe(
         map(res => {
-          if (!res.success) throw new Error(res.message ?? 'Failed to load reminders');
-          return res.data.data;
+          if (res?.success === false) throw new Error(res.message ?? 'Failed to load reminders');
+          const payload = res?.data ?? res;
+          return (Array.isArray(payload) ? payload : (payload?.data ?? [])) as EmailReminder[];
         }),
         catchError(this.handle),
       );
@@ -71,11 +73,11 @@ export class ScheduledRemindersService {
 
   createReminder(payload: CreateReminderPayload): Observable<EmailReminder> {
     return this.http
-      .post<ApiEnvelope<EmailReminder>>(`${this.base}email-reminders`, payload)
+      .post<any>(`${this.base}email-reminders`, payload)
       .pipe(
         map(res => {
-          if (!res.success) throw new Error(res.message ?? 'Failed to create reminder');
-          return res.data;
+          if (res?.success === false) throw new Error(res.message ?? 'Failed to create reminder');
+          return (res?.data ?? res) as EmailReminder;
         }),
         catchError(this.handle),
       );
@@ -83,10 +85,10 @@ export class ScheduledRemindersService {
 
   sendEmail(payload: SendEmailPayload): Observable<void> {
     return this.http
-      .post<ApiEnvelope<unknown>>(`${this.base}email-templates/send`, payload)
+      .post<any>(`${this.base}email-templates/send`, payload)
       .pipe(
         map(res => {
-          if (!res.success) throw new Error(res.message ?? 'Failed to send email');
+          if (res?.success === false) throw new Error(res.message ?? 'Failed to send email');
         }),
         catchError(this.handle),
       );
