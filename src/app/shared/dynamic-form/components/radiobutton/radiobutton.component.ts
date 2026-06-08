@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { MaterialModule } from '../../../../material.module';
-import { FieldConfig, Options } from '../../field.interface';
+import { FieldConfig } from '../../field.interface';
 
 @Component({
   selector: 'app-radiobutton',
@@ -74,7 +74,7 @@ export class RadiobuttonComponent implements OnInit {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() item!: FormGroup;
-  @Input() options!: Options[];
+  @Input() options!: any[];
 
   ngOnInit(): void {
     this.options = this.options || this.field.options || [];
