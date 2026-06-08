@@ -33,8 +33,8 @@ export class DevolutionFormulaComponent implements OnInit {
 
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
 
-  inrCurrencyOptions = { currencyTypeInUser: 10000000 as const };
-  grantAmount = signal(15_62_00_00_000);
+  inrCurrencyOptions = { currencyTypeInUser: 0 as const };
+  grantAmount = signal(1562);
   ulbCount = signal(123);
   stateName = signal('Andhra Pradesh');
 
