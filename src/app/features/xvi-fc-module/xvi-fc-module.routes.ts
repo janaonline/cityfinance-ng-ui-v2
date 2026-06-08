@@ -26,7 +26,6 @@ const isMohuaRole: CanMatchFn = () => readUserRole() === 'MoHUA';
 export const XVIFC_ROUTES: Routes = [
   {
     path: 'year',
-    pathMatch: 'full',
     loadComponent: () =>
       import('./shared/years-selection/years-selection.component').then(
         (m) => m.YearsSelectionComponent,
@@ -34,7 +33,6 @@ export const XVIFC_ROUTES: Routes = [
   },
   {
     path: 'profile-verify',
-    pathMatch: 'full',
     loadComponent: () =>
       import('./shared/profile-verification/profile-verification.component').then(
         (m) => m.ProfileVerificationComponent,
@@ -64,14 +62,16 @@ export const XVIFC_ROUTES: Routes = [
         loadChildren: () =>
           import('./mohua-module/mohua-module.routes').then((m) => m.MOHUA_ROUTES),
       },
+      // Authenticated user with unsupported role, or unknown child path
       {
         path: '**',
-        redirectTo: '',
+        redirectTo: '/xvifc/year',
       },
     ],
   },
+  // Unknown top-level path inside /xvifc
   {
     path: '**',
-    redirectTo: '',
+    redirectTo: '/xvifc/year',
   },
 ];

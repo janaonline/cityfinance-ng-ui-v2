@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, xvifcAuthGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
@@ -73,6 +73,7 @@ export const routes: Routes = [
   },
   {
     path: 'xvifc',
+    canActivate: [xvifcAuthGuard],
     loadChildren: () =>
       import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
