@@ -3,7 +3,7 @@ a {
   display: block;
   height: 100%;
   width: 100%;
-  color: var(--color-primary-accent);
+  color: var(--nav-item-color);
 }
 
 ul {
@@ -11,8 +11,9 @@ ul {
   padding-left: 1.5rem;
 }
 
+// Transparent so the sidebar background pattern shows through submenu rows.
 .submenu-item {
-  background-color: var(--color-primary);
+  background-color: var(--nav-submenu-bg, transparent);
 }
 
 .menu-item {
@@ -35,12 +36,12 @@ button.menu-item--command {
 
   &:hover,
   &:focus {
-    background-color: var(--color-primary-hover);
+    background-color: var(--nav-item-hover-bg);
     text-decoration: none;
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--nav-surface);
     outline-offset: 2px;
   }
 }
@@ -49,15 +50,15 @@ button.menu-item--command {
   width: 100%;
   border: none;
   background: transparent;
-  color: var(--color-primary-accent);
+  color: var(--nav-item-color);
   cursor: pointer;
   text-align: left;
 }
 
 a.menu-item.active {
-  background-color: var(--color-primary-selected);
-  color: var(--color-primary-accent);
-  border-left: 3px solid var(--color-primary-accent);
+  background-color: var(--nav-item-active-bg);
+  color: var(--nav-item-color);
+  border-left: 3px solid var(--nav-item-active-border);
 }
 
 .menu-label {

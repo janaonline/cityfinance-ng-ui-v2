@@ -28,7 +28,13 @@ export class XvifcModuleService {
   private readonly authService = inject(AuthService);
   private readonly sideMenuApiService = inject(XviFcSideMenuApiService);
 
-  readonly availableYearIds: readonly XvifcYearId[] = ['2026-27', '2027-28', '2028-29', '2029-30'];
+  readonly availableYearIds: readonly XvifcYearId[] = [
+    '67d7d136d3d038946a5239e9',
+    '69de2593f75f68f3bda51421',
+    '69de2593f75f68f3bda51422',
+    '69de2593f75f68f3bda51423',
+    '69de2593f75f68f3bda51424',
+  ];
 
   private readonly resolvedContext = signal<XvifcRouteContext | null>(null);
   private readonly lastMenuRequestKey = signal<string | null>(null);
@@ -144,17 +150,15 @@ export class XvifcModuleService {
       current = current.firstChild ?? null;
     }
 
-    // if (resolvedYearId !== null && !this.availableYearIds.includes(resolvedYearId)) {
-    //   return null;
-    // }
+    if (resolvedYearId !== null && !this.availableYearIds.includes(resolvedYearId)) {
+      return null;
+    }
 
     return resolvedYearId;
   }
 
   private resolveYearString(): string {
-    const stored = typeof localStorage !== 'undefined'
-      ? localStorage.getItem('xvifc_selectedYearString')
-      : null;
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('xvifc_selectedYearString') : null;
     return stored ? stored.replace(/^FY-/, '') : '';
   }
 

@@ -10,45 +10,39 @@ hr {
 }
 
 // ─── Wrapper ─────────────────────────────────────────────────────────────────
-// display:block so the toggle button (position:absolute) doesn't add width.
-// The wrapper IS the sidebar column — its width drives the parent flex layout.
+// height: 100% gives the wrapper real height so .layout-menu can fill it
+// overflow: visible is kept so the edge-toggle tab (right: -14px) isn't clipped.
 
 .menu-wrapper {
   position: relative;
   display: block; // NOT flex — toggle must not add layout width
-  height: 0; // zero layout height — sidebar must NOT force the row to 100vh
   width: var(--nav-width);
+  height: 100%;
   flex-shrink: 0;
-  overflow: visible; // layout-menu and toggle both overflow this intentionally
+  overflow: visible; // edge-toggle tab overflows right edge intentionally
   transition: width 0.3s ease;
 }
 
 // ─── Sidebar panel ───────────────────────────────────────────────────────────
+// height: 100% fills the wrapper. overflow: hidden clips content; scrolling is
+// delegated to .layout-menu-ul-pimary only. Sign Out stays at the bottom via
+// flex: 0 0 auto on .layout-menu-ul-secondary.
 
 .layout-menu {
+  position: relative;
+  isolation: isolate;
+
   font-size: var(--fs-6);
-  // base teal + dot-grid + arc-ring decorations (mirrors the grant-band design)
-  background-color: var(--color-primary);
-  background-image:
-    radial-gradient(circle at 95% 8%, transparent 0 76px, rgba(255, 255, 255, 0.13) 77px 78px, transparent 79px),
-    radial-gradient(circle at 112% 22%, transparent 0 54px, rgba(255, 255, 255, 0.09) 55px 56px, transparent 57px),
-    radial-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
-    linear-gradient(110deg, transparent 0 74%, rgba(255, 255, 255, 0.06) 74% 100%),
-    radial-gradient(circle at 96% 0%, rgba(139, 218, 205, 0.14), transparent 25%),
-    radial-gradient(circle at 30% 100%, rgba(24, 90, 157, 0.18), transparent 20%);
-  background-size: auto, auto, 18px 18px, auto, auto, auto;
-  background-attachment: scroll;
+  background-color: var(--nav-surface);
   border-radius: 0 0 5px 0;
   width: 100%;
-  height: 100dvh; // overflows the 0-height wrapper; fills the viewport visually
-  overflow-y: auto;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 
   transition:
     width 0.3s ease,
@@ -56,29 +50,72 @@ hr {
     opacity 0.2s ease;
 
   &:hover {
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    scrollbar-color: var(--nav-scrollbar-thumb) transparent;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    pointer-events: none;
+
+    background-color: var(--nav-surface);
+    background-image:
+      radial-gradient(
+        circle at 95% 8%,
+        transparent 0 76px,
+        var(--nav-pattern-ring-color-strong) 77px 78px,
+        transparent 79px
+      ),
+      radial-gradient(
+        circle at 112% 22%,
+        transparent 0 54px,
+        var(--nav-pattern-ring-color-soft) 55px 56px,
+        transparent 57px
+      ),
+      radial-gradient(var(--nav-pattern-dot-color) 1px, transparent 1px),
+      linear-gradient(110deg, transparent 0 74%, var(--nav-pattern-sheen-color) 74% 100%),
+      radial-gradient(circle at 96% 0%, var(--nav-pattern-glow-primary), transparent 25%),
+      radial-gradient(circle at 30% 100%, var(--nav-pattern-glow-secondary), transparent 20%);
+
+    background-size:
+      auto,
+      auto,
+      18px 18px,
+      auto,
+      auto,
+      auto;
+
+    background-attachment: scroll;
+    filter: blur(1px);
   }
 }
 
 .layout-menu-ul {
   padding: 0;
+  margin: 0;
 }
 
+// Scrollable primary nav — grows to fill available height, scrolls internally.
 .layout-menu-ul-pimary {
-  flex-grow: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   margin: 0.25rem 0.5rem 0.5rem;
 }
 
+// Sign Out / bottom actions — shrinks to content, anchored at the bottom via flex.
 .layout-menu-ul-secondary {
-  margin-bottom: 0;
+  flex: 0 0 auto;
+  position: static;
+  margin: 0;
   padding: 0.5rem;
   box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-split-squared);
-  background: linear-gradient(180deg, rgba(7, 61, 67, 0.85) 0%, rgba(7, 61, 67, 0.97) 100%);
+  background-color: var(--nav-bottom-bg);
   backdrop-filter: blur(2px);
-  position: sticky;
-  bottom: 0;
-  left: 0;
 }
 
 // ─── Desktop: icon-rail (collapsed) ──────────────────────────────────────────
@@ -137,7 +174,8 @@ hr {
 // ─── Mobile overlay (≤ 991.98px) ─────────────────────────────────────────────
 
 @media (max-width: 991.98px) {
-  // Wrapper collapses to zero width — the drawer is position:fixed (viewport-relative).
+  // Wrapper collapses to zero — the drawer is position: fixed and does not
+  // participate in document flow at all.
   .sidebar--overlay.menu-wrapper {
     width: 0;
     height: 0;
@@ -145,14 +183,13 @@ hr {
   }
 
   // Drawer panel: fixed to the left edge of the viewport.
-  // Starts hidden (translated left), slides in when open.
+  // Uses position: fixed because its parent wrapper reserves no space.
   .sidebar--overlay .layout-menu {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     width: min(var(--nav-width), calc(100vw - 4.5rem));
-    height: 100%;
     border-radius: 0 var(--radius-split-squared, 8px) var(--radius-split-squared, 8px) 0;
     box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.22);
     transform: translateX(calc(-100% - 1px));
@@ -178,7 +215,7 @@ hr {
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
     min-height: 3rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--nav-drawer-border);
     flex-shrink: 0;
   }
 

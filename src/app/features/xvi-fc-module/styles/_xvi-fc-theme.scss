@@ -24,6 +24,35 @@ $xvifc-primary-palette: mat-theme.$primary-palette;
   --radius-split-rouned: 5px 20px 20px 5px;
   --radius-split-squared: 8px 8px 8px 8px;
 
+  // ─── Nav / sidebar semantic tokens ─────────────────────────────────────────
+  // Components consume these; rgba() is allowed here, not in component SCSS.
+
+  // Surface
+  --nav-surface: var(--color-primary);
+  --nav-on-surface: var(--color-primary-accent);
+
+  // Dot-grid + arc-ring decorations on the sidebar panel
+  --nav-pattern-dot-color: #{rgba(map.get($xvifc-primary-palette, 98), 0.11)};
+  --nav-pattern-ring-color-strong: #{rgba(map.get($xvifc-primary-palette, 98), 0.13)};
+  --nav-pattern-ring-color-soft: #{rgba(map.get($xvifc-primary-palette, 98), 0.09)};
+  --nav-pattern-sheen-color: #{rgba(map.get($xvifc-primary-palette, 98), 0.06)};
+  --nav-pattern-glow-primary: #{rgba(map.get($xvifc-primary-palette, 80), 0.14)};
+  --nav-pattern-glow-secondary: #{rgba(map.get($xvifc-primary-palette, 40), 0.18)};
+
+  // Item interaction
+  --nav-item-color: var(--nav-on-surface);
+  --nav-item-hover-bg: #{rgba(map.get($xvifc-primary-palette, 98), 0.08)};
+  --nav-item-active-bg: #{rgba(map.get($xvifc-primary-palette, 98), 0.2)};
+  --nav-item-active-border: #{rgba(map.get($xvifc-primary-palette, 98), 0.35)};
+
+  // Submenu and bottom section
+  --nav-submenu-bg: transparent;
+  --nav-bottom-bg: #{rgba(map.get($xvifc-primary-palette, 20), 0.85)};
+
+  // Structural chrome (scrollbar thumb, drawer separator)
+  --nav-scrollbar-thumb: #{rgba(map.get($xvifc-primary-palette, 98), 0.3)};
+  --nav-drawer-border: #{rgba(map.get($xvifc-primary-palette, 98), 0.1)};
+
   font-family: $xvifc-font-family, sans-serif;
   font-size: 0.875rem;
   font-weight: 500;

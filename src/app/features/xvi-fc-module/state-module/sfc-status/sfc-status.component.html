@@ -6,16 +6,14 @@
       <div class="content-stack d-flex flex-column gap-4">
         <div>
           <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
-            16th Finance Commission &nbsp;&middot;&nbsp; Andhra Pradesh
+            16th Finance Commission &nbsp;&middot;&nbsp; {{ stateName() }}
           </div>
 
           <h1 class="page-title mb-2">State Finance Commission Verification</h1>
 
           <p class="page-subtitle text-secondary mb-0">
-            As part of the 16th Finance Commission grant conditions, the constitution and
-            functioning of the State Finance Commission (SFC) must be verified by the state
-            government. Based on records available with the 15th Finance Commission, we have the
-            following information. Please review and confirm.
+            As part of the 16th Finance Commission grant conditions, the constitution and functioning of the State
+            Finance Commission (SFC) must be verified by the state government.
           </p>
         </div>
 
@@ -27,9 +25,12 @@
           <app-pre-loader></app-pre-loader>
         } @else {
           <form class="content-body" [formGroup]="form">
-            @for (item of visibleFields(); track item.key) {
+            @for (item of visibleFields(); track item.key; let isLast = $last) {
               <app-dynamic-form
-                class="d-block my-2"
+                class="p-2 d-block my-2"
+                [class.border-bottom]="!isLast"
+                [class.border-success]="!isLast"
+                [class.border-opacity-25]="!isLast"
                 [field]="item"
                 [group]="form"
               ></app-dynamic-form>

@@ -12,13 +12,21 @@ import {
 } from '../../dynamic-form-visibility.service';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 
 @Component({
   selector: 'app-devolution-formula',
-  imports: [CommonModule, ReactiveFormsModule, InrCurrencyPipe, MatButtonModule, DynamicFormComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    InrCurrencyPipe,
+    MatButtonModule,
+    DynamicFormComponent,
+    PreLoaderComponent,
+  ],
   templateUrl: './devolution-formula.component.html',
   styleUrl: './devolution-formula.component.scss',
 })
@@ -33,8 +41,8 @@ export class DevolutionFormulaComponent implements OnInit {
 
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
 
-  inrCurrencyOptions = { currencyTypeInUser: 10000000 as const };
-  grantAmount = signal(15_62_00_00_000);
+  inrCurrencyOptions = { currencyTypeInUser: 0 as const };
+  grantAmount = signal(1562);
   ulbCount = signal(123);
   stateName = signal('Andhra Pradesh');
 
@@ -122,7 +130,12 @@ export class DevolutionFormulaComponent implements OnInit {
   }
 
   private submitForm(): void {
-    const payload = this.form.getRawValue();
+    // Use this instead of getRawValue() — excludes hidden fields
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+
+    // Includes all fields including hidden/disabled ones:
+    // const payload = this.form.getRawValue();
+
     console.log('Form submitted:', payload);
     this.utilityService.triggerSnackbar('Form submitted successfully!');
   }
@@ -146,6 +159,8 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     label: 'Upload completed devolution Excel file',
     key: 'devolutionExcelFile',
     validations: [
+      // TODO: Confirm with product whether file upload is mandatory before submit.
+      // If required, uncomment the validator below:
       // {
       //   name: 'required',
       //   validator: null,

@@ -23,7 +23,11 @@ describe('XvifcModuleService', () => {
       loginLogoutCheck: new Subject<boolean>(),
     };
 
-    TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule],
+      providers: [
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: {} },
         XvifcModuleService,
         { provide: Router, useValue: mockRouter },
         { provide: AuthService, useValue: mockAuthService },
@@ -58,12 +62,18 @@ describe('XvifcModuleService', () => {
   }
 
   it('should expose the configured list of year options', () => {
-    expect(service.availableYearIds).toEqual(['2026-27', '2027-28', '2028-29', '2029-30']);
+    expect(service.availableYearIds).toEqual([
+      '67d7d136d3d038946a5239e9',
+      '69de2593f75f68f3bda51421',
+      '69de2593f75f68f3bda51422',
+      '69de2593f75f68f3bda51423',
+      '69de2593f75f68f3bda51424',
+    ]);
   });
 
   it('should sync the deepest valid role and yearId from the route tree', async () => {
-    const child = createRouteSnapshot({ role: 'STATE', yearId: '2027-28' });
-    const root = createRouteSnapshot({ role: 'ULB', yearId: '2026-27', firstChild: child });
+    const child = createRouteSnapshot({ role: 'STATE', yearId: '69de2593f75f68f3bda51421' });
+    const root = createRouteSnapshot({ role: 'ULB', yearId: '67d7d136d3d038946a5239e9', firstChild: child });
 
     service.syncContextFromRoute(root);
     (TestBed as any).flushEffects();
@@ -71,12 +81,14 @@ describe('XvifcModuleService', () => {
     await Promise.resolve();
 
     expect(service.role()).toBe('STATE');
-    expect(service.yearId()).toBe('2027-28');
-    expect(service.sideMenuModel()).toEqual(SIDE_MENU_ITEMS.STATE('2027-28'));
+    expect(service.yearId()).toBe('69de2593f75f68f3bda51421');
+    // Service currently overrides bottomModel to [] — check topModel directly.
+    expect(service.sideMenuModel().topModel).toEqual(SIDE_MENU_ITEMS.STATE('69de2593f75f68f3bda51421').topModel);
+    expect(service.sideMenuModel().bottomModel).toEqual([]);
   });
 
   it('should keep DOE as a supported role for future routes', async () => {
-    const snapshot = createRouteSnapshot({ role: 'DOE', yearId: '2028-29' });
+    const snapshot = createRouteSnapshot({ role: 'DOE', yearId: '69de2593f75f68f3bda51422' });
 
     service.syncContextFromRoute(snapshot);
     (TestBed as any).flushEffects();
@@ -84,8 +96,8 @@ describe('XvifcModuleService', () => {
     await Promise.resolve();
 
     expect(service.role()).toBe('DOE');
-    expect(service.yearId()).toBe('2028-29');
-    expect(service.sideMenuModel()).toEqual(SIDE_MENU_ITEMS.DOE('2028-29'));
+    expect(service.yearId()).toBe('69de2593f75f68f3bda51422');
+    expect(service.sideMenuModel()).toEqual(SIDE_MENU_ITEMS.DOE('69de2593f75f68f3bda51422'));
   });
 
   it('should clear stale context, clear auth details, and redirect when role is missing', () => {
@@ -93,8 +105,8 @@ describe('XvifcModuleService', () => {
     const loginLogoutNextSpy = spyOn(mockAuthService.loginLogoutCheck, 'next');
     const sessionStorageClearSpy = spyOn(sessionStorage, 'clear');
 
-    service.syncContextFromRoute(createRouteSnapshot({ role: 'ULB', yearId: '2026-27' }));
-    service.syncContextFromRoute(createRouteSnapshot({ yearId: '2026-27' }));
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'ULB', yearId: '67d7d136d3d038946a5239e9' }));
+    service.syncContextFromRoute(createRouteSnapshot({ yearId: '67d7d136d3d038946a5239e9' }));
 
     expect(service.role()).toBeNull();
     expect(service.yearId()).toBeNull();
@@ -111,7 +123,7 @@ describe('XvifcModuleService', () => {
   it('should redirect when role is malformed', () => {
     const logoutEventSpy = spyOn(Login_Logout, 'logout');
 
-    service.syncContextFromRoute(createRouteSnapshot({ role: 'NOT_A_ROLE', yearId: '2026-27' }));
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'NOT_A_ROLE', yearId: '67d7d136d3d038946a5239e9' }));
 
     expect(service.role()).toBeNull();
     expect(service.yearId()).toBeNull();
@@ -151,7 +163,7 @@ describe('XvifcModuleService', () => {
   });
 
   it('should allow consumers to clear the resolved context explicitly', () => {
-    service.syncContextFromRoute(createRouteSnapshot({ role: 'STATE', yearId: '2029-30' }));
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'STATE', yearId: '69de2593f75f68f3bda51423' }));
 
     service.clearResolvedContext();
 

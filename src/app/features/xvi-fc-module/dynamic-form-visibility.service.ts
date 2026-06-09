@@ -6,6 +6,7 @@ import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.servi
 
 export type VisibilityCondition =
   | { key: string; operator: 'equals'; value: unknown }
+  | { key: string; operator: 'in'; value: unknown[] }
   | { key: string; operator: 'yearGreaterThan'; value: number };
 
 export type ConditionalFieldConfig = FieldConfig & {
@@ -226,6 +227,9 @@ export class DynamicFormVisibilityService {
     switch (condition.operator) {
       case 'equals':
         return rawValue === condition.value;
+
+      case 'in':
+        return Array.isArray(condition.value) && condition.value.includes(rawValue);
 
       case 'yearGreaterThan': {
         const year = this.extractYear(rawValue);

@@ -13,6 +13,89 @@ import { ConditionalFieldConfig } from '../../features/xvi-fc-module/dynamic-for
 
 export const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
   {
+    formFieldType: 'radio',
+    label: 'SFC Active',
+    key: 'sfcActive',
+    value: 'yes',
+    options: [
+      { label: 'Yes', id: 'yes' },
+      { label: 'No', id: 'no' },
+    ],
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+  },
+  {
+    formFieldType: 'text',
+    label: 'Status of SFC Report',
+    key: 'sfcReportStatus',
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    },
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+  },
+  {
+    formFieldType: 'file',
+    label: 'Upload SFC Report',
+    key: 'sfcReport',
+    allowedFileTypes: ['pdf'],
+    maxFileSize: 20,
+    folderPath: 'state/sfc-status/sfc-report',
+    value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [
+        { key: 'isActiveSfc', operator: 'equals', value: 'yes' },
+        {
+          key: 'sfcReportStatus',
+          operator: 'in',
+          value: ['reportSubmittedAtrNotYetTabled', 'reportSubmittedAtrTabled'],
+        },
+      ],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+  },
+  {
+    formFieldType: 'date',
+    label: 'Applicable SFC for Grant Calculation',
+    key: 'applicableSfcGrantCalculation',
+    readonly: false,
+    minDate: '2026-02-01',
+    maxDate: '2026-12-31',
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+      {
+        name: 'minDate',
+        validator: '2026-02-01',
+        message: 'Date must be on or after 01 Feb 2026.',
+      },
+      {
+        name: 'maxDate',
+        validator: '2026-12-31',
+        message: 'Date must be on or before 31 Dec 2026.',
+      },
+    ],
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    },
+  },
+  {
     formFieldType: 'file',
     label: 'Upload devolution data',
     key: 'devolutionExcelFile',
