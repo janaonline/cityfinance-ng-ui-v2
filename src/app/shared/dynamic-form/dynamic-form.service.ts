@@ -14,6 +14,7 @@ import {
 } from '../../core/validators/comparison.validator';
 import { FieldConfig, UploadedFileValue } from './field.interface';
 import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
+import { yearRangeValidator } from '../../core/validators/year-range.validator';
 import { toUtcIsoDateString } from './components/date/utc-iso-date-adapter';
 
 @Injectable({
@@ -239,6 +240,9 @@ export class DynamicFormService {
             break;
           case 'email':
             validators.push(Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$'));
+            break;
+          case 'yearRange':
+            validators.push(yearRangeValidator(row.validator));
             break;
         }
       });

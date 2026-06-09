@@ -31,6 +31,8 @@ export class SfcStatusComponent implements OnInit {
   private confirmDialogService = inject(ConfirmDialogService);
   private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
 
+  readonly stateName = signal('Andhra Pradesh');
+
   form = this.fb.group({});
   fields = signal<ConditionalFieldConfig[]>([]);
   visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
@@ -146,141 +148,235 @@ export class SfcStatusComponent implements OnInit {
   }
 }
 
+// Computed once at module load.
+// TODO: min/max date bounds for reportSubmissionDate should come from the API config.
+function isoDateString(d: Date): string {
+  return d.toISOString().split('T')[0];
+}
+const TODAY_ISO = isoDateString(new Date());
+const FIVE_YEARS_FROM_TODAY_ISO = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 5);
+  return isoDateString(d);
+})();
+
 const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
   {
     formFieldType: 'radio',
-    label: 'SFC Active',
-    key: 'sfcActive',
+    label: 'Is the state currently in an active SFC award period?',
+    key: 'isActiveSfc',
     value: 'yes',
+    // radioLayout: 'vertical',
     options: [
       { label: 'Yes', id: 'yes' },
       { label: 'No', id: 'no' },
     ],
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-    ],
-  },
-  {
-    formFieldType: 'text',
-    label: 'State Name',
-    key: 'stateName',
-    value: 'Andhra Pradesh',
-    readonly: true,
-    visibleWhen: {
-      mode: 'all',
-      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
     },
   },
   {
     formFieldType: 'text',
-    label: 'Status of SFC Report',
+    label: 'What is the active award period?',
+    key: 'awardPeriod',
+    placeholder: 'e.g., 2026-2031',
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'isActiveSfc', operator: 'equals', value: 'yes' }],
+    },
+    validations: [
+      { name: 'required', validator: null, message: 'This field is required.' },
+      {
+        name: 'yearRange',
+        validator: {
+          startYearMin: 2020,
+          startYearMax: 2029,
+          endYearMin: 2000,
+          endYearMax: 2099,
+          requireEndGreaterThanStart: true,
+        },
+        message:
+          'Enter a valid award period in YYYY-YYYY format. Start year must be between 2020 and 2029, and end year must be greater than start year.',
+      },
+    ],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+  },
+  {
+    formFieldType: 'select',
+    label: 'For this award period, which SFC is applicable?',
+    key: 'whichAwardPeriod',
+    options: ['1st SFC', '2nd SFC', '3rd SFC', '4th SFC', '5th SFC', '6th SFC', '7th SFC', '8th SFC'],
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'isActiveSfc', operator: 'equals', value: 'yes' }],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+  },
+  {
+    formFieldType: 'radio',
+    label: 'What is the status of the SFC report?',
     key: 'sfcReportStatus',
+    options: [
+      { label: 'To be submitted', id: 'toBeSubmitted' },
+      { label: 'Report submitted - ATR not yet tabled', id: 'reportSubmittedAtrNotYetTabled' },
+      { label: 'Report submitted - ATR tabled', id: 'reportSubmittedAtrTabled' },
+    ],
+    radioLayout: 'vertical',
     visibleWhen: {
       mode: 'all',
-      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+      conditions: [{ key: 'isActiveSfc', operator: 'equals', value: 'yes' }],
     },
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-    ],
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
   },
   {
     formFieldType: 'date',
-    label: 'Applicable SFC for Grant Calculation',
-    key: 'applicableSfcGrantCalculation',
-    readonly: false,
-    minDate: '2026-02-01',
-    maxDate: '2026-12-31',
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-      {
-        name: 'minDate',
-        validator: '2026-02-01',
-        message: 'Date must be on or after 01 Feb 2026.',
-      },
-      {
-        name: 'maxDate',
-        validator: '2026-12-31',
-        message: 'Date must be on or before 31 Dec 2026.',
-      },
-    ],
+    label: 'Expected Report Submission Date',
+    key: 'reportSubmissionDate',
+    minDate: TODAY_ISO,
+    maxDate: FIVE_YEARS_FROM_TODAY_ISO,
     visibleWhen: {
       mode: 'all',
-      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+      conditions: [
+        { key: 'isActiveSfc', operator: 'equals', value: 'yes' },
+        { key: 'sfcReportStatus', operator: 'equals', value: 'toBeSubmitted' },
+      ],
+    },
+    validations: [
+      { name: 'required', validator: null, message: 'This field is required.' },
+      { name: 'minDate', validator: TODAY_ISO, message: 'Date cannot be earlier than today.' },
+      {
+        name: 'maxDate',
+        validator: FIVE_YEARS_FROM_TODAY_ISO,
+        message: 'Date cannot be beyond 5 years from today.',
+      },
+    ],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
     },
   },
   {
-    formFieldType: 'text',
-    label: 'Applicable SFC Report Submission Date',
-    key: 'applicableSfcReportSubmissionDate',
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-      {
-        name: 'pattern',
-        validator: /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$/,
-        message: 'Date must be in DD-MM-YYYY format (e.g., 19-01-2024)',
-      },
-    ],
+    formFieldType: 'file',
+    label: 'Upload SFC Report',
+    key: 'sfcReport',
+    allowedFileTypes: ['pdf'],
+    maxFileSize: 20,
+    folderPath: 'state/sfc-status/sfc-report',
+    value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
     visibleWhen: {
       mode: 'all',
-      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+      conditions: [
+        { key: 'isActiveSfc', operator: 'equals', value: 'yes' },
+        {
+          key: 'sfcReportStatus',
+          operator: 'in',
+          value: ['reportSubmittedAtrNotYetTabled', 'reportSubmittedAtrTabled'],
+        },
+      ],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+  },
+  {
+    formFieldType: 'file',
+    label: 'Upload ATR',
+    key: 'atrReport',
+    allowedFileTypes: ['pdf'],
+    maxFileSize: 20,
+    folderPath: 'state/sfc-status/atr-report',
+    value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [
+        { key: 'isActiveSfc', operator: 'equals', value: 'yes' },
+        { key: 'sfcReportStatus', operator: 'equals', value: 'reportSubmittedAtrTabled' },
+      ],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+  },
+  {
+    formFieldType: 'radio',
+    label: 'Has a new SFC been constituted for the next award period?',
+    key: 'isNewSfcConstituted',
+    options: [
+      { label: 'Yes', id: 'yes' },
+      { label: 'No', id: 'no' },
+      { label: 'Not applicable / current award period still active', id: 'notApplicable' },
+    ],
+    radioLayout: 'vertical',
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+  },
+  {
+    formFieldType: 'file',
+    label: 'Gazette Notification / Order for new SFC constitution',
+    key: 'gazetteNotification',
+    allowedFileTypes: ['pdf'],
+    maxFileSize: 20,
+    folderPath: 'state/sfc-status/gazette-notification',
+    value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'isNewSfcConstituted', operator: 'equals', value: 'yes' }],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
     },
   },
   {
     formFieldType: 'textarea',
-    label: 'SFC Term',
-    key: 'sfcTerm',
-    visibleWhen: {
-      mode: 'all',
-      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
+    label: 'Raise an issue / clarification for the PMU team.',
+    key: 'raiseAnIssue',
+    placeholder: 'Describe the issue or clarification required...',
+    validations: [{ name: 'maxlength', validator: 500, message: 'Maximum 500 characters allowed.' }],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
     },
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-    ],
   },
   {
-    formFieldType: 'file',
-    label: 'Action Taken Report',
-    key: 'actionTakenReport',
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-    ],
-    value: {
-      fileName: '',
-      fileUrl: '',
-      fileSize: null,
-      mimeType: '',
-    },
-    folderPath: '',
-    maxFileSize: 5,
-    // fileViewType: 'button',
-    allowedFileTypes: ['pdf'],
-    visibleWhen: {
-      mode: 'all',
-      conditions: [{ key: 'sfcActive', operator: 'equals', value: 'yes' }],
-    },
+    formFieldType: 'checkbox',
+    label:
+      'I hereby certify that the information provided above is true and correct to the best of my knowledge and is provided for the purpose of 16th Finance Commission grant eligibility.',
+    key: 'checkboxConfirmation',
+    value: false,
+    validations: [{ name: 'requiredTrue', validator: null, message: 'Please confirm before submitting.' }],
   },
 ];

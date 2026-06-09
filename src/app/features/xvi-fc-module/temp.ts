@@ -172,4 +172,9 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
     ],
     bottomModel: [],
   }),
+
+  ADMIN: (_yearId) => ({
+    topModel: [],
+    bottomModel: [],
+  }),
 };

@@ -117,6 +117,7 @@ export interface FieldConfig {
   hideLabel?: boolean;
   appearance?: FieldAppearanceConfig;
   inputCardConfig?: InputCardConfig;
+  radioLayout?: 'horizontal' | 'vertical';
 }
 
 export interface JsonFieldConfig {

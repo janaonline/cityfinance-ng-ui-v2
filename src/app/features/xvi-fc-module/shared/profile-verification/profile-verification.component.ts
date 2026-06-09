@@ -196,7 +196,13 @@ export class ProfileVerificationComponent implements OnInit {
       .verifyOtp(mobile, otp)
       .pipe(
         switchMap(() =>
-          this.profileService.updateProfileContacts(loggedInUserId, email, mobile),
+          this.profileService.updateProfileContacts(
+            loggedInUserId,
+            profile.name,
+            email,
+            mobile,
+            profile.designation,
+          ),
         ),
       )
       .subscribe({
