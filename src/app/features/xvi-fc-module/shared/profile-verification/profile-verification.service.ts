@@ -85,12 +85,14 @@ export class ProfileVerificationService {
 
   updateProfileContacts(
     id: string,
+    name: string,
     email: string,
     mobile: string,
+    designation: string,
   ): Observable<{ success: boolean }> {
     return this.http.patch<{ success: boolean }>(
       `${environment.api.url2}users/${id}/profile-contacts`,
-      { email, mobile, isXVIFCProfileVerified: true },
+      { name, email, mobile, designation, isXVIFCProfileVerified: true },
     );
   }
 
