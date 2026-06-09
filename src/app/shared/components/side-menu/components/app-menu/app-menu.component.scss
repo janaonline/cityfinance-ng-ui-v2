@@ -10,35 +10,36 @@ hr {
 }
 
 // ─── Wrapper ─────────────────────────────────────────────────────────────────
-// display:block so the toggle button (position:absolute) doesn't add width.
-// The wrapper IS the sidebar column — its width drives the parent flex layout.
+// height: 100% gives the wrapper real height so .layout-menu can fill it
+// overflow: visible is kept so the edge-toggle tab (right: -14px) isn't clipped.
 
 .menu-wrapper {
   position: relative;
   display: block; // NOT flex — toggle must not add layout width
-  height: 0; // zero layout height — sidebar must NOT force the row to 100vh
   width: var(--nav-width);
+  height: 100%;
   flex-shrink: 0;
-  overflow: visible; // layout-menu and toggle both overflow this intentionally
+  overflow: visible; // edge-toggle tab overflows right edge intentionally
   transition: width 0.3s ease;
 }
 
 // ─── Sidebar panel ───────────────────────────────────────────────────────────
+// height: 100% fills the wrapper. overflow: hidden clips content; scrolling is
+// delegated to .layout-menu-ul-pimary only. justify-content removed — Sign Out
+// stays at the bottom via flex: 0 0 auto instead.
 
 .layout-menu {
   font-size: var(--fs-6);
   background-color: var(--color-primary);
   border-radius: 0 0 5px 0;
   width: 100%;
-  height: 100dvh; // overflows the 0-height wrapper; fills the viewport visually
-  overflow-y: auto;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 
   transition:
     width 0.3s ease,
@@ -52,22 +53,28 @@ hr {
 
 .layout-menu-ul {
   padding: 0;
+  margin: 0;
 }
 
+// Scrollable primary nav — grows to fill available height, scrolls internally.
 .layout-menu-ul-pimary {
-  flex-grow: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   margin: 0.25rem 0.5rem 0.5rem;
 }
 
+// Sign Out / bottom actions — shrinks to content, anchored at the bottom.
+// No position: sticky / fixed / absolute needed — flex handles it.
 .layout-menu-ul-secondary {
-  margin-bottom: 0;
+  flex: 0 0 auto;
+  position: static;
+  margin: 0;
   padding: 0.5rem;
   box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-split-squared);
   background-color: var(--color-primary);
-  position: sticky;
-  bottom: 0;
-  left: 0;
 }
 
 // ─── Desktop: icon-rail (collapsed) ──────────────────────────────────────────
@@ -126,7 +133,8 @@ hr {
 // ─── Mobile overlay (≤ 991.98px) ─────────────────────────────────────────────
 
 @media (max-width: 991.98px) {
-  // Wrapper collapses to zero width — the drawer is position:fixed (viewport-relative).
+  // Wrapper collapses to zero — the drawer is position: fixed and does not
+  // participate in document flow at all.
   .sidebar--overlay.menu-wrapper {
     width: 0;
     height: 0;
@@ -134,14 +142,13 @@ hr {
   }
 
   // Drawer panel: fixed to the left edge of the viewport.
-  // Starts hidden (translated left), slides in when open.
+  // Uses explicit 100dvh because its parent wrapper is zero-height.
   .sidebar--overlay .layout-menu {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     width: min(var(--nav-width), calc(100vw - 4.5rem));
-    height: 100%;
     border-radius: 0 var(--radius-split-squared, 8px) var(--radius-split-squared, 8px) 0;
     box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.22);
     transform: translateX(calc(-100% - 1px));
