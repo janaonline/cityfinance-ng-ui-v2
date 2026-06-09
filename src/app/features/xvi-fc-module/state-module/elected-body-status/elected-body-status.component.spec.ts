@@ -19,7 +19,11 @@ describe('ElectedBodyStatusComponent', () => {
     confirmDialogService = jasmine.createSpyObj<ConfirmDialogService>('ConfirmDialogService', ['confirm']);
     confirmDialogService.confirm.and.returnValue(of(false));
 
-    utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
+    utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', [
+      'triggerSnackbar',
+      'getNonEmptyString',
+      'formatBytes',
+    ]);
 
     await TestBed.configureTestingModule({
       providers: [
@@ -43,6 +47,7 @@ describe('ElectedBodyStatusComponent', () => {
   });
 
   it('initializes form controls after loading', fakeAsync(() => {
+    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
     tick(1);
     fixture.detectChanges();
 
@@ -56,6 +61,7 @@ describe('ElectedBodyStatusComponent', () => {
     expect(fixture.nativeElement.querySelector('app-pre-loader')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
 
+    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
     tick(1);
     fixture.detectChanges();
 
@@ -80,6 +86,7 @@ describe('ElectedBodyStatusComponent', () => {
   // ─── Validation ────────────────────────────────────────────────────────────
 
   it('checkboxConfirmation uses requiredTrue validation', fakeAsync(() => {
+    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
     tick(1);
     fixture.detectChanges();
 
@@ -117,6 +124,7 @@ describe('ElectedBodyStatusComponent', () => {
   });
 
   it('marks required fields touched on invalid submit after form loads', fakeAsync(() => {
+    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
     tick(1);
     fixture.detectChanges();
 
