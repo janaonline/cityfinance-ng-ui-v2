@@ -19,37 +19,43 @@
 
         <hr class="my-0 text-body-tertiary" />
 
-        <div class="content-body">
-          <span class="text-uppercase fw-bold">Instructions</span>
-          <ul>
-            <li class="my-1">
-              For FY 2026-27, <strong> &#8377;{{ grantAmount() | inrCurrency: inrCurrencyOptions }} crore</strong> is to
-              be allocated across <strong>{{ ulbCount() }}</strong> ULBs. Upload the devolution formula below. This will
-              determine the allocation for the first instalment. The details will be reconfirmed prior to the second
-              instalment release.
-            </li>
-            <li class="my-1">
-              <strong>All grant amounts must be entered in crores (₹ Cr).</strong> If a value is in lakhs, convert
-              before uploading - e.g. ₹45 lakhs = ₹0.45 Cr. Do not write "45 lakhs" or "45L" in the amount column; only
-              plain numbers are accepted.
-            </li>
-          </ul>
+        @if (isLoading()) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        } @else {
+          <div class="content-body">
+            <span class="text-uppercase fw-bold">Instructions</span>
+            <ul>
+              <li class="my-1">
+                For FY 2026-27, <strong> &#8377;{{ grantAmount() | inrCurrency: inrCurrencyOptions }} crore</strong> is to
+                be allocated across <strong>{{ ulbCount() }}</strong> ULBs. Upload the devolution formula below. This will
+                determine the allocation for the first instalment. The details will be reconfirmed prior to the second
+                instalment release.
+              </li>
+              <li class="my-1">
+                <strong>All grant amounts must be entered in crores (₹ Cr).</strong> If a value is in lakhs, convert
+                before uploading - e.g. ₹45 lakhs = ₹0.45 Cr. Do not write "45 lakhs" or "45L" in the amount column; only
+                plain numbers are accepted.
+              </li>
+            </ul>
 
-          <hr class="my-0 text-body-tertiary" />
+            <hr class="my-0 text-body-tertiary" />
 
-          <form [formGroup]="form">
-            @for (item of visibleFields(); track item.key; let isLast = $last) {
-              <app-dynamic-form
-                class="p-2 d-block my-2"
-                [class.border-bottom]="!isLast"
-                [class.border-success]="!isLast"
-                [class.border-opacity-25]="!isLast"
-                [field]="item"
-                [group]="form"
-              ></app-dynamic-form>
-            }
-          </form>
-        </div>
+            <form [formGroup]="form">
+              @for (item of visibleFields(); track item.key; let isLast = $last) {
+                <app-dynamic-form
+                  class="p-2 d-block my-2"
+                  [class.border-bottom]="!isLast"
+                  [class.border-success]="!isLast"
+                  [class.border-opacity-25]="!isLast"
+                  [field]="item"
+                  [group]="form"
+                ></app-dynamic-form>
+              }
+            </form>
+          </div>
+        }
       </div>
     </div>
 

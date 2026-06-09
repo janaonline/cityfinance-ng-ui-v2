@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MatButtonModule } from '@angular/material/button';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -17,7 +18,7 @@ import {
 
 @Component({
   selector: 'app-elected-body-status',
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, DynamicFormComponent],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, DynamicFormComponent, PreLoaderComponent],
   templateUrl: './elected-body-status.component.html',
   styleUrl: './elected-body-status.component.scss',
 })
@@ -116,7 +117,12 @@ export class ElectedBodyStatusComponent implements OnInit {
   }
 
   private submitForm(): void {
-    const payload = this.form.getRawValue();
+    // Use this instead of getRawValue() — excludes hidden fields
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+
+    // Includes all fields including hidden/disabled ones:
+    // const payload = this.form.getRawValue();
+
     console.log('Form submitted:', payload);
     this.utilityService.triggerSnackbar('Form submitted successfully!');
   }
@@ -167,6 +173,8 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     label: 'Upload elected bodies list',
     key: 'electedBodyExcelFile',
     validations: [
+      // TODO: Confirm with product whether file upload is mandatory before submit.
+      // If required, uncomment the validator below:
       // {
       //   name: 'required',
       //   validator: null,
