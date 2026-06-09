@@ -2,6 +2,7 @@
 import { Component, OnInit, TemplateRef, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -15,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { Permission } from '../../../../core/auth/permissions';
 import { RolesDialogComponent } from './roles-dialog/roles-dialog.component';
 import { RolesDialogConfig, RolesDialogResult } from './roles-dialog/roles-dialog.types';
@@ -102,6 +104,8 @@ interface PermissionMatrixRow {
 export class RolesTeamsOverviewComponent implements OnInit {
   readonly permissionService = inject(AuthPermissionService);
   readonly Permission = Permission;
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   @ViewChild('transferDialog') private transferDialog?: TemplateRef<unknown>;
   private transferDialogRef?: MatDialogRef<unknown>;
@@ -776,20 +780,19 @@ export class RolesTeamsOverviewComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.members = this.members.map((m) => {
-            if (m.role === 'Submitter') return { ...m, role: 'Editor' as TeamMemberRole };
-            if (m.id === newSubmitterId) return { ...m, role: 'Submitter' as TeamMemberRole };
-            return m;
-          });
-          delete this.memberRoleSelections[newSubmitterId];
           this.transferVerifying = false;
           this.transferDialogRef?.close();
           const newSubmitter = this.members.find((m) => m.id === newSubmitterId);
           this.snackBar.open(
-            `Ownership transferred to ${newSubmitter?.name ?? 'the selected member'}.`,
+            `Ownership transferred to ${newSubmitter?.name ?? 'the selected member'}. You will be logged out now.`,
             'Dismiss',
-            { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
+            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
           );
+          setTimeout(() => {
+            this.authService.logout().subscribe({
+              complete: () => void this.router.navigate(['/auth/login/16thFC']),
+            });
+          }, 3000);
         },
         error: (err) => {
           this.transferVerifying = false;
