@@ -83,7 +83,7 @@ describe('ElectedBodyStatusComponent', () => {
     tick(1);
     fixture.detectChanges();
 
-    const ctrl = component.form.get('checkboxConfirmation')!;
+    const ctrl = component.form.get('checkboxConfirmation') as unknown as FormControl;
     expect(ctrl.value).toBeFalse();
     ctrl.markAsTouched();
     expect(ctrl.hasError('required')).toBeTrue();
@@ -147,8 +147,8 @@ describe('ElectedBodyStatusComponent', () => {
     tick(1);
     fixture.detectChanges();
 
-    component.form.get('ulbCount')?.setValue(50);
-    component.form.get('checkboxConfirmation')?.setValue(true);
+    (component.form.get('ulbCount') as unknown as FormControl)?.setValue(50);
+    (component.form.get('checkboxConfirmation') as unknown as FormControl)?.setValue(true);
     fixture.detectChanges();
 
     expect(component.form.valid).toBeTrue();
