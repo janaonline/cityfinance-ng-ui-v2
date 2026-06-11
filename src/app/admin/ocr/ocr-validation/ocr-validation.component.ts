@@ -802,7 +802,7 @@ export class OcrValidationComponent implements OnInit {
   }
 
   private startPolling(jobId: string): void {
-    timer(0, 3000)
+    timer(0, 5000)
       .pipe(
         switchMap(() => this.ocrService.getOcrValidationJobStatus(jobId)),
         tap((status) => {
