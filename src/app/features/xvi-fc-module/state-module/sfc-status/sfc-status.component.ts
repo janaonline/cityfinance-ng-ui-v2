@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { distinctUntilChanged, map, startWith } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { getYearRangeDuration } from '../../../../core/validators/year-range.validator';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
@@ -95,6 +97,22 @@ export class SfcStatusComponent implements OnInit {
       preserveHiddenValue: true,
     });
 
+    // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
+    const awardPeriodControl = this.form.get('awardPeriod');
+    const durationControl = this.form.get('awardPeriodDuration') as FormControl<number | null> | null;
+    if (awardPeriodControl && durationControl) {
+      awardPeriodControl.valueChanges
+        .pipe(
+          startWith(awardPeriodControl.value),
+          map((v) => getYearRangeDuration(v)),
+          distinctUntilChanged(),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe((duration) => {
+          durationControl.setValue(duration, { emitEvent: true });
+        });
+    }
+
     this.isLoading.set(false);
   }
 
@@ -148,25 +166,12 @@ export class SfcStatusComponent implements OnInit {
   }
 }
 
-// Computed once at module load.
-// TODO: min/max date bounds for reportSubmissionDate should come from the API config.
-function isoDateString(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-const TODAY_ISO = isoDateString(new Date());
-const FIVE_YEARS_FROM_TODAY_ISO = (() => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + 5);
-  return isoDateString(d);
-})();
-
 const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
   {
     formFieldType: 'radio',
     label: 'Is the state currently in an active SFC award period?',
     key: 'isActiveSfc',
     value: 'yes',
-    // radioLayout: 'vertical',
     options: [
       { label: 'Yes', id: 'yes' },
       { label: 'No', id: 'no' },
@@ -192,15 +197,91 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
         name: 'yearRange',
         validator: {
           startYearMin: 2020,
-          startYearMax: 2029,
-          endYearMin: 2000,
-          endYearMax: 2099,
+          startYearMax: 2026,
+          endYearMin: 2025,
+          endYearMax: 2032,
           requireEndGreaterThanStart: true,
+          allowedDurations: [1, 5, 6],
+          requiredIncludedYear: 2026,
         },
         message:
-          'Enter a valid award period in YYYY-YYYY format. Start year must be between 2020 and 2029, and end year must be greater than start year.',
+          'Enter a valid period in YYYY-YYYY format. The period must include 2026 and span 1, 5, or 6 years.',
       },
     ],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+  },
+  {
+    formFieldType: 'number',
+    key: 'awardPeriodDuration',
+    label: 'Award Period Duration',
+    render: false,
+    includeInPayload: false,
+  },
+  {
+    formFieldType: 'radio',
+    label: 'Was the SFC constituted for an interim period?',
+    key: 'sfcConstitutedForInterim',
+    options: [
+      { label: 'Yes', id: 'yes' },
+      { label: 'No', id: 'no' },
+    ],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'awardPeriodDuration', operator: 'equals', value: 1 }],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+  },
+  {
+    formFieldType: 'radio',
+    label: 'Has the SFC award period been extended?',
+    key: 'sfcAwardPeriodExtended',
+    options: [
+      { label: 'Yes', id: 'yes' },
+      { label: 'No', id: 'no' },
+    ],
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'awardPeriodDuration', operator: 'equals', value: 6 }],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    supportingContent: [
+      {
+        type: 'info',
+        position: 'after',
+        title: '',
+        description:
+          'This award period exceeds the standard 5 years. Without an extension order, this submission will be flagged for manual review by the PMU team.',
+      },
+    ],
+  },
+  {
+    formFieldType: 'file',
+    label: 'Upload Extension Order',
+    key: 'extensionOrder',
+    allowedFileTypes: ['pdf'],
+    maxFileSize: 20,
+    folderPath: 'state/sfc-status/extension-order',
+    value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [{ key: 'sfcAwardPeriodExtended', operator: 'equals', value: 'yes' }],
+    },
+    validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
     layout: {
       variant: 'inline',
       labelWidth: 'lg',
@@ -210,7 +291,7 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     formFieldType: 'select',
     label: 'For this award period, which SFC is applicable?',
     key: 'whichAwardPeriod',
-    options: ['1st SFC', '2nd SFC', '3rd SFC', '4th SFC', '5th SFC', '6th SFC', '7th SFC', '8th SFC'],
+    options: ['8th SFC', '7th SFC', '6th SFC', '5th SFC', '4th SFC', '3rd SFC', '2nd SFC', '1st SFC'],
     visibleWhen: {
       mode: 'all',
       conditions: [{ key: 'isActiveSfc', operator: 'equals', value: 'yes' }],
@@ -245,8 +326,6 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     formFieldType: 'date',
     label: 'Expected Report Submission Date',
     key: 'reportSubmissionDate',
-    minDate: TODAY_ISO,
-    maxDate: FIVE_YEARS_FROM_TODAY_ISO,
     visibleWhen: {
       mode: 'all',
       conditions: [
@@ -256,11 +335,15 @@ const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     },
     validations: [
       { name: 'required', validator: null, message: 'This field is required.' },
-      { name: 'minDate', validator: TODAY_ISO, message: 'Date cannot be earlier than today.' },
+      {
+        name: 'minDate',
+        validator: 'TODAY+0D',
+        message: 'Date cannot be earlier than today.',
+      },
       {
         name: 'maxDate',
-        validator: FIVE_YEARS_FROM_TODAY_ISO,
-        message: 'Date cannot be beyond 5 years from today.',
+        validator: '2027-03-31',
+        message: 'Date cannot be beyond 31 March 2027.',
       },
     ],
     layout: {

@@ -103,11 +103,12 @@ export class DynamicFormVisibilityService {
 
   /**
    * Returns an array of fields that are currently visible based on the 'hidden' property
+   * and the `render` flag.
    * @param fields - Array of conditional field configurations
-   * @returns filtered array containing only the fields that are not hidden
+   * @returns filtered array containing only the fields that are not hidden and renderable
    */
   getVisibleFields<T extends ConditionalFieldConfig>(fields: T[]): T[] {
-    return fields.filter((field) => !field.hidden);
+    return fields.filter((field) => !field.hidden && field.render !== false);
   }
 
   /**
@@ -127,7 +128,7 @@ export class DynamicFormVisibilityService {
     for (const field of fields) {
       const key = field.key;
 
-      if (field.hidden || typeof key !== 'string' || key.length === 0) {
+      if (field.hidden || field.includeInPayload === false || typeof key !== 'string' || key.length === 0) {
         continue;
       }
 
