@@ -6,10 +6,8 @@ import { MatFormFieldAppearance, MatFormFieldModule } from '@angular/material/fo
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
-import {
-  formatDateForValidationMessage,
-  normalizeDateValue,
-} from '../../../../core/validators/date-range.validator';
+import { formatDateForValidationMessage } from '../../../../core/validators/date-range.validator';
+import { resolveDateConstraint } from '../../date-constraint-resolver';
 import { FieldConfig, Validator } from '../../field.interface';
 import { UTC_ISO_DATE_FORMATS, UtcIsoDateAdapter } from './utc-iso-date-adapter';
 
@@ -43,17 +41,9 @@ type DateConstraintKey = 'minDate' | 'maxDate';
         [attr.data-cy]="field.key ? field.key + '-test' : null"
       />
 
-      <mat-datepicker-toggle
-        matSuffix
-        [for]="picker"
-        [disabled]="isReadonly"
-      ></mat-datepicker-toggle>
+      <mat-datepicker-toggle matSuffix [for]="picker" [disabled]="isReadonly"></mat-datepicker-toggle>
 
-      <mat-datepicker
-        #picker
-        [panelClass]="materialThemeClass"
-        [disabled]="isReadonly"
-      ></mat-datepicker>
+      <mat-datepicker #picker [panelClass]="materialThemeClass" [disabled]="isReadonly"></mat-datepicker>
 
       <!-- <mat-hint></mat-hint> -->
 
@@ -69,8 +59,7 @@ type DateConstraintKey = 'minDate' | 'maxDate';
   ],
 })
 export class DateComponent implements OnChanges {
-  readonly materialThemeClass: string | string[] =
-    inject(MATERIAL_THEME_CLASS, { optional: true }) ?? '';
+  readonly materialThemeClass: string | string[] = inject(MATERIAL_THEME_CLASS, { optional: true }) ?? '';
 
   @Input({ required: true }) field!: FieldConfig;
   @Input({ required: true }) group!: FormGroup;
@@ -82,8 +71,8 @@ export class DateComponent implements OnChanges {
   /** Recompute derived field config when the input metadata changes. */
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['field']) {
-      this.minDate = this.resolveDateConstraint('minDate');
-      this.maxDate = this.resolveDateConstraint('maxDate');
+      this.minDate = this.resolveDateBound('minDate');
+      this.maxDate = this.resolveDateBound('maxDate');
       this.validationMessages = this.buildValidationMessages();
     }
   }
@@ -148,10 +137,10 @@ export class DateComponent implements OnChanges {
     return messages;
   }
 
-  /** Resolves a date boundary from direct field config or validation fallback config. */
-  private resolveDateConstraint(key: DateConstraintKey): Date | null {
+  /** Resolves a date boundary from the validations array or direct field config fallback. */
+  private resolveDateBound(key: DateConstraintKey): Date | null {
     const validation = this.field.validations?.find(({ name }) => name === key);
-    return normalizeDateValue(this.field[key] ?? validation?.validator);
+    return resolveDateConstraint(validation?.validator ?? this.field[key]);
   }
 
   /** Normalizes custom and Angular Material error keys for the same validation rule. */
