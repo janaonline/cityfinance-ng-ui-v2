@@ -1,3 +1,5 @@
+@use '../../styles/xvi-fc-theme' as theme;
+
 :host { display: block; }
 
 .ulb-forms-page {
@@ -14,31 +16,17 @@
 
 // ── Grant band ────────────────────────────────────────────────────────────────
 .grant-band {
-  background:
-    radial-gradient(circle at 96% 0%, rgba(139, 218, 205, 0.16), transparent 22%),
-    radial-gradient(circle at 82% 92%, rgba(24, 90, 157, 0.22), transparent 20%),
-    linear-gradient(135deg, #073d43 0%, #0d615a 58%, #08515a 100%);
-  box-shadow: 0 16px 36px rgba(7, 61, 67, 0.2);
+  @include theme.grant-band-tokens;
+  @include theme.grant-band-surface;
   animation: rise-in 420ms ease-out both;
 
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
-      linear-gradient(110deg, transparent 0 74%, rgba(255, 255, 255, 0.08) 74% 100%);
-    background-size: 18px 18px, auto;
-  }
+  &::before { @include theme.grant-band-subtle-overlay; }
+  &::after  { @include theme.grant-band-left-bar; }
 }
 
-.grant-band__dots {
-  opacity: 0.7;
-  background:
-    radial-gradient(circle at 95% 15%, transparent 0 86px, rgba(255, 255, 255, 0.14) 87px 88px, transparent 89px),
-    radial-gradient(circle at 82% 96%, transparent 0 72px, rgba(255, 255, 255, 0.1) 73px 74px, transparent 75px);
-}
+.grant-band__deco    { @include theme.grant-band-deco-base; }
+.grant-band__deco--1 { @include theme.grant-band-deco-large; }
+.grant-band__deco--2 { @include theme.grant-band-deco-small; }
 
 .grant-band__eyebrow { color: #a8d8d2; font-size: 0.65rem; letter-spacing: 0.1em; }
 .grant-band__amount  { color: #ffffff; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.1; }

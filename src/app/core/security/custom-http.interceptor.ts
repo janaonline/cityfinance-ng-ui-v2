@@ -118,15 +118,15 @@ function handleError(
   options: { logoutOnUnauthorized: boolean },
 ) {
   switch (error.status) {
-    case 401:
+    case 401: // Unauthorized can occur when access token is invalid/expired. If logoutOnUnauthorized is true, we should logout the user to be safe. If it's false, it means this 401 occurred on a login request, so we should not logout but just show the error.
       if (options.logoutOnUnauthorized) {
         logoutRedirection(authService, router);
       }
       break;
-    case 403:
+    case 403: // Forbidden can occur when refresh token is invalid/expired or user doesn't have access to a resource. In both cases, we should logout the user to be safe.
       logoutRedirection(authService, router, false);
       break;
-    case 503:
+    case 503: // Service Unavailable can occur when backend is down or undergoing maintenance. Redirecting to a dedicated maintenance page.
       clearLocalStorage(authService);
       void router.navigate(['maintenance']);
       break;
