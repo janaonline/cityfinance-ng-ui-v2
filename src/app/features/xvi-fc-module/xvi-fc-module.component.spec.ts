@@ -12,7 +12,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { Subject } from 'rxjs';
-import { MenuItem, SideBarModel } from '../../shared/components/side-menu/interface';
+import { MenuItem, SideBarModel } from '../../shared/components/side-menu';
 import { XviFcModuleComponent } from './xvi-fc-module.component';
 import { XvifcModuleService } from './xvi-fc-module.service';
 import { Roles, XvifcYearId } from './xvi-fc-side-menu.config';

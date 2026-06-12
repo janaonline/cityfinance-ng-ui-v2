@@ -15,10 +15,14 @@ interface YearItem {
   year: string;
 }
 
-interface YearsApiResponse {
-  success: boolean;
-  data: YearItem[];
-  timestamp: string;
+interface DocumentYearEntry {
+  _id: string;
+  year: string;
+}
+
+export interface XvifcDocumentYears {
+  audited: DocumentYearEntry;
+  provisional: DocumentYearEntry;
 }
 
 interface StoredUser {
@@ -28,21 +32,38 @@ interface StoredUser {
   isXVIFCProfileVerified?: boolean;
 }
 
-const ROLE_MAP: Record<string, ProfileRole> = {
-  STATE: 'state',
-  XVIFC_STATE: 'state',
-  ULB: 'ulb',
-  XVIFC: 'ulb',
-  MoHUA: 'mohua',
+/**
+ * Financial year records for the document references in the 16th FC annual account.
+ * These are the FY-level years (not the grant year) used as yearId in uploaded documents.
+ * Hardcoded because they don't change — 2024-25 is always the audited year and
+ * 2025-26 is always the provisional year for this grant cycle.
+ */
+const DOCUMENT_YEARS: XvifcDocumentYears = {
+  audited: { _id: '606aafcf4dff55e6c075d424', year: '2024-25' },
+  provisional: { _id: '606aafda4dff55e6c075d48f', year: '2025-26' },
 };
 
-const ROUTE_ROLE_MAP: Record<string, Roles> = {
-  STATE: 'STATE',
-  XVIFC_STATE: 'STATE',
-  ULB: 'ULB',
-  XVIFC: 'ULB',
-  MoHUA: 'MOHUA',
-};
+export const XVIFC_LS_KEYS = {
+  selectedYearId: 'xvifc_selectedYearId',
+  selectedYearString: 'xvifc_selectedYearString',
+  documentYears: 'xvifc_document_years',
+} as const;
+
+function resolveProfileRole(userRole: string): ProfileRole {
+  const r = userRole.toUpperCase();
+  if (r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-')) return 'state';
+  if (r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-')) return 'ulb';
+  if (r === 'MOHUA') return 'mohua';
+  return 'state';
+}
+
+function resolveRouteRole(userRole: string): Roles {
+  const r = userRole.toUpperCase();
+  if (r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-')) return 'STATE';
+  if (r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-')) return 'ULB';
+  if (r === 'MOHUA') return 'MOHUA';
+  return 'STATE';
+}
 
 @Component({
   selector: 'app-years-selection',
@@ -64,11 +85,14 @@ export class YearsSelectionComponent implements OnInit {
   selectedYear = signal<string>('');
 
   ngOnInit(): void {
-    this.http.get<YearsApiResponse>(`${environment.api.url2}xvi-fc/years`).subscribe({
+    this.http.get<any>(`${environment.api.url2}xvi-fc/years`).subscribe({
       next: (response) => {
-        if (response.success && response.data.length > 0) {
-          this.yearItems = response.data;
-          const [first, ...rest] = response.data;
+        const items: YearItem[] = Array.isArray(response)
+          ? response
+          : (response?.data ?? []);
+        if (items.length > 0) {
+          this.yearItems = items;
+          const [first, ...rest] = items;
           this.activeYear.set(first.year);
           this.upcomingYears.set(rest.map((y) => y.year));
           this.selectedYear.set(first.year);
@@ -107,7 +131,10 @@ export class YearsSelectionComponent implements OnInit {
 
     const isVerified = standaloneKey === 'true' || userDataVerified;
 
-    localStorage.setItem('xvifc_selectedYearString', `FY-${yearString}`);
+    // Persist year context so child components can read it without walking the route tree
+    localStorage.setItem(XVIFC_LS_KEYS.selectedYearString, `FY-${yearString}`);
+    localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, yearId);
+    localStorage.setItem(XVIFC_LS_KEYS.documentYears, JSON.stringify(DOCUMENT_YEARS));
 
     if (isVerified) {
       this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
@@ -127,9 +154,9 @@ export class YearsSelectionComponent implements OnInit {
       const raw = localStorage.getItem('userData');
       if (!raw) return '';
       const user = JSON.parse(raw) as StoredUser;
-      const role = ROLE_MAP[user.role ?? ''] ?? 'state';
-      if (role === 'ulb') return user.ulb ?? '';
-      if (role === 'state') return user.state ?? '';
+      const profileRole = resolveProfileRole(user.role ?? '');
+      if (profileRole === 'ulb') return user.ulb ?? '';
+      if (profileRole === 'state') return user.state ?? '';
       return user.state ?? user.ulb ?? '';
     } catch {
       return '';
@@ -141,7 +168,7 @@ export class YearsSelectionComponent implements OnInit {
       const raw = localStorage.getItem('userData');
       if (!raw) return 'STATE';
       const user = JSON.parse(raw) as StoredUser;
-      return ROUTE_ROLE_MAP[user.role ?? ''] ?? 'STATE';
+      return resolveRouteRole(user.role ?? '');
     } catch {
       return 'STATE';
     }

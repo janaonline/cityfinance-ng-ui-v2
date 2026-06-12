@@ -7,6 +7,7 @@ export class GlobalLoaderService {
   loading = signal(false);
 
   isLayoutVisible = signal(true);
+  isFooterVisible = signal(true);
 
   constructor() { }
 

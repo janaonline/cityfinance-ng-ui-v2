@@ -1,4 +1,4 @@
-import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { SideBarModel } from '../../shared/components/side-menu';
 import { buildXvifcFeatureLink, Roles, XvifcYearId } from './xvi-fc-side-menu.config';
 
 type SideBarFactory = (yearId: XvifcYearId) => SideBarModel;
@@ -170,6 +170,11 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
         buildXvifcFeatureLink('DOE', MOCK_ENTITY_ID, yearId),
       ),
     ],
+    bottomModel: [],
+  }),
+
+  ADMIN: (_yearId) => ({
+    topModel: [],
     bottomModel: [],
   }),
 };

@@ -1,0 +1,181 @@
+:host {
+  display: block;
+}
+
+.page-heading {
+  font-size: 1.5rem;
+}
+
+.page-subtitle {
+  font-size: 0.82rem;
+}
+
+.upload-description {
+  font-size: 0.82rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.body-sm {
+  font-size: 0.82rem;
+}
+
+.body-xs {
+  font-size: 0.75rem;
+}
+
+.back-btn {
+  font-size: 0.82rem;
+  color: #374151;
+  border-radius: 0 !important;
+
+  ::ng-deep .mat-mdc-button-persistent-ripple,
+  ::ng-deep .mat-mdc-button-ripple {
+    display: none;
+  }
+
+  &:hover {
+    background: transparent !important;
+    color: #111827;
+  }
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: middle;
+  }
+}
+
+.mode-toggle {
+  display: inline-flex;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  font-size: 0.82rem;
+  padding: 0.35rem 1.1rem;
+  border: none;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  & + & {
+    border-left: 1px solid #d1d5db;
+  }
+
+  &--active {
+    background: #14532d;
+    color: #fff;
+  }
+
+  &:hover:not(.mode-btn--active) {
+    background: #f3f4f6;
+  }
+}
+
+.info-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+
+  p {
+    color: #1d4ed8;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+}
+
+.period-card {
+  border: none;
+  max-width: 540px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.period-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: #374151;
+}
+
+.period-label {
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.disclosure-badge {
+  font-size: 0.7rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 20px;
+  padding: 0.1rem 0.6rem;
+  white-space: nowrap;
+}
+
+.doc-step-box {
+  background: #f9fafb;
+  border-color: #e5e7eb !important;
+}
+
+.field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.supporting-doc-hint {
+  font-weight: 400;
+  color: #2563eb;
+}
+
+.input-group-text {
+  font-size: 0.82rem;
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.form-control {
+  font-size: 0.82rem;
+  border-color: #d1d5db;
+
+  &:focus {
+    border-color: #14532d;
+    box-shadow: 0 0 0 0.15rem rgba(20, 83, 45, 0.15);
+  }
+}
+
+.choose-file-btn {
+  font-size: 0.78rem;
+  border-color: #d1d5db;
+  color: #374151;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 0.75rem;
+
+  mat-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+}
+
+.save-btn {
+  font-size: 0.82rem;
+  background-color: #14532d;
+  color: #fff;
+
+  &[disabled] {
+    background-color: #e5e7eb;
+    color: #9ca3af;
+  }
+}
+
+.cancel-btn {
+  font-size: 0.82rem;
+  color: #374151;
+}

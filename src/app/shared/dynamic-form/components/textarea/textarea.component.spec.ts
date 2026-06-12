@@ -171,6 +171,29 @@ describe('TextareaComponent', () => {
     expect(errorElements.length).toBe(0);
   });
 
+  it('should render data-cy attribute on the textarea using field.key', () => {
+    component.field = createField({ key: 'additionalNotes' });
+    component.group = new FormGroup({ additionalNotes: new FormControl('') });
+
+    fixture.detectChanges();
+    const textarea: HTMLTextAreaElement = fixture.nativeElement.querySelector(
+      '[data-cy="additionalNotes-test"]',
+    );
+
+    expect(textarea).toBeTruthy();
+    expect(textarea.tagName.toLowerCase()).toBe('textarea');
+  });
+
+  it('should not set data-cy when field.key is falsy', () => {
+    component.field = createField({ key: '' });
+    component.group = new FormGroup({});
+
+    fixture.detectChanges();
+    const el = fixture.nativeElement.querySelector('[data-cy]');
+
+    expect(el).toBeNull();
+  });
+
   it('should bind to a different control key when field.key changes', () => {
     component.field = createField({
       key: 'notes',

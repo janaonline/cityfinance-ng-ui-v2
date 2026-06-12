@@ -18,6 +18,7 @@
 .component-menu {
   display: block;
   position: sticky;
-  top: 68px;
+  top: 0;
   z-index: 2;
+  height: 100%;
 }

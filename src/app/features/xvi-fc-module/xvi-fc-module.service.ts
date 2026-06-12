@@ -4,19 +4,15 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { Login_Logout } from '../../core/util/logout.util';
-import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { SideBarModel } from '../../shared/components/side-menu';
 import { XviFcSideMenuApiService } from './xvi-fc-side-menu.service';
-import {
-  ROLES,
-  Roles,
-  XVIFC_LANDING_ROUTE,
-  XvifcYearId,
-} from './xvi-fc-side-menu.config';
+import { ROLES, Roles, XVIFC_LANDING_ROUTE, XvifcYearId } from './xvi-fc-side-menu.config';
 
 export interface XvifcRouteContext {
   role: Roles;
   entityId: string;
   yearId: XvifcYearId;
+  yearString: string;
 }
 
 const EMPTY_SIDE_MENU_MODEL: SideBarModel = {
@@ -32,7 +28,13 @@ export class XvifcModuleService {
   private readonly authService = inject(AuthService);
   private readonly sideMenuApiService = inject(XviFcSideMenuApiService);
 
-  readonly availableYearIds: readonly XvifcYearId[] = ['2026-27', '2027-28', '2028-29', '2029-30'];
+  readonly availableYearIds: readonly XvifcYearId[] = [
+    '67d7d136d3d038946a5239e9',
+    '69de2593f75f68f3bda51421',
+    '69de2593f75f68f3bda51422',
+    '69de2593f75f68f3bda51423',
+    '69de2593f75f68f3bda51424',
+  ];
 
   private readonly resolvedContext = signal<XvifcRouteContext | null>(null);
   private readonly lastMenuRequestKey = signal<string | null>(null);
@@ -82,6 +84,11 @@ export class XvifcModuleService {
     this.resolvedContext.set(null);
   }
 
+  /** Executes the module's logout contract. */
+  logout(): void {
+    this.clearAuthDetailsAndRedirectToLandingPage();
+  }
+
   /**
    * Resolves the route context required to render a XVI-FC workspace.
    * Both role and year are mandatory for any in-feature route.
@@ -95,7 +102,8 @@ export class XvifcModuleService {
     }
 
     const entityId = this.resolveEntityId(snapshot);
-    return { role, entityId, yearId };
+    const yearString = this.resolveYearString();
+    return { role, entityId, yearId, yearString };
   }
 
   /**
@@ -142,11 +150,16 @@ export class XvifcModuleService {
       current = current.firstChild ?? null;
     }
 
-    // if (resolvedYearId !== null && !this.availableYearIds.includes(resolvedYearId)) {
-    //   return null;
-    // }
+    if (resolvedYearId !== null && !this.availableYearIds.includes(resolvedYearId)) {
+      return null;
+    }
 
     return resolvedYearId;
+  }
+
+  private resolveYearString(): string {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('xvifc_selectedYearString') : null;
+    return stored ? stored.replace(/^FY-/, '') : '';
   }
 
   /** Walks the nested route tree and returns the deepest `entityId` route param. */
@@ -187,7 +200,18 @@ export class XvifcModuleService {
 
     try {
       const menu = await this.buildSideMenuItems(context);
-      this.sideMenuModel.set(menu);
+      this.sideMenuModel.set({
+        ...menu,
+        bottomModel: [
+          // ...menu.bottomModel,
+          // { label: '', separator: true },
+          // {
+          //   label: 'Sign Out',
+          //   icon: 'bi bi-box-arrow-right',
+          //   command: () => this.logout(),
+          // },
+        ],
+      });
     } catch (error) {
       console.error('Failed to load side menu', error);
       this.sideMenuModel.set(EMPTY_SIDE_MENU_MODEL);

@@ -5,7 +5,7 @@ import { BehaviorSubject, Observable, Subject, catchError, filter, finalize, map
 
 import { environment } from '../../../environments/environment';
 import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
-
+import { AuthPermissionService } from '../auth/auth-permission.service';
 export interface AuthSessionState {
   isAuthenticated: boolean;
   isRefreshing: boolean;
@@ -43,7 +43,10 @@ export class AuthService {
   readonly currentUser$ = this.currentUserSubject.asObservable();
   readonly sessionState$ = this.sessionStateSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private authPermissionService: AuthPermissionService,
+  ) {
     this.removeLegacyRefreshTokenStorage();
     this.publishSessionState();
   }
@@ -93,21 +96,21 @@ export class AuthService {
     this.refreshRequest$ = this.http
       .post(this.refreshTokenUrl, {}, { withCredentials: true })
       .pipe(
-        map((response: any) => {
-          this.applyAuthResponse(response);
-          return response;
-        }),
-        catchError((error) => {
-          this.handleRefreshFailure(error);
-          return throwError(() => error);
-        }),
-        finalize(() => {
-          this.refreshRequest$ = null;
-          this.isRefreshing = false;
-          this.publishSessionState();
-        }),
-        shareReplay(1),
-      );
+      map((response: any) => {
+        this.applyAuthResponse(response);
+        return response;
+      }),
+      catchError((error) => {
+        this.handleRefreshFailure(error);
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.refreshRequest$ = null;
+        this.isRefreshing = false;
+        this.publishSessionState();
+      }),
+      shareReplay(1),
+    );
 
     return this.refreshRequest$;
   }
@@ -295,7 +298,7 @@ export class AuthService {
     return this.http.post<{ success: boolean; message: string }>(
       `${environment.api.url}captcha_validate`,
       {
-        recaptcha,
+      recaptcha,
       },
     );
   }
@@ -304,10 +307,10 @@ export class AuthService {
     const request$ = this.http
       .post(this.logoutUrl, {}, { withCredentials: true })
       .pipe(
-        catchError(() => of(null)),
-        finalize(() => this.clearLocalStorage()),
-        shareReplay(1),
-      );
+      catchError(() => of(null)),
+      finalize(() => this.clearLocalStorage()),
+      shareReplay(1),
+    );
 
     request$.subscribe({
       next: () => { },
@@ -336,6 +339,35 @@ export class AuthService {
       );
   }
 
+  checkUser(identifier: string, role: string): Observable<{
+    status?: string;
+    isXVIFCProfileVerified?: boolean;
+    maskedContact?: string;
+    loginFlow?: string;
+    message?: string;
+  }> {
+    return this.http.post<any>(`${environment.api.url2}auth/check-user`, { identifier, role }).pipe(
+      map((res: any) => (res?.data ?? res) as {
+            status?: string;
+            isXVIFCProfileVerified?: boolean;
+            maskedContact?: string;
+            loginFlow?: string;
+            message?: string;
+      }),
+    );
+  }
+
+  setPassword(identifier: string, newPassword: string, confirmPassword: string): Observable<{
+    success: boolean;
+    data: { message: string };
+  }> {
+    return this.http.post<{ success: boolean; data: { message: string } }>(
+      `${environment.api.url2}auth/set-password`,
+      { identifier, newPassword, confirmPassword },
+      { withCredentials: true },
+    );
+  }
+
   clearLocalStorage(excludeKeys = ['userInfo']) {
     this.clearAccessToken();
 
@@ -352,6 +384,7 @@ export class AuthService {
     sessionStorage.removeItem('sessionID');
     this.loginLogoutCheck.next(false);
     this.currentUserSubject.next(null);
+    this.authPermissionService.clearUser();
     this.isRefreshing = false;
     this.isRestoringSession = false;
     this.publishSessionState();
@@ -361,6 +394,7 @@ export class AuthService {
     localStorage.removeItem(key);
     if (key === 'userData') {
       this.currentUserSubject.next(null);
+      this.authPermissionService.clearUser();
       this.publishSessionState();
     }
   }
@@ -411,8 +445,8 @@ export class AuthService {
 
     if (currentUser) {
       localStorage.setItem('userData', JSON.stringify(currentUser));
+      this.authPermissionService.setUser(currentUser);
     }
-
     this.currentUserSubject.next(currentUser);
     this.removeLegacyRefreshTokenStorage();
     this.publishSessionState();

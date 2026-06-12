@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { UPLOAD_CONFIGS } from './ulb-forms/upload-documents/upload-documents.component';
+import { uploadDocumentsDeactivateGuard } from './ulb-forms/upload-documents/upload-documents-deactivate.guard';
 
 export const ULB_ROUTES: Routes = [
   {
@@ -19,6 +21,43 @@ export const ULB_ROUTES: Routes = [
         path: 'support-hours',
         loadComponent: () =>
           import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
+      },
+      {
+        path: 'ulb-forms',
+        loadComponent: () =>
+          import('./ulb-forms/ulb-forms.component').then((m) => m.UlbFormsComponent),
+      },
+      {
+        path: 'upload-audited',
+        loadComponent: () =>
+          import('./ulb-forms/upload-documents/upload-documents.component').then(
+            (m) => m.UploadDocumentsComponent,
+          ),
+        data: { config: UPLOAD_CONFIGS.audited },
+        canDeactivate: [uploadDocumentsDeactivateGuard],
+      },
+      {
+        path: 'upload-provisional',
+        loadComponent: () =>
+          import('./ulb-forms/upload-documents/upload-documents.component').then(
+            (m) => m.UploadDocumentsComponent,
+          ),
+        data: { config: UPLOAD_CONFIGS.provisional },
+        canDeactivate: [uploadDocumentsDeactivateGuard],
+      },
+      {
+        path: 'fill-disclosure',
+        loadComponent: () =>
+          import('./ulb-forms/fill-disclosure/fill-disclosure.component').then(
+            (m) => m.FillDisclosureComponent,
+          ),
+      },
+      {
+        path: 'roles-teams-unified-view',
+        loadComponent: () =>
+          import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+            (m) => m.RolesTeamsOverviewComponent,
+          ),
       },
       {
         path: '**',

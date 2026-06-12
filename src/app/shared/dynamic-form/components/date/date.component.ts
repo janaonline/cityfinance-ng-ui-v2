@@ -27,7 +27,9 @@ type DateConstraintKey = 'minDate' | 'maxDate';
     MatIconModule,
   ],
   template: `
-    <label [for]="field.key" class="fw-bold">{{ field.label }}</label>
+    @if (!field.hideLabel) {
+      <label [for]="field.key" class="fw-semibold">{{ field.label }}</label>
+    }
 
     <mat-form-field class="margin-top" [appearance]="appearance" [formGroup]="group">
       <input
@@ -38,6 +40,7 @@ type DateConstraintKey = 'minDate' | 'maxDate';
         [readonly]="isReadonly"
         [min]="minDate"
         [max]="maxDate"
+        [attr.data-cy]="field.key ? field.key + '-test' : null"
       />
 
       <mat-datepicker-toggle

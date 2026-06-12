@@ -1,146 +1,410 @@
-<div class="pv-overlay">
-  <div class="pv-card">
-    <!-- Header -->
-    <div class="pv-card__header">
-      <p class="pv-tag">16th Finance Commission · Grant Portal</p>
-      <h2>Welcome back. Please verify your profile.</h2>
-      <p class="pv-subtitle">
-        This is a new portal for the 16th FC cycle. Confirm that your contact details are correct
-        before you continue.
-      </p>
-    </div>
+<div class="pv-page">
+  <div class="container-xl py-3 py-md-4">
+    <div class="row g-4 align-items-stretch">
 
-    <!-- Body -->
-    <div class="pv-card__body">
-      @if (isLoading) {
-        <div class="pv-loading">
-          <div class="pv-spinner"></div>
-          <span>Loading your profile…</span>
-        </div>
-      } @else {
-        @if (errorMessage) {
-          <div class="pv-error-banner">{{ errorMessage }}</div>
-        }
+      <!-- ══════════════════════════════════════════════════════
+           LEFT COLUMN — 40% — Entity info (sticky)
+      ══════════════════════════════════════════════════════ -->
+      <div class="col-lg-5 d-flex flex-column">
+        <div class="pv-hero flex-grow-1">
 
-        <!-- Info banner -->
-        <div class="pv-info-banner">
-          <svg class="pv-info-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7.5" stroke="#1d7a6b" stroke-width="1" />
-            <path d="M8 7v5" stroke="#1d7a6b" stroke-width="1.5" stroke-linecap="round" />
-            <circle cx="8" cy="5" r="0.75" fill="#1d7a6b" />
-          </svg>
-          <span>
-            Details below are pre-filled from 15th FC records. Review and correct anything that has
-            changed.
+          <span class="pv-hero__fc-label">
+            <i class="bi bi-award-fill"></i>
+            16<sup>th</sup> Finance Commission · Grant Portal
           </span>
-        </div>
 
-        <form [formGroup]="form" (ngSubmit)="onConfirm()">
-
-          <!-- ULB-specific pre-filled fields -->
-          @if (role === 'ulb') {
-            <div class="pv-field">
-              <div class="pv-label-row">
-                <label class="pv-label" for="ulbName">ULB Name</label>
-                <span class="pv-badge">Prefilled</span>
-              </div>
-              <input id="ulbName" class="pv-input pv-input--readonly" type="text" [value]="ulbName" readonly />
+          @if (entityInfo(); as info) {
+            <h1 class="pv-hero__name">{{ info.entityName || '—' }}</h1>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="pv-chip pv-chip--teal">
+                <i class="bi {{ getRoleIcon() }}"></i> {{ getRoleBadgeLabel() }}
+              </span>
+              @if (info.stateName) {
+                <span class="pv-chip pv-chip--blue">
+                  <i class="bi bi-map-fill"></i> {{ info.stateName }}
+                </span>
+              }
+              @if (info.entityCode) {
+                <span class="pv-chip pv-chip--purple">
+                  <i class="bi bi-upc-scan"></i> {{ info.entityCode }}
+                </span>
+              }
+              @if (info.entityType) {
+                <span class="pv-chip pv-chip--orange">
+                  <i class="bi bi-tag-fill"></i> {{ info.entityType }}
+                </span>
+              }
             </div>
-
-            <div class="pv-row">
-              <div class="pv-field">
-                <div class="pv-label-row">
-                  <label class="pv-label" for="ulbCode">ULB Code</label>
-                  <span class="pv-badge">Prefilled</span>
-                </div>
-                <input id="ulbCode" class="pv-input pv-input--readonly" type="text" [value]="ulbCode" readonly />
-              </div>
-              <div class="pv-field">
-                <div class="pv-label-row">
-                  <label class="pv-label" for="ulbType">ULB Type</label>
-                  <span class="pv-badge">Prefilled</span>
-                </div>
-                <input id="ulbType" class="pv-input pv-input--readonly" type="text" [value]="ulbType" readonly />
-              </div>
+          } @else {
+            <div class="pv-sk-dark mb-2" style="width:200px;height:22px;border-radius:6px;"></div>
+            <div class="d-flex gap-2 mb-3">
+              <div class="pv-sk-dark" style="width:68px;height:24px;border-radius:20px;"></div>
+              <div class="pv-sk-dark" style="width:88px;height:24px;border-radius:20px;"></div>
             </div>
           }
 
-          <!-- State field (shown for all roles) -->
-          <div class="pv-field">
-            <div class="pv-label-row">
-              <label class="pv-label" for="stateName">State</label>
-              <span class="pv-badge">Prefilled</span>
-            </div>
-            <input id="stateName" class="pv-input pv-input--readonly" type="text" [value]="stateName" readonly />
-          </div>
+          <div class="pv-hero__divider"></div>
 
-          <!-- Contact details section -->
-          <p class="pv-section-title">Your Contact Details</p>
-
-          <div class="pv-field">
-            <label class="pv-label" for="contactPersonName">Contact Person Name</label>
-            <input
-              id="contactPersonName"
-              class="pv-input"
-              type="text"
-              formControlName="contactPersonName"
-              placeholder="Enter full name"
-            />
-          </div>
-
-          <div class="pv-field">
-            <label class="pv-label" for="designation">Designation</label>
-            <input
-              id="designation"
-              class="pv-input"
-              type="text"
-              formControlName="designation"
-              placeholder="Enter designation"
-            />
-          </div>
-
-          <div class="pv-row">
-            <div class="pv-field">
-              <label class="pv-label" for="officialEmail">Official Email</label>
-              <input
-                id="officialEmail"
-                class="pv-input"
-                type="email"
-                formControlName="officialEmail"
-                placeholder="Enter official email"
-              />
-            </div>
-            <div class="pv-field">
-              <label class="pv-label" for="mobileNumber">Mobile Number</label>
-              <input
-                id="mobileNumber"
-                class="pv-input"
-                type="tel"
-                formControlName="mobileNumber"
-                placeholder="+91 XXXXX XXXXX"
-              />
-            </div>
-          </div>
-
-          <p class="pv-note">
-            Please ensure these details are correct. This is where you will receive all
-            notifications, alerts, and reminders.
+          <h2 class="pv-hero__welcome-title">Welcome back. Please verify your profile.</h2>
+          <p class="pv-hero__welcome-sub">
+            Find your name in the list and click <strong>Verify</strong> to receive an OTP.
+            Details are pre-filled from 15th FC records - only one person needs to verify.
           </p>
 
-          <div class="pv-footer">
-            <p class="pv-footer-text">
-              @if (role === 'ulb') {
-                You can update these details anytime from Accounts &amp; People.
-              } @else {
-                You can update these details anytime from your profile settings.
-              }
-            </p>
-            <button class="pv-confirm-btn" type="submit" [disabled]="form.invalid || isSubmitting">
-              {{ isSubmitting ? 'Saving…' : 'Confirm & Continue' }}
+          <!-- Step indicator -->
+          <div class="pv-steps">
+            <div class="pv-step pv-step--active">
+              <div class="pv-step__dot">1</div>
+              <span class="pv-step__lbl">Find your name</span>
+            </div>
+            <div class="pv-step__line"></div>
+            <div class="pv-step">
+              <div class="pv-step__dot">2</div>
+              <span class="pv-step__lbl">Verify with OTP</span>
+            </div>
+            <div class="pv-step__line"></div>
+            <div class="pv-step">
+              <div class="pv-step__dot">3</div>
+              <span class="pv-step__lbl">Access portal</span>
+            </div>
+          </div>
+
+          <!-- Security note -->
+          <div class="pv-hero__footer">
+            <i class="bi bi-shield-lock-fill"></i>
+            Secure &amp; Encrypted · 16th FC Grant Portal
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           RIGHT COLUMN — 60% — Registered Contacts
+      ══════════════════════════════════════════════════════ -->
+      <div class="col-lg-7">
+
+        <!-- Error alert -->
+        @if (errorMsg()) {
+          <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+            <span class="flex-grow-1">{{ errorMsg() }}</span>
+            <button type="button" class="btn btn-sm btn-link p-0 text-danger" (click)="errorMsg.set('')">
+              <i class="bi bi-x-lg"></i>
             </button>
           </div>
-        </form>
-      }
+        }
+
+        <!-- Section heading -->
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <div class="pv-section-icon">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <span class="pv-section-title">Registered Contacts</span>
+          </div>
+          @if (!isLoading()) {
+            <span class="pv-count-badge">
+              {{ (entityInfo()?.profiles ?? []).length }} found
+            </span>
+          }
+        </div>
+
+        <!-- Loading skeletons -->
+        @if (isLoading()) {
+          <div class="d-flex flex-column gap-2 mb-3">
+            @for (_ of skeletonRows; track $index) {
+              <div class="pv-card-shell overflow-hidden">
+                <div class="d-flex align-items-stretch">
+                  <div class="d-flex flex-column align-items-center justify-content-center gap-2 p-3" style="min-width:96px;background:#f0f8fa;border-right:1px solid #e5e7eb;">
+                    <div class="pv-sk pv-sk--avatar"></div>
+                    <div class="pv-sk" style="width:64px;height:26px;border-radius:6px;"></div>
+                  </div>
+                  <div class="flex-grow-1 p-3">
+                    <div class="pv-sk d-block mb-2" style="width:48%;height:13px;"></div>
+                    <div class="pv-sk d-block mb-2" style="width:28%;height:11px;"></div>
+                    <div class="pv-sk d-block" style="width:60%;height:11px;"></div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Profile cards -->
+        @else if ((entityInfo()?.profiles ?? []).length > 0) {
+          <div class="d-flex flex-column gap-2 mb-3">
+            @for (profile of entityInfo()!.profiles; track getProfileKey(profile); let i = $index) {
+              <div
+                class="pv-card pv-card--{{ i % 4 }}"
+                [class.pv-card--expanded]="expandedKey() === getProfileKey(profile)"
+              >
+                <div class="pv-card__main">
+                  <!-- Left: avatar panel -->
+                  <div class="pv-card__action">
+                    <div class="pv-avatar pv-avatar--{{ i % 4 }}">{{ getInitials(profile.name) }}</div>
+                  </div>
+
+                  <!-- Middle: info -->
+                  <div class="pv-card__info">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <span class="pv-card__name">{{ profile.name }}</span>
+                      <span class="pv-card__num">#{{ i + 1 }}</span>
+                    </div>
+                    @if (profile.designation) {
+                      <div class="pv-card__designation mb-1">{{ profile.designation }}</div>
+                    }
+                    <div class="d-flex flex-wrap gap-3">
+                      @if (profile.email) {
+                        <span class="pv-contact">
+                          <i class="bi bi-envelope-fill"></i>{{ profile.email }}
+                        </span>
+                      }
+                      @if (getMobile(profile)) {
+                        <span class="pv-contact">
+                          <i class="bi bi-phone-fill"></i>{{ getMobile(profile) }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Right: verify button -->
+                  <div class="pv-card__btn-col">
+                    <button
+                      class="pv-verify-btn pv-verify-btn--{{ i % 4 }}"
+                      [class.pv-verify-btn--cancel]="expandedKey() === getProfileKey(profile)"
+                      [disabled]="verifyingKey() !== null && verifyingKey() !== getProfileKey(profile)"
+                      (click)="toggleExpand(getProfileKey(profile))"
+                      type="button"
+                    >
+                      @if (expandedKey() === getProfileKey(profile)) {
+                        <i class="bi bi-x-lg"></i> Cancel
+                      } @else {
+                        <i class="bi bi-patch-check-fill"></i> Verify
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                <!-- OTP expand panel -->
+                <div class="pv-card__expand">
+                  <div class="pv-otp-panel">
+                    @if (otpSentKey() !== getProfileKey(profile)) {
+                      <p class="pv-otp-hint">
+                        <i class="bi bi-phone-vibrate-fill"></i>
+                        Confirm your mobile and email. An OTP will be sent to your mobile number.
+                      </p>
+
+                      <div class="pv-input-wrap mb-2">
+                        <i class="bi bi-envelope-fill pv-input-icon"></i>
+                        <input
+                          class="pv-bare-input"
+                          type="email"
+                          inputmode="email"
+                          [value]="getEmail(profile)"
+                          (input)="onEmailInput(getProfileKey(profile), $event)"
+                          placeholder="Official email address"
+                        />
+                        <span class="pv-edit-tag"><i class="bi bi-pencil-fill"></i> edit</span>
+                      </div>
+
+                      <div class="row g-2">
+                        <div class="col">
+                          <div class="pv-input-wrap">
+                            <i class="bi bi-phone-fill pv-input-icon"></i>
+                            <input
+                              class="pv-bare-input"
+                              type="tel"
+                              inputmode="numeric"
+                              maxlength="10"
+                              [value]="getMobile(profile)"
+                              (input)="onMobileInput(getProfileKey(profile), $event)"
+                              placeholder="10-digit mobile"
+                            />
+                            <span class="pv-edit-tag"><i class="bi bi-pencil-fill"></i> edit</span>
+                          </div>
+                        </div>
+                        <div class="col-auto">
+                          <button
+                            class="pv-action-btn pv-action-btn--send"
+                            type="button"
+                            [disabled]="sendingOtpKey() === getProfileKey(profile)"
+                            (click)="sendOtp(profile)"
+                          >
+                            @if (sendingOtpKey() === getProfileKey(profile)) {
+                              <span class="pv-spin"></span> Sending…
+                            } @else {
+                              <i class="bi bi-send-fill"></i> Send OTP
+                            }
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="pv-otp-sent-notice">
+                        <i class="bi bi-check-circle-fill"></i>
+                        OTP sent to <strong>{{ getMobile(profile) }}</strong>
+                        <button class="pv-resend-btn" type="button" (click)="sendOtp(profile)">
+                          Resend
+                        </button>
+                      </div>
+                      <div class="row g-2">
+                        <div class="col">
+                          <div class="pv-input-wrap">
+                            <i class="bi bi-key-fill pv-input-icon"></i>
+                            <input
+                              class="pv-bare-input pv-otp-input"
+                              type="tel"
+                              inputmode="numeric"
+                              maxlength="4"
+                              placeholder="Enter 4-digit OTP"
+                              [value]="otpValues()[getProfileKey(profile)] ?? ''"
+                              (input)="onOtpInput(getProfileKey(profile), $event)"
+                            />
+                          </div>
+                        </div>
+                        <div class="col-auto">
+                          <button
+                            class="pv-action-btn pv-action-btn--confirm"
+                            type="button"
+                            [disabled]="verifyingKey() === getProfileKey(profile)"
+                            (click)="confirmVerify(profile)"
+                          >
+                            @if (verifyingKey() === getProfileKey(profile)) {
+                              <span class="pv-spin pv-spin--light"></span> Verifying…
+                            } @else {
+                              <i class="bi bi-shield-check"></i> Confirm Identity
+                            }
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Empty state -->
+        @else {
+          <div class="pv-empty mb-3">
+            <div class="pv-empty__icon">
+              <i class="bi bi-person-x"></i>
+            </div>
+            <p class="pv-empty__title">No contacts found</p>
+            <p class="pv-empty__sub">No profiles in records. Add yourself using the form below.</p>
+          </div>
+        }
+
+        <!-- ── Request Access ──────────────────────────────── -->
+        <div class="pv-request mb-3" [class.pv-request--open]="showAddForm()">
+          <button class="pv-request__trigger" type="button" (click)="toggleAddForm()">
+            <span class="pv-req-icon">
+              <i class="bi bi-person-plus-fill"></i>
+            </span>
+            <span class="pv-request__text">
+              <span class="pv-request__title">Not seeing your name?</span>
+              <span class="pv-request__sub">Fill in your details to request access</span>
+            </span>
+            <span class="pv-request__badge">Request Access</span>
+            <i
+              class="bi ms-2"
+              [class.bi-chevron-down]="!showAddForm()"
+              [class.bi-chevron-up]="showAddForm()"
+            ></i>
+          </button>
+
+          <div class="pv-request__body">
+            <div class="pv-request__inner">
+              <div class="pv-info-notice">
+                <i class="bi bi-info-circle-fill"></i>
+                Your details will be added and sent for verification. You'll receive portal access
+                once confirmed.
+              </div>
+
+              <form [formGroup]="addForm" (ngSubmit)="submitAddForm()">
+                <p class="pv-form-section-label">
+                  <i class="bi bi-person-vcard-fill"></i> Personal Info
+                </p>
+                <div class="row g-3 mb-2">
+                  <div class="col-sm-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Full Name</mat-label>
+                      <input matInput formControlName="name" placeholder="Your full name" />
+                      @if (addForm.controls.name.invalid && addForm.controls.name.touched) {
+                        <mat-error>Name is required</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+                  <div class="col-sm-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Designation</mat-label>
+                      <input
+                        matInput
+                        formControlName="designation"
+                        placeholder="e.g. Deputy Commissioner"
+                      />
+                      @if (
+                        addForm.controls.designation.invalid &&
+                        addForm.controls.designation.touched
+                      ) {
+                        <mat-error>Designation is required</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+                </div>
+
+                <p class="pv-form-section-label">
+                  <i class="bi bi-envelope-at-fill"></i> Contact Details
+                </p>
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Official Email</mat-label>
+                      <input matInput type="email" formControlName="email" placeholder="name@gov.in" />
+                      @if (addForm.controls.email.invalid && addForm.controls.email.touched) {
+                        <mat-error>Valid email is required</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+                  <div class="col-sm-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Mobile Number</mat-label>
+                      <input
+                        matInput
+                        type="tel"
+                        formControlName="mobile"
+                        placeholder="10-digit number"
+                        inputmode="numeric"
+                      />
+                      @if (addForm.controls.mobile.invalid && addForm.controls.mobile.touched) {
+                        <mat-error>Valid 10-digit mobile required</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="submit"
+                    class="pv-submit-btn"
+                    [disabled]="addFormSubmitting()"
+                  >
+                    @if (addFormSubmitting()) {
+                      <span class="pv-spin pv-spin--light"></span> Submitting…
+                    } @else {
+                      <i class="bi bi-send-check-fill me-1"></i> Submit &amp; Request Access
+                    }
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- /right column -->
+
     </div>
   </div>
 </div>
