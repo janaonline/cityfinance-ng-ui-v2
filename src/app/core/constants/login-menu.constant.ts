@@ -6,23 +6,25 @@ export interface IRoutePages {
     label: string;
     link?: string;
     isMenu: boolean;
+    isNew?: boolean;
     route?: string;
     roles?: USER_TYPE[];
 }
 export const ROUTE_PAGES: IRoutePages[] = [{
+    type: '16thFC',
+    label: 'XVI FC Grant',
+    route: '/xvifc/year',
+    isMenu: true,
+    isNew: true,
+    roles: [USER_TYPE.ULB, USER_TYPE.STATE, USER_TYPE.MoHUA, USER_TYPE.ADMIN]
+}, {
     type: '15thFC',
     label: 'XV FC Grant',
     link: '/fc-home-page',
     isMenu: true,
     roles: [USER_TYPE.ULB, USER_TYPE.STATE, USER_TYPE.MoHUA, USER_TYPE.ADMIN, USER_TYPE.PARTNER]
 },
-//  {
-//     type: '16thFC',
-//     label: 'XVI FC Grant',
-//     route: '/xvifc/year',
-//     isMenu: true,
-//     roles: [USER_TYPE.ULB, USER_TYPE.STATE, USER_TYPE.MoHUA, USER_TYPE.ADMIN]
-// },
+
 {
     type: 'XVIFC',
     label: 'XVI FC Data Collection',

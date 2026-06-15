@@ -1,3 +1,5 @@
+@use '../../styles/xvi-fc-theme' as theme;
+
 :host {
   display: block;
 }
@@ -17,58 +19,20 @@
 }
 
 .ap-overview__hero {
+  @include theme.grant-band-tokens;
+  @include theme.grant-band-surface;
   border-radius: 1rem;
   padding: 1.1rem 1.4rem;
-  background: linear-gradient(135deg, #114551 0%, #0f4c4d 60%, #0a5a56 100%);
-  box-shadow: 0 8px 24px rgba(17, 69, 81, 0.2);
   position: relative;
   overflow: hidden;
 }
 
-.ap-overview__hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 22px 22px;
-  opacity: 0.28;
-  pointer-events: none;
-}
+.ap-overview__hero::before { @include theme.grant-band-subtle-overlay; }
+.ap-overview__hero::after  { @include theme.grant-band-left-bar; }
 
-.ap-overview__hero::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 100%);
-  border-radius: 4px 0 0 4px;
-}
-
-.hero-deco {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.hero-deco--1 {
-  width: 180px;
-  height: 180px;
-  top: -60px;
-  right: -45px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid rgba(255, 255, 255, 0.09);
-}
-
-.hero-deco--2 {
-  width: 100px;
-  height: 100px;
-  bottom: -36px;
-  right: 140px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
-}
+.hero-deco     { @include theme.grant-band-deco-base; }
+.hero-deco--1  { @include theme.grant-band-deco-large; }
+.hero-deco--2  { @include theme.grant-band-deco-small; }
 
 .overview-container {
   position: relative;
@@ -223,6 +187,23 @@
   line-height: 1;
   font-weight: 800;
   letter-spacing: -0.05em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.grant-content__amount-suffix {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: rgba(31, 31, 31, 0.6);
+}
+
+.grant-content__description {
+  color: rgba(31, 31, 31, 0.75);
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 .grant-points {
@@ -238,6 +219,16 @@
 
 .grant-points li::marker {
   color: #176c6d;
+}
+
+.grant-points--nested {
+  margin-left: 0.5rem;
+}
+
+.grant-content__note {
+  color: rgba(31, 31, 31, 0.65);
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
 @media (max-width: 991.98px) {

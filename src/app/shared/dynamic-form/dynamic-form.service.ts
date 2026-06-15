@@ -14,6 +14,7 @@ import {
 } from '../../core/validators/comparison.validator';
 import { FieldConfig, UploadedFileValue } from './field.interface';
 import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
+import { yearRangeValidator } from '../../core/validators/year-range.validator';
 import { toUtcIsoDateString } from './components/date/utc-iso-date-adapter';
 
 @Injectable({
@@ -208,6 +209,9 @@ export class DynamicFormService {
           case 'required':
             validators.push(Validators.required);
             break;
+          case 'requiredTrue':
+            validators.push(Validators.requiredTrue);
+            break;
           case 'nullValidator':
             validators.push(Validators.nullValidator);
             break;
@@ -236,6 +240,9 @@ export class DynamicFormService {
             break;
           case 'email':
             validators.push(Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$'));
+            break;
+          case 'yearRange':
+            validators.push(yearRangeValidator(row.validator));
             break;
         }
       });
@@ -270,7 +277,7 @@ export class DynamicFormService {
     fields.forEach((field: any) => {
       const fieldFormArrays = field.data || field.formArrays;
       if (fieldFormArrays && fieldFormArrays.length) {
-        let formArrays: any[] = [];
+        const formArrays: any[] = [];
         const validators: any = [];
         fieldFormArrays.forEach((childField: any) => {
           const compareValid = childField.validations?.find(

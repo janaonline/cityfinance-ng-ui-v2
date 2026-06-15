@@ -118,13 +118,42 @@
               <div class="grant-content" [attr.id]="'panel-' + activeGrant.id" role="tabpanel">
                 <p class="grant-content__eyebrow mb-2">{{ activeGrant.componentLabel }}</p>
                 <h3 class="grant-content__title mb-2">{{ activeGrant.title }}</h3>
-                <div class="grant-content__amount mb-4">{{ activeGrant.amount }}</div>
+
+                @if (activeGrant.amount) {
+                  <div class="grant-content__amount mb-4">
+                    {{ activeGrant.amount }}
+                    @if (activeGrant.amountSuffix) {
+                      <span class="grant-content__amount-suffix">{{ activeGrant.amountSuffix }}</span>
+                    }
+                  </div>
+                }
+
+                @if (activeGrant.description) {
+                  <p class="grant-content__description mb-3">{{ activeGrant.description }}</p>
+                }
 
                 <ul class="grant-points mb-0">
-                  @for (point of activeGrant.points; track point) {
-                    <li>{{ point }}</li>
+                  @for (point of activeGrant.points; track $index) {
+                    @if (isGrantPoint(point)) {
+                      <li>
+                        {{ point.text }}
+                        @if (point.subPoints?.length) {
+                          <ul class="grant-points grant-points--nested mt-2">
+                            @for (sub of point.subPoints; track sub) {
+                              <li>{{ sub }}</li>
+                            }
+                          </ul>
+                        }
+                      </li>
+                    } @else {
+                      <li>{{ point }}</li>
+                    }
                   }
                 </ul>
+
+                @if (activeGrant.note) {
+                  <p class="grant-content__note mt-3 mb-0">{{ activeGrant.note }}</p>
+                }
               </div>
             }
           </div>

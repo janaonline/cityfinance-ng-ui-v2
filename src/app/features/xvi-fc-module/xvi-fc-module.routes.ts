@@ -1,9 +1,5 @@
 import { CanMatchFn, Routes } from '@angular/router';
 
-const ULB_ROLES = new Set(['ULB', 'XVIFC']);
-const STATE_ROLES = new Set(['STATE', 'XVIFC_STATE']);
-const MOHUA_ROLES = new Set(['MoHUA']);
-
 function readUserRole(): string {
   try {
     const raw = localStorage.getItem('userData');
@@ -13,14 +9,24 @@ function readUserRole(): string {
   }
 }
 
-const isUlbRole: CanMatchFn = () => ULB_ROLES.has(readUserRole());
-const isStateRole: CanMatchFn = () => STATE_ROLES.has(readUserRole());
-const isMohuaRole: CanMatchFn = () => MOHUA_ROLES.has(readUserRole());
+function isUlbUserRole(role: string): boolean {
+  const r = role.toUpperCase();
+  return r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-');
+}
+
+function isStateUserRole(role: string): boolean {
+  const r = role.toUpperCase();
+  return r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-');
+}
+
+const isUlbRole: CanMatchFn = () => isUlbUserRole(readUserRole());
+const isStateRole: CanMatchFn = () => isStateUserRole(readUserRole());
+const isMohuaRole: CanMatchFn = () => readUserRole() === 'MoHUA';
+const isAdminRole: CanMatchFn = () => readUserRole().toUpperCase() === 'ADMIN';
 
 export const XVIFC_ROUTES: Routes = [
   {
     path: 'year',
-    pathMatch: 'full',
     loadComponent: () =>
       import('./shared/years-selection/years-selection.component').then(
         (m) => m.YearsSelectionComponent,
@@ -28,7 +34,6 @@ export const XVIFC_ROUTES: Routes = [
   },
   {
     path: 'profile-verify',
-    pathMatch: 'full',
     loadComponent: () =>
       import('./shared/profile-verification/profile-verification.component').then(
         (m) => m.ProfileVerificationComponent,
@@ -58,14 +63,23 @@ export const XVIFC_ROUTES: Routes = [
         loadChildren: () =>
           import('./mohua-module/mohua-module.routes').then((m) => m.MOHUA_ROUTES),
       },
+      // Authenticated user with unsupported role, or unknown child path
+      {
+        path: ':yearId',
+        canMatch: [isAdminRole],
+        data: { role: 'ADMIN' },
+        loadChildren: () =>
+          import('./admin-module/admin-module.routes').then((m) => m.ADMIN_ROUTES),
+      },
       {
         path: '**',
-        redirectTo: '',
+        redirectTo: '/xvifc/year',
       },
     ],
   },
+  // Unknown top-level path inside /xvifc
   {
     path: '**',
-    redirectTo: '',
+    redirectTo: '/xvifc/year',
   },
 ];

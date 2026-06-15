@@ -1,5 +1,5 @@
 @if (showStandaloneLabel()) {
-  <label [for]="fileInputId" class="fw-bold m-0">{{ fieldLabel() }}</label>
+  <label [for]="fileInputId" class="fw-semibold m-0">{{ fieldLabel() }}</label>
 }
 
 @if (!isReadonly()) {
@@ -12,6 +12,7 @@
     tabindex="-1"
     aria-hidden="true"
     (change)="fileBrowseHandler($event)"
+    [attr.data-cy]="field().key ? field().key + '-file-input-test' : null"
   />
 }
 
@@ -23,23 +24,24 @@
       @if (!isReadonly()) {
         <button
           type="button"
-          class="btn btn-success d-inline-flex align-items-center gap-2"
+          [class]="'btn ' + fileColorClass() + ' d-inline-flex align-items-center gap-2'"
           [disabled]="isUploading()"
           [attr.aria-busy]="isUploading()"
           [attr.aria-describedby]="showError() ? fileInputId + '-error' : null"
           (click)="openFileBrowser()"
+          [attr.data-cy]="field().key ? field().key + '-test' : null"
         >
           @if (showButtonUploadedState()) {
             <i class="bi bi-check2"></i>
             <span>Uploaded</span>
           } @else {
-            <i class="bi bi-upload"></i>
+            <i [class]="field().appearance?.icon ? fileIconClass() : 'bi bi-upload'"></i>
             <span>{{ uploadPromptLabel() }}</span>
           }
         </button>
       } @else if (showButtonUploadedState()) {
         <span
-          class="btn btn-success disabled d-inline-flex align-items-center gap-2"
+          [class]="'btn ' + fileColorClass() + ' disabled d-inline-flex align-items-center gap-2'"
           aria-disabled="true"
         >
           <i class="bi bi-check2"></i>
@@ -55,6 +57,7 @@
             target="_blank"
             rel="noopener noreferrer"
             [attr.aria-label]="'View file ' + uploadedFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
           >
             <i class="bi bi-eye fs-5 mx-1 text-dark" title="View file"></i>
           </a>
@@ -66,6 +69,7 @@
             class="file-icon-button m-0 p-0 border-0 bg-transparent"
             [attr.aria-label]="'Remove file ' + uploadedFile.name"
             (click)="deleteFile()"
+            [attr.data-cy]="field().key ? field().key + '-remove-test' : null"
           >
             <i class="bi bi-x-circle fs-5 mx-1 text-danger" title="Remove file"></i>
           </button>
@@ -85,7 +89,7 @@
 } @else {
   @if (!isReadonly()) {
     <div
-      class="file-dropzone mb-1"
+      [class]="'file-dropzone mb-1 ' + fileDropzoneClass()"
       appDnd
       role="button"
       [attr.tabindex]="canSelectFile() ? 0 : -1"
@@ -96,10 +100,14 @@
       (click)="openFileBrowser()"
       (keydown)="onDropzoneKeydown($event)"
       (fileDropped)="onFileDropped($event)"
+      [attr.data-cy]="field().key ? field().key + '-test' : null"
     >
-      <i class="bi bi-file-earmark-arrow-up-fill fs-4 text-cfPrimary"></i>
-      <p class="fw-bold m-0">{{ uploadPromptLabel() }}</p>
+      <i [class]="fileIconClass() + ' fs-4 ' + fileIconColorClass()"></i>
+      <p class="fw-semibold m-0">{{ uploadPromptLabel() }}</p>
       <small class="text-secondary">Drag and drop the file here.</small>
+      @if (fileRequirementText()) {
+        <small class="text-secondary">{{ fileRequirementText() }}</small>
+      }
     </div>
   }
 
@@ -139,6 +147,7 @@
             target="_blank"
             rel="noopener noreferrer"
             [attr.aria-label]="'View file ' + displayFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
           >
             <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
           </a>
@@ -150,6 +159,7 @@
             class="file-icon-button align-self-center"
             [attr.aria-label]="'Remove file ' + displayFile.name"
             (click)="deleteFile()"
+            [attr.data-cy]="field().key ? field().key + '-remove-test' : null"
           >
             <mat-icon class="text-danger fs-3 me-1" title="Remove file">delete_forever</mat-icon>
           </button>
@@ -169,7 +179,12 @@
 }
 
 @if (showError()) {
-  <div [id]="fileInputId + '-error'" class="text-danger small mt-2" role="alert">
+  <div
+    [id]="fileInputId + '-error'"
+    class="text-danger small mt-2"
+    role="alert"
+    [attr.data-cy]="field().key ? field().key + '-error-test' : null"
+  >
     {{ errorMessage() }}
   </div>
 }

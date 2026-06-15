@@ -1,19 +1,17 @@
-export interface ProfileVerificationApiResponse {
-  stateName: string;
-  contactPersonName: string;
+export interface ProfileItem {
+  id?: string;
+  _id?: string;
+  name: string;
   designation: string;
-  officialEmail: string;
-  mobileNumber: string;
-  // ULB-only pre-filled fields
-  ulbName?: string;
-  ulbCode?: string;
-  ulbType?: string;
+  designantion?: string; // API variant (typo handled in service)
+  email: string;
+  mobile: string;
 }
 
-export interface ProfileVerificationPayload {
-  isXVIFCProfileVerified: true;
-  contactPersonName?: string;
-  designation?: string;
-  officialEmail?: string;
-  mobileNumber?: string;
+export interface EntityProfilesResponse {
+  entityName: string;
+  entityCode?: string;
+  entityType?: string;
+  stateName: string;
+  profiles: ProfileItem[];
 }

@@ -11,6 +11,7 @@ export interface MenuItem {
   class?: string;
   disabled?: boolean;
   expanded?: boolean;
+  command?: () => void;
 }
 
 export interface SideBarModel {

@@ -152,6 +152,13 @@ html {
   }
 }
 
+// ----- Snackbar variants ----- //
+.snack-success {
+  --mdc-snackbar-container-color: #1b5e20;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #a5d6a7;
+}
+
 // ----- Common buttons. ----- //
 .primary-btn-1 {
   font-family: var(--ff-base);
@@ -193,10 +200,10 @@ button[disabled] {
 //   }
 // }
 
-.form-control {
-  height: 30px;
-  padding: 4px 12px;
-}
+// .form-control {
+//   height: 30px;
+//   padding: 4px 12px;
+// }
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
@@ -357,3 +364,12 @@ mat-form-field {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+// ulb-forms shared dialog — makes the dialog surface scrollable
+.ulb-forms-dialog-panel {
+  .mat-mdc-dialog-surface {
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+  }
+}
+

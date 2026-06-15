@@ -1,97 +1,124 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, delay } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
+import { environment } from '../../../../../environments/environment';
 import { DisbursementColumn, DisbursementRow, UlbOverviewApiResponse } from './overview-card.models';
 import { OverviewData } from '../../shared/overview-card/overview-card.component';
 
-const DUMMY_ULB_RESPONSES: Record<string, UlbOverviewApiResponse> = {
-  default: {
-    totalAllocation: 2158,
-    ulbId: 'default',
-    ulbName: 'Greater Visakhapatnam Municipal Corporation',
-    stateName: 'Andhra Pradesh',
-    years: '2026-27 to 2030-31',
-    tableData: [
-      { year: 'FY2026-27', basic: 312, performance: 148 },
-      { year: 'FY2027-28', basic: 320, performance: 155 },
-      { year: 'FY2028-29', basic: 335, performance: 162 },
-      { year: 'FY2029-30', basic: 348, performance: 170 },
-      { year: 'FY2030-31', basic: 360, performance: 148 },
-    ],
-  },
-};
+const DUMMY_TABLE_DATA: UlbOverviewApiResponse['tableData'] = [
+  { year: 'FY2026-27', basic: 312, performance: 148 },
+  { year: 'FY2027-28', basic: 320, performance: 155 },
+  { year: 'FY2028-29', basic: 335, performance: 162 },
+  { year: 'FY2029-30', basic: 348, performance: 170 },
+  { year: 'FY2030-31', basic: 360, performance: 148 },
+];
 
 @Injectable({
   providedIn: 'root',
 })
 export class UlbOverviewService {
-  private readUserNames(): { ulbName: string; stateName: string } {
-    try {
-      const raw = localStorage.getItem('userData');
-      if (!raw) return { ulbName: '', stateName: '' };
-      const user = JSON.parse(raw) as { name?: string; stateName?: string };
-      return { ulbName: user.name ?? '', stateName: user.stateName ?? '' };
-    } catch {
-      return { ulbName: '', stateName: '' };
-    }
-  }
-
-  getUlbOverview(ulbId: string): Observable<UlbOverviewApiResponse> {
-    const data = DUMMY_ULB_RESPONSES[ulbId] ?? DUMMY_ULB_RESPONSES['default'];
-    const { ulbName, stateName } = this.readUserNames();
-    return of({
-      ...data,
-      ulbId,
-      ...(ulbName && { ulbName }),
-      ...(stateName && { stateName }),
-    }).pipe(delay(600));
-  }
+  private readonly http = inject(HttpClient);
 
   getOverviewViewModel(ulbId: string): Observable<{
     ulbOverviewData: OverviewData;
     disbursementColumns: DisbursementColumn[];
     disbursementRows: DisbursementRow[];
   }> {
-    return this.getUlbOverview(ulbId).pipe(
-      map((response) => ({
-        ulbOverviewData: this.mapToOverviewData(response),
-        disbursementColumns: this.mapToDisbursementColumns(response),
-        disbursementRows: this.mapToDisbursementRows(response),
-      })),
-    );
+    return this.http
+      .get<any>(`${environment.api.url2}xvi-fc/ulb/${ulbId}`)
+      .pipe(
+        tap((res) => {
+          const d = res?.data ?? res;
+          const raw = localStorage.getItem('xvifc_selectedYearString') ?? '';
+          const selectedYear = raw.replace(/^FY-/, 'FY ');
+          localStorage.setItem(
+            'xvifc_ulb_details',
+            JSON.stringify({ ulbName: d.ulbName, stateName: d.stateName, selectedYear }),
+          );
+        }),
+        map((res) => {
+          const d = res?.data ?? res;
+          const { ulbName, stateName } = d as { ulbName: string; stateName: string };
+          return this.buildViewModel(ulbId, ulbName, stateName);
+        }),
+        catchError(() => of(this.buildViewModel(ulbId, '', ''))),
+      );
+  }
+
+  private buildViewModel(
+    ulbId: string,
+    ulbName: string,
+    stateName: string,
+  ): {
+    ulbOverviewData: OverviewData;
+    disbursementColumns: DisbursementColumn[];
+    disbursementRows: DisbursementRow[];
+  } {
+    const response: UlbOverviewApiResponse = {
+      totalAllocation: 0,
+      ulbId,
+      ulbName,
+      stateName,
+      years: '2026-27 to 2030-31',
+      tableData: DUMMY_TABLE_DATA,
+    };
+    return {
+      ulbOverviewData: this.mapToOverviewData(response),
+      disbursementColumns: this.mapToDisbursementColumns(response),
+      disbursementRows: this.mapToDisbursementRows(response),
+    };
   }
 
   private mapToOverviewData(response: UlbOverviewApiResponse): OverviewData {
     return {
       name: response.ulbName,
-      financialYear: `FY-${response.years}`,
-      subHeader1: 'TOTAL 5-YEAR ALLOCATION',
-      subHeader2: 'BASIC + PERFORMANCE',
+      financialYear: 'FY 2026-27',
+      subHeader1: 'BASIC GRANT ONLY',
+      subHeader2: 'Based on SFC data, population figures, and CF calculations',
       totalAllocation: '₹___ crore',
       totalAllocationNote: `For ${response.ulbName}, ${response.stateName}`,
       grantSections: [
         {
-          id: 'basic',
-          label: 'Basic Grants',
+          id: 'grantEstimate',
+          label: 'Grant Estimate',
           componentLabel: 'Grant Component',
-          title: 'Basic Grants',
+          title: 'Grant Estimate for FY 2026-27',
           amount: '₹___ crore',
+          description: 'Grant structure:',
           points: [
-            'Supports delivery of core municipal services across eligible Urban Local Bodies.',
-            'Focused on improving service continuity, maintenance, and local civic infrastructure.',
-            "Released as part of the state's overall grant support framework.",
+            '₹___ crore — Tied grant (SWM & Water)',
+            '₹___ crore — Untied grant (General use)',
+          ],
+          note: 'Grants cannot be used for salaries or establishment expenditure. Untied: max 20% on roads (₹___ crore).',
+        },
+        {
+          id: 'eligibilityRequirements',
+          label: 'Eligibility Requirements',
+          componentLabel: 'Entry Conditions',
+          title: 'Eligibility Requirements for FY 2026-27',
+          description: 'The following conditions must be met:',
+          points: [
+            'State confirmation of SFC status and submission of the ATR report',
+            'State confirmation of elected body status for the ULB',
+            {
+              text: 'ULB submission of financial statements:',
+              subPoints: [
+                'FY 2024-25 audited statements',
+                'FY 2025-26 provisional statements',
+              ],
+            },
           ],
         },
         {
-          id: 'performance',
-          label: 'Performance Grants',
-          componentLabel: 'Grant Component',
-          title: 'Performance Grants',
-          amount: '₹___ crore',
+          id: 'grantRelease',
+          label: 'Grant Release and Usage Guidelines',
+          componentLabel: 'Release Process',
+          title: 'Grant Release and Usage Guidelines',
           points: [
-            'Linked to achievement of reform-linked performance indicators by eligible ULBs.',
-            'Encourages stronger financial management, reporting, and governance outcomes.',
-            'Designed to reward measurable improvements in urban administration.',
+            'In the first year (FY 2026-27), only basic grants will apply. Performance-linked grants to begin from FY 2027-28.',
+            'Funds will be released in two installments.',
+            'Submissions are reviewed by MoHUA on a rolling basis, and funds are released by DoE after approvals are completed.',
           ],
         },
       ],

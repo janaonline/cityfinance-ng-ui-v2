@@ -1,0 +1,38 @@
+export enum Permission {
+  VIEW_STATUS_REPORTS = 'VIEW_STATUS_REPORTS',
+  VIEW_DASHBOARDS = 'VIEW_DASHBOARDS',
+  UPLOAD_DOCUMENTS = 'UPLOAD_DOCUMENTS',
+  UPLOAD_STATE_LEVEL_DOCUMENTS = 'UPLOAD_STATE_LEVEL_DOCUMENTS',
+  REVIEW_ULB_SUBMISSIONS = 'REVIEW_ULB_SUBMISSIONS',
+  MESSAGE_USERS = 'MESSAGE_USERS',
+  APPROVE_ULB_SUBMISSIONS = 'APPROVE_ULB_SUBMISSIONS',
+  PREPARE_GRANT_LETTERS = 'PREPARE_GRANT_LETTERS',
+  RECOMMEND_EXEMPTIONS = 'RECOMMEND_EXEMPTIONS',
+  FINAL_SUBMIT_TO_STATE_DMA = 'FINAL_SUBMIT_TO_STATE_DMA',
+  FINAL_SUBMIT_TO_MOHUA = 'FINAL_SUBMIT_TO_MOHUA',
+  MANAGE_USERS = 'MANAGE_USERS',
+  VIEW_MANAGED_USERS = 'VIEW_MANAGED_USERS',
+  CREATE_MANAGED_USER = 'CREATE_MANAGED_USER',
+  UPDATE_MANAGED_USER = 'UPDATE_MANAGED_USER',
+  DELETE_MANAGED_USER = 'DELETE_MANAGED_USER',
+}
+
+export type Scope = 'ULB' | 'STATE' | 'MOHUA';
+
+export type AccessLevel = 'ADMIN' | 'EDITOR' | 'VIEWER';
+
+export interface AuthUser {
+  _id: string;
+  name: string;
+  email?: string;
+  mobile?: string;
+  role: string;
+  scope: Scope;
+  accessLevel: AccessLevel;
+  state?: string;
+  ulb?: string;
+  stateName?: string;
+  ulbCode?: string;
+  stateCode?: string;
+  isXVIFCProfileVerified?: boolean;
+}

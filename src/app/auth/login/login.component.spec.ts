@@ -132,6 +132,8 @@ describe('LoginComponent', () => {
       identifier: '  ulb@example.com  ',
       password: 'secret1',
       otp: '',
+      newPassword: '',
+      confirmPassword: '',
     });
 
     component['onSubmit']();
@@ -155,6 +157,8 @@ describe('LoginComponent', () => {
       identifier: 'mohua@example.com',
       password: 'secret1',
       otp: '',
+      newPassword: '',
+      confirmPassword: '',
     });
 
     component['onSubmit']();
@@ -173,6 +177,8 @@ describe('LoginComponent', () => {
       identifier: '123456',
       password: 'secret1',
       otp: '',
+      newPassword: '',
+      confirmPassword: '',
     });
 
     component['onSubmit']();
@@ -189,6 +195,8 @@ describe('LoginComponent', () => {
       identifier: '123456',
       password: 'secret1',
       otp: '',
+      newPassword: '',
+      confirmPassword: '',
     });
 
     component['onSubmit']();

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { environment } from '../../../../../../src/environments/environment';
+import { catchError, map, Observable, of, forkJoin } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 
 import {
   DisbursementColumn,
@@ -26,11 +26,17 @@ export class OverviewService {
       token ? { Authorization: `Bearer ${token}`, 'x-access-token': token } : {},
     );
     return this.http
-      .get<{ success: boolean; data: StateOverviewApiResponse; timestamp: string }>(
-        `${this.baseUrl}xvi-fc/state/${stateId}`,
-        { headers },
-      )
-      .pipe(map((wrapper) => wrapper.data));
+      .get<any>(`${this.baseUrl}xvi-fc/state/${stateId}`, { headers })
+      .pipe(map((wrapper) => (wrapper?.data ?? wrapper) as StateOverviewApiResponse));
+  }
+
+  getStateName(stateId: string): Observable<string> {
+    return this.http
+      .get<any>(`${this.baseUrl}xvi-fc/state-info/${stateId}`)
+      .pipe(
+        map((res) => ((res?.data ?? res) as { stateName: string }).stateName),
+        catchError(() => of('')),
+      );
   }
 
   getOverviewViewModel(stateId: string): Observable<{
@@ -38,30 +44,30 @@ export class OverviewService {
     disbursementColumns: DisbursementColumn[];
     disbursementRows: DisbursementRow[];
   }> {
-    return this.getStateOverview(stateId).pipe(
-      map((response) => {
-        const stateOverviewData = this.mapToOverviewData(response);
-        const disbursementColumns = this.mapToDisbursementColumns(response);
-        const disbursementRows = this.mapToDisbursementRows(response);
-
+    return forkJoin({
+      overview: this.getStateOverview(stateId),
+      stateName: this.getStateName(stateId),
+    }).pipe(
+      map(({ overview, stateName }) => {
+        const merged = { ...overview, stateName: stateName || overview.stateName };
         return {
-          stateOverviewData,
-          disbursementColumns,
-          disbursementRows,
+          stateOverviewData: this.mapToOverviewData(merged),
+          disbursementColumns: this.mapToDisbursementColumns(merged),
+          disbursementRows: this.mapToDisbursementRows(merged),
         };
       }),
     );
   }
 
   private mapToOverviewData(response: StateOverviewApiResponse): OverviewData {
-    const firstYear = response.tableData[0]?.year ?? '-';
     const totalBasic = response.tableData.reduce((sum, row) => sum + row.basic, 0);
     const totalPerformance = response.tableData.reduce((sum, row) => sum + row.performance, 0);
+    const eligibleCities = getEligibleCitiesLabel(response.stateName);
 
     return {
       name: response.stateName,
       financialYear: `FY-${response.years}`,
-      subHeader1: `TOTAL 5-YEAR ALLOCATION`,
+      subHeader1: 'TOTAL 5-YEAR ALLOCATION',
       subHeader2: 'BASIC + PERFORMANCE',
       totalAllocation: this.formatCrore(response.totalAllocation),
       totalAllocationNote: `For ${response.totalUlbs} ULBs in ${response.stateName}`,
@@ -72,10 +78,11 @@ export class OverviewService {
           componentLabel: 'Grant Component',
           title: 'Basic Grants',
           amount: this.formatCrore(totalBasic),
+          description: 'Basic grants are allocated as 50% tied and 50% untied, subject to:',
           points: [
-            'Supports delivery of core municipal services across eligible Urban Local Bodies.',
-            'Focused on improving service continuity, maintenance, and local civic infrastructure.',
-            'Released as part of the state’s overall grant support framework.',
+            'Confirmation of an active SFC and timely submission of the ATR',
+            'Confirmation of elected bodies in the ULB',
+            'Submission of audited and provisional financial statements',
           ],
         },
         {
@@ -84,22 +91,24 @@ export class OverviewService {
           componentLabel: 'Grant Component',
           title: 'Performance Grants',
           amount: this.formatCrore(totalPerformance),
+          description: 'Untied performance grants contingent on:',
           points: [
-            'Linked to achievement of reform-linked performance indicators by eligible ULBs.',
-            'Encourages stronger financial management, reporting, and governance outcomes.',
-            'Designed to reward measurable improvements in urban administration.',
+            'Achievement of 5% annual increase in OSR',
+            "States transferring a matching grant of at least 20% of the Union Finance Commission's basic grants to local governments",
           ],
         },
         {
-          id: 'specialInfrastructure ',
+          id: 'specialInfrastructure',
           label: 'Special Infrastructure',
           componentLabel: 'Grant Component',
           title: 'Special Infrastructure Grants',
           amount: '₹56,100 crore',
+          amountSuffix: 'for 22 cities',
+          description: 'Grants for cities with 1–4M population to undertake wastewater management projects:',
           points: [
             'Covers 60% of project cost',
             'Remaining cost to be shared by state governments and ULBs',
-            getEligibleCitiesLabel(response.stateName) ?? '',
+            ...(eligibleCities ? [eligibleCities] : []),
           ],
         },
         {
@@ -131,22 +140,13 @@ export class OverviewService {
 
     response.tableData.forEach((row) => {
       const key = this.toColumnKey(row.year);
-
       basicValues[key] = this.formatCrore(row.basic);
       performanceValues[key] = row.performance > 0 ? this.formatCrore(row.performance) : '—';
     });
 
     return [
-      {
-        id: 'basic',
-        label: 'Basic',
-        values: basicValues,
-      },
-      {
-        id: 'performance',
-        label: 'Performance',
-        values: performanceValues,
-      },
+      { id: 'basic', label: 'Basic', values: basicValues },
+      { id: 'performance', label: 'Performance', values: performanceValues },
     ];
   }
 

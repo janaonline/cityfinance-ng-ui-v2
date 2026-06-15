@@ -1,49 +1,92 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
+import { FieldConfig } from '../../field.interface';
+
 @Component({
-    selector: 'app-radiobutton',
-    imports: [MaterialModule],
-    template: ` <fieldset class="demo-full-width margin-top" [formGroup]="group">
-      @if (field.label) {
-        <div>
-          <legend class="fw-bold m-0 custom-font-size-6"
-            >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
-            <!-- <span class="text-danger">*&nbsp;</span> -->
-          </legend>
-        </div>
+  selector: 'app-radiobutton',
+  imports: [MaterialModule],
+  template: `
+    <fieldset class="radio-field" [formGroup]="group">
+      @if (field.label && !field.hideLabel) {
+        <legend class="radio-field__label fw-semibold custom-font-size-6">
+          {{ field.position ? field.position + '. ' : '' }}{{ field.label }}
+        </legend>
       }
-      <mat-radio-group [formControlName]="field.key">
-        @for (opt of options; track opt) {
-          <mat-radio-button [value]="opt.id || opt" color="primary">{{
-            opt.label || opt
-          }}</mat-radio-button>
-        }
-        @for (validation of field.validations; track validation) {
-          <ng-container ngProjectAs="mat-error">
-            @if (hasError(field.key, validation.name)) {
-              <mat-error>{{ validation.message }}</mat-error>
-            }
-          </ng-container>
+
+      <mat-radio-group
+        class="radio-field__group"
+        [class.radio-field__group--vertical]="field.radioLayout === 'vertical'"
+        [class.radio-field__group--horizontal]="field.radioLayout !== 'vertical'"
+        [formControlName]="field.key"
+        [attr.data-cy]="field.key ? field.key + '-test' : null"
+      >
+        @for (opt of options; track opt.id || opt) {
+          <mat-radio-button
+            [value]="opt.id || opt"
+            color="primary"
+            [attr.data-cy]="field.key && opt.id ? field.key + '-' + opt.id + '-test' : null"
+          >
+            {{ opt.label || opt }}
+          </mat-radio-button>
         }
       </mat-radio-group>
-    </fieldset>`,
-    styles: ``
+
+      @for (validation of field.validations ?? []; track validation.name) {
+        @if (hasError(field.key, validation.name)) {
+          <div class="text-danger small mt-1" role="alert" [attr.data-cy]="field.key + '-error-test'">
+            {{ validation.message }}
+          </div>
+        }
+      }
+    </fieldset>
+  `,
+  styles: `
+    .radio-field {
+      border: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .radio-field__label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .radio-field__group {
+      width: 100%;
+    }
+
+    .radio-field__group--horizontal {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .radio-field__group--vertical {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  `,
 })
 export class RadiobuttonComponent implements OnInit {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() item!: FormGroup;
   @Input() options!: any[];
-  // @Input() label: any = true;
 
-  constructor() {}
-  ngOnInit() {
-    this.options = this.options || this.field.options;
+  ngOnInit(): void {
+    this.options = this.options || this.field.options || [];
   }
 
-  hasError(key: string, name: string) {
-    return (this.group.get(key) as FormControl).hasError(name);
+  hasError(key: string, name: string): boolean {
+    const control = this.group.get(key) as FormControl | null;
+
+    if (!control) {
+      return false;
+    }
+
+    return control.hasError(name) && (control.touched || control.dirty);
   }
 }

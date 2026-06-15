@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map, catchError } from 'rxjs';
-import { MenuItem, SideBarModel } from '../../shared/components/side-menu/interface';
-// import { SideBarModel } from '../../shared/components/side-menu/interface';
+import { MenuItem, SideBarModel } from '../../shared/components/side-menu';
+// import { SideBarModel } from '../../shared/components/side-menu';
 import { XvifcRouteContext } from './xvi-fc-module.service';
 import { buildXvifcFeatureLink, Roles } from './xvi-fc-side-menu.config';
 import { environment } from '../../../environments/environment';
@@ -37,7 +37,7 @@ export class XviFcSideMenuApiService {
       token ? { Authorization: `Bearer ${token}`, 'x-access-token': token } : {},
     );
     return this.http
-      .get<{ success: boolean; data: ApiSideMenuResponse; timestamp: string }>(
+      .get<any>(
         `${this.baseUrl}xvi-fc/sidebar/${context.role}`,
         {
           headers,
@@ -47,7 +47,12 @@ export class XviFcSideMenuApiService {
         },
       )
       .pipe(
-        map((wrapper) => this.mapApiResponseToSideBarModel(wrapper.data, context)),
+        map((wrapper: any) => {
+          // Handle both wrapped { success, data: { topModel, bottomModel } }
+          // and flat { topModel, bottomModel } responses
+          const apiData: ApiSideMenuResponse = wrapper?.data ?? wrapper;
+          return this.mapApiResponseToSideBarModel(apiData, context);
+        }),
         catchError((error) => {
           console.error('Failed to load side menu API.', error);
           throw error;
@@ -72,9 +77,17 @@ export class XviFcSideMenuApiService {
   ): MenuItem[] {
     return items.map((item) => ({
       ...item,
+      label: this.transformLabel(item.label, context),
       routerLink: this.resolveRouterLink(item, context, isTopLevel),
       items: item.items ? this.mapItems(item.items, context) : undefined,
     }));
+  }
+
+  private transformLabel(label: string, context: XvifcRouteContext): string {
+    if (context.yearString && label?.includes(context.yearId)) {
+      return label.replace(context.yearId, context.yearString);
+    }
+    return label;
   }
 
   private resolveRouterLink(

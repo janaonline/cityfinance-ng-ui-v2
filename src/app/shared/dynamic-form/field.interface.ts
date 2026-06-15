@@ -6,6 +6,66 @@ export interface Validator {
 
 export type DateConfigValue = Date | string | null;
 
+export interface InputCardConfig {
+  title?: string;
+  description?: string;
+  prefixText?: string;
+  suffixText?: string;
+}
+
+export type FieldAppearanceColor = 'primary' | 'success' | 'warning' | 'danger' | 'secondary';
+export type FieldAppearanceVariant = 'default' | 'soft' | 'outlined';
+
+export interface FieldAppearanceConfig {
+  color?: FieldAppearanceColor;
+  variant?: FieldAppearanceVariant;
+  icon?: string;
+}
+
+export type FieldLayoutVariant = 'stacked' | 'inline';
+export type FieldLayoutLabelWidth = 'sm' | 'md' | 'lg';
+
+export interface FieldLayoutConfig {
+  variant?: FieldLayoutVariant;
+  labelWidth?: FieldLayoutLabelWidth;
+}
+
+export type FieldSupportingContentPosition = 'before' | 'after';
+
+export type FieldSupportingContent =
+  | {
+      type: 'template-download';
+      position?: FieldSupportingContentPosition;
+      label: string;
+      url: string;
+      description?: string;
+    }
+  | {
+      type: 'info';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      description: string;
+    }
+  | {
+      type: 'warning';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      description: string;
+    }
+  | {
+      type: 'sample-columns';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      columns: string[];
+    }
+  | {
+      type: 'readonly-card';
+      position?: FieldSupportingContentPosition;
+      title?: string;
+      description?: string;
+      rows?: { label: string; value: string }[];
+    };
+
 export type UploadedFileValue = {
   fileName: string;
   fileUrl: string;
@@ -51,6 +111,13 @@ export interface FieldConfig {
   maxFileSize?: number;
   minDate?: DateConfigValue;
   maxDate?: DateConfigValue;
+  placeholder?: string;
+  supportingContent?: FieldSupportingContent[];
+  layout?: FieldLayoutConfig;
+  hideLabel?: boolean;
+  appearance?: FieldAppearanceConfig;
+  inputCardConfig?: InputCardConfig;
+  radioLayout?: 'horizontal' | 'vertical';
 }
 
 export interface JsonFieldConfig {

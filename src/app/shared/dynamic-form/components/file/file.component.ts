@@ -24,7 +24,12 @@ import {
   FileIconComponent,
   SupportedFileExtension,
 } from '../../../components/file-icon/file-icon.component';
-import { FieldConfig, LegacyFileValue, UploadedFileValue } from '../../field.interface';
+import {
+  FieldAppearanceColor,
+  FieldConfig,
+  LegacyFileValue,
+  UploadedFileValue,
+} from '../../field.interface';
 import { DndDirective } from './dnd.directive';
 import { FileService } from './file.service';
 
@@ -174,6 +179,23 @@ export class FileComponent implements OnInit {
   /** Button UI: dropzone or button */
   readonly isButtonView = computed(() => this.field().fileViewType === 'button');
 
+  /** Helper text shown in the dropzone listing accepted formats and max file size. Empty string when neither is configured. */
+  readonly fileRequirementText = computed(() => {
+    const parts: string[] = [];
+
+    const allowedFileTypes = this.field().allowedFileTypes ?? [];
+    if (allowedFileTypes.length) {
+      parts.push(` Accepted formats: ${allowedFileTypes.map((type) => `.${type}`).join(', ')}`);
+    }
+
+    const maxFileSize = this.field().maxFileSize;
+    if (maxFileSize) {
+      parts.push(`Max file size: ${maxFileSize} MB`);
+    }
+
+    return parts.join(' | ');
+  });
+
   /**
    * Converts configured file extensions into a comma-separated MIME string for the native input
    * `accept` attribute.
@@ -193,8 +215,71 @@ export class FileComponent implements OnInit {
   /** Shows the label only for standalone file fields to avoid duplicate labels in legacy flows. */
   readonly showStandaloneLabel = computed(
     () =>
-      !!this.standaloneFileControl() && !!this.utilityService.getNonEmptyString(this.field().label),
+      !this.field().hideLabel &&
+      !!this.standaloneFileControl() &&
+      !!this.utilityService.getNonEmptyString(this.field().label),
   );
+
+  private static readonly iconColorMap: Record<FieldAppearanceColor, string> = {
+    primary: 'text-primary',
+    success: 'text-success',
+    warning: 'text-warning',
+    danger: 'text-danger',
+    secondary: 'text-secondary',
+  };
+
+  /** Bootstrap icon class (bi + icon name). Defaults to the standard upload icon. */
+  readonly fileIconClass = computed((): string => {
+    const icon = this.field().appearance?.icon ?? 'bi-file-earmark-arrow-up-fill';
+    return `bi ${icon}`;
+  });
+
+  /**
+   * Text color class applied to the dropzone icon.
+   * Defaults to text-cfPrimary (preserves original appearance when no color is configured).
+   */
+  readonly fileIconColorClass = computed((): string => {
+    const color = this.field().appearance?.color;
+    if (!color) return 'text-cfPrimary';
+    return FileComponent.iconColorMap[color] ?? 'text-primary';
+  });
+
+  /**
+   * Bootstrap button class for the upload button.
+   * Defaults to btn-success (preserves original appearance when no color is configured).
+   * Uses btn-outline-{color} when variant is 'outlined'.
+   */
+  readonly fileColorClass = computed((): string => {
+    const appearance = this.field().appearance;
+    if (!appearance?.color) return 'btn-cf-primary';
+    const prefix = appearance.variant === 'outlined' ? 'btn-outline-' : 'btn-';
+    return `${prefix}${appearance.color}`;
+  });
+
+  /**
+   * Extra CSS classes applied to the dropzone container for soft/outlined variants.
+   * Returns an empty string for the default variant or when no appearance color is configured.
+   */
+  readonly fileVariantClass = computed((): string => {
+    const appearance = this.field().appearance;
+    const color = appearance?.color;
+    const variant = appearance?.variant ?? 'default';
+    if (!color || variant === 'default') return '';
+    return `file-color-${color} file-variant-${variant}`;
+  });
+
+  /**
+   * Full appearance class for the dropzone container.
+   * When no color is configured, returns 'file-dropzone-cityfinance' (CityFinance orange style).
+   * When a Bootstrap color is configured, returns 'file-color-{color} file-variant-{variant}'.
+   */
+  readonly fileDropzoneClass = computed((): string => {
+    const appearance = this.field().appearance;
+    const color = appearance?.color;
+    if (!color) return 'file-dropzone-cityfinance';
+    const variant = appearance?.variant ?? 'default';
+    return `file-color-${color} file-variant-${variant}`;
+  });
 
   /** Final label text, including optional field numbering. (year-wise component) */
   readonly fieldLabel = computed(() => {
