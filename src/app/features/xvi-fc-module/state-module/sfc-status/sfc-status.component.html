@@ -23,6 +23,10 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
+        } @else if (errorMessage()) {
+          <div class="alert alert-danger" role="alert">
+            {{ errorMessage() }}
+          </div>
         } @else {
           <form class="content-body" [formGroup]="form">
             @for (item of visibleFields(); track item.key; let isLast = $last) {
@@ -42,8 +46,24 @@
 
     <div class="acknowledgement border-top p-3">
       <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
-        <button type="button" matButton="outlined" (click)="onCancel()" data-cy="sfc-status-cancel-test">Cancel</button>
-        <button type="submit" matButton="filled" (click)="onSubmit()" data-cy="sfc-status-submit-test">Submit</button>
+        <button
+          type="button"
+          matButton="outlined"
+          [disabled]="!canEdit()"
+          (click)="onCancel()"
+          data-cy="sfc-status-cancel-test"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          matButton="filled"
+          [disabled]="!canEdit()"
+          (click)="onSubmit()"
+          data-cy="sfc-status-submit-test"
+        >
+          Submit
+        </button>
       </div>
     </div>
   </div>
