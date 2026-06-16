@@ -43,6 +43,7 @@ type ValidationSnapshot = Readonly<{
   dirty: boolean;
   touched: boolean;
   errors: Record<string, unknown> | null;
+  disabled: boolean;
 }>;
 type UploadTarget = Readonly<{
   uploadUrl: string;
@@ -127,6 +128,7 @@ export class FileComponent implements OnInit {
     dirty: false,
     touched: false,
     errors: null,
+    disabled: false,
   });
 
   /** Optional parent config that can override readonly and validation settings. */
@@ -175,7 +177,7 @@ export class FileComponent implements OnInit {
   );
 
   readonly isReadonly = computed(
-    () => this.parentField()?.readonly ?? this.field().readonly ?? false,
+    () => (this.parentField()?.readonly ?? this.field().readonly ?? false) || this.validationSnapshot().disabled,
   );
 
   /** Button UI: dropzone or button */
@@ -799,7 +801,7 @@ export class FileComponent implements OnInit {
    */
   private createValidationSnapshot(control: AbstractControl | null): ValidationSnapshot {
     if (!control) {
-      return { invalid: false, dirty: false, touched: false, errors: null };
+      return { invalid: false, dirty: false, touched: false, errors: null, disabled: false };
     }
 
     return {
@@ -807,6 +809,7 @@ export class FileComponent implements OnInit {
       dirty: control.dirty,
       touched: control.touched,
       errors: control.errors as Record<string, unknown> | null,
+      disabled: control.disabled,
     };
   }
 

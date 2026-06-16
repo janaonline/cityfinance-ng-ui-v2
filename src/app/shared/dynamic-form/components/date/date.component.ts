@@ -82,7 +82,7 @@ export class DateComponent implements OnChanges {
   }
 
   get isReadonly(): boolean {
-    return !!this.field?.readonly;
+    return !!this.field?.readonly || !!this.control?.disabled;
   }
 
   get appearance(): MatFormFieldAppearance {
