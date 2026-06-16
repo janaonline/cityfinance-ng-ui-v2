@@ -1,62 +1,26 @@
+@use '../../styles/xvi-fc-theme' as theme;
+
 :host {
   display: block;
 }
 
 /* ── Hero card ─────────────────────────────────────────────── */
 .sh-card {
+  @include theme.grant-band-tokens;
+  @include theme.grant-band-surface;
   position: relative;
   overflow: hidden;
   border-radius: 1rem;
-  background: linear-gradient(135deg, #114551 0%, #0f4c4d 60%, #0a5a56 100%);
-  box-shadow: 0 8px 24px rgba(17, 69, 81, 0.2);
   padding: 1.25rem 1.5rem;
 }
 
-.sh-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 22px 22px;
-  opacity: 0.25;
-  pointer-events: none;
-}
-
-.sh-card::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.06) 100%);
-  border-radius: 4px 0 0 4px;
-}
+.sh-card::before { @include theme.grant-band-subtle-overlay; }
+.sh-card::after  { @include theme.grant-band-left-bar; }
 
 /* Decorative circles */
-.sh-deco {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.sh-deco--1 {
-  width: 200px;
-  height: 200px;
-  top: -70px;
-  right: -50px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-}
-
-.sh-deco--2 {
-  width: 110px;
-  height: 110px;
-  bottom: -40px;
-  right: 180px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1.5px solid rgba(255, 255, 255, 0.06);
-}
+.sh-deco     { @include theme.grant-band-deco-base; }
+.sh-deco--1  { @include theme.grant-band-deco-large; }
+.sh-deco--2  { @include theme.grant-band-deco-small; }
 
 /* Layout */
 .sh-body {

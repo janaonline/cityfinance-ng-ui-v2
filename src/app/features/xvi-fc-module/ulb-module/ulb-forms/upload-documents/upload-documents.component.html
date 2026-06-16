@@ -26,60 +26,130 @@
   </div>
 
   <div class="d-flex justify-content-end mb-3 mt-2">
-    <button mat-stroked-button class="save-later-btn" type="button">Save and continue later</button>
+    <button
+      mat-stroked-button
+      class="save-later-btn"
+      type="button"
+      [disabled]="!hasUnsavedUploads() || isSaving()"
+      (click)="saveDraft()"
+    >
+      @if (isSaving()) { Saving… } @else { Save and continue later }
+    </button>
   </div>
 
   <div class="documents-card rounded-3 border overflow-hidden mb-4">
-    @for (doc of documents(); track doc.id; let last = $last) {
-      <div class="doc-row d-flex align-items-center gap-3 px-3 py-3" [class.border-bottom]="!last">
 
-        <div class="flex-grow-1 min-w-0">
-          <p class="doc-title fw-semibold mb-0">{{ doc.title }}</p>
-          <p class="doc-subtitle text-muted mb-0">{{ doc.subtitle }}</p>
+    @if (isLoadingExisting()) {
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="doc-row doc-row--skeleton d-flex align-items-center gap-3 px-3 py-3 border-bottom">
+          <div class="flex-grow-1">
+            <div class="skeleton-line skeleton-line--title mb-1"></div>
+            <div class="skeleton-line skeleton-line--sub"></div>
+          </div>
+          <div class="skeleton-btn"></div>
         </div>
+      }
+    } @else {
+      @for (doc of documents(); track doc.id; let last = $last) {
+        <div class="doc-row d-flex align-items-start gap-3 px-3 py-3" [class.border-bottom]="!last">
 
-        <div class="doc-right-col flex-shrink-0">
-          @if (doc.status === 'uploaded' && doc.fileName) {
-            <div class="file-chip d-flex align-items-center justify-content-center gap-1">
-              <mat-icon class="doc-check-icon">check_circle</mat-icon>
-              <span class="doc-filename">{{ doc.fileName }}</span>
-              <button
-                mat-icon-button
-                class="doc-preview-btn"
-                type="button"
-                matTooltip="Preview"
-                (click)="previewFile(doc.previewUrl!)"
-              >
-                <mat-icon>visibility</mat-icon>
+          <div class="flex-grow-1 min-w-0">
+            <p class="doc-title fw-semibold mb-0">{{ doc.title }}</p>
+            <p class="doc-subtitle text-muted mb-0">{{ doc.subtitle }}</p>
+          </div>
+
+          <div class="doc-right-col flex-shrink-0">
+
+            @if (doc.status === 'uploading') {
+              <div class="file-chip file-chip--uploading d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                <mat-progress-bar mode="indeterminate" class="doc-upload-progress flex-grow-1"></mat-progress-bar>
+                <span class="doc-filename text-muted">Uploading…</span>
+              </div>
+            }
+
+            @if (doc.status === 'error') {
+              <div class="file-chip file-chip--error d-flex align-items-center gap-2 px-3 py-2 rounded-2 mb-2">
+                <mat-icon class="doc-status-icon text-danger">error_outline</mat-icon>
+                <span class="doc-filename text-danger">Upload failed. Try again.</span>
+              </div>
+              <button mat-stroked-button class="upload-btn w-100" type="button" (click)="triggerUpload(doc.id)">
+                <mat-icon>upload</mat-icon> Upload
               </button>
-            </div>
-          }
-          <button
-            mat-stroked-button
-            class="upload-btn w-100"
-            [ngClass]="{ 'upload-btn--done': doc.status === 'uploaded' }"
-            type="button"
-            (click)="triggerUpload(doc.id)"
-          >
-            <mat-icon>upload</mat-icon>
-            {{ doc.status === 'uploaded' ? 'Replace' : 'Upload' }}
-          </button>
-        </div>
+            }
 
-      </div>
+            @if (doc.status === 'pending') {
+              <button mat-stroked-button class="upload-btn" type="button" (click)="triggerUpload(doc.id)">
+                <mat-icon>upload</mat-icon> Upload
+              </button>
+            }
+
+            @if (doc.status === 'uploaded') {
+              <div class="uploaded-block">
+                <div class="file-chip file-chip--passed d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                  <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{ doc.fileName }}</span>
+
+                  @if (doc.fileSize) {
+                    <span class="chip-meta">· {{ formatFileSize(doc.fileSize) }}</span>
+                  }
+
+                  @if (doc.version) {
+                    <span class="chip-meta">· {{ doc.version }}</span>
+                  }
+
+                  <span class="passed-badge ms-1">
+                    <span class="passed-dot">●</span> PASSED
+                  </span>
+
+                  <button
+                    mat-icon-button
+                    class="chip-icon-btn"
+                    type="button"
+                    matTooltip="Preview document"
+                    (click)="previewFile(doc)"
+                  >
+                    <mat-icon class="chip-icon">visibility</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    class="chip-icon-btn chip-icon-btn--delete"
+                    type="button"
+                    matTooltip="Remove and re-upload"
+                    (click)="removeDocument(doc.id)"
+                  >
+                    <mat-icon class="chip-icon">delete_outline</mat-icon>
+                  </button>
+                </div>
+
+                <p class="uploader-meta body-xs text-muted mt-1 mb-0">
+                  Uploaded by <strong>{{ uploaderLabel(doc) }}</strong>
+                  @if (doc.uploadedAt) {
+                    &nbsp;·&nbsp;{{ timeAgo(doc.uploadedAt) }}
+                  }
+                </p>
+              </div>
+            }
+
+          </div>
+        </div>
+      }
     }
+
   </div>
 
   <div class="page-footer d-flex justify-content-end align-items-center border-top pt-3">
     <div class="d-flex flex-column align-items-end gap-1">
+      @if (saveError()) {
+        <p class="text-danger body-xs mb-1">{{ saveError() }}</p>
+      }
       <button
         mat-flat-button
         class="confirm-btn"
         type="button"
-        [disabled]="!allReady()"
+        [disabled]="!allReady() || isSaving()"
         (click)="confirmDocuments()"
       >
-        {{ config.confirmLabel }}
+        @if (isSaving()) { Saving… } @else { {{ config.confirmLabel }} }
       </button>
       <p class="footer-note body-xs text-muted mb-0">
         Once confirmed, documents are locked. Changes are only possible if the State DMA rejects the submission.

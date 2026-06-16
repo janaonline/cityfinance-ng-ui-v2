@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { UPLOAD_CONFIGS } from './ulb-forms/upload-documents/upload-documents.component';
+import { uploadDocumentsDeactivateGuard } from './ulb-forms/upload-documents/upload-documents-deactivate.guard';
 
 export const ULB_ROUTES: Routes = [
   {
@@ -33,6 +34,7 @@ export const ULB_ROUTES: Routes = [
             (m) => m.UploadDocumentsComponent,
           ),
         data: { config: UPLOAD_CONFIGS.audited },
+        canDeactivate: [uploadDocumentsDeactivateGuard],
       },
       {
         path: 'upload-provisional',
@@ -41,6 +43,7 @@ export const ULB_ROUTES: Routes = [
             (m) => m.UploadDocumentsComponent,
           ),
         data: { config: UPLOAD_CONFIGS.provisional },
+        canDeactivate: [uploadDocumentsDeactivateGuard],
       },
       {
         path: 'fill-disclosure',

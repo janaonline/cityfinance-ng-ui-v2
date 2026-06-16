@@ -15,6 +15,15 @@ interface YearItem {
   year: string;
 }
 
+interface DocumentYearEntry {
+  _id: string;
+  year: string;
+}
+
+export interface XvifcDocumentYears {
+  audited: DocumentYearEntry;
+  provisional: DocumentYearEntry;
+}
 
 interface StoredUser {
   role?: string;
@@ -22,6 +31,23 @@ interface StoredUser {
   state?: string;
   isXVIFCProfileVerified?: boolean;
 }
+
+/**
+ * Financial year records for the document references in the 16th FC annual account.
+ * These are the FY-level years (not the grant year) used as yearId in uploaded documents.
+ * Hardcoded because they don't change — 2024-25 is always the audited year and
+ * 2025-26 is always the provisional year for this grant cycle.
+ */
+const DOCUMENT_YEARS: XvifcDocumentYears = {
+  audited: { _id: '606aafcf4dff55e6c075d424', year: '2024-25' },
+  provisional: { _id: '606aafda4dff55e6c075d48f', year: '2025-26' },
+};
+
+export const XVIFC_LS_KEYS = {
+  selectedYearId: 'xvifc_selectedYearId',
+  selectedYearString: 'xvifc_selectedYearString',
+  documentYears: 'xvifc_document_years',
+} as const;
 
 function resolveProfileRole(userRole: string): ProfileRole {
   const r = userRole.toUpperCase();
@@ -61,7 +87,6 @@ export class YearsSelectionComponent implements OnInit {
   ngOnInit(): void {
     this.http.get<any>(`${environment.api.url2}xvi-fc/years`).subscribe({
       next: (response) => {
-        // Handle both a plain array and a wrapped { success, data } response
         const items: YearItem[] = Array.isArray(response)
           ? response
           : (response?.data ?? []);
@@ -106,7 +131,10 @@ export class YearsSelectionComponent implements OnInit {
 
     const isVerified = standaloneKey === 'true' || userDataVerified;
 
-    localStorage.setItem('xvifc_selectedYearString', `FY-${yearString}`);
+    // Persist year context so child components can read it without walking the route tree
+    localStorage.setItem(XVIFC_LS_KEYS.selectedYearString, `FY-${yearString}`);
+    localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, yearId);
+    localStorage.setItem(XVIFC_LS_KEYS.documentYears, JSON.stringify(DOCUMENT_YEARS));
 
     if (isVerified) {
       this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
