@@ -534,14 +534,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return `${(sizeKb / 1024).toFixed(1)} MB`;
   }
 
-  // Converts a raw failed-check string like "ulb_name_mismatch: expected 'X' extracted 'Y'"
-  // into a human-readable label.
   formatCheckLabel(raw: string): string {
-    const colonIdx = raw.indexOf(':');
-    if (colonIdx === -1) return raw;
-    const key = raw.slice(0, colonIdx).trim().replace(/_/g, ' ');
-    const detail = raw.slice(colonIdx + 1).trim();
-    return `${key.charAt(0).toUpperCase()}${key.slice(1)} — ${detail}`;
+    return raw;
   }
 
   // ─── Private helpers ─────────────────────────────────────────────────────────
