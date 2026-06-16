@@ -1,5 +1,5 @@
 import { Component, computed, Input } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { TrimOnBlurDirective } from '../../../../core/directives/trim-on-blur.directive';
 import { MaterialModule } from '../../../../material.module';
 import { FieldConfig } from '../../field.interface';
@@ -18,7 +18,8 @@ export class TextareaComponent {
 
   validations = computed(() => this.field.validations);
 
-  hasError(key: string, name: string) {
-    return (this.group.get(key) as FormControl).hasError(name);
+  hasError(key: string, name: string): boolean {
+    const control = this.group.get(key);
+    return !!control?.hasError(name) && (control.touched || control.dirty);
   }
 }

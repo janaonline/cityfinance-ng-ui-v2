@@ -91,7 +91,7 @@ export class DateComponent implements OnChanges {
 
   get activeErrors(): DateValidationMessage[] {
     const control = this.control;
-    if (!control) {
+    if (!control || (!control.touched && !control.dirty)) {
       return [];
     }
 
