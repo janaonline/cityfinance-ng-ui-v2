@@ -160,6 +160,45 @@
   }
 }
 
+.submitted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  white-space: nowrap;
+
+  &__icon {
+    font-size: 0.85rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    line-height: 1;
+  }
+}
+
+.preview-icon-btn {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+
+  .preview-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    color: #2563eb;
+  }
+
+  &:hover .preview-icon { color: #1d4ed8; }
+}
+
 .no-action-badge {
   display: inline-flex;
   align-items: center;

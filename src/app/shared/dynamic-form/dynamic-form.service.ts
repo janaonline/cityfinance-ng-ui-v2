@@ -14,6 +14,7 @@ import {
 } from '../../core/validators/comparison.validator';
 import { FieldConfig, UploadedFileValue } from './field.interface';
 import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
+import { resolveDateConstraint } from './date-constraint-resolver';
 import { yearRangeValidator } from '../../core/validators/year-range.validator';
 import { toUtcIsoDateString } from './components/date/utc-iso-date-adapter';
 
@@ -224,14 +225,16 @@ export class DynamicFormService {
           case 'max':
             validators.push(Validators.max(row.validator));
             break;
-          case 'minDate':
+          case 'minDate': {
             hasMinDateValidation = true;
-            validators.push(minDateValidator(row.validator ?? field?.minDate));
+            validators.push(minDateValidator(resolveDateConstraint(row.validator ?? field?.minDate)));
             break;
-          case 'maxDate':
+          }
+          case 'maxDate': {
             hasMaxDateValidation = true;
-            validators.push(maxDateValidator(row.validator ?? field?.maxDate));
+            validators.push(maxDateValidator(resolveDateConstraint(row.validator ?? field?.maxDate)));
             break;
+          }
           case 'minlength':
             validators.push(Validators.minLength(row.validator));
             break;

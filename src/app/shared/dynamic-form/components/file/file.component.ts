@@ -42,6 +42,8 @@ type ValidationSnapshot = Readonly<{
   invalid: boolean;
   dirty: boolean;
   touched: boolean;
+  errors: Record<string, unknown> | null;
+  disabled: boolean;
 }>;
 type UploadTarget = Readonly<{
   uploadUrl: string;
@@ -125,6 +127,8 @@ export class FileComponent implements OnInit {
     invalid: false,
     dirty: false,
     touched: false,
+    errors: null,
+    disabled: false,
   });
 
   /** Optional parent config that can override readonly and validation settings. */
@@ -173,7 +177,7 @@ export class FileComponent implements OnInit {
   );
 
   readonly isReadonly = computed(
-    () => this.parentField()?.readonly ?? this.field().readonly ?? false,
+    () => (this.parentField()?.readonly ?? this.field().readonly ?? false) || this.validationSnapshot().disabled,
   );
 
   /** Button UI: dropzone or button */
@@ -387,12 +391,20 @@ export class FileComponent implements OnInit {
     return validationSnapshot.invalid && (validationSnapshot.dirty || validationSnapshot.touched);
   });
 
-  /** Returns the required-field error message, using a custom message when available. */
-  readonly errorMessage = computed(
-    () =>
-      this.validations().find((validation) => validation.name === REQUIRED_VALIDATION_NAME)
-        ?.message ?? 'This field is required.',
-  );
+  /** Active error message from field config, matched against current control errors. */
+  readonly errorMessage = computed(() => {
+    const errors = this.validationSnapshot().errors;
+    if (errors) {
+      const matched = this.validations().find((v) =>
+        Object.prototype.hasOwnProperty.call(errors, v.name),
+      );
+      if (matched) return matched.message;
+    }
+    return (
+      this.validations().find((v) => v.name === REQUIRED_VALIDATION_NAME)?.message ??
+      'This field is required.'
+    );
+  });
 
   /** Screen-reader status text for upload progress, success confirmation, and validation feedback. */
   readonly liveRegionMessage = computed(() => {
@@ -789,17 +801,15 @@ export class FileComponent implements OnInit {
    */
   private createValidationSnapshot(control: AbstractControl | null): ValidationSnapshot {
     if (!control) {
-      return {
-        invalid: false,
-        dirty: false,
-        touched: false,
-      };
+      return { invalid: false, dirty: false, touched: false, errors: null, disabled: false };
     }
 
     return {
       invalid: control.invalid,
       dirty: control.dirty,
       touched: control.touched,
+      errors: control.errors as Record<string, unknown> | null,
+      disabled: control.disabled,
     };
   }
 

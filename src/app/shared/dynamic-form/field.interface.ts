@@ -118,6 +118,10 @@ export interface FieldConfig {
   appearance?: FieldAppearanceConfig;
   inputCardConfig?: InputCardConfig;
   radioLayout?: 'horizontal' | 'vertical';
+  /** When `false`, the field is excluded from UI rendering but its form control still exists. Defaults to `true`. */
+  render?: boolean;
+  /** When `false`, the field is excluded from the visible payload on submit. Defaults to `true`. */
+  includeInPayload?: boolean;
 }
 
 export interface JsonFieldConfig {

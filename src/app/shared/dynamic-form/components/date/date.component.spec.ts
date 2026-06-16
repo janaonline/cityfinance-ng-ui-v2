@@ -48,7 +48,12 @@ describe('DateComponent', () => {
   let host: HostComponent;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, HostComponent, NoopAnimationsModule],
+    await TestBed.configureTestingModule({
+      providers: [
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: {} },
+      ],
+      imports: [HttpClientTestingModule, RouterTestingModule, HostComponent, NoopAnimationsModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HostComponent);
@@ -69,9 +74,7 @@ describe('DateComponent', () => {
   }
 
   function getErrorTexts(): string[] {
-    return fixture.debugElement
-      .queryAll(By.css('mat-error'))
-      .map((node) => node.nativeElement.textContent.trim());
+    return fixture.debugElement.queryAll(By.css('mat-error')).map((node) => node.nativeElement.textContent.trim());
   }
 
   it('resolves minDate and maxDate from direct field config', () => {
@@ -187,9 +190,7 @@ describe('DateComponent', () => {
       { name: 'maxDate', message: 'Start date is too late.' },
     ]);
 
-    expect(component.validationMessages.filter((x) => x.name === 'matDatepickerParse')).toHaveSize(
-      1,
-    );
+    expect(component.validationMessages.filter((x) => x.name === 'matDatepickerParse')).toHaveSize(1);
     expect(component.validationMessages.filter((x) => x.name === 'minDate')).toHaveSize(1);
     expect(component.validationMessages.filter((x) => x.name === 'maxDate')).toHaveSize(1);
   });
@@ -293,5 +294,32 @@ describe('DateComponent', () => {
 
     expect(component.control).toBeNull();
     expect(component.activeErrors).toEqual([]);
+  });
+
+  it('resolves TODAY+0D in validations to today for the [min] datepicker binding', () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    host.field = createField({
+      validations: [createValidation('minDate', 'Date cannot be earlier than today.', 'TODAY+0D')],
+    });
+
+    fixture.detectChanges();
+
+    expect(getComponent().minDate?.getTime()).toBe(today.getTime());
+  });
+
+  it('resolves TODAY+5Y in validations to five years from today for the [max] datepicker binding', () => {
+    const fiveYearsOut = new Date();
+    fiveYearsOut.setFullYear(fiveYearsOut.getFullYear() + 5);
+    fiveYearsOut.setHours(0, 0, 0, 0);
+
+    host.field = createField({
+      validations: [createValidation('maxDate', 'Date cannot be beyond 5 years from today.', 'TODAY+5Y')],
+    });
+
+    fixture.detectChanges();
+
+    expect(getComponent().maxDate?.getTime()).toBe(fiveYearsOut.getTime());
   });
 });
