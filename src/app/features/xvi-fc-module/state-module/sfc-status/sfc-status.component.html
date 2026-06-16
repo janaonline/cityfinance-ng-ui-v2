@@ -6,7 +6,10 @@
       <div class="content-stack d-flex flex-column gap-4">
         <div>
           <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
-            16th Finance Commission &nbsp;&middot;&nbsp; {{ stateName() }}
+            16th Finance Commission
+            @if (stateName()) {
+              &nbsp;&middot;&nbsp; {{ stateName() }}
+            }
           </div>
 
           <h1 class="page-title mb-2">State Finance Commission Verification</h1>
@@ -24,6 +27,24 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
         } @else {
+          <div class="d-flex align-items-center gap-3 alert alert-info" role="alert">
+            <i class="bi bi-people fs-4"></i>
+            <div>
+              @for (item of actors(); track item.by) {
+                @if (item.by) {
+                  <small class="d-flex align-items-center gap-2 p-0 m-0">
+                    <strong class="text-nowrap">{{ item.action }}</strong>
+                    <span class="text-nowrap">{{ item.by }} State DMA Officer</span>
+                    <span class="text-muted">&middot;</span>
+                    <span class="text-nowrap">{{ item.date | date: 'dd MMM yyyy' }}</span>
+                  </small>
+                }
+              }
+            </div>
+          </div>
+
+          <hr class="my-0 text-body-tertiary" />
+
           <form class="content-body" [formGroup]="form">
             @for (item of visibleFields(); track item.key; let isLast = $last) {
               <div
