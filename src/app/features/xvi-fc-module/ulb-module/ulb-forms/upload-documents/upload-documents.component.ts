@@ -14,7 +14,7 @@ import { AuthPermissionService } from '../../../../../core/auth/auth-permission.
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -232,6 +232,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
 })
 export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly location = inject(Location);
+  private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly route = inject(ActivatedRoute);
@@ -505,7 +506,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       await firstValueFrom(
         this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section }),
       );
-      this.location.back();
+      this.router.navigate(['../ulb-forms'], { relativeTo: this.route });
     } catch (err) {
       console.error('[submit] failed to submit section', err);
     }
