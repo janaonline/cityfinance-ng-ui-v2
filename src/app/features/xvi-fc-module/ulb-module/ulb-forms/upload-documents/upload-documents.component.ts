@@ -1,32 +1,35 @@
 import {
   Component,
+  DestroyRef,
+  ElementRef,
   HostListener,
-  OnInit,
   OnDestroy,
+  OnInit,
+  ViewChild,
   computed,
   inject,
   signal,
-  ViewChild,
-  ElementRef,
 } from '@angular/core';
-import { Location, NgClass } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Location } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { PDFDocument } from 'pdf-lib';
-import { firstValueFrom } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { EMPTY, Subscription, firstValueFrom, interval, switchMap } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
-import { XVIFC_LS_KEYS, type XvifcDocumentYears } from '../../../shared/years-selection/years-selection.component';
+import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import {
   UlbFormsDialogComponent,
   ULB_FORMS_DIALOG_PANEL_CLASS,
   type UlbFormsDialogData,
 } from './ulb-forms-dialog.component';
+
+// ─── Public model types (used in template + guard) ───────────────────────────
 
 export interface UploadDocumentDef {
   id: string;
@@ -41,59 +44,93 @@ export interface UploadPageConfig {
   documents: ReadonlyArray<UploadDocumentDef>;
 }
 
+// ─── Testing knobs ────────────────────────────────────────────────────────────
+// Change AUDITED_YEAR / PROVISIONAL_YEAR to update UI labels + the `year` param.
+// Set TEST_AUDITED_YEAR_ID / TEST_PROVISIONAL_YEAR_ID to override the `yearId`
+// param sent to the API (null = use the ID from localStorage / route as normal).
+// Revert all four to production values when done testing.
+const AUDITED_YEAR              = '2023-24';             // production: '2024-25'
+const PROVISIONAL_YEAR          = '2024-25';             // production: '2025-26'
+const TEST_AUDITED_YEAR_ID:     string | null = '606aafc14dff55e6c075d3ec'; // 2023-24
+const TEST_PROVISIONAL_YEAR_ID: string | null = '606aafcf4dff55e6c075d424'; // 2024-25
+
 export const UPLOAD_CONFIGS: Record<'audited' | 'provisional', UploadPageConfig> = {
   audited: {
     type: 'audited',
-    description:
-      'Upload your audited financial statement for FY 2024-25. You may upload documents in any order. The system will automatically verify that each document is readable and meets the required checks.',
+    description: `Upload your audited financial statement for FY ${AUDITED_YEAR}. You may upload documents in any order. The system will automatically verify that each document is readable and meets the required checks.`,
     confirmLabel: 'Confirm Audited Documents',
     documents: [
-      { id: 'receipts-payments', title: 'Receipts and Payments Statement', subtitle: 'FY 2024-25 · PDF only' },
-      { id: 'balance-sheet', title: 'Balance Sheet', subtitle: 'FY 2024-25 · PDF only' },
-      { id: 'balance-sheet-schedules', title: 'Balance Sheet Schedules', subtitle: 'FY 2024-25 · PDF only' },
-      { id: 'income-expenditure', title: 'Income and Expenditure Statement', subtitle: 'FY 2024-25 · PDF only' },
-      { id: 'income-statement-schedules', title: 'Income Statement Schedules', subtitle: 'FY 2024-25 · PDF only' },
-      { id: 'cash-flow', title: 'Cash Flow Statement', subtitle: 'FY 2024-25 · PDF only' },
+      // { id: 'receipts-payments',          title: 'Receipts and Payments Statement', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
+      { id: 'balance-sheet', title: 'Balance Sheet', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
+      { id: 'balance-sheet-schedules', title: 'Balance Sheet Schedules', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
+      {
+        id: 'income-expenditure',
+        title: 'Income and Expenditure Statement',
+        subtitle: `FY ${AUDITED_YEAR} · PDF only`,
+      },
+      {
+        id: 'income-statement-schedules',
+        title: 'Income Statement Schedules',
+        subtitle: `FY ${AUDITED_YEAR} · PDF only`,
+      },
+      { id: 'cash-flow', title: 'Cash Flow Statement', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
       { id: 'auditors-report', title: "Auditor's Report", subtitle: 'PDF only · CA-certified' },
     ],
   },
   provisional: {
     type: 'provisional',
-    description:
-      'Upload your provisional financial statement for FY 2025-26. You may upload documents in any order. The system will automatically verify that each document is readable and meets the required checks.',
+    description: `Upload your provisional financial statement for FY ${PROVISIONAL_YEAR}. You may upload documents in any order. The system will automatically verify that each document is readable and meets the required checks.`,
     confirmLabel: 'Confirm Provisional Documents',
     documents: [
-      { id: 'receipts-payments', title: 'Receipts and Payments Statement', subtitle: 'FY 2025-26 · PDF only' },
-      { id: 'balance-sheet', title: 'Balance Sheet', subtitle: 'FY 2025-26 · PDF only' },
-      { id: 'balance-sheet-schedules', title: 'Balance Sheet Schedules', subtitle: 'FY 2025-26 · PDF only' },
-      { id: 'income-expenditure', title: 'Income and Expenditure Statement', subtitle: 'FY 2025-26 · PDF only' },
-      { id: 'income-statement-schedules', title: 'Income Statement Schedules', subtitle: 'FY 2025-26 · PDF only' },
-      { id: 'cash-flow', title: 'Cash Flow Statement', subtitle: 'FY 2025-26 · PDF only' },
+      // { id: 'receipts-payments',          title: 'Receipts and Payments Statement', subtitle: `FY ${PROVISIONAL_YEAR} · PDF only` },
+      { id: 'balance-sheet', title: 'Balance Sheet', subtitle: `FY ${PROVISIONAL_YEAR} · PDF only` },
+      {
+        id: 'balance-sheet-schedules',
+        title: 'Balance Sheet Schedules',
+        subtitle: `FY ${PROVISIONAL_YEAR} · PDF only`,
+      },
+      {
+        id: 'income-expenditure',
+        title: 'Income and Expenditure Statement',
+        subtitle: `FY ${PROVISIONAL_YEAR} · PDF only`,
+      },
+      {
+        id: 'income-statement-schedules',
+        title: 'Income Statement Schedules',
+        subtitle: `FY ${PROVISIONAL_YEAR} · PDF only`,
+      },
+      { id: 'cash-flow', title: 'Cash Flow Statement', subtitle: `FY ${PROVISIONAL_YEAR} · PDF only` },
     ],
   },
 };
 
-const YEAR_BY_TYPE: Record<'audited' | 'provisional', string> = {
-  audited: '2024-25',
-  provisional: '2025-26',
-};
+// ─── Internal types ───────────────────────────────────────────────────────────
 
-type DocumentStatus = 'pending' | 'uploading' | 'uploaded' | 'error';
+// uploading → multipart POST in-flight
+// processing → backend received file, OCR running
+// passed → OCR PASSED
+// failed → OCR FAILED (with validation details)
+// error → network/validation error during upload
+type DocumentStatus = 'pending' | 'uploading' | 'processing' | 'passed' | 'failed' | 'error';
 
 interface UploadDocument extends UploadDocumentDef {
   status: DocumentStatus;
   fileName: string | null;
   fileSize: number | null;
-  previewUrl: string | null;
-  s3FileUrl: string | null;
-  s3Path: string | null;
+  sizeKb: number | null;
+  localPreviewUrl: string | null;
   pageCount: number | null;
   mimeType: string | null;
-  version: string | null;
+  versionLabel: string | null;
   uploadedAt: Date | null;
   uploaderUserId: string | null;
-  uploaderName: string | null;
   uploaderRole: string | null;
+  uploadId: string | null;
+  ocrProgressStep: string | null;
+  validationStatus: string | null;
+  validationDetails: string | null;
+  failedChecks: string[];
+  validationError: string | null;
 }
 
 interface UlbDetails {
@@ -102,41 +139,59 @@ interface UlbDetails {
   selectedYear: string;
 }
 
-interface S3SignedUrlResult {
-  url: string;
-  fileAlias: string;
-  fileUrl: string;
-  path: string;
-  fileSize: number | null | undefined;
-  pages: number | undefined;
+// Shape of ocrInfo inside currentUpload from backend status API
+interface BackendOcrInfo {
+  jobId: string | null;
+  status: string | null;
+  progressStep: string | null;
+  validationStatus: string | null;
+  validationDetails: string | null;
+  failedChecks: string[];
 }
 
-interface DbDocument {
+// Shape returned by GET /xvi-fc/annual-account/:id/status (and by-ulb lookup)
+interface BackendStatusDoc {
   docId: string;
-  type: string;
-  fileName?: string;
-  fileSize?: number;
-  fileUrl?: string;
-  pages: number;
-  mimeType: string;
-  filePath: string;
-  version: string;
-  userInfo: { userId: string | { _id: string; name: string }; role: string };
+  uploadStatus: string;
+  processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
+  currentUpload: {
+    uploadId: string;
+    version: number;
+    versionLabel: string;
+    file: { originalName: string; mimeType: string; pages: number; sizeKb: number };
+    ocrInfo: BackendOcrInfo;
+    userInfo: { userId: string; role: string } | null;
+    uploadedAt: string;
+  } | null;
+}
+
+interface BackendStatusSection {
+  form_status: 'NOT_STARTED' | 'IN_PROGRESS' | 'UNDER_REVIEW_BY_STATE';
+  yearId: string;
+  year: string;
+  documents: BackendStatusDoc[];
+}
+
+interface BackendStatusResponse {
+  annualAccountId: string;
+  auditedData: BackendStatusSection | null;
+  unauditedData: BackendStatusSection | null;
+}
+
+// Shape returned by POST /upload
+interface UploadResponse {
+  annualAccountId: string;
+  uploadId: string;
+  section: string;
+  docId: string;
+  version: number;
+  versionLabel: string;
+  processingStatus: string;
   uploadedAt: string;
 }
 
-interface DbYearSection {
-  yearId: string;
-  year: string;
-  documents: DbDocument[];
-}
-
-interface AnnualAccountRecord {
-  auditedData?: DbYearSection;
-  unauditedData?: DbYearSection;
-}
-
-const S3_UPLOAD_FOLDER = 'ulb-forms/2026';
+const API = `${environment.api.url2}`;
+const POLL_INTERVAL_MS = 5000;
 
 function emptyDoc(def: UploadDocumentDef): UploadDocument {
   return {
@@ -144,23 +199,27 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     status: 'pending',
     fileName: null,
     fileSize: null,
-    previewUrl: null,
-    s3FileUrl: null,
-    s3Path: null,
+    sizeKb: null,
+    localPreviewUrl: null,
     pageCount: null,
     mimeType: null,
-    version: null,
+    versionLabel: null,
     uploadedAt: null,
     uploaderUserId: null,
-    uploaderName: null,
     uploaderRole: null,
+    uploadId: null,
+    ocrProgressStep: null,
+    validationStatus: null,
+    validationDetails: null,
+    failedChecks: [],
+    validationError: null,
   };
 }
 
 @Component({
   selector: 'app-upload-documents',
   standalone: true,
-  imports: [NgClass, MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
+  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
   templateUrl: './upload-documents.component.html',
   styleUrl: './upload-documents.component.scss',
 })
@@ -169,27 +228,39 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly permissions = inject(AuthPermissionService);
+
+  readonly canUpload  = () => this.permissions.canUploadDocuments();
+  readonly canDelete  = () => this.permissions.canDeleteDocuments();
+  readonly canConfirm = () => this.permissions.canSubmitToStateDma();
 
   @ViewChild('fileInput') private readonly fileInputRef!: ElementRef<HTMLInputElement>;
   private pendingDocId: string | null = null;
+  private pollingSub: Subscription | null = null;
 
   readonly config: UploadPageConfig = this.route.snapshot.data['config'] as UploadPageConfig;
 
   readonly ulbDetails = signal<UlbDetails | null>(this.loadUlbDetails());
   readonly isLoadingExisting = signal(true);
-  readonly isSaving = signal(false);
-  readonly saveError = signal<string | null>(null);
-
-  private readonly isSaved = signal(false);
-  private readonly loggedInUserId = this.getLoggedInUserId();
-
   readonly documents = signal<UploadDocument[]>(this.config.documents.map(emptyDoc));
 
-  readonly readyCount = computed(() => this.documents().filter((d) => d.status === 'uploaded').length);
+  // annualAccountId is known after first successful upload or on initial load
+  readonly annualAccountId = signal<string | null>(null);
+
+  // True when this section has been submitted to State DMA — locks all edits for all roles
+  readonly sectionLocked = signal(false);
+
+  readonly passedCount = computed(() => this.documents().filter((d) => d.status === 'passed').length);
   readonly totalCount = this.config.documents.length;
-  readonly progressPct = computed(() => Math.round((this.readyCount() / this.totalCount) * 100));
-  readonly allReady = computed(() => this.readyCount() === this.totalCount);
-  readonly hasUnsavedUploads = computed(() => this.readyCount() > 0 && !this.isSaved());
+  readonly progressPct = computed(() => Math.round((this.passedCount() / this.totalCount) * 100));
+  readonly allPassed = computed(() => this.passedCount() === this.totalCount);
+  readonly hasProcessingDocs = computed(() =>
+    this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
+  );
+
+  // Used by deactivate guard — warn user if OCR is still running
+  readonly hasUnsavedUploads = this.hasProcessingDocs;
 
   async ngOnInit(): Promise<void> {
     await this.loadExistingData();
@@ -197,14 +268,15 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent): void {
-    if (this.hasUnsavedUploads()) {
+    if (this.hasProcessingDocs()) {
       event.preventDefault();
     }
   }
 
   ngOnDestroy(): void {
+    this.stopPolling();
     this.documents().forEach((d) => {
-      if (d.previewUrl) URL.revokeObjectURL(d.previewUrl);
+      if (d.localPreviewUrl) URL.revokeObjectURL(d.localPreviewUrl);
     });
   }
 
@@ -225,87 +297,147 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     const docId = this.pendingDocId;
     this.pendingDocId = null;
+    const docDef = this.config.documents.find((d) => d.id === docId)!;
 
-    console.log(`[upload] step 0 — file selected`, { docId, name: file.name, size: file.size, type: file.type });
+    const validationMsg = await this.checkFileValidity(file, docId);
+    if (validationMsg) {
+      this.setDocError(docId, validationMsg);
+      return;
+    }
 
     this.documents.update((docs) =>
-      docs.map((d) => (d.id === docId ? { ...d, status: 'uploading', fileName: file.name } : d)),
+      docs.map((d) => (d.id === docId ? { ...emptyDoc(docDef), status: 'uploading', fileName: file.name } : d)),
     );
 
     try {
-      const pageCount = await this.readPdfPageCount(file);
-      console.log(`[upload] step 1 — PDF page count`, { pageCount });
+      const ulbId = this.resolveUlbId();
+      const designYearId = this.resolveDesignYearId();
+      if (!ulbId || !designYearId) throw new Error('Missing ulbId or designYearId');
 
-      const s3Result = await firstValueFrom(
-        this.http
-          .post<{ success: boolean; data: S3SignedUrlResult[] }>(
-            `${environment.api.url2}s3/signed-url`,
-            [{ fileName: file.name, fileUrl: '', fileSize: file.size, pages: pageCount ?? 0, mimeType: file.type, folder: S3_UPLOAD_FOLDER }],
-          )
-          .pipe(map((res) => res.data[0])),
+      const yearId = this.config.type === 'audited' ? TEST_AUDITED_YEAR_ID! : TEST_PROVISIONAL_YEAR_ID!;
+      const year   = this.config.type === 'audited' ? AUDITED_YEAR : PROVISIONAL_YEAR;
+      const section = this.config.type === 'audited' ? 'auditedData' : 'unauditedData';
+
+      const form = new FormData();
+      form.append('file', file, file.name);
+      form.append('ulbId', ulbId);
+      form.append('designYearId', designYearId);
+      form.append('section', section);
+      form.append('docId', docId);
+      form.append('yearId', yearId);
+      form.append('year', year);
+
+      const result = await firstValueFrom(
+        this.http.post<{ success: boolean; data: UploadResponse }>(`${API}xvi-fc/annual-account/upload`, form),
       );
-      console.log(`[upload] step 2 — presigned URL received`, { s3Result });
 
-      await firstValueFrom(
-        this.http.put(s3Result.url, file, {
-          headers: new HttpHeaders({ 'Content-Type': file.type }),
-          responseType: 'text',
-        }),
-      );
-      console.log(`[upload] step 3 — S3 upload complete ✓`);
+      const upload = result.data;
+      this.annualAccountId.set(upload.annualAccountId);
 
-      const previewUrl = URL.createObjectURL(file);
+      const localPreviewUrl = URL.createObjectURL(file);
 
       this.documents.update((docs) =>
         docs.map((d) => {
           if (d.id !== docId) return d;
-          if (d.previewUrl) URL.revokeObjectURL(d.previewUrl);
+          if (d.localPreviewUrl) URL.revokeObjectURL(d.localPreviewUrl);
           return {
             ...d,
-            status: 'uploaded',
+            status: 'processing' as DocumentStatus,
             fileName: file.name,
             fileSize: file.size,
-            previewUrl,
-            s3FileUrl: s3Result.fileUrl,
-            s3Path: s3Result.path,
-            pageCount,
+            sizeKb: Math.round((file.size / 1024) * 10) / 10,
+            localPreviewUrl,
             mimeType: file.type,
-            version: null,       // version assigned server-side on save
-            uploadedAt: new Date(),
-            uploaderUserId: this.loggedInUserId,
-            uploaderName: null,
+            versionLabel: upload.versionLabel,
+            uploadId: upload.uploadId,
+            uploadedAt: new Date(upload.uploadedAt),
+            uploaderUserId: this.getLoggedInUserId(),
             uploaderRole: null,
+            ocrProgressStep: null,
+            validationStatus: null,
+            validationDetails: null,
+            failedChecks: [],
           };
         }),
       );
 
-      this.isSaved.set(false);
+      this.startPolling();
     } catch (err) {
-      console.error('[upload] FAILED', err);
-      this.documents.update((docs) =>
-        docs.map((d) => (d.id === docId ? { ...d, status: 'error', fileName: null } : d)),
+      console.error('[upload] failed', err);
+      this.setDocError(docId);
+    }
+  }
+
+  async retryUpload(docId: string): Promise<void> {
+    const doc = this.documents().find((d) => d.id === docId);
+    if (!doc?.uploadId || !this.annualAccountId()) return;
+
+    this.documents.update((docs) =>
+      docs.map((d) =>
+        d.id === docId
+          ? {
+              ...d,
+              status: 'processing',
+              ocrProgressStep: null,
+              validationStatus: null,
+              validationDetails: null,
+              failedChecks: [],
+            }
+          : d,
+      ),
+    );
+
+    try {
+      await firstValueFrom(
+        this.http.post(`${API}xvi-fc/annual-account/${this.annualAccountId()}/documents/${doc.uploadId}/retry`, {}),
       );
+      this.startPolling();
+    } catch (err) {
+      console.error('[retry] failed', err);
+      this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, status: 'failed' } : d)));
+    }
+  }
+
+  async previewFile(doc: UploadDocument): Promise<void> {
+    if (doc.localPreviewUrl) {
+      window.open(doc.localPreviewUrl, '_blank', 'noopener');
+      return;
+    }
+    if (!doc.uploadId || !this.annualAccountId()) return;
+    try {
+      const result = await firstValueFrom(
+        this.http.get<{ success: boolean; data: { url: string } }>(
+          `${API}xvi-fc/annual-account/${this.annualAccountId()}/documents/${doc.uploadId}/signed-url`,
+        ),
+      );
+      window.open(result.data.url, '_blank', 'noopener');
+    } catch (err) {
+      console.error('[preview] failed to get signed URL', err);
     }
   }
 
   async removeDocument(docId: string): Promise<void> {
-    const removeData: UlbFormsDialogData = {
+    const data: UlbFormsDialogData = {
       title: 'Remove this document?',
       icon: { name: 'warning_amber', color: '#e53935' },
       description:
         'This document has already passed validation. Removing it will clear the current verification result — the system will run the checks again on your replacement file.',
       buttons: [
-        { label: 'Cancel',             result: 'cancel', variant: 'stroked' },
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
         { label: 'Remove and re-upload', result: 'remove', variant: 'flat', bgColor: '#e53935' },
       ],
     };
 
     const result = await firstValueFrom(
       this.dialog
-        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(
-          UlbFormsDialogComponent,
-          { data: removeData, disableClose: true, width: '500px', maxWidth: '95vw', maxHeight: '90vh', panelClass: ULB_FORMS_DIALOG_PANEL_CLASS },
-        )
+        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
+          data,
+          disableClose: true,
+          width: '500px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
+        })
         .afterClosed(),
     );
 
@@ -314,62 +446,68 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents.update((docs) =>
       docs.map((d) => {
         if (d.id !== docId) return d;
-        if (d.previewUrl) URL.revokeObjectURL(d.previewUrl);
+        if (d.localPreviewUrl) URL.revokeObjectURL(d.localPreviewUrl);
         return emptyDoc(this.config.documents.find((def) => def.id === docId)!);
       }),
     );
-
-    this.isSaved.set(false);
-  }
-
-  previewFile(doc: UploadDocument): void {
-    const url = doc.s3FileUrl ?? doc.previewUrl;
-    if (url) window.open(url, '_blank', 'noopener');
-  }
-
-  async saveDraft(): Promise<void> {
-    await this.persistToDb();
   }
 
   async confirmDocuments(): Promise<void> {
     const rows = this.documents()
-      .filter((d) => d.status === 'uploaded')
+      .filter((d) => d.status === 'passed')
       .map((d) => ({
         title: d.title,
         fileName: d.fileName,
-        version: d.version,
+        version: d.versionLabel,
         uploaderLabel: this.uploaderLabel(d),
-        byTeammate: !!d.uploaderUserId && d.uploaderUserId !== this.loggedInUserId,
+        byTeammate: !!d.uploaderUserId && d.uploaderUserId !== this.getLoggedInUserId(),
       }));
 
     const confirmData: UlbFormsDialogData = {
       title: 'Review before submitting',
       description:
-        'Check that each document is correct. Rows highlighted in amber were uploaded by a teammate — verify them before confirming. Once submitted, files are locked until State DMA responds.',
+        'All documents have passed validation. Check that each document is correct before submitting to State DMA.',
       table: rows,
       buttons: [
-        { label: 'Go back',            result: 'back',   variant: 'stroked' },
+        { label: 'Go back', result: 'back', variant: 'stroked' },
         { label: 'Submit to State DMA', result: 'submit', variant: 'flat' },
       ],
     };
 
     const result = await firstValueFrom(
       this.dialog
-        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(
-          UlbFormsDialogComponent,
-          { data: confirmData, disableClose: true, width: '600px', maxWidth: '95vw', maxHeight: '90vh', panelClass: ULB_FORMS_DIALOG_PANEL_CLASS },
-        )
+        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
+          data: confirmData,
+          disableClose: true,
+          width: '600px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
+        })
         .afterClosed(),
     );
 
     if (result !== 'submit') return;
-    await this.persistToDb();
+
+    const accountId = this.annualAccountId();
+    if (!accountId) return;
+
+    const section = this.config.type === 'audited' ? 'auditedData' : 'unauditedData';
+
+    try {
+      await firstValueFrom(
+        this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section }),
+      );
+      this.location.back();
+    } catch (err) {
+      console.error('[submit] failed to submit section', err);
+    }
   }
 
   uploaderLabel(doc: UploadDocument): string {
     if (!doc.uploaderUserId) return '';
-    if (doc.uploaderUserId === this.loggedInUserId) return 'You';
-    return doc.uploaderName ?? (doc.uploaderRole ? this.roleLabel(doc.uploaderRole) : 'Another user');
+    if (doc.uploaderUserId === this.getLoggedInUserId()) return 'You';
+    return doc.uploaderRole ? this.roleLabel(doc.uploaderRole) : 'Another user';
   }
 
   timeAgo(date: Date | null): string {
@@ -382,67 +520,90 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? 's' : ''} ago`;
     const diffDay = Math.floor(diffHr / 24);
     if (diffDay < 30) return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
-    return new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'Asia/Kolkata',
+    });
   }
 
-  formatFileSize(bytes: number | null): string {
-    if (bytes === null || bytes === undefined) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  formatFileSize(sizeKb: number | null): string {
+    if (sizeKb === null || sizeKb === undefined) return '';
+    if (sizeKb < 1024) return `${sizeKb.toFixed(0)} KB`;
+    return `${(sizeKb / 1024).toFixed(1)} MB`;
   }
+
+  // Converts a raw failed-check string like "ulb_name_mismatch: expected 'X' extracted 'Y'"
+  // into a human-readable label.
+  formatCheckLabel(raw: string): string {
+    const colonIdx = raw.indexOf(':');
+    if (colonIdx === -1) return raw;
+    const key = raw.slice(0, colonIdx).trim().replace(/_/g, ' ');
+    const detail = raw.slice(colonIdx + 1).trim();
+    return `${key.charAt(0).toUpperCase()}${key.slice(1)} — ${detail}`;
+  }
+
+  // ─── Private helpers ─────────────────────────────────────────────────────────
 
   private async loadExistingData(): Promise<void> {
-    const yearId = this.resolveYearId();
     const ulbId = this.resolveUlbId();
+    const designYearId = this.resolveDesignYearId();
 
-    if (!yearId || !ulbId) {
+    if (!ulbId || !designYearId) {
       this.isLoadingExisting.set(false);
       return;
     }
 
     try {
-      const response = await firstValueFrom(
-        this.http.get<{ success: boolean; data: AnnualAccountRecord }>(
-          `${environment.api.url2}xvi-fc/annual-account/${ulbId}/${yearId}`,
+      const result = await firstValueFrom(
+        this.http.get<{ success: boolean; data: BackendStatusResponse | null }>(
+          `${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}`,
         ),
       );
 
-      const section =
-        this.config.type === 'audited'
-          ? response.data?.auditedData
-          : response.data?.unauditedData;
+      const statusData = result.data;
+      if (!statusData) return;
 
-      if (section?.documents?.length) {
-        this.documents.update((docs) =>
-          docs.map((doc) => {
-            const saved = section.documents.find((d) => d.docId === doc.id);
-            if (!saved) return doc;
+      this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
 
-            const rawUserId = saved.userInfo?.userId;
-            const uploaderUserId = typeof rawUserId === 'object' ? rawUserId._id : (rawUserId ?? null);
-            const uploaderName   = typeof rawUserId === 'object' ? rawUserId.name : null;
+      const section = this.config.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
+      this.sectionLocked.set(section?.form_status === 'UNDER_REVIEW_BY_STATE');
+      if (!section?.documents?.length) return;
 
-            return {
-              ...doc,
-              status: 'uploaded' as DocumentStatus,
-              fileName: saved.fileName ?? this.extractDisplayName(saved.filePath),
-              fileSize: saved.fileSize ?? null,
-              previewUrl: null,
-              s3FileUrl: saved.fileUrl ?? null,
-              s3Path: saved.filePath,
-              pageCount: saved.pages,
-              mimeType: saved.mimeType,
-              version: saved.version,
-              uploadedAt: new Date(saved.uploadedAt),
-              uploaderUserId,
-              uploaderName,
-              uploaderRole: saved.userInfo?.role ?? null,
-            };
-          }),
-        );
+      this.documents.update((docs) =>
+        docs.map((doc) => {
+          const saved = section.documents.find((d) => d.docId === doc.id);
+          if (!saved?.currentUpload) return doc;
 
-        this.isSaved.set(true);
+          const cu = saved.currentUpload;
+          const status = this.backendStatusToLocal(saved.processingStatus);
+
+          return {
+            ...doc,
+            status,
+            fileName: cu.file.originalName,
+            fileSize: null,
+            sizeKb: cu.file.sizeKb,
+            localPreviewUrl: null,
+            pageCount: cu.file.pages,
+            mimeType: cu.file.mimeType,
+            versionLabel: cu.versionLabel,
+            uploadedAt: new Date(cu.uploadedAt),
+            uploaderUserId: cu.userInfo?.userId ?? null,
+            uploaderRole: cu.userInfo?.role ?? null,
+            uploadId: cu.uploadId,
+            ocrProgressStep: cu.ocrInfo.progressStep,
+            validationStatus: cu.ocrInfo.validationStatus ?? null,
+            validationDetails: cu.ocrInfo.validationDetails ?? null,
+            failedChecks: cu.ocrInfo.failedChecks ?? [],
+          };
+        }),
+      );
+
+      // Start polling if any doc is still processing
+      if (this.documents().some((d) => d.status === 'processing')) {
+        this.startPolling();
       }
     } catch (err: unknown) {
       if ((err as { status?: number })?.status !== 404) {
@@ -453,73 +614,159 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async persistToDb(): Promise<void> {
-    const designYear = this.resolveYearId();
-    const ulbId = this.resolveUlbId();
+  private startPolling(): void {
+    if (this.pollingSub && !this.pollingSub.closed) return;
 
-    if (!designYear || !ulbId) {
-      console.error('[save] missing yearId or ulbId', { designYear, ulbId });
-      this.saveError.set('Session context is missing. Please reload the page.');
-      return;
-    }
+    const accountId = this.annualAccountId();
+    if (!accountId) return;
 
-    const docYear = this.resolveDocumentYear();
-    const year = docYear?.year ?? YEAR_BY_TYPE[this.config.type];
-    const docYearId = docYear?._id ?? designYear;
-
-    const uploadedDocs = this.documents().filter((d) => d.status === 'uploaded');
-    if (uploadedDocs.length === 0) return;
-
-    const documents = uploadedDocs.map((d) => ({
-      docId: d.id,
-      type: d.title,
-      fileName: d.fileName ?? undefined,
-      fileSize: d.fileSize ?? undefined,
-      pages: d.pageCount ?? 0,
-      mimeType: d.mimeType ?? 'application/pdf',
-      filePath: d.s3Path ?? d.s3FileUrl ?? '',
-      fileUrl: d.s3FileUrl ?? undefined,
-    }));
-
-    const sectionKey = this.config.type === 'audited' ? 'auditedData' : 'unauditedData';
-    const payload = {
-      ulb: ulbId,
-      design_year: designYear,
-      [sectionKey]: { yearId: docYearId, year, documents },
-    };
-
-    this.isSaving.set(true);
-    this.saveError.set(null);
-
-    try {
-      await firstValueFrom(
-        this.http.post<{ success: boolean; data: unknown }>(
-          `${environment.api.url2}xvi-fc/annual-account`,
-          payload,
+    this.pollingSub = interval(POLL_INTERVAL_MS)
+      .pipe(
+        switchMap(() =>
+          this.documents().some((d) => d.status === 'processing')
+            ? this.http.get<{ success: boolean; data: BackendStatusResponse }>(
+                `${API}xvi-fc/annual-account/${accountId}/status`,
+              )
+            : EMPTY,
         ),
-      );
-      this.isSaved.set(true);
-      await this.loadExistingData(); // refresh to get server-assigned version numbers
-    } catch (err) {
-      console.error('[save] failed', err);
-      this.saveError.set('Failed to save documents. Please try again.');
-      throw err;
-    } finally {
-      this.isSaving.set(false);
-    }
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (result) => {
+          const section = this.config.type === 'audited' ? result.data.auditedData : result.data.unauditedData;
+          if (!section?.documents) return;
+
+          this.documents.update((docs) =>
+            docs.map((doc) => {
+              if (doc.status !== 'processing') return doc;
+
+              const remote = section.documents.find((d) => d.docId === doc.id);
+              // Guard: must match the specific uploadId being tracked
+              if (!remote?.currentUpload || remote.currentUpload.uploadId !== doc.uploadId) return doc;
+
+              const newStatus = this.backendStatusToLocal(remote.processingStatus);
+              if (newStatus === doc.status) return doc;
+
+              return {
+                ...doc,
+                status: newStatus,
+                ocrProgressStep: remote.currentUpload.ocrInfo.progressStep,
+                validationStatus: remote.currentUpload.ocrInfo.validationStatus ?? null,
+                validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
+                failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
+              };
+            }),
+          );
+
+          if (!this.documents().some((d) => d.status === 'processing')) {
+            this.stopPolling();
+          }
+        },
+        error: (err) => console.error('[poll] status check failed', err),
+      });
   }
 
-  private async readPdfPageCount(file: File): Promise<number | null> {
+  private stopPolling(): void {
+    this.pollingSub?.unsubscribe();
+    this.pollingSub = null;
+  }
+
+  private backendStatusToLocal(ps: string): DocumentStatus {
+    if (ps === 'PASSED') return 'passed';
+    if (ps === 'FAILED') return 'failed';
+    if (ps === 'PROCESSING') return 'processing';
+    return 'pending';
+  }
+
+  private setDocError(docId: string, message: string | null = null): void {
+    this.documents.update((docs) =>
+      docs.map((d) => (d.id === docId ? { ...d, status: 'error', fileName: null, validationError: message } : d)),
+    );
+  }
+
+  private async checkFileValidity(file: File, docId: string): Promise<string | null> {
+    const isPdfMime = file.type === 'application/pdf';
+    const isPdfExt = file.name.toLowerCase().endsWith('.pdf');
+
+    if (!isPdfMime && !isPdfExt) {
+      return 'Please upload a PDF file only.';
+    }
+
+    if (file.size === 0) {
+      return 'The selected file is empty. Please upload a valid PDF.';
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      return 'File size exceeds 50 MB. Please compress or split the PDF and try again.';
+    }
+
+    // Fast header check — confirm %PDF- signature before reading the whole file
     try {
-      const buffer = await file.arrayBuffer();
-      const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
-      return pdf.getPageCount();
+      const headerBuf = await file.slice(0, 5).arrayBuffer();
+      const h = new Uint8Array(headerBuf);
+      if (!(h[0] === 0x25 && h[1] === 0x50 && h[2] === 0x44 && h[3] === 0x46 && h[4] === 0x2d)) {
+        return 'Please upload a PDF file only.';
+      }
     } catch {
-      return null;
+      // ignore — pdf.js will also reject a corrupt file
     }
+
+    // Render-based blank detection via pdf.js.
+    // Heuristics (scanning raw bytes for /Font etc.) cannot detect blank scanned pages
+    // because they look identical to real scans at the byte level.
+    // Rendering at low resolution and checking pixel brightness is the only reliable approach.
+    try {
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url,
+      ).toString();
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      if (pdf.numPages === 0) {
+        return 'This PDF has no pages. Please upload a valid document.';
+      }
+
+      // Render page 1 at scale 0.15 (~96×136 px for A4) — fast, enough for blank detection
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 0.15 });
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let nonWhite = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] < 240 || data[i + 1] < 240 || data[i + 2] < 240) nonWhite++;
+      }
+
+      const totalPixels = canvas.width * canvas.height;
+      if (nonWhite / totalPixels < 0.005) {
+        return 'This PDF appears to be blank. Please upload a document with content.';
+      }
+
+      // Page-count check only after confirming the document is a valid, non-blank PDF
+      if (docId === 'auditors-report' && pdf.numPages < 2) {
+        return "A valid Auditor's Report must contain more than one page.";
+      }
+    } catch (err) {
+      // pdf.js failed to load or render — let the backend validate instead
+      console.warn('[pdf-check] render check skipped:', err);
+    }
+
+    return null;
   }
 
-  private resolveYearId(): string | null {
+  private resolveDesignYearId(): string | null {
     const stored = localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
     if (stored) return stored;
     let current: ActivatedRoute | null = this.route;
@@ -547,15 +794,6 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
   }
 
-  private resolveDocumentYear(): { _id: string; year: string } | null {
-    try {
-      const raw = localStorage.getItem(XVIFC_LS_KEYS.documentYears);
-      if (!raw) return null;
-      return (JSON.parse(raw) as XvifcDocumentYears)[this.config.type] ?? null;
-    } catch {
-      return null;
-    }
-  }
 
   private getLoggedInUserId(): string | null {
     try {
@@ -569,17 +807,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
   private roleLabel(role: string): string {
     const map: Record<string, string> = {
-      'ULB': 'ULB User',
+      ULB: 'ULB User',
       'ULB-EDITOR': 'ULB Editor',
       'ULB-VIEWER': 'ULB Viewer',
-      'STATE': 'State User',
+      STATE: 'State User',
     };
     return map[role] ?? role;
-  }
-
-  private extractDisplayName(filePath: string): string {
-    const filename = filePath.split('/').pop() ?? filePath;
-    return filename.replace(/_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\.[^.]+)$/, '$1');
   }
 
   private loadUlbDetails(): UlbDetails | null {
