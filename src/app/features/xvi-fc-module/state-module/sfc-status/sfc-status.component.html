@@ -27,23 +27,25 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
         } @else {
-          <div class="d-flex align-items-center gap-3 alert alert-info" role="alert">
-            <i class="bi bi-people fs-4"></i>
-            <div>
-              @for (item of actors(); track item.by) {
-                @if (item.by) {
-                  <small class="d-flex align-items-center gap-2 p-0 m-0">
-                    <strong class="text-nowrap">{{ item.action }}</strong>
-                    <span class="text-nowrap">{{ item.by }} State DMA Officer</span>
-                    <span class="text-muted">&middot;</span>
-                    <span class="text-nowrap">{{ item.date | date: 'dd MMM yyyy' }}</span>
-                  </small>
+          @if (actors().length) {
+            <div class="d-flex align-items-center gap-3 alert alert-info" role="alert">
+              <i class="bi bi-people fs-4"></i>
+              <div>
+                @for (item of actors(); track $index) {
+                  @if (item.by) {
+                    <small class="d-flex align-items-center gap-2 p-0 m-0">
+                      <strong class="text-nowrap">{{ item.action }}</strong>
+                      <span class="text-nowrap">{{ item.by }} State DMA Officer</span>
+                      <span class="text-muted">&middot;</span>
+                      <span class="text-nowrap">{{ item.date | date: 'dd MMM yyyy' }}</span>
+                    </small>
+                  }
                 }
-              }
+              </div>
             </div>
-          </div>
 
-          <hr class="my-0 text-body-tertiary" />
+            <hr class="my-0 text-body-tertiary" />
+          }
 
           <form class="content-body" [formGroup]="form">
             @for (item of visibleFields(); track item.key; let isLast = $last) {
