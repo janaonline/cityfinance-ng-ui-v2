@@ -368,6 +368,9 @@ export class SfcStatusComponent implements OnInit {
         const fieldErrors = errors[field.key ?? ''];
         if (!fieldErrors?.length) return field;
 
+        // Don't inject validation entries for fields that are currently hidden.
+        if (field.hidden) return field;
+
         const validations = [...(field.validations ?? [])];
 
         for (const error of fieldErrors) {
@@ -389,12 +392,16 @@ export class SfcStatusComponent implements OnInit {
       if (!fieldErrors.length) continue;
 
       const actualKey = fieldErrors[0]?.field ?? fieldKey;
+      const fieldConfig = this.fields().find((f) => f.key === actualKey);
       const control = this.form.get(actualKey);
 
       if (!control) {
         console.warn(`[SFC Status] API error for unknown field: ${actualKey}`);
         continue;
       }
+
+      // Don't apply errors to fields that are currently hidden.
+      if (fieldConfig?.hidden) continue;
 
       const errorMap = fieldErrors.reduce<Record<string, true>>((acc, error) => {
         if (error.code) acc[error.code] = true;

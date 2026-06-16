@@ -169,11 +169,18 @@ export class DynamicFormVisibilityService {
     const dependents = dependencyIndex.get(controllerKey);
     if (!dependents?.length) return;
 
-    for (const field of dependents) {
-      const shouldShow = this.evaluateFieldVisibility(field, form);
-      field.hidden = !shouldShow;
+    // Build a visibility map keyed by field.key so the signal update below can
+    // look fields up by key rather than mutating the stored reference directly.
+    // Direct mutation broke after applyApiErrors() replaced field objects in the
+    // signal via spread, making the dependencyIndex references stale.
+    const visibilityMap = new Map<string, boolean>();
 
-      const control = form.get(field.key!);
+    for (const field of dependents) {
+      if (!field.key) continue;
+      const shouldShow = this.evaluateFieldVisibility(field, form);
+      visibilityMap.set(field.key, shouldShow);
+
+      const control = form.get(field.key);
       if (!control) continue;
 
       if (shouldShow) {
@@ -183,14 +190,29 @@ export class DynamicFormVisibilityService {
           control.reset(null, { emitEvent: false });
         }
         control.disable({ emitEvent: false });
+        // Clear errors so hidden fields don't block submission and don't display
+        // stale API or client-side error messages when they become hidden.
+        control.setErrors(null);
+        control.markAsUntouched();
+        control.markAsPristine();
       }
 
-      // updateValueAndValidity will trigger re-evaluation of visibility for fields
       control.updateValueAndValidity({ emitEvent: false });
     }
 
-    // trigger signal refresh for templates/computed state
-    fieldsSignal.update((fields) => [...fields]);
+    // Update the hidden flag on the CURRENT signal objects (by key) rather than
+    // the stale dependencyIndex references. Return the same reference when nothing
+    // changes to avoid unnecessary object churn.
+    fieldsSignal.update((fields) =>
+      fields.map((field) => {
+        if (!field.key) return field;
+        const shouldShow = visibilityMap.get(field.key);
+        if (shouldShow === undefined) return field; // not a dependent of this controller
+        const newHidden = !shouldShow;
+        if (field.hidden === newHidden) return field;
+        return { ...field, hidden: newHidden };
+      }),
+    );
   }
 
   /**
