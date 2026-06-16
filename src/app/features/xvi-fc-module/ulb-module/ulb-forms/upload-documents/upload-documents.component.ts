@@ -193,6 +193,13 @@ interface UploadResponse {
 const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
 
+// The dev backend may return bare objects instead of { success, data } wrappers.
+// This helper extracts the payload from either shape.
+function unwrap<T>(response: unknown): T {
+  const r = response as Record<string, unknown>;
+  return (r && 'data' in r ? r['data'] : r) as T;
+}
+
 function emptyDoc(def: UploadDocumentDef): UploadDocument {
   return {
     ...def,
@@ -328,10 +335,10 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       form.append('year', year);
 
       const result = await firstValueFrom(
-        this.http.post<{ success: boolean; data: UploadResponse }>(`${API}xvi-fc/annual-account/upload`, form),
+        this.http.post<unknown>(`${API}xvi-fc/annual-account/upload`, form),
       );
 
-      const upload = result.data;
+      const upload = unwrap<UploadResponse>(result);
       this.annualAccountId.set(upload.annualAccountId);
 
       const localPreviewUrl = URL.createObjectURL(file);
@@ -406,11 +413,11 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (!doc.uploadId || !this.annualAccountId()) return;
     try {
       const result = await firstValueFrom(
-        this.http.get<{ success: boolean; data: { url: string } }>(
+        this.http.get<unknown>(
           `${API}xvi-fc/annual-account/${this.annualAccountId()}/documents/${doc.uploadId}/signed-url`,
         ),
       );
-      window.open(result.data.url, '_blank', 'noopener');
+      window.open(unwrap<{ url: string }>(result).url, '_blank', 'noopener');
     } catch (err) {
       console.error('[preview] failed to get signed URL', err);
     }
@@ -551,12 +558,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     try {
       const result = await firstValueFrom(
-        this.http.get<{ success: boolean; data: BackendStatusResponse | null }>(
+        this.http.get<unknown>(
           `${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}`,
         ),
       );
 
-      const statusData = result.data;
+      const statusData = unwrap<BackendStatusResponse | null>(result);
       if (!statusData) return;
 
       this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
@@ -587,7 +594,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             uploaderUserId: cu.userInfo?.userId ?? null,
             uploaderRole: cu.userInfo?.role ?? null,
             uploadId: cu.uploadId,
-            ocrProgressStep: cu.ocrInfo.progressStep,
+            ocrProgressStep: cu.ocrInfo?.progressStep ?? null,
             validationStatus: cu.ocrInfo.validationStatus ?? null,
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
@@ -618,7 +625,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       .pipe(
         switchMap(() =>
           this.documents().some((d) => d.status === 'processing')
-            ? this.http.get<{ success: boolean; data: BackendStatusResponse }>(
+            ? this.http.get<unknown>(
                 `${API}xvi-fc/annual-account/${accountId}/status`,
               )
             : EMPTY,
@@ -627,7 +634,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (result) => {
-          const section = this.config.type === 'audited' ? result.data.auditedData : result.data.unauditedData;
+          const payload = unwrap<BackendStatusResponse>(result);
+          const section = this.config.type === 'audited' ? payload.auditedData : payload.unauditedData;
           if (!section?.documents) return;
 
           this.documents.update((docs) =>
@@ -644,7 +652,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               return {
                 ...doc,
                 status: newStatus,
-                ocrProgressStep: remote.currentUpload.ocrInfo.progressStep,
+                ocrProgressStep: remote.currentUpload.ocrInfo?.progressStep ?? null,
                 validationStatus: remote.currentUpload.ocrInfo.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
