@@ -278,6 +278,15 @@
                 }
               </p>
 
+              <!-- Inline error messages (shown immediately after result is fetched) -->
+              @if (job.status === 'completed' && job.result && job.result.error_messages.length) {
+                <ul class="mb-2 ps-4 text-danger small">
+                  @for (msg of job.result.error_messages; track msg) {
+                    <li>{{ msg }}</li>
+                  }
+                </ul>
+              }
+
               <!-- Result panel (completed) -->
               @if (job.status === 'completed' && job.result && job.showResult) {
                 <div class="d-grid gap-4 mt-3 pt-3 border-top">
@@ -570,10 +579,10 @@
                             {{ job.result.basic_validation.validation_details }}
                           </p>
                         }
-                        @if (job.result.basic_validation.failed_checks.length) {
+                        @if (job.result.error_messages.length) {
                           <ul class="mb-0 mt-2 ps-4 text-danger small">
-                            @for (check of job.result.basic_validation.failed_checks; track check) {
-                              <li>{{ check }}</li>
+                            @for (msg of job.result.error_messages; track msg) {
+                              <li>{{ msg }}</li>
                             }
                           </ul>
                         }

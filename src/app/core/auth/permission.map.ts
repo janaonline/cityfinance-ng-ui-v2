@@ -23,6 +23,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_STATUS_REPORTS,
     Permission.UPLOAD_DOCUMENTS,
     Permission.MESSAGE_USERS,
+    Permission.DELETE_DOCUMENTS,
     Permission.FINAL_SUBMIT_TO_STATE_DMA,
     Permission.MANAGE_USERS,
     Permission.VIEW_MANAGED_USERS,
@@ -33,11 +34,10 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   'ULB-EDITOR': [
     Permission.VIEW_STATUS_REPORTS,
     Permission.UPLOAD_DOCUMENTS,
+    Permission.DELETE_DOCUMENTS,
     Permission.MESSAGE_USERS,
   ],
-  'ULB-VIEWER': [
-    Permission.VIEW_STATUS_REPORTS,
-  ],
+  'ULB-VIEWER': [Permission.VIEW_STATUS_REPORTS],
   STATE: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
@@ -61,10 +61,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.REVIEW_ULB_SUBMISSIONS,
     Permission.MESSAGE_USERS,
   ],
-  'STATE-VIEWER': [
-    Permission.VIEW_STATUS_REPORTS,
-    Permission.VIEW_DASHBOARDS,
-  ],
+  'STATE-VIEWER': [Permission.VIEW_STATUS_REPORTS, Permission.VIEW_DASHBOARDS],
   // Legacy roles mapped to equivalent permission sets
   // XVIFC: [
   //   Permission.VIEW_STATUS_REPORTS,

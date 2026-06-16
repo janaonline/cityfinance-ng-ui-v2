@@ -1,11 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
+import { AnnualAccountStateService } from '../annual-account-state.service';
 
 interface UlbDetails {
   ulbName: string;
@@ -102,14 +104,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         actionLabel: 'Upload',
         route: 'upload-provisional',
       },
-      {
-        id: 'unspent-balance',
-        title: 'FC Unspent Balance Disclosure',
-        subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
-        status: 'pending',
-        actionLabel: 'Fill Disclosure',
-        route: 'fill-disclosure',
-      },
+      // {
+      //   id: 'unspent-balance',
+      //   title: 'FC Unspent Balance Disclosure',
+      //   subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
+      //   status: 'pending',
+      //   actionLabel: 'Fill Disclosure',
+      //   route: 'fill-disclosure',
+      // },
     ],
   },
   {
@@ -140,15 +142,17 @@ const ALL_CONDITIONS = CONDITION_GROUPS.flatMap((g) => g.conditions);
 @Component({
   selector: 'app-ulb-forms',
   standalone: true,
-  imports: [NgClass, MatFormFieldModule, MatSelectModule, MatProgressBarModule, MatIconModule, MatButtonModule],
+  imports: [MatFormFieldModule, MatSelectModule, MatProgressBarModule, MatIconModule, MatButtonModule, MatTooltipModule],
   templateUrl: './ulb-forms.component.html',
   styleUrl: './ulb-forms.component.scss',
 })
-export class UlbFormsComponent {
+export class UlbFormsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly state = inject(AnnualAccountStateService);
 
   readonly ulbDetails = signal<UlbDetails | null>(this.loadUlbDetails());
+  readonly sectionFormStatus = this.state.formStatus;
 
   readonly grantBand = computed(() => {
     const year = this.ulbDetails()?.selectedYear ?? 'FY 2026-27';
@@ -168,10 +172,11 @@ export class UlbFormsComponent {
   });
 
   readonly conditionGroups: ConditionGroup[] = CONDITION_GROUPS;
-  readonly conditionsFooterNote = 'Confirm both document sets above to automatically submit your package to the State DMA.';
+  readonly conditionsFooterNote =
+    'Confirm both document sets above to automatically submit your package to the State DMA.';
 
   readonly conditionsProgress = computed(() => {
-    const complete = ALL_CONDITIONS.filter((c) => c.status === 'complete').length;
+    const complete = ALL_CONDITIONS.filter((c) => this.resolveStatus(c) === 'complete').length;
     const total = ALL_CONDITIONS.filter((c) => c.status !== 'locked').length;
     return { complete, total, pct: Math.round((complete / total) * 100) };
   });
@@ -181,6 +186,36 @@ export class UlbFormsComponent {
     high: '#f97316',
     medium: '#f59e0b',
   };
+
+  async ngOnInit(): Promise<void> {
+    const ulbId = this.resolveUlbId();
+    const designYearId = this.resolveDesignYearId();
+    if (!ulbId || !designYearId) return;
+    await this.state.loadFormStatus(ulbId, designYearId);
+  }
+
+  // Returns the effective display status for a condition, overriding the static
+  // value for the two upload conditions based on live API data.
+  resolveStatus(condition: Condition): 'complete' | 'pending' | 'locked' {
+    const status = this.sectionFormStatus();
+    if (status) {
+      if (condition.id === 'audited-statement') {
+        return status.auditedData.form_status === 'UNDER_REVIEW_BY_STATE' ? 'complete' : 'pending';
+      }
+      if (condition.id === 'provisional-statement') {
+        return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE' ? 'complete' : 'pending';
+      }
+    }
+    return condition.status;
+  }
+
+  isSubmitted(condition: Condition): boolean {
+    const status = this.sectionFormStatus();
+    if (!status) return false;
+    if (condition.id === 'audited-statement') return status.auditedData.form_status === 'UNDER_REVIEW_BY_STATE';
+    if (condition.id === 'provisional-statement') return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE';
+    return false;
+  }
 
   severityColor(scenario: WhatIfScenario): string {
     return this.SEVERITY_COLORS[scenario.severity];
@@ -198,19 +233,38 @@ export class UlbFormsComponent {
     this.router.navigate([route], { relativeTo: this.activatedRoute.parent });
   }
 
+  private resolveUlbId(): string | null {
+    let current = this.activatedRoute as ActivatedRoute | null;
+    while (current) {
+      const id = current.snapshot.paramMap.get('entityId');
+      if (id) return id;
+      current = current.parent;
+    }
+    try {
+      const raw = localStorage.getItem('userData');
+      return raw ? ((JSON.parse(raw) as { ulb?: string }).ulb ?? null) : null;
+    } catch { return null; }
+  }
+
+  private resolveDesignYearId(): string | null {
+    const stored = localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
+    if (stored) return stored;
+    let current = this.activatedRoute as ActivatedRoute | null;
+    while (current) {
+      const id = current.snapshot.paramMap.get('yearId');
+      if (id) return id;
+      current = current.parent;
+    }
+    return null;
+  }
+
   private loadUlbDetails(): UlbDetails | null {
     try {
       const raw = localStorage.getItem('xvifc_ulb_details');
       if (!raw) return null;
       const parsed = JSON.parse(raw) as Partial<UlbDetails>;
       if (!parsed.ulbName || !parsed.stateName || !parsed.selectedYear) return null;
-      return {
-        ulbName: parsed.ulbName,
-        stateName: parsed.stateName,
-        selectedYear: parsed.selectedYear,
-      };
-    } catch {
-      return null;
-    }
+      return { ulbName: parsed.ulbName, stateName: parsed.stateName, selectedYear: parsed.selectedYear };
+    } catch { return null; }
   }
 }
