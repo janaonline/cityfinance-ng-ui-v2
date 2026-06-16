@@ -29,6 +29,15 @@ export const SUBMIT_CONFIRM_DIALOG_DEFAULTS: Required<ConfirmDialogData> = {
   icon: 'bi-check-circle-fill',
 };
 
+export const SAVE_AS_DRAFT_DIALOG_DEFAULTS: Required<ConfirmDialogData> = {
+  title: 'Save as draft?',
+  message: 'Your progress will be saved. You can return to complete and submit this form later.',
+  confirmText: 'Yes, save draft',
+  cancelText: 'No, continue editing',
+  confirmButtonColor: 'primary',
+  icon: 'bi-floppy-fill',
+};
+
 /**
  * Generic confirmation dialog for guarding destructive or irreversible actions.
  *

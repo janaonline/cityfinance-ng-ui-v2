@@ -110,11 +110,12 @@ describe('TextareaComponent', () => {
     expect(textarea.readOnly).toBeFalse();
   });
 
-  it('should return true from hasError() when the control has that validation error', () => {
+  it('should return true from hasError() when the control has that validation error and is touched', () => {
     component.field = createField();
     component.group = new FormGroup({
       description: new FormControl('', Validators.required),
     });
+    component.group.get('description')!.markAsTouched();
     fixture.detectChanges();
 
     const result = component.hasError('description', 'required');

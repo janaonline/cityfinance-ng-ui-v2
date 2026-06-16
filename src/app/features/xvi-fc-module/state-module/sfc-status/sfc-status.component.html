@@ -26,14 +26,14 @@
         } @else {
           <form class="content-body" [formGroup]="form">
             @for (item of visibleFields(); track item.key; let isLast = $last) {
-              <app-dynamic-form
-                class="p-2 d-block my-2"
+              <div
+                class="my-2"
                 [class.border-bottom]="!isLast"
                 [class.border-success]="!isLast"
                 [class.border-opacity-25]="!isLast"
-                [field]="item"
-                [group]="form"
-              ></app-dynamic-form>
+              >
+                <app-dynamic-form class="p-2 d-block" [field]="item" [group]="form"></app-dynamic-form>
+              </div>
             }
           </form>
         }
@@ -42,8 +42,43 @@
 
     <div class="acknowledgement border-top p-3">
       <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
-        <button type="button" matButton="outlined" (click)="onCancel()" data-cy="sfc-status-cancel-test">Cancel</button>
-        <button type="submit" matButton="filled" (click)="onSubmit()" data-cy="sfc-status-submit-test">Submit</button>
+        <button
+          type="button"
+          matButton="outlined"
+          [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+          (click)="onCancel()"
+          data-cy="sfc-status-cancel-test"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          matButton="filled"
+          [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+          (click)="onSubmit('saveAsDraft')"
+          data-cy="sfc-status-submit-test"
+        >
+          @if (isSavingDraft()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Saving...
+          } @else {
+            Save
+          }
+        </button>
+        <button
+          type="button"
+          matButton="filled"
+          [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
+          (click)="onSubmit('finalSubmit')"
+          data-cy="sfc-status-final-submit-test"
+        >
+          @if (isFinalSubmitting()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Submitting...
+          } @else {
+            Final Submit
+          }
+        </button>
       </div>
     </div>
   </div>

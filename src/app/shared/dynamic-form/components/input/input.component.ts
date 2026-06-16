@@ -1,5 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 import { NoUpDownDirective } from '../../../../core/directives/no-up-down.directive';
@@ -20,7 +20,7 @@ import { TrimOnBlurDirective } from '../../../../core/directives/trim-on-blur.di
     }`,
   ]
 })
-export class InputComponent implements OnInit {
+export class InputComponent implements OnInit, OnChanges {
   className: string = 'box1';
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
@@ -31,10 +31,20 @@ export class InputComponent implements OnInit {
   validations: any[] = [];
   warnings: any[] = [];
   decimal: number = 0;
-  // textualFormFiledTypes: string[] = ['text', 'url', 'email', 'number'];
 
   constructor() { }
-  ngOnInit() {
+
+  ngOnInit(): void {
+    this.syncFromInputs();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['field'] || changes['parentField']) {
+      this.syncFromInputs();
+    }
+  }
+
+  private syncFromInputs(): void {
     this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
     this.decimal =
@@ -43,9 +53,11 @@ export class InputComponent implements OnInit {
         : this.field?.decimal;
     this.warnings = this.parentField?.warning;
   }
-  hasError(key: string, name: string) {
+
+  hasError(key: string, name: string): boolean {
     if (name === 'email') name = 'pattern';
-    return (this.group.get(key) as FormControl).hasError(name);
+    const control = this.group.get(key);
+    return !!control?.hasError(name) && (control.touched || control.dirty);
   }
 
   hasWarning(key: string, warning: any) {
