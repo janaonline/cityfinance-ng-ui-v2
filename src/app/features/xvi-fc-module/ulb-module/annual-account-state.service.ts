@@ -11,6 +11,11 @@ export interface FormStatusData {
 
 const API = `${environment.api.url2}`;
 
+function unwrap<T>(response: unknown): T {
+  const r = response as Record<string, unknown>;
+  return (r && 'data' in r ? r['data'] : r) as T;
+}
+
 /** Holds the live annual-account form-status fetched from the API.
  *  Permission checks live in XviFcPermissionService, not here. */
 @Injectable({ providedIn: 'root' })
@@ -22,11 +27,11 @@ export class AnnualAccountStateService {
   async loadFormStatus(ulbId: string, designYearId: string): Promise<void> {
     try {
       const result = await firstValueFrom(
-        this.http.get<{ success: boolean; data: FormStatusData }>(
+        this.http.get<unknown>(
           `${API}xvi-fc/annual-account/form-status/${ulbId}/${designYearId}`,
         ),
       );
-      this.formStatus.set(result.data);
+      this.formStatus.set(unwrap<FormStatusData>(result));
     } catch {
       // No record yet (404) or network error — leave signal null so UI shows pending state
     }
