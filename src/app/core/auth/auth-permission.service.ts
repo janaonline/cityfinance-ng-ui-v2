@@ -83,6 +83,20 @@ export class AuthPermissionService {
     return this.hasAnyPermission([Permission.FINAL_SUBMIT_TO_STATE_DMA, Permission.FINAL_SUBMIT_TO_MOHUA]);
   }
 
+  // ── Annual Accounts document upload ──────────────────────────────────────────
+
+  canUploadDocuments(): boolean {
+    return this.hasPermission(Permission.UPLOAD_DOCUMENTS);
+  }
+
+  canDeleteDocuments(): boolean {
+    return this.hasPermission(Permission.DELETE_DOCUMENTS);
+  }
+
+  canSubmitToStateDma(): boolean {
+    return this.hasPermission(Permission.FINAL_SUBMIT_TO_STATE_DMA);
+  }
+
   private getStoredUser(): IUserLoggedInDetails | null {
     const rawUser = localStorage.getItem('userData');
     if (!rawUser) return null;

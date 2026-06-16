@@ -69,7 +69,10 @@ export class ProfileVerificationComponent implements OnInit {
 
   // Add-form
   readonly showAddForm = signal(false);
-  readonly addFormSubmitting = signal(false);
+  readonly addFormOtpSent = signal(false);
+  readonly addFormSendingOtp = signal(false);
+  readonly addFormVerifying = signal(false);
+  readonly addFormOtpValue = signal('');
 
   readonly skeletonRows = [1, 2, 3];
 
@@ -164,7 +167,7 @@ export class ProfileVerificationComponent implements OnInit {
     }
     this.sendingOtpKey.set(key);
     this.errorMsg.set('');
-    this.profileService.sendProfileOtp(mobile).subscribe({
+    this.profileService.sendMobileVerifyOtp(mobile).subscribe({
       next: () => {
         this.otpSentKey.set(key);
         this.sendingOtpKey.set(null);
@@ -193,10 +196,16 @@ export class ProfileVerificationComponent implements OnInit {
     this.errorMsg.set('');
     const loggedInUserId = this.getLoggedInUserId();
     this.profileService
-      .verifyOtp(mobile, otp)
+      .verifyMobileOtp(mobile, otp)
       .pipe(
         switchMap(() =>
-          this.profileService.updateProfileContacts(loggedInUserId, email, mobile),
+          this.profileService.updateProfileContacts(
+            loggedInUserId,
+            profile.name,
+            email,
+            mobile,
+            profile.designation,
+          ),
         ),
       )
       .subscribe({
@@ -223,6 +232,43 @@ export class ProfileVerificationComponent implements OnInit {
   // ── Add form ──────────────────────────────────────────────────
   toggleAddForm(): void {
     this.showAddForm.update((v) => !v);
+    if (!this.showAddForm()) {
+      this.addFormOtpSent.set(false);
+      this.addFormSendingOtp.set(false);
+      this.addFormVerifying.set(false);
+      this.addFormOtpValue.set('');
+      this.errorMsg.set('');
+    }
+  }
+
+  onAddFormOtpInput(event: Event): void {
+    this.addFormOtpValue.set((event.target as HTMLInputElement).value);
+  }
+
+  sendAddFormOtp(): void {
+    if (this.addForm.invalid) {
+      this.addForm.markAllAsTouched();
+      this.errorMsg.set('Please fill in all fields before sending OTP.');
+      return;
+    }
+    const mobile = this.addForm.controls.mobile.value ?? '';
+    this.addFormSendingOtp.set(true);
+    this.addFormOtpSent.set(false);
+    this.addFormOtpValue.set('');
+    this.errorMsg.set('');
+    this.profileService.sendMobileVerifyOtp(mobile).subscribe({
+      next: () => {
+        this.addFormOtpSent.set(true);
+        this.addFormSendingOtp.set(false);
+      },
+      error: (err: unknown) => {
+        this.errorMsg.set(
+          (err as { error?: { message?: string } })?.error?.message ??
+            'Failed to send OTP. Please try again.',
+        );
+        this.addFormSendingOtp.set(false);
+      },
+    });
   }
 
   submitAddForm(): void {
@@ -230,22 +276,34 @@ export class ProfileVerificationComponent implements OnInit {
       this.addForm.markAllAsTouched();
       return;
     }
+    const otp = this.addFormOtpValue();
+    if (!otp || otp.length < 4) {
+      this.errorMsg.set('Please enter the OTP sent to your mobile.');
+      return;
+    }
     const val = this.addForm.value;
-    this.addFormSubmitting.set(true);
+    const mobile = val.mobile ?? '';
+    this.addFormVerifying.set(true);
+    this.errorMsg.set('');
+    const loggedInUserId = this.getLoggedInUserId();
     this.profileService
-      .createManagedUser({
-        name: val.name ?? '',
-        username: val.name ?? '',
-        designation: val.designation ?? '',
-        email: val.email ?? '',
-        mobile: val.mobile ?? '',
-        role: 'ULB',
-      })
+      .verifyMobileOtp(mobile, otp)
+      .pipe(
+        switchMap(() =>
+          this.profileService.updateProfileContacts(
+            loggedInUserId,
+            val.name ?? '',
+            val.email ?? '',
+            mobile,
+            val.designation ?? '',
+          ),
+        ),
+      )
       .subscribe({
         next: () => {
-          this.markVerifiedInStorage();
-          this.snackBar.open('Account created successfully!', 'Close', {
-            duration: 4000,
+          this.markVerifiedInStorage(val.name ?? '', val.email ?? '', mobile, val.designation ?? '');
+          this.snackBar.open('Profile verified successfully!', 'Close', {
+            duration: 3000,
             horizontalPosition: 'center',
             verticalPosition: 'top',
             panelClass: ['snack-success'],
@@ -255,9 +313,9 @@ export class ProfileVerificationComponent implements OnInit {
         error: (err: unknown) => {
           this.errorMsg.set(
             (err as { error?: { message?: string } })?.error?.message ??
-              'Submission failed. Please try again.',
+              'Verification failed. Please try again.',
           );
-          this.addFormSubmitting.set(false);
+          this.addFormVerifying.set(false);
         },
       });
   }
@@ -299,13 +357,17 @@ export class ProfileVerificationComponent implements OnInit {
     return false;
   }
 
-  private markVerifiedInStorage(): void {
+  private markVerifiedInStorage(name?: string, email?: string, mobile?: string, designation?: string): void {
     localStorage.setItem('isXVIFCProfileVerified', 'true');
     try {
       const raw = localStorage.getItem('userData');
       if (raw) {
         const user = JSON.parse(raw) as Record<string, unknown>;
         user['isXVIFCProfileVerified'] = true;
+        if (name) user['name'] = name;
+        if (email) user['email'] = email;
+        if (mobile) user['mobile'] = mobile;
+        if (designation) user['designation'] = designation;
         localStorage.setItem('userData', JSON.stringify(user));
       }
     } catch {

@@ -53,6 +53,8 @@
 
       <!-- Filters -->
       <form [formGroup]="filterForm" class="filter-grid">
+
+        <!-- Row 1: status, doc type, validation model, progress step, actions -->
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Status</mat-label>
           <mat-select formControlName="status">
@@ -61,9 +63,58 @@
             <mat-option value="processing">Processing</mat-option>
             <mat-option value="completed">Completed</mat-option>
             <mat-option value="failed">Failed</mat-option>
+            <mat-option value="failed:429">Failed — 429 Rate Limited</mat-option>
+            <mat-option value="failed:503">Failed — 503 Unavailable</mat-option>
+            <mat-option value="cancelled">Cancelled</mat-option>
           </mat-select>
         </mat-form-field>
 
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Document Type</mat-label>
+          <mat-select formControlName="docType">
+            <mat-option value="">All</mat-option>
+            @for (opt of docTypeOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Validation Model</mat-label>
+          <mat-select formControlName="validationModel">
+            <mat-option value="">All</mat-option>
+            @for (model of validationModelOptions; track model) {
+              <mat-option [value]="model">{{ model }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Step Status</mat-label>
+          <mat-select formControlName="progressStep">
+            <mat-option value="">All</mat-option>
+            @for (step of progressStepOptions; track step.value) {
+              <mat-option [value]="step.value">{{ step.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+<mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Match Status</mat-label>
+          <mat-select formControlName="matchStatus">
+            <mat-option value="">All</mat-option>
+            <mat-option value="ulb_name:true">ULB: Matched</mat-option>
+            <mat-option value="ulb_name:false">ULB: Not Matched</mat-option>
+            <mat-option value="financial_year:true">Year: Matched</mat-option>
+            <mat-option value="financial_year:false">Year: Not Matched</mat-option>
+            <mat-option value="doc_type:true">Doc Type: Matched</mat-option>
+            <mat-option value="doc_type:false">Doc Type: Not Matched</mat-option>
+            <mat-option value="overall:true">Overall: Matched</mat-option>
+            <mat-option value="overall:false">Overall: Not Matched</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Row 2: identifiers, ULB, dates -->
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Batch ID</mat-label>
           <input matInput formControlName="batchId" placeholder="Enter batch ID" />
@@ -82,6 +133,20 @@
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>ULB Name</mat-label>
           <input matInput formControlName="ulbName" placeholder="Search ULB name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Created From</mat-label>
+          <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom" placeholder="DD/MM/YYYY" readonly />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerFrom" />
+          <mat-datepicker #pickerFrom />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Created To</mat-label>
+          <input matInput [matDatepicker]="pickerTo" formControlName="dateTo" placeholder="DD/MM/YYYY" readonly />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerTo" />
+          <mat-datepicker #pickerTo />
         </mat-form-field>
 
         <div class="filter-actions">
@@ -237,7 +302,12 @@
 
           <!-- Dates -->
           <ng-container matColumnDef="dates">
-            <th mat-header-cell *matHeaderCellDef>Dates</th>
+            <th mat-header-cell *matHeaderCellDef>
+              <button type="button" class="sort-header-btn" (click)="toggleSortOrder()" [title]="sortOrder() === 'desc' ? 'Newest first — click for oldest first' : 'Oldest first — click for newest first'">
+                Dates
+                <mat-icon class="sort-icon">{{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}</mat-icon>
+              </button>
+            </th>
             <td mat-cell *matCellDef="let row">
               <div class="dates-cell">
                 <div>
@@ -259,14 +329,6 @@
             <th mat-header-cell *matHeaderCellDef>Action</th>
             <td mat-cell *matCellDef="let row">
               <div class="action-cell">
-                <button
-                  type="button"
-                  class="copy-btn copy-btn--lg"
-                  [title]="isCopied('ID', row.jobId) ? 'Copied!' : 'Copy job ID'"
-                  (click)="copyValue('ID', row.jobId)"
-                >
-                  <mat-icon>{{ isCopied('ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
-                </button>
                 <a
                   class="btn btn-sm btn-outline-primary"
                   routerLink="/ocr/validation"
@@ -275,6 +337,22 @@
                 >
                   View
                 </a>
+                @if (row.status === 'failed' || row.status === 'cancelled') {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-warning"
+                    [disabled]="retryingJobId() === row.jobId"
+                    (click)="retryJob(row)"
+                    title="Retry this job using the original file from S3"
+                  >
+                    @if (retryingJobId() === row.jobId) {
+                      <mat-icon class="spin-icon">hourglass_empty</mat-icon>
+                    } @else {
+                      <mat-icon>replay</mat-icon>
+                    }
+                    Retry
+                  </button>
+                }
               </div>
             </td>
           </ng-container>

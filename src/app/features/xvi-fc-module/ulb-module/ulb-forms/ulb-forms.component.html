@@ -9,7 +9,8 @@
     </div>
 
     <div class="grant-band position-relative overflow-hidden rounded-3 p-3 mb-3 mat-elevation-z3">
-      <div class="grant-band__dots position-absolute top-0 start-0 w-100 h-100" aria-hidden="true"></div>
+      <span class="grant-band__deco grant-band__deco--1" aria-hidden="true"></span>
+      <span class="grant-band__deco grant-band__deco--2" aria-hidden="true"></span>
       <div class="position-relative">
         <p class="grant-band__eyebrow text-uppercase fw-bold mb-1">{{ band.eyebrow }}</p>
         <p class="grant-band__amount fw-bolder mb-1">{{ band.amount }}</p>
@@ -48,7 +49,7 @@
             ></mat-progress-bar>
           </div>
           <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="simulator-badge" [ngClass]="badgeClass(result)">{{ result.likelihoodLabel }}</span>
+            <span class="simulator-badge" [class]="'simulator-badge ' + badgeClass(result)">{{ result.likelihoodLabel }}</span>
             <span class="body-xs text-muted">· {{ result.likelihood }}% likelihood</span>
           </div>
           <p class="simulator-desc rounded-2 p-2 body-xs mb-0">{{ result.description }}</p>
@@ -74,13 +75,15 @@
 
         <div class="conditions-card rounded-3 overflow-hidden mb-2 mat-elevation-z2">
           @for (condition of group.conditions; track condition.id; let last = $last) {
+            @let effectiveStatus = resolveStatus(condition);
+            @let submitted = isSubmitted(condition);
             <div class="condition-row d-flex align-items-center gap-3 px-3 py-2" [class.border-bottom]="!last">
 
-              @if (condition.status === 'complete') {
+              @if (effectiveStatus === 'complete') {
                 <span class="condition-icon condition-icon--complete flex-shrink-0">
                   <mat-icon>check</mat-icon>
                 </span>
-              } @else if (condition.status === 'pending') {
+              } @else if (effectiveStatus === 'pending') {
                 <span class="condition-icon condition-icon--pending flex-shrink-0" aria-hidden="true"></span>
               } @else {
                 <span class="condition-icon condition-icon--locked flex-shrink-0" aria-hidden="true"></span>
@@ -91,12 +94,28 @@
                 <p class="condition-subtitle text-muted mb-0">{{ condition.subtitle }}</p>
               </div>
 
-              @if (condition.status === 'complete') {
+              @if (submitted) {
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <span class="submitted-badge">
+                    <mat-icon class="submitted-badge__icon">check_circle</mat-icon>
+                    SUBMITTED
+                  </span>
+                  <button
+                    mat-icon-button
+                    class="preview-icon-btn"
+                    type="button"
+                    matTooltip="View uploaded documents"
+                    (click)="navigateTo(condition.route!)"
+                  >
+                    <mat-icon class="preview-icon">visibility</mat-icon>
+                  </button>
+                </div>
+              } @else if (effectiveStatus === 'complete') {
                 <span class="no-action-badge flex-shrink-0">
                   <span class="no-action-dot" aria-hidden="true"></span>
                   NO ACTION REQUIRED
                 </span>
-              } @else if (condition.status === 'pending') {
+              } @else if (effectiveStatus === 'pending') {
                 <button
                   mat-flat-button
                   class="condition-action-btn flex-shrink-0"

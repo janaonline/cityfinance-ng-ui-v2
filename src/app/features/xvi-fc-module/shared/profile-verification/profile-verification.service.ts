@@ -69,42 +69,27 @@ export class ProfileVerificationService {
       );
   }
 
-  sendProfileOtp(mobile: string): Observable<{ message?: string }> {
-    return this.http.post<{ message?: string }>(
+  sendMobileVerifyOtp(mobile: string): Observable<{ success?: boolean; message?: string; mobile?: string }> {
+    return this.http.post<{ success?: boolean; message?: string; mobile?: string }>(
       `${environment.api.url2}auth/sendOtp`,
-      { identifier: mobile, purpose: 'login' },
+      { identifier: mobile, purpose: 'mobile-verify' },
     );
   }
 
-  verifyOtp(mobile: string, otp: string): Observable<{ success?: boolean; message?: string }> {
-    return this.http.post<{ success?: boolean; message?: string }>(
-      `${environment.api.url2}auth/verifyOtp`,
-      { identifier: mobile, otp },
-    );
+  verifyMobileOtp(mobile: string, otp: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${environment.api.url2}auth/verifyMobileOtp`, { identifier: mobile, otp });
   }
 
   updateProfileContacts(
     id: string,
+    name: string,
     email: string,
     mobile: string,
+    designation: string,
   ): Observable<{ success: boolean }> {
     return this.http.patch<{ success: boolean }>(
       `${environment.api.url2}users/${id}/profile-contacts`,
-      { email, mobile, isXVIFCProfileVerified: true },
-    );
-  }
-
-  createManagedUser(payload: {
-    name: string;
-    username: string;
-    designation: string;
-    email: string;
-    mobile: string;
-    role: string;
-  }): Observable<{ success: boolean; message?: string }> {
-    return this.http.post<{ success: boolean; message?: string }>(
-      `${environment.api.url2}users/create-user`,
-      payload,
+      { name, email, mobile, designation, isXVIFCProfileVerified: true },
     );
   }
 
