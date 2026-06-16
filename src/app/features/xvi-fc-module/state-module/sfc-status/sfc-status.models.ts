@@ -1,5 +1,15 @@
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
 
+export type SubmitType = 'saveAsDraft' | 'finalSubmit';
+
+export interface ApiFieldError {
+  field?: string;
+  message: string;
+  code?: string;
+}
+
+export type ApiErrorMap = Record<string, ApiFieldError[]>;
+
 export interface SfcStatusPermissions {
   canView: boolean;
   canEdit: boolean;
@@ -30,4 +40,37 @@ export interface SfcStatusApiResponse {
   message: string;
   data: SfcStatusFormData;
   timestamp: string;
+}
+
+export interface SfcStatusDraftPayload {
+  stateId: string;
+  yearId: string;
+  data: Record<string, unknown>;
+}
+
+export interface SfcStatusFinalSubmitPayload {
+  stateId: string;
+  yearId: string;
+  data: Record<string, unknown>;
+}
+
+export interface SfcStatusSubmitData {
+  currentFormStatus?: number;
+  currentFormStatusLabel?: string;
+}
+
+export interface SfcStatusSubmitResponse {
+  success: boolean;
+  message: string;
+  data?: SfcStatusSubmitData;
+  errors?: ApiErrorMap;
+  timestamp?: string;
+}
+
+export interface ApiErrorResponse {
+  statusCode?: number;
+  message?: string;
+  errors?: ApiErrorMap;
+  timestamp?: string;
+  path?: string;
 }
