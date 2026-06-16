@@ -527,8 +527,8 @@ export class OcrValidationComponent implements OnInit {
         const bc = isPass ? '#22c55e' : '#f43f5e';
         const bbg = isPass ? '#f0fdf4' : '#fff1f2';
         const btxt = isPass ? '#166534' : '#991b1b';
-        const failedItems = r.basic_validation.failed_checks?.length
-          ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.basic_validation.failed_checks.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
+        const failedItems = r.error_messages?.length
+          ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.error_messages.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
           : '';
         const detail = r.basic_validation.validation_details
           ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`

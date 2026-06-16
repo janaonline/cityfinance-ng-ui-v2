@@ -102,6 +102,7 @@ export interface OcrValidationResult {
   financial_figures: OcrFinancialFigures | null;
   validations: OcrValidationCheck[] | null;
   overall_assessment: string | null;
+  error_messages: string[];
   summary: string | null;
   ocr_notes: string | null;
   usage_metadata: Record<string, unknown> | null;
