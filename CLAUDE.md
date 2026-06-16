@@ -19,6 +19,7 @@ npm run test         # Unit tests via Karma + Jasmine (watch mode)
 
 # Code quality
 npm run lint         # ESLint (TS + HTML)
+npm run lint:fix     # ESLint with auto-fix
 npm run format       # Prettier (TS + HTML)
 
 # Bundle analysis
@@ -49,7 +50,11 @@ src/app/
 ├── shared/         # Reusable UI components (header, footer, map, dialogs, dynamic-form)
 ├── features/       # Lazy-loaded feature areas (cfr, xvi-fc-module, xvi-fc-form, auth)
 ├── auth/           # Login, signup, forgot-password, OTP page components
-├── admin/          # Admin-only routes (xvi-fc-review)
+├── admin/          # Admin-only routes
+│   ├── ocr/        # OCR validation pipeline UI (job submission, results, comparison table)
+│   ├── xvi-fc-review/  # 16th FC review & approval workflow
+│   ├── afs-dashboard/  # AFS financial statement dashboards
+│   └── events/     # Events dashboard
 ├── pages/          # Top-level page components
 ├── material.module.ts  # Centralised Angular Material re-exports
 └── app.component.ts
@@ -74,6 +79,7 @@ All environments (`src/environments/`) derive `baseUrl` from `window.location.or
 - **XVI FC** (`features/xvi-fc-module/`) — 16th Finance Commission data entry split into mohua/state/ulb sub-modules.
 - **XVI FC Form** (`features/xvi-fc-form/`) — Form submission for 16th FC; protected by `authGuard`.
 - **AFS Dashboard** (`pages/`) — Financial statement dashboards (current and legacy versions).
+- **OCR** (`admin/ocr/`) — Two-step Gemini OCR validation pipeline. Jobs are submitted via `ocr-validation/`, polled for status, and results shown with extraction metadata and financial validation checks. Key models live in `ocr-validation/ocr-validation-models.ts` (`OcrValidationExtraction`, `OcrValidationBasicCheck`, `OcrValidationResult`). The comparison table (`ocr-comparison-table/`) is a legacy view using a different response schema (`upload-file-ocr/ocr-response.ts`) — do not mix the two.
 
 ### Shared Infrastructure
 
