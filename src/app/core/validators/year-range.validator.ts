@@ -7,22 +7,39 @@ export interface YearRangeValidatorConfig {
   endYearMin?: number;
   endYearMax?: number;
   requireEndGreaterThanStart?: boolean;
+  /** When set, `endYear - startYear` must be one of these values. */
+  allowedDurations?: number[];
+  /** When set, the range must include (contain) this year (inclusive on both ends). */
+  requiredIncludedYear?: number;
+}
+
+/** Discriminated reason returned inside the `yearRange` error object. */
+export type YearRangeErrorReason =
+  | 'invalidFormat'
+  | 'startOutOfRange'
+  | 'endOutOfRange'
+  | 'endNotGreater'
+  | 'invalidDuration'
+  | 'requiredIncludedYearMissing';
+
+function yearRangeError(reason: YearRangeErrorReason): ValidationErrors {
+  return { yearRange: { reason } };
 }
 
 /**
  * Validates that a text value represents a valid year range in the form `YYYY<separator>YYYY`.
  *
  * All constraints are optional. `requireEndGreaterThanStart` defaults to `true`.
- * Returns `{ yearRange: true }` on any constraint violation, `null` on success.
+ * Returns `{ yearRange: { reason } }` on any constraint violation, `null` on success.
  * Returns `null` for empty values so the field stays optional-compatible.
  *
  * @example
- * // SFC award period: 2020–2029 start, any 20xx end, end > start
- * yearRangeValidator({ startYearMin: 2020, startYearMax: 2029, endYearMin: 2000, endYearMax: 2099 })
- *
- * @example
- * // Grant period with custom separator
- * yearRangeValidator({ separator: '/', startYearMin: 2026, endYearMax: 2035 })
+ * yearRangeValidator({
+ *   startYearMin: 2015, startYearMax: 2027,
+ *   endYearMin: 2020,   endYearMax: 2029,
+ *   allowedDurations: [1, 5, 6],
+ *   requiredIncludedYear: 2026,
+ * })
  */
 export function yearRangeValidator(config: YearRangeValidatorConfig = {}): ValidatorFn {
   const {
@@ -32,6 +49,8 @@ export function yearRangeValidator(config: YearRangeValidatorConfig = {}): Valid
     endYearMin,
     endYearMax,
     requireEndGreaterThanStart = true,
+    allowedDurations,
+    requiredIncludedYear,
   } = config;
 
   const escapedSeparator = separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -42,18 +61,57 @@ export function yearRangeValidator(config: YearRangeValidatorConfig = {}): Valid
     if (value === null || value === undefined || value === '') return null;
 
     const str = String(value);
-    if (!FORMAT_PATTERN.test(str)) return { yearRange: true };
+    if (!FORMAT_PATTERN.test(str)) return yearRangeError('invalidFormat');
 
     const parts = str.split(separator);
     const start = parseInt(parts[0], 10);
     const end = parseInt(parts[1], 10);
 
-    if (startYearMin !== undefined && start < startYearMin) return { yearRange: true };
-    if (startYearMax !== undefined && start > startYearMax) return { yearRange: true };
-    if (endYearMin !== undefined && end < endYearMin) return { yearRange: true };
-    if (endYearMax !== undefined && end > endYearMax) return { yearRange: true };
-    if (requireEndGreaterThanStart && end <= start) return { yearRange: true };
+    if (startYearMin !== undefined && start < startYearMin) return yearRangeError('startOutOfRange');
+    if (startYearMax !== undefined && start > startYearMax) return yearRangeError('startOutOfRange');
+    if (endYearMin !== undefined && end < endYearMin) return yearRangeError('endOutOfRange');
+    if (endYearMax !== undefined && end > endYearMax) return yearRangeError('endOutOfRange');
+    if (requireEndGreaterThanStart && end <= start) return yearRangeError('endNotGreater');
+
+    if (allowedDurations !== undefined) {
+      const duration = end - start;
+      if (!allowedDurations.includes(duration)) return yearRangeError('invalidDuration');
+    }
+
+    if (
+      requiredIncludedYear !== undefined &&
+      (requiredIncludedYear < start || requiredIncludedYear > end)
+    ) {
+      return yearRangeError('requiredIncludedYearMissing');
+    }
 
     return null;
   };
+}
+
+/**
+ * Parse a `YYYY<separator>YYYY` string and return `endYear - startYear`.
+ *
+ * Returns `null` when:
+ * - value is not a string
+ * - the format does not match
+ * - end year is not strictly greater than start year
+ *
+ * @param value     Raw value to parse (typically from a form control).
+ * @param separator Character(s) that separate start and end year. Defaults to `'-'`.
+ */
+export function getYearRangeDuration(value: unknown, separator = '-'): number | null {
+  if (typeof value !== 'string') return null;
+
+  const str = value.trim();
+  const escapedSep = separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const FORMAT_PATTERN = new RegExp(`^\\d{4}${escapedSep}\\d{4}$`);
+
+  if (!FORMAT_PATTERN.test(str)) return null;
+
+  const parts = str.split(separator);
+  const start = parseInt(parts[0], 10);
+  const end = parseInt(parts[1], 10);
+
+  return end > start ? end - start : null;
 }

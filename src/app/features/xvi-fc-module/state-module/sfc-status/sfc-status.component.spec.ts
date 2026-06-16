@@ -47,7 +47,9 @@ describe('SfcStatusComponent', () => {
     })
       .overrideComponent(SfcStatusComponent, {
         remove: { imports: [HttpClientTestingModule, RouterTestingModule, DynamicFormComponent, PreLoaderComponent] },
-        add: { imports: [HttpClientTestingModule, RouterTestingModule, MockDynamicFormComponent, MockPreLoaderComponent] },
+        add: {
+          imports: [HttpClientTestingModule, RouterTestingModule, MockDynamicFormComponent, MockPreLoaderComponent],
+        },
       })
       .compileComponents();
   });
@@ -82,17 +84,37 @@ describe('SfcStatusComponent', () => {
     fixture.detectChanges();
 
     expect(component.isLoading()).toBeFalse();
-    expect(component.fields().length).toBe(11);
-    // isActiveSfc starts with value 'yes', so its dependents are shown immediately
+    // 14 user-facing fields + 1 derived (awardPeriodDuration)
+    expect(component.fields().length).toBe(15);
+    // isActiveSfc starts 'yes'; sfcConstitutedForInterim/sfcAwardPeriodExtended hidden (no duration yet);
+    // awardPeriodDuration excluded by render:false
     expect(visibleKeys()).toEqual([
-      'isActiveSfc', 'awardPeriod', 'whichAwardPeriod', 'sfcReportStatus',
-      'isNewSfcConstituted', 'raiseAnIssue', 'checkboxConfirmation',
+      'isActiveSfc',
+      'awardPeriod',
+      'whichAwardPeriod',
+      'sfcReportStatus',
+      'isNewSfcConstituted',
+      'raiseAnIssue',
+      'checkboxConfirmation',
     ]);
     expect(Object.keys(component.form.controls)).toEqual([
-      'isActiveSfc', 'awardPeriod', 'whichAwardPeriod', 'sfcReportStatus',
-      'reportSubmissionDate', 'sfcReport', 'atrReport',
-      'isNewSfcConstituted', 'gazetteNotification', 'raiseAnIssue', 'checkboxConfirmation',
+      'isActiveSfc',
+      'awardPeriod',
+      'awardPeriodDuration',
+      'sfcConstitutedForInterim',
+      'sfcAwardPeriodExtended',
+      'extensionOrder',
+      'whichAwardPeriod',
+      'sfcReportStatus',
+      'reportSubmissionDate',
+      'sfcReport',
+      'atrReport',
+      'isNewSfcConstituted',
+      'gazetteNotification',
+      'raiseAnIssue',
+      'checkboxConfirmation',
     ]);
+    // 7 rendered visible fields (awardPeriodDuration is render:false; others hidden)
     expect(fixture.nativeElement.querySelectorAll('app-dynamic-form').length).toBe(7);
   }));
 
@@ -225,31 +247,34 @@ describe('SfcStatusComponent', () => {
     createComponent();
     completeInitialLoad();
 
-    // isActiveSfc already 'yes' — awardPeriod control is enabled
     const ctrl = getControl('awardPeriod')!;
 
-    // Invalid format
     ctrl.setValue('bad-format');
     ctrl.updateValueAndValidity();
     expect(ctrl.hasError('yearRange')).toBeTrue();
 
-    // Start year outside 2020–2029
-    ctrl.setValue('2019-2024');
+    // end year exceeds endYearMax (DESIGN_YEAR+3 = 2029)
+    ctrl.setValue('2026-2030');
     ctrl.updateValueAndValidity();
     expect(ctrl.hasError('yearRange')).toBeTrue();
 
-    // End year out of 2000–2099
-    ctrl.setValue('2026-2100');
-    ctrl.updateValueAndValidity();
-    expect(ctrl.hasError('yearRange')).toBeTrue();
-
-    // End year <= start year
+    // end year <= start year
     ctrl.setValue('2026-2026');
     ctrl.updateValueAndValidity();
     expect(ctrl.hasError('yearRange')).toBeTrue();
 
-    // Valid award period
-    ctrl.setValue('2026-2031');
+    // duration not in [1,5,6]
+    ctrl.setValue('2022-2026');
+    ctrl.updateValueAndValidity();
+    expect(ctrl.hasError('yearRange')).toBeTrue();
+
+    // missing boundary year 2026
+    ctrl.setValue('2020-2025');
+    ctrl.updateValueAndValidity();
+    expect(ctrl.hasError('yearRange')).toBeTrue();
+
+    // valid: duration 5, boundary at end
+    ctrl.setValue('2021-2026');
     ctrl.updateValueAndValidity();
     expect(ctrl.hasError('yearRange')).toBeFalse();
   }));
@@ -356,12 +381,17 @@ describe('SfcStatusComponent', () => {
     getControl('isActiveSfc')?.setValue('yes');
     fixture.detectChanges();
 
-    getControl('awardPeriod')?.setValue('2026-2031');
+    getControl('awardPeriod')?.setValue('2021-2026');
     getControl('whichAwardPeriod')?.setValue('6th SFC');
     getControl('sfcReportStatus')?.setValue('reportSubmittedAtrTabled');
     fixture.detectChanges();
 
-    const sfcReportFile = { fileName: 'report.pdf', fileUrl: '/report.pdf', fileSize: 1024, mimeType: 'application/pdf' };
+    const sfcReportFile = {
+      fileName: 'report.pdf',
+      fileUrl: '/report.pdf',
+      fileSize: 1024,
+      mimeType: 'application/pdf',
+    };
     const atrReportFile = { fileName: 'atr.pdf', fileUrl: '/atr.pdf', fileSize: 512, mimeType: 'application/pdf' };
     getControl('sfcReport')?.setValue(sfcReportFile);
     getControl('atrReport')?.setValue(atrReportFile);
@@ -375,7 +405,7 @@ describe('SfcStatusComponent', () => {
 
     const payload = logSpy.calls.mostRecent().args[1] as Record<string, unknown>;
     expect(payload['isActiveSfc']).toBe('yes');
-    expect(payload['awardPeriod']).toBe('2026-2031');
+    expect(payload['awardPeriod']).toBe('2021-2026');
     expect(payload['sfcReportStatus']).toBe('reportSubmittedAtrTabled');
     expect(payload['sfcReport']).toEqual(sfcReportFile);
     expect(payload['atrReport']).toEqual(atrReportFile);
@@ -417,10 +447,7 @@ describe('SfcStatusComponent', () => {
     confirmDialogService.confirm.and.returnValue(of(true));
     createComponent();
     component.onCancel();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-      'Form submission cancelled.',
-      'snackbar-danger',
-    );
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submission cancelled.', 'snackbar-danger');
   });
 
   it('does not show cancellation snackbar when cancel dialog is dismissed', () => {
@@ -495,20 +522,123 @@ describe('SfcStatusComponent', () => {
     expect(control?.disabled).toBeFalse();
   });
 
+  // ─── awardPeriodDuration derived control ──────────────────────────────────
+
+  it('creates an awardPeriodDuration form control', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+    expect(getControl('awardPeriodDuration')).toBeTruthy();
+  }));
+
+  it('awardPeriodDuration starts as null when awardPeriod is empty', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+    expect(getControl('awardPeriodDuration')?.value).toBeNull();
+  }));
+
+  it('populates awardPeriodDuration when a valid awardPeriod is set', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    getControl('awardPeriod')?.setValue('2021-2026');
+    fixture.detectChanges();
+
+    expect(getControl('awardPeriodDuration')?.value).toBe(5);
+  }));
+
+  it('updates awardPeriodDuration when awardPeriod changes', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    getControl('awardPeriod')?.setValue('2021-2026');
+    fixture.detectChanges();
+    expect(getControl('awardPeriodDuration')?.value).toBe(5);
+
+    getControl('awardPeriod')?.setValue('2026-2027');
+    fixture.detectChanges();
+    expect(getControl('awardPeriodDuration')?.value).toBe(1);
+  }));
+
+  it('does not update awardPeriodDuration when a different awardPeriod yields the same duration', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    let updateCount = 0;
+    getControl('awardPeriodDuration')?.valueChanges.subscribe(() => updateCount++);
+
+    getControl('awardPeriod')?.setValue('2021-2026'); // duration 5
+    fixture.detectChanges();
+    const countAfterFirst = updateCount;
+
+    getControl('awardPeriod')?.setValue('2020-2025'); // also duration 5
+    fixture.detectChanges();
+    expect(getControl('awardPeriodDuration')?.value).toBe(5);
+    expect(updateCount).toBe(countAfterFirst); // no additional emission
+  }));
+
+  it('shows sfcConstitutedForInterim when awardPeriodDuration is 1', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    getControl('awardPeriod')?.setValue('2026-2027');
+    fixture.detectChanges();
+
+    expect(visibleKeys()).toContain('sfcConstitutedForInterim');
+    expect(visibleKeys()).not.toContain('sfcAwardPeriodExtended');
+  }));
+
+  it('shows sfcAwardPeriodExtended when awardPeriodDuration is 6', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    getControl('awardPeriod')?.setValue('2020-2026');
+    fixture.detectChanges();
+
+    expect(visibleKeys()).toContain('sfcAwardPeriodExtended');
+    expect(visibleKeys()).not.toContain('sfcConstitutedForInterim');
+  }));
+
+  it('hides both sfcConstitutedForInterim and sfcAwardPeriodExtended for duration 5', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    getControl('awardPeriod')?.setValue('2021-2026');
+    fixture.detectChanges();
+
+    expect(visibleKeys()).not.toContain('sfcConstitutedForInterim');
+    expect(visibleKeys()).not.toContain('sfcAwardPeriodExtended');
+  }));
+
+  it('awardPeriodDuration is not rendered in the UI', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const renderedKeys = component.visibleFields().map((f) => f.key);
+    expect(renderedKeys).not.toContain('awardPeriodDuration');
+  }));
+
+  it('awardPeriodDuration is excluded from the visible payload', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    getControl('isActiveSfc')?.setValue('no');
+    getControl('isNewSfcConstituted')?.setValue('no');
+    getControl('checkboxConfirmation')?.setValue(true);
+    fixture.detectChanges();
+
+    const payload = component['visibilityService'].getVisiblePayload(component.form, component.fields());
+    expect(Object.prototype.hasOwnProperty.call(payload, 'awardPeriodDuration')).toBeFalse();
+  }));
+
   it('stops control creation and reports invalid field configuration', () => {
     createComponent();
 
-    component.fields.set([
-      { formFieldType: 'text', label: 'Broken field' } as ConditionalFieldConfig,
-    ]);
+    component.fields.set([{ formFieldType: 'text', label: 'Broken field' } as ConditionalFieldConfig]);
 
     component.createFormControls();
 
     expect(Object.keys(component.form.controls)).toEqual([]);
     expect(component.isLoading()).toBeFalse();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-      'Invalid field configuration.',
-      'snackbar-danger',
-    );
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Invalid field configuration.', 'snackbar-danger');
   });
 });

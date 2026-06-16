@@ -1,5 +1,5 @@
 import { Component, computed, Input } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { MaterialModule } from '../../../../material.module';
 import { FieldConfig } from '../../field.interface';
 @Component({
@@ -28,10 +28,10 @@ export class CheckboxComponent {
 
   validations = computed(() => this.field.validations);
 
-  hasError(key: string, name: string) {
+  hasError(key: string, name: string): boolean {
     // Validators.requiredTrue sets error key 'required', not 'requiredTrue'
     const errorKey = name === 'requiredTrue' ? 'required' : name;
-    const control = this.group.get(key) as FormControl;
-    return control.touched && control.hasError(errorKey);
+    const control = this.group.get(key);
+    return !!control?.hasError(errorKey) && (control.touched || control.dirty);
   }
 }

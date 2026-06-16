@@ -1,5 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../field.interface';
 import { MaterialModule } from '../../../../material.module';
 @Component({
@@ -52,7 +52,7 @@ import { MaterialModule } from '../../../../material.module';
 </mat-icon></mat-label><mat-select formControlName="value"><mat-option *ngFor="let opt of getValue('options')" [value]="opt">{{opt}}</mat-option></mat-select></mat-form-field> -->`,
     styles: []
 })
-export class SelectComponent implements OnInit {
+export class SelectComponent implements OnInit, OnChanges {
   @Input() field!: FieldConfig;
   @Input() group!: FormGroup;
   @Input() options!: any[];
@@ -64,18 +64,25 @@ export class SelectComponent implements OnInit {
   readonly: any = false;
 
   constructor() {}
-  ngOnInit() {
-    // console.log('----group sel --',this.group);
+
+  ngOnInit(): void {
+    this.syncFromInputs();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['field'] || changes['parentField']) {
+      this.syncFromInputs();
+    }
+  }
+
+  private syncFromInputs(): void {
     this.options = this.options || this.field.options;
-    // console.log('this.options---',this.options);
     this.validations = this.parentField?.validations || this.field.validations;
     this.readonly = this.parentField?.readonly || this.field?.readonly;
   }
-  // getValue(name: string) {
-  //   return this.group.value.get(name).value;
-  // }
 
-  hasError(key: string, name: string) {
-    return (this.group.get(key) as FormControl).hasError(name);
+  hasError(key: string, name: string): boolean {
+    const control = this.group.get(key);
+    return !!control?.hasError(name) && (control.touched || control.dirty);
   }
 }
