@@ -357,6 +357,20 @@
                                     </td>
                                   </tr>
                                 }
+                                @if (job.result.extraction.signature_present !== null) {
+                                  <tr>
+                                    <td class="text-secondary fw-medium ps-0">Signature Present</td>
+                                    <td class="pe-0">
+                                      <span
+                                        class="badge"
+                                        [class.text-bg-success]="job.result.extraction.signature_present"
+                                        [class.text-bg-danger]="!job.result.extraction.signature_present"
+                                      >
+                                        {{ job.result.extraction.signature_present ? 'Yes' : 'No' }}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                }
                                 @if (job.result.extraction.as_on_date) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0">As On Date</td>
