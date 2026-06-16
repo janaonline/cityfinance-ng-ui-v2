@@ -167,7 +167,7 @@ export class ProfileVerificationComponent implements OnInit {
     }
     this.sendingOtpKey.set(key);
     this.errorMsg.set('');
-    this.profileService.sendProfileOtp(mobile).subscribe({
+    this.profileService.sendMobileVerifyOtp(mobile).subscribe({
       next: () => {
         this.otpSentKey.set(key);
         this.sendingOtpKey.set(null);
@@ -196,7 +196,7 @@ export class ProfileVerificationComponent implements OnInit {
     this.errorMsg.set('');
     const loggedInUserId = this.getLoggedInUserId();
     this.profileService
-      .verifyOtp(mobile, otp)
+      .verifyMobileOtp(mobile, otp)
       .pipe(
         switchMap(() =>
           this.profileService.updateProfileContacts(
@@ -256,7 +256,7 @@ export class ProfileVerificationComponent implements OnInit {
     this.addFormOtpSent.set(false);
     this.addFormOtpValue.set('');
     this.errorMsg.set('');
-    this.profileService.sendProfileOtp(mobile).subscribe({
+    this.profileService.sendMobileVerifyOtp(mobile).subscribe({
       next: () => {
         this.addFormOtpSent.set(true);
         this.addFormSendingOtp.set(false);
@@ -287,7 +287,7 @@ export class ProfileVerificationComponent implements OnInit {
     this.errorMsg.set('');
     const loggedInUserId = this.getLoggedInUserId();
     this.profileService
-      .verifyOtp(mobile, otp)
+      .verifyMobileOtp(mobile, otp)
       .pipe(
         switchMap(() =>
           this.profileService.updateProfileContacts(
