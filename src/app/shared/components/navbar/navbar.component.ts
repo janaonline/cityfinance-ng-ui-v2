@@ -160,18 +160,18 @@ export class NavbarComponent implements OnInit {
       return;
     }
 
-    const role = this.user.role;
+    // const role = this.user.role;
     this.menus = [
-      ...(role === USER_TYPE.ULB ? [{ name: 'XVI FC Data Collection', link: '/xvifc-form' }] : []),
-      ...(role === USER_TYPE.ULB
-        ? [
-          {
-            name: 'User Manual',
-            href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
-            target: '_blank',
-          },
-        ]
-        : []),
+      // ...(role === USER_TYPE.ULB ? [{ name: 'XVI FC Data Collection', link: '/xvifc-form' }] : []),
+      // ...(role === USER_TYPE.ULB
+      //   ? [
+      //     {
+      //       name: 'User Manual',
+      //       href: './assets/USER-MANUAL-XVI-FC-Data-Collection.pdf',
+      //       target: '_blank',
+      //     },
+      //   ]
+      //   : []),
       ...(this.inRole([USER_TYPE.XVIFC, USER_TYPE.XVIFC_STATE])
         ? [{ name: 'Review XVI FC', link: '/admin/xvi-fc-review' }]
         : []),
