@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -24,6 +24,7 @@ import { SfcStatusService } from './sfc-status.service';
 import {
   ApiErrorMap,
   ApiErrorResponse,
+  SfcFormActor,
   SfcStatusDraftPayload,
   SfcStatusFinalSubmitPayload,
   SfcStatusPermissions,
@@ -33,7 +34,7 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
 
 @Component({
   selector: 'app-sfc-status',
-  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule, DatePipe],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
 })
@@ -47,8 +48,8 @@ export class SfcStatusComponent implements OnInit {
   private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
   private sfcStatusService = inject(SfcStatusService);
   private moduleService = inject(XvifcModuleService);
-
-  readonly stateName = signal('Andhra Pradesh');
+  public stateName = signal('');
+  public actors = signal<SfcFormActor[]>([]);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -111,7 +112,8 @@ export class SfcStatusComponent implements OnInit {
           this.currentFormStatus.set(data.currentFormStatus);
           this.currentFormStatusLabel.set(data.currentFormStatusLabel);
           this.fields.set(data.questions);
-          // this.fields.set(data.questions.map(({ validations, ...field }) => field));
+          this.stateName.set(data.stateName);
+          this.actors.set(data.actors);
           this.createFormControls();
           this.isLoading.set(false);
         },
