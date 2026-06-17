@@ -748,7 +748,14 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       if (doc.minPages && pdf.numPages < doc.minPages) {
         return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      const name = (err as { name?: string })?.name;
+      if (name === 'PasswordException') {
+        return 'This PDF is password-protected. Please remove the password and try again.';
+      }
+      if (name === 'InvalidPDFException') {
+        return 'This PDF is corrupted or unreadable. Please upload a valid PDF file.';
+      }
       console.warn('[pdf-check] render check skipped:', err);
     }
 
