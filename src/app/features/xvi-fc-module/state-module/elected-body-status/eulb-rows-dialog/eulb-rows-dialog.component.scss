@@ -1,0 +1,17 @@
+.eulb-table-wrap {
+  max-height: calc(90vh - 220px);
+  overflow-y: auto;
+
+  table {
+    min-width: 900px;
+  }
+}
+
+/* Compact error badge below the status badge */
+.badge.text-bg-danger-subtle {
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: normal;
+  text-align: left;
+  max-width: 220px;
+}

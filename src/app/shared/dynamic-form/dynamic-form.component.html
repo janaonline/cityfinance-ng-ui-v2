@@ -1,6 +1,8 @@
 <app-field-supporting-content
   [supportingContent]="fieldForRenderer.supportingContent"
+  [fieldKey]="fieldForRenderer.key ?? ''"
   position="before"
+  (supportingAction)="supportingAction.emit($event)"
 ></app-field-supporting-content>
 
 @if (isInlineLayout) {
@@ -18,7 +20,9 @@
 
 <app-field-supporting-content
   [supportingContent]="fieldForRenderer.supportingContent"
+  [fieldKey]="fieldForRenderer.key ?? ''"
   position="after"
+  (supportingAction)="supportingAction.emit($event)"
 ></app-field-supporting-content>
 
 <ng-template #fieldContent>

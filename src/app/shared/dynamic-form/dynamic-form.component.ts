@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { FieldSupportingActionEvent } from './field.interface';
 import { MaterialModule } from '../../material.module';
 import { ButtonComponent } from './components/button/button.component';
 import { CheckboxComponent } from './components/checkbox/checkbox.component';
@@ -40,6 +41,9 @@ export class DynamicFormComponent implements OnInit, OnChanges {
   @Input() field!: any;
   @Input() group!: FormGroup;
   @Input() formArray!: FormArray;
+
+  /** Bubbles action events from nested supporting-content blocks up to the host page. */
+  readonly supportingAction = output<FieldSupportingActionEvent>();
 
   formFieldType!: string;
   fieldForRenderer!: any;

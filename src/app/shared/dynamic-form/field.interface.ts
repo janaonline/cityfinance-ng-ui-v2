@@ -32,9 +32,46 @@ export interface FieldLayoutConfig {
 
 export type FieldSupportingContentPosition = 'before' | 'after';
 
+export type FieldSupportingActionLayout = 'inline' | 'stacked';
+export type FieldSupportingActionSeparator = 'dot' | 'none';
+export type FieldSupportingActionVariant = 'link' | 'button';
+export type FieldSupportingActionTone = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
+
+export interface FieldSupportingAction {
+  id: string;
+  label: string;
+  /** Static href only. For API downloads, dialogs, or app actions use `id` and handle the emitted event. */
+  url?: string;
+  icon?: string;
+  tone?: FieldSupportingActionTone;
+  className?: string;
+  iconClassName?: string;
+  variant?: FieldSupportingActionVariant;
+  visible?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+  loadingLabel?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface FieldSupportingBadge {
+  label: string;
+  icon?: string;
+  tone?: FieldSupportingActionTone;
+  className?: string;
+  visible?: boolean;
+}
+
+export interface FieldSupportingActionEvent {
+  fieldKey: string;
+  actionId: string;
+  meta?: Record<string, unknown>;
+}
+
 export type FieldSupportingContent =
   | {
       type: 'template-download';
+      className?: string;
       position?: FieldSupportingContentPosition;
       label: string;
       url: string;
@@ -42,28 +79,42 @@ export type FieldSupportingContent =
     }
   | {
       type: 'info';
+      className?: string;
       position?: FieldSupportingContentPosition;
       title?: string;
       description: string;
     }
   | {
       type: 'warning';
+      className?: string;
       position?: FieldSupportingContentPosition;
       title?: string;
       description: string;
     }
   | {
       type: 'sample-columns';
+      className?: string;
       position?: FieldSupportingContentPosition;
       title?: string;
       columns: string[];
     }
   | {
       type: 'readonly-card';
+      className?: string;
       position?: FieldSupportingContentPosition;
       title?: string;
       description?: string;
       rows?: { label: string; value: string }[];
+    }
+  | {
+      type: 'actions';
+      className?: string;
+      position?: FieldSupportingContentPosition;
+      layout?: FieldSupportingActionLayout;
+      separator?: FieldSupportingActionSeparator;
+      description?: string;
+      actions: FieldSupportingAction[];
+      badges?: FieldSupportingBadge[];
     };
 
 export type UploadedFileValue = {
