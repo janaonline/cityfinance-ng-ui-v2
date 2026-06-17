@@ -31,10 +31,15 @@ export class UploadDocumentsService {
 
   getUploadConfig(type: 'audited' | 'provisional', designYearId: string): Observable<UploadPageConfig> {
     return this.http
-      .get<{ success: boolean; data: UploadConfigApiData }>(
+      .get<unknown>(
         `${this.baseUrl}xvi-fc/annual-account/upload-config/${type}?yearId=${designYearId}`,
       )
-      .pipe(map((res) => this.mapToConfig(type, res.data)));
+      .pipe(map((res) => {
+        // Dev server returns raw payload; local NestJS wraps it as { success, data, timestamp }
+        const r = res as Record<string, unknown>;
+        const apiData = (r && 'success' in r ? r['data'] : res) as UploadConfigApiData;
+        return this.mapToConfig(type, apiData);
+      }));
   }
 
   private mapToConfig(type: 'audited' | 'provisional', apiData: UploadConfigApiData): UploadPageConfig {
