@@ -31,18 +31,23 @@ import {
   EulbPermissions,
   EulbRowsDialogResult,
   EulbSaveDraftPayload,
-  EulbValidationSummary,
   SubmitType,
 } from './eulb-status.models';
 import { EulbStatusService } from './eulb-status.service';
 import { EulbRowsDialogComponent } from './eulb-rows-dialog/eulb-rows-dialog.component';
 
+/** Action IDs emitted by the dynamic form's `supportingContent` action buttons. */
 const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_TEMPLATE: 'download-template',
   VIEW_UPLOADED_DATA: 'view-uploaded-data',
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
 } as const;
 
+/**
+ * Page component for the Elected Urban Local Bodies status-confirmation form.
+ * Renders a backend-driven dynamic form, handles Excel upload/validation,
+ * and delegates action routing from supporting-content buttons to the appropriate handlers.
+ */
 @Component({
   selector: 'app-elected-body-status',
   imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule, DatePipe],
@@ -80,90 +85,13 @@ export class ElectedBodyStatusComponent implements OnInit {
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
 
-  readonly validationSummary = signal<EulbValidationSummary | null>(null);
-  readonly errorExcelFile = signal<EulbFileValue | null>(null);
-  readonly hasUploadedData = computed(() => {
-    const s = this.validationSummary();
-    return s != null && s.excelRowCount > 0;
-  });
-
-  /** Fields enriched with reactive `type: 'actions'` supporting content for rendering. */
-  readonly fieldsForRenderer = computed((): ConditionalFieldConfig[] => {
-    const summary = this.validationSummary();
-    const hasData = this.hasUploadedData();
-    const validating = this.isValidating();
-    const downloadingTpl = this.isDownloadingTemplate();
-    const downloadingErr = this.isDownloadingErrorSheet();
-
-    return this.fields().map((f): ConditionalFieldConfig => {
-      if (f.key !== 'electedBodyExcelFile') return f;
-
-      const baseContent = (f.supportingContent ?? []).filter((sc) => sc.type !== 'template-download');
-      const actionsItem = {
-        type: 'actions' as const,
-        position: 'before' as const,
-        layout: 'inline' as const,
-        separator: 'dot' as const,
-        description: 'Fill in the details and re-upload as a single Excel file.',
-        actions: [
-          {
-            id: EULB_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
-            label: 'Download the template',
-            icon: 'bi bi-file-earmark-arrow-down',
-            tone: 'primary' as const,
-            loading: downloadingTpl,
-            loadingLabel: 'Downloading…',
-          },
-          {
-            id: EULB_SUPPORTING_ACTION.VIEW_UPLOADED_DATA,
-            label: 'View uploaded data',
-            icon: 'bi bi-table',
-            tone: 'primary' as const,
-            visible: hasData,
-          },
-          {
-            id: EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET,
-            label: 'Download error sheet',
-            icon: 'bi bi-file-earmark-excel',
-            tone: 'danger' as const,
-            visible: (summary?.errorRowCount ?? 0) > 0,
-            loading: downloadingErr,
-            loadingLabel: 'Downloading…',
-          },
-          {
-            id: 'validating-indicator',
-            label: 'Validating…',
-            tone: 'muted' as const,
-            visible: validating,
-            loading: validating,
-            disabled: true,
-          },
-        ],
-        badges: summary
-          ? [
-              { label: `Total rows: ${summary.excelRowCount}`, tone: 'secondary' as const },
-              ...(summary.validationStatus === 'VALID'
-                ? [{ label: 'All valid', icon: 'bi bi-check-circle-fill', tone: 'success' as const }]
-                : []),
-              ...(summary.errorRowCount > 0
-                ? [{ label: `${summary.errorRowCount} error(s)`, tone: 'danger' as const }]
-                : []),
-              ...(summary.missingDbUlbCount > 0
-                ? [{ label: `${summary.missingDbUlbCount} missing ULB(s)`, tone: 'warning' as const }]
-                : []),
-            ]
-          : [],
-      };
-
-      return { ...f, supportingContent: [...baseContent, actionsItem] };
-    });
-  });
-
-  readonly visibleFieldsForRenderer = computed(() => this.visibilityService.getVisibleFields(this.fieldsForRenderer()));
-
+  /** Maps field keys to their dependency relationships for reactive visibility evaluation. */
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
+
+  /** Tracks API-injected error keys per control so they can be cleared before re-submission. */
   private readonly serverErrorKeys = new Map<string, string[]>();
 
+  /** State ID read from localStorage `userData`. Returns empty string if absent or unparseable. */
   private get stateId(): string {
     try {
       const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
@@ -173,6 +101,7 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
   }
 
+  /** Active year ID from the parent XVI-FC module context. */
   private get yearId(): string {
     return this.moduleService.yearId() ?? '';
   }
@@ -181,6 +110,10 @@ export class ElectedBodyStatusComponent implements OnInit {
     this.loadForm();
   }
 
+  /**
+   * Fetches form config and initial state from the API, then builds reactive form controls.
+   * Aborts with a snackbar if `stateId` or `yearId` is missing.
+   */
   private loadForm(): void {
     const stateId = this.stateId;
     const yearId = this.yearId;
@@ -203,8 +136,6 @@ export class ElectedBodyStatusComponent implements OnInit {
           this.permissions.set(data.permissions);
           this.stateName.set(data.stateName ?? '');
           this.actors.set(data.actors ?? []);
-          this.validationSummary.set(data.validationSummary ?? null);
-          this.errorExcelFile.set(data.errorExcelFile ?? data.response?.errorExcelFile ?? null);
 
           this.fields.set(data.questions);
           this.createFormControls();
@@ -217,6 +148,11 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /**
+   * Registers a `FormControl` for every field in `this.fields`, wires up visibility bindings,
+   * disables the form when the user lacks edit permission, and starts the validation trigger.
+   * Exits early with a snackbar on invalid field config.
+   */
   createFormControls(): void {
     this.isLoading.set(true);
 
@@ -252,6 +188,10 @@ export class ElectedBodyStatusComponent implements OnInit {
     this.isLoading.set(false);
   }
 
+  /**
+   * Subscribes to `electedBodyExcelFile` value changes and auto-triggers Excel validation
+   * whenever a valid file object is set and `ulbCount` is already populated.
+   */
   private setupValidationTrigger(): void {
     const fileControl = this.form.get('electedBodyExcelFile') as FormControl | null;
     if (!fileControl) return;
@@ -268,17 +208,28 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /**
+   * Returns `true` if `val` is a non-null object with both `fileName` and `fileUrl` strings.
+   * @param val - Value from the file form control.
+   */
   private isValidFileValue(val: unknown): boolean {
     if (!val || typeof val !== 'object') return false;
     const file = val as { fileName?: string; fileUrl?: string };
     return !!(file.fileName && file.fileUrl);
   }
 
+  /** Returns `true` when the `ulbCount` control holds a positive number. */
   private hasValidUlbCount(): boolean {
     const count = this.form.get('ulbCount')?.value;
     return typeof count === 'number' && count > 0;
   }
 
+  /**
+   * Calls the validate-excel API with the current file and ULB count.
+   * On success (VALID or INVALID HTTP 200), reloads the form so backend-driven
+   * supporting content reflects the latest validation state.
+   * On HTTP error, applies field-level API errors without reloading.
+   */
   private triggerExcelValidation(): void {
     if (this.isValidating()) return;
 
@@ -295,9 +246,6 @@ export class ElectedBodyStatusComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.isValidating.set(false);
-          this.validationSummary.set(res.data.summary);
-          this.errorExcelFile.set(res.data.errorExcelFile ?? null);
-
           if (res.data.validationStatus === 'VALID') {
             this.utilityService.triggerSnackbar('Excel validated successfully.');
           } else {
@@ -306,6 +254,7 @@ export class ElectedBodyStatusComponent implements OnInit {
               'snackbar-danger',
             );
           }
+          this.reloadForm();
         },
         error: (err: unknown) => {
           this.isValidating.set(false);
@@ -321,6 +270,7 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /** Downloads the EULB Excel template as a blob and saves it via FileSaver. */
   downloadTemplate(): void {
     if (this.isDownloadingTemplate()) return;
     this.isDownloadingTemplate.set(true);
@@ -340,13 +290,19 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /**
+   * Opens the full-screen rows dialog for reviewing uploaded EULB data.
+   * Reloads the form when the dialog closes with an updated summary so backend-driven
+   * action/badge state is refreshed.
+   */
   openRowsDialog(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : {};
+    const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'eulb-rows-dialog-panel'];
     const dialogRef = this.dialog.open(EulbRowsDialogComponent, {
-      ...config,
-      width: '90vw',
-      maxWidth: '90vw',
-      height: '90vh',
+      panelClass,
+      width: '95vw',
+      maxWidth: '95vw',
+      height: '95vh',
+      maxHeight: '95vh',
       data: { stateId: this.stateId, yearId: this.yearId },
     });
 
@@ -356,11 +312,16 @@ export class ElectedBodyStatusComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
         filter((result): result is EulbRowsDialogResult => !!result?.updatedSummary),
       )
-      .subscribe((result) => {
-        this.validationSummary.set(result.updatedSummary!);
+      .subscribe(() => {
+        this.reloadForm();
       });
   }
 
+  /**
+   * Routes action events emitted by `FieldSupportingContentComponent` for the
+   * `electedBodyExcelFile` field to the appropriate handler method.
+   * @param event - Action event containing `fieldKey` and `actionId`.
+   */
   onSupportingAction(event: FieldSupportingActionEvent): void {
     if (event.fieldKey !== 'electedBodyExcelFile') return;
     switch (event.actionId) {
@@ -378,6 +339,10 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
   }
 
+  /**
+   * Fetches the error sheet on demand from the backend and saves it as a blob.
+   * Shows distinct snackbar messages for a 400 (no data) vs other errors.
+   */
   downloadErrorSheet(): void {
     const stateId = this.stateId;
     const yearId = this.yearId;
@@ -406,6 +371,11 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /**
+   * Validates the form for the given submit type, then shows a confirm dialog
+   * before delegating to `executeSaveDraft` or `executeFinalSubmit`.
+   * @param action - `'saveAsDraft'` or `'finalSubmit'`.
+   */
   onSubmit(action: SubmitType): void {
     if (!this.isValidForSubmitType(action)) {
       this.form.markAllAsTouched();
@@ -440,6 +410,11 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /**
+   * Checks every visible field's control for errors.
+   * For `saveAsDraft`, plain `required` errors (without `requiredTrue`) are ignored.
+   * @param action - The submit type being validated.
+   */
   private isValidForSubmitType(action: SubmitType): boolean {
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
       if (!field.key) continue;
@@ -456,6 +431,7 @@ export class ElectedBodyStatusComponent implements OnInit {
     return true;
   }
 
+  /** Clears previous API errors, posts the visible payload as a draft, then reloads the form on success. */
   private executeSaveDraft(): void {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
@@ -487,6 +463,7 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /** Clears previous API errors, posts the visible payload as a final submission, then reloads on success. */
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
     this.isFinalSubmitting.set(true);
@@ -518,6 +495,12 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /**
+   * Extracts a structured error from an API failure, shows the message as a snackbar,
+   * and stamps field-level errors onto form controls when present.
+   * @param err - Raw error from the HTTP observable.
+   * @param fallbackMessage - Shown if the error body carries no message.
+   */
   private handleSubmitError(err: unknown, fallbackMessage: string): void {
     const response = this.extractApiErrorResponse(err);
     this.utilityService.triggerSnackbar(response?.message ?? fallbackMessage, 'snackbar-danger');
@@ -526,6 +509,13 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
   }
 
+  /**
+   * Normalises an HTTP error or plain error object into a typed `ApiErrorResponse`.
+   * Handles both `{ error: { message, errors } }` (Angular HttpErrorResponse) and
+   * `{ success: false, message, errors }` (plain error body) shapes.
+   * Returns `null` if the error cannot be parsed.
+   * @param err - Raw thrown value from an HTTP observable.
+   */
   private extractApiErrorResponse(err: unknown): ApiErrorResponse | null {
     if (!this.isObject(err)) return null;
 
@@ -552,10 +542,19 @@ export class ElectedBodyStatusComponent implements OnInit {
     return null;
   }
 
+  /**
+   * Type guard: returns `true` if `value` is a non-null object.
+   * @param value - Value to test.
+   */
   private isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
   }
 
+  /**
+   * Type guard: returns `true` if `value` is an `ApiErrorMap` —
+   * an object whose every entry is an array of objects with a `message` string.
+   * @param value - Value to test.
+   */
   private isApiErrorMap(value: unknown): value is ApiErrorMap {
     if (!this.isObject(value)) return false;
     return Object.values(value).every(
@@ -565,6 +564,12 @@ export class ElectedBodyStatusComponent implements OnInit {
     );
   }
 
+  /**
+   * Stamps API-returned field errors onto both the `fields` signal (for message display)
+   * and the corresponding `FormControl` (for invalid state). Skips hidden fields.
+   * Records each error key in `serverErrorKeys` so it can be cleared before re-submission.
+   * @param errors - Map of field key → array of API error descriptors.
+   */
   private applyApiErrors(errors: ApiErrorMap): void {
     this.fields.update((fields) =>
       fields.map((field) => {
@@ -608,6 +613,10 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
   }
 
+  /**
+   * Removes all error keys previously injected by `applyApiErrors` from their controls,
+   * then clears the `serverErrorKeys` tracker. Called before every submit attempt.
+   */
   private clearAllApiErrors(): void {
     for (const [fieldKey, errorCodes] of this.serverErrorKeys) {
       const control = this.form.get(fieldKey);
@@ -621,12 +630,14 @@ export class ElectedBodyStatusComponent implements OnInit {
     this.serverErrorKeys.clear();
   }
 
+  /** Tears down the current form and field state, then fetches fresh data from the API. */
   private reloadForm(): void {
     this.form = this.fb.group({});
     this.fields.set([]);
     this.loadForm();
   }
 
+  /** Shows a cancel confirmation dialog; notifies the user if the action is confirmed. */
   onCancel(): void {
     const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService

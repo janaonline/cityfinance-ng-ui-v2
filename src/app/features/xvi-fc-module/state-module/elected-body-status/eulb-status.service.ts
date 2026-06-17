@@ -15,11 +15,18 @@ import {
   EulbValidateExcelResponse,
 } from './eulb-status.models';
 
+/** HTTP service for all Elected Urban Local Bodies API endpoints. */
 @Injectable({ providedIn: 'root' })
 export class EulbStatusService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.api.url2}xvi-fc/state/elected-urban-local-bodies/`;
 
+  /**
+   * Fetches the form config, permissions, actors, and current state for a given state/year.
+   * Throws if the API response indicates failure (`success: false`).
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   */
   getFormData(stateId: string, yearId: string): Observable<EulbFormResponseData> {
     return this.http.get<EulbFormApiResponse>(`${this.baseUrl}${stateId}/${yearId}`).pipe(
       map((res) => {
@@ -29,26 +36,57 @@ export class EulbStatusService {
     );
   }
 
+  /**
+   * Downloads the EULB Excel template as a blob.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   */
   downloadTemplate(stateId: string, yearId: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}${stateId}/${yearId}/template`, { responseType: 'blob' });
   }
 
+  /**
+   * Fetches an on-demand error sheet blob for rows that failed validation.
+   * Returns HTTP 400 if no uploaded data exists yet.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   */
   downloadErrorSheet(stateId: string, yearId: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}${stateId}/${yearId}/error-sheet`, { responseType: 'blob' });
   }
 
+  /**
+   * Saves the form data as a draft without final validation constraints.
+   * @param payload - Draft payload including `stateId`, `yearId`, and partial form data.
+   */
   saveDraft(payload: EulbSaveDraftPayload): Observable<void> {
     return this.http.post<{ message?: string }>(`${this.baseUrl}save-draft`, payload).pipe(map(() => undefined));
   }
 
+  /**
+   * Validates the uploaded Excel file against the expected ULB list.
+   * A 200 response with `validationStatus: 'INVALID'` is still a success; HTTP errors indicate
+   * structural or auth failures.
+   * @param payload - Validation payload including the file reference and expected ULB count.
+   */
   validateExcel(payload: EulbValidateExcelPayload): Observable<EulbValidateExcelResponse> {
     return this.http.post<EulbValidateExcelResponse>(`${this.baseUrl}validate-excel`, payload);
   }
 
+  /**
+   * Performs the final submission of the EULB status form.
+   * @param payload - Full submit payload including `stateId`, `yearId`, and all required fields.
+   */
   finalSubmit(payload: EulbFinalSubmitPayload): Observable<void> {
     return this.http.post<{ message?: string }>(`${this.baseUrl}final-submit`, payload).pipe(map(() => undefined));
   }
 
+  /**
+   * Fetches a paginated, filterable list of uploaded EULB rows.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   * @param query - Optional filters: `page`, `limit`, `search`, `validationStatus`, `rowType`, `errorField`.
+   */
   getRows(stateId: string, yearId: string, query: EulbRowsQuery = {}): Observable<EulbRowsApiResponse> {
     let params = new HttpParams();
     if (query.page !== undefined) params = params.set('page', String(query.page));
@@ -61,6 +99,13 @@ export class EulbStatusService {
     return this.http.get<EulbRowsApiResponse>(`${this.baseUrl}${stateId}/${yearId}/rows`, { params });
   }
 
+  /**
+   * Patches a single EULB row with corrected field values.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   * @param rowId - The unique row identifier.
+   * @param payload - Fields to update on the row.
+   */
   updateRow(
     stateId: string,
     yearId: string,

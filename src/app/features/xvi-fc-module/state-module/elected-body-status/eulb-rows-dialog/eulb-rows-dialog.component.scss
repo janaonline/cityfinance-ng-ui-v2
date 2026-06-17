@@ -1,17 +1,25 @@
-.eulb-table-wrap {
-  max-height: calc(90vh - 220px);
-  overflow-y: auto;
+@use '@angular/material' as mat;
 
-  table {
-    min-width: 900px;
-  }
+:host {
+  /* This automatically scopes the density shift strictly inside this component */
+  @include mat.button-density(-2);
 }
 
-/* Compact error badge below the status badge */
-.badge.text-bg-danger-subtle {
-  font-size: 0.68rem;
-  font-weight: 500;
-  white-space: normal;
-  text-align: left;
-  max-width: 220px;
+mat-dialog-content.eulb-rows-dialog-content {
+  max-height: none;
+}
+
+.eulb-cell-invalid {
+  background-color: var(--bs-danger-bg-subtle);
+  box-shadow: inset 3px 0 0 var(--bs-danger);
+  cursor: pointer;
+}
+
+.eulb-error-icon {
+  line-height: 1;
+}
+
+.eulb-row-btn {
+  min-width: 0;
+  padding-inline: 8px;
 }

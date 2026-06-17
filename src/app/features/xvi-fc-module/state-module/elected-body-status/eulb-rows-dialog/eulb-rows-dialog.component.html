@@ -1,8 +1,8 @@
-<h2 mat-dialog-title class="fs-6 fw-semibold mb-0">Uploaded Data — Elected Urban Local Bodies</h2>
+<h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-1">Uploaded Data - Elected Urban Local Bodies</h2>
 
-<mat-dialog-content class="p-0">
+<mat-dialog-content class="p-0 eulb-rows-dialog-content">
   <!-- Filters -->
-  <div class="border-bottom px-3 py-2 bg-body-tertiary">
+  <div class="border-bottom px-3 py-2">
     <form [formGroup]="filterForm" class="d-flex flex-wrap gap-2 align-items-end">
       <div class="flex-grow-1" style="min-width: 180px; max-width: 320px">
         <label class="form-label small fw-semibold mb-1" for="eulb-search">Search</label>
@@ -30,6 +30,17 @@
           <option value="">All</option>
           <option value="DB_ULB">DB ULB</option>
           <option value="EXTRA_ULB">Extra ULB</option>
+        </select>
+      </div>
+
+      <div style="min-width: 160px">
+        <label class="form-label small fw-semibold mb-1" for="eulb-efield">Error field</label>
+        <select id="eulb-efield" class="form-select form-select-sm" formControlName="errorField">
+          <option value="">All</option>
+          <option value="electedBodyStatus">Elected Body Status</option>
+          <option value="dateOfConstitution">Date of Constitution</option>
+          <option value="dateOfExpiry">Date of Expiry</option>
+          <option value="remarks">Remarks</option>
         </select>
       </div>
     </form>
@@ -62,121 +73,216 @@
         </thead>
         <tbody>
           @for (row of rows(); track row._id) {
-            <tr [class.table-warning]="row.validationStatus === 'INVALID'">
+            <tr>
               @if (editingRowId() === row._id) {
                 <!-- Edit mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
-                <td>
-                  @if (row.rowType === 'DB_ULB') {
-                    <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">DB</span>
-                  } @else {
-                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Extra</span>
-                  }
-                </td>
-                <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '—' }}</td>
+                <td>{{ row.rowType === 'DB_ULB' ? 'DB' : 'Extra' }}</td>
+                <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '-' }}</td>
                 <td class="small fw-medium text-nowrap">{{ row.ulbName }}</td>
                 <td>
                   <select
                     class="form-select form-select-sm"
+                    [class.is-invalid]="hasEditFieldError('electedBodyStatus')"
                     style="min-width: 140px"
+                    data-eulb-edit-field="electedBodyStatus"
                     [formControl]="$any(editForm.get('electedBodyStatus'))"
                   >
-                    <option value="">— Select —</option>
+                    <option value="">- Select -</option>
                     @for (opt of electedBodyStatusOptions; track opt) {
                       <option [value]="opt">{{ opt }}</option>
                     }
                   </select>
+                  @for (message of getEditFieldErrors('electedBodyStatus'); track message) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </td>
                 <td>
                   <input
                     type="date"
                     class="form-control form-control-sm"
+                    [class.is-invalid]="hasEditFieldError('dateOfConstitution')"
                     style="min-width: 140px"
+                    data-eulb-edit-field="dateOfConstitution"
                     [formControl]="$any(editForm.get('dateOfConstitution'))"
                   />
+                  @for (message of getEditFieldErrors('dateOfConstitution'); track message) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </td>
                 <td>
                   <input
                     type="date"
                     class="form-control form-control-sm"
+                    [class.is-invalid]="hasEditFieldError('dateOfExpiry')"
                     style="min-width: 140px"
+                    data-eulb-edit-field="dateOfExpiry"
                     [formControl]="$any(editForm.get('dateOfExpiry'))"
                   />
+                  @for (message of getEditFieldErrors('dateOfExpiry'); track message) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </td>
                 <td>
                   <input
                     type="text"
                     class="form-control form-control-sm"
+                    [class.is-invalid]="hasEditFieldError('remarks')"
                     style="min-width: 160px"
                     placeholder="Remarks"
+                    data-eulb-edit-field="remarks"
                     [formControl]="$any(editForm.get('remarks'))"
                   />
+                  @for (message of getEditFieldErrors('remarks'); track message) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </td>
                 <td>
                   @if (row.validationStatus === 'VALID') {
-                    <span class="badge text-bg-success">Valid</span>
+                    <span class="badge rounded px-1 small text-bg-success">Valid</span>
                   } @else {
-                    <span class="badge text-bg-danger">Invalid</span>
+                    <span class="badge rounded px-1 small text-bg-danger">Invalid</span>
                   }
                 </td>
                 <td class="pe-3">
                   <div class="d-flex gap-1">
                     <button
                       type="button"
-                      class="btn btn-sm btn-primary"
+                      matButton="filled"
+                      class="eulb-row-btn"
+                      aria-label="Save row"
                       [disabled]="isUpdatingRowId() === row._id"
                       (click)="saveRow(row._id)"
                     >
                       @if (isUpdatingRowId() === row._id) {
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                       } @else {
-                        Save
+                        <i class="bi bi-floppy"></i>
                       }
                     </button>
                     <button
                       type="button"
-                      class="btn btn-sm btn-outline-secondary"
+                      matButton="outlined"
+                      class="eulb-row-btn"
+                      aria-label="Cancel edit"
                       [disabled]="isUpdatingRowId() === row._id"
                       (click)="cancelEdit()"
                     >
-                      Cancel
+                      <i class="bi bi-x-lg"></i>
                     </button>
                   </div>
                 </td>
               } @else {
                 <!-- Read mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
-                <td>
-                  @if (row.rowType === 'DB_ULB') {
-                    <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">DB</span>
-                  } @else {
-                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Extra</span>
-                  }
-                </td>
-                <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '—' }}</td>
-                <td class="small fw-medium text-nowrap">{{ row.ulbName }}</td>
-                <td class="small text-nowrap">{{ row.electedBodyStatus ?? '—' }}</td>
-                <td class="small text-nowrap">{{ row.dateOfConstitution ?? '—' }}</td>
-                <td class="small text-nowrap">{{ row.dateOfExpiry ?? '—' }}</td>
-                <td class="small">{{ row.remarks || '—' }}</td>
-                <td>
-                  <div class="d-flex flex-column gap-1">
-                    @if (row.validationStatus === 'VALID') {
-                      <span class="badge text-bg-success">Valid</span>
-                    } @else {
-                      <span class="badge text-bg-danger">Invalid</span>
-                    }
-                    @for (err of row.errors; track err.field) {
-                      <span class="badge text-bg-danger-subtle text-danger border border-danger-subtle small">
-                        {{ err.field }}: {{ err.message }}
-                      </span>
+                <td class="small">{{ row.rowType === 'DB_ULB' ? 'DB' : 'Extra' }}</td>
+                <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '-' }}</td>
+                <td class="small fw-medium">{{ row.ulbName }}</td>
+                <td
+                  class="small"
+                  [class.eulb-cell-invalid]="hasCellError(row, 'electedBodyStatus')"
+                  [class.cursor-pointer]="hasCellError(row, 'electedBodyStatus')"
+                  (click)="startEditAtField(row, 'electedBodyStatus')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                    <span class="text-truncate min-w-0">{{ row.electedBodyStatus ?? '-' }}</span>
+                    @if (hasCellError(row, 'electedBodyStatus')) {
+                      <button
+                        type="button"
+                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
+                        [matTooltip]="getCellErrorText(row, 'electedBodyStatus')"
+                        matTooltipPosition="above"
+                        aria-label="View elected body status error"
+                        (click)="$event.stopPropagation()"
+                      >
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                      </button>
                     }
                   </div>
+                </td>
+                <td
+                  class="small text-nowrap"
+                  [class.eulb-cell-invalid]="hasCellError(row, 'dateOfConstitution')"
+                  [class.cursor-pointer]="hasCellError(row, 'dateOfConstitution')"
+                  (click)="startEditAtField(row, 'dateOfConstitution')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                    <span class="text-truncate min-w-0">{{
+                      (row.dateOfConstitution | date: 'dd MMM yyyy' : '+0530') ?? '-'
+                    }}</span>
+                    @if (hasCellError(row, 'dateOfConstitution')) {
+                      <button
+                        type="button"
+                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
+                        [matTooltip]="getCellErrorText(row, 'dateOfConstitution')"
+                        matTooltipPosition="above"
+                        aria-label="View date of constitution error"
+                        (click)="$event.stopPropagation()"
+                      >
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+                <td
+                  class="small text-nowrap"
+                  [class.eulb-cell-invalid]="hasCellError(row, 'dateOfExpiry')"
+                  [class.cursor-pointer]="hasCellError(row, 'dateOfExpiry')"
+                  (click)="startEditAtField(row, 'dateOfExpiry')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                    <span class="text-truncate min-w-0">{{
+                      (row.dateOfExpiry | date: 'dd MMM yyyy' : '+0530') ?? '-'
+                    }}</span>
+                    @if (hasCellError(row, 'dateOfExpiry')) {
+                      <button
+                        type="button"
+                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
+                        [matTooltip]="getCellErrorText(row, 'dateOfExpiry')"
+                        matTooltipPosition="above"
+                        aria-label="View date of expiry error"
+                        (click)="$event.stopPropagation()"
+                      >
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+                <td
+                  class="small"
+                  [class.eulb-cell-invalid]="hasCellError(row, 'remarks')"
+                  [class.cursor-pointer]="hasCellError(row, 'remarks')"
+                  (click)="startEditAtField(row, 'remarks')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                    <span class="text-truncate min-w-0">{{ row.remarks || '-' }}</span>
+                    @if (hasCellError(row, 'remarks')) {
+                      <button
+                        type="button"
+                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
+                        [matTooltip]="getCellErrorText(row, 'remarks')"
+                        matTooltipPosition="above"
+                        aria-label="View remarks error"
+                        (click)="$event.stopPropagation()"
+                      >
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+                <td>
+                  @if (row.validationStatus === 'VALID') {
+                    <span class="badge rounded px-1 small text-bg-success">Valid</span>
+                  } @else {
+                    <span class="badge rounded px-1 small text-bg-danger">Invalid</span>
+                  }
                 </td>
                 <td class="pe-3">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary"
+                    matButton="outlined"
+                    class="eulb-row-btn"
+                    aria-label="Edit row"
                     [disabled]="editingRowId() !== null"
                     (click)="startEdit(row)"
                   >
@@ -190,35 +296,33 @@
       </table>
     }
   </div>
-
-  <!-- Pagination -->
-  @if (total() > 0) {
-    <div
-      class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2 border-top bg-body-tertiary small"
-    >
-      <span class="text-secondary"> Showing {{ startIndex() }}-{{ endIndex() }} of {{ total() }} rows </span>
-
-      <nav aria-label="Rows pagination">
-        <ul class="pagination pagination-sm mb-0">
-          <li class="page-item" [class.disabled]="!hasPrev()">
-            <button type="button" class="page-link" (click)="goToPage(page() - 1)" [disabled]="!hasPrev()">
-              &lsaquo; Prev
-            </button>
-          </li>
-          <li class="page-item disabled">
-            <span class="page-link">{{ page() }} / {{ totalPages() }}</span>
-          </li>
-          <li class="page-item" [class.disabled]="!hasNext()">
-            <button type="button" class="page-link" (click)="goToPage(page() + 1)" [disabled]="!hasNext()">
-              Next &rsaquo;
-            </button>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  }
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="border-top px-3 py-2">
+<mat-dialog-actions class="border-top px-3 py-2 d-flex justify-content-between align-items-center gap-3">
   <button type="button" matButton="outlined" (click)="close()">Close</button>
+
+  @if (total() > 0) {
+    <div class="d-flex align-items-center gap-3 small">
+      <span class="text-secondary">Showing {{ startIndex() }}–{{ endIndex() }} of {{ total() }} rows</span>
+      <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 text-decoration-none"
+          [disabled]="!hasPrev()"
+          (click)="goToPage(page() - 1)"
+        >
+          &lsaquo; Prev
+        </button>
+        <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 text-decoration-none"
+          [disabled]="!hasNext()"
+          (click)="goToPage(page() + 1)"
+        >
+          Next &rsaquo;
+        </button>
+      </div>
+    </div>
+  }
 </mat-dialog-actions>
