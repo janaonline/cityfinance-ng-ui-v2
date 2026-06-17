@@ -27,12 +27,20 @@ export interface SfcStatusFormData {
   formType: string;
   stateId: string;
   yearId: string;
+  stateName: string;
+  actors: SfcFormActor[];
   currentFormStatus: number;
   currentFormStatusLabel: string;
   questions: ConditionalFieldConfig[];
   permissions: SfcStatusPermissions;
   instructions: unknown[];
   meta: SfcStatusFormMeta;
+}
+
+export interface SfcFormActor {
+  action: string | null;
+  by: string | null;
+  date: string | null;
 }
 
 export interface SfcStatusApiResponse {

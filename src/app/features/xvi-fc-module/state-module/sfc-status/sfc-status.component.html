@@ -6,7 +6,10 @@
       <div class="content-stack d-flex flex-column gap-4">
         <div>
           <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
-            16th Finance Commission &nbsp;&middot;&nbsp; {{ stateName() }}
+            16th Finance Commission
+            @if (stateName()) {
+              &nbsp;&middot;&nbsp; {{ stateName() }}
+            }
           </div>
 
           <h1 class="page-title mb-2">State Finance Commission Verification</h1>
@@ -24,6 +27,34 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
         } @else {
+          @if (actors().length) {
+            <div
+              class="alert alert-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 gap-md-3"
+              role="alert"
+            >
+              <i class="bi bi-people fs-4 d-none d-md-block"></i>
+
+              <div class="w-100">
+                @for (item of actors(); track $index) {
+                  @if (item.by) {
+                    <small
+                      class="d-flex flex-column flex-sm-row flex-wrap align-items-start align-items-sm-center gap-1 gap-sm-2 p-0 m-0"
+                    >
+                      <strong>{{ item.action }}</strong>
+                      <span>{{ item.by }} State DMA Officer</span>
+                      <span class="text-muted d-none d-sm-inline">&middot;</span>
+                      <span class="text-nowrap">
+                        {{ item.date | date: 'dd MMM yyyy' }}
+                      </span>
+                    </small>
+                  }
+                }
+              </div>
+            </div>
+
+            <hr class="my-0 text-body-tertiary" />
+          }
+
           <form class="content-body" [formGroup]="form">
             @for (item of visibleFields(); track item.key; let isLast = $last) {
               <div
@@ -49,8 +80,10 @@
           (click)="onCancel()"
           data-cy="sfc-status-cancel-test"
         >
-          Cancel
+          <i class="bi bi-x-circle-fill d-md-none"></i>
+          <span class="d-none d-md-inline">Cancel</span>
         </button>
+
         <button
           type="submit"
           matButton="filled"
@@ -60,11 +93,13 @@
         >
           @if (isSavingDraft()) {
             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            Saving...
+            <span class="d-none d-md-inline">Saving...</span>
           } @else {
-            Save
+            <i class="bi bi-bookmark-check-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Save</span>
           }
         </button>
+
         <button
           type="button"
           matButton="filled"
@@ -74,9 +109,10 @@
         >
           @if (isFinalSubmitting()) {
             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            Submitting...
+            <span class="d-none d-md-inline">Submitting...</span>
           } @else {
-            Final Submit
+            <i class="bi bi-send-check-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Final Submit</span>
           }
         </button>
       </div>
