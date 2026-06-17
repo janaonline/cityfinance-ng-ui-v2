@@ -1,15 +1,16 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import {
   OverviewCardComponent,
   OverviewData,
 } from '../../shared/overview-card/overview-card.component';
+import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
 import { UlbOverviewService } from './overview-card.service';
 import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [OverviewCardComponent],
+  imports: [OverviewCardComponent, PageErrorStateComponent],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
 })
@@ -26,8 +27,8 @@ export class OverviewComponent implements OnInit {
   }
 
   currentRequirementYear = 'FY 2026-27';
-  isLoading = false;
-  errorMessage = '';
+  readonly isLoading = signal(false);
+  readonly hasError = signal(false);
 
   ulbOverviewData: OverviewData | null = null;
   disbursementColumns: DisbursementColumn[] = [];
@@ -38,8 +39,8 @@ export class OverviewComponent implements OnInit {
   }
 
   loadOverview(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.hasError.set(false);
 
     this.overviewService.getOverviewViewModel(this.ulbId).subscribe({
       next: ({ ulbOverviewData, disbursementColumns, disbursementRows }) => {
@@ -47,12 +48,12 @@ export class OverviewComponent implements OnInit {
         this.disbursementColumns = disbursementColumns;
         this.disbursementRows = disbursementRows;
         this.currentRequirementYear = disbursementColumns[0]?.label ?? 'FY 2026-27';
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Failed to load ULB overview', error);
-        this.errorMessage = 'Failed to load overview data.';
-        this.isLoading = false;
+        this.hasError.set(true);
+        this.isLoading.set(false);
       },
     });
   }

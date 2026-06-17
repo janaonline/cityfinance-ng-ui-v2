@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
+import { UploadDocumentsService } from './upload-documents.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -23,6 +24,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { EMPTY, Subscription, firstValueFrom, interval, switchMap } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
+import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import {
   UlbFormsDialogComponent,
   ULB_FORMS_DIALOG_PANEL_CLASS,
@@ -35,74 +37,19 @@ export interface UploadDocumentDef {
   id: string;
   title: string;
   subtitle: string;
+  allowedFileTypes: string[];
+  maxFileSize: number;  // MB
+  minPages?: number;
 }
 
 export interface UploadPageConfig {
   type: 'audited' | 'provisional';
   description: string;
   confirmLabel: string;
+  documentYearId: string;
+  documentYear: string;
   documents: ReadonlyArray<UploadDocumentDef>;
 }
-
-// ─── Testing knobs ────────────────────────────────────────────────────────────
-// Change AUDITED_YEAR / PROVISIONAL_YEAR to update UI labels + the `year` param.
-// Set TEST_AUDITED_YEAR_ID / TEST_PROVISIONAL_YEAR_ID to override the `yearId`
-// param sent to the API (null = use the ID from localStorage / route as normal).
-// Revert all four to production values when done testing.
-const AUDITED_YEAR              = '2023-24';             // production: '2024-25'
-const PROVISIONAL_YEAR          = '2024-25';             // production: '2025-26'
-const TEST_AUDITED_YEAR_ID:     string | null = '606aafc14dff55e6c075d3ec'; // 2023-24
-const TEST_PROVISIONAL_YEAR_ID: string | null = '606aafcf4dff55e6c075d424'; // 2024-25
-
-export const UPLOAD_CONFIGS: Record<'audited' | 'provisional', UploadPageConfig> = {
-  audited: {
-    type: 'audited',
-    description: `Upload your audited financial statement for FY ${AUDITED_YEAR}. You may upload documents in any order. The system will automatically verify that each document is readable and meets the required checks.`,
-    confirmLabel: 'Confirm Audited Documents',
-    documents: [
-      // { id: 'receipts-payments',          title: 'Receipts and Payments Statement', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
-      { id: 'balance-sheet', title: 'Balance Sheet', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
-      { id: 'balance-sheet-schedules', title: 'Balance Sheet Schedules', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
-      {
-        id: 'income-expenditure',
-        title: 'Income and Expenditure Statement',
-        subtitle: `FY ${AUDITED_YEAR} · PDF only`,
-      },
-      {
-        id: 'income-statement-schedules',
-        title: 'Income Statement Schedules',
-        subtitle: `FY ${AUDITED_YEAR} · PDF only`,
-      },
-      { id: 'cash-flow', title: 'Cash Flow Statement', subtitle: `FY ${AUDITED_YEAR} · PDF only` },
-      { id: 'auditors-report', title: "Auditor's Report", subtitle: 'PDF only · CA-certified' },
-    ],
-  },
-  provisional: {
-    type: 'provisional',
-    description: `Upload your provisional financial statement for FY ${PROVISIONAL_YEAR}. You may upload documents in any order. The system will automatically verify that each document is readable and meets the required checks.`,
-    confirmLabel: 'Confirm Provisional Documents',
-    documents: [
-      // { id: 'receipts-payments',          title: 'Receipts and Payments Statement', subtitle: `FY ${PROVISIONAL_YEAR} · PDF only` },
-      { id: 'balance-sheet', title: 'Balance Sheet', subtitle: `FY ${PROVISIONAL_YEAR} · PDF only` },
-      {
-        id: 'balance-sheet-schedules',
-        title: 'Balance Sheet Schedules',
-        subtitle: `FY ${PROVISIONAL_YEAR} · PDF only`,
-      },
-      {
-        id: 'income-expenditure',
-        title: 'Income and Expenditure Statement',
-        subtitle: `FY ${PROVISIONAL_YEAR} · PDF only`,
-      },
-      {
-        id: 'income-statement-schedules',
-        title: 'Income Statement Schedules',
-        subtitle: `FY ${PROVISIONAL_YEAR} · PDF only`,
-      },
-      { id: 'cash-flow', title: 'Cash Flow Statement', subtitle: `FY ${PROVISIONAL_YEAR} · PDF only` },
-    ],
-  },
-};
 
 // ─── Internal types ───────────────────────────────────────────────────────────
 
@@ -226,7 +173,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
 @Component({
   selector: 'app-upload-documents',
   standalone: true,
-  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
+  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, MatTooltipModule, PageErrorStateComponent],
   templateUrl: './upload-documents.component.html',
   styleUrl: './upload-documents.component.scss',
 })
@@ -238,20 +185,24 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly permissions = inject(AuthPermissionService);
+  private readonly uploadDocumentsService = inject(UploadDocumentsService);
 
-  readonly canUpload  = () => this.permissions.canUploadDocuments();
-  readonly canDelete  = () => this.permissions.canDeleteDocuments();
+  readonly canUpload = () => this.permissions.canUploadDocuments();
+  readonly canDelete = () => this.permissions.canDeleteDocuments();
   readonly canConfirm = () => this.permissions.canSubmitToStateDma();
 
   @ViewChild('fileInput') private readonly fileInputRef!: ElementRef<HTMLInputElement>;
   private pendingDocId: string | null = null;
   private pollingSub: Subscription | null = null;
 
-  readonly config: UploadPageConfig = this.route.snapshot.data['config'] as UploadPageConfig;
+  private readonly uploadType = this.route.snapshot.data['uploadType'] as 'audited' | 'provisional';
 
+  readonly config = signal<UploadPageConfig | null>(null);
+  readonly isLoadingConfig = signal(true);
+  readonly configError = signal(false);
   readonly ulbDetails = signal<UlbDetails | null>(this.loadUlbDetails());
   readonly isLoadingExisting = signal(true);
-  readonly documents = signal<UploadDocument[]>(this.config.documents.map(emptyDoc));
+  readonly documents = signal<UploadDocument[]>([]);
 
   // annualAccountId is known after first successful upload or on initial load
   readonly annualAccountId = signal<string | null>(null);
@@ -260,9 +211,15 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   readonly sectionLocked = signal(false);
 
   readonly passedCount = computed(() => this.documents().filter((d) => d.status === 'passed').length);
-  readonly totalCount = this.config.documents.length;
-  readonly progressPct = computed(() => Math.round((this.passedCount() / this.totalCount) * 100));
-  readonly allPassed = computed(() => this.passedCount() === this.totalCount);
+  readonly totalCount = computed(() => this.config()?.documents.length ?? 0);
+  readonly progressPct = computed(() => {
+    const total = this.totalCount();
+    return total === 0 ? 0 : Math.round((this.passedCount() / total) * 100);
+  });
+  readonly allPassed = computed(() => {
+    const total = this.totalCount();
+    return total > 0 && this.passedCount() === total;
+  });
   readonly hasProcessingDocs = computed(() =>
     this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
   );
@@ -271,7 +228,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   readonly hasUnsavedUploads = this.hasProcessingDocs;
 
   async ngOnInit(): Promise<void> {
-    await this.loadExistingData();
+    await this.loadConfig();
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -292,6 +249,43 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.location.back();
   }
 
+  async retryLoadConfig(): Promise<void> {
+    this.configError.set(false);
+    this.isLoadingConfig.set(true);
+    await this.loadConfig();
+  }
+
+  private async loadConfig(): Promise<void> {
+    const designYearId = this.resolveDesignYearId();
+    if (!designYearId) {
+      this.configError.set(true);
+      this.isLoadingConfig.set(false);
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      this.uploadDocumentsService
+        .getUploadConfig(this.uploadType, designYearId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (cfg) => {
+            this.config.set(cfg);
+            this.documents.set(cfg.documents.map(emptyDoc));
+            this.isLoadingConfig.set(false);
+            resolve();
+          },
+          error: () => {
+            this.configError.set(true);
+            this.isLoadingConfig.set(false);
+            resolve();
+          },
+        });
+    });
+
+    if (this.configError()) return;
+    await this.loadExistingData();
+  }
+
   triggerUpload(docId: string): void {
     this.pendingDocId = docId;
     this.fileInputRef.nativeElement.value = '';
@@ -301,13 +295,13 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file || !this.pendingDocId) return;
+    if (!file || !this.pendingDocId || !this.config()) return;
 
     const docId = this.pendingDocId;
     this.pendingDocId = null;
-    const docDef = this.config.documents.find((d) => d.id === docId)!;
+    const docDef = this.config()!.documents.find((d) => d.id === docId)!;
 
-    const validationMsg = await this.checkFileValidity(file, docId);
+    const validationMsg = await this.checkFileValidity(file, docDef);
     if (validationMsg) {
       this.setDocError(docId, validationMsg);
       return;
@@ -322,9 +316,10 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const designYearId = this.resolveDesignYearId();
       if (!ulbId || !designYearId) throw new Error('Missing ulbId or designYearId');
 
-      const yearId = this.config.type === 'audited' ? TEST_AUDITED_YEAR_ID! : TEST_PROVISIONAL_YEAR_ID!;
-      const year   = this.config.type === 'audited' ? AUDITED_YEAR : PROVISIONAL_YEAR;
-      const section = this.config.type === 'audited' ? 'auditedData' : 'unauditedData';
+      const cfg = this.config()!;
+      const yearId = cfg.documentYearId;
+      const year = cfg.documentYear;
+      const section = cfg.type === 'audited' ? 'auditedData' : 'unauditedData';
 
       const form = new FormData();
       form.append('file', file, file.name);
@@ -335,9 +330,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       form.append('yearId', yearId);
       form.append('year', year);
 
-      const result = await firstValueFrom(
-        this.http.post<unknown>(`${API}xvi-fc/annual-account/upload`, form),
-      );
+      const result = await firstValueFrom(this.http.post<unknown>(`${API}xvi-fc/annual-account/upload`, form));
 
       const upload = unwrap<UploadResponse>(result);
       this.annualAccountId.set(upload.annualAccountId);
@@ -451,11 +444,23 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     if (result !== 'remove') return;
 
+    const accountId = this.annualAccountId();
+    if (accountId) {
+      const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
+      try {
+        await firstValueFrom(
+          this.http.delete(`${API}xvi-fc/annual-account/${accountId}/documents/${docId}?section=${section}`),
+        );
+      } catch (err) {
+        console.error('[remove] failed to delete document from server', err);
+      }
+    }
+
     this.documents.update((docs) =>
       docs.map((d) => {
         if (d.id !== docId) return d;
         if (d.localPreviewUrl) URL.revokeObjectURL(d.localPreviewUrl);
-        return emptyDoc(this.config.documents.find((def) => def.id === docId)!);
+        return emptyDoc(this.config()!.documents.find((def) => def.id === docId)!);
       }),
     );
   }
@@ -500,12 +505,10 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const accountId = this.annualAccountId();
     if (!accountId) return;
 
-    const section = this.config.type === 'audited' ? 'auditedData' : 'unauditedData';
+    const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
 
     try {
-      await firstValueFrom(
-        this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section }),
-      );
+      await firstValueFrom(this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section }));
       this.router.navigate(['../ulb-forms'], { relativeTo: this.route });
     } catch (err) {
       console.error('[submit] failed to submit section', err);
@@ -559,9 +562,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     try {
       const result = await firstValueFrom(
-        this.http.get<unknown>(
-          `${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}`,
-        ),
+        this.http.get<unknown>(`${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}`),
       );
 
       const statusData = unwrap<BackendStatusResponse | null>(result);
@@ -569,7 +570,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
       this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
 
-      const section = this.config.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
+      const section = this.config()!.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
       this.sectionLocked.set(section?.form_status === 'UNDER_REVIEW_BY_STATE');
       if (!section?.documents?.length) return;
 
@@ -626,9 +627,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       .pipe(
         switchMap(() =>
           this.documents().some((d) => d.status === 'processing')
-            ? this.http.get<unknown>(
-                `${API}xvi-fc/annual-account/${accountId}/status`,
-              )
+            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status`)
             : EMPTY,
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -636,7 +635,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           const payload = unwrap<BackendStatusResponse>(result);
-          const section = this.config.type === 'audited' ? payload.auditedData : payload.unauditedData;
+          const section = this.config()!.type === 'audited' ? payload.auditedData : payload.unauditedData;
           if (!section?.documents) return;
 
           this.documents.update((docs) =>
@@ -687,37 +686,36 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     );
   }
 
-  private async checkFileValidity(file: File, docId: string): Promise<string | null> {
-    const isPdfMime = file.type === 'application/pdf';
-    const isPdfExt = file.name.toLowerCase().endsWith('.pdf');
+  private async checkFileValidity(file: File, doc: UploadDocumentDef): Promise<string | null> {
+    const isPdf = doc.allowedFileTypes.includes('pdf');
 
-    if (!isPdfMime && !isPdfExt) {
-      return 'Please upload a PDF file only.';
+    if (isPdf) {
+      const isPdfMime = file.type === 'application/pdf';
+      const isPdfExt = file.name.toLowerCase().endsWith('.pdf');
+      if (!isPdfMime && !isPdfExt) return 'Please upload a PDF file only.';
     }
 
-    if (file.size === 0) {
-      return 'The selected file is empty. Please upload a valid PDF.';
+    if (file.size === 0) return 'The selected file is empty. Please upload a valid file.';
+
+    const maxBytes = doc.maxFileSize * 1024 * 1024;
+    if (file.size > maxBytes) {
+      return `File size exceeds ${doc.maxFileSize} MB. Please compress or split the file and try again.`;
     }
 
-    if (file.size > 50 * 1024 * 1024) {
-      return 'File size exceeds 50 MB. Please compress or split the PDF and try again.';
-    }
+    if (!isPdf) return null;
 
-    // Fast header check — confirm %PDF- signature before reading the whole file
+    // Fast %PDF- header check
     try {
       const headerBuf = await file.slice(0, 5).arrayBuffer();
       const h = new Uint8Array(headerBuf);
       if (!(h[0] === 0x25 && h[1] === 0x50 && h[2] === 0x44 && h[3] === 0x46 && h[4] === 0x2d)) {
         return 'Please upload a PDF file only.';
       }
-    } catch {
-      // ignore — pdf.js will also reject a corrupt file
-    }
+    } catch { /* ignore — pdf.js will reject a corrupt file */ }
 
     // Render-based blank detection via pdf.js.
-    // Heuristics (scanning raw bytes for /Font etc.) cannot detect blank scanned pages
-    // because they look identical to real scans at the byte level.
-    // Rendering at low resolution and checking pixel brightness is the only reliable approach.
+    // Rendering at low resolution and checking pixel brightness is the only reliable approach
+    // for detecting blank scanned pages (raw byte heuristics cannot distinguish them).
     try {
       const pdfjsLib = await import('pdfjs-dist');
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -725,22 +723,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-      if (pdf.numPages === 0) {
-        return 'This PDF has no pages. Please upload a valid document.';
-      }
+      if (pdf.numPages === 0) return 'This PDF has no pages. Please upload a valid document.';
 
-      // Render page 1 at scale 0.15 (~96×136 px for A4) — fast, enough for blank detection
       const page = await pdf.getPage(1);
       const viewport = page.getViewport({ scale: 0.15 });
-
       const canvas = document.createElement('canvas');
-      canvas.width  = Math.ceil(viewport.width);
+      canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);
-
       const ctx = canvas.getContext('2d')!;
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
       await page.render({ canvasContext: ctx, viewport, canvas }).promise;
 
       const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -748,18 +740,15 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       for (let i = 0; i < data.length; i += 4) {
         if (data[i] < 240 || data[i + 1] < 240 || data[i + 2] < 240) nonWhite++;
       }
-
-      const totalPixels = canvas.width * canvas.height;
-      if (nonWhite / totalPixels < 0.005) {
+      if (nonWhite / (canvas.width * canvas.height) < 0.005) {
         return 'This PDF appears to be blank. Please upload a document with content.';
       }
 
-      // Page-count check only after confirming the document is a valid, non-blank PDF
-      if (docId === 'auditors-report' && pdf.numPages < 2) {
-        return "A valid Auditor's Report must contain more than one page.";
+      // Min page count — driven by API config (e.g. Auditor's Report requires >= 2 pages)
+      if (doc.minPages && pdf.numPages < doc.minPages) {
+        return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
       }
     } catch (err) {
-      // pdf.js failed to load or render — let the backend validate instead
       console.warn('[pdf-check] render check skipped:', err);
     }
 
@@ -793,7 +782,6 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       return null;
     }
   }
-
 
   private getLoggedInUserId(): string | null {
     try {

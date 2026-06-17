@@ -1,10 +1,11 @@
 <main class="roles-page container-fluid py-4 py-lg-5">
-  @if (errorMessage) {
-    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
-      <mat-icon aria-hidden="true">error_outline</mat-icon>
-      <span>{{ errorMessage }}</span>
-    </div>
-  }
+  @if (hasError) {
+    <app-page-error-state
+      title="Failed to load team"
+      message="We couldn't load the roles and team information. Please check your connection and try again."
+      (retry)="loadRolesTeamsOverview()"
+    />
+  } @else {
 
   @if (!permissionService.canCreateManagedUser())  {
     <div class="readonly-notice" role="status">
@@ -377,6 +378,8 @@
     </div>
   </mat-card>
 }
+
+  } <!-- end @else (hasError) -->
 </main>
 
 <!-- ─── Transfer Ownership Dialog ────────────────────────────────────── -->
@@ -473,3 +476,5 @@
     </mat-dialog-actions>
   </div>
 </ng-template>
+
+
