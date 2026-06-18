@@ -1,15 +1,16 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import FileSaver from 'file-saver';
-import { filter } from 'rxjs';
+import { filter, finalize } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
 import {
+  ConfirmDialogData,
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -27,20 +28,27 @@ import {
   ApiErrorMap,
   ApiErrorResponse,
   EulbFileValue,
-  EulbFormActor,
   EulbPermissions,
+  EulbRevalidateExcelResponse,
   EulbRowsDialogResult,
   EulbSaveDraftPayload,
   SubmitType,
 } from './eulb-status.models';
 import { EulbStatusService } from './eulb-status.service';
 import { EulbRowsDialogComponent } from './eulb-rows-dialog/eulb-rows-dialog.component';
+import {
+  FORM_STATUS,
+  FormActor,
+  FormProgressComponent,
+  FormStatusValue,
+} from '../../shared/form-progress/form-progress.component';
 
 /** Action IDs emitted by the dynamic form's `supportingContent` action buttons. */
 const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_TEMPLATE: 'download-template',
   VIEW_UPLOADED_DATA: 'view-uploaded-data',
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
+  REVALIDATE_EXCEL: 'revalidate-excel',
 } as const;
 
 /**
@@ -50,7 +58,14 @@ const EULB_SUPPORTING_ACTION = {
  */
 @Component({
   selector: 'app-elected-body-status',
-  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule, DatePipe],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DynamicFormComponent,
+    PreLoaderComponent,
+    MatButtonModule,
+    FormProgressComponent,
+  ],
   templateUrl: './elected-body-status.component.html',
   styleUrl: './elected-body-status.component.scss',
 })
@@ -67,16 +82,21 @@ export class ElectedBodyStatusComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
 
   readonly stateName = signal('');
-  readonly actors = signal<EulbFormActor[]>([]);
+  readonly actors = signal<FormActor[]>([]);
+
+  /** Current numeric form status; used by the form-progress card. */
+  readonly formStatus = signal<FormStatusValue>(FORM_STATUS.NO_STATUS);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
+  readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
   readonly isValidating = signal(false);
+  readonly isDeleting = signal(false);
   readonly isDownloadingTemplate = signal(false);
   readonly isDownloadingErrorSheet = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
@@ -90,6 +110,17 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /** Tracks API-injected error keys per control so they can be cleared before re-submission. */
   private readonly serverErrorKeys = new Map<string, string[]>();
+
+  /** Guards the delete trigger from firing during form hydration, programmatic file restoration, or a concurrent delete. */
+  private isHydratingForm = false;
+  private isRestoringExcelFile = false;
+  private isDeleteExcelDialogOpen = false;
+
+  /** Last file value confirmed by the backend (GET response or validate-excel success). */
+  private lastPersistedExcelFile: EulbFileValue | null = null;
+
+  /** Reference to the rows dialog so it can be closed programmatically on delete success. */
+  private rowsDialogRef: MatDialogRef<EulbRowsDialogComponent> | null = null;
 
   /** State ID read from localStorage `userData`. Returns empty string if absent or unparseable. */
   private get stateId(): string {
@@ -126,6 +157,7 @@ export class ElectedBodyStatusComponent implements OnInit {
       return;
     }
 
+    this.isHydratingForm = true;
     this.isLoading.set(true);
 
     this.eulbService
@@ -136,12 +168,20 @@ export class ElectedBodyStatusComponent implements OnInit {
           this.permissions.set(data.permissions);
           this.stateName.set(data.stateName ?? '');
           this.actors.set(data.actors ?? []);
+          this.formStatus.set(data.currentFormStatus as FormStatusValue);
+
+          const fileField = data.questions.find((q) => q.key === 'electedBodyExcelFile');
+          this.lastPersistedExcelFile = this.hasFileValue(fileField?.value)
+            ? (fileField!.value as EulbFileValue)
+            : null;
 
           this.fields.set(data.questions);
+          this.rowEditFields.set(data.rowEditFields ?? []);
           this.createFormControls();
           this.isLoading.set(false);
         },
         error: () => {
+          this.isHydratingForm = false;
           this.utilityService.triggerSnackbar('Unable to load the form. Please try again.', 'snackbar-danger');
           this.isLoading.set(false);
         },
@@ -185,6 +225,8 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
 
     this.setupValidationTrigger();
+    this.setupDeleteTrigger();
+    this.isHydratingForm = false;
     this.isLoading.set(false);
   }
 
@@ -202,6 +244,7 @@ export class ElectedBodyStatusComponent implements OnInit {
         filter((val) => this.isValidFileValue(val)),
       )
       .subscribe(() => {
+        if (this.isRestoringExcelFile) return;
         if (this.hasValidUlbCount()) {
           this.triggerExcelValidation();
         }
@@ -239,13 +282,17 @@ export class ElectedBodyStatusComponent implements OnInit {
     if (!fileValue || !ulbCount) return;
 
     this.isValidating.set(true);
+    this.utilityService.triggerSnackbar('Excel uploaded. Verifying data…');
 
     this.eulbService
       .validateExcel({ stateId: this.stateId, yearId: this.yearId, ulbCount, electedBodyExcelFile: fileValue })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isValidating.set(false)),
+      )
       .subscribe({
         next: (res) => {
-          this.isValidating.set(false);
+          this.lastPersistedExcelFile = fileValue;
           if (res.data.validationStatus === 'VALID') {
             this.utilityService.triggerSnackbar('Excel validated successfully.');
           } else {
@@ -257,10 +304,47 @@ export class ElectedBodyStatusComponent implements OnInit {
           this.reloadForm();
         },
         error: (err: unknown) => {
-          this.isValidating.set(false);
           const response = this.extractApiErrorResponse(err);
           this.utilityService.triggerSnackbar(
             response?.message ?? 'Excel validation failed. Please try again.',
+            'snackbar-danger',
+          );
+          if (response?.errors) {
+            this.applyApiErrors(response.errors);
+          }
+        },
+      });
+  }
+
+  /** Re-validates the already-uploaded Excel when ulbCount changes without a new file upload. */
+  private revalidateUploadedExcel(): void {
+    if (this.isValidating()) return;
+
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId) return;
+
+    const ulbCount = this.form.get('ulbCount')?.value as unknown as number | null;
+    if (!ulbCount) return;
+
+    this.clearAllApiErrors();
+    this.isValidating.set(true);
+
+    this.eulbService
+      .revalidateUploadedExcel(stateId, yearId, ulbCount)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isValidating.set(false)),
+      )
+      .subscribe({
+        next: (res: EulbRevalidateExcelResponse) => {
+          this.utilityService.triggerSnackbar(res.message);
+          this.reloadForm();
+        },
+        error: (err: unknown) => {
+          const response = this.extractApiErrorResponse(err);
+          this.utilityService.triggerSnackbar(
+            response?.message ?? 'Revalidation failed. Please try again.',
             'snackbar-danger',
           );
           if (response?.errors) {
@@ -297,23 +381,28 @@ export class ElectedBodyStatusComponent implements OnInit {
    */
   openRowsDialog(): void {
     const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'eulb-rows-dialog-panel'];
-    const dialogRef = this.dialog.open(EulbRowsDialogComponent, {
+    this.rowsDialogRef = this.dialog.open(EulbRowsDialogComponent, {
       panelClass,
       width: '95vw',
       maxWidth: '95vw',
       height: '95vh',
       maxHeight: '95vh',
-      data: { stateId: this.stateId, yearId: this.yearId },
+      data: {
+        stateId: this.stateId,
+        yearId: this.yearId,
+        rowEditFields: this.rowEditFields(),
+        canEdit: this.canEdit(),
+      },
     });
 
-    dialogRef
+    this.rowsDialogRef
       .afterClosed()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        filter((result): result is EulbRowsDialogResult => !!result?.updatedSummary),
-      )
-      .subscribe(() => {
-        this.reloadForm();
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: EulbRowsDialogResult | undefined) => {
+        this.rowsDialogRef = null;
+        if (result?.updatedSummary) {
+          this.reloadForm();
+        }
       });
   }
 
@@ -333,6 +422,9 @@ export class ElectedBodyStatusComponent implements OnInit {
         return;
       case EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET:
         this.downloadErrorSheet();
+        return;
+      case EULB_SUPPORTING_ACTION.REVALIDATE_EXCEL:
+        this.revalidateUploadedExcel();
         return;
       default:
         return;
@@ -635,6 +727,128 @@ export class ElectedBodyStatusComponent implements OnInit {
     this.form = this.fb.group({});
     this.fields.set([]);
     this.loadForm();
+  }
+
+  /**
+   * Returns `true` if `value` represents a non-empty file object (has a fileName or fileUrl).
+   * Used to detect when the file control is cleared vs populated.
+   */
+  private hasFileValue(value: unknown): boolean {
+    const file = value as { fileName?: string; fileUrl?: string } | null | undefined;
+    return !!file?.fileName || !!file?.fileUrl;
+  }
+
+  /**
+   * Subscribes to `electedBodyExcelFile` value changes and triggers the delete flow
+   * whenever the control is cleared while a backend-persisted file exists.
+   * Guards against emissions during hydration, restoration, or concurrent async operations.
+   */
+  private setupDeleteTrigger(): void {
+    const fileControl = this.form.get('electedBodyExcelFile') as FormControl | null;
+    if (!fileControl) return;
+
+    fileControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((currentValue: unknown) => {
+      if (this.isHydratingForm || this.isRestoringExcelFile) return;
+      if (this.isDeleteExcelDialogOpen || this.isDeleting()) return;
+      if (!this.lastPersistedExcelFile) return;
+      if (this.hasFileValue(currentValue)) return;
+      if (!this.canEdit()) return;
+      if (this.isLoading() || this.isValidating() || this.isSubmitting()) return;
+
+      this.confirmAndDeleteExcel();
+    });
+  }
+
+  /**
+   * Shows a confirmation dialog before proceeding with Excel deletion.
+   * Restores the previous file value if the user cancels.
+   */
+  private confirmAndDeleteExcel(): void {
+    this.isDeleteExcelDialogOpen = true;
+
+    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
+    const dialogData: ConfirmDialogData = {
+      title: 'Remove uploaded Excel?',
+      message:
+        'Removing the uploaded Excel will also remove the uploaded row data and validation results. You can upload a new Excel file anytime. Continue?',
+      confirmText: 'Yes, remove',
+      cancelText: 'No, keep it',
+      confirmButtonColor: 'warn',
+      icon: 'bi-trash-fill',
+    };
+
+    this.confirmDialogService
+      .confirm(dialogData, config)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) {
+          this.isDeleteExcelDialogOpen = false;
+          this.restoreExcelFileControl();
+          return;
+        }
+        this.executeDeleteExcel();
+      });
+  }
+
+  /**
+   * Restores the last backend-persisted file value into the file control.
+   * Uses the default emitEvent so Angular's AbstractControl.events fires and the file component's
+   * internal fileValueSnapshot signal updates — necessary because FileComponent.bindFileValueState
+   * subscribes to source.events, which is gated by emitEvent. Callers set isRestoringExcelFile
+   * before this runs so valueChanges subscribers skip the delete/validation re-trigger paths.
+   */
+  private restoreExcelFileControl(): void {
+    const fileControl = this.form.get('electedBodyExcelFile') as FormControl | null;
+    if (!fileControl || !this.lastPersistedExcelFile) return;
+    this.isRestoringExcelFile = true;
+    try {
+      fileControl.setValue(this.lastPersistedExcelFile);
+      fileControl.markAsPristine();
+      fileControl.markAsUntouched();
+      fileControl.updateValueAndValidity({ emitEvent: false });
+    } finally {
+      this.isRestoringExcelFile = false;
+    }
+  }
+
+  /**
+   * Calls the DELETE API to remove the uploaded Excel and its row dataset.
+   * On success, resets local state, closes the rows dialog if open, and reloads the form.
+   * On failure, restores the file control value and shows the backend error message.
+   */
+  private executeDeleteExcel(): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    this.isDeleting.set(true);
+
+    this.eulbService
+      .deleteUploadedExcel(stateId, yearId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.isDeleting.set(false);
+          this.isDeleteExcelDialogOpen = false;
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.lastPersistedExcelFile = null;
+          this.rowsDialogRef?.close();
+          this.rowsDialogRef = null;
+          this.utilityService.triggerSnackbar('Uploaded Excel removed successfully.');
+          this.reloadForm();
+        },
+        error: (err: unknown) => {
+          const response = this.extractApiErrorResponse(err);
+          const status = (err as { status?: number })?.status;
+          const message =
+            status === 400 || status === 403
+              ? (response?.message ?? 'Failed to remove uploaded Excel. Please try again.')
+              : 'Failed to remove uploaded Excel. Please try again.';
+          this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+          this.restoreExcelFileControl();
+        },
+      });
   }
 
   /** Shows a cancel confirmation dialog; notifies the user if the action is confirmed. */
