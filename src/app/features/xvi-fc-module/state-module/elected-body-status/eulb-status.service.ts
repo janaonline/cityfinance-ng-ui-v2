@@ -3,9 +3,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  EulbDeleteUploadedExcelResponse,
   EulbFinalSubmitPayload,
   EulbFormApiResponse,
   EulbFormResponseData,
+  EulbRevalidateExcelResponse,
   EulbRowsApiResponse,
   EulbRowsQuery,
   EulbSaveDraftPayload,
@@ -97,6 +99,28 @@ export class EulbStatusService {
     if (query.errorField) params = params.set('errorField', query.errorField);
 
     return this.http.get<EulbRowsApiResponse>(`${this.baseUrl}${stateId}/${yearId}/rows`, { params });
+  }
+
+  /**
+   * Deletes the uploaded Excel file reference and its associated row dataset for a given state/year.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   */
+  deleteUploadedExcel(stateId: string, yearId: string): Observable<EulbDeleteUploadedExcelResponse> {
+    return this.http.delete<EulbDeleteUploadedExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/uploaded-excel`);
+  }
+
+  /**
+   * Re-validates the already-uploaded Excel against the expected ULB list.
+   * Use when `ulbCount` changes after an initial upload but no new file is uploaded.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   * @param ulbCount - The expected ULB count to validate against.
+   */
+  revalidateUploadedExcel(stateId: string, yearId: string, ulbCount: number): Observable<EulbRevalidateExcelResponse> {
+    return this.http.post<EulbRevalidateExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/revalidate-excel`, {
+      ulbCount,
+    });
   }
 
   /**

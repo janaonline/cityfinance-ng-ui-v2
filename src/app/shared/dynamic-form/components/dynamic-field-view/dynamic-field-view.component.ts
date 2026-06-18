@@ -275,7 +275,7 @@ export class DynamicFieldViewComponent implements OnChanges {
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       return String(value);
     }
-    if (typeof value === 'object' && value !== null) {
+    if (value !== null && typeof value === 'object') {
       const obj = value as Record<string, unknown>;
       const label = obj['label'] ?? obj['name'] ?? obj['id'];
       if (label !== undefined && label !== null) return String(label);
@@ -316,7 +316,7 @@ export class DynamicFieldViewComponent implements OnChanges {
 
   /** Builds readonly table row data by reading values from the nested FormGroup. */
   private buildTableRows(): TableRowView[] {
-    const rows = (this.field.data ?? []) as TableRowConfig[];
+    const rows = (this.field?.data ?? []) as TableRowConfig[];
     const tableGroup = this.group?.get(this.field?.key);
     if (!rows.length || !(tableGroup instanceof FormGroup)) return [];
 
