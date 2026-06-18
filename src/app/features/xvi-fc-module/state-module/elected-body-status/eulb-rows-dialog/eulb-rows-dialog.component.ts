@@ -75,6 +75,7 @@ export class EulbRowsDialogComponent implements OnInit {
   readonly stateId = this.data.stateId;
   readonly yearId = this.data.yearId;
   readonly rowEditFields = signal<ConditionalFieldConfig[]>(this.data.rowEditFields ?? []);
+  readonly canEditRows = !!this.data.canEdit;
 
   readonly rows = signal<EulbRow[]>([]);
   readonly total = signal(0);
@@ -162,6 +163,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param row - The row to edit.
    */
   startEdit(row: EulbRow): void {
+    if (!this.canEditRows) return;
     this.editingRowId.set(row._id);
     this.buildEditForm(row);
   }
@@ -182,6 +184,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param rowId - The unique identifier of the row being saved.
    */
   saveRow(rowId: string): void {
+    if (!this.canEditRows) return;
     this.editForm.markAllAsTouched();
     this.editForm.updateValueAndValidity();
     if (this.editForm.invalid) return;
@@ -380,6 +383,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param field - The field whose input should receive focus; must match a `data-eulb-edit-field` attribute value.
    */
   startEditAtField(row: EulbRow, field: string): void {
+    if (!this.canEditRows) return;
     if (!this.hasCellError(row, field) || this.editingRowId() !== null) return;
     this.startEdit(row);
     setTimeout(() => {

@@ -169,6 +169,7 @@ export interface EulbRowsDialogData {
   stateId: string;
   yearId: string;
   rowEditFields?: ConditionalFieldConfig[];
+  canEdit: boolean;
 }
 
 export interface EulbRowsDialogResult {

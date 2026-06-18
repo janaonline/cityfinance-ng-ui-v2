@@ -44,6 +44,7 @@
                   class="p-2 d-block"
                   [field]="item"
                   [group]="form"
+                  [mode]="canEdit() ? 'edit' : 'view'"
                   (supportingAction)="onSupportingAction($event)"
                 ></app-dynamic-form>
               </div>
@@ -53,52 +54,58 @@
       </div>
     </div>
 
-    <div class="acknowledgement border-top p-3">
-      <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
-        <button
-          type="button"
-          matButton="outlined"
-          [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
-          (click)="onCancel()"
-          data-cy="eulb-status-cancel-test"
-        >
-          <i class="bi bi-x-circle-fill d-md-none"></i>
-          <span class="d-none d-md-inline">Cancel</span>
-        </button>
+    @if (canEdit() || canFinalSubmit()) {
+      <div class="acknowledgement border-top p-3">
+        <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+          <button
+            type="button"
+            matButton="outlined"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
+            (click)="onCancel()"
+            data-cy="eulb-status-cancel-test"
+          >
+            <i class="bi bi-x-circle-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Cancel</span>
+          </button>
 
-        <button
-          type="submit"
-          matButton="filled"
-          [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
-          (click)="onSubmit('saveAsDraft')"
-          data-cy="eulb-status-save-draft-test"
-        >
-          @if (isSavingDraft()) {
-            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            <span class="d-none d-md-inline">Saving&hellip;</span>
-          } @else {
-            <i class="bi bi-bookmark-check-fill d-md-none"></i>
-            <span class="d-none d-md-inline">Save</span>
-          }
-        </button>
+          <button
+            type="submit"
+            matButton="filled"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
+            (click)="onSubmit('saveAsDraft')"
+            data-cy="eulb-status-save-draft-test"
+          >
+            @if (isSavingDraft()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span class="d-none d-md-inline">Saving&hellip;</span>
+            } @else {
+              <i class="bi bi-bookmark-check-fill d-md-none"></i>
+              <span class="d-none d-md-inline">Save</span>
+            }
+          </button>
 
-        <button
-          type="button"
-          matButton="filled"
-          [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
-          (click)="onSubmit('finalSubmit')"
-          data-cy="eulb-status-final-submit-test"
-        >
-          @if (isFinalSubmitting()) {
-            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            <span class="d-none d-md-inline">Submitting&hellip;</span>
-          } @else {
-            <i class="bi bi-send-check-fill d-md-none"></i>
-            <span class="d-none d-md-inline">Final Submit</span>
+          @if (canFinalSubmit()) {
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="
+                !canFinalSubmit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length
+              "
+              (click)="onSubmit('finalSubmit')"
+              data-cy="eulb-status-final-submit-test"
+            >
+              @if (isFinalSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Submitting&hellip;</span>
+              } @else {
+                <i class="bi bi-send-check-fill d-md-none"></i>
+                <span class="d-none d-md-inline">Final Submit</span>
+              }
+            </button>
           }
-        </button>
+        </div>
       </div>
-    </div>
+    }
     @if (isValidating()) {
       <div class="eulb-verification-overlay" role="status" aria-live="polite">
         <div class="eulb-verification-card shadow-sm">

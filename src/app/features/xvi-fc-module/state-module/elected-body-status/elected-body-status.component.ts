@@ -387,7 +387,12 @@ export class ElectedBodyStatusComponent implements OnInit {
       maxWidth: '95vw',
       height: '95vh',
       maxHeight: '95vh',
-      data: { stateId: this.stateId, yearId: this.yearId, rowEditFields: this.rowEditFields() },
+      data: {
+        stateId: this.stateId,
+        yearId: this.yearId,
+        rowEditFields: this.rowEditFields(),
+        canEdit: this.canEdit(),
+      },
     });
 
     this.rowsDialogRef

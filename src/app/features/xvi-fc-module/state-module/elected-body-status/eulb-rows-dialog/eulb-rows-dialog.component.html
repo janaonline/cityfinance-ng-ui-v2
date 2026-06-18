@@ -68,7 +68,9 @@
           <col class="eulb-col-date" />
           <col class="eulb-col-remarks" />
           <col class="eulb-col-validation" />
-          <col class="eulb-col-actions" />
+          @if (canEditRows) {
+            <col class="eulb-col-actions" />
+          }
         </colgroup>
         <thead class="table-light border-bottom">
           <tr>
@@ -81,7 +83,9 @@
             <th class="text-nowrap small fw-semibold">Date of Expiry</th>
             <th class="text-nowrap small fw-semibold">Remarks</th>
             <th class="text-nowrap small fw-semibold">Status</th>
-            <th class="text-nowrap small fw-semibold pe-3 eulb-actions-col">Actions</th>
+            @if (canEditRows) {
+              <th class="text-nowrap small fw-semibold pe-3 eulb-actions-col">Actions</th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -206,8 +210,8 @@
                 <td
                   class="small"
                   [class.eulb-cell-invalid]="hasCellError(row, 'electedBodyStatus')"
-                  [class.cursor-pointer]="hasCellError(row, 'electedBodyStatus')"
-                  (click)="startEditAtField(row, 'electedBodyStatus')"
+                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'electedBodyStatus')"
+                  (click)="canEditRows && startEditAtField(row, 'electedBodyStatus')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
                     <span class="text-truncate min-w-0">{{ row.electedBodyStatus ?? '-' }}</span>
@@ -228,8 +232,8 @@
                 <td
                   class="small text-nowrap"
                   [class.eulb-cell-invalid]="hasCellError(row, 'dateOfConstitution')"
-                  [class.cursor-pointer]="hasCellError(row, 'dateOfConstitution')"
-                  (click)="startEditAtField(row, 'dateOfConstitution')"
+                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'dateOfConstitution')"
+                  (click)="canEditRows && startEditAtField(row, 'dateOfConstitution')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
                     <span class="text-truncate min-w-0">{{
@@ -252,8 +256,8 @@
                 <td
                   class="small text-nowrap"
                   [class.eulb-cell-invalid]="hasCellError(row, 'dateOfExpiry')"
-                  [class.cursor-pointer]="hasCellError(row, 'dateOfExpiry')"
-                  (click)="startEditAtField(row, 'dateOfExpiry')"
+                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'dateOfExpiry')"
+                  (click)="canEditRows && startEditAtField(row, 'dateOfExpiry')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
                     <span class="text-truncate min-w-0">{{
@@ -276,8 +280,8 @@
                 <td
                   class="small"
                   [class.eulb-cell-invalid]="hasCellError(row, 'remarks')"
-                  [class.cursor-pointer]="hasCellError(row, 'remarks')"
-                  (click)="startEditAtField(row, 'remarks')"
+                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'remarks')"
+                  (click)="canEditRows && startEditAtField(row, 'remarks')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
                     <span class="text-truncate min-w-0">{{ row.remarks || '-' }}</span>
@@ -302,18 +306,20 @@
                     >{{ getValidationStatusLabel(row.validationStatus) }}</span
                   >
                 </td>
-                <td class="pe-3 eulb-actions-col">
-                  <button
-                    type="button"
-                    matButton="outlined"
-                    class="eulb-row-btn"
-                    aria-label="Edit row"
-                    [disabled]="editingRowId() !== null"
-                    (click)="startEdit(row)"
-                  >
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                </td>
+                @if (canEditRows) {
+                  <td class="pe-3 eulb-actions-col">
+                    <button
+                      type="button"
+                      matButton="outlined"
+                      class="eulb-row-btn"
+                      aria-label="Edit row"
+                      [disabled]="editingRowId() !== null"
+                      (click)="startEdit(row)"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </td>
+                }
               }
             </tr>
           }
