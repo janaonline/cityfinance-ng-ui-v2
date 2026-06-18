@@ -7,10 +7,18 @@
     </p>
   </div>
 
-  <app-support-hours-card
-    [nextSupportHour]="nextSupportHour()"
-    [upcomingSupportHours]="upcomingSupportHours()"
-    [isLoading]="isLoading()"
-    [errorMessage]="errorMessage()"
-  />
+  @if (hasError()) {
+    <app-page-error-state
+      title="Failed to load support hours"
+      message="We couldn't reach the server. Please check your connection and try again."
+      (retry)="loadSupportHours()"
+    />
+  } @else {
+    <app-support-hours-card
+      [nextSupportHour]="nextSupportHour()"
+      [upcomingSupportHours]="upcomingSupportHours()"
+      [isLoading]="isLoading()"
+      [errorMessage]="''"
+    />
+  }
 </div>

@@ -18,6 +18,7 @@ import { environment } from '../../../../../environments/environment';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Permission } from '../../../../core/auth/permissions';
+import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
 import { RolesDialogComponent } from './roles-dialog/roles-dialog.component';
 import { RolesDialogConfig, RolesDialogResult } from './roles-dialog/roles-dialog.types';
 
@@ -97,6 +98,7 @@ interface PermissionMatrixRow {
     MatSnackBarModule,
     MatTableModule,
     MatTooltipModule,
+    PageErrorStateComponent,
   ],
   templateUrl: './roles-teams-overview.component.html',
   styleUrl: './roles-teams-overview.component.scss',
@@ -130,7 +132,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   profile: EntityTeamProfile | null = null;
   members: TeamMember[] = [];
   isLoading = true;
-  errorMessage = '';
+  hasError = false;
   showPermissionMatrix = false;
 
   memberRoleSelections: Record<string, string> = {};
@@ -254,7 +256,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   async loadRolesTeamsOverview(): Promise<void> {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.hasError = false;
     try {
       const res = await firstValueFrom(
         this.http.get<ApiUsersListResponse>(`${this.baseUrl}users/list`, {
@@ -285,7 +287,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
       );
     } catch (error) {
       console.error('Failed to load roles and teams overview', error);
-      this.errorMessage = 'Unable to load people and roles right now.';
+      this.hasError = true;
     } finally {
       this.isLoading = false;
     }
