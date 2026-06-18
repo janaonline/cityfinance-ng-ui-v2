@@ -1,3 +1,6 @@
+/** Rendering mode for dynamic form fields: full editing UI or readonly value display. */
+export type DynamicFormMode = 'edit' | 'view';
+
 export interface Validator {
   name: string;
   validator: any;

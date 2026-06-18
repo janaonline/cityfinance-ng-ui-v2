@@ -40,7 +40,12 @@
                 [class.border-success]="!isLast"
                 [class.border-opacity-25]="!isLast"
               >
-                <app-dynamic-form class="p-2 d-block" [field]="item" [group]="form"></app-dynamic-form>
+                <app-dynamic-form
+                  class="p-2 d-block"
+                  [field]="item"
+                  [group]="form"
+                  [mode]="canEdit() ? 'edit' : 'view'"
+                ></app-dynamic-form>
               </div>
             }
           </form>
