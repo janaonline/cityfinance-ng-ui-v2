@@ -9,6 +9,33 @@ mat-dialog-content.eulb-rows-dialog-content {
   max-height: none;
 }
 
+// Filter wrapper widths (applied to the label+control <div> containers)
+.eulb-filter-search {
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.eulb-filter-validation {
+  min-width: 140px;
+}
+
+.eulb-filter-row-type {
+  min-width: 130px;
+}
+
+.eulb-filter-error-field {
+  min-width: 160px;
+}
+
+// Edit-mode control widths
+.eulb-edit-control {
+  min-width: 140px;
+}
+
+.eulb-edit-wide {
+  min-width: 160px;
+}
+
 .eulb-cell-invalid {
   background-color: var(--bs-danger-bg-subtle);
   box-shadow: inset 3px 0 0 var(--bs-danger);

@@ -1,4 +1,5 @@
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
+import { FormActor } from '../../shared/form-progress/form-progress.component';
 
 export type SubmitType = 'saveAsDraft' | 'finalSubmit';
 
@@ -41,12 +42,6 @@ export interface EulbValidationSummary {
   activeDatasetVersion: number;
 }
 
-export interface EulbFormActor {
-  action: string | null;
-  by: string | null;
-  date: string | null;
-}
-
 export interface EulbPermissions {
   canView: boolean;
   canEdit: boolean;
@@ -63,7 +58,8 @@ export interface EulbFormResponseData {
   currentFormStatusLabel: string;
   questions: ConditionalFieldConfig[];
   permissions: EulbPermissions;
-  actors?: EulbFormActor[];
+  actors?: FormActor[];
+  rowEditFields?: ConditionalFieldConfig[];
   validationSummary?: EulbValidationSummary;
   errorExcelFile?: EulbFileValue;
   /** Some backend versions nest errorExcelFile here; normalised in loadForm(). */
@@ -172,8 +168,17 @@ export interface EulbFinalSubmitPayload {
 export interface EulbRowsDialogData {
   stateId: string;
   yearId: string;
+  rowEditFields?: ConditionalFieldConfig[];
 }
 
 export interface EulbRowsDialogResult {
   updatedSummary?: EulbValidationSummary;
+}
+
+export interface EulbDeleteUploadedExcelResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    validationSummary?: EulbValidationSummary;
+  };
 }

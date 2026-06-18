@@ -28,28 +28,7 @@
           <app-pre-loader></app-pre-loader>
         } @else {
           @if (actors().length) {
-            <div
-              class="alert alert-info d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 gap-md-3"
-              role="alert"
-            >
-              <i class="bi bi-people fs-4 d-none d-md-block"></i>
-
-              <div class="w-100">
-                @for (item of actors(); track $index) {
-                  @if (item.by) {
-                    <small
-                      class="d-flex flex-column flex-sm-row flex-wrap align-items-start align-items-sm-center gap-1 gap-sm-2 p-0 m-0"
-                    >
-                      <strong>{{ item.action }}</strong>
-                      <span>{{ item.by }} State DMA Officer</span>
-                      <span class="text-muted d-none d-sm-inline">&middot;</span>
-                      <span class="text-nowrap">{{ item.date | date: 'dd MMM yyyy' }}</span>
-                    </small>
-                  }
-                }
-              </div>
-            </div>
-
+            <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
             <hr class="my-0 text-body-tertiary" />
           }
 
@@ -79,7 +58,7 @@
         <button
           type="button"
           matButton="outlined"
-          [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+          [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
           (click)="onCancel()"
           data-cy="eulb-status-cancel-test"
         >
@@ -90,7 +69,7 @@
         <button
           type="submit"
           matButton="filled"
-          [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+          [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
           (click)="onSubmit('saveAsDraft')"
           data-cy="eulb-status-save-draft-test"
         >
@@ -106,7 +85,7 @@
         <button
           type="button"
           matButton="filled"
-          [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
+          [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
           (click)="onSubmit('finalSubmit')"
           data-cy="eulb-status-final-submit-test"
         >
@@ -120,5 +99,13 @@
         </button>
       </div>
     </div>
+    @if (isValidating()) {
+      <div class="eulb-verification-overlay" role="status" aria-live="polite">
+        <div class="eulb-verification-card shadow-sm">
+          <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+          <span class="small fw-medium">Verifying uploaded Excel. Please wait…</span>
+        </div>
+      </div>
+    }
   </div>
 </div>

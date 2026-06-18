@@ -4,7 +4,7 @@
   <!-- Filters -->
   <div class="border-bottom px-3 py-2">
     <form [formGroup]="filterForm" class="d-flex flex-wrap gap-2 align-items-end">
-      <div class="flex-grow-1" style="min-width: 180px; max-width: 320px">
+      <div class="flex-grow-1 eulb-filter-search">
         <label class="form-label small fw-semibold mb-1" for="eulb-search">Search</label>
         <input
           id="eulb-search"
@@ -15,32 +15,33 @@
         />
       </div>
 
-      <div style="min-width: 140px">
+      <div class="eulb-filter-validation">
         <label class="form-label small fw-semibold mb-1" for="eulb-vstatus">Validation</label>
         <select id="eulb-vstatus" class="form-select form-select-sm" formControlName="validationStatus">
           <option value="">All</option>
-          <option value="VALID">Valid</option>
-          <option value="INVALID">Invalid</option>
+          @for (opt of validationStatusOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
         </select>
       </div>
 
-      <div style="min-width: 130px">
+      <div class="eulb-filter-row-type">
         <label class="form-label small fw-semibold mb-1" for="eulb-rtype">Row type</label>
         <select id="eulb-rtype" class="form-select form-select-sm" formControlName="rowType">
           <option value="">All</option>
-          <option value="DB_ULB">DB ULB</option>
-          <option value="EXTRA_ULB">Extra ULB</option>
+          @for (opt of rowTypeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
         </select>
       </div>
 
-      <div style="min-width: 160px">
+      <div class="eulb-filter-error-field">
         <label class="form-label small fw-semibold mb-1" for="eulb-efield">Error field</label>
         <select id="eulb-efield" class="form-select form-select-sm" formControlName="errorField">
           <option value="">All</option>
-          <option value="electedBodyStatus">Elected Body Status</option>
-          <option value="dateOfConstitution">Date of Constitution</option>
-          <option value="dateOfExpiry">Date of Expiry</option>
-          <option value="remarks">Remarks</option>
+          @for (opt of errorFieldOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
         </select>
       </div>
     </form>
@@ -77,14 +78,13 @@
               @if (editingRowId() === row._id) {
                 <!-- Edit mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
-                <td>{{ row.rowType === 'DB_ULB' ? 'DB' : 'Extra' }}</td>
+                <td class="small">{{ getRowTypeLabel(row.rowType) }}</td>
                 <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '-' }}</td>
                 <td class="small fw-medium text-nowrap">{{ row.ulbName }}</td>
                 <td>
                   <select
-                    class="form-select form-select-sm"
+                    class="form-select form-select-sm eulb-edit-control"
                     [class.is-invalid]="hasEditFieldError('electedBodyStatus')"
-                    style="min-width: 140px"
                     data-eulb-edit-field="electedBodyStatus"
                     [formControl]="$any(editForm.get('electedBodyStatus'))"
                   >
@@ -100,9 +100,10 @@
                 <td>
                   <input
                     type="date"
-                    class="form-control form-control-sm"
+                    class="form-control form-control-sm eulb-edit-control"
                     [class.is-invalid]="hasEditFieldError('dateOfConstitution')"
-                    style="min-width: 140px"
+                    [attr.min]="getEditDateMin('dateOfConstitution')"
+                    [attr.max]="getEditDateMax('dateOfConstitution')"
                     data-eulb-edit-field="dateOfConstitution"
                     [formControl]="$any(editForm.get('dateOfConstitution'))"
                   />
@@ -113,9 +114,10 @@
                 <td>
                   <input
                     type="date"
-                    class="form-control form-control-sm"
+                    class="form-control form-control-sm eulb-edit-control"
                     [class.is-invalid]="hasEditFieldError('dateOfExpiry')"
-                    style="min-width: 140px"
+                    [attr.min]="getEditDateMin('dateOfExpiry')"
+                    [attr.max]="getEditDateMax('dateOfExpiry')"
                     data-eulb-edit-field="dateOfExpiry"
                     [formControl]="$any(editForm.get('dateOfExpiry'))"
                   />
@@ -126,9 +128,8 @@
                 <td>
                   <input
                     type="text"
-                    class="form-control form-control-sm"
+                    class="form-control form-control-sm eulb-edit-wide"
                     [class.is-invalid]="hasEditFieldError('remarks')"
-                    style="min-width: 160px"
                     placeholder="Remarks"
                     data-eulb-edit-field="remarks"
                     [formControl]="$any(editForm.get('remarks'))"
@@ -138,11 +139,11 @@
                   }
                 </td>
                 <td>
-                  @if (row.validationStatus === 'VALID') {
-                    <span class="badge rounded px-1 small text-bg-success">Valid</span>
-                  } @else {
-                    <span class="badge rounded px-1 small text-bg-danger">Invalid</span>
-                  }
+                  <span
+                    class="badge rounded px-1 small"
+                    [ngClass]="getValidationStatusBadgeClass(row.validationStatus)"
+                    >{{ getValidationStatusLabel(row.validationStatus) }}</span
+                  >
                 </td>
                 <td class="pe-3">
                   <div class="d-flex gap-1">
@@ -175,7 +176,7 @@
               } @else {
                 <!-- Read mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
-                <td class="small">{{ row.rowType === 'DB_ULB' ? 'DB' : 'Extra' }}</td>
+                <td class="small">{{ getRowTypeLabel(row.rowType) }}</td>
                 <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '-' }}</td>
                 <td class="small fw-medium">{{ row.ulbName }}</td>
                 <td
@@ -271,11 +272,11 @@
                   </div>
                 </td>
                 <td>
-                  @if (row.validationStatus === 'VALID') {
-                    <span class="badge rounded px-1 small text-bg-success">Valid</span>
-                  } @else {
-                    <span class="badge rounded px-1 small text-bg-danger">Invalid</span>
-                  }
+                  <span
+                    class="badge rounded px-1 small"
+                    [ngClass]="getValidationStatusBadgeClass(row.validationStatus)"
+                    >{{ getValidationStatusLabel(row.validationStatus) }}</span
+                  >
                 </td>
                 <td class="pe-3">
                   <button
@@ -286,7 +287,7 @@
                     [disabled]="editingRowId() !== null"
                     (click)="startEdit(row)"
                   >
-                    Edit
+                    <i class="bi bi-pencil"></i>
                   </button>
                 </td>
               }

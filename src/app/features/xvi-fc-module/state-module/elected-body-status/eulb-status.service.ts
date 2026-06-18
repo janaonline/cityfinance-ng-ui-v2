@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  EulbDeleteUploadedExcelResponse,
   EulbFinalSubmitPayload,
   EulbFormApiResponse,
   EulbFormResponseData,
@@ -97,6 +98,15 @@ export class EulbStatusService {
     if (query.errorField) params = params.set('errorField', query.errorField);
 
     return this.http.get<EulbRowsApiResponse>(`${this.baseUrl}${stateId}/${yearId}/rows`, { params });
+  }
+
+  /**
+   * Deletes the uploaded Excel file reference and its associated row dataset for a given state/year.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   */
+  deleteUploadedExcel(stateId: string, yearId: string): Observable<EulbDeleteUploadedExcelResponse> {
+    return this.http.delete<EulbDeleteUploadedExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/uploaded-excel`);
   }
 
   /**
