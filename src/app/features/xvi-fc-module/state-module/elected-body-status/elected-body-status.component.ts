@@ -29,6 +29,7 @@ import {
   ApiErrorResponse,
   EulbFileValue,
   EulbPermissions,
+  EulbRevalidateExcelResponse,
   EulbRowsDialogResult,
   EulbSaveDraftPayload,
   SubmitType,
@@ -47,6 +48,7 @@ const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_TEMPLATE: 'download-template',
   VIEW_UPLOADED_DATA: 'view-uploaded-data',
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
+  REVALIDATE_EXCEL: 'revalidate-excel',
 } as const;
 
 /**
@@ -314,6 +316,44 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
+  /** Re-validates the already-uploaded Excel when ulbCount changes without a new file upload. */
+  private revalidateUploadedExcel(): void {
+    if (this.isValidating()) return;
+
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId) return;
+
+    const ulbCount = this.form.get('ulbCount')?.value as unknown as number | null;
+    if (!ulbCount) return;
+
+    this.clearAllApiErrors();
+    this.isValidating.set(true);
+
+    this.eulbService
+      .revalidateUploadedExcel(stateId, yearId, ulbCount)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isValidating.set(false)),
+      )
+      .subscribe({
+        next: (res: EulbRevalidateExcelResponse) => {
+          this.utilityService.triggerSnackbar(res.message);
+          this.reloadForm();
+        },
+        error: (err: unknown) => {
+          const response = this.extractApiErrorResponse(err);
+          this.utilityService.triggerSnackbar(
+            response?.message ?? 'Revalidation failed. Please try again.',
+            'snackbar-danger',
+          );
+          if (response?.errors) {
+            this.applyApiErrors(response.errors);
+          }
+        },
+      });
+  }
+
   /** Downloads the EULB Excel template as a blob and saves it via FileSaver. */
   downloadTemplate(): void {
     if (this.isDownloadingTemplate()) return;
@@ -377,6 +417,9 @@ export class ElectedBodyStatusComponent implements OnInit {
         return;
       case EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET:
         this.downloadErrorSheet();
+        return;
+      case EULB_SUPPORTING_ACTION.REVALIDATE_EXCEL:
+        this.revalidateUploadedExcel();
         return;
       default:
         return;

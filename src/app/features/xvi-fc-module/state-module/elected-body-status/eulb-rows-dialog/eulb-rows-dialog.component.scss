@@ -1,7 +1,7 @@
 @use '@angular/material' as mat;
 
 :host {
-  /* This automatically scopes the density shift strictly inside this component */
+  /* Scopes Material button density reduction to this component only */
   @include mat.button-density(-2);
 }
 
@@ -27,13 +27,86 @@ mat-dialog-content.eulb-rows-dialog-content {
   min-width: 160px;
 }
 
-// Edit-mode control widths
+// Fixed table layout — column widths are set by <colgroup> and never pushed by cell content
+.eulb-rows-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+// Column width declarations via <colgroup>
+.eulb-col-row-number {
+  width: 48px;
+}
+
+.eulb-col-type {
+  width: 64px;
+}
+
+.eulb-col-census {
+  width: 110px;
+}
+
+.eulb-col-ulb-name {
+  width: 180px;
+}
+
+.eulb-col-status {
+  width: 160px;
+}
+
+.eulb-col-date {
+  width: 150px;
+}
+
+.eulb-col-remarks {
+  width: 180px;
+}
+
+.eulb-col-validation {
+  width: 80px;
+}
+
+.eulb-col-actions {
+  width: 84px;
+}
+
+// Stable row height and cell overflow — content never expands a fixed-layout column
+.eulb-rows-table td {
+  overflow: hidden;
+  vertical-align: middle;
+  height: 48px;
+}
+
+.eulb-rows-table tbody tr {
+  min-height: 48px;
+}
+
+.eulb-rows-table .text-truncate {
+  min-width: 0;
+}
+
+// Edit-mode controls fill their fixed-width cell
 .eulb-edit-control {
-  min-width: 140px;
+  width: 100%;
+  min-height: 31px;
 }
 
 .eulb-edit-wide {
-  min-width: 160px;
+  width: 100%;
+  min-height: 31px;
+}
+
+// Actions column locked to 84px — read-mode (one button) and edit-mode (two buttons) share the same width
+.eulb-actions-col {
+  width: 84px;
+  min-width: 84px;
+  max-width: 84px;
+  white-space: nowrap;
+}
+
+.eulb-actions-col .d-flex {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
 }
 
 .eulb-cell-invalid {
@@ -46,7 +119,13 @@ mat-dialog-content.eulb-rows-dialog-content {
   line-height: 1;
 }
 
+// !important on min-width overrides Material's hardcoded .mat-mdc-button-base { min-width: 64px }
+// which is a global stylesheet rule and would otherwise win over the component-scoped class
 .eulb-row-btn {
-  min-width: 0;
-  padding-inline: 8px;
+  width: 32px;
+  min-width: 32px !important;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  line-height: 1;
 }

@@ -305,6 +305,15 @@ export class EulbRowsDialogComponent implements OnInit {
   }
 
   /**
+   * Returns all validation messages for the given edit-form field joined by newlines,
+   * suitable for use as a `matTooltip` value. Returns an empty string when there are no errors.
+   * @param field - The editable field name.
+   */
+  getEditFieldErrorText(field: string): string {
+    return this.getEditFieldErrors(field).join('\n');
+  }
+
+  /**
    * Returns the `yyyy-MM-dd` minimum date string for the given date field,
    * derived from the API-provided `rowEditFields` config. Returns `null` if
    * no minimum constraint is defined.

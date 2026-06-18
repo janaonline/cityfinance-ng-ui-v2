@@ -182,3 +182,12 @@ export interface EulbDeleteUploadedExcelResponse {
     validationSummary?: EulbValidationSummary;
   };
 }
+
+export interface EulbRevalidateExcelResponse {
+  success: boolean;
+  message: string;
+  data: {
+    validationSummary: EulbValidationSummary;
+    errors?: EulbRowError[];
+  };
+}

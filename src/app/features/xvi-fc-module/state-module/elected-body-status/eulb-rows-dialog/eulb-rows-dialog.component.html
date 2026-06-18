@@ -57,7 +57,19 @@
     } @else if (!rows().length) {
       <div class="text-center py-5 text-secondary small">No rows found for the current filters.</div>
     } @else {
-      <table class="table table-sm table-hover align-middle mb-0">
+      <table class="table table-sm table-hover align-middle mb-0 eulb-rows-table">
+        <colgroup>
+          <col class="eulb-col-row-number" />
+          <col class="eulb-col-type" />
+          <col class="eulb-col-census" />
+          <col class="eulb-col-ulb-name" />
+          <col class="eulb-col-status" />
+          <col class="eulb-col-date" />
+          <col class="eulb-col-date" />
+          <col class="eulb-col-remarks" />
+          <col class="eulb-col-validation" />
+          <col class="eulb-col-actions" />
+        </colgroup>
         <thead class="table-light border-bottom">
           <tr>
             <th class="ps-3 text-nowrap small fw-semibold">#</th>
@@ -69,7 +81,7 @@
             <th class="text-nowrap small fw-semibold">Date of Expiry</th>
             <th class="text-nowrap small fw-semibold">Remarks</th>
             <th class="text-nowrap small fw-semibold">Status</th>
-            <th class="text-nowrap small fw-semibold pe-3">Actions</th>
+            <th class="text-nowrap small fw-semibold pe-3 eulb-actions-col">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -85,6 +97,12 @@
                   <select
                     class="form-select form-select-sm eulb-edit-control"
                     [class.is-invalid]="hasEditFieldError('electedBodyStatus')"
+                    [matTooltip]="getEditFieldErrorText('electedBodyStatus')"
+                    [matTooltipDisabled]="!hasEditFieldError('electedBodyStatus')"
+                    matTooltipPosition="above"
+                    [matTooltipShowDelay]="100"
+                    aria-label="Elected Body Status"
+                    [attr.aria-invalid]="hasEditFieldError('electedBodyStatus')"
                     data-eulb-edit-field="electedBodyStatus"
                     [formControl]="$any(editForm.get('electedBodyStatus'))"
                   >
@@ -93,9 +111,6 @@
                       <option [value]="opt">{{ opt }}</option>
                     }
                   </select>
-                  @for (message of getEditFieldErrors('electedBodyStatus'); track message) {
-                    <div class="invalid-feedback d-block">{{ message }}</div>
-                  }
                 </td>
                 <td>
                   <input
@@ -104,12 +119,15 @@
                     [class.is-invalid]="hasEditFieldError('dateOfConstitution')"
                     [attr.min]="getEditDateMin('dateOfConstitution')"
                     [attr.max]="getEditDateMax('dateOfConstitution')"
+                    [matTooltip]="getEditFieldErrorText('dateOfConstitution')"
+                    [matTooltipDisabled]="!hasEditFieldError('dateOfConstitution')"
+                    matTooltipPosition="above"
+                    [matTooltipShowDelay]="100"
+                    aria-label="Date of Constitution"
+                    [attr.aria-invalid]="hasEditFieldError('dateOfConstitution')"
                     data-eulb-edit-field="dateOfConstitution"
                     [formControl]="$any(editForm.get('dateOfConstitution'))"
                   />
-                  @for (message of getEditFieldErrors('dateOfConstitution'); track message) {
-                    <div class="invalid-feedback d-block">{{ message }}</div>
-                  }
                 </td>
                 <td>
                   <input
@@ -118,25 +136,31 @@
                     [class.is-invalid]="hasEditFieldError('dateOfExpiry')"
                     [attr.min]="getEditDateMin('dateOfExpiry')"
                     [attr.max]="getEditDateMax('dateOfExpiry')"
+                    [matTooltip]="getEditFieldErrorText('dateOfExpiry')"
+                    [matTooltipDisabled]="!hasEditFieldError('dateOfExpiry')"
+                    matTooltipPosition="above"
+                    [matTooltipShowDelay]="100"
+                    aria-label="Date of Expiry"
+                    [attr.aria-invalid]="hasEditFieldError('dateOfExpiry')"
                     data-eulb-edit-field="dateOfExpiry"
                     [formControl]="$any(editForm.get('dateOfExpiry'))"
                   />
-                  @for (message of getEditFieldErrors('dateOfExpiry'); track message) {
-                    <div class="invalid-feedback d-block">{{ message }}</div>
-                  }
                 </td>
                 <td>
                   <input
                     type="text"
                     class="form-control form-control-sm eulb-edit-wide"
                     [class.is-invalid]="hasEditFieldError('remarks')"
+                    [matTooltip]="getEditFieldErrorText('remarks')"
+                    [matTooltipDisabled]="!hasEditFieldError('remarks')"
+                    matTooltipPosition="above"
+                    [matTooltipShowDelay]="100"
+                    aria-label="Remarks"
+                    [attr.aria-invalid]="hasEditFieldError('remarks')"
                     placeholder="Remarks"
                     data-eulb-edit-field="remarks"
                     [formControl]="$any(editForm.get('remarks'))"
                   />
-                  @for (message of getEditFieldErrors('remarks'); track message) {
-                    <div class="invalid-feedback d-block">{{ message }}</div>
-                  }
                 </td>
                 <td>
                   <span
@@ -145,8 +169,8 @@
                     >{{ getValidationStatusLabel(row.validationStatus) }}</span
                   >
                 </td>
-                <td class="pe-3">
-                  <div class="d-flex gap-1">
+                <td class="pe-3 eulb-actions-col">
+                  <div class="d-flex gap-1 flex-nowrap">
                     <button
                       type="button"
                       matButton="filled"
@@ -278,7 +302,7 @@
                     >{{ getValidationStatusLabel(row.validationStatus) }}</span
                   >
                 </td>
-                <td class="pe-3">
+                <td class="pe-3 eulb-actions-col">
                   <button
                     type="button"
                     matButton="outlined"
