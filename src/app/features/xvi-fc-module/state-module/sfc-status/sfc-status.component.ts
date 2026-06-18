@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -24,17 +24,24 @@ import { SfcStatusService } from './sfc-status.service';
 import {
   ApiErrorMap,
   ApiErrorResponse,
-  SfcFormActor,
   SfcStatusDraftPayload,
   SfcStatusFinalSubmitPayload,
   SfcStatusPermissions,
   SubmitType,
 } from './sfc-status.models';
+import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 
 @Component({
   selector: 'app-sfc-status',
-  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule, DatePipe],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DynamicFormComponent,
+    PreLoaderComponent,
+    MatButtonModule,
+    FormProgressComponent,
+  ],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
 })
@@ -49,7 +56,7 @@ export class SfcStatusComponent implements OnInit {
   private sfcStatusService = inject(SfcStatusService);
   private moduleService = inject(XvifcModuleService);
   public stateName = signal('');
-  public actors = signal<SfcFormActor[]>([]);
+  public actors = signal<FormActor[]>([]);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -67,6 +74,7 @@ export class SfcStatusComponent implements OnInit {
   });
   readonly currentFormStatus = signal<number>(0);
   readonly currentFormStatusLabel = signal('');
+  readonly formStatus = computed<FormStatusValue>(() => this.currentFormStatus() as FormStatusValue);
 
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);

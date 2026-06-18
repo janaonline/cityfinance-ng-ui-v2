@@ -1,0 +1,25 @@
+@use '@angular/material' as mat;
+
+:host {
+  /* This automatically scopes the density shift strictly inside this component */
+  @include mat.button-density(-2);
+}
+
+mat-dialog-content.eulb-rows-dialog-content {
+  max-height: none;
+}
+
+.eulb-cell-invalid {
+  background-color: var(--bs-danger-bg-subtle);
+  box-shadow: inset 3px 0 0 var(--bs-danger);
+  cursor: pointer;
+}
+
+.eulb-error-icon {
+  line-height: 1;
+}
+
+.eulb-row-btn {
+  min-width: 0;
+  padding-inline: 8px;
+}

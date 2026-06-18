@@ -1,65 +1,157 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, signal, OnInit } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { UtilityService } from '../../../../core/services/utility.service';
-import { MatButtonModule } from '@angular/material/button';
-import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
-import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { CommonModule, DatePipe } from '@angular/common';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import FileSaver from 'file-saver';
+import { filter } from 'rxjs';
+import { UtilityService } from '../../../../core/services/utility.service';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
-import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import {
+  SAVE_AS_DRAFT_DIALOG_DEFAULTS,
+  SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+} from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import {
-  DynamicFormVisibilityService,
   ConditionalFieldConfig,
   DependencyIndex,
+  DynamicFormVisibilityService,
 } from '../../dynamic-form-visibility.service';
+import { XvifcModuleService } from '../../xvi-fc-module.service';
+import {
+  ApiErrorMap,
+  ApiErrorResponse,
+  EulbFileValue,
+  EulbFormActor,
+  EulbPermissions,
+  EulbRowsDialogResult,
+  EulbSaveDraftPayload,
+  SubmitType,
+} from './eulb-status.models';
+import { EulbStatusService } from './eulb-status.service';
+import { EulbRowsDialogComponent } from './eulb-rows-dialog/eulb-rows-dialog.component';
 
+/** Action IDs emitted by the dynamic form's `supportingContent` action buttons. */
+const EULB_SUPPORTING_ACTION = {
+  DOWNLOAD_TEMPLATE: 'download-template',
+  VIEW_UPLOADED_DATA: 'view-uploaded-data',
+  DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
+} as const;
+
+/**
+ * Page component for the Elected Urban Local Bodies status-confirmation form.
+ * Renders a backend-driven dynamic form, handles Excel upload/validation,
+ * and delegates action routing from supporting-content buttons to the appropriate handlers.
+ */
 @Component({
   selector: 'app-elected-body-status',
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, DynamicFormComponent, PreLoaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule, DatePipe],
   templateUrl: './elected-body-status.component.html',
   styleUrl: './elected-body-status.component.scss',
 })
 export class ElectedBodyStatusComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private destroyRef = inject(DestroyRef);
-  private utilityService = inject(UtilityService);
-  private visibilityService = inject(DynamicFormVisibilityService);
-  private dynamicService = inject(DynamicFormService);
-  private confirmDialogService = inject(ConfirmDialogService);
-  private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly utilityService = inject(UtilityService);
+  private readonly dynamicService = inject(DynamicFormService);
+  private readonly visibilityService = inject(DynamicFormVisibilityService);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
+  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly eulbService = inject(EulbStatusService);
+  private readonly moduleService = inject(XvifcModuleService);
+  private readonly dialog = inject(MatDialog);
+
+  readonly stateName = signal('');
+  readonly actors = signal<EulbFormActor[]>([]);
+
+  form = this.fb.group({});
+  readonly fields = signal<ConditionalFieldConfig[]>([]);
+  readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
+
+  readonly isLoading = signal(false);
+  readonly isSavingDraft = signal(false);
+  readonly isFinalSubmitting = signal(false);
+  readonly isValidating = signal(false);
+  readonly isDownloadingTemplate = signal(false);
+  readonly isDownloadingErrorSheet = signal(false);
+  readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
+
+  readonly permissions = signal<EulbPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
+  readonly canEdit = computed(() => this.permissions().canEdit);
+  readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
+
+  /** Maps field keys to their dependency relationships for reactive visibility evaluation. */
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
 
-  stateName = signal('Andhra Pradesh');
-  form = this.fb.group({});
-  fields = signal<ConditionalFieldConfig[]>([]);
-  visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
-  isLoading = signal(false);
+  /** Tracks API-injected error keys per control so they can be cleared before re-submission. */
+  private readonly serverErrorKeys = new Map<string, string[]>();
+
+  /** State ID read from localStorage `userData`. Returns empty string if absent or unparseable. */
+  private get stateId(): string {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
+      return raw ? ((JSON.parse(raw) as { state?: string }).state ?? '') : '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** Active year ID from the parent XVI-FC module context. */
+  private get yearId(): string {
+    return this.moduleService.yearId() ?? '';
+  }
 
   ngOnInit(): void {
-    this.getQuestions();
+    this.loadForm();
   }
 
   /**
-   * Fetch questions from an API and initialize form controls based on the fetched field configurations (formJson)
+   * Fetches form config and initial state from the API, then builds reactive form controls.
+   * Aborts with a snackbar if `stateId` or `yearId` is missing.
    */
-  getQuestions(): void {
+  private loadForm(): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+
+    if (!stateId || !yearId) {
+      this.utilityService.triggerSnackbar(
+        'Unable to load the form. State or year information is missing.',
+        'snackbar-danger',
+      );
+      return;
+    }
+
     this.isLoading.set(true);
 
-    setTimeout(() => {
-      this.fields.set(TEMP_QUESTIONS);
-      this.createFormControls();
-      this.isLoading.set(false);
-    }, 1);
+    this.eulbService
+      .getFormData(stateId, yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.permissions.set(data.permissions);
+          this.stateName.set(data.stateName ?? '');
+          this.actors.set(data.actors ?? []);
+
+          this.fields.set(data.questions);
+          this.createFormControls();
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.utilityService.triggerSnackbar('Unable to load the form. Please try again.', 'snackbar-danger');
+          this.isLoading.set(false);
+        },
+      });
   }
 
   /**
-   * - Create form controls based on the field configurations (formJson) and add them to the form
-   * - Create a dependency index (map) to map controller fields to their dependent fields for visibility
-   * - Set up subscriptions for controller fields to listen for value changes and update visibility of dependent fields based on conditions defined in formJson
-   * - Show loading indicator while setting up the form and hide it once done
+   * Registers a `FormControl` for every field in `this.fields`, wires up visibility bindings,
+   * disables the form when the user lacks edit permission, and starts the validation trigger.
+   * Exits early with a snackbar on invalid field config.
    */
   createFormControls(): void {
     this.isLoading.set(true);
@@ -71,20 +163,15 @@ export class ElectedBodyStatusComponent implements OnInit {
         return;
       }
 
-      // If field is readonly but has no value, make it editable to allow user input
       const hasInitialValue = field.value !== null && field.value !== undefined && field.value !== '';
       field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
 
-      // Create form control with validations and readonly state
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
       this.form.addControl(field.key, formControl);
     }
 
-    // key: controller field key, value: array of fields whose visibility depends on this controller
     this.dependencyIndex = this.visibilityService.createDependencyIndex(this.fields());
 
-    // Set up visibility bindings for dependent fields based on controller field value changes
-    // preserveHiddenValue: true = save the values of hidden fields, if they become visible again, the previous values are retained
     this.visibilityService.bindVisibility({
       form: this.form,
       fieldsSignal: this.fields,
@@ -93,40 +180,464 @@ export class ElectedBodyStatusComponent implements OnInit {
       preserveHiddenValue: true,
     });
 
+    if (!this.canEdit()) {
+      this.form.disable({ emitEvent: false });
+    }
+
+    this.setupValidationTrigger();
     this.isLoading.set(false);
   }
 
-  onSubmit(): void {
-    if (this.form.invalid) {
+  /**
+   * Subscribes to `electedBodyExcelFile` value changes and auto-triggers Excel validation
+   * whenever a valid file object is set and `ulbCount` is already populated.
+   */
+  private setupValidationTrigger(): void {
+    const fileControl = this.form.get('electedBodyExcelFile') as FormControl | null;
+    if (!fileControl) return;
+
+    fileControl.valueChanges
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((val) => this.isValidFileValue(val)),
+      )
+      .subscribe(() => {
+        if (this.hasValidUlbCount()) {
+          this.triggerExcelValidation();
+        }
+      });
+  }
+
+  /**
+   * Returns `true` if `val` is a non-null object with both `fileName` and `fileUrl` strings.
+   * @param val - Value from the file form control.
+   */
+  private isValidFileValue(val: unknown): boolean {
+    if (!val || typeof val !== 'object') return false;
+    const file = val as { fileName?: string; fileUrl?: string };
+    return !!(file.fileName && file.fileUrl);
+  }
+
+  /** Returns `true` when the `ulbCount` control holds a positive number. */
+  private hasValidUlbCount(): boolean {
+    const count = this.form.get('ulbCount')?.value;
+    return typeof count === 'number' && count > 0;
+  }
+
+  /**
+   * Calls the validate-excel API with the current file and ULB count.
+   * On success (VALID or INVALID HTTP 200), reloads the form so backend-driven
+   * supporting content reflects the latest validation state.
+   * On HTTP error, applies field-level API errors without reloading.
+   */
+  private triggerExcelValidation(): void {
+    if (this.isValidating()) return;
+
+    const fileValue = this.form.get('electedBodyExcelFile')?.value as unknown as EulbFileValue | null;
+    const ulbCount = this.form.get('ulbCount')?.value as unknown as number;
+
+    if (!fileValue || !ulbCount) return;
+
+    this.isValidating.set(true);
+
+    this.eulbService
+      .validateExcel({ stateId: this.stateId, yearId: this.yearId, ulbCount, electedBodyExcelFile: fileValue })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.isValidating.set(false);
+          if (res.data.validationStatus === 'VALID') {
+            this.utilityService.triggerSnackbar('Excel validated successfully.');
+          } else {
+            this.utilityService.triggerSnackbar(
+              'Excel validation completed with errors. Please review uploaded data.',
+              'snackbar-danger',
+            );
+          }
+          this.reloadForm();
+        },
+        error: (err: unknown) => {
+          this.isValidating.set(false);
+          const response = this.extractApiErrorResponse(err);
+          this.utilityService.triggerSnackbar(
+            response?.message ?? 'Excel validation failed. Please try again.',
+            'snackbar-danger',
+          );
+          if (response?.errors) {
+            this.applyApiErrors(response.errors);
+          }
+        },
+      });
+  }
+
+  /** Downloads the EULB Excel template as a blob and saves it via FileSaver. */
+  downloadTemplate(): void {
+    if (this.isDownloadingTemplate()) return;
+    this.isDownloadingTemplate.set(true);
+
+    this.eulbService
+      .downloadTemplate(this.stateId, this.yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          FileSaver.saveAs(blob, 'elected-bodies-template.xlsx');
+          this.isDownloadingTemplate.set(false);
+        },
+        error: () => {
+          this.utilityService.triggerSnackbar('Failed to download template.', 'snackbar-danger');
+          this.isDownloadingTemplate.set(false);
+        },
+      });
+  }
+
+  /**
+   * Opens the full-screen rows dialog for reviewing uploaded EULB data.
+   * Reloads the form when the dialog closes with an updated summary so backend-driven
+   * action/badge state is refreshed.
+   */
+  openRowsDialog(): void {
+    const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'eulb-rows-dialog-panel'];
+    const dialogRef = this.dialog.open(EulbRowsDialogComponent, {
+      panelClass,
+      width: '95vw',
+      maxWidth: '95vw',
+      height: '95vh',
+      maxHeight: '95vh',
+      data: { stateId: this.stateId, yearId: this.yearId },
+    });
+
+    dialogRef
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((result): result is EulbRowsDialogResult => !!result?.updatedSummary),
+      )
+      .subscribe(() => {
+        this.reloadForm();
+      });
+  }
+
+  /**
+   * Routes action events emitted by `FieldSupportingContentComponent` for the
+   * `electedBodyExcelFile` field to the appropriate handler method.
+   * @param event - Action event containing `fieldKey` and `actionId`.
+   */
+  onSupportingAction(event: FieldSupportingActionEvent): void {
+    if (event.fieldKey !== 'electedBodyExcelFile') return;
+    switch (event.actionId) {
+      case EULB_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE:
+        this.downloadTemplate();
+        return;
+      case EULB_SUPPORTING_ACTION.VIEW_UPLOADED_DATA:
+        this.openRowsDialog();
+        return;
+      case EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET:
+        this.downloadErrorSheet();
+        return;
+      default:
+        return;
+    }
+  }
+
+  /**
+   * Fetches the error sheet on demand from the backend and saves it as a blob.
+   * Shows distinct snackbar messages for a 400 (no data) vs other errors.
+   */
+  downloadErrorSheet(): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId || this.isDownloadingErrorSheet()) return;
+
+    this.isDownloadingErrorSheet.set(true);
+
+    this.eulbService
+      .downloadErrorSheet(stateId, yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          FileSaver.saveAs(blob, 'elected-bodies-error-sheet.xlsx');
+          this.isDownloadingErrorSheet.set(false);
+          this.utilityService.triggerSnackbar('Error sheet downloaded successfully.');
+        },
+        error: (err: unknown) => {
+          this.isDownloadingErrorSheet.set(false);
+          const status = (err as { status?: number })?.status;
+          const message =
+            status === 400
+              ? 'No uploaded data found to generate error sheet.'
+              : 'Failed to download error sheet. Please try again.';
+          this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+        },
+      });
+  }
+
+  /**
+   * Validates the form for the given submit type, then shows a confirm dialog
+   * before delegating to `executeSaveDraft` or `executeFinalSubmit`.
+   * @param action - `'saveAsDraft'` or `'finalSubmit'`.
+   */
+  onSubmit(action: SubmitType): void {
+    if (!this.isValidForSubmitType(action)) {
       this.form.markAllAsTouched();
       this.utilityService.triggerSnackbar(
-        'Please correct the errors in the form before submitting.',
+        action === 'finalSubmit'
+          ? 'Please correct the errors in the form before submitting.'
+          : 'Please correct the errors in the form before saving as draft.',
         'snackbar-danger',
       );
       return;
     }
 
+    const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
     const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
+
     this.confirmDialogService
-      .confirm(SUBMIT_CONFIRM_DIALOG_DEFAULTS, config)
+      .confirm(dialogData, config)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
-        if (!confirmed) return;
-        this.submitForm();
+        if (!confirmed) {
+          this.utilityService.triggerSnackbar(
+            action === 'saveAsDraft' ? 'Draft save cancelled.' : 'Form submission cancelled.',
+            'snackbar-danger',
+          );
+          return;
+        }
+        if (action === 'saveAsDraft') {
+          this.executeSaveDraft();
+        } else {
+          this.executeFinalSubmit();
+        }
       });
   }
 
-  private submitForm(): void {
-    // Use this instead of getRawValue() — excludes hidden fields
-    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+  /**
+   * Checks every visible field's control for errors.
+   * For `saveAsDraft`, plain `required` errors (without `requiredTrue`) are ignored.
+   * @param action - The submit type being validated.
+   */
+  private isValidForSubmitType(action: SubmitType): boolean {
+    for (const field of this.visibilityService.getVisibleFields(this.fields())) {
+      if (!field.key) continue;
+      const control = this.form.get(field.key);
+      if (!control?.errors) continue;
 
-    // Includes all fields including hidden/disabled ones:
-    // const payload = this.form.getRawValue();
+      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
 
-    console.log('Form submitted:', payload);
-    this.utilityService.triggerSnackbar('Form submitted successfully!');
+      for (const errorKey of Object.keys(control.errors)) {
+        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
+        return false;
+      }
+    }
+    return true;
   }
 
+  /** Clears previous API errors, posts the visible payload as a draft, then reloads the form on success. */
+  private executeSaveDraft(): void {
+    this.clearAllApiErrors();
+    this.isSavingDraft.set(true);
+
+    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const payload: EulbSaveDraftPayload = {
+      stateId: this.stateId,
+      yearId: this.yearId,
+      data: {
+        ulbCount: visiblePayload['ulbCount'] as number | undefined,
+        electedBodyExcelFile: visiblePayload['electedBodyExcelFile'] as EulbFileValue | undefined,
+        checkboxConfirmation: visiblePayload['checkboxConfirmation'] as boolean | undefined,
+      },
+    };
+
+    this.eulbService
+      .saveDraft(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isSavingDraft.set(false);
+          this.utilityService.triggerSnackbar('Draft saved successfully.');
+          this.reloadForm();
+        },
+        error: (err: unknown) => {
+          this.isSavingDraft.set(false);
+          this.handleSubmitError(err, 'Unable to save draft. Please correct the errors and try again.');
+        },
+      });
+  }
+
+  /** Clears previous API errors, posts the visible payload as a final submission, then reloads on success. */
+  private executeFinalSubmit(): void {
+    this.clearAllApiErrors();
+    this.isFinalSubmitting.set(true);
+
+    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const payload = {
+      stateId: this.stateId,
+      yearId: this.yearId,
+      data: {
+        ulbCount: visiblePayload['ulbCount'] as number,
+        electedBodyExcelFile: visiblePayload['electedBodyExcelFile'] as EulbFileValue,
+        checkboxConfirmation: visiblePayload['checkboxConfirmation'] as boolean,
+      },
+    };
+
+    this.eulbService
+      .finalSubmit(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isFinalSubmitting.set(false);
+          this.utilityService.triggerSnackbar('Form submitted successfully.');
+          this.reloadForm();
+        },
+        error: (err: unknown) => {
+          this.isFinalSubmitting.set(false);
+          this.handleSubmitError(err, 'Unable to submit form. Please correct the errors and try again.');
+        },
+      });
+  }
+
+  /**
+   * Extracts a structured error from an API failure, shows the message as a snackbar,
+   * and stamps field-level errors onto form controls when present.
+   * @param err - Raw error from the HTTP observable.
+   * @param fallbackMessage - Shown if the error body carries no message.
+   */
+  private handleSubmitError(err: unknown, fallbackMessage: string): void {
+    const response = this.extractApiErrorResponse(err);
+    this.utilityService.triggerSnackbar(response?.message ?? fallbackMessage, 'snackbar-danger');
+    if (response?.errors) {
+      this.applyApiErrors(response.errors);
+    }
+  }
+
+  /**
+   * Normalises an HTTP error or plain error object into a typed `ApiErrorResponse`.
+   * Handles both `{ error: { message, errors } }` (Angular HttpErrorResponse) and
+   * `{ success: false, message, errors }` (plain error body) shapes.
+   * Returns `null` if the error cannot be parsed.
+   * @param err - Raw thrown value from an HTTP observable.
+   */
+  private extractApiErrorResponse(err: unknown): ApiErrorResponse | null {
+    if (!this.isObject(err)) return null;
+
+    const httpError = err as { error?: unknown };
+    if (this.isObject(httpError.error)) {
+      const body = httpError.error as Record<string, unknown>;
+      if (typeof body['message'] === 'string') {
+        return {
+          statusCode: typeof body['statusCode'] === 'number' ? body['statusCode'] : undefined,
+          message: body['message'],
+          errors: this.isApiErrorMap(body['errors']) ? (body['errors'] as ApiErrorMap) : undefined,
+        };
+      }
+    }
+
+    const plainErr = err as Record<string, unknown>;
+    if (plainErr['success'] === false && typeof plainErr['message'] === 'string') {
+      return {
+        message: plainErr['message'],
+        errors: this.isApiErrorMap(plainErr['errors']) ? (plainErr['errors'] as ApiErrorMap) : undefined,
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Type guard: returns `true` if `value` is a non-null object.
+   * @param value - Value to test.
+   */
+  private isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+  }
+
+  /**
+   * Type guard: returns `true` if `value` is an `ApiErrorMap` —
+   * an object whose every entry is an array of objects with a `message` string.
+   * @param value - Value to test.
+   */
+  private isApiErrorMap(value: unknown): value is ApiErrorMap {
+    if (!this.isObject(value)) return false;
+    return Object.values(value).every(
+      (fieldErrors) =>
+        Array.isArray(fieldErrors) &&
+        fieldErrors.every((error: unknown) => this.isObject(error) && typeof error['message'] === 'string'),
+    );
+  }
+
+  /**
+   * Stamps API-returned field errors onto both the `fields` signal (for message display)
+   * and the corresponding `FormControl` (for invalid state). Skips hidden fields.
+   * Records each error key in `serverErrorKeys` so it can be cleared before re-submission.
+   * @param errors - Map of field key → array of API error descriptors.
+   */
+  private applyApiErrors(errors: ApiErrorMap): void {
+    this.fields.update((fields) =>
+      fields.map((field) => {
+        const fieldErrors = errors[field.key ?? ''];
+        if (!fieldErrors?.length || field.hidden) return field;
+
+        const validations = [...(field.validations ?? [])];
+        for (const error of fieldErrors) {
+          if (!error.code) continue;
+          const existingIdx = validations.findIndex((v) => v.name === error.code);
+          if (existingIdx >= 0) {
+            validations[existingIdx] = { ...validations[existingIdx], message: error.message };
+          } else {
+            validations.push({ name: error.code, validator: null, message: error.message });
+          }
+        }
+
+        return { ...field, validations };
+      }),
+    );
+
+    for (const [fieldKey, fieldErrors] of Object.entries(errors)) {
+      if (!fieldErrors.length) continue;
+
+      const actualKey = fieldErrors[0]?.field ?? fieldKey;
+      const fieldConfig = this.fields().find((f) => f.key === actualKey);
+      const control = this.form.get(actualKey);
+
+      if (!control || fieldConfig?.hidden) continue;
+
+      const errorMap = fieldErrors.reduce<Record<string, true>>((acc, error) => {
+        if (error.code) acc[error.code] = true;
+        return acc;
+      }, {});
+
+      control.setErrors({ ...(control.errors ?? {}), ...errorMap });
+      control.markAsTouched();
+      control.markAsDirty();
+
+      this.serverErrorKeys.set(actualKey, [...(this.serverErrorKeys.get(actualKey) ?? []), ...Object.keys(errorMap)]);
+    }
+  }
+
+  /**
+   * Removes all error keys previously injected by `applyApiErrors` from their controls,
+   * then clears the `serverErrorKeys` tracker. Called before every submit attempt.
+   */
+  private clearAllApiErrors(): void {
+    for (const [fieldKey, errorCodes] of this.serverErrorKeys) {
+      const control = this.form.get(fieldKey);
+      if (!control?.errors) continue;
+      const remaining = { ...control.errors };
+      for (const code of errorCodes) {
+        delete remaining[code];
+      }
+      control.setErrors(Object.keys(remaining).length ? remaining : null);
+    }
+    this.serverErrorKeys.clear();
+  }
+
+  /** Tears down the current form and field state, then fetches fresh data from the API. */
+  private reloadForm(): void {
+    this.form = this.fb.group({});
+    this.fields.set([]);
+    this.loadForm();
+  }
+
+  /** Shows a cancel confirmation dialog; notifies the user if the action is confirmed. */
   onCancel(): void {
     const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
@@ -134,94 +645,7 @@ export class ElectedBodyStatusComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
-        this.form.reset();
         this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
       });
   }
 }
-
-const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
-  {
-    formFieldType: 'number',
-    label: 'How many ULBs are there in Andhra Pradesh as of March 31, 2026?',
-    key: 'ulbCount',
-    placeholder: '',
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: 'This field is required.',
-      },
-      {
-        name: 'min',
-        validator: 10,
-        message: 'ULB count cannot be less than 10.',
-      },
-      {
-        name: 'max',
-        validator: 1000,
-        message: 'ULB count cannot exceed 1000.',
-      },
-    ],
-    layout: {
-      variant: 'inline',
-      labelWidth: 'lg',
-    },
-  },
-  {
-    formFieldType: 'file',
-    label: 'Upload elected bodies list',
-    key: 'electedBodyExcelFile',
-    validations: [
-      // TODO: Confirm with product whether file upload is mandatory before submit.
-      // If required, uncomment the validator below:
-      // {
-      //   name: 'required',
-      //   validator: null,
-      //   message: 'This field is required.',
-      // },
-    ],
-    value: {
-      fileName: '',
-      fileUrl: '',
-      fileSize: null,
-      mimeType: '',
-    },
-    folderPath: 'state/elected-body-status-uploads',
-    maxFileSize: 20,
-    allowedFileTypes: ['xlsx', 'xls'],
-    supportingContent: [
-      {
-        type: 'template-download',
-        position: 'before',
-        label: 'Download the template',
-        url: '/assets/templates/elected-body-template.xlsx',
-        description: 'Fill in the details and re-upload as a single excel file.',
-      },
-      // {
-      //   type: 'sample-columns',
-      //   position: 'before',
-      //   title: 'Expected Excel columns',
-      //   columns: ['ULB Code', 'ULB Name', 'Grant Amount (₹ Cr)', 'Formula Used'],
-      // },
-    ],
-    appearance: {
-      color: 'success',
-      variant: 'soft',
-    },
-  },
-  {
-    formFieldType: 'checkbox',
-    label:
-      'I hereby certify that the information provided above is true and correct to the best of my knowledge and is provided for the purpose of 16th Finance Commission grant eligibility.',
-    key: 'checkboxConfirmation',
-    value: false,
-    validations: [
-      {
-        name: 'requiredTrue',
-        validator: null,
-        message: 'Please confirm before submitting.',
-      },
-    ],
-  },
-];
