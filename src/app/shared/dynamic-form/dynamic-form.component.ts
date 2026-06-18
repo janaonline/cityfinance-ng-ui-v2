@@ -1,13 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, Input, OnChanges, OnInit, SimpleChanges, output } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
-import { FieldSupportingActionEvent } from './field.interface';
+import { DynamicFormMode, FieldSupportingActionEvent } from './field.interface';
 import { MaterialModule } from '../../material.module';
 import { ButtonComponent } from './components/button/button.component';
 import { CheckboxComponent } from './components/checkbox/checkbox.component';
 import { ChildFormComponent } from './components/child-form/child-form.component';
 import { DateComponent } from './components/date/date.component';
 import { DynamicFieldSupportingContentComponent } from './components/field-supporting-content/field-supporting-content.component';
+import { DynamicFieldViewComponent } from './components/dynamic-field-view/dynamic-field-view.component';
 import { FileComponent } from './components/file/file.component';
 import { InputCardComponent } from './components/input-card/input-card.component';
 import { InputComponent } from './components/input/input.component';
@@ -34,6 +35,7 @@ import { TextareaComponent } from './components/textarea/textarea.component';
     InputCardComponent,
     TextareaComponent,
     DynamicFieldSupportingContentComponent,
+    DynamicFieldViewComponent,
   ],
   styleUrl: './dynamic-form.component.scss',
 })
@@ -41,6 +43,8 @@ export class DynamicFormComponent implements OnInit, OnChanges {
   @Input() field!: any;
   @Input() group!: FormGroup;
   @Input() formArray!: FormArray;
+  /** Controls whether the field renders an interactive editor or a readonly value display. */
+  @Input() mode: DynamicFormMode = 'edit';
 
   /** Bubbles action events from nested supporting-content blocks up to the host page. */
   readonly supportingAction = output<FieldSupportingActionEvent>();
