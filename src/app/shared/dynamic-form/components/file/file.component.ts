@@ -116,6 +116,8 @@ export class FileComponent implements OnInit {
   readonly selectedFile = signal<File | null>(null);
   readonly isUploading = signal(false);
   readonly uploadProgress = signal(0);
+  /** Blob object URL for the locally-selected file; valid until revoked. Never stored in form value. */
+  readonly localPreviewUrl = signal<string | null>(null);
 
   /**
    * Stores the current value of the active form control.
@@ -340,7 +342,7 @@ export class FileComponent implements OnInit {
    * save or refresh to get a downloadable link.
    */
   readonly isPendingDownload = computed(() => {
-    if (this.isUploading() || this.previewUrl()) return false;
+    if (this.isUploading() || this.previewUrl() || this.localPreviewUrl()) return false;
     return !!this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
   });
 
@@ -446,6 +448,7 @@ export class FileComponent implements OnInit {
   public ngOnInit(): void {
     this.bindFileValueState();
     this.bindValidationState();
+    this.destroyRef.onDestroy(() => this.revokeLocalPreview());
   }
 
   /** Clears the file input so selecting the same file triggers change again. */
@@ -518,6 +521,7 @@ export class FileComponent implements OnInit {
 
     this.resetFileInput();
     this.resetUploadState();
+    this.revokeLocalPreview();
 
     const legacyFileGroup = this.legacyFileGroup();
     if (legacyFileGroup) {
@@ -673,6 +677,8 @@ export class FileComponent implements OnInit {
    * @param file - File currently being uploaded
    */
   private startUpload(file: File): void {
+    this.revokeLocalPreview();
+    this.localPreviewUrl.set(URL.createObjectURL(file));
     this.selectedFile.set(file);
     this.isUploading.set(true);
     this.uploadProgress.set(0);
@@ -721,8 +727,17 @@ export class FileComponent implements OnInit {
    * @param error - Error raised by either the URL request or the upload request
    */
   private handleUploadFailure(error: unknown): void {
+    this.revokeLocalPreview();
     console.error('Failed to upload file.', error);
     this.utilityService.triggerSnackbar('Failed to upload file!', 'snackbar-danger');
+  }
+
+  private revokeLocalPreview(): void {
+    const url = this.localPreviewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+      this.localPreviewUrl.set(null);
+    }
   }
 
   /**
