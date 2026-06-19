@@ -26,32 +26,29 @@ type EntityType = 'ulb' | 'state';
 type TeamMemberRole = 'Submitter' | 'Editor' | 'Viewer' | null;
 type TeamMemberStatus = 'active' | 'inactive' | 'invited' | 'pending';
 
-interface ApiUser {
-  _id?: string;
-  mobile?: string | null;
-  designation?: string;
-  organization?: string;
+interface ApiTeamMember {
+  _id: string;
   name: string;
-  email?: string;
-  role?: string;
-  status?: string;
-  isXVIFCProfileVerified?: boolean;
+  designation: string;
+  email: string;
+  mobile: string;
+  role: string;
+  status: string;
+  isActive: boolean;
+  isXVIFCProfileVerified: boolean;
+  lastLoginAt: string | null;
 }
 
-interface ApiUlbDetails {
+interface ApiEntityDetails {
   name?: string;
   code?: string;
   stateName?: string;
 }
 
-interface ApiUsersListResponse {
-  success: boolean;
-  data: {
-    ulbDetails?: ApiUlbDetails;
-    stateDetails?: ApiUlbDetails;
-    data: ApiUser[];
-  };
-  timestamp: string;
+interface ApiTeamMembersResponse {
+  ulbDetails?: ApiEntityDetails;
+  stateDetails?: ApiEntityDetails;
+  data: ApiTeamMember[];
 }
 
 interface EntityTeamProfile {
@@ -144,7 +141,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   transferSending = false;
   transferVerifying = false;
 
-  readonly memberColumns = ['member', 'designation', 'role', 'status', 'action'];
+  readonly memberColumns = ['member', 'designation', 'role', 'status', 'lastLogin', 'action'];
   readonly permissionColumns = ['permission', 'submitter', 'editor', 'viewer'];
   readonly availableRoles: Exclude<TeamMemberRole, 'Submitter' | null>[] = ['Editor', 'Viewer'];
 
@@ -258,18 +255,17 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.isLoading = true;
     this.hasError = false;
     try {
+      const param = this.entityType === 'state' ? 'stateId' : 'ulbId';
       const res = await firstValueFrom(
-        this.http.get<ApiUsersListResponse>(`${this.baseUrl}users/list`, {
-          params: new HttpParams()
-            .set(this.entityType === 'state' ? 'stateId' : 'ulbId', this.entityId)
-            .set('showDeleted', 'true'),
-        }),
+        this.http.get<{ success: boolean; data: ApiTeamMembersResponse } | ApiTeamMembersResponse>(
+          `${this.baseUrl}users/team-members`,
+          { params: new HttpParams().set(param, this.entityId) },
+        ),
       );
-      const payload: ApiUsersListResponse['data'] =
-        res?.data && !Array.isArray(res.data) && typeof res.data === 'object'
-          ? res.data
-          : (res as unknown as ApiUsersListResponse['data']);
-      const entityDetails = payload?.ulbDetails ?? payload?.stateDetails;
+
+      const payload = 'success' in res ? res.data : res;
+      const entityDetails = payload.ulbDetails ?? payload.stateDetails;
+
       if (entityDetails) {
         this.profile = {
           type: this.entityType,
@@ -280,7 +276,8 @@ export class RolesTeamsOverviewComponent implements OnInit {
           state: entityDetails.stateName,
         };
       }
-      const members = (payload?.data ?? []).map((u) => this.mapApiUser(u));
+
+      const members = (payload.data ?? []).map((u) => this.mapApiUser(u));
       this.members = members;
       this.memberRoleSelections = Object.fromEntries(
         members.filter((m) => m.role && m.role !== 'Submitter').map((m) => [m.id, m.role as string]),
@@ -293,34 +290,39 @@ export class RolesTeamsOverviewComponent implements OnInit {
     }
   }
 
-  private mapApiUser(user: ApiUser): TeamMember {
-    const apiRole = (user.role ?? '').toLowerCase();
+  private mapApiUser(user: ApiTeamMember): TeamMember {
+    const apiRole = user.role.toLowerCase();
     let role: TeamMemberRole = null;
-    if (
-      apiRole === 'ulb' ||
-      apiRole === 'state' ||
-      apiRole === 'submitter' ||
-      apiRole === 'xvifc' ||
-      apiRole === 'xvifc_state'
-    ) {
-      role = 'Submitter';
-    } else if (apiRole.endsWith('-editor') || apiRole === 'editor') {
-      role = 'Editor';
-    } else if (apiRole.endsWith('-viewer') || apiRole === 'viewer') {
-      role = 'Viewer';
+    switch (apiRole) {
+      case 'submitter': role = 'Submitter'; break;
+      case 'editor':    role = 'Editor';    break;
+      case 'viewer':    role = 'Viewer';    break;
     }
 
     return {
-      id: user._id ?? `${user.name}_${user.mobile ?? user.email ?? ''}`,
-      initials: this.getInitials(user.name || user.email || ''),
-      name: user.name || user.email || '',
-      email: user.email ?? '',
-      phone: user.mobile ?? '',
-      designation: user.designation || '',
+      id: user._id,
+      initials: this.getInitials(user.name || user.email),
+      name: user.name || user.email,
+      email: user.email,
+      phone: user.mobile,
+      designation: user.designation,
       role,
       status: this.resolveApiStatus(user.status, user.isXVIFCProfileVerified),
-      lastActive: null,
+      lastActive: user.lastLoginAt,
     };
+  }
+
+  formatLastLogin(value: string | null): string {
+    if (!value) return 'Never';
+    return new Date(value).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
   }
 
   private getInitials(name: string): string {
