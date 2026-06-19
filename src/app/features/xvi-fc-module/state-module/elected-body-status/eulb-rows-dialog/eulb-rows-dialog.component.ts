@@ -1,5 +1,14 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +18,7 @@ import { debounceTime, distinctUntilChanged, merge } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { resolveDateConstraint } from '../../../../../shared/dynamic-form/date-constraint-resolver';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
-import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
+import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../dynamic-form-visibility.service';
 import { EulbStatusService } from '../eulb-status.service';
 import {
   EulbBodyStatus,
@@ -67,6 +76,8 @@ export class EulbRowsDialogComponent implements OnInit {
   private readonly service = inject(EulbStatusService);
   private readonly utilityService = inject(UtilityService);
   private readonly dynamicService = inject(DynamicFormService);
+  private readonly visibilityService = inject(DynamicFormVisibilityService);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialogRef = inject(MatDialogRef<EulbRowsDialogComponent>);
   private readonly data = inject<EulbRowsDialogData>(MAT_DIALOG_DATA);
@@ -445,6 +456,85 @@ export class EulbRowsDialogComponent implements OnInit {
         this.clearApiError(key);
       });
     }
+
+    this.bindEnabledWhenToEditForm(this.editForm);
+  }
+
+  /** Returns `true` when the edit-form control for `field` is currently enabled. */
+  isEditFieldEnabled(field: string): boolean {
+    return !this.editForm.get(field)?.disabled;
+  }
+
+  /** Returns the `disabledReason` string from the field config, or empty string if none. */
+  getEditFieldDisabledReason(field: string): string {
+    return this.getRowEditFieldConfig(field)?.disabledReason ?? '';
+  }
+
+  /**
+   * Builds a dependency map of controller keys → dependent fields via `enabledWhen`,
+   * applies the initial enabled/disabled state, then subscribes to controller changes
+   * to reapply state reactively.
+   */
+  private bindEnabledWhenToEditForm(form: FormGroup): void {
+    const deps = new Map<string, ConditionalFieldConfig[]>();
+    for (const field of this.rowEditFields()) {
+      if (!field.enabledWhen?.conditions?.length || !field.key) continue;
+      for (const condition of field.enabledWhen.conditions) {
+        const list = deps.get(condition.key) ?? [];
+        if (!list.some((f) => f.key === field.key)) list.push(field);
+        deps.set(condition.key, list);
+      }
+    }
+    if (!deps.size) return;
+
+    this.applyEnabledWhen(form, deps);
+
+    for (const controllerKey of deps.keys()) {
+      const ctrl = form.get(controllerKey);
+      if (!ctrl) continue;
+      ctrl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+        this.applyEnabledWhen(form, deps);
+      });
+    }
+  }
+
+  /**
+   * Evaluates `enabledWhen` for every dependent field and enables or disables its control.
+   * When disabling: clears value (if `clearValueWhenDisabled`), removes validators, clears errors.
+   * When enabling: restores validators from field config.
+   * Marks the view for check so `OnPush` CD picks up the new disabled state.
+   */
+  private applyEnabledWhen(form: FormGroup, deps: Map<string, ConditionalFieldConfig[]>): void {
+    const allDependents = [...new Set([...deps.values()].flat())];
+
+    for (const field of allDependents) {
+      if (!field.key) continue;
+      const control = form.get(field.key);
+      if (!control) continue;
+
+      const shouldEnable = this.visibilityService.evaluateConditions(field.enabledWhen, (key) => form.get(key)?.value);
+
+      if (shouldEnable) {
+        if (this.canEditRows) {
+          control.enable({ emitEvent: false });
+        }
+        const validators = this.dynamicService.bindValidations(field.validations, field);
+        control.setValidators(validators);
+        control.updateValueAndValidity({ emitEvent: false });
+      } else {
+        if (field.clearValueWhenDisabled) {
+          control.setValue('', { emitEvent: false });
+        }
+        control.clearValidators();
+        control.setErrors(null);
+        control.markAsUntouched();
+        control.markAsPristine();
+        control.disable({ emitEvent: false });
+        control.updateValueAndValidity({ emitEvent: false });
+      }
+    }
+
+    this.cdr.markForCheck();
   }
 
   /**
