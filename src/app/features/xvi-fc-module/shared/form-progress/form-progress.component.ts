@@ -55,7 +55,7 @@ const IP_DONE: FormStatusStep = { label: 'In Progress', state: 'done' };
 // const MOHUA_SUBMIT_ACTIVE: FormStatusStep = { label: 'Submitted to MoHUA', state: 'active' };
 const MOHUA_SUBMIT_DONE: FormStatusStep = { label: 'Submitted to MoHUA', state: 'done' };
 const MOHUA_ACKNOWLEDGED: FormStatusStep = { label: 'Acknowledged by MoHUA', state: 'done' };
-const MOHUA_REJECTED: FormStatusStep = { label: 'Rejected by MoHUA', state: 'error' };
+const MOHUA_REJECTED: FormStatusStep = { label: 'Returned by MoHUA', state: 'error' };
 // Inactive (future/pending) atoms
 const IP_INACTIVE: FormStatusStep = { label: 'In Progress', state: 'inactive' };
 const MOHUA_SUBMIT_INACTIVE: FormStatusStep = { label: 'Submitted to MoHUA', state: 'inactive' };
@@ -68,7 +68,7 @@ const STATE_SUBMIT_ACTIVE: FormStatusStep = { label: 'Submitted to State', state
 const STATE_SUBMIT_DONE: FormStatusStep = { label: 'Submitted to State', state: 'done' };
 const STATE_APPROVED_ACTIVE: FormStatusStep = { label: 'Approved by State', state: 'active' };
 const STATE_APPROVED_DONE: FormStatusStep = { label: 'Approved by State', state: 'done' };
-const STATE_REJECTED: FormStatusStep = { label: 'Rejected by State', state: 'error' };
+const STATE_REJECTED: FormStatusStep = { label: 'Returned by State', state: 'error' };
 const MOHUA_APPROVED: FormStatusStep = { label: 'Approved by MoHUA', state: 'done' };
 
 /** Maps each numeric status to the pill color tone. */
@@ -198,7 +198,7 @@ function getCurrentStatusLabel(formType: FormType, status: FormStatusValue): str
         <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
           <!-- Pill -->
           <div>
-            <small class="text-uppercase text-muted fw-bold">Form Status</small>
+            <small class="text-uppercase text-muted fw-bold">Current Form Status</small>
             <div class="mt-1">
               <span class="badge rounded-pill px-3 py-2" [ngClass]="'form-progress__pill--' + statusTone()">
                 <span class="form-progress__dot me-2"></span>
