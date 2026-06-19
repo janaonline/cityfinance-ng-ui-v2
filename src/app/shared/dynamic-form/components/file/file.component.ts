@@ -320,13 +320,28 @@ export class FileComponent implements OnInit {
 
   readonly hasUploadedFile = computed(() => !!this.uploadedFile());
 
-  /** Returns the preview path only when no upload is in progress. */
+  /**
+   * Returns the file URL only when it is an absolute HTTP/HTTPS URL that the browser can
+   * open directly (i.e. a backend-signed download URL). Raw storage paths like `/state/...`
+   * return `null` so the template never constructs a direct S3 link for private files.
+   */
   readonly previewUrl = computed(() => {
     if (this.isUploading()) {
       return null;
     }
 
-    return this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
+    const url = this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
+    return url && /^https?:\/\//i.test(url) ? url : null;
+  });
+
+  /**
+   * True when a file value is stored in the control but the URL is a raw storage path that
+   * has not yet been replaced by a signed download URL from the backend. Prompts the user to
+   * save or refresh to get a downloadable link.
+   */
+  readonly isPendingDownload = computed(() => {
+    if (this.isUploading() || this.previewUrl()) return false;
+    return !!this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
   });
 
   /** Formatted size label for the transient file currently being uploaded. */

@@ -151,6 +151,8 @@
           >
             <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
           </a>
+        } @else if (isPendingDownload()) {
+          <span class="text-body-secondary small text-nowrap px-2">Save to view file</span>
         }
 
         @if (canRemoveFile()) {
