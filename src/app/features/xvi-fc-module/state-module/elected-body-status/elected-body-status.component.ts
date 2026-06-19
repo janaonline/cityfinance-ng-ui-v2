@@ -119,6 +119,12 @@ export class ElectedBodyStatusComponent implements OnInit {
   /** Last file value confirmed by the backend (GET response or validate-excel success). */
   private lastPersistedExcelFile: EulbFileValue | null = null;
 
+  /**
+   * Field errors captured from a validate-excel HTTP error that also contained persisted data.
+   * Consumed and cleared in `createFormControls` so they are stamped onto the rebuilt controls.
+   */
+  private pendingPostReloadErrors: ApiErrorMap | null = null;
+
   /** Reference to the rows dialog so it can be closed programmatically on delete success. */
   private rowsDialogRef: MatDialogRef<EulbRowsDialogComponent> | null = null;
 
@@ -228,27 +234,43 @@ export class ElectedBodyStatusComponent implements OnInit {
     this.setupDeleteTrigger();
     this.isHydratingForm = false;
     this.isLoading.set(false);
+
+    if (this.pendingPostReloadErrors) {
+      const errors = this.pendingPostReloadErrors;
+      this.pendingPostReloadErrors = null;
+      this.applyApiErrors(errors);
+    }
   }
 
   /**
-   * Subscribes to `electedBodyExcelFile` value changes and auto-triggers Excel validation
-   * whenever a valid file object is set and `ulbCount` is already populated.
+   * Subscribes to `electedBodyExcelFile` and `ulbCount` value changes.
+   * A new valid file upload clears stale file API errors then auto-triggers Excel validation
+   * if `ulbCount` is already populated. Editing `ulbCount` clears its stale API errors.
    */
   private setupValidationTrigger(): void {
     const fileControl = this.form.get('electedBodyExcelFile') as FormControl | null;
-    if (!fileControl) return;
+    const ulbCountControl = this.form.get('ulbCount') as FormControl | null;
 
-    fileControl.valueChanges
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        filter((val) => this.isValidFileValue(val)),
-      )
-      .subscribe(() => {
-        if (this.isRestoringExcelFile) return;
-        if (this.hasValidUlbCount()) {
-          this.triggerExcelValidation();
-        }
+    if (fileControl) {
+      fileControl.valueChanges
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          filter((val) => this.isValidFileValue(val)),
+        )
+        .subscribe(() => {
+          if (this.isRestoringExcelFile) return;
+          this.clearApiErrorsForField('electedBodyExcelFile');
+          if (this.hasValidUlbCount()) {
+            this.triggerExcelValidation();
+          }
+        });
+    }
+
+    if (ulbCountControl) {
+      ulbCountControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+        this.clearApiErrorsForField('ulbCount');
       });
+    }
   }
 
   /**
@@ -271,7 +293,9 @@ export class ElectedBodyStatusComponent implements OnInit {
    * Calls the validate-excel API with the current file and ULB count.
    * On success (VALID or INVALID HTTP 200), reloads the form so backend-driven
    * supporting content reflects the latest validation state.
-   * On HTTP error, applies field-level API errors without reloading.
+   * On HTTP error with no persisted data, applies field-level API errors directly without reloading.
+   * On HTTP error that still carries saved file/summary data, stores field errors in
+   * `pendingPostReloadErrors` and reloads; `createFormControls` re-stamps them onto the new controls.
    */
   private triggerExcelValidation(): void {
     if (this.isValidating()) return;
@@ -309,7 +333,12 @@ export class ElectedBodyStatusComponent implements OnInit {
             response?.message ?? 'Excel validation failed. Please try again.',
             'snackbar-danger',
           );
-          if (response?.errors) {
+          if (this.hasPersistedValidationData(err)) {
+            if (response?.errors) {
+              this.pendingPostReloadErrors = response.errors;
+            }
+            this.reloadForm();
+          } else if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
         },
@@ -657,6 +686,24 @@ export class ElectedBodyStatusComponent implements OnInit {
   }
 
   /**
+   * Returns `true` when the HTTP error body contains `data.validationSummary` with a positive
+   * `excelRowCount`, indicating the backend persisted the upload and generated a validation
+   * summary despite returning an HTTP error. Used to decide whether to reload the form after
+   * a validate-excel HTTP failure.
+   * @param err - Raw thrown value from the HTTP observable.
+   */
+  private hasPersistedValidationData(err: unknown): boolean {
+    if (!this.isObject(err)) return false;
+    const body = (err as { error?: unknown }).error;
+    if (!this.isObject(body)) return false;
+    const data = (body as Record<string, unknown>)['data'];
+    if (!this.isObject(data)) return false;
+    const summary = (data as Record<string, unknown>)['validationSummary'];
+    if (!this.isObject(summary)) return false;
+    return Number((summary as Record<string, unknown>)['excelRowCount'] ?? 0) > 0;
+  }
+
+  /**
    * Stamps API-returned field errors onto both the `fields` signal (for message display)
    * and the corresponding `FormControl` (for invalid state). Skips hidden fields.
    * Records each error key in `serverErrorKeys` so it can be cleared before re-submission.
@@ -722,6 +769,21 @@ export class ElectedBodyStatusComponent implements OnInit {
     this.serverErrorKeys.clear();
   }
 
+  /** Removes API-injected error codes for a single field without disturbing other controls. */
+  private clearApiErrorsForField(fieldKey: string): void {
+    const errorCodes = this.serverErrorKeys.get(fieldKey);
+    if (!errorCodes?.length) return;
+    const control = this.form.get(fieldKey);
+    if (control?.errors) {
+      const remaining = { ...control.errors };
+      for (const code of errorCodes) {
+        delete remaining[code];
+      }
+      control.setErrors(Object.keys(remaining).length ? remaining : null);
+    }
+    this.serverErrorKeys.delete(fieldKey);
+  }
+
   /** Tears down the current form and field state, then fetches fresh data from the API. */
   private reloadForm(): void {
     this.form = this.fb.group({});
@@ -749,6 +811,9 @@ export class ElectedBodyStatusComponent implements OnInit {
 
     fileControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((currentValue: unknown) => {
       if (this.isHydratingForm || this.isRestoringExcelFile) return;
+      if (!this.hasFileValue(currentValue)) {
+        this.clearApiErrorsForField('electedBodyExcelFile');
+      }
       if (this.isDeleteExcelDialogOpen || this.isDeleting()) return;
       if (!this.lastPersistedExcelFile) return;
       if (this.hasFileValue(currentValue)) return;

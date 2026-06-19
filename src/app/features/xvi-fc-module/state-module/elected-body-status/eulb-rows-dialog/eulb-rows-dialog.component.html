@@ -1,4 +1,9 @@
-<h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-1">Uploaded Data - Elected Urban Local Bodies</h2>
+<h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-1 d-flex align-items-center justify-content-between">
+  <span>Uploaded Data - Elected Urban Local Bodies</span>
+  <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="close()">
+    <i class="bi bi-x-circle-fill fs-5"></i>
+  </button>
+</h2>
 
 <mat-dialog-content class="p-0 eulb-rows-dialog-content">
   <!-- Filters -->
@@ -116,7 +121,11 @@
                     }
                   </select>
                 </td>
-                <td>
+                <td
+                  [matTooltip]="getEditFieldDisabledReason('dateOfConstitution')"
+                  [matTooltipDisabled]="isEditFieldEnabled('dateOfConstitution')"
+                  matTooltipPosition="above"
+                >
                   <input
                     type="date"
                     class="form-control form-control-sm eulb-edit-control"
@@ -133,7 +142,11 @@
                     [formControl]="$any(editForm.get('dateOfConstitution'))"
                   />
                 </td>
-                <td>
+                <td
+                  [matTooltip]="getEditFieldDisabledReason('dateOfExpiry')"
+                  [matTooltipDisabled]="isEditFieldEnabled('dateOfExpiry')"
+                  matTooltipPosition="above"
+                >
                   <input
                     type="date"
                     class="form-control form-control-sm eulb-edit-control"
@@ -329,9 +342,7 @@
   </div>
 </mat-dialog-content>
 
-<mat-dialog-actions class="border-top px-3 py-2 d-flex justify-content-between align-items-center gap-3">
-  <button type="button" matButton="outlined" (click)="close()">Close</button>
-
+<mat-dialog-actions class="border-top px-3 py-2 d-flex justify-content-end align-items-center gap-3">
   @if (total() > 0) {
     <div class="d-flex align-items-center gap-3 small">
       <span class="text-secondary">Showing {{ startIndex() }}–{{ endIndex() }} of {{ total() }} rows</span>

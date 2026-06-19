@@ -4,23 +4,35 @@ import { FormGroup } from '@angular/forms';
 import { FieldConfig } from '../../shared/dynamic-form/field.interface';
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
 
+export type VisibleWhenMode = 'all' | 'any';
+
 export type VisibilityCondition =
   | { key: string; operator: 'equals'; value: unknown }
+  | { key: string; operator: 'notEquals'; value: unknown }
   | { key: string; operator: 'in'; value: unknown[] }
+  | { key: string; operator: 'notIn'; value: unknown[] }
   | { key: string; operator: 'yearGreaterThan'; value: number };
+
+export interface VisibleWhen {
+  mode: VisibleWhenMode;
+  conditions: VisibilityCondition[];
+}
 
 export type ConditionalFieldConfig = FieldConfig & {
   hidden?: boolean;
-  visibleWhen?: {
-    mode: 'all' | 'any';
-    conditions: VisibilityCondition[];
-  };
+  /** Controls whether the field is rendered or hidden. */
+  visibleWhen?: VisibleWhen;
+  /** Controls whether the rendered field is enabled or disabled. Does not affect visibility. */
+  enabledWhen?: VisibleWhen;
+  /** Controls whether configured validations are applied. */
+  validateWhen?: VisibleWhen;
+  /** When `true`, clears the control value when `enabledWhen` evaluates to false. */
+  clearValueWhenDisabled?: boolean;
+  /** Tooltip hint shown on the control wrapper when it is disabled due to `enabledWhen`. */
+  disabledReason?: string;
 };
 
-export type DependencyIndex<T extends ConditionalFieldConfig = ConditionalFieldConfig> = Map<
-  string,
-  T[]
->;
+export type DependencyIndex<T extends ConditionalFieldConfig = ConditionalFieldConfig> = Map<string, T[]>;
 
 @Injectable({ providedIn: 'root' })
 export class DynamicFormVisibilityService {
@@ -118,10 +130,7 @@ export class DynamicFormVisibilityService {
    * @param fields - Array of conditional field configurations (formJson) to determine which fields are hidden
    * @returns
    */
-  getVisiblePayload<T extends ConditionalFieldConfig>(
-    form: FormGroup,
-    fields: T[],
-  ): Record<string, unknown> {
+  getVisiblePayload<T extends ConditionalFieldConfig>(form: FormGroup, fields: T[]): Record<string, unknown> {
     const payload: Record<string, unknown> = Object.create(null);
     const controls = form.controls as Record<string, { value: unknown }>;
 
@@ -216,43 +225,46 @@ export class DynamicFormVisibilityService {
   }
 
   /**
-   * - Evaluate field visibility based on its 'visibleWhen' conditions and current form values
-   * - If visibility.mode is 'all', all conditions must be true for the field to be visible.
-   * - If visibility.mode is 'any', at least one condition must be true.
-   *
-   * @param field - The field whose visibility needs to be evaluated
-   * @param form - The FormGroup containing all form controls
-   * @returns boolean indicating whether the field should be visible or not
+   * Evaluates a `VisibleWhen` condition group against an arbitrary value-lookup function.
+   * Returns `true` when `conditionGroup` is `undefined` or has no conditions.
+   * @param conditionGroup - The condition group to evaluate, or `undefined`.
+   * @param valueLookup - Callback returning the current value for a given field key.
    */
-  private evaluateFieldVisibility<T extends ConditionalFieldConfig>(
-    field: T,
-    form: FormGroup,
-  ): boolean {
-    const visibility = field.visibleWhen;
-    if (!visibility?.conditions?.length) return true;
-
-    const results = visibility.conditions.map((condition) =>
-      this.evaluateCondition(condition, form),
-    );
-
-    return visibility.mode === 'all' ? results.every(Boolean) : results.some(Boolean);
+  evaluateConditions(conditionGroup: VisibleWhen | undefined, valueLookup: (key: string) => unknown): boolean {
+    if (!conditionGroup?.conditions?.length) return true;
+    const results = conditionGroup.conditions.map((c) => this.evaluateSingleCondition(c, valueLookup));
+    return conditionGroup.mode === 'all' ? results.every(Boolean) : results.some(Boolean);
   }
 
   /**
-   * Evaluate a single visibility condition based on the current form values
-   * @param condition - The visibility condition to evaluate
-   * @param form - The FormGroup containing all form controls
-   * @returns boolean indicating whether the condition is met
+   * Evaluates field visibility based on its `visibleWhen` conditions and current form values.
+   * @param field - The field whose visibility needs to be evaluated.
+   * @param form - The FormGroup containing all form controls.
    */
-  private evaluateCondition(condition: VisibilityCondition, form: FormGroup): boolean {
-    const rawValue = form.get(condition.key)?.value;
+  private evaluateFieldVisibility<T extends ConditionalFieldConfig>(field: T, form: FormGroup): boolean {
+    return this.evaluateConditions(field.visibleWhen, (key) => form.get(key)?.value);
+  }
+
+  /**
+   * Evaluates a single `VisibilityCondition` using a value-lookup callback.
+   * @param condition - The individual condition to test.
+   * @param valueLookup - Callback returning the current value for a given field key.
+   */
+  private evaluateSingleCondition(condition: VisibilityCondition, valueLookup: (key: string) => unknown): boolean {
+    const rawValue = valueLookup(condition.key);
 
     switch (condition.operator) {
       case 'equals':
         return rawValue === condition.value;
 
+      case 'notEquals':
+        return rawValue !== condition.value;
+
       case 'in':
         return Array.isArray(condition.value) && condition.value.includes(rawValue);
+
+      case 'notIn':
+        return Array.isArray(condition.value) && !condition.value.includes(rawValue);
 
       case 'yearGreaterThan': {
         const year = this.extractYear(rawValue);
