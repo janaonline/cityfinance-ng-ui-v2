@@ -224,6 +224,10 @@
                   class="small"
                   [class.eulb-cell-invalid]="hasCellError(row, 'electedBodyStatus')"
                   [class.cursor-pointer]="canEditRows && hasCellError(row, 'electedBodyStatus')"
+                  [matTooltip]="getCellErrorText(row, 'electedBodyStatus')"
+                  [matTooltipDisabled]="!hasCellError(row, 'electedBodyStatus')"
+                  matTooltipPosition="above"
+                  [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'electedBodyStatus')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
@@ -232,9 +236,7 @@
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                        [matTooltip]="getCellErrorText(row, 'electedBodyStatus')"
-                        matTooltipPosition="above"
-                        aria-label="View elected body status error"
+                        aria-label="Elected body status has a validation error"
                         (click)="$event.stopPropagation()"
                       >
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -246,6 +248,10 @@
                   class="small text-nowrap"
                   [class.eulb-cell-invalid]="hasCellError(row, 'dateOfConstitution')"
                   [class.cursor-pointer]="canEditRows && hasCellError(row, 'dateOfConstitution')"
+                  [matTooltip]="getCellErrorText(row, 'dateOfConstitution')"
+                  [matTooltipDisabled]="!hasCellError(row, 'dateOfConstitution')"
+                  matTooltipPosition="above"
+                  [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'dateOfConstitution')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
@@ -256,9 +262,7 @@
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                        [matTooltip]="getCellErrorText(row, 'dateOfConstitution')"
-                        matTooltipPosition="above"
-                        aria-label="View date of constitution error"
+                        aria-label="Date of constitution has a validation error"
                         (click)="$event.stopPropagation()"
                       >
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -270,6 +274,10 @@
                   class="small text-nowrap"
                   [class.eulb-cell-invalid]="hasCellError(row, 'dateOfExpiry')"
                   [class.cursor-pointer]="canEditRows && hasCellError(row, 'dateOfExpiry')"
+                  [matTooltip]="getCellErrorText(row, 'dateOfExpiry')"
+                  [matTooltipDisabled]="!hasCellError(row, 'dateOfExpiry')"
+                  matTooltipPosition="above"
+                  [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'dateOfExpiry')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
@@ -280,9 +288,7 @@
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                        [matTooltip]="getCellErrorText(row, 'dateOfExpiry')"
-                        matTooltipPosition="above"
-                        aria-label="View date of expiry error"
+                        aria-label="Date of expiry has a validation error"
                         (click)="$event.stopPropagation()"
                       >
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -294,6 +300,10 @@
                   class="small"
                   [class.eulb-cell-invalid]="hasCellError(row, 'remarks')"
                   [class.cursor-pointer]="canEditRows && hasCellError(row, 'remarks')"
+                  [matTooltip]="getCellErrorText(row, 'remarks')"
+                  [matTooltipDisabled]="!hasCellError(row, 'remarks')"
+                  matTooltipPosition="above"
+                  [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'remarks')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
@@ -302,9 +312,7 @@
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                        [matTooltip]="getCellErrorText(row, 'remarks')"
-                        matTooltipPosition="above"
-                        aria-label="View remarks error"
+                        aria-label="Remarks has a validation error"
                         (click)="$event.stopPropagation()"
                       >
                         <i class="bi bi-exclamation-triangle-fill"></i>

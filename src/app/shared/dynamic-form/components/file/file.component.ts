@@ -116,6 +116,8 @@ export class FileComponent implements OnInit {
   readonly selectedFile = signal<File | null>(null);
   readonly isUploading = signal(false);
   readonly uploadProgress = signal(0);
+  /** Blob object URL for the locally-selected file; valid until revoked. Never stored in form value. */
+  readonly localPreviewUrl = signal<string | null>(null);
 
   /**
    * Stores the current value of the active form control.
@@ -320,13 +322,28 @@ export class FileComponent implements OnInit {
 
   readonly hasUploadedFile = computed(() => !!this.uploadedFile());
 
-  /** Returns the preview path only when no upload is in progress. */
+  /**
+   * Returns the file URL only when it is an absolute HTTP/HTTPS URL that the browser can
+   * open directly (i.e. a backend-signed download URL). Raw storage paths like `/state/...`
+   * return `null` so the template never constructs a direct S3 link for private files.
+   */
   readonly previewUrl = computed(() => {
     if (this.isUploading()) {
       return null;
     }
 
-    return this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
+    const url = this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
+    return url && /^https?:\/\//i.test(url) ? url : null;
+  });
+
+  /**
+   * True when a file value is stored in the control but the URL is a raw storage path that
+   * has not yet been replaced by a signed download URL from the backend. Prompts the user to
+   * save or refresh to get a downloadable link.
+   */
+  readonly isPendingDownload = computed(() => {
+    if (this.isUploading() || this.previewUrl() || this.localPreviewUrl()) return false;
+    return !!this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
   });
 
   /** Formatted size label for the transient file currently being uploaded. */
@@ -431,6 +448,7 @@ export class FileComponent implements OnInit {
   public ngOnInit(): void {
     this.bindFileValueState();
     this.bindValidationState();
+    this.destroyRef.onDestroy(() => this.revokeLocalPreview());
   }
 
   /** Clears the file input so selecting the same file triggers change again. */
@@ -503,6 +521,7 @@ export class FileComponent implements OnInit {
 
     this.resetFileInput();
     this.resetUploadState();
+    this.revokeLocalPreview();
 
     const legacyFileGroup = this.legacyFileGroup();
     if (legacyFileGroup) {
@@ -658,6 +677,8 @@ export class FileComponent implements OnInit {
    * @param file - File currently being uploaded
    */
   private startUpload(file: File): void {
+    this.revokeLocalPreview();
+    this.localPreviewUrl.set(URL.createObjectURL(file));
     this.selectedFile.set(file);
     this.isUploading.set(true);
     this.uploadProgress.set(0);
@@ -706,8 +727,17 @@ export class FileComponent implements OnInit {
    * @param error - Error raised by either the URL request or the upload request
    */
   private handleUploadFailure(error: unknown): void {
+    this.revokeLocalPreview();
     console.error('Failed to upload file.', error);
     this.utilityService.triggerSnackbar('Failed to upload file!', 'snackbar-danger');
+  }
+
+  private revokeLocalPreview(): void {
+    const url = this.localPreviewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+      this.localPreviewUrl.set(null);
+    }
   }
 
   /**
