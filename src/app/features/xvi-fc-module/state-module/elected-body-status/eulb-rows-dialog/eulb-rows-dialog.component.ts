@@ -22,31 +22,37 @@ import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../d
 import { EulbStatusService } from '../eulb-status.service';
 import {
   EulbBodyStatus,
+  EulbEditableFieldKey,
   EulbRow,
+  EulbRowEditFormValue,
   EulbRowError,
+  EulbRowUpdateApiError,
   EulbRowsDialogData,
   EulbRowsDialogResult,
   EulbRowsQuery,
   EulbRowType,
   EulbRowValidationStatus,
-  EulbUpdateRowPayload,
   EulbValidationSummary,
 } from '../eulb-status.models';
+import { buildEulbRowUpdatePayload, getRecordValue, isRecord, parseEulbRowUpdateErrors } from '../eulb-status.utils';
 
-/** Shape of a single field-level error returned by the PATCH row update endpoint. */
-interface EulbRowUpdateApiError {
-  rowId?: string;
-  rowNumber?: number;
-  censusCode?: string;
-  ulbName?: string;
-  field: string;
-  code: string;
-  message: string;
-  value?: unknown;
+function isEulbBodyStatus(value: unknown): value is EulbBodyStatus {
+  return value === 'Constituted' || value === 'Not Constituted' || value === 'Exempt';
 }
 
-const EDITABLE_FIELDS = ['electedBodyStatus', 'dateOfConstitution', 'dateOfExpiry', 'remarks'] as const;
-type EditableField = (typeof EDITABLE_FIELDS)[number];
+function isRowValidationStatus(value: unknown): value is EulbRowValidationStatus {
+  return value === 'VALID' || value === 'INVALID';
+}
+
+function isRowType(value: unknown): value is EulbRowType {
+  return value === 'DB_ULB' || value === 'EXTRA_ULB';
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks';
 
 const VALIDATION_STATUS_OPTIONS: ReadonlyArray<{ readonly value: EulbRowValidationStatus; readonly label: string }> = [
   { value: 'VALID', label: 'Valid' },
@@ -58,12 +64,28 @@ const ROW_TYPE_OPTIONS: ReadonlyArray<{ readonly value: EulbRowType; readonly la
   { value: 'EXTRA_ULB', label: 'Extra ULB' },
 ];
 
-const ERROR_FIELD_OPTIONS: ReadonlyArray<{ readonly value: EditableField; readonly label: string }> = [
+const ERROR_FIELD_OPTIONS: ReadonlyArray<{ readonly value: EulbEditableFieldKey; readonly label: string }> = [
   { value: 'electedBodyStatus', label: 'Elected Body Status' },
   { value: 'dateOfConstitution', label: 'Date of Constitution' },
   { value: 'dateOfExpiry', label: 'Date of Expiry' },
   { value: 'remarks', label: 'Remarks' },
 ];
+
+interface EulbRowViewModel {
+  readonly row: EulbRow;
+  readonly cellHasError: Partial<Record<string, boolean>>;
+  readonly cellErrorText: Partial<Record<string, string>>;
+}
+
+function buildRowViewModel(row: EulbRow): EulbRowViewModel {
+  const cellHasError: Record<string, boolean> = {};
+  const cellErrorText: Record<string, string> = {};
+  for (const err of row.errors ?? []) {
+    cellHasError[err.field] = true;
+    cellErrorText[err.field] = cellErrorText[err.field] ? `${cellErrorText[err.field]}\n${err.message}` : err.message;
+  }
+  return { row, cellHasError, cellErrorText };
+}
 
 @Component({
   selector: 'app-eulb-rows-dialog',
@@ -102,6 +124,7 @@ export class EulbRowsDialogComponent implements OnInit {
   readonly hasNext = computed(() => this.page() < this.totalPages());
   readonly startIndex = computed(() => (this.page() - 1) * this.limit + 1);
   readonly endIndex = computed(() => Math.min(this.page() * this.limit, this.total()));
+  readonly rowViewModels = computed(() => this.rows().map(buildRowViewModel));
 
   readonly electedBodyStatusOptions: EulbBodyStatus[] = ['Constituted', 'Not Constituted', 'Exempt'];
   readonly validationStatusOptions = VALIDATION_STATUS_OPTIONS;
@@ -109,6 +132,7 @@ export class EulbRowsDialogComponent implements OnInit {
   readonly errorFieldOptions = ERROR_FIELD_OPTIONS;
 
   private hasSavedRowChanges = false;
+  private loadRequestId = 0;
 
   filterForm = this.fb.group({
     search: [''],
@@ -130,6 +154,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * Sets `isLoading` while the request is in flight and clears it on success or error.
    */
   loadRows(): void {
+    const requestId = ++this.loadRequestId;
     this.isLoading.set(true);
 
     const { search, validationStatus, rowType, errorField } = this.filterForm.getRawValue();
@@ -137,8 +162,8 @@ export class EulbRowsDialogComponent implements OnInit {
       page: this.page(),
       limit: this.limit,
       search: search || undefined,
-      validationStatus: (validationStatus as EulbRowsQuery['validationStatus']) || undefined,
-      rowType: (rowType as EulbRowsQuery['rowType']) || undefined,
+      validationStatus: isRowValidationStatus(validationStatus) ? validationStatus : undefined,
+      rowType: isRowType(rowType) ? rowType : undefined,
       errorField: errorField || undefined,
     };
 
@@ -147,11 +172,13 @@ export class EulbRowsDialogComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (requestId !== this.loadRequestId) return;
           this.rows.set(res.data.rows);
           this.total.set(res.data.total);
           this.isLoading.set(false);
         },
         error: () => {
+          if (requestId !== this.loadRequestId) return;
           this.utilityService.triggerSnackbar('Failed to load uploaded rows.', 'snackbar-danger');
           this.isLoading.set(false);
         },
@@ -186,6 +213,24 @@ export class EulbRowsDialogComponent implements OnInit {
     this.editForm = this.fb.group({});
   }
 
+  private getRowEditFormValue(): EulbRowEditFormValue {
+    const electedBodyStatusValue = this.editForm.get('electedBodyStatus')?.value;
+    const electedBodyStatus =
+      electedBodyStatusValue === '' || isEulbBodyStatus(electedBodyStatusValue) ? electedBodyStatusValue : undefined;
+
+    return {
+      electedBodyStatus,
+      dateOfConstitution: this.getRowStringEditControlValue('dateOfConstitution'),
+      dateOfExpiry: this.getRowStringEditControlValue('dateOfExpiry'),
+      remarks: this.getRowStringEditControlValue('remarks'),
+    };
+  }
+
+  private getRowStringEditControlValue(field: EulbRowStringEditField): string | undefined {
+    const value = this.editForm.get(field)?.value;
+    return typeof value === 'string' ? value : undefined;
+  }
+
   /**
    * Sends a PATCH request to persist the current edit-form values for the given row.
    * On success, replaces the updated row in the local list and exits edit mode.
@@ -202,17 +247,7 @@ export class EulbRowsDialogComponent implements OnInit {
 
     this.isUpdatingRowId.set(rowId);
 
-    const raw = this.editForm.getRawValue() as {
-      electedBodyStatus?: EulbBodyStatus | '';
-      dateOfConstitution?: string;
-      dateOfExpiry?: string;
-      remarks?: string;
-    };
-    const payload: EulbUpdateRowPayload = {};
-    if (raw.electedBodyStatus) payload.electedBodyStatus = raw.electedBodyStatus;
-    payload.dateOfConstitution = raw.dateOfConstitution || undefined;
-    payload.dateOfExpiry = raw.dateOfExpiry || undefined;
-    payload.remarks = raw.remarks;
+    const payload = buildEulbRowUpdatePayload(this.getRowEditFormValue());
 
     this.service
       .updateRow(this.stateId, this.yearId, rowId, payload)
@@ -234,7 +269,7 @@ export class EulbRowsDialogComponent implements OnInit {
         },
         error: (err: unknown) => {
           this.isUpdatingRowId.set(null);
-          const apiErrors = this.getRowUpdateErrors(err);
+          const apiErrors = parseEulbRowUpdateErrors(err);
 
           if (apiErrors.length > 0) {
             this.applyRowUpdateErrors(apiErrors);
@@ -293,10 +328,8 @@ export class EulbRowsDialogComponent implements OnInit {
       }
     };
 
-    if (Array.isArray(errors['apiErrors'])) {
-      for (const msg of errors['apiErrors'] as string[]) {
-        addMessage(msg);
-      }
+    for (const msg of toStringArray(errors['apiErrors'])) {
+      addMessage(msg);
     }
 
     const fallbacks: Record<string, string> = {
@@ -375,19 +408,6 @@ export class EulbRowsDialogComponent implements OnInit {
   }
 
   /**
-   * Returns a newline-joined string of error messages for the given field on a row,
-   * suitable for use as a `matTooltip` or native `title` attribute.
-   * @param row - The row whose errors are read.
-   * @param field - The field key to look up (e.g. `'remarks'`).
-   * @returns Concatenated error messages separated by `\n`, or an empty string when there are none.
-   */
-  getCellErrorText(row: EulbRow, field: string): string {
-    return this.getCellErrors(row, field)
-      .map((err) => err.message)
-      .join('\n');
-  }
-
-  /**
    * Enters edit mode for the given row and focuses the matching field control after the view updates.
    * No-ops when the cell has no errors or when another row is already being edited.
    * @param row - The row to place into edit mode.
@@ -439,7 +459,7 @@ export class EulbRowsDialogComponent implements OnInit {
       const key = field.key;
       if (!key || !field.formFieldType) continue;
 
-      const rawValue = (row as unknown as Record<string, unknown>)[key];
+      const rawValue = this.getEditableRowValue(row, key);
       const value = field.formFieldType === 'date' ? (this.toHtmlDate(rawValue) ?? '') : (rawValue ?? '');
 
       const fieldForControl: ConditionalFieldConfig = {
@@ -458,6 +478,10 @@ export class EulbRowsDialogComponent implements OnInit {
     }
 
     this.bindEnabledWhenToEditForm(this.editForm);
+  }
+
+  private getEditableRowValue(row: EulbRow, fieldKey: string): unknown {
+    return getRecordValue(row, fieldKey);
   }
 
   /** Returns `true` when the edit-form control for `field` is currently enabled. */
@@ -558,25 +582,6 @@ export class EulbRowsDialogComponent implements OnInit {
   }
 
   /**
-   * Extracts structured field-level errors from a PATCH row update HTTP failure.
-   * Looks for `error.errors` (Angular `HttpErrorResponse`) then `errors` directly on the thrown value.
-   * @param error - Raw thrown value from the HTTP observable.
-   */
-  private getRowUpdateErrors(error: unknown): EulbRowUpdateApiError[] {
-    if (typeof error !== 'object' || error === null) return [];
-
-    const httpErr = error as { error?: { errors?: unknown }; errors?: unknown };
-
-    const fromHttpBody = httpErr.error?.errors;
-    if (Array.isArray(fromHttpBody)) return fromHttpBody as EulbRowUpdateApiError[];
-
-    const fromPlain = httpErr.errors;
-    if (Array.isArray(fromPlain)) return fromPlain as EulbRowUpdateApiError[];
-
-    return [];
-  }
-
-  /**
    * Groups API errors by field name and stamps them onto the matching edit-form controls
    * as `{ apiErrors: string[] }`. Marks each control as touched so errors render immediately.
    * @param errors - Array of field-level errors from the PATCH response.
@@ -622,10 +627,11 @@ export class EulbRowsDialogComponent implements OnInit {
    * @returns The `error.message` string if present and a string, otherwise `null`.
    */
   private extractErrorMessage(err: unknown): string | null {
-    if (typeof err !== 'object' || err === null) return null;
-    const httpError = err as { error?: { message?: unknown } };
-    const msg = httpError.error?.message;
-    return typeof msg === 'string' ? msg : null;
+    if (!isRecord(err)) return null;
+    const body = err['error'];
+    if (!isRecord(body)) return null;
+    const message = body['message'];
+    return typeof message === 'string' ? message : null;
   }
 
   /**

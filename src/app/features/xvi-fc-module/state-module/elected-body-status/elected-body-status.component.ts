@@ -5,7 +5,7 @@ import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import FileSaver from 'file-saver';
-import { filter, finalize } from 'rxjs';
+import { filter, finalize, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
@@ -27,13 +27,22 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
 import {
   ApiErrorMap,
   ApiErrorResponse,
+  EulbFinalSubmitPayload,
   EulbFileValue,
+  EulbFormPayloadData,
   EulbPermissions,
   EulbRevalidateExcelResponse,
   EulbRowsDialogResult,
   EulbSaveDraftPayload,
   SubmitType,
 } from './eulb-status.models';
+import {
+  buildEulbFinalSubmitPayloadData,
+  buildEulbFormPayloadData,
+  hasEulbFileValue,
+  isRecord,
+  isValidEulbFileValue,
+} from './eulb-status.utils';
 import { EulbStatusService } from './eulb-status.service';
 import { EulbRowsDialogComponent } from './eulb-rows-dialog/eulb-rows-dialog.component';
 import {
@@ -50,6 +59,52 @@ const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
 } as const;
+
+function isApiErrorMap(value: unknown): value is ApiErrorMap {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every(
+    (fieldErrors) =>
+      Array.isArray(fieldErrors) &&
+      fieldErrors.every((error: unknown) => isRecord(error) && typeof error['message'] === 'string'),
+  );
+}
+
+function extractApiErrorResponse(err: unknown): ApiErrorResponse | null {
+  if (!isRecord(err)) return null;
+
+  const httpErrorBody = err['error'];
+  if (isRecord(httpErrorBody) && typeof httpErrorBody['message'] === 'string') {
+    return {
+      statusCode: typeof httpErrorBody['statusCode'] === 'number' ? httpErrorBody['statusCode'] : undefined,
+      message: httpErrorBody['message'],
+      errors: isApiErrorMap(httpErrorBody['errors']) ? httpErrorBody['errors'] : undefined,
+    };
+  }
+
+  if (err['success'] === false && typeof err['message'] === 'string') {
+    return {
+      message: err['message'],
+      errors: isApiErrorMap(err['errors']) ? err['errors'] : undefined,
+    };
+  }
+
+  return null;
+}
+
+function hasPersistedValidationData(err: unknown): boolean {
+  if (!isRecord(err)) return false;
+  const body = err['error'];
+  if (!isRecord(body)) return false;
+  const data = body['data'];
+  if (!isRecord(data)) return false;
+  const summary = data['validationSummary'];
+  if (!isRecord(summary)) return false;
+  return Number(summary['excelRowCount'] ?? 0) > 0;
+}
+
+function getHttpStatus(err: unknown): number | undefined {
+  return isRecord(err) && typeof err['status'] === 'number' ? err['status'] : undefined;
+}
 
 /**
  * Page component for the Elected Urban Local Bodies status-confirmation form.
@@ -110,6 +165,7 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /** Tracks API-injected error keys per control so they can be cleared before re-submission. */
   private readonly serverErrorKeys = new Map<string, string[]>();
+  private readonly formSubscriptionsTeardown$ = new Subject<void>();
 
   /** Guards the delete trigger from firing during form hydration, programmatic file restoration, or a concurrent delete. */
   private isHydratingForm = false;
@@ -177,9 +233,7 @@ export class ElectedBodyStatusComponent implements OnInit {
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
 
           const fileField = data.questions.find((q) => q.key === 'electedBodyExcelFile');
-          this.lastPersistedExcelFile = this.hasFileValue(fileField?.value)
-            ? (fileField!.value as EulbFileValue)
-            : null;
+          this.lastPersistedExcelFile = isValidEulbFileValue(fileField?.value) ? fileField.value : null;
 
           this.fields.set(data.questions);
           this.rowEditFields.set(data.rowEditFields ?? []);
@@ -254,8 +308,9 @@ export class ElectedBodyStatusComponent implements OnInit {
     if (fileControl) {
       fileControl.valueChanges
         .pipe(
+          filter(isValidEulbFileValue),
+          takeUntil(this.formSubscriptionsTeardown$),
           takeUntilDestroyed(this.destroyRef),
-          filter((val) => this.isValidFileValue(val)),
         )
         .subscribe(() => {
           if (this.isRestoringExcelFile) return;
@@ -267,20 +322,12 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
 
     if (ulbCountControl) {
-      ulbCountControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-        this.clearApiErrorsForField('ulbCount');
-      });
+      ulbCountControl.valueChanges
+        .pipe(takeUntil(this.formSubscriptionsTeardown$), takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          this.clearApiErrorsForField('ulbCount');
+        });
     }
-  }
-
-  /**
-   * Returns `true` if `val` is a non-null object with both `fileName` and `fileUrl` strings.
-   * @param val - Value from the file form control.
-   */
-  private isValidFileValue(val: unknown): boolean {
-    if (!val || typeof val !== 'object') return false;
-    const file = val as { fileName?: string; fileUrl?: string };
-    return !!(file.fileName && file.fileUrl);
   }
 
   /** Returns `true` when the `ulbCount` control holds a positive number. */
@@ -300,10 +347,10 @@ export class ElectedBodyStatusComponent implements OnInit {
   private triggerExcelValidation(): void {
     if (this.isValidating()) return;
 
-    const fileValue = this.form.get('electedBodyExcelFile')?.value as unknown as EulbFileValue | null;
-    const ulbCount = this.form.get('ulbCount')?.value as unknown as number;
+    const fileValue = this.form.get('electedBodyExcelFile')?.value;
+    const ulbCount = this.form.get('ulbCount')?.value;
 
-    if (!fileValue || !ulbCount) return;
+    if (!isValidEulbFileValue(fileValue) || typeof ulbCount !== 'number' || !ulbCount) return;
 
     this.isValidating.set(true);
     this.utilityService.triggerSnackbar('Excel uploaded. Verifying data…');
@@ -328,12 +375,12 @@ export class ElectedBodyStatusComponent implements OnInit {
           this.reloadForm();
         },
         error: (err: unknown) => {
-          const response = this.extractApiErrorResponse(err);
+          const response = extractApiErrorResponse(err);
           this.utilityService.triggerSnackbar(
             response?.message ?? 'Excel validation failed. Please try again.',
             'snackbar-danger',
           );
-          if (this.hasPersistedValidationData(err)) {
+          if (hasPersistedValidationData(err)) {
             if (response?.errors) {
               this.pendingPostReloadErrors = response.errors;
             }
@@ -353,8 +400,8 @@ export class ElectedBodyStatusComponent implements OnInit {
     const yearId = this.yearId;
     if (!stateId || !yearId) return;
 
-    const ulbCount = this.form.get('ulbCount')?.value as unknown as number | null;
-    if (!ulbCount) return;
+    const ulbCount = this.form.get('ulbCount')?.value;
+    if (typeof ulbCount !== 'number' || !ulbCount) return;
 
     this.clearAllApiErrors();
     this.isValidating.set(true);
@@ -371,7 +418,7 @@ export class ElectedBodyStatusComponent implements OnInit {
           this.reloadForm();
         },
         error: (err: unknown) => {
-          const response = this.extractApiErrorResponse(err);
+          const response = extractApiErrorResponse(err);
           this.utilityService.triggerSnackbar(
             response?.message ?? 'Revalidation failed. Please try again.',
             'snackbar-danger',
@@ -482,7 +529,7 @@ export class ElectedBodyStatusComponent implements OnInit {
         },
         error: (err: unknown) => {
           this.isDownloadingErrorSheet.set(false);
-          const status = (err as { status?: number })?.status;
+          const status = getHttpStatus(err);
           const message =
             status === 400
               ? 'No uploaded data found to generate error sheet.'
@@ -557,15 +604,11 @@ export class ElectedBodyStatusComponent implements OnInit {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
 
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const visiblePayload = this.getVisibleEulbPayloadData();
     const payload: EulbSaveDraftPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
-      data: {
-        ulbCount: visiblePayload['ulbCount'] as number | undefined,
-        electedBodyExcelFile: visiblePayload['electedBodyExcelFile'] as EulbFileValue | undefined,
-        checkboxConfirmation: visiblePayload['checkboxConfirmation'] as boolean | undefined,
-      },
+      data: visiblePayload,
     };
 
     this.eulbService
@@ -587,17 +630,24 @@ export class ElectedBodyStatusComponent implements OnInit {
   /** Clears previous API errors, posts the visible payload as a final submission, then reloads on success. */
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
+    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const finalSubmitData = buildEulbFinalSubmitPayloadData(visiblePayload);
+
+    if (!finalSubmitData) {
+      this.form.markAllAsTouched();
+      this.utilityService.triggerSnackbar(
+        'Please correct the errors in the form before submitting.',
+        'snackbar-danger',
+      );
+      return;
+    }
+
     this.isFinalSubmitting.set(true);
 
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
-    const payload = {
+    const payload: EulbFinalSubmitPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
-      data: {
-        ulbCount: visiblePayload['ulbCount'] as number,
-        electedBodyExcelFile: visiblePayload['electedBodyExcelFile'] as EulbFileValue,
-        checkboxConfirmation: visiblePayload['checkboxConfirmation'] as boolean,
-      },
+      data: finalSubmitData,
     };
 
     this.eulbService
@@ -623,84 +673,11 @@ export class ElectedBodyStatusComponent implements OnInit {
    * @param fallbackMessage - Shown if the error body carries no message.
    */
   private handleSubmitError(err: unknown, fallbackMessage: string): void {
-    const response = this.extractApiErrorResponse(err);
+    const response = extractApiErrorResponse(err);
     this.utilityService.triggerSnackbar(response?.message ?? fallbackMessage, 'snackbar-danger');
     if (response?.errors) {
       this.applyApiErrors(response.errors);
     }
-  }
-
-  /**
-   * Normalises an HTTP error or plain error object into a typed `ApiErrorResponse`.
-   * Handles both `{ error: { message, errors } }` (Angular HttpErrorResponse) and
-   * `{ success: false, message, errors }` (plain error body) shapes.
-   * Returns `null` if the error cannot be parsed.
-   * @param err - Raw thrown value from an HTTP observable.
-   */
-  private extractApiErrorResponse(err: unknown): ApiErrorResponse | null {
-    if (!this.isObject(err)) return null;
-
-    const httpError = err as { error?: unknown };
-    if (this.isObject(httpError.error)) {
-      const body = httpError.error as Record<string, unknown>;
-      if (typeof body['message'] === 'string') {
-        return {
-          statusCode: typeof body['statusCode'] === 'number' ? body['statusCode'] : undefined,
-          message: body['message'],
-          errors: this.isApiErrorMap(body['errors']) ? (body['errors'] as ApiErrorMap) : undefined,
-        };
-      }
-    }
-
-    const plainErr = err as Record<string, unknown>;
-    if (plainErr['success'] === false && typeof plainErr['message'] === 'string') {
-      return {
-        message: plainErr['message'],
-        errors: this.isApiErrorMap(plainErr['errors']) ? (plainErr['errors'] as ApiErrorMap) : undefined,
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * Type guard: returns `true` if `value` is a non-null object.
-   * @param value - Value to test.
-   */
-  private isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
-  }
-
-  /**
-   * Type guard: returns `true` if `value` is an `ApiErrorMap` —
-   * an object whose every entry is an array of objects with a `message` string.
-   * @param value - Value to test.
-   */
-  private isApiErrorMap(value: unknown): value is ApiErrorMap {
-    if (!this.isObject(value)) return false;
-    return Object.values(value).every(
-      (fieldErrors) =>
-        Array.isArray(fieldErrors) &&
-        fieldErrors.every((error: unknown) => this.isObject(error) && typeof error['message'] === 'string'),
-    );
-  }
-
-  /**
-   * Returns `true` when the HTTP error body contains `data.validationSummary` with a positive
-   * `excelRowCount`, indicating the backend persisted the upload and generated a validation
-   * summary despite returning an HTTP error. Used to decide whether to reload the form after
-   * a validate-excel HTTP failure.
-   * @param err - Raw thrown value from the HTTP observable.
-   */
-  private hasPersistedValidationData(err: unknown): boolean {
-    if (!this.isObject(err)) return false;
-    const body = (err as { error?: unknown }).error;
-    if (!this.isObject(body)) return false;
-    const data = (body as Record<string, unknown>)['data'];
-    if (!this.isObject(data)) return false;
-    const summary = (data as Record<string, unknown>)['validationSummary'];
-    if (!this.isObject(summary)) return false;
-    return Number((summary as Record<string, unknown>)['excelRowCount'] ?? 0) > 0;
   }
 
   /**
@@ -786,18 +763,20 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /** Tears down the current form and field state, then fetches fresh data from the API. */
   private reloadForm(): void {
+    this.resetFormSubscriptions();
     this.form = this.fb.group({});
     this.fields.set([]);
     this.loadForm();
   }
 
-  /**
-   * Returns `true` if `value` represents a non-empty file object (has a fileName or fileUrl).
-   * Used to detect when the file control is cleared vs populated.
-   */
-  private hasFileValue(value: unknown): boolean {
-    const file = value as { fileName?: string; fileUrl?: string } | null | undefined;
-    return !!file?.fileName || !!file?.fileUrl;
+  /** Ends subscriptions that are bound to controls from the current dynamic form instance. */
+  private resetFormSubscriptions(): void {
+    this.formSubscriptionsTeardown$.next();
+  }
+
+  /** Builds the draft payload data from currently visible dynamic-form controls. */
+  private getVisibleEulbPayloadData(): EulbFormPayloadData {
+    return buildEulbFormPayloadData(this.visibilityService.getVisiblePayload(this.form, this.fields()));
   }
 
   /**
@@ -809,19 +788,21 @@ export class ElectedBodyStatusComponent implements OnInit {
     const fileControl = this.form.get('electedBodyExcelFile') as FormControl | null;
     if (!fileControl) return;
 
-    fileControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((currentValue: unknown) => {
-      if (this.isHydratingForm || this.isRestoringExcelFile) return;
-      if (!this.hasFileValue(currentValue)) {
-        this.clearApiErrorsForField('electedBodyExcelFile');
-      }
-      if (this.isDeleteExcelDialogOpen || this.isDeleting()) return;
-      if (!this.lastPersistedExcelFile) return;
-      if (this.hasFileValue(currentValue)) return;
-      if (!this.canEdit()) return;
-      if (this.isLoading() || this.isValidating() || this.isSubmitting()) return;
+    fileControl.valueChanges
+      .pipe(takeUntil(this.formSubscriptionsTeardown$), takeUntilDestroyed(this.destroyRef))
+      .subscribe((currentValue: unknown) => {
+        if (this.isHydratingForm || this.isRestoringExcelFile) return;
+        if (!hasEulbFileValue(currentValue)) {
+          this.clearApiErrorsForField('electedBodyExcelFile');
+        }
+        if (this.isDeleteExcelDialogOpen || this.isDeleting()) return;
+        if (!this.lastPersistedExcelFile) return;
+        if (hasEulbFileValue(currentValue)) return;
+        if (!this.canEdit()) return;
+        if (this.isLoading() || this.isValidating() || this.isSubmitting()) return;
 
-      this.confirmAndDeleteExcel();
-    });
+        this.confirmAndDeleteExcel();
+      });
   }
 
   /**
@@ -864,7 +845,7 @@ export class ElectedBodyStatusComponent implements OnInit {
    */
   private restoreExcelFileControl(): void {
     const fileControl = this.form.get('electedBodyExcelFile') as FormControl | null;
-    if (!fileControl || !this.lastPersistedExcelFile) return;
+    if (!fileControl || !isValidEulbFileValue(this.lastPersistedExcelFile)) return;
     this.isRestoringExcelFile = true;
     try {
       fileControl.setValue(this.lastPersistedExcelFile);
@@ -904,8 +885,8 @@ export class ElectedBodyStatusComponent implements OnInit {
           this.reloadForm();
         },
         error: (err: unknown) => {
-          const response = this.extractApiErrorResponse(err);
-          const status = (err as { status?: number })?.status;
+          const response = extractApiErrorResponse(err);
+          const status = getHttpStatus(err);
           const message =
             status === 400 || status === 403
               ? (response?.message ?? 'Failed to remove uploaded Excel. Please try again.')

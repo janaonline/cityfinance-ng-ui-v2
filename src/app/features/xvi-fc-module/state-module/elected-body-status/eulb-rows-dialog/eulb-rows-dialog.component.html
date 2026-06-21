@@ -94,7 +94,8 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of rows(); track row._id) {
+          @for (vm of rowViewModels(); track vm.row._id) {
+            @let row = vm.row;
             <tr>
               @if (editingRowId() === row._id) {
                 <!-- Edit mode -->
@@ -222,17 +223,17 @@
                 <td class="small fw-medium">{{ row.ulbName }}</td>
                 <td
                   class="small"
-                  [class.eulb-cell-invalid]="hasCellError(row, 'electedBodyStatus')"
-                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'electedBodyStatus')"
-                  [matTooltip]="getCellErrorText(row, 'electedBodyStatus')"
-                  [matTooltipDisabled]="!hasCellError(row, 'electedBodyStatus')"
+                  [class.eulb-cell-invalid]="vm.cellHasError['electedBodyStatus']"
+                  [class.cursor-pointer]="canEditRows && vm.cellHasError['electedBodyStatus']"
+                  [matTooltip]="vm.cellErrorText['electedBodyStatus']"
+                  [matTooltipDisabled]="!vm.cellHasError['electedBodyStatus']"
                   matTooltipPosition="above"
                   [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'electedBodyStatus')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
                     <span class="text-truncate min-w-0">{{ row.electedBodyStatus ?? '-' }}</span>
-                    @if (hasCellError(row, 'electedBodyStatus')) {
+                    @if (vm.cellHasError['electedBodyStatus']) {
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
@@ -246,10 +247,10 @@
                 </td>
                 <td
                   class="small text-nowrap"
-                  [class.eulb-cell-invalid]="hasCellError(row, 'dateOfConstitution')"
-                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'dateOfConstitution')"
-                  [matTooltip]="getCellErrorText(row, 'dateOfConstitution')"
-                  [matTooltipDisabled]="!hasCellError(row, 'dateOfConstitution')"
+                  [class.eulb-cell-invalid]="vm.cellHasError['dateOfConstitution']"
+                  [class.cursor-pointer]="canEditRows && vm.cellHasError['dateOfConstitution']"
+                  [matTooltip]="vm.cellErrorText['dateOfConstitution']"
+                  [matTooltipDisabled]="!vm.cellHasError['dateOfConstitution']"
                   matTooltipPosition="above"
                   [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'dateOfConstitution')"
@@ -258,7 +259,7 @@
                     <span class="text-truncate min-w-0">{{
                       (row.dateOfConstitution | date: 'dd MMM yyyy' : '+0530') ?? '-'
                     }}</span>
-                    @if (hasCellError(row, 'dateOfConstitution')) {
+                    @if (vm.cellHasError['dateOfConstitution']) {
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
@@ -272,10 +273,10 @@
                 </td>
                 <td
                   class="small text-nowrap"
-                  [class.eulb-cell-invalid]="hasCellError(row, 'dateOfExpiry')"
-                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'dateOfExpiry')"
-                  [matTooltip]="getCellErrorText(row, 'dateOfExpiry')"
-                  [matTooltipDisabled]="!hasCellError(row, 'dateOfExpiry')"
+                  [class.eulb-cell-invalid]="vm.cellHasError['dateOfExpiry']"
+                  [class.cursor-pointer]="canEditRows && vm.cellHasError['dateOfExpiry']"
+                  [matTooltip]="vm.cellErrorText['dateOfExpiry']"
+                  [matTooltipDisabled]="!vm.cellHasError['dateOfExpiry']"
                   matTooltipPosition="above"
                   [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'dateOfExpiry')"
@@ -284,7 +285,7 @@
                     <span class="text-truncate min-w-0">{{
                       (row.dateOfExpiry | date: 'dd MMM yyyy' : '+0530') ?? '-'
                     }}</span>
-                    @if (hasCellError(row, 'dateOfExpiry')) {
+                    @if (vm.cellHasError['dateOfExpiry']) {
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
@@ -298,17 +299,17 @@
                 </td>
                 <td
                   class="small"
-                  [class.eulb-cell-invalid]="hasCellError(row, 'remarks')"
-                  [class.cursor-pointer]="canEditRows && hasCellError(row, 'remarks')"
-                  [matTooltip]="getCellErrorText(row, 'remarks')"
-                  [matTooltipDisabled]="!hasCellError(row, 'remarks')"
+                  [class.eulb-cell-invalid]="vm.cellHasError['remarks']"
+                  [class.cursor-pointer]="canEditRows && vm.cellHasError['remarks']"
+                  [matTooltip]="vm.cellErrorText['remarks']"
+                  [matTooltipDisabled]="!vm.cellHasError['remarks']"
                   matTooltipPosition="above"
                   [matTooltipShowDelay]="100"
                   (click)="canEditRows && startEditAtField(row, 'remarks')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-2 w-100">
                     <span class="text-truncate min-w-0">{{ row.remarks || '-' }}</span>
-                    @if (hasCellError(row, 'remarks')) {
+                    @if (vm.cellHasError['remarks']) {
                       <button
                         type="button"
                         class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"

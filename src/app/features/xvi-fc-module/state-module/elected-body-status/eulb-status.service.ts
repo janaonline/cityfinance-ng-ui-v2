@@ -7,6 +7,7 @@ import {
   EulbFinalSubmitPayload,
   EulbFormApiResponse,
   EulbFormResponseData,
+  EulbMutationApiResponse,
   EulbRevalidateExcelResponse,
   EulbRowsApiResponse,
   EulbRowsQuery,
@@ -16,6 +17,20 @@ import {
   EulbValidateExcelPayload,
   EulbValidateExcelResponse,
 } from './eulb-status.models';
+import { isRecord } from './eulb-status.utils';
+
+function ensureSuccessfulResponse<T>(response: T): T {
+  if (isRecord(response) && response['success'] === false) {
+    throw response;
+  }
+
+  return response;
+}
+
+function ensureSuccessfulVoidResponse(response: EulbMutationApiResponse): void {
+  ensureSuccessfulResponse(response);
+  return undefined;
+}
 
 /** HTTP service for all Elected Urban Local Bodies API endpoints. */
 @Injectable({ providedIn: 'root' })
@@ -32,8 +47,8 @@ export class EulbStatusService {
   getFormData(stateId: string, yearId: string): Observable<EulbFormResponseData> {
     return this.http.get<EulbFormApiResponse>(`${this.baseUrl}${stateId}/${yearId}`).pipe(
       map((res) => {
-        if (!res.success) throw new Error(res.message ?? 'Failed to load form data.');
-        return res.data;
+        const response = ensureSuccessfulResponse(res);
+        return response.data;
       }),
     );
   }
@@ -62,7 +77,9 @@ export class EulbStatusService {
    * @param payload - Draft payload including `stateId`, `yearId`, and partial form data.
    */
   saveDraft(payload: EulbSaveDraftPayload): Observable<void> {
-    return this.http.post<{ message?: string }>(`${this.baseUrl}save-draft`, payload).pipe(map(() => undefined));
+    return this.http
+      .post<EulbMutationApiResponse>(`${this.baseUrl}save-draft`, payload)
+      .pipe(map(ensureSuccessfulVoidResponse));
   }
 
   /**
@@ -72,7 +89,9 @@ export class EulbStatusService {
    * @param payload - Validation payload including the file reference and expected ULB count.
    */
   validateExcel(payload: EulbValidateExcelPayload): Observable<EulbValidateExcelResponse> {
-    return this.http.post<EulbValidateExcelResponse>(`${this.baseUrl}validate-excel`, payload);
+    return this.http
+      .post<EulbValidateExcelResponse>(`${this.baseUrl}validate-excel`, payload)
+      .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 
   /**
@@ -80,7 +99,9 @@ export class EulbStatusService {
    * @param payload - Full submit payload including `stateId`, `yearId`, and all required fields.
    */
   finalSubmit(payload: EulbFinalSubmitPayload): Observable<void> {
-    return this.http.post<{ message?: string }>(`${this.baseUrl}final-submit`, payload).pipe(map(() => undefined));
+    return this.http
+      .post<EulbMutationApiResponse>(`${this.baseUrl}final-submit`, payload)
+      .pipe(map(ensureSuccessfulVoidResponse));
   }
 
   /**
@@ -98,7 +119,9 @@ export class EulbStatusService {
     if (query.rowType) params = params.set('rowType', query.rowType);
     if (query.errorField) params = params.set('errorField', query.errorField);
 
-    return this.http.get<EulbRowsApiResponse>(`${this.baseUrl}${stateId}/${yearId}/rows`, { params });
+    return this.http
+      .get<EulbRowsApiResponse>(`${this.baseUrl}${stateId}/${yearId}/rows`, { params })
+      .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 
   /**
@@ -107,7 +130,9 @@ export class EulbStatusService {
    * @param yearId - The finance commission year identifier.
    */
   deleteUploadedExcel(stateId: string, yearId: string): Observable<EulbDeleteUploadedExcelResponse> {
-    return this.http.delete<EulbDeleteUploadedExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/uploaded-excel`);
+    return this.http
+      .delete<EulbDeleteUploadedExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/uploaded-excel`)
+      .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 
   /**
@@ -118,9 +143,11 @@ export class EulbStatusService {
    * @param ulbCount - The expected ULB count to validate against.
    */
   revalidateUploadedExcel(stateId: string, yearId: string, ulbCount: number): Observable<EulbRevalidateExcelResponse> {
-    return this.http.post<EulbRevalidateExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/revalidate-excel`, {
-      ulbCount,
-    });
+    return this.http
+      .post<EulbRevalidateExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/revalidate-excel`, {
+        ulbCount,
+      })
+      .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 
   /**
@@ -136,6 +163,8 @@ export class EulbStatusService {
     rowId: string,
     payload: EulbUpdateRowPayload,
   ): Observable<EulbUpdateRowResponse> {
-    return this.http.patch<EulbUpdateRowResponse>(`${this.baseUrl}${stateId}/${yearId}/rows/${rowId}`, payload);
+    return this.http
+      .patch<EulbUpdateRowResponse>(`${this.baseUrl}${stateId}/${yearId}/rows/${rowId}`, payload)
+      .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 }

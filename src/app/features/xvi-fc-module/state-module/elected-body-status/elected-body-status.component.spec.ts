@@ -1,21 +1,88 @@
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { RouterTestingModule } from '@angular/router/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { FormControl, Validators } from '@angular/forms';
-import { of } from 'rxjs';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AbstractControl } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { MatDialog } from '@angular/material/dialog';
+import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
+import {
+  SAVE_AS_DRAFT_DIALOG_DEFAULTS,
+  SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+} from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
-import { SUBMIT_CONFIRM_DIALOG_DEFAULTS } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
+import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
+import { FormActor, FormProgressComponent } from '../../shared/form-progress/form-progress.component';
+import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { ElectedBodyStatusComponent } from './elected-body-status.component';
+import {
+  EulbFileValue,
+  EulbFinalSubmitPayload,
+  EulbFormResponseData,
+  EulbSaveDraftPayload,
+} from './eulb-status.models';
+import { EulbStatusService } from './eulb-status.service';
+
+@Component({ selector: 'app-dynamic-form', standalone: true, template: '' })
+class MockDynamicFormComponent {
+  @Input() field: unknown;
+  @Input() group: unknown;
+  @Input() mode: unknown;
+  @Output() supportingAction = new EventEmitter<FieldSupportingActionEvent>();
+}
+
+@Component({ selector: 'app-pre-loader', standalone: true, template: '' })
+class MockPreLoaderComponent {}
+
+@Component({ selector: 'app-form-progress', standalone: true, template: '' })
+class MockFormProgressComponent {
+  @Input() formType: unknown;
+  @Input() formStatus: unknown;
+  @Input() actors: FormActor[] = [];
+}
 
 describe('ElectedBodyStatusComponent', () => {
+  const stateId = 'state-1';
+  const yearId = 'year-1';
+  const fileValue: EulbFileValue = {
+    fileName: 'eulb.xlsx',
+    fileUrl: 'https://example.test/eulb.xlsx',
+    fileSize: 1024,
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  };
+
   let component: ElectedBodyStatusComponent;
   let fixture: ComponentFixture<ElectedBodyStatusComponent>;
+  let eulbService: jasmine.SpyObj<EulbStatusService>;
+  let moduleService: jasmine.SpyObj<XvifcModuleService>;
+  let dialog: jasmine.SpyObj<MatDialog>;
   let confirmDialogService: jasmine.SpyObj<ConfirmDialogService>;
   let utilityService: jasmine.SpyObj<UtilityService>;
 
   beforeEach(async () => {
+    localStorage.setItem('userData', JSON.stringify({ state: stateId }));
+
+    eulbService = jasmine.createSpyObj<EulbStatusService>('EulbStatusService', [
+      'getFormData',
+      'saveDraft',
+      'finalSubmit',
+      'validateExcel',
+      'revalidateUploadedExcel',
+      'downloadTemplate',
+      'downloadErrorSheet',
+      'deleteUploadedExcel',
+    ]);
+    eulbService.getFormData.and.returnValue(of(createFormResponse()));
+    eulbService.saveDraft.and.returnValue(of(undefined));
+    eulbService.finalSubmit.and.returnValue(of(undefined));
+
+    moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
+    moduleService.yearId.and.returnValue(yearId);
+
+    dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
+
     confirmDialogService = jasmine.createSpyObj<ConfirmDialogService>('ConfirmDialogService', ['confirm']);
     confirmDialogService.confirm.and.returnValue(of(false));
 
@@ -26,193 +93,262 @@ describe('ElectedBodyStatusComponent', () => {
     ]);
 
     await TestBed.configureTestingModule({
+      imports: [ElectedBodyStatusComponent],
       providers: [
-        { provide: MatDialogRef, useValue: { close: () => undefined } },
-        { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: EulbStatusService, useValue: eulbService },
+        { provide: XvifcModuleService, useValue: moduleService },
+        { provide: MatDialog, useValue: dialog },
         { provide: ConfirmDialogService, useValue: confirmDialogService },
         { provide: UtilityService, useValue: utilityService },
       ],
-      imports: [HttpClientTestingModule, RouterTestingModule, ElectedBodyStatusComponent],
-    }).compileComponents();
+    })
+      .overrideComponent(ElectedBodyStatusComponent, {
+        remove: { imports: [DynamicFormComponent, PreLoaderComponent, FormProgressComponent] },
+        add: { imports: [MockDynamicFormComponent, MockPreLoaderComponent, MockFormProgressComponent] },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(ElectedBodyStatusComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  // ─── Initialization ────────────────────────────────────────────────────────
+  afterEach(() => {
+    localStorage.removeItem('userData');
+  });
 
-  it('should create', () => {
+  it('creates the component and loads the current EULB form from services', () => {
     expect(component).toBeTruthy();
-  });
-
-  it('initializes form controls after loading', fakeAsync(() => {
-    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
-    tick(1);
-    fixture.detectChanges();
-
+    expect(eulbService.getFormData).toHaveBeenCalledOnceWith(stateId, yearId);
     expect(component.isLoading()).toBeFalse();
-    expect(component.fields().length).toBe(3);
+    expect(component.fields().map((field) => field.key)).toEqual([
+      'ulbCount',
+      'electedBodyExcelFile',
+      'checkboxConfirmation',
+    ]);
     expect(Object.keys(component.form.controls)).toEqual(['ulbCount', 'electedBodyExcelFile', 'checkboxConfirmation']);
-  }));
-
-  it('shows preloader while loading and form after load', fakeAsync(() => {
-    expect(component.isLoading()).toBeTrue();
-    expect(fixture.nativeElement.querySelector('app-pre-loader')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('form')).toBeNull();
-
-    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
-    tick(1);
-    fixture.detectChanges();
-
-    expect(component.isLoading()).toBeFalse();
-    expect(fixture.nativeElement.querySelector('form')).toBeTruthy();
-  }));
-
-  // ─── data-cy selectors ─────────────────────────────────────────────────────
-
-  it('cancel button has data-cy="elected-body-status-cancel-test"', () => {
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[data-cy="elected-body-status-cancel-test"]');
-    expect(btn).toBeTruthy();
-    expect(btn.type).toBe('button');
   });
 
-  it('submit button has data-cy="elected-body-status-submit-test"', () => {
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[data-cy="elected-body-status-submit-test"]');
-    expect(btn).toBeTruthy();
-    expect(btn.type).toBe('submit');
+  it('uses the current data-cy selectors for footer actions', () => {
+    expect(fixture.debugElement.query(By.css('[data-cy="eulb-status-cancel-test"]'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-cy="eulb-status-save-draft-test"]'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-cy="eulb-status-final-submit-test"]'))).not.toBeNull();
   });
 
-  // ─── Validation ────────────────────────────────────────────────────────────
-
-  it('checkboxConfirmation uses requiredTrue validation', fakeAsync(() => {
-    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
-    tick(1);
-    fixture.detectChanges();
-
-    const ctrl = component.form.get('checkboxConfirmation') as unknown as FormControl;
-    expect(ctrl.value).toBeFalse();
-    ctrl.markAsTouched();
-    expect(ctrl.hasError('required')).toBeTrue();
-
-    ctrl.setValue(true);
-    ctrl.updateValueAndValidity();
-    expect(ctrl.valid).toBeTrue();
-  }));
-
-  // ─── onSubmit() ────────────────────────────────────────────────────────────
-
-  it('does not open confirmation dialog when form is invalid', () => {
-    component.form.addControl('required', new FormControl(null, Validators.required));
-
-    component.onSubmit();
+  it('blocks save-as-draft when required confirmation is not checked', () => {
+    component.onSubmit('saveAsDraft');
 
     expect(confirmDialogService.confirm).not.toHaveBeenCalled();
+    expect(eulbService.saveDraft).not.toHaveBeenCalled();
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
+      'Please correct the errors in the form before saving as draft.',
+      'snackbar-danger',
+    );
   });
 
-  it('marks all fields as touched and shows error snackbar when form is invalid', () => {
-    component.form.addControl('required', new FormControl(null, Validators.required));
-    const markTouchedSpy = spyOn(component.form, 'markAllAsTouched').and.callThrough();
+  it('opens the save-as-draft confirmation and sends the current draft payload when confirmed', () => {
+    setControlValue('checkboxConfirmation', true);
+    confirmDialogService.confirm.and.returnValue(of(true));
 
-    component.onSubmit();
+    component.onSubmit('saveAsDraft');
 
-    expect(markTouchedSpy).toHaveBeenCalledTimes(1);
+    expect(confirmDialogService.confirm).toHaveBeenCalledOnceWith(SAVE_AS_DRAFT_DIALOG_DEFAULTS, undefined);
+    expect(eulbService.saveDraft).toHaveBeenCalledTimes(1);
+
+    const payload: EulbSaveDraftPayload = eulbService.saveDraft.calls.mostRecent().args[0];
+    expect(payload).toEqual({
+      stateId,
+      yearId,
+      data: {
+        ulbCount: undefined,
+        electedBodyExcelFile: undefined,
+        checkboxConfirmation: true,
+      },
+    });
+  });
+
+  it('handles save-as-draft success:false as an error without showing success or reloading', () => {
+    eulbService.saveDraft.and.returnValue(throwError(() => createApiFailure('Draft rejected by backend.')));
+    setControlValue('checkboxConfirmation', true);
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    component.onSubmit('saveAsDraft');
+
+    expect(eulbService.saveDraft).toHaveBeenCalledTimes(1);
+    expect(eulbService.getFormData).toHaveBeenCalledTimes(1);
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Draft rejected by backend.', 'snackbar-danger');
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith('Draft saved successfully.');
+  });
+
+  it('blocks final submit when required controls are invalid', () => {
+    component.onSubmit('finalSubmit');
+
+    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
+    expect(eulbService.finalSubmit).not.toHaveBeenCalled();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
       'Please correct the errors in the form before submitting.',
       'snackbar-danger',
     );
   });
 
-  it('marks required fields touched on invalid submit after form loads', fakeAsync(() => {
-    component.getQuestions(); // re-schedule timer inside fakeAsync zone so tick(1) can fire it
-    tick(1);
-    fixture.detectChanges();
+  it('opens the final-submit confirmation with the current submit action', () => {
+    setValidFinalSubmitValues(15);
 
-    component.onSubmit();
+    component.onSubmit('finalSubmit');
 
-    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
-    expect(component.form.get('ulbCount')?.touched).toBeTrue();
-    expect(component.form.get('ulbCount')?.invalid).toBeTrue();
-    expect(component.form.get('checkboxConfirmation')?.touched).toBeTrue();
-    expect(component.form.get('checkboxConfirmation')?.invalid).toBeTrue();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
+    expect(confirmDialogService.confirm).toHaveBeenCalledOnceWith(SUBMIT_CONFIRM_DIALOG_DEFAULTS, undefined);
+    expect(eulbService.finalSubmit).not.toHaveBeenCalled();
+  });
+
+  it('sends a complete, typed final-submit payload when confirmation is accepted', () => {
+    setValidFinalSubmitValues('15');
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    component.onSubmit('finalSubmit');
+
+    expect(eulbService.finalSubmit).toHaveBeenCalledTimes(1);
+    const payload: EulbFinalSubmitPayload = eulbService.finalSubmit.calls.mostRecent().args[0];
+    expect(payload).toEqual({
+      stateId,
+      yearId,
+      data: {
+        ulbCount: 15,
+        electedBodyExcelFile: fileValue,
+        checkboxConfirmation: true,
+      },
+    });
+  });
+
+  it('handles final-submit success:false errors without showing success or reloading', () => {
+    eulbService.finalSubmit.and.returnValue(
+      throwError(() =>
+        createApiFailure('Final submit rejected by backend.', {
+          ulbCount: [{ field: 'ulbCount', message: 'ULB count is invalid.', code: 'invalidUlbCount' }],
+        }),
+      ),
+    );
+    setValidFinalSubmitValues(15);
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    component.onSubmit('finalSubmit');
+
+    expect(eulbService.finalSubmit).toHaveBeenCalledTimes(1);
+    expect(eulbService.getFormData).toHaveBeenCalledTimes(1);
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Final submit rejected by backend.', 'snackbar-danger');
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith('Form submitted successfully.');
+    expect(getControl('ulbCount')?.hasError('invalidUlbCount')).toBeTrue();
+    expect(getControl('ulbCount')?.dirty).toBeTrue();
+    expect(getControl('ulbCount')?.touched).toBeTrue();
+  });
+
+  it('does not call final-submit API when the final payload builder cannot narrow values', () => {
+    setControlValue('electedBodyExcelFile', fileValue);
+    setControlValue('ulbCount', 'not-a-number');
+    setControlValue('checkboxConfirmation', true);
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    component.onSubmit('finalSubmit');
+
+    expect(confirmDialogService.confirm).toHaveBeenCalledOnceWith(SUBMIT_CONFIRM_DIALOG_DEFAULTS, undefined);
+    expect(eulbService.finalSubmit).not.toHaveBeenCalled();
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
       'Please correct the errors in the form before submitting.',
       'snackbar-danger',
     );
-  }));
-
-  it('opens confirmation dialog with submit-specific content when form is valid', () => {
-    confirmDialogService.confirm.and.returnValue(of(false));
-
-    component.onSubmit();
-
-    expect(confirmDialogService.confirm).toHaveBeenCalledTimes(1);
-    const dialogData = confirmDialogService.confirm.calls.mostRecent().args[0];
-    expect(dialogData).toEqual(SUBMIT_CONFIRM_DIALOG_DEFAULTS);
   });
 
-  it('opens confirmation dialog with valid loaded form', fakeAsync(() => {
-    tick(1);
-    fixture.detectChanges();
+  it('does not keep delete-trigger subscriptions from a previous form after reload', () => {
+    const previousFileControl = getControl('electedBodyExcelFile');
+    expect(previousFileControl).withContext('Expected the initial file control to exist').not.toBeNull();
 
-    (component.form.get('ulbCount') as unknown as FormControl)?.setValue(50);
-    (component.form.get('checkboxConfirmation') as unknown as FormControl)?.setValue(true);
-    fixture.detectChanges();
-
-    expect(component.form.valid).toBeTrue();
-
-    component.onSubmit();
-
-    expect(confirmDialogService.confirm).toHaveBeenCalledTimes(1);
-    const dialogData = confirmDialogService.confirm.calls.mostRecent().args[0];
-    expect(dialogData).toEqual(SUBMIT_CONFIRM_DIALOG_DEFAULTS);
-  }));
-
-  it('submits form and shows success snackbar when dialog is confirmed', () => {
-    const logSpy = spyOn(console, 'log');
+    eulbService.getFormData.and.returnValue(of(createFormResponse(fileValue)));
+    setValidFinalSubmitValues(15);
     confirmDialogService.confirm.and.returnValue(of(true));
 
-    component.onSubmit();
+    component.onSubmit('finalSubmit');
 
-    expect(logSpy).toHaveBeenCalled();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submitted successfully!');
-  });
-
-  it('does not submit or show success snackbar when dialog is dismissed', () => {
-    const logSpy = spyOn(console, 'log');
+    expect(eulbService.getFormData).toHaveBeenCalledTimes(2);
+    confirmDialogService.confirm.calls.reset();
     confirmDialogService.confirm.and.returnValue(of(false));
 
-    component.onSubmit();
+    previousFileControl?.setValue(null);
 
-    expect(logSpy).not.toHaveBeenCalled();
-    expect(utilityService.triggerSnackbar).not.toHaveBeenCalled();
+    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
   });
 
-  // ─── onCancel() ────────────────────────────────────────────────────────────
+  function setValidFinalSubmitValues(ulbCount: number | string): void {
+    setControlValue('electedBodyExcelFile', fileValue);
+    setControlValue('ulbCount', ulbCount);
+    setControlValue('checkboxConfirmation', true);
+  }
 
-  it('opens the confirmation dialog when onCancel is called', () => {
-    confirmDialogService.confirm.and.returnValue(of(false));
-    component.onCancel();
-    expect(confirmDialogService.confirm).toHaveBeenCalledTimes(1);
-  });
+  function setControlValue(key: string, value: unknown): void {
+    const control = getControl(key);
+    expect(control).withContext(`Expected control ${key} to exist`).not.toBeNull();
+    control?.setValue(value);
+    control?.markAsDirty();
+    control?.updateValueAndValidity();
+    fixture.detectChanges();
+  }
 
-  it('resets form and shows cancellation snackbar when cancel dialog is confirmed', () => {
-    confirmDialogService.confirm.and.returnValue(of(true));
-    const resetSpy = spyOn(component.form, 'reset');
+  function getControl(key: string): AbstractControl<unknown, unknown> | null {
+    return component.form.get(key);
+  }
 
-    component.onCancel();
+  function createApiFailure(
+    message: string,
+    errors: Record<string, { message: string; field?: string; code?: string }[]> = {},
+  ) {
+    return {
+      success: false,
+      message,
+      errors,
+    };
+  }
 
-    expect(resetSpy).toHaveBeenCalledTimes(1);
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Form submission cancelled.', 'snackbar-danger');
-  });
+  function createFormResponse(restoredFileValue: EulbFileValue | null = null): EulbFormResponseData {
+    return {
+      _id: 'eulb-form-1',
+      formName: 'Elected Urban Local Bodies',
+      stateId,
+      yearId,
+      stateName: 'Test State',
+      currentFormStatus: 1,
+      currentFormStatusLabel: 'In Progress',
+      permissions: {
+        canView: true,
+        canEdit: true,
+        canFinalSubmit: true,
+      },
+      actors: [],
+      rowEditFields: [],
+      questions: createQuestions(restoredFileValue),
+    };
+  }
 
-  it('does not reset form or show snackbar when cancel dialog is dismissed', () => {
-    confirmDialogService.confirm.and.returnValue(of(false));
-    const resetSpy = spyOn(component.form, 'reset');
-
-    component.onCancel();
-
-    expect(resetSpy).not.toHaveBeenCalled();
-    expect(utilityService.triggerSnackbar).not.toHaveBeenCalled();
-  });
+  function createQuestions(restoredFileValue: EulbFileValue | null): ConditionalFieldConfig[] {
+    return [
+      {
+        label: 'ULB count',
+        key: 'ulbCount',
+        formFieldType: 'number',
+        value: null,
+        validations: [{ name: 'required', validator: true, message: 'ULB count is required.' }],
+      },
+      {
+        label: 'Elected body Excel file',
+        key: 'electedBodyExcelFile',
+        formFieldType: 'file',
+        value: restoredFileValue,
+        validations: [{ name: 'required', validator: true, message: 'Excel file is required.' }],
+      },
+      {
+        label: 'Confirmation',
+        key: 'checkboxConfirmation',
+        formFieldType: 'checkbox',
+        value: false,
+        validations: [{ name: 'requiredTrue', validator: true, message: 'Confirmation is required.' }],
+      },
+    ];
+  }
 });
