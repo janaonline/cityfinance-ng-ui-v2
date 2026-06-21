@@ -99,6 +99,13 @@ describe('EULB status payload builders', () => {
     });
   });
 
+  it('returns an empty array when the error body contains no recognisable error entries', () => {
+    expect(parseEulbRowUpdateErrors(null)).toEqual([]);
+    expect(parseEulbRowUpdateErrors({})).toEqual([]);
+    expect(parseEulbRowUpdateErrors({ error: {} })).toEqual([]);
+    expect(parseEulbRowUpdateErrors({ errors: [] })).toEqual([]);
+  });
+
   it('parses row update API errors from HTTP and plain backend bodies', () => {
     const httpError = {
       error: {

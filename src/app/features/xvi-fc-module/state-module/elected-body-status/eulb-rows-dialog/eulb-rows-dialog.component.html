@@ -104,81 +104,93 @@
                 <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '-' }}</td>
                 <td class="small fw-medium text-nowrap">{{ row.ulbName }}</td>
                 <td>
-                  <select
-                    class="form-select form-select-sm eulb-edit-control"
-                    [class.is-invalid]="hasEditFieldError('electedBodyStatus')"
-                    [matTooltip]="getEditFieldErrorText('electedBodyStatus')"
-                    [matTooltipDisabled]="!hasEditFieldError('electedBodyStatus')"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    aria-label="Elected Body Status"
-                    [attr.aria-invalid]="hasEditFieldError('electedBodyStatus')"
-                    data-eulb-edit-field="electedBodyStatus"
-                    [formControl]="$any(editForm.get('electedBodyStatus'))"
-                  >
-                    <option value="">- Select -</option>
-                    @for (opt of electedBodyStatusOptions; track opt) {
-                      <option [value]="opt">{{ opt }}</option>
-                    }
-                  </select>
+                  @let electedBodyStatusCtrl = getEditFormControl('electedBodyStatus');
+                  @if (electedBodyStatusCtrl) {
+                    <select
+                      class="form-select form-select-sm eulb-edit-control"
+                      [class.is-invalid]="hasEditFieldError('electedBodyStatus')"
+                      [matTooltip]="getEditFieldErrorText('electedBodyStatus')"
+                      [matTooltipDisabled]="!hasEditFieldError('electedBodyStatus')"
+                      matTooltipPosition="above"
+                      [matTooltipShowDelay]="100"
+                      aria-label="Elected Body Status"
+                      [attr.aria-invalid]="hasEditFieldError('electedBodyStatus')"
+                      data-eulb-edit-field="electedBodyStatus"
+                      [formControl]="electedBodyStatusCtrl"
+                    >
+                      <option value="">- Select -</option>
+                      @for (opt of electedBodyStatusOptions; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                      }
+                    </select>
+                  }
                 </td>
                 <td
                   [matTooltip]="getEditFieldDisabledReason('dateOfConstitution')"
                   [matTooltipDisabled]="isEditFieldEnabled('dateOfConstitution')"
                   matTooltipPosition="above"
                 >
-                  <input
-                    type="date"
-                    class="form-control form-control-sm eulb-edit-control"
-                    [class.is-invalid]="hasEditFieldError('dateOfConstitution')"
-                    [attr.min]="getEditDateMin('dateOfConstitution')"
-                    [attr.max]="getEditDateMax('dateOfConstitution')"
-                    [matTooltip]="getEditFieldErrorText('dateOfConstitution')"
-                    [matTooltipDisabled]="!hasEditFieldError('dateOfConstitution')"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    aria-label="Date of Constitution"
-                    [attr.aria-invalid]="hasEditFieldError('dateOfConstitution')"
-                    data-eulb-edit-field="dateOfConstitution"
-                    [formControl]="$any(editForm.get('dateOfConstitution'))"
-                  />
+                  @let dateOfConstitutionCtrl = getEditFormControl('dateOfConstitution');
+                  @if (dateOfConstitutionCtrl) {
+                    <input
+                      type="date"
+                      class="form-control form-control-sm eulb-edit-control"
+                      [class.is-invalid]="hasEditFieldError('dateOfConstitution')"
+                      [attr.min]="getEditDateMin('dateOfConstitution')"
+                      [attr.max]="getEditDateMax('dateOfConstitution')"
+                      [matTooltip]="getEditFieldErrorText('dateOfConstitution')"
+                      [matTooltipDisabled]="!hasEditFieldError('dateOfConstitution')"
+                      matTooltipPosition="above"
+                      [matTooltipShowDelay]="100"
+                      aria-label="Date of Constitution"
+                      [attr.aria-invalid]="hasEditFieldError('dateOfConstitution')"
+                      data-eulb-edit-field="dateOfConstitution"
+                      [formControl]="dateOfConstitutionCtrl"
+                    />
+                  }
                 </td>
                 <td
                   [matTooltip]="getEditFieldDisabledReason('dateOfExpiry')"
                   [matTooltipDisabled]="isEditFieldEnabled('dateOfExpiry')"
                   matTooltipPosition="above"
                 >
-                  <input
-                    type="date"
-                    class="form-control form-control-sm eulb-edit-control"
-                    [class.is-invalid]="hasEditFieldError('dateOfExpiry')"
-                    [attr.min]="getEditDateMin('dateOfExpiry')"
-                    [attr.max]="getEditDateMax('dateOfExpiry')"
-                    [matTooltip]="getEditFieldErrorText('dateOfExpiry')"
-                    [matTooltipDisabled]="!hasEditFieldError('dateOfExpiry')"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    aria-label="Date of Expiry"
-                    [attr.aria-invalid]="hasEditFieldError('dateOfExpiry')"
-                    data-eulb-edit-field="dateOfExpiry"
-                    [formControl]="$any(editForm.get('dateOfExpiry'))"
-                  />
+                  @let dateOfExpiryCtrl = getEditFormControl('dateOfExpiry');
+                  @if (dateOfExpiryCtrl) {
+                    <input
+                      type="date"
+                      class="form-control form-control-sm eulb-edit-control"
+                      [class.is-invalid]="hasEditFieldError('dateOfExpiry')"
+                      [attr.min]="getEditDateMin('dateOfExpiry')"
+                      [attr.max]="getEditDateMax('dateOfExpiry')"
+                      [matTooltip]="getEditFieldErrorText('dateOfExpiry')"
+                      [matTooltipDisabled]="!hasEditFieldError('dateOfExpiry')"
+                      matTooltipPosition="above"
+                      [matTooltipShowDelay]="100"
+                      aria-label="Date of Expiry"
+                      [attr.aria-invalid]="hasEditFieldError('dateOfExpiry')"
+                      data-eulb-edit-field="dateOfExpiry"
+                      [formControl]="dateOfExpiryCtrl"
+                    />
+                  }
                 </td>
                 <td>
-                  <input
-                    type="text"
-                    class="form-control form-control-sm eulb-edit-wide"
-                    [class.is-invalid]="hasEditFieldError('remarks')"
-                    [matTooltip]="getEditFieldErrorText('remarks')"
-                    [matTooltipDisabled]="!hasEditFieldError('remarks')"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    aria-label="Remarks"
-                    [attr.aria-invalid]="hasEditFieldError('remarks')"
-                    placeholder="Remarks"
-                    data-eulb-edit-field="remarks"
-                    [formControl]="$any(editForm.get('remarks'))"
-                  />
+                  @let remarksCtrl = getEditFormControl('remarks');
+                  @if (remarksCtrl) {
+                    <input
+                      type="text"
+                      class="form-control form-control-sm eulb-edit-wide"
+                      [class.is-invalid]="hasEditFieldError('remarks')"
+                      [matTooltip]="getEditFieldErrorText('remarks')"
+                      [matTooltipDisabled]="!hasEditFieldError('remarks')"
+                      matTooltipPosition="above"
+                      [matTooltipShowDelay]="100"
+                      aria-label="Remarks"
+                      [attr.aria-invalid]="hasEditFieldError('remarks')"
+                      placeholder="Remarks"
+                      data-eulb-edit-field="remarks"
+                      [formControl]="remarksCtrl"
+                    />
+                  }
                 </td>
                 <td>
                   <span

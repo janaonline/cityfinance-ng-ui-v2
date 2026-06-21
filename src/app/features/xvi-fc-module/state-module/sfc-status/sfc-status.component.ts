@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { distinctUntilChanged, map, startWith } from 'rxjs';
+import { Subject, distinctUntilChanged, map, startWith, takeUntil } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { getYearRangeDuration } from '../../../../core/validators/year-range.validator';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -82,6 +82,8 @@ export class SfcStatusComponent implements OnInit {
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
   /** Tracks error codes injected per field by the most recent failed API response. */
   private readonly serverErrorKeys = new Map<string, string[]>();
+  /** Emits once before each form rebuild so per-form subscriptions are torn down cleanly. */
+  private readonly formSubscriptionsTeardown$ = new Subject<void>();
 
   private get stateId(): string {
     try {
@@ -170,6 +172,7 @@ export class SfcStatusComponent implements OnInit {
       dependencyIndex: this.dependencyIndex,
       destroyRef: this.destroyRef,
       preserveHiddenValue: true,
+      formTeardown$: this.formSubscriptionsTeardown$,
     });
 
     // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
@@ -182,6 +185,7 @@ export class SfcStatusComponent implements OnInit {
           map((v) => getYearRangeDuration(v)),
           distinctUntilChanged(),
           takeUntilDestroyed(this.destroyRef),
+          takeUntil(this.formSubscriptionsTeardown$),
         )
         .subscribe((duration) => {
           durationControl.setValue(duration, { emitEvent: true });
@@ -325,14 +329,13 @@ export class SfcStatusComponent implements OnInit {
     if (!this.isObject(err)) return null;
 
     // HTTP 4xx — Angular puts the parsed body in err.error
-    const httpError = err as { error?: unknown };
-    if (this.isObject(httpError.error)) {
-      const body = httpError.error as Record<string, unknown>;
-      if (typeof body['message'] === 'string') {
+    const errorBody = err['error'];
+    if (this.isObject(errorBody)) {
+      if (typeof errorBody['message'] === 'string') {
         return {
-          statusCode: typeof body['statusCode'] === 'number' ? body['statusCode'] : undefined,
-          message: body['message'],
-          errors: this.isApiErrorMap(body['errors']) ? (body['errors'] as ApiErrorMap) : undefined,
+          statusCode: typeof errorBody['statusCode'] === 'number' ? errorBody['statusCode'] : undefined,
+          message: errorBody['message'],
+          errors: this.isApiErrorMap(errorBody['errors']) ? errorBody['errors'] : undefined,
         };
       }
     }
@@ -341,7 +344,7 @@ export class SfcStatusComponent implements OnInit {
     if (err['success'] === false && typeof err['message'] === 'string') {
       return {
         message: err['message'],
-        errors: this.isApiErrorMap(err['errors']) ? (err['errors'] as ApiErrorMap) : undefined,
+        errors: this.isApiErrorMap(err['errors']) ? err['errors'] : undefined,
       };
     }
 
@@ -440,8 +443,13 @@ export class SfcStatusComponent implements OnInit {
     this.serverErrorKeys.clear();
   }
 
+  private resetFormSubscriptions(): void {
+    this.formSubscriptionsTeardown$.next();
+  }
+
   /** Reset the form group and reload fresh data from the API. */
   private reloadForm(): void {
+    this.resetFormSubscriptions();
     this.form = this.fb.group({});
     this.fields.set([]);
     this.loadForm();

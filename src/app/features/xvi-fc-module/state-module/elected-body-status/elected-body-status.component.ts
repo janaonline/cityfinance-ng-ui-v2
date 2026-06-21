@@ -26,7 +26,6 @@ import {
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import {
   ApiErrorMap,
-  ApiErrorResponse,
   EulbFinalSubmitPayload,
   EulbFileValue,
   EulbFormPayloadData,
@@ -39,8 +38,10 @@ import {
 import {
   buildEulbFinalSubmitPayloadData,
   buildEulbFormPayloadData,
+  extractApiErrorResponse,
+  getHttpStatus,
   hasEulbFileValue,
-  isRecord,
+  hasPersistedValidationData,
   isValidEulbFileValue,
 } from './eulb-status.utils';
 import { EulbStatusService } from './eulb-status.service';
@@ -59,52 +60,6 @@ const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
 } as const;
-
-function isApiErrorMap(value: unknown): value is ApiErrorMap {
-  if (!isRecord(value)) return false;
-  return Object.values(value).every(
-    (fieldErrors) =>
-      Array.isArray(fieldErrors) &&
-      fieldErrors.every((error: unknown) => isRecord(error) && typeof error['message'] === 'string'),
-  );
-}
-
-function extractApiErrorResponse(err: unknown): ApiErrorResponse | null {
-  if (!isRecord(err)) return null;
-
-  const httpErrorBody = err['error'];
-  if (isRecord(httpErrorBody) && typeof httpErrorBody['message'] === 'string') {
-    return {
-      statusCode: typeof httpErrorBody['statusCode'] === 'number' ? httpErrorBody['statusCode'] : undefined,
-      message: httpErrorBody['message'],
-      errors: isApiErrorMap(httpErrorBody['errors']) ? httpErrorBody['errors'] : undefined,
-    };
-  }
-
-  if (err['success'] === false && typeof err['message'] === 'string') {
-    return {
-      message: err['message'],
-      errors: isApiErrorMap(err['errors']) ? err['errors'] : undefined,
-    };
-  }
-
-  return null;
-}
-
-function hasPersistedValidationData(err: unknown): boolean {
-  if (!isRecord(err)) return false;
-  const body = err['error'];
-  if (!isRecord(body)) return false;
-  const data = body['data'];
-  if (!isRecord(data)) return false;
-  const summary = data['validationSummary'];
-  if (!isRecord(summary)) return false;
-  return Number(summary['excelRowCount'] ?? 0) > 0;
-}
-
-function getHttpStatus(err: unknown): number | undefined {
-  return isRecord(err) && typeof err['status'] === 'number' ? err['status'] : undefined;
-}
 
 /**
  * Page component for the Elected Urban Local Bodies status-confirmation form.

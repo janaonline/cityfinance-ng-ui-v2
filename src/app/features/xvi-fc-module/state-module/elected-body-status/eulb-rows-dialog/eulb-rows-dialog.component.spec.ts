@@ -1,10 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { of, Subject, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
+import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
+import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
 import { EulbStatusService } from '../eulb-status.service';
-import { EulbRow, EulbRowsApiResponse, EulbRowsDialogData, EulbUpdateRowResponse } from '../eulb-status.models';
+import {
+  EulbRow,
+  EulbRowsApiResponse,
+  EulbRowsDialogData,
+  EulbUpdateRowResponse,
+  EulbValidationSummary,
+} from '../eulb-status.models';
 import { EulbRowsDialogComponent } from './eulb-rows-dialog.component';
 
 describe('EulbRowsDialogComponent', () => {
@@ -219,6 +227,79 @@ describe('EulbRowsDialogComponent', () => {
     });
   });
 
+  describe('close()', () => {
+    it('passes an empty result when no row has been saved', () => {
+      component.close();
+      expect(dialogRef.close).toHaveBeenCalledOnceWith({});
+    });
+
+    it('includes the latest validation summary when a save returned one', () => {
+      const summary = createSummary();
+      service.updateRow.and.returnValue(of(createUpdateResponse(row, summary)));
+      component.editForm = createEditForm({
+        electedBodyStatus: 'Constituted',
+        dateOfConstitution: '',
+        dateOfExpiry: '',
+        remarks: '',
+      });
+
+      component.saveRow(row._id);
+      component.close();
+
+      expect(dialogRef.close).toHaveBeenCalledOnceWith({ updatedSummary: summary });
+    });
+  });
+
+  describe('cancelEdit()', () => {
+    it('sets editingRowId to null', () => {
+      component.editingRowId.set(row._id);
+      component.cancelEdit();
+      expect(component.editingRowId()).toBeNull();
+    });
+
+    it('resets the edit form so it has no controls', () => {
+      component.editForm = createEditForm({
+        electedBodyStatus: '',
+        dateOfConstitution: '',
+        dateOfExpiry: '',
+        remarks: '',
+      });
+      component.cancelEdit();
+      expect(Object.keys(component.editForm.controls)).toHaveSize(0);
+    });
+
+    it('clears API errors from controls before replacing the form', () => {
+      const form = createEditForm({ electedBodyStatus: '', dateOfConstitution: '', dateOfExpiry: '', remarks: '' });
+      component.editForm = form;
+      form.get('remarks')?.setErrors({ apiErrors: ['Stale server error'] });
+
+      component.cancelEdit();
+
+      // clearAllEditApiErrors ran before editForm was replaced — the old control has no apiErrors
+      expect(form.get('remarks')?.hasError('apiErrors')).toBeFalse();
+    });
+  });
+
+  describe('goToPage boundary behavior', () => {
+    it('does not call getRows for out-of-range page numbers', () => {
+      component.total.set(20); // totalPages = ceil(20/20) = 1
+
+      component.goToPage(0); // below minimum
+      component.goToPage(2); // above totalPages
+
+      expect(service.getRows).not.toHaveBeenCalled();
+    });
+
+    it('updates page and loads rows when given a valid page number', () => {
+      component.total.set(40); // totalPages = ceil(40/20) = 2
+
+      component.goToPage(2);
+
+      expect(component.page()).toBe(2);
+      expect(service.getRows).toHaveBeenCalledTimes(1);
+    });
+  });
+
   function createEditForm(values: {
     electedBodyStatus: string;
     dateOfConstitution: string;
@@ -233,11 +314,26 @@ describe('EulbRowsDialogComponent', () => {
     });
   }
 
-  function createUpdateResponse(updatedRow: EulbRow): EulbUpdateRowResponse {
+  function createUpdateResponse(updatedRow: EulbRow, validationSummary?: EulbValidationSummary): EulbUpdateRowResponse {
     return {
       data: {
         row: updatedRow,
+        ...(validationSummary && { validationSummary }),
       },
+    };
+  }
+
+  function createSummary(): EulbValidationSummary {
+    return {
+      dbUlbCount: 10,
+      maxAllowedExcelRows: 20,
+      excelRowCount: 12,
+      matchedDbUlbCount: 10,
+      missingDbUlbCount: 0,
+      extraExcelRowCount: 2,
+      errorRowCount: 1,
+      validationStatus: 'INVALID',
+      activeDatasetVersion: 1,
     };
   }
 
@@ -256,4 +352,78 @@ describe('EulbRowsDialogComponent', () => {
       errors: [],
     };
   }
+});
+
+describe('EulbRowsDialogComponent edit-form subscription teardown', () => {
+  const stateId = 'state-1';
+  const yearId = 'year-1';
+
+  const testRow: EulbRow = {
+    _id: 'row-1',
+    rowNumber: 1,
+    censusCode: '123',
+    ulbName: 'Test ULB',
+    electedBodyStatus: 'Not Constituted',
+    dateOfConstitution: '',
+    dateOfExpiry: '',
+    remarks: '',
+    rowType: 'DB_ULB',
+    validationStatus: 'INVALID',
+    errors: [],
+  };
+
+  let fixture: ComponentFixture<EulbRowsDialogComponent>;
+  let component: EulbRowsDialogComponent;
+
+  beforeEach(async () => {
+    const service = jasmine.createSpyObj<EulbStatusService>('EulbStatusService', ['getRows', 'updateRow']);
+    service.getRows.and.returnValue(of({ data: { rows: [], total: 0, page: 1, limit: 20 } }));
+
+    const utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
+    const dialogRef = jasmine.createSpyObj<MatDialogRef<EulbRowsDialogComponent>>('MatDialogRef', ['close']);
+
+    const dynamicFormSpy = jasmine.createSpyObj<DynamicFormService>('DynamicFormService', [
+      'createContorl',
+      'bindValidations',
+    ]);
+    dynamicFormSpy.createContorl.and.callFake(() => new FormControl(''));
+    dynamicFormSpy.bindValidations.and.returnValue(Validators.nullValidator);
+
+    const remarksField: ConditionalFieldConfig = { key: 'remarks', label: 'Remarks', formFieldType: 'text' };
+    const dialogData: EulbRowsDialogData = { stateId, yearId, rowEditFields: [remarksField], canEdit: true };
+
+    await TestBed.configureTestingModule({
+      imports: [EulbRowsDialogComponent],
+      providers: [
+        { provide: EulbStatusService, useValue: service },
+        { provide: UtilityService, useValue: utilityService },
+        { provide: MatDialogRef, useValue: dialogRef },
+        { provide: MAT_DIALOG_DATA, useValue: dialogData },
+        { provide: DynamicFormService, useValue: dynamicFormSpy },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EulbRowsDialogComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('does not carry over valueChanges subscriptions from a cancelled edit session into the next', () => {
+    // First edit session: build form, stamp an API error
+    component.startEdit(testRow);
+    const oldRemarksCtrl = component.editForm.get('remarks')!;
+    oldRemarksCtrl.setErrors({ apiErrors: ['Stale error'] });
+
+    // Cancel — old subscriptions should be torn down here
+    component.cancelEdit();
+
+    // Second edit session: build a fresh form, stamp a new API error
+    component.startEdit(testRow);
+    component.editForm.get('remarks')!.setErrors({ apiErrors: ['Current error'] });
+
+    // Emitting from the old orphaned control would call clearApiError('remarks') on the
+    // current editForm if the old subscription were still alive, clearing the new error.
+    oldRemarksCtrl.setValue('anything');
+
+    expect(component.editForm.get('remarks')?.hasError('apiErrors')).toBeTrue();
+  });
 });

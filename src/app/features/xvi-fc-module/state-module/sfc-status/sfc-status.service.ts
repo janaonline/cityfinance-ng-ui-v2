@@ -20,7 +20,7 @@ export class SfcStatusService {
     return this.http.get<SfcStatusApiResponse>(`${this.baseUrl}xvi-fc/state/sfc-status/${stateId}/${yearId}`).pipe(
       map((response) => {
         if (!response.success) {
-          throw new Error('SFC status form data could not be loaded.');
+          throw response;
         }
         return response.data;
       }),

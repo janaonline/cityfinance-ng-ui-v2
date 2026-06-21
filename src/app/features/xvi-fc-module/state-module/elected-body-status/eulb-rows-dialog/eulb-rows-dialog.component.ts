@@ -5,16 +5,17 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { debounceTime, distinctUntilChanged, merge } from 'rxjs';
+import { debounceTime, distinctUntilChanged, merge, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { resolveDateConstraint } from '../../../../../shared/dynamic-form/date-constraint-resolver';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
@@ -104,6 +105,7 @@ export class EulbRowsDialogComponent implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<EulbRowsDialogComponent>);
   private readonly data = inject<EulbRowsDialogData>(MAT_DIALOG_DATA);
   private readonly fb = inject(FormBuilder);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
   readonly stateId = this.data.stateId;
   readonly yearId = this.data.yearId;
@@ -133,6 +135,7 @@ export class EulbRowsDialogComponent implements OnInit {
 
   private hasSavedRowChanges = false;
   private loadRequestId = 0;
+  private readonly editFormTeardown$ = new Subject<void>();
 
   filterForm = this.fb.group({
     search: [''],
@@ -208,6 +211,7 @@ export class EulbRowsDialogComponent implements OnInit {
 
   /** Exits edit mode without saving, clears all API field errors, and resets the edit form. */
   cancelEdit(): void {
+    this.resetEditFormSubscriptions();
     this.clearAllEditApiErrors();
     this.editingRowId.set(null);
     this.editForm = this.fb.group({});
@@ -418,8 +422,8 @@ export class EulbRowsDialogComponent implements OnInit {
     if (!this.hasCellError(row, field) || this.editingRowId() !== null) return;
     this.startEdit(row);
     setTimeout(() => {
-      const el = document.querySelector<HTMLElement>(`[data-eulb-edit-field="${field}"]`);
-      el?.focus();
+      const el = this.elementRef.nativeElement.querySelector(`[data-eulb-edit-field="${field}"]`);
+      if (el instanceof HTMLElement) el.focus();
     }, 50);
   }
 
@@ -453,6 +457,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param row - The row whose current values pre-fill the form controls.
    */
   private buildEditForm(row: EulbRow): void {
+    this.resetEditFormSubscriptions();
     this.editForm = this.fb.group({});
 
     for (const field of this.rowEditFields()) {
@@ -472,9 +477,11 @@ export class EulbRowsDialogComponent implements OnInit {
       this.editForm.addControl(key, control);
       control.updateValueAndValidity({ emitEvent: false });
 
-      control.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-        this.clearApiError(key);
-      });
+      control.valueChanges
+        .pipe(takeUntil(this.editFormTeardown$), takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          this.clearApiError(key);
+        });
     }
 
     this.bindEnabledWhenToEditForm(this.editForm);
@@ -482,6 +489,12 @@ export class EulbRowsDialogComponent implements OnInit {
 
   private getEditableRowValue(row: EulbRow, fieldKey: string): unknown {
     return getRecordValue(row, fieldKey);
+  }
+
+  /** Returns the typed `FormControl` for the given edit-form field, or `null` when absent. */
+  getEditFormControl(key: string): FormControl<string | null> | null {
+    const ctrl = this.editForm.get(key);
+    return ctrl instanceof FormControl ? (ctrl as FormControl<string | null>) : null;
   }
 
   /** Returns `true` when the edit-form control for `field` is currently enabled. */
@@ -516,7 +529,7 @@ export class EulbRowsDialogComponent implements OnInit {
     for (const controllerKey of deps.keys()) {
       const ctrl = form.get(controllerKey);
       if (!ctrl) continue;
-      ctrl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      ctrl.valueChanges.pipe(takeUntil(this.editFormTeardown$), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
         this.applyEnabledWhen(form, deps);
       });
     }
@@ -572,6 +585,10 @@ export class EulbRowsDialogComponent implements OnInit {
     const remainingErrors = { ...control.errors };
     delete remainingErrors['apiErrors'];
     control.setErrors(Object.keys(remainingErrors).length ? remainingErrors : null);
+  }
+
+  private resetEditFormSubscriptions(): void {
+    this.editFormTeardown$.next();
   }
 
   /** Clears API errors from all current edit-form controls. Called on cancel and on successful save. */
