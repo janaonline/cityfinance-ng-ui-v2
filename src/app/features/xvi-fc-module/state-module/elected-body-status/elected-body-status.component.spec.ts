@@ -241,6 +241,27 @@ describe('ElectedBodyStatusComponent', () => {
     expect(getControl('ulbCount')?.touched).toBeTrue();
   });
 
+  it('handles success:false body with optional data field — data is ignored, message and errors still applied', () => {
+    eulbService.finalSubmit.and.returnValue(
+      throwError(() => ({
+        success: false,
+        message: 'Rejected with context data.',
+        errors: {
+          ulbCount: [{ field: 'ulbCount', message: 'Invalid ULB count.', code: 'invalidUlbCount' }],
+        },
+        data: { someContext: 'this must not break error parsing' },
+      })),
+    );
+    setValidFinalSubmitValues(15);
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    component.onSubmit('finalSubmit');
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Rejected with context data.', 'snackbar-danger');
+    expect(getControl('ulbCount')?.hasError('invalidUlbCount')).toBeTrue();
+    expect(eulbService.getFormData).toHaveBeenCalledTimes(1); // no reload on error
+  });
+
   it('does not call final-submit API when the final payload builder cannot narrow values', () => {
     setControlValue('electedBodyExcelFile', fileValue);
     setControlValue('ulbCount', 'not-a-number');

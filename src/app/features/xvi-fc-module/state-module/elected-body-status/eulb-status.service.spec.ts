@@ -117,6 +117,24 @@ describe('EulbStatusService', () => {
     }
   });
 
+  it('passes blob downloads straight through without applying the success:false check', () => {
+    const blobContent = new Blob(['test'], { type: 'application/vnd.ms-excel' });
+
+    let templateResult: Blob | undefined;
+    service.downloadTemplate(stateId, yearId).subscribe((blob) => (templateResult = blob));
+    httpMock
+      .expectOne((r) => r.method === 'GET' && r.url.includes('/template') && r.responseType === 'blob')
+      .flush(blobContent);
+    expect(templateResult).toBe(blobContent);
+
+    let errorSheetResult: Blob | undefined;
+    service.downloadErrorSheet(stateId, yearId).subscribe((blob) => (errorSheetResult = blob));
+    httpMock
+      .expectOne((r) => r.method === 'GET' && r.url.includes('/error-sheet') && r.responseType === 'blob')
+      .flush(blobContent);
+    expect(errorSheetResult).toBe(blobContent);
+  });
+
   it('keeps successful save draft responses on the success path', () => {
     let completed = false;
 

@@ -106,15 +106,20 @@ describe('EULB status payload builders', () => {
     expect(parseEulbRowUpdateErrors({ errors: [] })).toEqual([]);
   });
 
-  it('parses row update API errors from HTTP and plain backend bodies', () => {
+  it('parses row update field errors from the new map-keyed backend format', () => {
+    // HTTP 4xx body — Angular wraps it in err.error; new contract includes success:false
     const httpError = {
       error: {
-        errors: [{ field: 'remarks', message: 'Remarks are required.', code: 'required' }],
+        success: false,
+        statusCode: 400,
+        message: 'Validation failed.',
+        errors: { remarks: [{ field: 'remarks', message: 'Remarks are required.', code: 'required' }] },
       },
     };
+    // Directly thrown body (2xx success:false) — field comes from map key, not from error object
     const plainError = {
       success: false,
-      errors: [{ field: 'dateOfExpiry', message: 'Expiry date is invalid.', code: 'invalidDate' }],
+      errors: { dateOfExpiry: [{ message: 'Expiry date is invalid.', code: 'invalidDate' }] },
     };
 
     expect(parseEulbRowUpdateErrors(httpError)).toEqual([
@@ -123,5 +128,28 @@ describe('EULB status payload builders', () => {
     expect(parseEulbRowUpdateErrors(plainError)).toEqual([
       { field: 'dateOfExpiry', message: 'Expiry date is invalid.', code: 'invalidDate' },
     ]);
+  });
+
+  it('parses dateOfExpiry minDate error from the full backend error shape including data context', () => {
+    const httpError = {
+      error: {
+        success: false,
+        statusCode: 400,
+        message: 'Validation failed.',
+        errors: {
+          dateOfExpiry: [{ field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' }],
+        },
+        data: { rowId: 'row-1', rowNumber: 1, censusCode: '123', ulbName: 'Achalpur Muncipal Council' },
+      },
+    };
+    expect(parseEulbRowUpdateErrors(httpError)).toEqual([
+      { field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' },
+    ]);
+  });
+
+  it('does not parse old array-shaped row update errors — map format is required', () => {
+    // Old format: errors was a flat array; new backend always sends a field-keyed map
+    expect(parseEulbRowUpdateErrors({ error: { errors: [{ field: 'remarks', message: 'Required.' }] } })).toEqual([]);
+    expect(parseEulbRowUpdateErrors({ errors: [{ field: 'dateOfExpiry', message: 'Invalid.' }] })).toEqual([]);
   });
 });

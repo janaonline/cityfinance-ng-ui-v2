@@ -1103,6 +1103,35 @@ describe('SfcStatusComponent', () => {
     );
   }));
 
+  it('shows HTTP error message when 4xx body includes success:false, timestamp, path, and data fields', fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const sfcService = TestBed.inject(SfcStatusService);
+    spyOn(sfcService, 'finalSubmitSfcStatus').and.returnValue(
+      throwError(() => ({
+        error: {
+          success: false,
+          statusCode: 422,
+          message: 'Standardised 4xx body.',
+          timestamp: '2026-01-01T00:00:00.000Z',
+          path: '/api/v2/xvi-fc/state/sfc-status/final-submit',
+          data: null,
+        },
+      })),
+    );
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    getControl('isActiveSfc')?.setValue('no');
+    getControl('isNewSfcConstituted')?.setValue('no');
+    getControl('checkboxConfirmation')?.setValue(true);
+    fixture.detectChanges();
+
+    component.onSubmit('finalSubmit');
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Standardised 4xx body.', 'snackbar-danger');
+  }));
+
   it('shows fallback message when final submit error has no recognized shape', fakeAsync(() => {
     createComponent();
     completeInitialLoad();

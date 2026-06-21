@@ -85,14 +85,18 @@ describe('EulbRowsDialogComponent', () => {
     service.updateRow.and.returnValue(
       throwError(() => ({
         error: {
-          errors: [
-            {
-              field: 'dateOfExpiry',
-              message: 'Expiry date cannot be before constitution date.',
-              code: 'invalidDate',
-              ulbName: row.ulbName,
-            },
-          ],
+          success: false,
+          statusCode: 400,
+          message: 'Row validation failed.',
+          errors: {
+            dateOfExpiry: [
+              {
+                field: 'dateOfExpiry',
+                message: 'Expiry date cannot be before constitution date.',
+                code: 'invalidDate',
+              },
+            ],
+          },
         },
       })),
     );
@@ -101,6 +105,40 @@ describe('EulbRowsDialogComponent', () => {
 
     expect(component.editForm.get('dateOfExpiry')?.hasError('apiErrors')).toBeTrue();
     expect(component.getEditFieldErrors('dateOfExpiry')).toEqual(['Expiry date cannot be before constitution date.']);
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
+      `${row.ulbName} has errors. Please validate it.`,
+      'snackbar-danger',
+    );
+  });
+
+  it('shows dateOfExpiry minDate API error from the full backend shape including data context', () => {
+    component.rows.set([row]);
+    component.editForm = createEditForm({
+      electedBodyStatus: 'Constituted',
+      dateOfConstitution: '2026-01-01',
+      dateOfExpiry: '2020-01-01',
+      remarks: '',
+    });
+    service.updateRow.and.returnValue(
+      throwError(() => ({
+        error: {
+          success: false,
+          statusCode: 400,
+          message: 'Validation failed.',
+          errors: {
+            dateOfExpiry: [
+              { field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' },
+            ],
+          },
+          data: { rowId: row._id, rowNumber: 1, censusCode: '123', ulbName: row.ulbName },
+        },
+      })),
+    );
+
+    component.saveRow(row._id);
+
+    expect(component.editForm.get('dateOfExpiry')?.hasError('apiErrors')).toBeTrue();
+    expect(component.getEditFieldErrors('dateOfExpiry')).toEqual(['Date of expiry cannot be in the past.']);
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
       `${row.ulbName} has errors. Please validate it.`,
       'snackbar-danger',
@@ -390,7 +428,17 @@ describe('EulbRowsDialogComponent edit-form subscription teardown', () => {
     dynamicFormSpy.bindValidations.and.returnValue(Validators.nullValidator);
 
     const remarksField: ConditionalFieldConfig = { key: 'remarks', label: 'Remarks', formFieldType: 'text' };
-    const dialogData: EulbRowsDialogData = { stateId, yearId, rowEditFields: [remarksField], canEdit: true };
+    const dateOfExpiryField: ConditionalFieldConfig = {
+      key: 'dateOfExpiry',
+      label: 'Date of Expiry',
+      formFieldType: 'date',
+    };
+    const dialogData: EulbRowsDialogData = {
+      stateId,
+      yearId,
+      rowEditFields: [remarksField, dateOfExpiryField],
+      canEdit: true,
+    };
 
     await TestBed.configureTestingModule({
       imports: [EulbRowsDialogComponent],
@@ -425,5 +473,19 @@ describe('EulbRowsDialogComponent edit-form subscription teardown', () => {
     oldRemarksCtrl.setValue('anything');
 
     expect(component.editForm.get('remarks')?.hasError('apiErrors')).toBeTrue();
+  });
+
+  it('clears dateOfExpiry API error when the user edits the field after a row update failure', () => {
+    component.startEdit(testRow);
+    const dateOfExpiryCtrl = component.editForm.get('dateOfExpiry')!;
+
+    dateOfExpiryCtrl.setErrors({ apiErrors: ['Date of expiry cannot be in the past.'] });
+    dateOfExpiryCtrl.markAsTouched();
+
+    expect(dateOfExpiryCtrl.hasError('apiErrors')).toBeTrue();
+
+    dateOfExpiryCtrl.setValue('2030-01-01');
+
+    expect(dateOfExpiryCtrl.hasError('apiErrors')).toBeFalse();
   });
 });

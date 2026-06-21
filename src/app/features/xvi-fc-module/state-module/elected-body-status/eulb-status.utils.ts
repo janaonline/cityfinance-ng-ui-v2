@@ -74,12 +74,22 @@ export function buildEulbFinalSubmitPayloadData(
   };
 }
 
-function isRowUpdateApiError(value: unknown): value is EulbRowUpdateApiError {
-  return isRecord(value) && typeof value['field'] === 'string' && typeof value['message'] === 'string';
-}
-
-function toRowUpdateApiErrors(value: unknown): EulbRowUpdateApiError[] {
-  return Array.isArray(value) ? value.filter(isRowUpdateApiError) : [];
+function errorsMapToRowErrors(errorsMap: unknown): EulbRowUpdateApiError[] {
+  if (!isRecord(errorsMap)) return [];
+  const result: EulbRowUpdateApiError[] = [];
+  for (const [field, fieldErrors] of Object.entries(errorsMap)) {
+    if (!Array.isArray(fieldErrors)) continue;
+    for (const err of fieldErrors) {
+      if (isRecord(err) && typeof err['message'] === 'string') {
+        result.push({
+          field,
+          message: err['message'],
+          code: typeof err['code'] === 'string' ? err['code'] : undefined,
+        });
+      }
+    }
+  }
+  return result;
 }
 
 export function buildEulbRowUpdatePayload(raw: EulbRowEditFormValue): EulbUpdateRowPayload {
@@ -100,14 +110,12 @@ export function parseEulbRowUpdateErrors(error: unknown): EulbRowUpdateApiError[
   if (!isRecord(error)) return [];
 
   const httpErrorBody = error['error'];
-  const fromHttpBody = isRecord(httpErrorBody) ? httpErrorBody['errors'] : undefined;
-  const httpBodyErrors = toRowUpdateApiErrors(fromHttpBody);
-  if (httpBodyErrors.length) return httpBodyErrors;
+  if (isRecord(httpErrorBody)) {
+    const parsed = errorsMapToRowErrors(httpErrorBody['errors']);
+    if (parsed.length) return parsed;
+  }
 
-  const plainErrors = toRowUpdateApiErrors(error['errors']);
-  if (plainErrors.length) return plainErrors;
-
-  return [];
+  return errorsMapToRowErrors(error['errors']);
 }
 
 function isApiErrorMap(value: unknown): value is ApiErrorMap {
