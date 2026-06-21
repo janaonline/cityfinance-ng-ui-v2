@@ -71,9 +71,11 @@ export interface SfcStatusSubmitResponse {
 }
 
 export interface ApiErrorResponse {
+  success?: false;
   statusCode?: number;
   message?: string;
   errors?: ApiErrorMap;
   timestamp?: string;
   path?: string;
+  data?: unknown;
 }

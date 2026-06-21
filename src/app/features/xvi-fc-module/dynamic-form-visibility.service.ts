@@ -1,8 +1,9 @@
 import { DestroyRef, Injectable, WritableSignal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
-import { FieldConfig } from '../../shared/dynamic-form/field.interface';
+import { Observable, takeUntil } from 'rxjs';
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
+import { FieldConfig } from '../../shared/dynamic-form/field.interface';
 
 export type VisibleWhenMode = 'all' | 'any';
 
@@ -82,15 +83,21 @@ export class DynamicFormVisibilityService {
     dependencyIndex: DependencyIndex<T>;
     destroyRef: DestroyRef;
     preserveHiddenValue?: boolean;
+    /** When provided, subscriptions are also torn down when this notifier emits (e.g. on form reload). */
+    formTeardown$?: Observable<void>;
   }): void {
-    const { form, fieldsSignal, dependencyIndex, destroyRef, preserveHiddenValue = true } = options;
+    const { form, fieldsSignal, dependencyIndex, destroyRef, preserveHiddenValue = true, formTeardown$ } = options;
 
     // Subscribe only to controller fields - all the fields that have other fields depending on them for visibility
     for (const controllerKey of dependencyIndex.keys()) {
       const control = form.get(controllerKey);
       if (!control) continue;
 
-      control.valueChanges.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      let valueChanges$ = control.valueChanges.pipe(takeUntilDestroyed(destroyRef));
+      if (formTeardown$) {
+        valueChanges$ = valueChanges$.pipe(takeUntil(formTeardown$));
+      }
+      valueChanges$.subscribe(() => {
         this.applyVisibilityForController({
           controllerKey,
           form,
@@ -165,6 +172,7 @@ export class DynamicFormVisibilityService {
    * @param options.fieldsSignal - WritableSignal holding the array of field configurations (formJson)
    * @param options.dependencyIndex - Map of controller field keys to their dependent fields (created by createDependencyIndex())
    * @param options.preserveHiddenValue - Whether to preserve values of hidden fields when they are hidden
+   * @param options.forceHide - When true, hide all dependents regardless of condition evaluation (used for cascade)
    * @returns void: updates form control states and triggers signal refresh for templates/computed state to reflect visibility changes
    */
   private applyVisibilityForController<T extends ConditionalFieldConfig>(options: {
@@ -173,8 +181,9 @@ export class DynamicFormVisibilityService {
     fieldsSignal: WritableSignal<T[]>;
     dependencyIndex: DependencyIndex<T>;
     preserveHiddenValue: boolean;
+    forceHide?: boolean;
   }): void {
-    const { controllerKey, form, fieldsSignal, dependencyIndex, preserveHiddenValue } = options;
+    const { controllerKey, form, fieldsSignal, dependencyIndex, preserveHiddenValue, forceHide = false } = options;
     const dependents = dependencyIndex.get(controllerKey);
     if (!dependents?.length) return;
 
@@ -186,7 +195,7 @@ export class DynamicFormVisibilityService {
 
     for (const field of dependents) {
       if (!field.key) continue;
-      const shouldShow = this.evaluateFieldVisibility(field, form);
+      const shouldShow = forceHide ? false : this.evaluateFieldVisibility(field, form);
       visibilityMap.set(field.key, shouldShow);
 
       const control = form.get(field.key);
@@ -222,6 +231,22 @@ export class DynamicFormVisibilityService {
         return { ...field, hidden: newHidden };
       }),
     );
+
+    // Cascade: when a dependent field is hidden and is itself a controller, force-hide
+    // all of its own dependents. This covers multi-level chains such as:
+    //   isActiveSfc → sfcReportStatus → sfcReport / atrReport
+    for (const [key, shouldShow] of visibilityMap) {
+      if (!shouldShow && dependencyIndex.has(key)) {
+        this.applyVisibilityForController({
+          controllerKey: key,
+          form,
+          fieldsSignal,
+          dependencyIndex,
+          preserveHiddenValue,
+          forceHide: true,
+        });
+      }
+    }
   }
 
   /**

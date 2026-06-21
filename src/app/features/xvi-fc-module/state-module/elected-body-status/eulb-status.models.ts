@@ -12,15 +12,19 @@ export interface ApiFieldError {
 export type ApiErrorMap = Record<string, ApiFieldError[]>;
 
 export interface ApiErrorResponse {
+  success?: false;
   statusCode?: number;
   message?: string;
   errors?: ApiErrorMap;
+  timestamp?: string;
+  path?: string;
+  data?: unknown;
 }
 
 export interface EulbFileValue {
   fileName: string;
   fileUrl: string;
-  fileSize: number | null;
+  fileSize?: number | null;
   mimeType?: string;
   s3Key?: string;
 }
@@ -29,6 +33,8 @@ export type EulbValidationStatus = 'NOT_VALIDATED' | 'VALID' | 'INVALID';
 export type EulbRowValidationStatus = 'VALID' | 'INVALID';
 export type EulbRowType = 'DB_ULB' | 'EXTRA_ULB';
 export type EulbBodyStatus = 'Constituted' | 'Not Constituted' | 'Exempt';
+export const EULB_EDITABLE_FIELDS = ['electedBodyStatus', 'dateOfConstitution', 'dateOfExpiry', 'remarks'] as const;
+export type EulbEditableFieldKey = (typeof EULB_EDITABLE_FIELDS)[number];
 
 export interface EulbValidationSummary {
   dbUlbCount: number;
@@ -72,6 +78,13 @@ export interface EulbFormApiResponse {
   success: boolean;
   message: string;
   data: EulbFormResponseData;
+}
+
+export interface EulbMutationApiResponse {
+  success?: boolean;
+  message?: string;
+  errors?: ApiErrorMap;
+  data?: unknown;
 }
 
 export interface EulbValidateExcelPayload {
@@ -137,6 +150,24 @@ export interface EulbUpdateRowPayload {
   remarks?: string;
 }
 
+export interface EulbRowEditFormValue {
+  electedBodyStatus?: EulbBodyStatus | '';
+  dateOfConstitution?: string;
+  dateOfExpiry?: string;
+  remarks?: string;
+}
+
+export interface EulbRowUpdateApiError {
+  rowId?: string;
+  rowNumber?: number;
+  censusCode?: string;
+  ulbName?: string;
+  field: string;
+  code?: string;
+  message: string;
+  value?: unknown;
+}
+
 export interface EulbUpdateRowResponse {
   data: {
     row: EulbRow;
@@ -148,21 +179,25 @@ export interface EulbUpdateRowResponse {
 export interface EulbSaveDraftPayload {
   stateId: string;
   yearId: string;
-  data: {
-    ulbCount?: number;
-    electedBodyExcelFile?: EulbFileValue;
-    checkboxConfirmation?: boolean;
-  };
+  data: EulbFormPayloadData;
 }
 
 export interface EulbFinalSubmitPayload {
   stateId: string;
   yearId: string;
-  data: {
-    ulbCount: number;
-    electedBodyExcelFile: EulbFileValue;
-    checkboxConfirmation: boolean;
-  };
+  data: EulbFinalSubmitPayloadData;
+}
+
+export interface EulbFormPayloadData {
+  ulbCount?: number;
+  electedBodyExcelFile?: EulbFileValue;
+  checkboxConfirmation?: boolean;
+}
+
+export interface EulbFinalSubmitPayloadData {
+  ulbCount: number;
+  electedBodyExcelFile: EulbFileValue;
+  checkboxConfirmation: boolean;
 }
 
 export interface EulbRowsDialogData {
