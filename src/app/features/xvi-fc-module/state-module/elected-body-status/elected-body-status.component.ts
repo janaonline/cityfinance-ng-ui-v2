@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { ActivatedRoute, Router } from '@angular/router';
 import FileSaver from 'file-saver';
 import { filter, finalize, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -90,6 +91,8 @@ export class ElectedBodyStatusComponent implements OnInit {
   private readonly eulbService = inject(EulbStatusService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
 
   readonly stateName = signal('');
   readonly actors = signal<FormActor[]>([]);
@@ -114,6 +117,10 @@ export class ElectedBodyStatusComponent implements OnInit {
   readonly permissions = signal<EulbPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
+  readonly canShowPostSubmissionUpdate = computed(() => {
+    const status = this.formStatus();
+    return status === FORM_STATUS.UNDER_REVIEW_BY_MOHUA || status === FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA;
+  });
 
   /** Maps field keys to their dependency relationships for reactive visibility evaluation. */
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
@@ -862,5 +869,9 @@ export class ElectedBodyStatusComponent implements OnInit {
         if (!confirmed) return;
         this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
       });
+  }
+
+  goToPostSubmissionUpdate(): void {
+    void this.router.navigate(['elected-body-post-update'], { relativeTo: this.activatedRoute.parent });
   }
 }

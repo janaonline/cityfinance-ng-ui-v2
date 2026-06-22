@@ -1,0 +1,410 @@
+<div class="eulb-post-update-page container-fluid py-3">
+  <div class="d-flex align-items-center justify-content-between gap-3 border-bottom pb-2 mb-3">
+    <h2 class="fs-5 fw-semibold mb-0">Update Elected Urban Local Bodies</h2>
+
+    @if (canView()) {
+      <div class="d-flex align-items-center gap-2">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2"
+        [disabled]="isValidating()"
+        (click)="validateChanges()"
+      >
+        @if (isValidating()) {
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        } @else {
+          <i class="bi bi-check2-circle"></i>
+        }
+        <span>Validate Changes</span>
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2"
+        [disabled]="!canSubmitUpdate()"
+        (click)="submitUpdate()"
+      >
+        @if (isSubmitting()) {
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        } @else {
+          <i class="bi bi-send"></i>
+        }
+        <span>Submit Update</span>
+      </button>
+      </div>
+    }
+  </div>
+
+  @if (isLoadingMeta()) {
+    <div class="d-flex justify-content-center align-items-center py-5">
+      <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+      <span class="small text-secondary">Loading...</span>
+    </div>
+  } @else if (metadataErrorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      {{ metadataErrorMessage() }}
+    </div>
+  } @else if (!canView()) {
+    <div class="alert alert-secondary" role="alert">
+      Post-submission update is available only after the Elected Urban Local Bodies form is submitted or approved.
+    </div>
+  } @else {
+    <div class="card mb-3 border-0 bg-light">
+      <div class="card-body py-2 px-3 d-flex align-items-center gap-4">
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-muted">Eligible rows:</span>
+          <span class="fw-semibold" data-testid="eligible-row-count">{{ eligibleRowCount() }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-muted">Modified rows:</span>
+          <span class="fw-semibold" data-testid="modified-row-count">{{ changedRowCount() }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-muted">Validation:</span>
+          <span class="fw-semibold" data-testid="validation-state">{{ validationState() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3 eulb-document-card">
+      <div class="card-body py-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div>
+            <h3 class="fs-6 fw-semibold mb-1">Combined Update PDF</h3>
+            <p class="small text-muted mb-0">Upload one PDF document supporting the changed rows.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <label class="btn btn-sm btn-outline-secondary mb-0" for="eulb-post-document-upload">
+              @if (isUploadingDocument()) {
+                Uploading {{ uploadProgress() }}%
+              } @else if (updateDocument()) {
+                Replace PDF
+              } @else {
+                Upload PDF
+              }
+            </label>
+            <input
+              id="eulb-post-document-upload"
+              type="file"
+              class="visually-hidden"
+              accept="application/pdf,.pdf"
+              [disabled]="isUploadingDocument() || isSubmitting()"
+              (change)="onDocumentSelected($event)"
+            />
+            @if (updateDocument()) {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                [disabled]="isSubmitting()"
+                (click)="removeDocument()"
+              >
+                Remove
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (documentErrorMessage()) {
+          <div class="alert alert-danger py-2 mt-3 mb-0" role="alert">
+            {{ documentErrorMessage() }}
+          </div>
+        }
+
+        @if (updateDocument()) {
+          @let document = updateDocument();
+          <div class="d-flex flex-wrap align-items-center gap-3 mt-3 small">
+            <span class="fw-semibold">{{ document?.fileName }}</span>
+            <span class="text-muted">{{ documentSizeLabel() }}</span>
+            <a
+              class="link-primary text-decoration-none"
+              [href]="(document?.fileUrl ?? '') | toStorageUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View file
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+
+    <form [formGroup]="filterForm" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+      <div class="flex-grow-1">
+        <label class="form-label small fw-semibold mb-1" for="eulb-post-search">Search</label>
+        <input
+          id="eulb-post-search"
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Census code or ULB name"
+          formControlName="search"
+        />
+      </div>
+
+      <div>
+        <label class="form-label small fw-semibold mb-1" for="eulb-post-body-status">Body status</label>
+        <select id="eulb-post-body-status" class="form-select form-select-sm" formControlName="electedBodyStatus">
+          <option value="">All</option>
+          @for (opt of electedBodyStatusOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label small fw-semibold mb-1" for="eulb-post-vstatus">Validation</label>
+        <select id="eulb-post-vstatus" class="form-select form-select-sm" formControlName="validationStatus">
+          <option value="">All</option>
+          @for (opt of validationStatusOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+    </form>
+
+    @if (rowsErrorMessage()) {
+      <div class="alert alert-danger py-2" role="alert">
+        {{ rowsErrorMessage() }}
+      </div>
+    }
+
+    <div class="table-responsive">
+      @if (isLoadingRows()) {
+        <div class="d-flex justify-content-center align-items-center py-5">
+          <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+          <span class="small text-secondary">Loading rows...</span>
+        </div>
+      } @else if (!rows().length) {
+        <div class="text-center py-5 text-secondary small">No eligible rows found for the current filters.</div>
+      } @else {
+        <table class="table table-sm table-hover align-middle mb-0 eulb-post-update-table">
+          <thead class="table-light border-bottom">
+            <tr>
+              <th class="text-nowrap small fw-semibold">#</th>
+              <th class="text-nowrap small fw-semibold">Census Code</th>
+              <th class="text-nowrap small fw-semibold">ULB Name</th>
+              <th class="text-nowrap small fw-semibold">Elected Body Status</th>
+              <th class="text-nowrap small fw-semibold">Date of Constitution</th>
+              <th class="text-nowrap small fw-semibold">Date of Expiry</th>
+              <th class="text-nowrap small fw-semibold">Remarks</th>
+              <th class="text-nowrap small fw-semibold">Validation</th>
+              @if (canEditRows()) {
+                <th class="text-nowrap small fw-semibold eulb-actions-col">Actions</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (vm of rowViewModels(); track vm.row._id) {
+              @let row = vm.row;
+              <tr [class.eulb-row-modified]="vm.isModified">
+                <td class="small text-muted">{{ row.rowNumber }}</td>
+                <td class="small">{{ row.censusCode }}</td>
+                <td class="small fw-medium text-nowrap">
+                  <div class="d-flex align-items-center gap-2">
+                    <span>{{ row.ulbName }}</span>
+                    @if (vm.isModified) {
+                      <span class="badge text-bg-warning rounded-pill eulb-modified-badge">Modified</span>
+                    }
+                  </div>
+                </td>
+
+                @if (editingRowId() === row._id) {
+                  <td>
+                    @if (isFieldEditable('electedBodyStatus')) {
+                      <select
+                        class="form-select form-select-sm eulb-edit-control"
+                        [class.is-invalid]="vm.cellHasError['electedBodyStatus']"
+                        [matTooltip]="vm.cellErrorText['electedBodyStatus'] ?? ''"
+                        [matTooltipDisabled]="!vm.cellHasError['electedBodyStatus']"
+                        matTooltipPosition="above"
+                        aria-label="Elected Body Status"
+                        [formControl]="editForm.controls.electedBodyStatus"
+                      >
+                        <option value="">- Select -</option>
+                        @for (opt of electedBodyStatusOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    } @else {
+                      <span class="small">{{ row.electedBodyStatus }}</span>
+                    }
+                  </td>
+                  <td>
+                    @if (isFieldEditable('dateOfConstitution')) {
+                      <input
+                        type="date"
+                        class="form-control form-control-sm eulb-edit-control"
+                        [class.is-invalid]="vm.cellHasError['dateOfConstitution']"
+                        [matTooltip]="vm.cellErrorText['dateOfConstitution'] ?? ''"
+                        [matTooltipDisabled]="!vm.cellHasError['dateOfConstitution']"
+                        matTooltipPosition="above"
+                        aria-label="Date of Constitution"
+                        [formControl]="editForm.controls.dateOfConstitution"
+                      />
+                    } @else {
+                      <span class="small">{{ (row.dateOfConstitution | date: 'dd MMM yyyy') ?? '-' }}</span>
+                    }
+                  </td>
+                  <td>
+                    @if (isFieldEditable('dateOfExpiry')) {
+                      <input
+                        type="date"
+                        class="form-control form-control-sm eulb-edit-control"
+                        [class.is-invalid]="vm.cellHasError['dateOfExpiry']"
+                        [matTooltip]="vm.cellErrorText['dateOfExpiry'] ?? ''"
+                        [matTooltipDisabled]="!vm.cellHasError['dateOfExpiry']"
+                        matTooltipPosition="above"
+                        aria-label="Date of Expiry"
+                        [formControl]="editForm.controls.dateOfExpiry"
+                      />
+                    } @else {
+                      <span class="small">{{ (row.dateOfExpiry | date: 'dd MMM yyyy') ?? '-' }}</span>
+                    }
+                  </td>
+                  <td>
+                    @if (isFieldEditable('remarks')) {
+                      <input
+                        type="text"
+                        class="form-control form-control-sm eulb-edit-wide"
+                        [class.is-invalid]="vm.cellHasError['remarks']"
+                        [matTooltip]="vm.cellErrorText['remarks'] ?? ''"
+                        [matTooltipDisabled]="!vm.cellHasError['remarks']"
+                        matTooltipPosition="above"
+                        aria-label="Remarks"
+                        placeholder="Remarks"
+                        [formControl]="editForm.controls.remarks"
+                      />
+                    } @else {
+                      <span class="small">{{ row.remarks || '-' }}</span>
+                    }
+                  </td>
+                } @else {
+                  <td
+                    class="small"
+                    [class.eulb-cell-invalid]="vm.cellHasError['electedBodyStatus']"
+                    [matTooltip]="vm.cellErrorText['electedBodyStatus'] ?? ''"
+                    [matTooltipDisabled]="!vm.cellHasError['electedBodyStatus']"
+                    matTooltipPosition="above"
+                  >
+                    {{ row.electedBodyStatus }}
+                  </td>
+                  <td
+                    class="small text-nowrap"
+                    [class.eulb-cell-invalid]="vm.cellHasError['dateOfConstitution']"
+                    [matTooltip]="vm.cellErrorText['dateOfConstitution'] ?? ''"
+                    [matTooltipDisabled]="!vm.cellHasError['dateOfConstitution']"
+                    matTooltipPosition="above"
+                  >
+                    {{ (row.dateOfConstitution | date: 'dd MMM yyyy') ?? '-' }}
+                  </td>
+                  <td
+                    class="small text-nowrap"
+                    [class.eulb-cell-invalid]="vm.cellHasError['dateOfExpiry']"
+                    [matTooltip]="vm.cellErrorText['dateOfExpiry'] ?? ''"
+                    [matTooltipDisabled]="!vm.cellHasError['dateOfExpiry']"
+                    matTooltipPosition="above"
+                  >
+                    {{ (row.dateOfExpiry | date: 'dd MMM yyyy') ?? '-' }}
+                  </td>
+                  <td
+                    class="small"
+                    [class.eulb-cell-invalid]="vm.cellHasError['remarks']"
+                    [matTooltip]="vm.cellErrorText['remarks'] ?? ''"
+                    [matTooltipDisabled]="!vm.cellHasError['remarks']"
+                    matTooltipPosition="above"
+                  >
+                    {{ row.remarks || '-' }}
+                  </td>
+                }
+
+                <td>
+                  <span
+                    class="badge rounded-pill"
+                    [class.text-bg-success]="row.validationStatus === 'VALID'"
+                    [class.text-bg-danger]="row.validationStatus === 'INVALID'"
+                  >
+                    {{ getValidationStatusLabel(row.validationStatus) }}
+                  </span>
+                </td>
+
+                @if (canEditRows()) {
+                  <td class="eulb-actions-col">
+                    @if (editingRowId() === row._id) {
+                      <div class="d-flex gap-1 flex-nowrap">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary eulb-row-btn"
+                          aria-label="Done editing"
+                          (click)="finishEdit(row._id)"
+                        >
+                          <i class="bi bi-check-lg"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-danger eulb-row-btn"
+                          aria-label="Reset row"
+                          [disabled]="!isRowModified(row._id)"
+                          (click)="resetRow(row._id)"
+                        >
+                          <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="d-flex gap-1 flex-nowrap">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary eulb-row-btn"
+                          aria-label="Edit row"
+                          [disabled]="editingRowId() !== null"
+                          (click)="startEdit(row)"
+                        >
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        @if (vm.isModified) {
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger eulb-row-btn"
+                            aria-label="Reset row"
+                            [disabled]="editingRowId() !== null"
+                            (click)="resetRow(row._id)"
+                          >
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    @if (total() > 0) {
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <span class="small text-muted">Showing {{ startIndex() }}-{{ endIndex() }} of {{ total() }} rows</span>
+        <div class="d-flex align-items-center gap-1">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            [disabled]="!hasPrev()"
+            (click)="goToPage(page() - 1)"
+            aria-label="Previous page"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="small px-2">Page {{ page() }} of {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            [disabled]="!hasNext()"
+            (click)="goToPage(page() + 1)"
+            aria-label="Next page"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>

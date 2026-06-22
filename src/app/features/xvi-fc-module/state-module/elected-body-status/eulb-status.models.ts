@@ -227,3 +227,151 @@ export interface EulbRevalidateExcelResponse {
     errors?: EulbRowError[];
   };
 }
+
+export interface EulbPostSubmissionUpdatePermissions {
+  canView: boolean;
+  canSubmitUpdate: boolean;
+}
+
+export interface EulbPostSubmissionUpdateSummary {
+  eligibleRowCount: number;
+}
+
+export type EulbPostSubmissionUpdateElectedBodyStatus = Exclude<EulbBodyStatus, 'Exempt'>;
+
+export interface EulbPostSubmissionUpdateMetadata {
+  formStatus: number;
+  canUpdate: boolean;
+  permissions: EulbPostSubmissionUpdatePermissions;
+  summary: EulbPostSubmissionUpdateSummary;
+  rowEditFields: ConditionalFieldConfig[];
+}
+
+export interface EulbPostSubmissionUpdateMetadataResponse {
+  success: boolean;
+  message?: string;
+  data: EulbPostSubmissionUpdateMetadata;
+  timestamp?: string;
+}
+
+export interface EulbPostUpdateRowError {
+  field?: string;
+  code?: string;
+  message: string;
+  value?: unknown;
+}
+
+export interface EulbPostSubmissionUpdateRow {
+  _id: string;
+  rowNumber: number;
+  censusCode: string;
+  ulbName: string;
+  electedBodyStatus: EulbBodyStatus;
+  dateOfConstitution: string | null;
+  dateOfExpiry: string | null;
+  remarks: string | null;
+  rowType: EulbRowType;
+  validationStatus: EulbRowValidationStatus;
+  errors: EulbPostUpdateRowError[];
+}
+
+export interface EulbPostSubmissionUpdateRowsData {
+  rows: EulbPostSubmissionUpdateRow[];
+  total: number;
+  page: number;
+  limit: number;
+  eligibleRule: {
+    allowedFormStatuses: number[];
+    today: string;
+  };
+}
+
+export interface EulbPostSubmissionUpdateRowsResponse {
+  success: boolean;
+  message?: string;
+  data: EulbPostSubmissionUpdateRowsData;
+  timestamp?: string;
+}
+
+export interface EulbPostSubmissionUpdateRowsQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  electedBodyStatus?: EulbPostSubmissionUpdateElectedBodyStatus;
+  validationStatus?: EulbRowValidationStatus;
+}
+
+export interface EulbPostSubmissionUpdateValidateRowPayload {
+  rowId: string;
+  electedBodyStatus: EulbBodyStatus;
+  dateOfConstitution: string | null;
+  dateOfExpiry: string | null;
+  remarks: string;
+}
+
+export interface EulbPostSubmissionUpdateValidatePayload {
+  rows: EulbPostSubmissionUpdateValidateRowPayload[];
+}
+
+export interface EulbPostSubmissionUpdateValidateRow {
+  rowId: string;
+  rowNumber: number;
+  censusCode: string;
+  ulbName: string;
+  electedBodyStatus: EulbBodyStatus;
+  dateOfConstitution: string | null;
+  dateOfExpiry: string | null;
+  remarks: string;
+  validationStatus: EulbRowValidationStatus;
+  errors: EulbPostUpdateRowError[];
+}
+
+export interface EulbPostSubmissionUpdateValidateData {
+  validationStatus: EulbRowValidationStatus;
+  rows: EulbPostSubmissionUpdateValidateRow[];
+  errorRowCount: number;
+  validRowCount: number;
+  totalRowCount: number;
+}
+
+export interface EulbPostSubmissionUpdateValidateResponse {
+  success: boolean;
+  message?: string;
+  data: EulbPostSubmissionUpdateValidateData;
+  timestamp?: string;
+}
+
+export interface EulbPostSubmissionUpdateDocument {
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType?: string;
+  s3Key?: string;
+}
+
+export interface EulbPostSubmissionUpdateSubmitPayload {
+  rows: EulbPostSubmissionUpdateValidateRowPayload[];
+  document: EulbPostSubmissionUpdateDocument;
+}
+
+export interface EulbPostSubmissionUpdateSubmitData {
+  batchId: string;
+  updatedRowCount: number;
+  document: EulbPostSubmissionUpdateDocument;
+  validationSummary: EulbValidationSummary;
+}
+
+export interface EulbPostSubmissionUpdateSubmitResponse {
+  success: boolean;
+  message?: string;
+  data: EulbPostSubmissionUpdateSubmitData;
+  timestamp?: string;
+}
+
+export interface EulbPostSubmissionUpdateSubmitRowError {
+  rowId: string;
+  rowNumber: number;
+  censusCode: string;
+  ulbName: string;
+  errors: EulbPostUpdateRowError[];
+}

@@ -8,6 +8,15 @@ import {
   EulbFormApiResponse,
   EulbFormResponseData,
   EulbMutationApiResponse,
+  EulbPostSubmissionUpdateMetadata,
+  EulbPostSubmissionUpdateMetadataResponse,
+  EulbPostSubmissionUpdateRowsData,
+  EulbPostSubmissionUpdateRowsQuery,
+  EulbPostSubmissionUpdateRowsResponse,
+  EulbPostSubmissionUpdateSubmitPayload,
+  EulbPostSubmissionUpdateSubmitResponse,
+  EulbPostSubmissionUpdateValidatePayload,
+  EulbPostSubmissionUpdateValidateResponse,
   EulbRevalidateExcelResponse,
   EulbRowsApiResponse,
   EulbRowsQuery,
@@ -165,6 +174,77 @@ export class EulbStatusService {
   ): Observable<EulbUpdateRowResponse> {
     return this.http
       .patch<EulbUpdateRowResponse>(`${this.baseUrl}${stateId}/${yearId}/rows/${rowId}`, payload)
+      .pipe(map((response) => ensureSuccessfulResponse(response)));
+  }
+
+  /**
+   * Fetches post-submission update metadata: canUpdate flag, permissions, summary, and row edit fields.
+   * Returns `success:true` even when `canUpdate` is false; use `data.canUpdate` to gate the UI.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   */
+  getPostSubmissionUpdateMetadata(stateId: string, yearId: string): Observable<EulbPostSubmissionUpdateMetadata> {
+    return this.http
+      .get<EulbPostSubmissionUpdateMetadataResponse>(`${this.baseUrl}${stateId}/${yearId}/post-submission-update`)
+      .pipe(map((res) => ensureSuccessfulResponse(res).data));
+  }
+
+  /**
+   * Fetches a paginated, filterable list of rows eligible for post-submission update.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   * @param query - Optional filters: `page`, `limit`, `search`, `electedBodyStatus`, `validationStatus`.
+   */
+  getPostSubmissionUpdateRows(
+    stateId: string,
+    yearId: string,
+    query: EulbPostSubmissionUpdateRowsQuery = {},
+  ): Observable<EulbPostSubmissionUpdateRowsData> {
+    let params = new HttpParams();
+    if (query.page !== undefined) params = params.set('page', String(query.page));
+    if (query.limit !== undefined) params = params.set('limit', String(query.limit));
+    if (query.search) params = params.set('search', query.search);
+    if (query.electedBodyStatus) params = params.set('electedBodyStatus', query.electedBodyStatus);
+    if (query.validationStatus) params = params.set('validationStatus', query.validationStatus);
+
+    return this.http
+      .get<EulbPostSubmissionUpdateRowsResponse>(`${this.baseUrl}${stateId}/${yearId}/post-submission-update/rows`, {
+        params,
+      })
+      .pipe(map((res) => ensureSuccessfulResponse(res).data));
+  }
+
+  /**
+   * Validates locally changed post-submission update rows without submitting them.
+   * Business-invalid rows still return `success:true`; callers must inspect `data.validationStatus`.
+   */
+  validatePostSubmissionUpdateRows(
+    stateId: string,
+    yearId: string,
+    payload: EulbPostSubmissionUpdateValidatePayload,
+  ): Observable<EulbPostSubmissionUpdateValidateResponse> {
+    return this.http
+      .post<EulbPostSubmissionUpdateValidateResponse>(
+        `${this.baseUrl}${stateId}/${yearId}/post-submission-update/validate`,
+        payload,
+      )
+      .pipe(map((response) => ensureSuccessfulResponse(response)));
+  }
+
+  /**
+   * Submits validated post-submission update rows with one already-uploaded combined PDF document.
+   * The request body is JSON; the document must be uploaded before this call.
+   */
+  submitPostSubmissionUpdate(
+    stateId: string,
+    yearId: string,
+    payload: EulbPostSubmissionUpdateSubmitPayload,
+  ): Observable<EulbPostSubmissionUpdateSubmitResponse> {
+    return this.http
+      .post<EulbPostSubmissionUpdateSubmitResponse>(
+        `${this.baseUrl}${stateId}/${yearId}/post-submission-update/submit`,
+        payload,
+      )
       .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 }
