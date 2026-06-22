@@ -41,6 +41,7 @@ export interface OcrValidationExtraction {
   as_on_date: string | null;
   language_detected: string | null;
   seal_present: boolean | null;
+  signature_present: boolean | null;
   auditor_name: string | null;
   auditor_firm: string | null;
   audited_date: string | null;
