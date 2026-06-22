@@ -75,3 +75,68 @@
     </div>
   </div>
 }
+
+@for (item of actionItems(); track $index) {
+  <div [class]="'small' + (item.className ? ' ' + item.className : '')">
+    <div [class]="item.layout === 'stacked' ? 'd-grid gap-2' : 'd-flex flex-wrap align-items-center gap-2 gap-md-3'">
+      @for (action of visibleActions(item.actions); track action.id; let isFirst = $first) {
+        @if (!isFirst && (item.separator ?? 'dot') === 'dot') {
+          <span class="text-body-tertiary" aria-hidden="true">&middot;</span>
+        }
+        @if (action.url) {
+          <a
+            [href]="action.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            [class]="
+              'btn btn-link p-0 small fw-semibold d-inline-flex align-items-center gap-1 ' +
+              actionToneClass(action) +
+              (action.className ? ' ' + action.className : '')
+            "
+          >
+            @if (action.icon) {
+              <i [class]="action.icon"></i>
+            }
+            {{ action.label }}
+          </a>
+        } @else {
+          <button
+            type="button"
+            [class]="
+              'btn btn-sm btn-link p-0 fw-semibold d-inline-flex align-items-center gap-1 ' +
+              actionToneClass(action) +
+              (action.className ? ' ' + action.className : '')
+            "
+            [disabled]="action.disabled || action.loading"
+            (click)="handleAction(action)"
+          >
+            @if (action.loading) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              {{ action.loadingLabel ?? 'Loading…' }}
+            } @else {
+              @if (action.icon) {
+                <i [class]="action.icon + (action.iconClassName ? ' ' + action.iconClassName : '')"></i>
+              }
+              {{ action.label }}
+            }
+          </button>
+        }
+      }
+    </div>
+    @if (item.description) {
+      <p class="text-body-secondary mt-1 mb-0">{{ item.description }}</p>
+    }
+    @if (visibleBadges(item.badges).length) {
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        @for (badge of visibleBadges(item.badges); track badge.label) {
+          <span [class]="'px-1 badge rounded-pill ' + badgeToneClass(badge)">
+            @if (badge.icon) {
+              <i [class]="badge.icon + ' me-1'"></i>
+            }
+            {{ badge.label }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+}

@@ -6,14 +6,17 @@
       <div class="content-stack d-flex flex-column gap-4">
         <div>
           <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
-            16th Finance Commission &nbsp;&middot;&nbsp; {{ stateName() }}
+            16th Finance Commission
+            @if (stateName()) {
+              &nbsp;&middot;&nbsp; {{ stateName() }}
+            }
           </div>
 
           <h1 class="page-title mb-2">Elected Urban Local Bodies - Status Confirmation</h1>
 
           <p class="page-subtitle text-secondary mb-0">
-            As per grant eligibility conditions, Urban Local Bodies must have duly constituted elected bodies in place.
-            Please confirm the current status
+            As per the 16th Finance Commission grant eligibility conditions, Urban Local Bodies must have duly
+            constituted elected bodies in place. Please confirm the current status by uploading the required data.
           </p>
         </div>
 
@@ -24,31 +27,92 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
         } @else {
+          @if (actors().length) {
+            <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
+            <hr class="my-0 text-body-tertiary" />
+          }
+
           <form class="content-body" [formGroup]="form">
             @for (item of visibleFields(); track item.key; let isLast = $last) {
-              <app-dynamic-form
-                class="p-2 d-block my-2"
+              <div
+                class="my-2"
                 [class.border-bottom]="!isLast"
                 [class.border-success]="!isLast"
                 [class.border-opacity-25]="!isLast"
-                [field]="item"
-                [group]="form"
-              ></app-dynamic-form>
+              >
+                <app-dynamic-form
+                  class="p-2 d-block"
+                  [field]="item"
+                  [group]="form"
+                  [mode]="canEdit() ? 'edit' : 'view'"
+                  (supportingAction)="onSupportingAction($event)"
+                ></app-dynamic-form>
+              </div>
             }
           </form>
         }
       </div>
     </div>
 
-    <div class="acknowledgement border-top p-3">
-      <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
-        <button type="button" matButton="outlined" (click)="onCancel()" data-cy="elected-body-status-cancel-test">
-          Cancel
-        </button>
-        <button type="submit" matButton="filled" (click)="onSubmit()" data-cy="elected-body-status-submit-test">
-          Submit
-        </button>
+    @if (canEdit() || canFinalSubmit()) {
+      <div class="acknowledgement border-top p-3">
+        <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+          <button
+            type="button"
+            matButton="outlined"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
+            (click)="onCancel()"
+            data-cy="eulb-status-cancel-test"
+          >
+            <i class="bi bi-x-circle-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Cancel</span>
+          </button>
+
+          <button
+            type="submit"
+            matButton="filled"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
+            (click)="onSubmit('saveAsDraft')"
+            data-cy="eulb-status-save-draft-test"
+          >
+            @if (isSavingDraft()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span class="d-none d-md-inline">Saving&hellip;</span>
+            } @else {
+              <i class="bi bi-bookmark-check-fill d-md-none"></i>
+              <span class="d-none d-md-inline">Save</span>
+            }
+          </button>
+
+          @if (canFinalSubmit()) {
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="
+                !canFinalSubmit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length
+              "
+              (click)="onSubmit('finalSubmit')"
+              data-cy="eulb-status-final-submit-test"
+            >
+              @if (isFinalSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Submitting&hellip;</span>
+              } @else {
+                <i class="bi bi-send-check-fill d-md-none"></i>
+                <span class="d-none d-md-inline">Final Submit</span>
+              }
+            </button>
+          }
+        </div>
       </div>
-    </div>
+    }
+    @if (isValidating()) {
+      <div class="eulb-verification-overlay" role="status" aria-live="polite">
+        <div class="eulb-verification-card shadow-sm">
+          <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+          <span class="small fw-medium">Verifying uploaded Excel. Please wait…</span>
+        </div>
+      </div>
+    }
   </div>
 </div>

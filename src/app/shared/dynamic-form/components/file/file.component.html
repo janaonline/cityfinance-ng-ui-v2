@@ -61,6 +61,17 @@
           >
             <i class="bi bi-eye fs-5 mx-1 text-dark" title="View file"></i>
           </a>
+        } @else if (localPreviewUrl()) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [href]="localPreviewUrl()!"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'View selected file ' + uploadedFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
+          >
+            <i class="bi bi-eye fs-5 mx-1 text-dark" title="View selected file"></i>
+          </a>
         }
 
         @if (canRemoveFile()) {
@@ -151,6 +162,19 @@
           >
             <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
           </a>
+        } @else if (localPreviewUrl()) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [href]="localPreviewUrl()!"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'View selected file ' + displayFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
+          >
+            <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View selected file"></i>
+          </a>
+        } @else if (isPendingDownload()) {
+          <span class="text-body-secondary small text-nowrap px-2">Save to view file</span>
         }
 
         @if (canRemoveFile()) {

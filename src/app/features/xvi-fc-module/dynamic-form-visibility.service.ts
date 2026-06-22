@@ -1,26 +1,39 @@
 import { DestroyRef, Injectable, WritableSignal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
-import { FieldConfig } from '../../shared/dynamic-form/field.interface';
+import { Observable, takeUntil } from 'rxjs';
 import { DynamicFormService } from '../../shared/dynamic-form/dynamic-form.service';
+import { FieldConfig } from '../../shared/dynamic-form/field.interface';
+
+export type VisibleWhenMode = 'all' | 'any';
 
 export type VisibilityCondition =
   | { key: string; operator: 'equals'; value: unknown }
+  | { key: string; operator: 'notEquals'; value: unknown }
   | { key: string; operator: 'in'; value: unknown[] }
+  | { key: string; operator: 'notIn'; value: unknown[] }
   | { key: string; operator: 'yearGreaterThan'; value: number };
+
+export interface VisibleWhen {
+  mode: VisibleWhenMode;
+  conditions: VisibilityCondition[];
+}
 
 export type ConditionalFieldConfig = FieldConfig & {
   hidden?: boolean;
-  visibleWhen?: {
-    mode: 'all' | 'any';
-    conditions: VisibilityCondition[];
-  };
+  /** Controls whether the field is rendered or hidden. */
+  visibleWhen?: VisibleWhen;
+  /** Controls whether the rendered field is enabled or disabled. Does not affect visibility. */
+  enabledWhen?: VisibleWhen;
+  /** Controls whether configured validations are applied. */
+  validateWhen?: VisibleWhen;
+  /** When `true`, clears the control value when `enabledWhen` evaluates to false. */
+  clearValueWhenDisabled?: boolean;
+  /** Tooltip hint shown on the control wrapper when it is disabled due to `enabledWhen`. */
+  disabledReason?: string;
 };
 
-export type DependencyIndex<T extends ConditionalFieldConfig = ConditionalFieldConfig> = Map<
-  string,
-  T[]
->;
+export type DependencyIndex<T extends ConditionalFieldConfig = ConditionalFieldConfig> = Map<string, T[]>;
 
 @Injectable({ providedIn: 'root' })
 export class DynamicFormVisibilityService {
@@ -70,15 +83,21 @@ export class DynamicFormVisibilityService {
     dependencyIndex: DependencyIndex<T>;
     destroyRef: DestroyRef;
     preserveHiddenValue?: boolean;
+    /** When provided, subscriptions are also torn down when this notifier emits (e.g. on form reload). */
+    formTeardown$?: Observable<void>;
   }): void {
-    const { form, fieldsSignal, dependencyIndex, destroyRef, preserveHiddenValue = true } = options;
+    const { form, fieldsSignal, dependencyIndex, destroyRef, preserveHiddenValue = true, formTeardown$ } = options;
 
     // Subscribe only to controller fields - all the fields that have other fields depending on them for visibility
     for (const controllerKey of dependencyIndex.keys()) {
       const control = form.get(controllerKey);
       if (!control) continue;
 
-      control.valueChanges.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      let valueChanges$ = control.valueChanges.pipe(takeUntilDestroyed(destroyRef));
+      if (formTeardown$) {
+        valueChanges$ = valueChanges$.pipe(takeUntil(formTeardown$));
+      }
+      valueChanges$.subscribe(() => {
         this.applyVisibilityForController({
           controllerKey,
           form,
@@ -118,10 +137,7 @@ export class DynamicFormVisibilityService {
    * @param fields - Array of conditional field configurations (formJson) to determine which fields are hidden
    * @returns
    */
-  getVisiblePayload<T extends ConditionalFieldConfig>(
-    form: FormGroup,
-    fields: T[],
-  ): Record<string, unknown> {
+  getVisiblePayload<T extends ConditionalFieldConfig>(form: FormGroup, fields: T[]): Record<string, unknown> {
     const payload: Record<string, unknown> = Object.create(null);
     const controls = form.controls as Record<string, { value: unknown }>;
 
@@ -156,6 +172,7 @@ export class DynamicFormVisibilityService {
    * @param options.fieldsSignal - WritableSignal holding the array of field configurations (formJson)
    * @param options.dependencyIndex - Map of controller field keys to their dependent fields (created by createDependencyIndex())
    * @param options.preserveHiddenValue - Whether to preserve values of hidden fields when they are hidden
+   * @param options.forceHide - When true, hide all dependents regardless of condition evaluation (used for cascade)
    * @returns void: updates form control states and triggers signal refresh for templates/computed state to reflect visibility changes
    */
   private applyVisibilityForController<T extends ConditionalFieldConfig>(options: {
@@ -164,8 +181,9 @@ export class DynamicFormVisibilityService {
     fieldsSignal: WritableSignal<T[]>;
     dependencyIndex: DependencyIndex<T>;
     preserveHiddenValue: boolean;
+    forceHide?: boolean;
   }): void {
-    const { controllerKey, form, fieldsSignal, dependencyIndex, preserveHiddenValue } = options;
+    const { controllerKey, form, fieldsSignal, dependencyIndex, preserveHiddenValue, forceHide = false } = options;
     const dependents = dependencyIndex.get(controllerKey);
     if (!dependents?.length) return;
 
@@ -177,7 +195,7 @@ export class DynamicFormVisibilityService {
 
     for (const field of dependents) {
       if (!field.key) continue;
-      const shouldShow = this.evaluateFieldVisibility(field, form);
+      const shouldShow = forceHide ? false : this.evaluateFieldVisibility(field, form);
       visibilityMap.set(field.key, shouldShow);
 
       const control = form.get(field.key);
@@ -213,46 +231,65 @@ export class DynamicFormVisibilityService {
         return { ...field, hidden: newHidden };
       }),
     );
+
+    // Cascade: when a dependent field is hidden and is itself a controller, force-hide
+    // all of its own dependents. This covers multi-level chains such as:
+    //   isActiveSfc → sfcReportStatus → sfcReport / atrReport
+    for (const [key, shouldShow] of visibilityMap) {
+      if (!shouldShow && dependencyIndex.has(key)) {
+        this.applyVisibilityForController({
+          controllerKey: key,
+          form,
+          fieldsSignal,
+          dependencyIndex,
+          preserveHiddenValue,
+          forceHide: true,
+        });
+      }
+    }
   }
 
   /**
-   * - Evaluate field visibility based on its 'visibleWhen' conditions and current form values
-   * - If visibility.mode is 'all', all conditions must be true for the field to be visible.
-   * - If visibility.mode is 'any', at least one condition must be true.
-   *
-   * @param field - The field whose visibility needs to be evaluated
-   * @param form - The FormGroup containing all form controls
-   * @returns boolean indicating whether the field should be visible or not
+   * Evaluates a `VisibleWhen` condition group against an arbitrary value-lookup function.
+   * Returns `true` when `conditionGroup` is `undefined` or has no conditions.
+   * @param conditionGroup - The condition group to evaluate, or `undefined`.
+   * @param valueLookup - Callback returning the current value for a given field key.
    */
-  private evaluateFieldVisibility<T extends ConditionalFieldConfig>(
-    field: T,
-    form: FormGroup,
-  ): boolean {
-    const visibility = field.visibleWhen;
-    if (!visibility?.conditions?.length) return true;
-
-    const results = visibility.conditions.map((condition) =>
-      this.evaluateCondition(condition, form),
-    );
-
-    return visibility.mode === 'all' ? results.every(Boolean) : results.some(Boolean);
+  evaluateConditions(conditionGroup: VisibleWhen | undefined, valueLookup: (key: string) => unknown): boolean {
+    if (!conditionGroup?.conditions?.length) return true;
+    const results = conditionGroup.conditions.map((c) => this.evaluateSingleCondition(c, valueLookup));
+    return conditionGroup.mode === 'all' ? results.every(Boolean) : results.some(Boolean);
   }
 
   /**
-   * Evaluate a single visibility condition based on the current form values
-   * @param condition - The visibility condition to evaluate
-   * @param form - The FormGroup containing all form controls
-   * @returns boolean indicating whether the condition is met
+   * Evaluates field visibility based on its `visibleWhen` conditions and current form values.
+   * @param field - The field whose visibility needs to be evaluated.
+   * @param form - The FormGroup containing all form controls.
    */
-  private evaluateCondition(condition: VisibilityCondition, form: FormGroup): boolean {
-    const rawValue = form.get(condition.key)?.value;
+  private evaluateFieldVisibility<T extends ConditionalFieldConfig>(field: T, form: FormGroup): boolean {
+    return this.evaluateConditions(field.visibleWhen, (key) => form.get(key)?.value);
+  }
+
+  /**
+   * Evaluates a single `VisibilityCondition` using a value-lookup callback.
+   * @param condition - The individual condition to test.
+   * @param valueLookup - Callback returning the current value for a given field key.
+   */
+  private evaluateSingleCondition(condition: VisibilityCondition, valueLookup: (key: string) => unknown): boolean {
+    const rawValue = valueLookup(condition.key);
 
     switch (condition.operator) {
       case 'equals':
         return rawValue === condition.value;
 
+      case 'notEquals':
+        return rawValue !== condition.value;
+
       case 'in':
         return Array.isArray(condition.value) && condition.value.includes(rawValue);
+
+      case 'notIn':
+        return Array.isArray(condition.value) && !condition.value.includes(rawValue);
 
       case 'yearGreaterThan': {
         const year = this.extractYear(rawValue);

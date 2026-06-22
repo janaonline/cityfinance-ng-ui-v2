@@ -1,4 +1,5 @@
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
+import { FormActor } from '../../shared/form-progress/form-progress.component';
 
 export type SubmitType = 'saveAsDraft' | 'finalSubmit';
 
@@ -27,6 +28,8 @@ export interface SfcStatusFormData {
   formType: string;
   stateId: string;
   yearId: string;
+  stateName: string;
+  actors: FormActor[];
   currentFormStatus: number;
   currentFormStatusLabel: string;
   questions: ConditionalFieldConfig[];
@@ -68,9 +71,11 @@ export interface SfcStatusSubmitResponse {
 }
 
 export interface ApiErrorResponse {
+  success?: false;
   statusCode?: number;
   message?: string;
   errors?: ApiErrorMap;
   timestamp?: string;
   path?: string;
+  data?: unknown;
 }

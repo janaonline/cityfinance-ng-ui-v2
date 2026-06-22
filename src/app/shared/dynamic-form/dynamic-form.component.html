@@ -1,6 +1,8 @@
 <app-field-supporting-content
   [supportingContent]="fieldForRenderer.supportingContent"
+  [fieldKey]="fieldForRenderer.key ?? ''"
   position="before"
+  (supportingAction)="supportingAction.emit($event)"
 ></app-field-supporting-content>
 
 @if (isInlineLayout) {
@@ -18,54 +20,53 @@
 
 <app-field-supporting-content
   [supportingContent]="fieldForRenderer.supportingContent"
+  [fieldKey]="fieldForRenderer.key ?? ''"
   position="after"
+  (supportingAction)="supportingAction.emit($event)"
 ></app-field-supporting-content>
 
 <ng-template #fieldContent>
-  <!-- <ng-container *ngFor="let field of fields;"> -->
-  @switch (this.formFieldType) {
-    @case ('input') {
-      <!-- <app-input [field]="field" [group]="group"></app-input> -->
-      <app-input [field]="fieldForRenderer" [group]="group"></app-input>
+  @if (mode === 'view') {
+    <app-dynamic-field-view [field]="fieldForRenderer" [group]="group"></app-dynamic-field-view>
+  } @else {
+    @switch (this.formFieldType) {
+      @case ('input') {
+        <!-- <app-input [field]="field" [group]="group"></app-input> -->
+        <app-input [field]="fieldForRenderer" [group]="group"></app-input>
+      }
+      @case ('textarea') {
+        <app-textarea [field]="fieldForRenderer" [group]="group"></app-textarea>
+      }
+      @case ('radio') {
+        <app-radiobutton [field]="fieldForRenderer" [group]="group"></app-radiobutton>
+      }
+      @case ('checkbox') {
+        <app-checkbox [field]="fieldForRenderer" [group]="group"></app-checkbox>
+      }
+      @case ('select') {
+        <app-select [field]="fieldForRenderer" [group]="group"></app-select>
+      }
+      @case ('dropdown') {
+        <app-select [field]="fieldForRenderer" [group]="group"></app-select>
+      }
+      @case ('date') {
+        <app-date [field]="fieldForRenderer" [group]="group"></app-date>
+      }
+      @case ('childform') {
+        <app-child-form [field]="fieldForRenderer" [group]="group"></app-child-form>
+      }
+      @case ('table') {
+        <app-table [field]="fieldForRenderer" [group]="group"></app-table>
+      }
+      @case ('button') {
+        <app-button [field]="fieldForRenderer" [group]="group"></app-button>
+      }
+      @case ('file') {
+        <app-file [field]="fieldForRenderer" [group]="group"></app-file>
+      }
+      @case ('input-card') {
+        <app-input-card [field]="fieldForRenderer" [group]="group"></app-input-card>
+      }
     }
-    @case ('textarea') {
-      <app-textarea [field]="fieldForRenderer" [group]="group"></app-textarea>
-    }
-    @case ('radio') {
-      <app-radiobutton [field]="fieldForRenderer" [group]="group"></app-radiobutton>
-    }
-    @case ('checkbox') {
-      <app-checkbox [field]="fieldForRenderer" [group]="group"></app-checkbox>
-    }
-    @case ('select') {
-      <app-select [field]="fieldForRenderer" [group]="group"></app-select>
-    }
-    @case ('dropdown') {
-      <app-select [field]="fieldForRenderer" [group]="group"></app-select>
-    }
-    @case ('date') {
-      <app-date [field]="fieldForRenderer" [group]="group"></app-date>
-    }
-    @case ('childform') {
-      <app-child-form [field]="fieldForRenderer" [group]="group"></app-child-form>
-    }
-    @case ('table') {
-      <app-table [field]="fieldForRenderer" [group]="group"></app-table>
-    }
-    @case ('button') {
-      <app-button [field]="fieldForRenderer" [group]="group"></app-button>
-    }
-    @case ('file') {
-      <app-file [field]="fieldForRenderer" [group]="group"></app-file>
-    }
-    @case ('input-card') {
-      <app-input-card [field]="fieldForRenderer" [group]="group"></app-input-card>
-    }
-
-    <!-- @default {
-                <span>Default case (Not 0 or 1 or 2)</span>
-              } -->
   }
-  <!-- </ng-container> -->
-  <!-- </form> -->
 </ng-template>

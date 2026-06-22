@@ -23,18 +23,26 @@
     </div>
   }
 
-  <p class="upload-description body-sm mb-3">{{ config.description }}</p>
+  @if (configError()) {
+    <app-page-error-state
+      title="Failed to load document configuration"
+      message="We couldn't reach the server. Please check your connection and try again."
+      (retry)="retryLoadConfig()"
+    />
+  } @else {
+
+  <p class="upload-description body-sm mb-3">{{ config()?.description }}</p>
 
   <div class="d-flex align-items-center gap-3 mb-3">
     <div class="flex-grow-1">
       <mat-progress-bar mode="determinate" [value]="progressPct()"></mat-progress-bar>
     </div>
-    <span class="body-xs text-muted text-nowrap">{{ passedCount() }} of {{ totalCount }} verified</span>
+    <span class="body-xs text-muted text-nowrap">{{ passedCount() }} of {{ totalCount() }} verified</span>
   </div>
 
   <div class="documents-card rounded-3 border overflow-hidden mb-4">
 
-    @if (isLoadingExisting()) {
+    @if (isLoadingConfig() || isLoadingExisting()) {
       @for (i of [1,2,3,4,5]; track i) {
         <div class="doc-row doc-row--skeleton border-bottom">
           <div class="d-flex align-items-center gap-3 px-3 py-3">
@@ -234,7 +242,7 @@
           [disabled]="!allPassed()"
           (click)="confirmDocuments()"
         >
-          {{ config.confirmLabel }}
+          {{ config()?.confirmLabel }}
         </button>
         <p class="footer-note body-xs text-muted mb-0">
           All documents must pass verification before confirming. Once confirmed, documents are locked.
@@ -242,5 +250,7 @@
       </div>
     </div>
   }
+
+  } <!-- end @else (configError) -->
 
 </div>
