@@ -10,6 +10,8 @@
   border: 1px solid #d8dee9;
   border-radius: 6px;
   min-height: 180px;
+  max-height: 62vh;
+  overflow-y: auto;
 }
 
 .table {
@@ -74,6 +76,11 @@ td {
 }
 
 .eulb-cell-invalid {
-  color: #b42318;
-  font-weight: 600;
+  background-color: var(--bs-danger-bg-subtle);
+  box-shadow: inset 3px 0 0 var(--bs-danger);
+  cursor: pointer;
+}
+
+.eulb-error-icon {
+  line-height: 1;
 }

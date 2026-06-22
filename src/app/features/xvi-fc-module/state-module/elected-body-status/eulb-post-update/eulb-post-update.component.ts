@@ -1,6 +1,16 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpEvent, HttpEventType } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -20,7 +30,9 @@ import { S3FileURLResponse } from '../../../../../core/models/s3Responses/fileUR
 import { ToStorageUrlPipe } from '../../../../../core/pipes/to-storage-url.pipe';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
-import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
+import { resolveDateConstraint } from '../../../../../shared/dynamic-form/date-constraint-resolver';
+import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
+import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../dynamic-form-visibility.service';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import {
   EulbBodyStatus,
@@ -193,6 +205,10 @@ export class EulbPostUpdateComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly dynamicService = inject(DynamicFormService);
+  private readonly visibilityService = inject(DynamicFormVisibilityService);
 
   readonly isLoadingMeta = signal(false);
   readonly isLoadingRows = signal(false);
@@ -402,6 +418,7 @@ export class EulbPostUpdateComponent implements OnInit {
     this.editForm.valueChanges
       .pipe(takeUntil(this.editFormTeardown$), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.updateChangedRowFromEdit(row._id));
+    this.bindEnabledWhenToEditForm(this.editForm);
   }
 
   finishEdit(rowId: string): void {
@@ -575,6 +592,65 @@ export class EulbPostUpdateComponent implements OnInit {
 
   isRowModified(rowId: string): boolean {
     return this.changedRows().has(rowId);
+  }
+
+  getEditDateMin(fieldKey: string): string | null {
+    const field = this.getRowEditFieldConfig(fieldKey);
+    if (!field) return null;
+    if (field.minDate != null) return this.toHtmlDate(field.minDate);
+    const val = field.validations?.find((v) => v.name === 'minDate')?.validator;
+    return val != null ? this.toHtmlDate(val) : null;
+  }
+
+  getEditDateMax(fieldKey: string): string | null {
+    const field = this.getRowEditFieldConfig(fieldKey);
+    if (!field) return null;
+    if (field.maxDate != null) return this.toHtmlDate(field.maxDate);
+    const val = field.validations?.find((v) => v.name === 'maxDate')?.validator;
+    return val != null ? this.toHtmlDate(val) : null;
+  }
+
+  isEditFieldEnabled(field: string): boolean {
+    return !this.editForm.get(field)?.disabled;
+  }
+
+  getEditFieldDisabledReason(field: string): string {
+    return this.getRowEditFieldConfig(field)?.disabledReason ?? '';
+  }
+
+  getUpdateValidationStateBadgeClass(): string {
+    const s = this.validationState();
+    if (s === 'VALID') return 'text-bg-success';
+    if (s === 'INVALID') return 'text-bg-danger';
+    if (s === 'STALE') return 'text-bg-warning';
+    return 'text-bg-secondary';
+  }
+
+  getUpdateValidationStateLabel(): string {
+    const s = this.validationState();
+    if (s === 'VALID') return 'Valid';
+    if (s === 'INVALID') return 'Invalid';
+    if (s === 'STALE') return 'Stale — re-validate needed';
+    return 'Not validated';
+  }
+
+  startEditAtField(row: EulbPostSubmissionUpdateRow, field: string): void {
+    if (!this.canEditRows()) return;
+    if (this.editingRowId() !== null) return;
+    const hasError = row.errors?.some((err) => err.field === field) ?? false;
+    if (!hasError) return;
+    this.startEdit(row);
+    setTimeout(() => {
+      const el = this.elementRef.nativeElement.querySelector(`[data-eulb-post-edit-field="${field}"]`);
+      if (el instanceof HTMLElement) el.focus();
+    }, 50);
+  }
+
+  getSubmitDisabledReason(): string {
+    if (this.changedRowCount() === 0) return 'No changed rows to submit.';
+    if (!this.updateDocument()) return 'Upload the combined PDF first.';
+    if (this.validationState() !== 'VALID') return 'Validate changes before submitting.';
+    return '';
   }
 
   private updateChangedRowFromEdit(rowId: string): void {
@@ -887,6 +963,80 @@ export class EulbPostUpdateComponent implements OnInit {
     if (this.validationState() === 'VALID' || this.validationState() === 'INVALID') {
       this.validationState.set('STALE');
     }
+  }
+
+  private getRowEditFieldConfig(fieldKey: string): ConditionalFieldConfig | undefined {
+    return this.pageRowEditFields().find((f) => f.key === fieldKey);
+  }
+
+  private toHtmlDate(value: unknown): string | null {
+    if (value === null || value === undefined || value === '') return null;
+    try {
+      const resolved = resolveDateConstraint(value);
+      if (!resolved || isNaN(resolved.getTime())) return null;
+      const y = resolved.getFullYear();
+      const m = String(resolved.getMonth() + 1).padStart(2, '0');
+      const d = String(resolved.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    } catch {
+      return null;
+    }
+  }
+
+  private bindEnabledWhenToEditForm(form: FormGroup): void {
+    const deps = new Map<string, ConditionalFieldConfig[]>();
+    for (const field of this.pageRowEditFields()) {
+      if (!field.enabledWhen?.conditions?.length || !field.key) continue;
+      for (const condition of field.enabledWhen.conditions) {
+        const list = deps.get(condition.key) ?? [];
+        if (!list.some((f) => f.key === field.key)) list.push(field);
+        deps.set(condition.key, list);
+      }
+    }
+    if (!deps.size) return;
+
+    this.applyEnabledWhen(form, deps);
+
+    for (const controllerKey of deps.keys()) {
+      const ctrl = form.get(controllerKey);
+      if (!ctrl) continue;
+      ctrl.valueChanges.pipe(takeUntil(this.editFormTeardown$), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+        this.applyEnabledWhen(form, deps);
+      });
+    }
+  }
+
+  private applyEnabledWhen(form: FormGroup, deps: Map<string, ConditionalFieldConfig[]>): void {
+    const allDependents = [...new Set([...deps.values()].flat())];
+
+    for (const field of allDependents) {
+      if (!field.key) continue;
+      const control = form.get(field.key);
+      if (!control) continue;
+
+      const shouldEnable = this.visibilityService.evaluateConditions(field.enabledWhen, (key) => form.get(key)?.value);
+
+      if (shouldEnable) {
+        if (this.canEditRows()) {
+          control.enable({ emitEvent: false });
+        }
+        const validators = this.dynamicService.bindValidations(field.validations, field);
+        control.setValidators(validators);
+        control.updateValueAndValidity({ emitEvent: false });
+      } else {
+        if (field.clearValueWhenDisabled) {
+          control.setValue('', { emitEvent: false });
+        }
+        control.clearValidators();
+        control.setErrors(null);
+        control.markAsUntouched();
+        control.markAsPristine();
+        control.disable({ emitEvent: false });
+        control.updateValueAndValidity({ emitEvent: false });
+      }
+    }
+
+    this.cdr.markForCheck();
   }
 
   private setupFilterSubscription(): void {
