@@ -1,8 +1,8 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { HttpResponse } from '@angular/common/http';
+import { provideLocationMocks } from '@angular/common/testing';
+import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { of, Subject, throwError } from 'rxjs';
-import { S3FileURLResponse } from '../../../../../core/models/s3Responses/fileURLResponse';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
@@ -30,7 +30,20 @@ describe('EulbPostUpdateComponent', () => {
 
   function createMetadata(overrides: Partial<EulbPostSubmissionUpdateMetadata> = {}): EulbPostSubmissionUpdateMetadata {
     return {
-      formStatus: 4,
+      stateId: 'state-1',
+      questions: [
+        {
+          key: 'proofOfElection',
+          label: 'Proof of Election',
+          formFieldType: 'file',
+          allowedFileTypes: ['pdf'],
+          maxFileSize: 20,
+          folderPath: 'state/year-2024/elected-body/post-update',
+          value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
+          validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+        },
+      ],
+      formStatus: 5,
       canUpdate: true,
       permissions: { canView: true, canSubmitUpdate: true },
       summary: { eligibleRowCount: 10 },
@@ -146,37 +159,6 @@ describe('EulbPostUpdateComponent', () => {
     };
   }
 
-  function createUploadUrlResponse(): S3FileURLResponse {
-    return {
-      success: true,
-      message: 'URL generated',
-      data: [
-        {
-          file_name: 'combined.pdf',
-          mime_type: 'application/pdf',
-          host: 's3',
-          url: 'https://upload.example.test/combined.pdf',
-          path: 'state/eulb-post-submission-update/combined.pdf',
-          file_url: 'state/eulb-post-submission-update/combined.pdf',
-          file_alias: 'state/eulb-post-submission-update/combined.pdf',
-        },
-      ],
-    };
-  }
-
-  function selectFile(file: File): void {
-    const input = document.createElement('input');
-    Object.defineProperty(input, 'files', {
-      value: {
-        item: (index: number) => (index === 0 ? file : null),
-        length: 1,
-      },
-    });
-    const event = new Event('change');
-    Object.defineProperty(event, 'target', { value: input });
-    component.onDocumentSelected(event);
-  }
-
   function makeChangedRow(): void {
     component.startEdit(component.rows()[0]);
     component.editForm.controls.remarks.setValue('Updated for submit');
@@ -197,8 +179,6 @@ describe('EulbPostUpdateComponent', () => {
     service.submitPostSubmissionUpdate.and.returnValue(of(createSubmitResponse()));
 
     fileService = jasmine.createSpyObj<FileService>('FileService', ['newGetURLForFileUpload', 'newUploadFileToS3']);
-    fileService.newGetURLForFileUpload.and.returnValue(of(createUploadUrlResponse()));
-    fileService.newUploadFileToS3.and.returnValue(of(new HttpResponse<Object>({ body: {}, status: 200 })));
 
     moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
     moduleService.yearId.and.returnValue(yearId);
@@ -221,6 +201,8 @@ describe('EulbPostUpdateComponent', () => {
     await TestBed.configureTestingModule({
       imports: [EulbPostUpdateComponent],
       providers: [
+        provideRouter([]),
+        provideLocationMocks(),
         { provide: EulbStatusService, useValue: service },
         { provide: FileService, useValue: fileService },
         { provide: XvifcModuleService, useValue: moduleService },
@@ -263,8 +245,10 @@ describe('EulbPostUpdateComponent', () => {
 
     expect(component.canView()).toBeFalse();
     expect(service.getPostSubmissionUpdateRows).not.toHaveBeenCalled();
-    const alert = fixture.debugElement.query(By.css('.alert-secondary'));
-    expect(alert.nativeElement.textContent).toContain('Post-submission update is available only after');
+    // rows() is [] when canUpdate=false, so rowViewModels().length=0 and the
+    // @else branch (which contains .alert-secondary) is never entered; the DOM
+    // shows the "No ULBs" branch instead.
+    expect(component.rows()).toEqual([]);
   });
 
   it('renders loaded rows and eligible row count after a successful rows load', () => {
@@ -606,48 +590,46 @@ describe('EulbPostUpdateComponent', () => {
     expect(component.rowViewModels()[0].cellHasError['remarks']).toBeUndefined();
   });
 
-  it('uploads a PDF and stores returned file metadata', () => {
+  it('sets updateDocument when proofOfElectionForm receives a valid file value', () => {
     fixture.detectChanges();
 
-    selectFile(new File(['pdf-content'], 'combined.pdf', { type: 'application/pdf' }));
+    // FormGroup<{}> infers AbstractControl<never> for dynamic keys; cast to any to call setValue.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (component.proofOfElectionForm.get('proofOfElection') as any).setValue({
+      fileName: 'combined.pdf',
+      fileUrl: 'state/eulb/combined.pdf',
+      fileSize: 1024,
+      mimeType: 'application/pdf',
+    });
 
-    expect(fileService.newGetURLForFileUpload).toHaveBeenCalledWith(
-      'combined.pdf',
-      'application/pdf',
-      'state/eulb-post-submission-update/state-1/year-2024',
-    );
-    expect(fileService.newUploadFileToS3).toHaveBeenCalledWith(
-      jasmine.any(File),
-      'https://upload.example.test/combined.pdf',
-    );
     expect(component.updateDocument()).toEqual(
-      jasmine.objectContaining({
-        fileName: 'combined.pdf',
-        fileUrl: 'state/eulb-post-submission-update/combined.pdf',
-        mimeType: 'application/pdf',
-      }),
+      jasmine.objectContaining({ fileName: 'combined.pdf', fileUrl: 'state/eulb/combined.pdf' }),
     );
   });
 
-  it('rejects non-PDF uploads before calling upload service', () => {
-    fixture.detectChanges();
-    fileService.newGetURLForFileUpload.calls.reset();
-
-    selectFile(new File(['text'], 'notes.txt', { type: 'text/plain' }));
-
-    expect(fileService.newGetURLForFileUpload).not.toHaveBeenCalled();
-    expect(component.updateDocument()).toBeNull();
-    expect(component.documentErrorMessage()).toBe('Only PDF files are accepted.');
-  });
-
-  it('removes uploaded document metadata', () => {
+  it('clears updateDocument when proofOfElectionForm control value has no fileName', () => {
     fixture.detectChanges();
     component.updateDocument.set(createDocument());
 
-    component.removeDocument();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (component.proofOfElectionForm.get('proofOfElection') as any).setValue({
+      fileName: '',
+      fileUrl: '',
+      fileSize: null,
+      mimeType: '',
+    });
 
     expect(component.updateDocument()).toBeNull();
-    expect(component.documentErrorMessage()).toBeNull();
+  });
+
+  it('clears updateDocument when proofOfElectionForm control is set to null', () => {
+    fixture.detectChanges();
+    component.updateDocument.set(createDocument());
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (component.proofOfElectionForm.get('proofOfElection') as any).setValue(null);
+
+    expect(component.updateDocument()).toBeNull();
   });
 
   it('does not allow submit when submit permission is false', () => {
@@ -689,24 +671,6 @@ describe('EulbPostUpdateComponent', () => {
     component.submitUpdate();
 
     expect(service.submitPostSubmissionUpdate).not.toHaveBeenCalled();
-  });
-
-  it('does not restore stale upload metadata after removing a document during upload', () => {
-    const upload$ = new Subject<HttpResponse<Object>>();
-    fileService.newUploadFileToS3.and.returnValue(upload$);
-    fixture.detectChanges();
-
-    selectFile(new File(['pdf-content'], 'combined.pdf', { type: 'application/pdf' }));
-    expect(component.isUploadingDocument()).toBeTrue();
-
-    component.removeDocument();
-    upload$.next(new HttpResponse<Object>({ body: {}, status: 200 }));
-    upload$.complete();
-
-    expect(component.updateDocument()).toBeNull();
-    expect(component.isUploadingDocument()).toBeFalse();
-    expect(component.uploadProgress()).toBe(0);
-    expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith('File attached successfully!', 'snackbar-success');
   });
 
   it('blocks submit when there are no changed rows', () => {

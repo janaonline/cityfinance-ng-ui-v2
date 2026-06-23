@@ -103,8 +103,425 @@
                   flagged as ineligible in your Elected Body Status submission. For each one you select, enter the date
                   the body was duly constituted and its date of expiry.
                 </p>
-                <!-- Edit table -->
-                <ng-container *ngTemplateOutlet="welcomeMessage"></ng-container>
+                <!-- Data entry summary -->
+                <div class="my-2 d-flex gap-2">
+                  <p class="m-0 p-2 bg-light small border rounded">
+                    Eligible rows:
+                    <span class="fw-semibold" data-testid="eligible-row-count">{{ eligibleRowCount() }}</span>
+                  </p>
+
+                  <p class="m-0 p-2 bg-light small border rounded">
+                    Modified rows:
+                    <span class="fw-semibold" data-testid="modified-row-count">{{ changedRowCount() }}</span>
+                  </p>
+
+                  <p class="m-0 p-2 bg-light small border rounded">
+                    Validation:
+                    <span
+                      class="fw-semibold"
+                      [ngClass]="getUpdateValidationStateBadgeClass()"
+                      data-testid="validation-state"
+                    >
+                      {{ getUpdateValidationStateLabel() }}
+                    </span>
+                  </p>
+                </div>
+
+                <div class="p-1 card bg-light">
+                  <!-- Search/ Filters -->
+                  <form [formGroup]="filterForm" class="pt-2 pb-3 px-3 d-flex flex-wrap gap-2 align-items-end">
+                    <div class="flex-grow-1">
+                      <label class="form-label small fw-semibold mb-1" for="eulb-post-search">Search</label>
+                      <input
+                        id="eulb-post-search"
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Census code or ULB name"
+                        formControlName="search"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="form-label small fw-semibold mb-1" for="eulb-post-body-status">Body status</label>
+                      <select
+                        id="eulb-post-body-status"
+                        class="form-select form-select-sm"
+                        formControlName="electedBodyStatus"
+                      >
+                        <option value="">All</option>
+                        @for (opt of electedBodyStatusOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="form-label small fw-semibold mb-1" for="eulb-post-vstatus">Validation</label>
+                      <select
+                        id="eulb-post-vstatus"
+                        class="form-select form-select-sm"
+                        formControlName="validationStatus"
+                      >
+                        <option value="">All</option>
+                        @for (opt of validationStatusOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                  </form>
+
+                  @if (rowsErrorMessage()) {
+                    <div class="alert alert-danger py-2" role="alert">
+                      {{ rowsErrorMessage() }}
+                    </div>
+                  }
+
+                  <!-- Table content -->
+                  <div class="table-responsive">
+                    @if (isLoadingRows()) {
+                      <div class="d-flex justify-content-center align-items-center py-5">
+                        <div
+                          class="spinner-border spinner-border-sm text-primary me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></div>
+                        <span class="small text-secondary">Loading rows...</span>
+                      </div>
+                    } @else if (!rows().length) {
+                      <div class="text-center py-5 text-secondary small">
+                        No eligible rows found for the current filters.
+                      </div>
+                    } @else {
+                      <table class="table table-sm table-hover align-middle mb-0">
+                        <caption class="visually-hidden">
+                          Eligible ULBs for post-submission elected body status update
+                        </caption>
+                        <thead class="table-light border-bottom border-top">
+                          <tr class="py-3">
+                            <th scope="col" class="small text-nowrap fw-semibold">#</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Census Code</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">ULB Name</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Elected Body Status</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Date of Constitution</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Date of Expiry</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Remarks</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Validation</th>
+                            @if (canEditRows()) {
+                              <th scope="col" class="small fw-semibold">Actions</th>
+                            }
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (vm of rowViewModels(); track vm.row._id) {
+                            @let row = vm.row;
+                            <tr>
+                              <td class="small text-muted">{{ row.rowNumber }}</td>
+                              <td class="small">{{ row.censusCode }}</td>
+                              <td class="small fw-medium">
+                                <div class="d-flex align-items-center gap-2">
+                                  <span>{{ row.ulbName }}</span>
+                                  @if (vm.isModified) {
+                                    <span class="badge rounded px-1 small text-bg-warning rounded-pill">
+                                      Modified
+                                    </span>
+                                  }
+                                </div>
+                              </td>
+
+                              @if (editingRowId() === row._id) {
+                                <td>
+                                  @if (isFieldEditable('electedBodyStatus')) {
+                                    <select
+                                      class="form-select form-select-sm"
+                                      [class.is-invalid]="vm.cellHasError['electedBodyStatus']"
+                                      [matTooltip]="vm.cellErrorText['electedBodyStatus'] ?? ''"
+                                      [matTooltipDisabled]="!vm.cellHasError['electedBodyStatus']"
+                                      matTooltipPosition="above"
+                                      [matTooltipShowDelay]="100"
+                                      aria-label="Elected Body Status"
+                                      [attr.aria-invalid]="vm.cellHasError['electedBodyStatus'] || null"
+                                      [attr.data-eulb-post-edit-field]="'electedBodyStatus'"
+                                      [formControl]="editForm.controls.electedBodyStatus"
+                                    >
+                                      <option value="">- Select -</option>
+                                      @for (opt of electedBodyStatusOptions; track opt.value) {
+                                        <option [value]="opt.value">{{ opt.label }}</option>
+                                      }
+                                    </select>
+                                  } @else {
+                                    <span class="small">{{ row.electedBodyStatus }}</span>
+                                  }
+                                </td>
+                                <td
+                                  [matTooltip]="getEditFieldDisabledReason('dateOfConstitution')"
+                                  [matTooltipDisabled]="isEditFieldEnabled('dateOfConstitution')"
+                                  matTooltipPosition="above"
+                                  [matTooltipShowDelay]="100"
+                                >
+                                  @if (isFieldEditable('dateOfConstitution')) {
+                                    <input
+                                      type="date"
+                                      class="form-control form-control-sm"
+                                      [class.is-invalid]="vm.cellHasError['dateOfConstitution']"
+                                      [attr.min]="getEditDateMin('dateOfConstitution')"
+                                      [attr.max]="getEditDateMax('dateOfConstitution')"
+                                      [matTooltip]="vm.cellErrorText['dateOfConstitution'] ?? ''"
+                                      [matTooltipDisabled]="!vm.cellHasError['dateOfConstitution']"
+                                      matTooltipPosition="above"
+                                      [matTooltipShowDelay]="100"
+                                      aria-label="Date of Constitution"
+                                      [attr.aria-invalid]="vm.cellHasError['dateOfConstitution'] || null"
+                                      [attr.data-eulb-post-edit-field]="'dateOfConstitution'"
+                                      [formControl]="editForm.controls.dateOfConstitution"
+                                    />
+                                  } @else {
+                                    <span class="small">{{
+                                      (row.dateOfConstitution | date: 'dd MMM yyyy' : '+0530') ?? '-'
+                                    }}</span>
+                                  }
+                                </td>
+                                <td
+                                  [matTooltip]="getEditFieldDisabledReason('dateOfExpiry')"
+                                  [matTooltipDisabled]="isEditFieldEnabled('dateOfExpiry')"
+                                  matTooltipPosition="above"
+                                  [matTooltipShowDelay]="100"
+                                >
+                                  @if (isFieldEditable('dateOfExpiry')) {
+                                    <input
+                                      type="date"
+                                      class="form-control form-control-sm"
+                                      [class.is-invalid]="vm.cellHasError['dateOfExpiry']"
+                                      [attr.min]="getEditDateMin('dateOfExpiry')"
+                                      [attr.max]="getEditDateMax('dateOfExpiry')"
+                                      [matTooltip]="vm.cellErrorText['dateOfExpiry'] ?? ''"
+                                      [matTooltipDisabled]="!vm.cellHasError['dateOfExpiry']"
+                                      matTooltipPosition="above"
+                                      [matTooltipShowDelay]="100"
+                                      aria-label="Date of Expiry"
+                                      [attr.aria-invalid]="vm.cellHasError['dateOfExpiry'] || null"
+                                      [attr.data-eulb-post-edit-field]="'dateOfExpiry'"
+                                      [formControl]="editForm.controls.dateOfExpiry"
+                                    />
+                                  } @else {
+                                    <span class="small">{{
+                                      (row.dateOfExpiry | date: 'dd MMM yyyy' : '+0530') ?? '-'
+                                    }}</span>
+                                  }
+                                </td>
+                                <td>
+                                  @if (isFieldEditable('remarks')) {
+                                    <input
+                                      type="text"
+                                      class="form-control form-control-sm"
+                                      [class.is-invalid]="vm.cellHasError['remarks']"
+                                      [matTooltip]="vm.cellErrorText['remarks'] ?? ''"
+                                      [matTooltipDisabled]="!vm.cellHasError['remarks']"
+                                      matTooltipPosition="above"
+                                      [matTooltipShowDelay]="100"
+                                      aria-label="Remarks"
+                                      [attr.aria-invalid]="vm.cellHasError['remarks'] || null"
+                                      [attr.data-eulb-post-edit-field]="'remarks'"
+                                      placeholder="Remarks"
+                                      [formControl]="editForm.controls.remarks"
+                                    />
+                                  } @else {
+                                    <span class="small">{{ row.remarks || '-' }}</span>
+                                  }
+                                </td>
+                              } @else {
+                                <td
+                                  class="small"
+                                  [class.cursor-pointer]="canEditRows() && vm.cellHasError['electedBodyStatus']"
+                                  [matTooltip]="vm.cellErrorText['electedBodyStatus'] ?? ''"
+                                  [matTooltipDisabled]="!vm.cellHasError['electedBodyStatus']"
+                                  matTooltipPosition="above"
+                                  [matTooltipShowDelay]="100"
+                                  (click)="startEditAtField(row, 'electedBodyStatus')"
+                                >
+                                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                                    <span class="text-truncate min-w-0">{{ row.electedBodyStatus }}</span>
+                                    @if (vm.cellHasError['electedBodyStatus']) {
+                                      <button
+                                        type="button"
+                                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                                        aria-label="Elected body status has a validation error"
+                                        (click)="$event.stopPropagation()"
+                                      >
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                      </button>
+                                    }
+                                  </div>
+                                </td>
+                                <td
+                                  class="small"
+                                  [class.cursor-pointer]="canEditRows() && vm.cellHasError['dateOfConstitution']"
+                                  [matTooltip]="vm.cellErrorText['dateOfConstitution'] ?? ''"
+                                  [matTooltipDisabled]="!vm.cellHasError['dateOfConstitution']"
+                                  matTooltipPosition="above"
+                                  [matTooltipShowDelay]="100"
+                                  (click)="startEditAtField(row, 'dateOfConstitution')"
+                                >
+                                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                                    <span class="text-truncate min-w-0">
+                                      {{ (row.dateOfConstitution | date: 'dd MMM yyyy' : '+0530') ?? '-' }}
+                                    </span>
+                                    @if (vm.cellHasError['dateOfConstitution']) {
+                                      <button
+                                        type="button"
+                                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                                        aria-label="Date of constitution has a validation error"
+                                        (click)="$event.stopPropagation()"
+                                      >
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                      </button>
+                                    }
+                                  </div>
+                                </td>
+                                <td
+                                  class="small"
+                                  [class.cursor-pointer]="canEditRows() && vm.cellHasError['dateOfExpiry']"
+                                  [matTooltip]="vm.cellErrorText['dateOfExpiry'] ?? ''"
+                                  [matTooltipDisabled]="!vm.cellHasError['dateOfExpiry']"
+                                  matTooltipPosition="above"
+                                  [matTooltipShowDelay]="100"
+                                  (click)="startEditAtField(row, 'dateOfExpiry')"
+                                >
+                                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                                    <span class="text-truncate min-w-0">
+                                      {{ (row.dateOfExpiry | date: 'dd MMM yyyy' : '+0530') ?? '-' }}
+                                    </span>
+                                    @if (vm.cellHasError['dateOfExpiry']) {
+                                      <button
+                                        type="button"
+                                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                                        aria-label="Date of expiry has a validation error"
+                                        (click)="$event.stopPropagation()"
+                                      >
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                      </button>
+                                    }
+                                  </div>
+                                </td>
+                                <td
+                                  class="small"
+                                  [class.cursor-pointer]="canEditRows() && vm.cellHasError['remarks']"
+                                  [matTooltip]="vm.cellErrorText['remarks'] ?? ''"
+                                  [matTooltipDisabled]="!vm.cellHasError['remarks']"
+                                  matTooltipPosition="above"
+                                  [matTooltipShowDelay]="100"
+                                  (click)="startEditAtField(row, 'remarks')"
+                                >
+                                  <div class="d-flex align-items-center justify-content-between gap-2 w-100">
+                                    <span class="text-truncate min-w-0">{{ row.remarks || '-' }}</span>
+                                    @if (vm.cellHasError['remarks']) {
+                                      <button
+                                        type="button"
+                                        class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                                        aria-label="Remarks has a validation error"
+                                        (click)="$event.stopPropagation()"
+                                      >
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                      </button>
+                                    }
+                                  </div>
+                                </td>
+                              }
+
+                              <td>
+                                <span
+                                  class="badge rounded px-1 small"
+                                  [ngClass]="getValidationStatusBadgeClass(row.validationStatus)"
+                                >
+                                  {{ getValidationStatusLabel(row.validationStatus) }}
+                                </span>
+                              </td>
+
+                              @if (canEditRows()) {
+                                <td>
+                                  @if (editingRowId() === row._id) {
+                                    <div class="d-flex gap-1 flex-nowrap">
+                                      <button
+                                        type="button"
+                                        matButton="outlined"
+                                        aria-label="Done editing"
+                                        (click)="finishEdit(row._id)"
+                                      >
+                                        <i class="bi bi-check-lg"></i>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        matButton="outlined"
+                                        color="warn"
+                                        aria-label="Reset row"
+                                        [disabled]="!isRowModified(row._id)"
+                                        (click)="resetRow(row._id)"
+                                      >
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                      </button>
+                                    </div>
+                                  } @else {
+                                    <div class="d-flex gap-1 flex-nowrap">
+                                      <button
+                                        type="button"
+                                        matButton="outlined"
+                                        aria-label="Edit row"
+                                        [disabled]="editingRowId() !== null"
+                                        (click)="startEdit(row)"
+                                      >
+                                        <i class="bi bi-pencil"></i>
+                                      </button>
+                                      @if (vm.isModified) {
+                                        <button
+                                          type="button"
+                                          matButton="outlined"
+                                          color="warn"
+                                          aria-label="Reset row"
+                                          [disabled]="editingRowId() !== null"
+                                          (click)="resetRow(row._id)"
+                                        >
+                                          <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                      }
+                                    </div>
+                                  }
+                                </td>
+                              }
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
+                  </div>
+
+                  @if (total() > 0) {
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                      <span class="small text-muted"
+                        >Showing {{ startIndex() }}-{{ endIndex() }} of {{ total() }} rows</span
+                      >
+                      <div class="d-flex align-items-center gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-success"
+                          [disabled]="!hasPrev()"
+                          (click)="goToPage(page() - 1)"
+                          aria-label="Previous page"
+                        >
+                          <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span class="small px-2">Page {{ page() }} of {{ totalPages() }}</span>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-success"
+                          [disabled]="!hasNext()"
+                          (click)="goToPage(page() + 1)"
+                          aria-label="Next page"
+                        >
+                          <i class="bi bi-chevron-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
               </div>
 
               <!-- Upload proof of election document via dynamic form. -->
@@ -171,408 +588,3 @@
     </div>
   </div>
 }
-<!-- Data summary, filter, table. -->
-<ng-template #welcomeMessage>
-  <!-- Data entry summary -->
-  <div class="my-2 d-flex gap-2">
-    <p class="m-0 p-2 bg-light small border rounded">
-      Eligible rows:
-      <span class="fw-semibold" data-testid="eligible-row-count">{{ eligibleRowCount() }}</span>
-    </p>
-
-    <p class="m-0 p-2 bg-light small border rounded">
-      Modified rows:
-      <span class="fw-semibold" data-testid="modified-row-count">{{ changedRowCount() }}</span>
-    </p>
-
-    <p class="m-0 p-2 bg-light small border rounded">
-      Validation:
-      <span
-        class="badge rounded p-1 small"
-        [ngClass]="getUpdateValidationStateBadgeClass()"
-        data-testid="validation-state"
-      >
-        {{ getUpdateValidationStateLabel() }}
-      </span>
-    </p>
-  </div>
-
-  <div class="p-1 card bg-light">
-    <!-- Search/ Filters -->
-    <form [formGroup]="filterForm" class="pt-2 pb-3 px-3 d-flex flex-wrap gap-2 align-items-end">
-      <div class="flex-grow-1">
-        <label class="form-label small fw-semibold mb-1" for="eulb-post-search">Search</label>
-        <input
-          id="eulb-post-search"
-          type="text"
-          class="form-control form-control-sm"
-          placeholder="Census code or ULB name"
-          formControlName="search"
-        />
-      </div>
-
-      <div>
-        <label class="form-label small fw-semibold mb-1" for="eulb-post-body-status">Body status</label>
-        <select id="eulb-post-body-status" class="form-select form-select-sm" formControlName="electedBodyStatus">
-          <option value="">All</option>
-          @for (opt of electedBodyStatusOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-      </div>
-
-      <div>
-        <label class="form-label small fw-semibold mb-1" for="eulb-post-vstatus">Validation</label>
-        <select id="eulb-post-vstatus" class="form-select form-select-sm" formControlName="validationStatus">
-          <option value="">All</option>
-          @for (opt of validationStatusOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-      </div>
-    </form>
-
-    @if (rowsErrorMessage()) {
-      <div class="alert alert-danger py-2" role="alert">
-        {{ rowsErrorMessage() }}
-      </div>
-    }
-
-    <!-- Table content -->
-    <div class="table-responsive">
-      @if (isLoadingRows()) {
-        <div class="d-flex justify-content-center align-items-center py-5">
-          <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
-          <span class="small text-secondary">Loading rows...</span>
-        </div>
-      } @else if (!rows().length) {
-        <div class="text-center py-5 text-secondary small">No eligible rows found for the current filters.</div>
-      } @else {
-        <table class="table table-sm table-hover align-middle mb-0">
-          <thead class="table-light border-bottom border-top">
-            <tr class="py-3">
-              <th class="small text-nowrap fw-semibold">#</th>
-              <th class="small text-nowrap fw-semibold">Census Code</th>
-              <th class="small text-nowrap fw-semibold">ULB Name</th>
-              <th class="small text-nowrap fw-semibold">Elected Body Status</th>
-              <th class="small text-nowrap fw-semibold">Date of Constitution</th>
-              <th class="small text-nowrap fw-semibold">Date of Expiry</th>
-              <th class="small text-nowrap fw-semibold">Remarks</th>
-              <th class="small text-nowrap fw-semibold">Validation</th>
-              @if (canEditRows()) {
-                <th class="small fw-semibold eulb-actions-col">Actions</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (vm of rowViewModels(); track vm.row._id) {
-              @let row = vm.row;
-              <tr [class.eulb-row-modified]="vm.isModified">
-                <td class="small text-muted">{{ row.rowNumber }}</td>
-                <td class="small">{{ row.censusCode }}</td>
-                <td class="small fw-medium">
-                  <div class="d-flex align-items-center gap-2">
-                    <span>{{ row.ulbName }}</span>
-                    @if (vm.isModified) {
-                      <span class="badge text-bg-warning rounded-pill eulb-modified-badge">Modified</span>
-                    }
-                  </div>
-                </td>
-
-                @if (editingRowId() === row._id) {
-                  <td>
-                    @if (isFieldEditable('electedBodyStatus')) {
-                      <select
-                        class="form-select form-select-sm eulb-edit-control"
-                        [class.is-invalid]="vm.cellHasError['electedBodyStatus']"
-                        [matTooltip]="vm.cellErrorText['electedBodyStatus'] ?? ''"
-                        [matTooltipDisabled]="!vm.cellHasError['electedBodyStatus']"
-                        matTooltipPosition="above"
-                        [matTooltipShowDelay]="100"
-                        aria-label="Elected Body Status"
-                        [attr.aria-invalid]="vm.cellHasError['electedBodyStatus'] || null"
-                        [attr.data-eulb-post-edit-field]="'electedBodyStatus'"
-                        [formControl]="editForm.controls.electedBodyStatus"
-                      >
-                        <option value="">- Select -</option>
-                        @for (opt of electedBodyStatusOptions; track opt.value) {
-                          <option [value]="opt.value">{{ opt.label }}</option>
-                        }
-                      </select>
-                    } @else {
-                      <span class="small">{{ row.electedBodyStatus }}</span>
-                    }
-                  </td>
-                  <td
-                    [matTooltip]="getEditFieldDisabledReason('dateOfConstitution')"
-                    [matTooltipDisabled]="isEditFieldEnabled('dateOfConstitution')"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                  >
-                    @if (isFieldEditable('dateOfConstitution')) {
-                      <input
-                        type="date"
-                        class="form-control form-control-sm eulb-edit-control"
-                        [class.is-invalid]="vm.cellHasError['dateOfConstitution']"
-                        [attr.min]="getEditDateMin('dateOfConstitution')"
-                        [attr.max]="getEditDateMax('dateOfConstitution')"
-                        [matTooltip]="vm.cellErrorText['dateOfConstitution'] ?? ''"
-                        [matTooltipDisabled]="!vm.cellHasError['dateOfConstitution']"
-                        matTooltipPosition="above"
-                        [matTooltipShowDelay]="100"
-                        aria-label="Date of Constitution"
-                        [attr.aria-invalid]="vm.cellHasError['dateOfConstitution'] || null"
-                        [attr.data-eulb-post-edit-field]="'dateOfConstitution'"
-                        [formControl]="editForm.controls.dateOfConstitution"
-                      />
-                    } @else {
-                      <span class="small">{{ (row.dateOfConstitution | date: 'dd MMM yyyy' : '+0530') ?? '-' }}</span>
-                    }
-                  </td>
-                  <td
-                    [matTooltip]="getEditFieldDisabledReason('dateOfExpiry')"
-                    [matTooltipDisabled]="isEditFieldEnabled('dateOfExpiry')"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                  >
-                    @if (isFieldEditable('dateOfExpiry')) {
-                      <input
-                        type="date"
-                        class="form-control form-control-sm eulb-edit-control"
-                        [class.is-invalid]="vm.cellHasError['dateOfExpiry']"
-                        [attr.min]="getEditDateMin('dateOfExpiry')"
-                        [attr.max]="getEditDateMax('dateOfExpiry')"
-                        [matTooltip]="vm.cellErrorText['dateOfExpiry'] ?? ''"
-                        [matTooltipDisabled]="!vm.cellHasError['dateOfExpiry']"
-                        matTooltipPosition="above"
-                        [matTooltipShowDelay]="100"
-                        aria-label="Date of Expiry"
-                        [attr.aria-invalid]="vm.cellHasError['dateOfExpiry'] || null"
-                        [attr.data-eulb-post-edit-field]="'dateOfExpiry'"
-                        [formControl]="editForm.controls.dateOfExpiry"
-                      />
-                    } @else {
-                      <span class="small">{{ (row.dateOfExpiry | date: 'dd MMM yyyy' : '+0530') ?? '-' }}</span>
-                    }
-                  </td>
-                  <td>
-                    @if (isFieldEditable('remarks')) {
-                      <input
-                        type="text"
-                        class="form-control form-control-sm eulb-edit-wide"
-                        [class.is-invalid]="vm.cellHasError['remarks']"
-                        [matTooltip]="vm.cellErrorText['remarks'] ?? ''"
-                        [matTooltipDisabled]="!vm.cellHasError['remarks']"
-                        matTooltipPosition="above"
-                        [matTooltipShowDelay]="100"
-                        aria-label="Remarks"
-                        [attr.aria-invalid]="vm.cellHasError['remarks'] || null"
-                        [attr.data-eulb-post-edit-field]="'remarks'"
-                        placeholder="Remarks"
-                        [formControl]="editForm.controls.remarks"
-                      />
-                    } @else {
-                      <span class="small">{{ row.remarks || '-' }}</span>
-                    }
-                  </td>
-                } @else {
-                  <td
-                    class="small"
-                    [class.eulb-cell-invalid]="vm.cellHasError['electedBodyStatus']"
-                    [class.cursor-pointer]="canEditRows() && vm.cellHasError['electedBodyStatus']"
-                    [matTooltip]="vm.cellErrorText['electedBodyStatus'] ?? ''"
-                    [matTooltipDisabled]="!vm.cellHasError['electedBodyStatus']"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    (click)="startEditAtField(row, 'electedBodyStatus')"
-                  >
-                    <div class="d-flex align-items-center justify-content-between gap-2 w-100">
-                      <span class="text-truncate min-w-0">{{ row.electedBodyStatus }}</span>
-                      @if (vm.cellHasError['electedBodyStatus']) {
-                        <button
-                          type="button"
-                          class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                          aria-label="Elected body status has a validation error"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <i class="bi bi-exclamation-triangle-fill"></i>
-                        </button>
-                      }
-                    </div>
-                  </td>
-                  <td
-                    class="small"
-                    [class.eulb-cell-invalid]="vm.cellHasError['dateOfConstitution']"
-                    [class.cursor-pointer]="canEditRows() && vm.cellHasError['dateOfConstitution']"
-                    [matTooltip]="vm.cellErrorText['dateOfConstitution'] ?? ''"
-                    [matTooltipDisabled]="!vm.cellHasError['dateOfConstitution']"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    (click)="startEditAtField(row, 'dateOfConstitution')"
-                  >
-                    <div class="d-flex align-items-center justify-content-between gap-2 w-100">
-                      <span class="text-truncate min-w-0">
-                        {{ (row.dateOfConstitution | date: 'dd MMM yyyy' : '+0530') ?? '-' }}
-                      </span>
-                      @if (vm.cellHasError['dateOfConstitution']) {
-                        <button
-                          type="button"
-                          class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                          aria-label="Date of constitution has a validation error"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <i class="bi bi-exclamation-triangle-fill"></i>
-                        </button>
-                      }
-                    </div>
-                  </td>
-                  <td
-                    class="small"
-                    [class.eulb-cell-invalid]="vm.cellHasError['dateOfExpiry']"
-                    [class.cursor-pointer]="canEditRows() && vm.cellHasError['dateOfExpiry']"
-                    [matTooltip]="vm.cellErrorText['dateOfExpiry'] ?? ''"
-                    [matTooltipDisabled]="!vm.cellHasError['dateOfExpiry']"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    (click)="startEditAtField(row, 'dateOfExpiry')"
-                  >
-                    <div class="d-flex align-items-center justify-content-between gap-2 w-100">
-                      <span class="text-truncate min-w-0">
-                        {{ (row.dateOfExpiry | date: 'dd MMM yyyy' : '+0530') ?? '-' }}
-                      </span>
-                      @if (vm.cellHasError['dateOfExpiry']) {
-                        <button
-                          type="button"
-                          class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                          aria-label="Date of expiry has a validation error"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <i class="bi bi-exclamation-triangle-fill"></i>
-                        </button>
-                      }
-                    </div>
-                  </td>
-                  <td
-                    class="small"
-                    [class.eulb-cell-invalid]="vm.cellHasError['remarks']"
-                    [class.cursor-pointer]="canEditRows() && vm.cellHasError['remarks']"
-                    [matTooltip]="vm.cellErrorText['remarks'] ?? ''"
-                    [matTooltipDisabled]="!vm.cellHasError['remarks']"
-                    matTooltipPosition="above"
-                    [matTooltipShowDelay]="100"
-                    (click)="startEditAtField(row, 'remarks')"
-                  >
-                    <div class="d-flex align-items-center justify-content-between gap-2 w-100">
-                      <span class="text-truncate min-w-0">{{ row.remarks || '-' }}</span>
-                      @if (vm.cellHasError['remarks']) {
-                        <button
-                          type="button"
-                          class="btn btn-link btn-sm p-0 text-danger flex-shrink-0 eulb-error-icon"
-                          aria-label="Remarks has a validation error"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <i class="bi bi-exclamation-triangle-fill"></i>
-                        </button>
-                      }
-                    </div>
-                  </td>
-                }
-
-                <td>
-                  <span
-                    class="badge rounded px-1 small"
-                    [ngClass]="getValidationStatusBadgeClass(row.validationStatus)"
-                  >
-                    {{ getValidationStatusLabel(row.validationStatus) }}
-                  </span>
-                </td>
-
-                @if (canEditRows()) {
-                  <td class="eulb-actions-col">
-                    @if (editingRowId() === row._id) {
-                      <div class="d-flex gap-1 flex-nowrap">
-                        <button
-                          type="button"
-                          matButton="outlined"
-                          class="eulb-row-btn"
-                          aria-label="Done editing"
-                          (click)="finishEdit(row._id)"
-                        >
-                          <i class="bi bi-check-lg"></i>
-                        </button>
-                        <button
-                          type="button"
-                          matButton="outlined"
-                          color="warn"
-                          class="eulb-row-btn"
-                          aria-label="Reset row"
-                          [disabled]="!isRowModified(row._id)"
-                          (click)="resetRow(row._id)"
-                        >
-                          <i class="bi bi-arrow-counterclockwise"></i>
-                        </button>
-                      </div>
-                    } @else {
-                      <div class="d-flex gap-1 flex-nowrap">
-                        <button
-                          type="button"
-                          matButton="outlined"
-                          class="eulb-row-btn"
-                          aria-label="Edit row"
-                          [disabled]="editingRowId() !== null"
-                          (click)="startEdit(row)"
-                        >
-                          <i class="bi bi-pencil"></i>
-                        </button>
-                        @if (vm.isModified) {
-                          <button
-                            type="button"
-                            matButton="outlined"
-                            color="warn"
-                            class="eulb-row-btn"
-                            aria-label="Reset row"
-                            [disabled]="editingRowId() !== null"
-                            (click)="resetRow(row._id)"
-                          >
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                          </button>
-                        }
-                      </div>
-                    }
-                  </td>
-                }
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-    </div>
-
-    @if (total() > 0) {
-      <div class="d-flex justify-content-between align-items-center mt-3">
-        <span class="small text-muted">Showing {{ startIndex() }}-{{ endIndex() }} of {{ total() }} rows</span>
-        <div class="d-flex align-items-center gap-1">
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-success"
-            [disabled]="!hasPrev()"
-            (click)="goToPage(page() - 1)"
-            aria-label="Previous page"
-          >
-            <i class="bi bi-chevron-left"></i>
-          </button>
-          <span class="small px-2">Page {{ page() }} of {{ totalPages() }}</span>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-success"
-            [disabled]="!hasNext()"
-            (click)="goToPage(page() + 1)"
-            aria-label="Next page"
-          >
-            <i class="bi bi-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    }
-  </div>
-</ng-template>

@@ -240,6 +240,8 @@ export interface EulbPostSubmissionUpdateSummary {
 export type EulbPostSubmissionUpdateElectedBodyStatus = Exclude<EulbBodyStatus, 'Exempt'>;
 
 export interface EulbPostSubmissionUpdateMetadata {
+  stateId: string;
+  questions: ConditionalFieldConfig[];
   formStatus: number;
   canUpdate: boolean;
   permissions: EulbPostSubmissionUpdatePermissions;
