@@ -62,6 +62,11 @@ const EULB_SUPPORTING_ACTION = {
   REVALIDATE_EXCEL: 'revalidate-excel',
 } as const;
 
+export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
+  FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
+  FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA,
+];
+
 /**
  * Page component for the Elected Urban Local Bodies status-confirmation form.
  * Renders a backend-driven dynamic form, handles Excel upload/validation,
@@ -119,7 +124,7 @@ export class ElectedBodyStatusComponent implements OnInit {
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
   readonly canShowPostSubmissionUpdate = computed(() => {
     const status = this.formStatus();
-    return status === FORM_STATUS.UNDER_REVIEW_BY_MOHUA || status === FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA;
+    return POST_SUBMISSION_UPDATE_STATUS.includes(status);
   });
 
   /** Maps field keys to their dependency relationships for reactive visibility evaluation. */
