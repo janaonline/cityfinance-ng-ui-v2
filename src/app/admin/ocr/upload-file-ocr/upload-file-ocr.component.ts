@@ -20,7 +20,7 @@ import { UtilityService } from '../../../core/services/utility.service';
 import { MaterialModule } from '../../../material.module';
 import { OcrComparisonTableComponent } from '../ocr-comparison-table/ocr-comparison-table.component';
 import { OcrValidationInfoTableComponent } from '../ocr-comparison-table/ocr-validation-info-table.component';
-import { OcrService } from '../ocr.service';
+import { OcrService, SelectOption } from '../ocr.service';
 import {
   isErroredOcrJobResponse,
   FailedOcrResponse,
@@ -31,16 +31,6 @@ import {
   OcrResponse,
   ocrResponse,
 } from './ocr-response';
-
-interface OcrDocumentType {
-  value: string;
-  label: string;
-}
-
-interface FinancialYearOption {
-  value: string;
-  label: string;
-}
 
 interface OcrMethodOption {
   value: string;
@@ -81,42 +71,8 @@ export class UploadFileOcrComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
 
   readonly maxFileSizeMb = 50;
-  // readonly documentTypes: OcrDocumentType[] = [
-  //   { value: 'bal_sheet', label: 'Balance Sheet' },
-  //   { value: 'bal_sheet_schedules', label: 'Balance Sheet Schedule' },
-  //   { value: 'inc_exp', label: 'Income and Expenditure' },
-  //   { value: 'inc_exp_schedules', label: 'Income and Expenditure Schedule' },
-  //   { value: 'cash_flow', label: 'Cash Flow Statement' },
-  //   { value: 'auditor_report', label: 'Auditors Report' },
-
-  // ];
-  // DOCUMENT_TYPE_MAPPING_FULL = {
-  //   "BALANCE_SHEET": "Balance Sheet",
-  //   "BALANCE_SHEET_SCHEDULE": "Balance Sheet Schedule",
-  //   "INCOME_EXPENDITURE": "Income and Expenditure",
-  //   "INCOME_EXPENDITURE_SCHEDULE": "Income and Expenditure Schedule",
-  //   "CASH_FLOW": "Cash Flow Statement",
-  //   "AUDITOR_REPORT": "Auditors Report",
-  //   "UNKNOWN": "Unknown",
-  // }
-  readonly documentTypes: OcrDocumentType[] = [
-    { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
-    { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
-    { value: 'INCOME_EXPENDITURE', label: 'Income and Expenditure' },
-    { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'Income and Expenditure Schedule' },
-    { value: 'CASH_FLOW', label: 'Cash Flow Statement' },
-    { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
-  ];
-
-  readonly financialYears: FinancialYearOption[] = [
-    { value: '2025-26', label: '2025-26' },
-    { value: '2024-25', label: '2024-25' },
-    { value: '2023-24', label: '2023-24' },
-    { value: '2022-23', label: '2022-23' },
-    { value: '2021-22', label: '2021-22' },
-    { value: '2020-21', label: '2020-21' },
-    { value: '2019-20', label: '2019-20' },
-  ];
+  readonly documentTypes = this.ocrService.documentTypes;
+  readonly financialYears = this.ocrService.financialYears;
   readonly ocrMethods: OcrMethodOption[] = [
     { value: 'combined', label: 'Combined' },
     { value: 'sarvam', label: 'Sarvam' },

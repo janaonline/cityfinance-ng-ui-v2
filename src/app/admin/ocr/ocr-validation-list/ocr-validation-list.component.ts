@@ -33,15 +33,6 @@ interface OcrValidationListRow {
   expectedTableExists: string;
 }
 
-const DOC_TYPE_OPTIONS = [
-  { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
-  { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
-  { value: 'INCOME_EXPENDITURE', label: 'Income & Expenditure' },
-  { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'I&E Schedule' },
-  { value: 'CASH_FLOW', label: 'Cash Flow' },
-  { value: 'AUDITOR_REPORT', label: 'Auditor Report' },
-  { value: 'UNKNOWN', label: 'Unknown' },
-];
 
 const ERROR_CODE_OPTIONS = [
   { value: '429', label: '429 — Rate Limited' },
@@ -103,7 +94,7 @@ export class OcrValidationListComponent implements OnInit {
     'action',
   ];
 
-  readonly docTypeOptions = DOC_TYPE_OPTIONS;
+  readonly docTypeOptions = this.ocrService.documentTypes;
   readonly errorCodeOptions = ERROR_CODE_OPTIONS;
   readonly progressStepOptions = PROGRESS_STEP_OPTIONS;
   readonly validationModelOptions = VALIDATION_MODEL_OPTIONS;
@@ -174,7 +165,7 @@ export class OcrValidationListComponent implements OnInit {
 
   exportToExcel(): void {
     const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
-            matchStatus, dateFrom, dateTo } =
+      matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
 
     this.exporting.set(true);
@@ -288,7 +279,7 @@ export class OcrValidationListComponent implements OnInit {
 
   private loadJobs(): void {
     const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
-            matchStatus, dateFrom, dateTo } =
+      matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
     this.loading.set(true);
 
