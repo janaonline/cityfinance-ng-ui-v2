@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
@@ -14,7 +15,7 @@ import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
-import { FormActor, FormProgressComponent } from '../../shared/form-progress/form-progress.component';
+import { FORM_STATUS, FormActor, FormProgressComponent } from '../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { ElectedBodyStatusComponent } from './elected-body-status.component';
 import {
@@ -58,8 +59,10 @@ describe('ElectedBodyStatusComponent', () => {
   let eulbService: jasmine.SpyObj<EulbStatusService>;
   let moduleService: jasmine.SpyObj<XvifcModuleService>;
   let dialog: jasmine.SpyObj<MatDialog>;
+  let router: jasmine.SpyObj<Router>;
   let confirmDialogService: jasmine.SpyObj<ConfirmDialogService>;
   let utilityService: jasmine.SpyObj<UtilityService>;
+  let parentRoute: object;
 
   beforeEach(async () => {
     localStorage.setItem('userData', JSON.stringify({ state: stateId }));
@@ -82,6 +85,8 @@ describe('ElectedBodyStatusComponent', () => {
     moduleService.yearId.and.returnValue(yearId);
 
     dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
+    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    parentRoute = {};
 
     confirmDialogService = jasmine.createSpyObj<ConfirmDialogService>('ConfirmDialogService', ['confirm']);
     confirmDialogService.confirm.and.returnValue(of(false));
@@ -98,6 +103,8 @@ describe('ElectedBodyStatusComponent', () => {
         { provide: EulbStatusService, useValue: eulbService },
         { provide: XvifcModuleService, useValue: moduleService },
         { provide: MatDialog, useValue: dialog },
+        { provide: Router, useValue: router },
+        { provide: ActivatedRoute, useValue: { parent: parentRoute } },
         { provide: ConfirmDialogService, useValue: confirmDialogService },
         { provide: UtilityService, useValue: utilityService },
       ],
@@ -133,6 +140,39 @@ describe('ElectedBodyStatusComponent', () => {
     expect(fixture.debugElement.query(By.css('[data-cy="eulb-status-cancel-test"]'))).not.toBeNull();
     expect(fixture.debugElement.query(By.css('[data-cy="eulb-status-save-draft-test"]'))).not.toBeNull();
     expect(fixture.debugElement.query(By.css('[data-cy="eulb-status-final-submit-test"]'))).not.toBeNull();
+  });
+
+  it('shows the post-submission update button when form status is under review by MoHUA', () => {
+    component.formStatus.set(FORM_STATUS.UNDER_REVIEW_BY_MOHUA);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-cy="update-elected-body-test"]'))).not.toBeNull();
+  });
+
+  it('shows the post-submission update button when form status is acknowledged by MoHUA', () => {
+    component.formStatus.set(FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-cy="update-elected-body-test"]'))).not.toBeNull();
+  });
+
+  it('hides the post-submission update button when form status is not eligible', () => {
+    component.formStatus.set(FORM_STATUS.IN_PROGRESS);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-cy="update-elected-body-test"]'))).toBeNull();
+  });
+
+  it('navigates to the post-submission update route when the update button is clicked', () => {
+    component.formStatus.set(FORM_STATUS.UNDER_REVIEW_BY_MOHUA);
+    fixture.detectChanges();
+
+    fixture.debugElement.query(By.css('[data-cy="update-elected-body-test"]')).nativeElement.click();
+
+    expect(router.navigate).toHaveBeenCalledOnceWith(
+      ['elected-body-post-update'],
+      jasmine.objectContaining({ relativeTo: parentRoute }),
+    );
   });
 
   it('blocks save-as-draft when required confirmation is not checked', () => {

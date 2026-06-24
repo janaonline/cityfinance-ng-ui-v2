@@ -1,0 +1,96 @@
+@use '../../../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+  @include layout.acknowledgement-layout;
+}
+
+// .tab-con {
+//   overflow-x: auto;
+//   width: 100%;
+// }
+
+// .eulb-post-update-page {
+//   color: #1f2933;
+//   border: 2px solid red;
+
+// }
+
+// .table-responsive {
+//   border: 1px solid #d8dee9;
+//   border-radius: 6px;
+//   min-height: 180px;
+//   max-height: 62vh;
+//   overflow-y: auto;
+// }
+
+// .table {
+//   --bs-table-hover-bg: #f7f9fc;
+// }
+
+// th,
+// td {
+//   vertical-align: middle;
+// }
+
+// td {
+//   max-width: 260px;
+// }
+
+// .eulb-post-update-table {
+//   min-width: 1120px;
+// }
+
+// .eulb-document-card {
+//   border-color: #d8dee9;
+//   border-radius: 6px;
+// }
+
+// .form-select,
+// .form-control {
+//   min-width: 180px;
+// }
+
+// .badge {
+//   min-width: 64px;
+// }
+
+// .eulb-edit-control {
+//   min-width: 160px;
+// }
+
+// .eulb-edit-wide {
+//   min-width: 220px;
+// }
+
+// .eulb-actions-col {
+//   width: 96px;
+// }
+
+// .eulb-row-btn {
+//   align-items: center;
+//   display: inline-flex;
+//   height: 30px;
+//   justify-content: center;
+//   min-width: 30px;
+//   padding: 0;
+// }
+
+// .eulb-row-modified {
+//   --bs-table-bg: #fff8e5;
+// }
+
+// .eulb-modified-badge {
+//   font-size: 0.68rem;
+//   min-width: auto;
+// }
+
+// .eulb-cell-invalid {
+//   background-color: var(--bs-danger-bg-subtle);
+//   box-shadow: inset 3px 0 0 var(--bs-danger);
+//   cursor: pointer;
+// }
+
+// .eulb-error-icon {
+//   line-height: 1;
+// }

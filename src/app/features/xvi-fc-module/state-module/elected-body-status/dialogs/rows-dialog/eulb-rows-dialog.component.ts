@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -16,11 +16,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged, merge, Subject, takeUntil } from 'rxjs';
-import { UtilityService } from '../../../../../core/services/utility.service';
-import { resolveDateConstraint } from '../../../../../shared/dynamic-form/date-constraint-resolver';
-import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
-import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../dynamic-form-visibility.service';
-import { EulbStatusService } from '../eulb-status.service';
+import { UtilityService } from '../../../../../../core/services/utility.service';
+import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
+import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../../dynamic-form-visibility.service';
+import { EulbStatusService } from '../../eulb-status.service';
 import {
   EulbBodyStatus,
   EulbEditableFieldKey,
@@ -32,18 +31,21 @@ import {
   EulbRowsDialogResult,
   EulbRowsQuery,
   EulbRowType,
-  EulbRowValidationStatus,
   EulbValidationSummary,
-} from '../eulb-status.models';
-import { buildEulbRowUpdatePayload, getRecordValue, isRecord, parseEulbRowUpdateErrors } from '../eulb-status.utils';
-
-function isEulbBodyStatus(value: unknown): value is EulbBodyStatus {
-  return value === 'Constituted' || value === 'Not Constituted' || value === 'Exempt';
-}
-
-function isRowValidationStatus(value: unknown): value is EulbRowValidationStatus {
-  return value === 'VALID' || value === 'INVALID';
-}
+} from '../../eulb-status.models';
+import { buildEulbRowUpdatePayload, getRecordValue, isRecord, parseEulbRowUpdateErrors } from '../../eulb-status.utils';
+import {
+  bindEulbEnabledWhenToEditForm,
+  buildEulbRowViewModel,
+  EULB_ROW_VALIDATION_STATUS_OPTIONS,
+  getEulbEditDateMax,
+  getEulbEditDateMin,
+  isEulbBodyStatus,
+  isEulbRowValidationStatus,
+  toEulbHtmlDate,
+} from '../../shared/eulb-row-edit.utils';
+import { EulbEditableFieldCellComponent } from '../../components/editable-field-cell/eulb-editable-field-cell.component';
+import { EulbValidationBadgeComponent } from '../../components/validation-badge/eulb-validation-badge.component';
 
 function isRowType(value: unknown): value is EulbRowType {
   return value === 'DB_ULB' || value === 'EXTRA_ULB';
@@ -54,11 +56,6 @@ function toStringArray(value: unknown): string[] {
 }
 
 type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks';
-
-const VALIDATION_STATUS_OPTIONS: ReadonlyArray<{ readonly value: EulbRowValidationStatus; readonly label: string }> = [
-  { value: 'VALID', label: 'Valid' },
-  { value: 'INVALID', label: 'Invalid' },
-];
 
 const ROW_TYPE_OPTIONS: ReadonlyArray<{ readonly value: EulbRowType; readonly label: string }> = [
   { value: 'DB_ULB', label: 'DB ULB' },
@@ -72,25 +69,17 @@ const ERROR_FIELD_OPTIONS: ReadonlyArray<{ readonly value: EulbEditableFieldKey;
   { value: 'remarks', label: 'Remarks' },
 ];
 
-interface EulbRowViewModel {
-  readonly row: EulbRow;
-  readonly cellHasError: Partial<Record<string, boolean>>;
-  readonly cellErrorText: Partial<Record<string, string>>;
-}
-
-function buildRowViewModel(row: EulbRow): EulbRowViewModel {
-  const cellHasError: Record<string, boolean> = {};
-  const cellErrorText: Record<string, string> = {};
-  for (const err of row.errors ?? []) {
-    cellHasError[err.field] = true;
-    cellErrorText[err.field] = cellErrorText[err.field] ? `${cellErrorText[err.field]}\n${err.message}` : err.message;
-  }
-  return { row, cellHasError, cellErrorText };
-}
-
 @Component({
   selector: 'app-eulb-rows-dialog',
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule, MatTooltipModule, DatePipe],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatTooltipModule,
+    EulbEditableFieldCellComponent,
+    EulbValidationBadgeComponent,
+  ],
   templateUrl: './eulb-rows-dialog.component.html',
   styleUrl: './eulb-rows-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -126,10 +115,10 @@ export class EulbRowsDialogComponent implements OnInit {
   readonly hasNext = computed(() => this.page() < this.totalPages());
   readonly startIndex = computed(() => (this.page() - 1) * this.limit + 1);
   readonly endIndex = computed(() => Math.min(this.page() * this.limit, this.total()));
-  readonly rowViewModels = computed(() => this.rows().map(buildRowViewModel));
+  readonly rowViewModels = computed(() => this.rows().map(buildEulbRowViewModel));
 
   readonly electedBodyStatusOptions: EulbBodyStatus[] = ['Constituted', 'Not Constituted', 'Exempt'];
-  readonly validationStatusOptions = VALIDATION_STATUS_OPTIONS;
+  readonly validationStatusOptions = EULB_ROW_VALIDATION_STATUS_OPTIONS;
   readonly rowTypeOptions = ROW_TYPE_OPTIONS;
   readonly errorFieldOptions = ERROR_FIELD_OPTIONS;
 
@@ -165,7 +154,7 @@ export class EulbRowsDialogComponent implements OnInit {
       page: this.page(),
       limit: this.limit,
       search: search || undefined,
-      validationStatus: isRowValidationStatus(validationStatus) ? validationStatus : undefined,
+      validationStatus: isEulbRowValidationStatus(validationStatus) ? validationStatus : undefined,
       rowType: isRowType(rowType) ? rowType : undefined,
       errorField: errorField || undefined,
     };
@@ -371,11 +360,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param fieldKey - The field key (e.g. `'dateOfConstitution'`).
    */
   getEditDateMin(fieldKey: string): string | null {
-    const field = this.getRowEditFieldConfig(fieldKey);
-    if (!field) return null;
-    if (field.minDate != null) return this.toHtmlDate(field.minDate);
-    const val = field.validations?.find((v) => v.name === 'minDate')?.validator;
-    return val != null ? this.toHtmlDate(val) : null;
+    return getEulbEditDateMin(this.getRowEditFieldConfig(fieldKey));
   }
 
   /**
@@ -385,11 +370,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param fieldKey - The field key (e.g. `'dateOfExpiry'`).
    */
   getEditDateMax(fieldKey: string): string | null {
-    const field = this.getRowEditFieldConfig(fieldKey);
-    if (!field) return null;
-    if (field.maxDate != null) return this.toHtmlDate(field.maxDate);
-    const val = field.validations?.find((v) => v.name === 'maxDate')?.validator;
-    return val != null ? this.toHtmlDate(val) : null;
+    return getEulbEditDateMax(this.getRowEditFieldConfig(fieldKey));
   }
 
   /**
@@ -428,22 +409,6 @@ export class EulbRowsDialogComponent implements OnInit {
   }
 
   /**
-   * Returns the CSS badge class (`text-bg-success` or `text-bg-danger`) for a row validation status.
-   * @param status - The row's `validationStatus` value.
-   */
-  getValidationStatusBadgeClass(status: EulbRowValidationStatus): string {
-    return status === 'VALID' ? 'text-bg-success' : 'text-bg-danger';
-  }
-
-  /**
-   * Returns the human-readable label (`'Valid'` or `'Invalid'`) for a row validation status.
-   * @param status - The row's `validationStatus` value.
-   */
-  getValidationStatusLabel(status: EulbRowValidationStatus): string {
-    return status === 'VALID' ? 'Valid' : 'Invalid';
-  }
-
-  /**
    * Returns the short display label (`'DB'` or `'Extra'`) for a row type.
    * @param rowType - The row's `rowType` value.
    */
@@ -465,7 +430,7 @@ export class EulbRowsDialogComponent implements OnInit {
       if (!key || !field.formFieldType) continue;
 
       const rawValue = this.getEditableRowValue(row, key);
-      const value = field.formFieldType === 'date' ? (this.toHtmlDate(rawValue) ?? '') : (rawValue ?? '');
+      const value = field.formFieldType === 'date' ? (toEulbHtmlDate(rawValue) ?? '') : (rawValue ?? '');
 
       const fieldForControl: ConditionalFieldConfig = {
         ...field,
@@ -513,65 +478,16 @@ export class EulbRowsDialogComponent implements OnInit {
    * to reapply state reactively.
    */
   private bindEnabledWhenToEditForm(form: FormGroup): void {
-    const deps = new Map<string, ConditionalFieldConfig[]>();
-    for (const field of this.rowEditFields()) {
-      if (!field.enabledWhen?.conditions?.length || !field.key) continue;
-      for (const condition of field.enabledWhen.conditions) {
-        const list = deps.get(condition.key) ?? [];
-        if (!list.some((f) => f.key === field.key)) list.push(field);
-        deps.set(condition.key, list);
-      }
-    }
-    if (!deps.size) return;
-
-    this.applyEnabledWhen(form, deps);
-
-    for (const controllerKey of deps.keys()) {
-      const ctrl = form.get(controllerKey);
-      if (!ctrl) continue;
-      ctrl.valueChanges.pipe(takeUntil(this.editFormTeardown$), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-        this.applyEnabledWhen(form, deps);
-      });
-    }
-  }
-
-  /**
-   * Evaluates `enabledWhen` for every dependent field and enables or disables its control.
-   * When disabling: clears value (if `clearValueWhenDisabled`), removes validators, clears errors.
-   * When enabling: restores validators from field config.
-   * Marks the view for check so `OnPush` CD picks up the new disabled state.
-   */
-  private applyEnabledWhen(form: FormGroup, deps: Map<string, ConditionalFieldConfig[]>): void {
-    const allDependents = [...new Set([...deps.values()].flat())];
-
-    for (const field of allDependents) {
-      if (!field.key) continue;
-      const control = form.get(field.key);
-      if (!control) continue;
-
-      const shouldEnable = this.visibilityService.evaluateConditions(field.enabledWhen, (key) => form.get(key)?.value);
-
-      if (shouldEnable) {
-        if (this.canEditRows) {
-          control.enable({ emitEvent: false });
-        }
-        const validators = this.dynamicService.bindValidations(field.validations, field);
-        control.setValidators(validators);
-        control.updateValueAndValidity({ emitEvent: false });
-      } else {
-        if (field.clearValueWhenDisabled) {
-          control.setValue('', { emitEvent: false });
-        }
-        control.clearValidators();
-        control.setErrors(null);
-        control.markAsUntouched();
-        control.markAsPristine();
-        control.disable({ emitEvent: false });
-        control.updateValueAndValidity({ emitEvent: false });
-      }
-    }
-
-    this.cdr.markForCheck();
+    bindEulbEnabledWhenToEditForm({
+      form,
+      fields: this.rowEditFields(),
+      canEdit: this.canEditRows,
+      dynamicService: this.dynamicService,
+      visibilityService: this.visibilityService,
+      editFormTeardown$: this.editFormTeardown$,
+      destroyRef: this.destroyRef,
+      cdr: this.cdr,
+    });
   }
 
   /**
@@ -666,25 +582,5 @@ export class EulbRowsDialogComponent implements OnInit {
    */
   private getRowEditFieldConfig(fieldKey: string): ConditionalFieldConfig | undefined {
     return this.rowEditFields().find((f) => f.key === fieldKey);
-  }
-
-  /**
-   * Converts any date-like value to a `yyyy-MM-dd` string suitable for `<input type="date">`.
-   * Handles `Date` objects, ISO strings, `YYYY-MM-DD` strings, and relative expressions like `TODAY`.
-   * Returns `null` for null/undefined/empty/unparseable inputs without throwing.
-   * @param value - Raw date value from row data or field config.
-   */
-  private toHtmlDate(value: unknown): string | null {
-    if (value === null || value === undefined || value === '') return null;
-    try {
-      const resolved = resolveDateConstraint(value);
-      if (!resolved || isNaN(resolved.getTime())) return null;
-      const y = resolved.getFullYear();
-      const m = String(resolved.getMonth() + 1).padStart(2, '0');
-      const d = String(resolved.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    } catch {
-      return null;
-    }
   }
 }

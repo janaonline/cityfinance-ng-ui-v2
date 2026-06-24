@@ -3,6 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { Observable } from 'rxjs';
 import {
   EulbFinalSubmitPayload,
+  EulbPostSubmissionUpdateSubmitPayload,
+  EulbPostSubmissionUpdateValidatePayload,
   EulbSaveDraftPayload,
   EulbUpdateRowPayload,
   EulbValidateExcelPayload,
@@ -90,6 +92,30 @@ describe('EulbStatusService', () => {
         urlPart: `${stateId}/${yearId}/rows/${rowId}`,
         call: () => service.updateRow(stateId, yearId, rowId, createRowUpdatePayload()),
       },
+      {
+        name: 'post-submission update metadata',
+        method: 'GET',
+        urlPart: `${stateId}/${yearId}/post-submission-update`,
+        call: () => service.getPostSubmissionUpdateMetadata(stateId, yearId),
+      },
+      {
+        name: 'post-submission update rows',
+        method: 'GET',
+        urlPart: `${stateId}/${yearId}/post-submission-update/rows`,
+        call: () => service.getPostSubmissionUpdateRows(stateId, yearId),
+      },
+      {
+        name: 'post-submission update validate',
+        method: 'POST',
+        urlPart: `${stateId}/${yearId}/post-submission-update/validate`,
+        call: () => service.validatePostSubmissionUpdateRows(stateId, yearId, createPostUpdateValidatePayload()),
+      },
+      {
+        name: 'post-submission update submit',
+        method: 'POST',
+        urlPart: `${stateId}/${yearId}/post-submission-update/submit`,
+        call: () => service.submitPostSubmissionUpdate(stateId, yearId, createPostUpdateSubmitPayload()),
+      },
     ];
 
     for (const testCase of cases) {
@@ -150,6 +176,146 @@ describe('EulbStatusService', () => {
     expect(completed).toBeTrue();
   });
 
+  it('fetches post-submission update rows with the expected query params', () => {
+    let total = 0;
+
+    service
+      .getPostSubmissionUpdateRows(stateId, yearId, {
+        page: 2,
+        limit: 20,
+        search: 'Bhopal',
+        electedBodyStatus: 'Constituted',
+        validationStatus: 'INVALID',
+      })
+      .subscribe((data) => {
+        total = data.total;
+      });
+
+    const req = httpMock.expectOne(
+      (request) => request.method === 'GET' && request.url.includes(`${stateId}/${yearId}/post-submission-update/rows`),
+    );
+
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.get('limit')).toBe('20');
+    expect(req.request.params.get('search')).toBe('Bhopal');
+    expect(req.request.params.get('electedBodyStatus')).toBe('Constituted');
+    expect(req.request.params.get('validationStatus')).toBe('INVALID');
+
+    req.flush({
+      success: true,
+      data: {
+        rows: [
+          {
+            _id: 'row-1',
+            rowNumber: 1,
+            censusCode: '100001',
+            ulbName: 'Test ULB',
+            electedBodyStatus: 'Constituted',
+            dateOfConstitution: '2020-01-01',
+            dateOfExpiry: '2030-01-01',
+            remarks: null,
+            rowType: 'DB_ULB',
+            validationStatus: 'INVALID',
+            errors: [],
+          },
+        ],
+        total: 1,
+        page: 2,
+        limit: 20,
+        eligibleRule: { allowedFormStatuses: [4, 5], today: '2026-06-22' },
+      },
+    });
+
+    expect(total).toBe(1);
+  });
+
+  it('passes post-submission update validate success responses through', () => {
+    let validationStatus: 'VALID' | 'INVALID' | undefined;
+
+    service.validatePostSubmissionUpdateRows(stateId, yearId, createPostUpdateValidatePayload()).subscribe((res) => {
+      validationStatus = res.data.validationStatus;
+    });
+
+    const req = httpMock.expectOne(
+      (request) =>
+        request.method === 'POST' && request.url.includes(`${stateId}/${yearId}/post-submission-update/validate`),
+    );
+
+    expect(req.request.body).toEqual(createPostUpdateValidatePayload());
+    req.flush({
+      success: true,
+      message: 'All rows are valid.',
+      data: {
+        validationStatus: 'VALID',
+        rows: [
+          {
+            rowId: rowId,
+            rowNumber: 1,
+            censusCode: '100001',
+            ulbName: 'Test ULB',
+            electedBodyStatus: 'Constituted',
+            dateOfConstitution: '2020-01-01',
+            dateOfExpiry: '2030-01-01',
+            remarks: 'Updated',
+            validationStatus: 'VALID',
+            errors: [],
+          },
+        ],
+        errorRowCount: 0,
+        validRowCount: 1,
+        totalRowCount: 1,
+      },
+      timestamp: '2026-06-22T00:00:00.000Z',
+    });
+
+    expect(validationStatus).toBe('VALID');
+  });
+
+  it('passes post-submission update submit success responses through with a JSON payload', () => {
+    let updatedRowCount = 0;
+
+    service.submitPostSubmissionUpdate(stateId, yearId, createPostUpdateSubmitPayload()).subscribe((res) => {
+      updatedRowCount = res.data.updatedRowCount;
+    });
+
+    const req = httpMock.expectOne(
+      (request) =>
+        request.method === 'POST' && request.url.includes(`${stateId}/${yearId}/post-submission-update/submit`),
+    );
+
+    expect(req.request.body).toEqual(createPostUpdateSubmitPayload());
+    expect(req.request.body instanceof FormData).toBeFalse();
+    req.flush({
+      success: true,
+      message: 'Elected Urban Local Bodies update submitted successfully.',
+      data: {
+        batchId: 'batch-1',
+        updatedRowCount: 1,
+        document: {
+          fileName: 'combined.pdf',
+          fileUrl: 'state/eulb-post-submission-update/combined.pdf',
+          fileSize: 1024,
+          mimeType: 'application/pdf',
+          s3Key: 'state/eulb-post-submission-update/combined.pdf',
+        },
+        validationSummary: {
+          dbUlbCount: 1,
+          maxAllowedExcelRows: 2,
+          excelRowCount: 1,
+          matchedDbUlbCount: 1,
+          missingDbUlbCount: 0,
+          extraExcelRowCount: 0,
+          errorRowCount: 0,
+          validationStatus: 'VALID',
+          activeDatasetVersion: 1,
+        },
+      },
+      timestamp: '2026-06-22T00:00:00.000Z',
+    });
+
+    expect(updatedRowCount).toBe(1);
+  });
+
   function createDraftPayload(): EulbSaveDraftPayload {
     return {
       stateId,
@@ -186,6 +352,33 @@ describe('EulbStatusService', () => {
   function createRowUpdatePayload(): EulbUpdateRowPayload {
     return {
       remarks: 'Updated',
+    };
+  }
+
+  function createPostUpdateValidatePayload(): EulbPostSubmissionUpdateValidatePayload {
+    return {
+      rows: [
+        {
+          rowId,
+          electedBodyStatus: 'Constituted',
+          dateOfConstitution: '2020-01-01',
+          dateOfExpiry: '2030-01-01',
+          remarks: 'Updated',
+        },
+      ],
+    };
+  }
+
+  function createPostUpdateSubmitPayload(): EulbPostSubmissionUpdateSubmitPayload {
+    return {
+      rows: createPostUpdateValidatePayload().rows,
+      document: {
+        fileName: 'combined.pdf',
+        fileUrl: 'state/eulb-post-submission-update/combined.pdf',
+        fileSize: 1024,
+        mimeType: 'application/pdf',
+        s3Key: 'state/eulb-post-submission-update/combined.pdf',
+      },
     };
   }
 });
