@@ -7,6 +7,10 @@ export interface FormStatusData {
   annualAccountId: string | null;
   auditedData: { form_status: string; form_status_id: number };
   unauditedData: { form_status: string; form_status_id: number };
+  unspentBalanceDisclosure: {
+    form_status: 'NOT_STARTED' | 'SUBMITTED';
+    form_status_id: null;
+  };
 }
 
 const API = `${environment.api.url2}`;
@@ -28,7 +32,7 @@ export class AnnualAccountStateService {
     try {
       const result = await firstValueFrom(
         this.http.get<unknown>(
-          `${API}xvi-fc/annual-account/form-status/${ulbId}/${designYearId}`,
+          `${API}xvi-fc/form-status/${ulbId}/${designYearId}`,
         ),
       );
       this.formStatus.set(unwrap<FormStatusData>(result));

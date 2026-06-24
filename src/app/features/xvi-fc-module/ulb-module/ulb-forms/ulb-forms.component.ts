@@ -104,14 +104,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         actionLabel: 'Upload',
         route: 'upload-provisional',
       },
-      // {
-      //   id: 'unspent-balance',
-      //   title: 'FC Unspent Balance Disclosure',
-      //   subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
-      //   status: 'pending',
-      //   actionLabel: 'Fill Disclosure',
-      //   route: 'fill-disclosure',
-      // },
+      {
+        id: 'unspent-balance',
+        title: 'FC Unspent Balance Disclosure',
+        subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
+        status: 'pending',
+        actionLabel: 'Fill Disclosure',
+        route: 'fill-disclosure',
+      },
     ],
   },
   {
@@ -212,6 +212,9 @@ export class UlbFormsComponent implements OnInit {
       if (condition.id === 'provisional-statement') {
         return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE' ? 'complete' : 'pending';
       }
+      if (condition.id === 'unspent-balance') {
+        return status.unspentBalanceDisclosure.form_status === 'SUBMITTED' ? 'complete' : 'pending';
+      }
     }
     return condition.status;
   }
@@ -221,6 +224,7 @@ export class UlbFormsComponent implements OnInit {
     if (!status) return false;
     if (condition.id === 'audited-statement') return status.auditedData.form_status === 'UNDER_REVIEW_BY_STATE';
     if (condition.id === 'provisional-statement') return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE';
+    if (condition.id === 'unspent-balance') return status.unspentBalanceDisclosure.form_status === 'SUBMITTED';
     return false;
   }
 
