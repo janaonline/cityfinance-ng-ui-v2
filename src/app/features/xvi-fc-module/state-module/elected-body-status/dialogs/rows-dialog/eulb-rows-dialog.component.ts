@@ -55,7 +55,7 @@ function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
-type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks';
+type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks' | 'censusCode' | 'ulbName';
 
 const ROW_TYPE_OPTIONS: ReadonlyArray<{ readonly value: EulbRowType; readonly label: string }> = [
   { value: 'DB_ULB', label: 'DB ULB' },
@@ -99,6 +99,7 @@ export class EulbRowsDialogComponent implements OnInit {
   readonly stateId = this.data.stateId;
   readonly yearId = this.data.yearId;
   readonly rowEditFields = signal<ConditionalFieldConfig[]>(this.data.rowEditFields ?? []);
+  readonly extraUlbEditFields = signal<ConditionalFieldConfig[]>(this.data.extraUlbEditFields ?? []);
   readonly canEditRows = !!this.data.canEdit;
 
   readonly rows = signal<EulbRow[]>([]);
@@ -124,6 +125,7 @@ export class EulbRowsDialogComponent implements OnInit {
 
   private hasSavedRowChanges = false;
   private loadRequestId = 0;
+  private currentEditFields: ConditionalFieldConfig[] = [];
   private readonly editFormTeardown$ = new Subject<void>();
 
   filterForm = this.fb.group({
@@ -188,8 +190,13 @@ export class EulbRowsDialogComponent implements OnInit {
     this.loadRows();
   }
 
+  /** Returns the edit-field config list appropriate for the given row's type. */
+  getEditableFieldsForRow(row: EulbRow): ConditionalFieldConfig[] {
+    return row.rowType === 'EXTRA_ULB' ? this.extraUlbEditFields() : this.rowEditFields();
+  }
+
   /**
-   * Puts the given row into edit mode and builds the edit form from `rowEditFields`.
+   * Puts the given row into edit mode and builds the edit form from the row-specific field list.
    * @param row - The row to edit.
    */
   startEdit(row: EulbRow): void {
@@ -211,11 +218,20 @@ export class EulbRowsDialogComponent implements OnInit {
     const electedBodyStatus =
       electedBodyStatusValue === '' || isEulbBodyStatus(electedBodyStatusValue) ? electedBodyStatusValue : undefined;
 
+    const isExtraUlb =
+      this.rows().find((r) => r._id === this.editingRowId())?.rowType === 'EXTRA_ULB';
+
     return {
       electedBodyStatus,
       dateOfConstitution: this.getRowStringEditControlValue('dateOfConstitution'),
       dateOfExpiry: this.getRowStringEditControlValue('dateOfExpiry'),
       remarks: this.getRowStringEditControlValue('remarks'),
+      ...(isExtraUlb
+        ? {
+            censusCode: this.getRowStringEditControlValue('censusCode'),
+            ulbName: this.getRowStringEditControlValue('ulbName'),
+          }
+        : {}),
     };
   }
 
@@ -417,15 +433,16 @@ export class EulbRowsDialogComponent implements OnInit {
   }
 
   /**
-   * Builds the edit form dynamically from `rowEditFields`, setting initial values from the row.
+   * Builds the edit form dynamically from the row-specific field list, setting initial values from the row.
    * Subscribes to each control's `valueChanges` to auto-clear stale API errors on input.
    * @param row - The row whose current values pre-fill the form controls.
    */
   private buildEditForm(row: EulbRow): void {
     this.resetEditFormSubscriptions();
     this.editForm = this.fb.group({});
+    this.currentEditFields = this.getEditableFieldsForRow(row);
 
-    for (const field of this.rowEditFields()) {
+    for (const field of this.currentEditFields) {
       const key = field.key;
       if (!key || !field.formFieldType) continue;
 
@@ -480,7 +497,7 @@ export class EulbRowsDialogComponent implements OnInit {
   private bindEnabledWhenToEditForm(form: FormGroup): void {
     bindEulbEnabledWhenToEditForm({
       form,
-      fields: this.rowEditFields(),
+      fields: this.currentEditFields,
       canEdit: this.canEditRows,
       dynamicService: this.dynamicService,
       visibilityService: this.visibilityService,
@@ -581,6 +598,6 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param fieldKey - The field key to look up.
    */
   private getRowEditFieldConfig(fieldKey: string): ConditionalFieldConfig | undefined {
-    return this.rowEditFields().find((f) => f.key === fieldKey);
+    return this.currentEditFields.find((f) => f.key === fieldKey);
   }
 }

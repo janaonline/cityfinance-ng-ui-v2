@@ -14,6 +14,7 @@ import {
   EulbPostSubmissionUpdateRowsData,
   EulbPostSubmissionUpdateSubmitResponse,
   EulbPostSubmissionUpdateValidateResponse,
+  EulbStatusSummary,
 } from '../../eulb-status.models';
 import { EulbStatusService } from '../../eulb-status.service';
 import { EulbPostUpdateComponent } from './eulb-post-update.component';
@@ -87,6 +88,16 @@ describe('EulbPostUpdateComponent', () => {
       page: 1,
       limit: 20,
       eligibleRule: { allowedFormStatuses: [4, 5], today: '2026-06-21' },
+      ...overrides,
+    };
+  }
+
+  function createStatusSummary(overrides: Partial<EulbStatusSummary> = {}): EulbStatusSummary {
+    return {
+      totalUlbCount: 10,
+      constitutedCount: 7,
+      notConstitutedCount: 2,
+      exemptCount: 1,
       ...overrides,
     };
   }
@@ -900,6 +911,93 @@ describe('EulbPostUpdateComponent', () => {
     expect(component.metadataErrorMessage()).toBe('Failed to load post-submission update data.');
     expect(component.isLoadingMeta()).toBeFalse();
     expect(service.getPostSubmissionUpdateRows).not.toHaveBeenCalled();
+  });
+
+  describe('statusSummary', () => {
+    it('stores statusSummary from rows API response in the signal', () => {
+      const summary = createStatusSummary({ constitutedCount: 7, totalUlbCount: 10 });
+      service.getPostSubmissionUpdateRows.and.returnValue(of(createRowsData({ statusSummary: summary })));
+      fixture.detectChanges();
+
+      expect(component.statusSummary()).toEqual(summary);
+    });
+
+    it('sets statusSummary to null when rows API response omits statusSummary', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(of(createRowsData()));
+      fixture.detectChanges();
+
+      expect(component.statusSummary()).toBeNull();
+    });
+
+    it('hides summary section when statusSummary is null', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(of(createRowsData()));
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('[data-testid="status-summary-section"]'))).toBeNull();
+    });
+
+    it('renders summary section when statusSummary is present', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(of(createRowsData({ statusSummary: createStatusSummary() })));
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('[data-testid="status-summary-section"]'))).not.toBeNull();
+    });
+
+    it('renders summary message with constitutedCount and totalUlbCount', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(
+        of(createRowsData({ statusSummary: createStatusSummary({ constitutedCount: 7, totalUlbCount: 10 }) })),
+      );
+      fixture.detectChanges();
+
+      const msg = fixture.debugElement.query(By.css('[data-testid="status-summary-message"]'));
+      expect(msg).not.toBeNull();
+      expect(msg.nativeElement.textContent).toContain('7');
+      expect(msg.nativeElement.textContent).toContain('10');
+    });
+
+    it('renders three summary cards via the computed array', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(of(createRowsData({ statusSummary: createStatusSummary() })));
+      fixture.detectChanges();
+
+      const cards = fixture.debugElement.queryAll(By.css('[data-testid="status-summary-card"]'));
+      expect(cards).toHaveSize(3);
+    });
+
+    it('constituted card shows count and border-success class', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(
+        of(createRowsData({ statusSummary: createStatusSummary({ constitutedCount: 7 }) })),
+      );
+      fixture.detectChanges();
+
+      const cards = fixture.debugElement.queryAll(By.css('[data-testid="status-summary-card"]'));
+      const constitutedCard = cards[0];
+      expect(constitutedCard.nativeElement.classList).toContain('border-success');
+      expect(constitutedCard.nativeElement.textContent).toContain('7');
+    });
+
+    it('not-constituted card shows count and border-danger class', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(
+        of(createRowsData({ statusSummary: createStatusSummary({ notConstitutedCount: 2 }) })),
+      );
+      fixture.detectChanges();
+
+      const cards = fixture.debugElement.queryAll(By.css('[data-testid="status-summary-card"]'));
+      const notConstitutedCard = cards[1];
+      expect(notConstitutedCard.nativeElement.classList).toContain('border-danger');
+      expect(notConstitutedCard.nativeElement.textContent).toContain('2');
+    });
+
+    it('exempt card shows count and border-secondary class', () => {
+      service.getPostSubmissionUpdateRows.and.returnValue(
+        of(createRowsData({ statusSummary: createStatusSummary({ exemptCount: 1 }) })),
+      );
+      fixture.detectChanges();
+
+      const cards = fixture.debugElement.queryAll(By.css('[data-testid="status-summary-card"]'));
+      const exemptCard = cards[2];
+      expect(exemptCard.nativeElement.classList).toContain('border-secondary');
+      expect(exemptCard.nativeElement.textContent).toContain('1');
+    });
   });
 
   it('ignores stale rows responses when a newer request completes first', () => {

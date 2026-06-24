@@ -103,6 +103,14 @@ export function buildEulbRowUpdatePayload(raw: EulbRowEditFormValue): EulbUpdate
     payload.electedBodyStatus = raw.electedBodyStatus;
   }
 
+  if (raw.censusCode !== undefined) {
+    payload.censusCode = raw.censusCode;
+  }
+
+  if (raw.ulbName !== undefined) {
+    payload.ulbName = raw.ulbName;
+  }
+
   return payload;
 }
 

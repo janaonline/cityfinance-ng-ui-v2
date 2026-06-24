@@ -75,6 +75,53 @@ describe('EulbRowsDialogComponent', () => {
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Row updated successfully.');
   });
 
+  it('saveRow omits censusCode and ulbName from the payload for DB_ULB rows', () => {
+    component.rows.set([row]);
+    component.editingRowId.set(row._id);
+    component.editForm = createEditForm({
+      electedBodyStatus: 'Constituted',
+      dateOfConstitution: '',
+      dateOfExpiry: '',
+      remarks: '',
+    });
+
+    component.saveRow(row._id);
+
+    const payload = service.updateRow.calls.mostRecent().args[3];
+    expect(Object.prototype.hasOwnProperty.call(payload, 'censusCode')).toBeFalse();
+    expect(Object.prototype.hasOwnProperty.call(payload, 'ulbName')).toBeFalse();
+  });
+
+  it('saveRow includes censusCode and ulbName in the payload for EXTRA_ULB rows', () => {
+    const extraUlbRow: EulbRow = {
+      ...row,
+      _id: 'extra-1',
+      rowType: 'EXTRA_ULB',
+      censusCode: 'OLD001',
+      ulbName: 'Old Name',
+    };
+    service.updateRow.and.returnValue(of(createUpdateResponse(extraUlbRow)));
+    component.rows.set([extraUlbRow]);
+    component.editingRowId.set(extraUlbRow._id);
+    component.editForm = new FormGroup({
+      electedBodyStatus: new FormControl(''),
+      dateOfConstitution: new FormControl(''),
+      dateOfExpiry: new FormControl(''),
+      remarks: new FormControl(''),
+      censusCode: new FormControl('NEW001'),
+      ulbName: new FormControl('New Name'),
+    });
+
+    component.saveRow(extraUlbRow._id);
+
+    expect(service.updateRow).toHaveBeenCalledOnceWith(
+      stateId,
+      yearId,
+      extraUlbRow._id,
+      jasmine.objectContaining({ censusCode: 'NEW001', ulbName: 'New Name' }),
+    );
+  });
+
   it('keeps the dialog Type column and editable field cells as native td elements', () => {
     fixture.detectChanges();
 
@@ -82,8 +129,41 @@ describe('EulbRowsDialogComponent', () => {
     const fieldCells = fixture.debugElement.queryAll(By.css('tbody tr td[app-eulb-editable-field-cell]'));
 
     expect(rowCells[1].nativeElement.textContent.trim()).toBe('DB');
-    expect(fieldCells).toHaveSize(4);
+    expect(fieldCells).toHaveSize(6);
     expect(fixture.debugElement.query(By.css('app-eulb-editable-field-cell'))).toBeNull();
+  });
+
+  it('getEditableFieldsForRow returns extraUlbEditFields for EXTRA_ULB and rowEditFields for DB_ULB', () => {
+    const commonFields = createRowEditFields();
+    const extraFields = createExtraUlbEditFields();
+    component.rowEditFields.set(commonFields);
+    component.extraUlbEditFields.set(extraFields);
+
+    const extraUlbRow: EulbRow = { ...row, rowType: 'EXTRA_ULB' };
+    const dbUlbRow: EulbRow = { ...row, rowType: 'DB_ULB' };
+
+    expect(component.getEditableFieldsForRow(extraUlbRow)).toBe(extraFields);
+    expect(component.getEditableFieldsForRow(dbUlbRow)).toBe(commonFields);
+  });
+
+  it('censusCode and ulbName cells show an error icon when the row has those errors', () => {
+    const errorRow: EulbRow = {
+      ...row,
+      errors: [
+        { field: 'censusCode', code: 'invalid', message: 'Census code not found.' },
+        { field: 'ulbName', code: 'invalid', message: 'ULB name is required.' },
+      ],
+    };
+    service.getRows.and.returnValue(of({ data: { rows: [errorRow], total: 1, page: 1, limit: 20 } }));
+    fixture.detectChanges();
+
+    const censusIcon = fixture.debugElement.query(
+      By.css('td[app-eulb-editable-field-cell][field="censusCode"] button'),
+    );
+    const ulbNameIcon = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell][field="ulbName"] button'));
+
+    expect(censusIcon).not.toBeNull();
+    expect(ulbNameIcon).not.toBeNull();
   });
 
   it('clicking an errored dialog cell enters edit mode and preserves the focus selector', fakeAsync(() => {
@@ -422,6 +502,14 @@ describe('EulbRowsDialogComponent', () => {
     ];
   }
 
+  function createExtraUlbEditFields(): ConditionalFieldConfig[] {
+    return [
+      { key: 'censusCode', label: 'Census Code', formFieldType: 'text' },
+      { key: 'ulbName', label: 'ULB Name', formFieldType: 'text' },
+      ...createRowEditFields(),
+    ];
+  }
+
   function createRow(): EulbRow {
     return {
       _id: 'row-1',
@@ -437,6 +525,101 @@ describe('EulbRowsDialogComponent', () => {
       errors: [],
     };
   }
+});
+
+describe('EulbRowsDialogComponent EXTRA_ULB buildEditForm', () => {
+  const stateId = 'state-1';
+  const yearId = 'year-1';
+
+  let fixture: ComponentFixture<EulbRowsDialogComponent>;
+  let component: EulbRowsDialogComponent;
+
+  beforeEach(async () => {
+    const service = jasmine.createSpyObj<EulbStatusService>('EulbStatusService', ['getRows', 'updateRow']);
+    service.getRows.and.returnValue(of({ data: { rows: [], total: 0, page: 1, limit: 20 } }));
+
+    const utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
+    const dialogRef = jasmine.createSpyObj<MatDialogRef<EulbRowsDialogComponent>>('MatDialogRef', ['close']);
+
+    const dynamicFormSpy = jasmine.createSpyObj<DynamicFormService>('DynamicFormService', [
+      'createContorl',
+      'bindValidations',
+    ]);
+    dynamicFormSpy.createContorl.and.callFake(() => new FormControl(''));
+    dynamicFormSpy.bindValidations.and.returnValue(Validators.nullValidator);
+
+    const dialogData: EulbRowsDialogData = {
+      stateId,
+      yearId,
+      rowEditFields: [
+        { key: 'electedBodyStatus', label: 'Elected Body Status', formFieldType: 'select' },
+        { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
+      ],
+      extraUlbEditFields: [
+        { key: 'censusCode', label: 'Census Code', formFieldType: 'text' },
+        { key: 'ulbName', label: 'ULB Name', formFieldType: 'text' },
+        { key: 'electedBodyStatus', label: 'Elected Body Status', formFieldType: 'select' },
+        { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
+      ],
+      canEdit: true,
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [EulbRowsDialogComponent],
+      providers: [
+        { provide: EulbStatusService, useValue: service },
+        { provide: UtilityService, useValue: utilityService },
+        { provide: MatDialogRef, useValue: dialogRef },
+        { provide: MAT_DIALOG_DATA, useValue: dialogData },
+        { provide: DynamicFormService, useValue: dynamicFormSpy },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EulbRowsDialogComponent);
+    component = fixture.componentInstance;
+  });
+
+  const dbUlbRow: EulbRow = {
+    _id: 'db-1',
+    rowNumber: 1,
+    censusCode: '123',
+    ulbName: 'DB ULB',
+    electedBodyStatus: 'Constituted',
+    dateOfConstitution: '',
+    dateOfExpiry: '',
+    remarks: '',
+    rowType: 'DB_ULB',
+    validationStatus: 'VALID',
+    errors: [],
+  };
+
+  const extraUlbRow: EulbRow = {
+    _id: 'extra-1',
+    rowNumber: 2,
+    censusCode: 'NEW001',
+    ulbName: 'Extra ULB',
+    electedBodyStatus: undefined,
+    dateOfConstitution: '',
+    dateOfExpiry: '',
+    remarks: '',
+    rowType: 'EXTRA_ULB',
+    validationStatus: 'INVALID',
+    errors: [],
+  };
+
+  it('creates censusCode and ulbName form controls when editing an EXTRA_ULB row', () => {
+    component.startEdit(extraUlbRow);
+
+    expect(component.getEditFormControl('censusCode')).not.toBeNull();
+    expect(component.getEditFormControl('ulbName')).not.toBeNull();
+  });
+
+  it('does not create censusCode or ulbName form controls when editing a DB_ULB row', () => {
+    component.startEdit(dbUlbRow);
+
+    expect(component.getEditFormControl('censusCode')).toBeNull();
+    expect(component.getEditFormControl('ulbName')).toBeNull();
+  });
 });
 
 describe('EulbRowsDialogComponent edit-form subscription teardown', () => {

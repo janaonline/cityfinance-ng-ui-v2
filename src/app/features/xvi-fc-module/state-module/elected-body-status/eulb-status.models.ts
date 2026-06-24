@@ -35,6 +35,7 @@ export type EulbRowType = 'DB_ULB' | 'EXTRA_ULB';
 export type EulbBodyStatus = 'Constituted' | 'Not Constituted' | 'Exempt';
 export const EULB_EDITABLE_FIELDS = ['electedBodyStatus', 'dateOfConstitution', 'dateOfExpiry', 'remarks'] as const;
 export type EulbEditableFieldKey = (typeof EULB_EDITABLE_FIELDS)[number];
+export type EulbFieldCellKey = EulbEditableFieldKey | 'censusCode' | 'ulbName';
 
 export interface EulbValidationSummary {
   dbUlbCount: number;
@@ -66,6 +67,7 @@ export interface EulbFormResponseData {
   permissions: EulbPermissions;
   actors?: FormActor[];
   rowEditFields?: ConditionalFieldConfig[];
+  extraUlbEditFields?: ConditionalFieldConfig[];
   validationSummary?: EulbValidationSummary;
   errorExcelFile?: EulbFileValue;
   /** Some backend versions nest errorExcelFile here; normalised in loadForm(). */
@@ -148,6 +150,8 @@ export interface EulbUpdateRowPayload {
   dateOfConstitution?: string;
   dateOfExpiry?: string;
   remarks?: string;
+  censusCode?: string;
+  ulbName?: string;
 }
 
 export interface EulbRowEditFormValue {
@@ -155,6 +159,8 @@ export interface EulbRowEditFormValue {
   dateOfConstitution?: string;
   dateOfExpiry?: string;
   remarks?: string;
+  censusCode?: string;
+  ulbName?: string;
 }
 
 export interface EulbRowUpdateApiError {
@@ -204,6 +210,7 @@ export interface EulbRowsDialogData {
   stateId: string;
   yearId: string;
   rowEditFields?: ConditionalFieldConfig[];
+  extraUlbEditFields?: ConditionalFieldConfig[];
   canEdit: boolean;
 }
 
@@ -277,6 +284,13 @@ export interface EulbPostSubmissionUpdateRow {
   errors: EulbPostUpdateRowError[];
 }
 
+export interface EulbStatusSummary {
+  totalUlbCount: number;
+  constitutedCount: number;
+  notConstitutedCount: number;
+  exemptCount: number;
+}
+
 export interface EulbPostSubmissionUpdateRowsData {
   rows: EulbPostSubmissionUpdateRow[];
   total: number;
@@ -286,6 +300,7 @@ export interface EulbPostSubmissionUpdateRowsData {
     allowedFormStatuses: number[];
     today: string;
   };
+  statusSummary?: EulbStatusSummary;
 }
 
 export interface EulbPostSubmissionUpdateRowsResponse {

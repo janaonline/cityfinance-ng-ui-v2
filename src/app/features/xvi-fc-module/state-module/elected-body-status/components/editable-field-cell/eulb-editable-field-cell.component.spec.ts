@@ -8,7 +8,7 @@ import {
   EulbEditableFieldCellDataAttribute,
   EulbEditableFieldCellStatusOption,
 } from './eulb-editable-field-cell.component';
-import { EulbBodyStatus, EulbEditableFieldKey } from '../../eulb-status.models';
+import { EulbBodyStatus, EulbFieldCellKey } from '../../eulb-status.models';
 
 @Component({
   imports: [ReactiveFormsModule, EulbEditableFieldCellComponent],
@@ -42,7 +42,7 @@ import { EulbBodyStatus, EulbEditableFieldKey } from '../../eulb-status.models';
   `,
 })
 class HostComponent {
-  field: EulbEditableFieldKey = 'remarks';
+  field: EulbFieldCellKey = 'remarks';
   value: string | null = 'Needs review';
   isEditing = false;
   canEdit = false;
@@ -59,7 +59,7 @@ class HostComponent {
   );
   editFieldDataAttribute: EulbEditableFieldCellDataAttribute = 'data-eulb-edit-field';
   showInvalidCellClass = false;
-  requestedField: EulbEditableFieldKey | null = null;
+  requestedField: EulbFieldCellKey | null = null;
 }
 
 describe('EulbEditableFieldCellComponent', () => {
@@ -174,5 +174,38 @@ describe('EulbEditableFieldCellComponent', () => {
     const input = fixture.debugElement.query(By.css('input[aria-label="Date of Expiry"]'));
     expect(input.nativeElement.getAttribute('data-eulb-post-edit-field')).toBe('dateOfExpiry');
     expect(input.nativeElement.hasAttribute('data-eulb-edit-field')).toBeFalse();
+  });
+
+  it('renders an edit-mode text input for censusCode', () => {
+    host.field = 'censusCode';
+    host.isEditing = true;
+    host.editControl = new FormControl<string | null>('ABC001');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input[aria-label="Census Code"]'));
+    expect(input).not.toBeNull();
+    expect(input.nativeElement.getAttribute('placeholder')).toBe('Census code');
+  });
+
+  it('renders an edit-mode text input for ulbName', () => {
+    host.field = 'ulbName';
+    host.isEditing = true;
+    host.editControl = new FormControl<string | null>('New ULB');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input[aria-label="ULB Name"]'));
+    expect(input).not.toBeNull();
+    expect(input.nativeElement.getAttribute('placeholder')).toBe('ULB name');
+  });
+
+  it('returns the correct aria label for censusCode errors', () => {
+    host.field = 'censusCode';
+    host.canEdit = true;
+    host.cellHasError = true;
+    host.cellErrorText = 'Census code is invalid.';
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('button[aria-label="Census code has a validation error"]'));
+    expect(icon).not.toBeNull();
   });
 });

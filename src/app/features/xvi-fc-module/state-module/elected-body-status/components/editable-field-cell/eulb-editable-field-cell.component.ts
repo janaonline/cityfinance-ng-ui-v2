@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatTooltip } from '@angular/material/tooltip';
-import { EulbBodyStatus, EulbEditableFieldKey } from '../../eulb-status.models';
+import { EulbBodyStatus, EulbFieldCellKey } from '../../eulb-status.models';
 
 export interface EulbEditableFieldCellStatusOption {
   readonly value: string;
@@ -107,6 +107,40 @@ export type EulbEditableFieldCellControl =
               [formControl]="editControl"
             />
           }
+          @case ('censusCode') {
+            <input
+              type="text"
+              [class]="inputControlClass"
+              [class.is-invalid]="cellHasError"
+              [matTooltip]="cellErrorText ?? ''"
+              [matTooltipDisabled]="!cellHasError"
+              matTooltipPosition="above"
+              [matTooltipShowDelay]="100"
+              aria-label="Census Code"
+              [attr.aria-invalid]="cellHasError || null"
+              placeholder="Census code"
+              [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
+              [attr.data-eulb-post-edit-field]="editFieldDataAttribute === 'data-eulb-post-edit-field' ? field : null"
+              [formControl]="editControl"
+            />
+          }
+          @case ('ulbName') {
+            <input
+              type="text"
+              [class]="inputControlClass"
+              [class.is-invalid]="cellHasError"
+              [matTooltip]="cellErrorText ?? ''"
+              [matTooltipDisabled]="!cellHasError"
+              matTooltipPosition="above"
+              [matTooltipShowDelay]="100"
+              aria-label="ULB Name"
+              [attr.aria-invalid]="cellHasError || null"
+              placeholder="ULB name"
+              [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
+              [attr.data-eulb-post-edit-field]="editFieldDataAttribute === 'data-eulb-post-edit-field' ? field : null"
+              [formControl]="editControl"
+            />
+          }
         }
       } @else {
         <span class="small">{{ displayText }}</span>
@@ -132,7 +166,7 @@ export type EulbEditableFieldCellControl =
 export class EulbEditableFieldCellComponent implements OnChanges {
   private readonly tooltip = inject(MatTooltip, { self: true });
 
-  @Input({ required: true }) field!: EulbEditableFieldKey;
+  @Input({ required: true }) field!: EulbFieldCellKey;
   @Input() value: string | null | undefined = null;
   @Input() isEditing = false;
   @Input() canEdit = false;
@@ -150,7 +184,7 @@ export class EulbEditableFieldCellComponent implements OnChanges {
   @Input() editFieldDataAttribute: EulbEditableFieldCellDataAttribute = 'data-eulb-edit-field';
   @Input() showInvalidCellClass = false;
 
-  @Output() readonly editRequested = new EventEmitter<EulbEditableFieldKey>();
+  @Output() readonly editRequested = new EventEmitter<EulbFieldCellKey>();
 
   @HostBinding('class.cursor-pointer')
   get isClickable(): boolean {
@@ -193,6 +227,10 @@ export class EulbEditableFieldCellComponent implements OnChanges {
         return 'Date of expiry has a validation error';
       case 'remarks':
         return 'Remarks has a validation error';
+      case 'censusCode':
+        return 'Census code has a validation error';
+      case 'ulbName':
+        return 'ULB name has a validation error';
     }
   }
 

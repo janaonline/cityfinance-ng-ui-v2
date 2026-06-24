@@ -55,6 +55,38 @@
 
           <hr class="my-0 text-body-tertiary" />
 
+          <!-- Summary -->
+          @if (statusSummary(); as summary) {
+            <div data-testid="status-summary-section">
+              <div class="alert alert-success border-success d-flex gap-2" role="alert">
+                <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                <div>
+                  <p class="m-0 p-0 fs-5 fw-semibold text-success">Elected Body Status submitted</p>
+                  <p class="m-0 p-0" data-testid="status-summary-message">
+                    {{ summary.constitutedCount }} of {{ summary.totalUlbCount }} ULBs confirmed as having constituted
+                    elected bodies. This has been recorded and will be used in assessing grant eligibility.
+                  </p>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                @for (card of statusSummaryCards(); track card.label) {
+                  <div
+                    class="border shadow-sm rounded p-3 flex-fill"
+                    style="min-width: 250px"
+                    [ngClass]="card.borderClass"
+                    data-testid="status-summary-card"
+                  >
+                    <p class="m-0 fs-5 fw-semibold" [ngClass]="card.textClass">{{ card.count }}</p>
+                    <p class="m-0">{{ card.label }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <hr class="my-0 text-body-tertiary" />
+
           <!-- Show table only if ineligible rows/ ULBs are available. -->
           @if (!rowViewModels().length) {
             <div class="alert alert-info d-flex gap-2" role="alert">

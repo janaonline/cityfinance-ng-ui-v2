@@ -108,6 +108,7 @@ export class ElectedBodyStatusComponent implements OnInit {
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
+  readonly extraUlbEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
   readonly isLoading = signal(false);
@@ -204,6 +205,7 @@ export class ElectedBodyStatusComponent implements OnInit {
 
           this.fields.set(data.questions);
           this.rowEditFields.set(data.rowEditFields ?? []);
+          this.extraUlbEditFields.set(data.extraUlbEditFields ?? []);
           this.createFormControls();
           this.isLoading.set(false);
         },
@@ -434,6 +436,7 @@ export class ElectedBodyStatusComponent implements OnInit {
         stateId: this.stateId,
         yearId: this.yearId,
         rowEditFields: this.rowEditFields(),
+        extraUlbEditFields: this.extraUlbEditFields(),
         canEdit: this.canEdit(),
       },
     });
