@@ -38,6 +38,13 @@ const ACTIVE_STATE_CHILD_ROUTES: Routes = [
       ),
   },
   {
+    path: 'elected-body-post-update',
+    loadComponent: () =>
+      import('./elected-body-status/pages/post-update/eulb-post-update.component').then(
+        (m) => m.EulbPostUpdateComponent,
+      ),
+  },
+  {
     path: 'devolution-formula',
     loadComponent: () =>
       import('./devolution-formula/devolution-formula.component').then(
