@@ -11,6 +11,9 @@ export enum Permission {
   RECOMMEND_EXEMPTIONS = 'RECOMMEND_EXEMPTIONS',
   FINAL_SUBMIT_TO_STATE_DMA = 'FINAL_SUBMIT_TO_STATE_DMA',
   FINAL_SUBMIT_TO_MOHUA = 'FINAL_SUBMIT_TO_MOHUA',
+  VIEW_STATE_FORMS = 'VIEW_STATE_FORMS',
+  EDIT_STATE_FORMS = 'EDIT_STATE_FORMS',
+  FINAL_SUBMIT_STATE_FORMS = 'FINAL_SUBMIT_STATE_FORMS',
   MANAGE_USERS = 'MANAGE_USERS',
   VIEW_MANAGED_USERS = 'VIEW_MANAGED_USERS',
   CREATE_MANAGED_USER = 'CREATE_MANAGED_USER',
@@ -22,6 +25,8 @@ export type Scope = 'ULB' | 'STATE' | 'MOHUA';
 
 export type AccessLevel = 'ADMIN' | 'EDITOR' | 'VIEWER';
 
+export type SubRole = 'submitter' | 'editor' | 'viewer';
+
 export interface AuthUser {
   _id: string;
   name: string;
@@ -30,6 +35,7 @@ export interface AuthUser {
   role: string;
   scope: Scope;
   accessLevel: AccessLevel;
+  subRole?: SubRole | null;
   state?: string;
   ulb?: string;
   stateName?: string;

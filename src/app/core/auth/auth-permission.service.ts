@@ -30,9 +30,25 @@ export class AuthPermissionService {
     const user = this.userSignal();
     if (!user?.role) return false;
 
-    const base = ROLE_PERMISSIONS[user.role] ?? [];
-    const allowed = new Set<Permission>(base);
+    const base: Permission[] = ROLE_PERMISSIONS[user.role] ?? [];
 
+    // Apply subRole cap for legacy STATE/ULB accounts designated as editor or
+    // viewer within XVI-FC. Mirrors the backend getEffectivePermissions() logic
+    // so the UI accurately reflects what the API will actually allow.
+    let effective: Permission[];
+    if (user.subRole && user.subRole !== 'submitter') {
+      const capKey = this.resolveSubRoleCap(user.role, user.subRole);
+      if (capKey) {
+        const cap = new Set<Permission>(ROLE_PERMISSIONS[capKey] ?? []);
+        effective = base.filter((p) => cap.has(p));
+      } else {
+        effective = base;
+      }
+    } else {
+      effective = base;
+    }
+
+    const allowed = new Set<Permission>(effective);
     user.permissionOverrides?.allow?.forEach((p) => allowed.add(p));
     user.permissionOverrides?.deny?.forEach((p) => allowed.delete(p));
 
@@ -48,15 +64,29 @@ export class AuthPermissionService {
   }
 
   isAdmin(): boolean {
-    return this.accessLevel() === 'ADMIN';
+    const user = this.userSignal();
+    if (!user) return false;
+    if (user.accessLevel !== 'ADMIN') return false;
+    // Legacy STATE/ULB accounts designated as editor or viewer must not be
+    // treated as admins even though their role-level accessLevel is 'ADMIN'.
+    if (user.subRole === 'editor' || user.subRole === 'viewer') return false;
+    return true;
   }
 
   isEditor(): boolean {
-    return this.accessLevel() === 'EDITOR';
+    const user = this.userSignal();
+    if (!user) return false;
+    if (user.accessLevel === 'EDITOR') return true;
+    // Legacy STATE/ULB accounts with editor subRole
+    return user.subRole === 'editor';
   }
 
   isViewer(): boolean {
-    return this.accessLevel() === 'VIEWER';
+    const user = this.userSignal();
+    if (!user) return false;
+    if (user.accessLevel === 'VIEWER') return true;
+    // Legacy STATE/ULB accounts with viewer subRole
+    return user.subRole === 'viewer';
   }
 
   isUlbUser(): boolean {
@@ -105,5 +135,25 @@ export class AuthPermissionService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Maps a (role, subRole) pair to the permission-cap key used in ROLE_PERMISSIONS.
+   * Mirrors backend resolveSubRoleCap() in permissions.map.ts.
+   * Only applies to legacy full-access roles (STATE, ULB) that have been
+   * downgraded to editor or viewer within XVI-FC. Managed users already
+   * have the correct role key and don't need this cap.
+   */
+  private resolveSubRoleCap(role: string, subRole: string): string | null {
+    const r = role.toUpperCase();
+    if (r === 'STATE') {
+      if (subRole === 'editor') return 'STATE-EDITOR';
+      if (subRole === 'viewer') return 'STATE-VIEWER';
+    }
+    if (r === 'ULB') {
+      if (subRole === 'editor') return 'ULB-EDITOR';
+      if (subRole === 'viewer') return 'ULB-VIEWER';
+    }
+    return null;
   }
 }

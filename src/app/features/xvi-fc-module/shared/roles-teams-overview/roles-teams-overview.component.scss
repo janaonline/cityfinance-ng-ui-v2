@@ -310,8 +310,7 @@
 
 .permission-table,
 .team-table {
-  min-width: 940px;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .permission-table th,
@@ -322,10 +321,15 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .permission-table {
-  min-width: 760px;
+  min-width: 520px;
+}
+
+.team-table {
+  min-width: 480px;
 }
 
 .permission-table th {
@@ -367,23 +371,35 @@
 }
 
 .team-table .mat-column-member {
-  width: 210px;
+  min-width: 160px;
+  width: 24%;
 }
 
 .team-table .mat-column-designation {
-  width: 220px;
+  min-width: 130px;
+  width: 20%;
 }
 
 .team-table .mat-column-role {
-  width: 170px;
+  min-width: 130px;
+  width: 18%;
 }
 
 .team-table .mat-column-status {
-  width: 145px;
+  min-width: 100px;
+  width: 14%;
+}
+
+.team-table .mat-column-lastLogin,
+.team-table .mat-column-sentAt {
+  min-width: 120px;
+  width: 16%;
+  white-space: nowrap;
 }
 
 .team-table .mat-column-action {
-  width: 160px;
+  min-width: 80px;
+  width: 8%;
 }
 
 .permission-table .mat-column-permission {
@@ -1054,6 +1070,252 @@
   color: var(--roles-green);
 }
 
+// ── Team section headers (Active / Pending tiers) ────────────────────────────
+
+.team-section {
+  border-top: 1px solid var(--roles-border);
+
+  &:first-child {
+    border-top: none;
+  }
+}
+
+.team-section--pending .team-table th {
+  background: #fff8f0;
+}
+
+.team-section--pending .team-table tr.mat-mdc-row:hover {
+  background: #fff5ea;
+}
+
+.team-section__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.team-section__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #3d5266;
+}
+
+.team-section__hint {
+  margin-left: auto;
+  color: var(--roles-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.count-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  background: #e6f6ed;
+  color: var(--roles-green);
+  border: 1px solid #ccebd9;
+}
+
+.count-chip--pending {
+  background: #fff1e5;
+  color: var(--roles-orange);
+  border-color: #f8d7bc;
+}
+
+.count-chip--suggested {
+  background: #eef3ff;
+  color: #2955a3;
+  border-color: #c8d7f5;
+}
+
+// ── Pending-specific ──────────────────────────────────────────────────────────
+
+.member-avatar--pending {
+  background: linear-gradient(135deg, #8a6626, #b07a30);
+  box-shadow: 0 0 0 4px rgba(138, 102, 38, 0.08);
+}
+
+.invite-expired-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c0392b;
+  background: #fff0ee;
+  border: 1px solid #f5c0bb;
+
+  mat-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+  }
+}
+
+.resend-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #b36b1a, #c17f30) !important;
+  border-radius: 6px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  min-height: 28px;
+  padding: 0 12px !important;
+  line-height: 28px;
+  box-shadow: 0 4px 12px rgba(176, 122, 48, 0.22);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 8px 18px rgba(176, 122, 48, 0.32);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+  }
+}
+
+// ── Team empty & loading ──────────────────────────────────────────────────────
+
+.team-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--roles-muted);
+
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    opacity: 0.35;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.team-empty__hint {
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  opacity: 0.75;
+}
+
+.team-loading {
+  border-top: 1px solid var(--roles-border);
+}
+
+.team-loading__row {
+  border-bottom: 1px solid var(--roles-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// ── Suggested contacts card ───────────────────────────────────────────────────
+
+.suggested-card {
+  border: 1px solid #d4e0f0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 14px 34px rgba(23, 32, 51, 0.05);
+  animation: rise-in 360ms ease-out both;
+}
+
+.suggested-card::before {
+  content: '';
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, #2955a3, #5b82d4, #a3bef0);
+}
+
+.suggested-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #e8edf6;
+  background: linear-gradient(90deg, rgba(41, 85, 163, 0.05), transparent 60%);
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 6px;
+    color: var(--roles-ink);
+    font-size: 0.94rem;
+    font-weight: 700;
+  }
+
+  p {
+    color: var(--roles-muted);
+    font-size: 0.82rem;
+  }
+}
+
+.suggested-contact {
+  padding: 14px 16px;
+}
+
+.member-avatar--suggested {
+  background: linear-gradient(135deg, #2955a3, #4472c4);
+  box-shadow: 0 0 0 4px rgba(41, 85, 163, 0.08);
+}
+
+.invite-suggested-btn {
+  flex: 0 0 auto;
+  color: #2955a3 !important;
+  border-color: #a3bef0 !important;
+  border-radius: 7px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  min-height: 32px;
+  padding: 0 12px !important;
+  transition: background 160ms ease, color 160ms ease;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    color: #ffffff !important;
+    background: #2955a3 !important;
+    border-color: #2955a3 !important;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.suggested-contact__designation {
+  color: var(--roles-muted);
+  font-size: 0.78rem;
+  padding-left: calc(34px + 8px); // avatar width + gap
+}
+
 @keyframes rise-in {
   from {
     opacity: 0;
@@ -1084,6 +1346,31 @@
   }
 }
 
+// ── md (768–991px): table visible but condensed ──────────────────────────────
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .team-table th,
+  .team-table td {
+    padding: 12px 12px;
+  }
+
+  .team-table tr.mat-mdc-row {
+    height: 64px;
+  }
+
+  .role-field {
+    width: 118px;
+  }
+}
+
+// ── lg+ (992px+): full table with all columns ─────────────────────────────────
+@media (min-width: 992px) {
+  .team-table th,
+  .team-table td {
+    padding: 14px 16px;
+  }
+}
+
+// ── < md: mobile card view ────────────────────────────────────────────────────
 @media (max-width: 767.98px) {
   .roles-page {
     padding-right: 14px;

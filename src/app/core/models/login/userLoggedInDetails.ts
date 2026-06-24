@@ -1,5 +1,5 @@
 import { ObjectID } from '../document.type';
-import { AccessLevel, Permission } from '../../auth/permissions';
+import { AccessLevel, Permission, SubRole } from '../../auth/permissions';
 import { USER_TYPE } from '../user/userType';
 
 export interface IUserLoggedInDetails {
@@ -9,6 +9,7 @@ export interface IUserLoggedInDetails {
   role: USER_TYPE;
   scope?: string;
   accessLevel?: AccessLevel;
+  subRole?: SubRole | null;
   state?: ObjectID;
   ulb?: ObjectID;
   isXVIFCProfileVerified?: boolean;

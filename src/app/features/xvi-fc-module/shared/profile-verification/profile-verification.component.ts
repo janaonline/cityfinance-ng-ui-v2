@@ -93,6 +93,14 @@ export class ProfileVerificationComponent implements OnInit {
       return;
     }
 
+    // STATE users: email is their login credential — it must never be overwritten
+    // via this form. Clear all validators so the field (hidden in template) does
+    // not block form submission.
+    if (this.role === 'state') {
+      this.addForm.controls.email.clearValidators();
+      this.addForm.controls.email.updateValueAndValidity();
+    }
+
     this.loadProfiles();
   }
 
@@ -161,7 +169,8 @@ export class ProfileVerificationComponent implements OnInit {
       this.errorMsg.set('Please enter a valid 10-digit mobile number.');
       return;
     }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // STATE users: email is their login credential — skip email validation entirely.
+    if (this.role !== 'state' && (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
       this.errorMsg.set('Please enter a valid email address.');
       return;
     }
@@ -191,7 +200,8 @@ export class ProfileVerificationComponent implements OnInit {
       return;
     }
     const mobile = this.getMobile(profile);
-    const email = this.getEmail(profile);
+    // STATE users: never send email — their login credential must not change.
+    const email = this.role !== 'state' ? this.getEmail(profile) : undefined;
     this.verifyingKey.set(key);
     this.errorMsg.set('');
     const loggedInUserId = this.getLoggedInUserId();
@@ -202,9 +212,9 @@ export class ProfileVerificationComponent implements OnInit {
           this.profileService.updateProfileContacts(
             loggedInUserId,
             profile.name,
-            email,
             mobile,
             profile.designation,
+            email,
           ),
         ),
       )
@@ -283,6 +293,8 @@ export class ProfileVerificationComponent implements OnInit {
     }
     const val = this.addForm.value;
     const mobile = val.mobile ?? '';
+    // STATE users: never send email — their login credential must not change.
+    const email = this.role !== 'state' ? (val.email || undefined) : undefined;
     this.addFormVerifying.set(true);
     this.errorMsg.set('');
     const loggedInUserId = this.getLoggedInUserId();
@@ -293,15 +305,15 @@ export class ProfileVerificationComponent implements OnInit {
           this.profileService.updateProfileContacts(
             loggedInUserId,
             val.name ?? '',
-            val.email ?? '',
             mobile,
             val.designation ?? '',
+            email,
           ),
         ),
       )
       .subscribe({
         next: () => {
-          this.markVerifiedInStorage(val.name ?? '', val.email ?? '', mobile, val.designation ?? '');
+          this.markVerifiedInStorage(val.name ?? '', mobile, val.designation ?? '', email);
           this.snackBar.open('Profile verified successfully!', 'Close', {
             duration: 3000,
             horizontalPosition: 'center',
@@ -357,7 +369,7 @@ export class ProfileVerificationComponent implements OnInit {
     return false;
   }
 
-  private markVerifiedInStorage(name?: string, email?: string, mobile?: string, designation?: string): void {
+  private markVerifiedInStorage(name?: string, mobile?: string, designation?: string, email?: string): void {
     localStorage.setItem('isXVIFCProfileVerified', 'true');
     try {
       const raw = localStorage.getItem('userData');
@@ -365,9 +377,10 @@ export class ProfileVerificationComponent implements OnInit {
         const user = JSON.parse(raw) as Record<string, unknown>;
         user['isXVIFCProfileVerified'] = true;
         if (name) user['name'] = name;
-        if (email) user['email'] = email;
         if (mobile) user['mobile'] = mobile;
         if (designation) user['designation'] = designation;
+        // Only update stored email for ULB users; STATE email is their login credential.
+        if (email) user['email'] = email;
         localStorage.setItem('userData', JSON.stringify(user));
       }
     } catch {

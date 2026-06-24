@@ -104,14 +104,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         actionLabel: 'Upload',
         route: 'upload-provisional',
       },
-      // {
-      //   id: 'unspent-balance',
-      //   title: 'FC Unspent Balance Disclosure',
-      //   subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
-      //   status: 'pending',
-      //   actionLabel: 'Fill Disclosure',
-      //   route: 'fill-disclosure',
-      // },
+      {
+        id: 'unspent-balance',
+        title: 'FC Unspent Balance Disclosure',
+        subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
+        status: 'pending',
+        actionLabel: 'Fill Disclosure',
+        route: 'fill-disclosure',
+      },
     ],
   },
   {
@@ -142,7 +142,14 @@ const ALL_CONDITIONS = CONDITION_GROUPS.flatMap((g) => g.conditions);
 @Component({
   selector: 'app-ulb-forms',
   standalone: true,
-  imports: [MatFormFieldModule, MatSelectModule, MatProgressBarModule, MatIconModule, MatButtonModule, MatTooltipModule],
+  imports: [
+    MatFormFieldModule,
+    MatSelectModule,
+    MatProgressBarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+  ],
   templateUrl: './ulb-forms.component.html',
   styleUrl: './ulb-forms.component.scss',
 })
@@ -243,7 +250,9 @@ export class UlbFormsComponent implements OnInit {
     try {
       const raw = localStorage.getItem('userData');
       return raw ? ((JSON.parse(raw) as { ulb?: string }).ulb ?? null) : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   private resolveDesignYearId(): string | null {
@@ -265,6 +274,8 @@ export class UlbFormsComponent implements OnInit {
       const parsed = JSON.parse(raw) as Partial<UlbDetails>;
       if (!parsed.ulbName || !parsed.stateName || !parsed.selectedYear) return null;
       return { ulbName: parsed.ulbName, stateName: parsed.stateName, selectedYear: parsed.selectedYear };
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 }

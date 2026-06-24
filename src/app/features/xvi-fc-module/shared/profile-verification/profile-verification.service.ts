@@ -83,14 +83,18 @@ export class ProfileVerificationService {
   updateProfileContacts(
     id: string,
     name: string,
-    email: string,
     mobile: string,
     designation: string,
+    email?: string,
   ): Observable<{ success: boolean }> {
-    return this.http.patch<{ success: boolean }>(
-      `${environment.api.url2}users/${id}/profile-contacts`,
-      { name, email, mobile, designation, isXVIFCProfileVerified: true },
-    );
+    const body: Record<string, unknown> = { name, mobile, designation, isXVIFCProfileVerified: true };
+    // email is intentionally omitted for STATE users — it is their login credential
+    // and must never be overwritten. The backend enforces this too, but we avoid
+    // sending it in the first place to prevent accidental overwrites.
+    if (email !== undefined) {
+      body['email'] = email;
+    }
+    return this.http.patch<{ success: boolean }>(`${environment.api.url2}users/${id}/profile-contacts`, body);
   }
 
   private buildFallbackProfiles(role: 'state' | 'ulb' | 'mohua'): EntityProfilesResponse {

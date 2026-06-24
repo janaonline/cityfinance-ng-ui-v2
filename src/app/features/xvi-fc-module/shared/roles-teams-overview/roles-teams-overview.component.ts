@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, TemplateRef, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -33,10 +33,26 @@ interface ApiTeamMember {
   email: string;
   mobile: string;
   role: string;
+  subRole: string | null;
   status: string;
   isActive: boolean;
   isXVIFCProfileVerified: boolean;
   lastLoginAt: string | null;
+  invitedAt: string | null;
+  isInviteExpired: boolean;
+}
+
+interface ApiListUser {
+  _id?: string;
+  name: string;
+  designation: string;
+  email: string;
+  mobile: string;
+  role: string;
+  status: string;
+  isActive: boolean;
+  isXVIFCProfileVerified: boolean;
+  isLegacyContact: boolean;
 }
 
 interface ApiEntityDetails {
@@ -49,6 +65,12 @@ interface ApiTeamMembersResponse {
   ulbDetails?: ApiEntityDetails;
   stateDetails?: ApiEntityDetails;
   data: ApiTeamMember[];
+}
+
+interface ApiListUsersResponse {
+  ulbDetails?: ApiEntityDetails;
+  stateDetails?: ApiEntityDetails;
+  data: ApiListUser[];
 }
 
 interface EntityTeamProfile {
@@ -70,6 +92,16 @@ interface TeamMember {
   role: TeamMemberRole;
   status: TeamMemberStatus;
   lastActive: string | null;
+  invitedAt: string | null;
+  isInviteExpired: boolean;
+}
+
+interface SuggestedContact {
+  initials: string;
+  name: string;
+  email: string;
+  phone: string;
+  designation: string;
 }
 
 interface PermissionMatrixRow {
@@ -128,9 +160,15 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   profile: EntityTeamProfile | null = null;
   members: TeamMember[] = [];
+  suggestedContacts: SuggestedContact[] = [];
+
   isLoading = true;
   hasError = false;
+  isSuggestedLoading = false;
   showPermissionMatrix = false;
+
+  // Tracks in-flight resend-invite requests per member ID to prevent double-submission.
+  private readonly resendingIds = new Set<string>();
 
   memberRoleSelections: Record<string, string> = {};
 
@@ -142,11 +180,11 @@ export class RolesTeamsOverviewComponent implements OnInit {
   transferVerifying = false;
 
   readonly memberColumns = ['member', 'designation', 'role', 'status', 'lastLogin', 'action'];
+  readonly pendingColumns = ['member', 'designation', 'role', 'status', 'sentAt', 'action'];
   readonly permissionColumns = ['permission', 'submitter', 'editor', 'viewer'];
   readonly availableRoles: Exclude<TeamMemberRole, 'Submitter' | null>[] = ['Editor', 'Viewer'];
 
-  getRolesForMember(member: TeamMember): Exclude<TeamMemberRole, 'Submitter' | null>[] {
-    if (member.role === 'Editor') return ['Editor', 'Viewer'];
+  getRolesForMember(_member: TeamMember): Exclude<TeamMemberRole, 'Submitter' | null>[] {
     return ['Editor', 'Viewer'];
   }
 
@@ -205,8 +243,20 @@ export class RolesTeamsOverviewComponent implements OnInit {
     });
   }
 
+  get activeMembers(): TeamMember[] {
+    return this.sortedMembers.filter((m) => m.status === 'active');
+  }
+
+  get pendingMembers(): TeamMember[] {
+    return this.sortedMembers.filter((m) => m.status === 'pending' || m.status === 'invited');
+  }
+
   get transferableMembers(): TeamMember[] {
     return this.members.filter((m) => m.role !== 'Submitter' && m.status === 'active');
+  }
+
+  isResendingInvite(memberId: string): boolean {
+    return this.resendingIds.has(memberId);
   }
 
   private resolveEntityFromStorage(): void {
@@ -256,14 +306,18 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.hasError = false;
     try {
       const param = this.entityType === 'state' ? 'stateId' : 'ulbId';
-      const res = await firstValueFrom(
-        this.http.get<{ success: boolean; data: ApiTeamMembersResponse } | ApiTeamMembersResponse>(
-          `${this.baseUrl}users/team-members`,
-          { params: new HttpParams().set(param, this.entityId) },
+      const [teamRes] = await Promise.all([
+        firstValueFrom(
+          this.http.get<{ success: boolean; data: ApiTeamMembersResponse } | ApiTeamMembersResponse>(
+            `${this.baseUrl}users/team-members`,
+            { params: new HttpParams().set(param, this.entityId) },
+          ),
         ),
-      );
+        // Suggested contacts load in parallel but fail silently.
+        this.loadSuggestedContactsSilently(),
+      ]);
 
-      const payload = 'success' in res ? res.data : res;
+      const payload = 'success' in teamRes ? teamRes.data : teamRes;
       const entityDetails = payload.ulbDetails ?? payload.stateDetails;
 
       if (entityDetails) {
@@ -290,6 +344,36 @@ export class RolesTeamsOverviewComponent implements OnInit {
     }
   }
 
+  private async loadSuggestedContactsSilently(): Promise<void> {
+    this.isSuggestedLoading = true;
+    try {
+      const param = this.entityType === 'state' ? 'stateId' : 'ulbId';
+      const res = await firstValueFrom(
+        this.http.get<
+          { success: boolean; data: ApiListUsersResponse } | ApiListUsersResponse
+        >(`${this.baseUrl}users/list`, {
+          params: new HttpParams().set(param, this.entityId),
+        }),
+      );
+      const payload = 'success' in res ? res.data : res;
+      const items = (payload.data ?? []) as ApiListUser[];
+      this.suggestedContacts = items
+        .filter((u) => u.isLegacyContact === true)
+        .map((u) => ({
+          initials: this.getInitials(u.name || u.email),
+          name: u.name || u.email,
+          email: u.email,
+          phone: u.mobile,
+          designation: u.designation,
+        }));
+    } catch {
+      // Suggested contacts are informational — primary content is unaffected if this fails.
+      this.suggestedContacts = [];
+    } finally {
+      this.isSuggestedLoading = false;
+    }
+  }
+
   private mapApiUser(user: ApiTeamMember): TeamMember {
     const apiRole = user.role.toLowerCase();
     let role: TeamMemberRole = null;
@@ -309,6 +393,8 @@ export class RolesTeamsOverviewComponent implements OnInit {
       role,
       status: this.resolveApiStatus(user.status, user.isXVIFCProfileVerified),
       lastActive: user.lastLoginAt,
+      invitedAt: user.invitedAt,
+      isInviteExpired: user.isInviteExpired,
     };
   }
 
@@ -323,6 +409,15 @@ export class RolesTeamsOverviewComponent implements OnInit {
       minute: '2-digit',
       hour12: true,
     });
+  }
+
+  formatInvitedAt(value: string | null): string {
+    if (!value) return '—';
+    const hoursAgo = Math.floor((Date.now() - new Date(value).getTime()) / 3_600_000);
+    if (hoursAgo < 1) return 'Just now';
+    if (hoursAgo < 24) return `${hoursAgo}h ago`;
+    const daysAgo = Math.floor(hoursAgo / 24);
+    return `${daysAgo}d ago`;
   }
 
   private getInitials(name: string): string {
@@ -390,6 +485,70 @@ export class RolesTeamsOverviewComponent implements OnInit {
     });
   }
 
+  // ── Invite suggested contact ───────────────────────────────────────────────
+  onInviteSuggested(contact: SuggestedContact): void {
+    if (this.memberLimitReached) return;
+    const dialogRef = this.dialog.open(RolesDialogComponent, {
+      autoFocus: 'first-tabbable',
+      maxHeight: 'calc(100vh - 48px)',
+      panelClass: 'roles-dialog-panel',
+      width: 'min(440px, calc(100vw - 32px))',
+      data: {
+        title: 'Invite Contact',
+        subtitle: "Confirm the details below and select a role. A welcome message will be sent to their mobile number.",
+        fields: [
+          { type: 'select', key: 'role', label: 'Role', required: true, options: this.inviteRoles },
+          {
+            type: 'text',
+            key: 'name',
+            label: 'Full Name',
+            required: true,
+            initialValue: contact.name,
+            placeholder: 'e.g. Priya Nair',
+            sanitize: this.sanitizeName.bind(this),
+          },
+          {
+            type: 'tel',
+            key: 'phone',
+            label: 'Phone Number',
+            required: true,
+            initialValue: contact.phone.replace(/\D/g, '').slice(-10),
+            placeholder: '10-digit mobile number',
+            maxlength: 10,
+            sanitize: this.sanitizePhone.bind(this),
+          },
+          {
+            type: 'text',
+            key: 'designation',
+            label: 'Designation',
+            optional: true,
+            initialValue: contact.designation,
+            placeholder: 'e.g. Accounts Officer',
+            sanitize: this.sanitizeDesignation.bind(this),
+          },
+        ],
+        confirmLabel: 'Send Invite',
+        confirmIcon: 'person_add',
+        disabledFn: (v: Record<string, string>) =>
+          !v['name'] || (v['phone']?.length ?? 0) < 10 || !v['role'],
+      } satisfies RolesDialogConfig,
+    });
+
+    dialogRef.afterClosed().subscribe((result: RolesDialogResult) => {
+      if (!result) return;
+      this.submitAddMember(
+        {
+          name: result['name'],
+          phone: result['phone'],
+          email: contact.email,
+          designation: result['designation'] ?? '',
+          role: result['role'],
+        },
+        false,
+      );
+    });
+  }
+
   private submitAddMember(
     params: { name: string; phone: string; email: string; designation: string; role: string },
     skipEmail: boolean,
@@ -430,6 +589,39 @@ export class RolesTeamsOverviewComponent implements OnInit {
         });
       },
     });
+  }
+
+  // ── Resend invite ──────────────────────────────────────────────────────────
+  onResendInvite(member: TeamMember): void {
+    if (this.resendingIds.has(member.id)) return;
+    this.resendingIds.add(member.id);
+    this.http
+      .post<{ success: boolean; message?: string }>(
+        `${this.baseUrl}users/${member.id}/resend-invite`,
+        {},
+      )
+      .subscribe({
+        next: () => {
+          this.resendingIds.delete(member.id);
+          // Reset the expiry flag locally — resend opens a fresh 48-hour window.
+          this.members = this.members.map((m) =>
+            m.id === member.id ? { ...m, isInviteExpired: false } : m,
+          );
+          this.snackBar.open(
+            `Invite resent to ${member.name}. They have 48 hours to join.`,
+            'Dismiss',
+            { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
+          );
+        },
+        error: (err) => {
+          this.resendingIds.delete(member.id);
+          this.snackBar.open(
+            err?.error?.message ?? 'Failed to resend invite. Please try again.',
+            'Dismiss',
+            { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top' },
+          );
+        },
+      });
   }
 
   // ── Activate / invite ──────────────────────────────────────────────────────

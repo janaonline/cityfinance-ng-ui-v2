@@ -41,6 +41,9 @@ export interface AuthUser {
   email: string;
   mobile: string;
   role: UserRole;
+  scope?: string;
+  accessLevel?: string;
+  subRole?: 'submitter' | 'editor' | 'viewer' | null;
   username: string;
   sbCode: string | null;
   censusCode: string | null;
