@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -26,18 +26,22 @@ function unwrap<T>(response: unknown): T {
 export class AnnualAccountStateService {
   private readonly http = inject(HttpClient);
 
-  readonly formStatus = signal<FormStatusData | null>(null);
+  readonly formStatus  = signal<FormStatusData | null>(null);
+  readonly loadError   = signal<string | null>(null);
 
   async loadFormStatus(ulbId: string, designYearId: string): Promise<void> {
+    this.loadError.set(null);
     try {
       const result = await firstValueFrom(
-        this.http.get<unknown>(
-          `${API}xvi-fc/form-status/${ulbId}/${designYearId}`,
-        ),
+        this.http.get<unknown>(`${API}xvi-fc/form-status/${ulbId}/${designYearId}`),
       );
       this.formStatus.set(unwrap<FormStatusData>(result));
-    } catch {
-      // No record yet (404) or network error — leave signal null so UI shows pending state
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 404) {
+        // No record yet — leave formStatus null so UI shows pending state.
+        return;
+      }
+      this.loadError.set('Failed to load form status. Please refresh and try again.');
     }
   }
 }

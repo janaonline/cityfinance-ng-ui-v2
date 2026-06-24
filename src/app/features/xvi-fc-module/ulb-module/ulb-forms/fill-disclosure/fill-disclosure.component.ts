@@ -221,6 +221,12 @@ export class FillDisclosureComponent {
   /** _id of the fetched disclosure record — needed for the signed-URL endpoint. */
   readonly disclosureId = signal<string | null>(null);
 
+  /** True only when a SUBMITTED disclosure was loaded — locks the entire form. */
+  private readonly isSubmittedRecord = signal(false);
+
+  /** True when a saved document chip has been removed but not yet persisted via Save. */
+  readonly hasPendingDocChanges = signal(false);
+
   readonly processingKeys = signal<ReadonlySet<SlotKey>>(new Set());
 
   readonly slotErrors = signal<Record<SlotKey, string | null>>({
@@ -247,8 +253,8 @@ export class FillDisclosureComponent {
     return keys.every((k) => (entries[k].length > 0 || saved[k].length > 0) && !errs[k]);
   });
 
-  /** True when a previously submitted disclosure was loaded — puts the whole form in read-only mode. */
-  readonly isReadOnly = computed(() => this.disclosureId() !== null);
+  /** True only when the loaded disclosure has formStatus === 'SUBMITTED' — locks the form. */
+  readonly isReadOnly = computed(() => this.isSubmittedRecord());
 
   readonly infoBannerText = computed(() =>
     this.activeMode() === 'manual'
@@ -289,12 +295,15 @@ export class FillDisclosureComponent {
   private patchFormFromDisclosure(disclosure: DisclosureRecord): void {
     this.disclosureId.set(disclosure._id);
 
+    const submitted = disclosure.formStatus === 'SUBMITTED';
+    this.isSubmittedRecord.set(submitted);
+
     const mode = disclosure.mode as 'manual' | 'document-assisted';
     this.activeMode.set(mode);
 
-    const prefix   = mode === 'manual' ? 'support' : 'doc';
-    const slot14   = `${prefix}-14` as SlotKey;
-    const slot15   = `${prefix}-15` as SlotKey;
+    const prefix = mode === 'manual' ? 'support' : 'doc';
+    const slot14 = `${prefix}-14` as SlotKey;
+    const slot15 = `${prefix}-15` as SlotKey;
 
     this.savedDocsBySlot.set({
       'support-14': [],
@@ -314,8 +323,9 @@ export class FillDisclosureComponent {
       accountNumber: disclosure.fc15.bankAccountNumber,
     });
 
-    // Lock all inputs — the disclosure is already submitted.
-    this.periods.forEach((p) => p.form.disable());
+    if (submitted) {
+      this.periods.forEach((p) => p.form.disable());
+    }
   }
 
   // ── Template helpers ─────────────────────────────────────────────────────────
@@ -385,6 +395,17 @@ export class FillDisclosureComponent {
   // ── Actions ──────────────────────────────────────────────────────────────────
 
   setMode(mode: 'manual' | 'document-assisted'): void {
+    if (mode === this.activeMode()) return;
+    // Revoke blob URLs for the slots that are going out of view to avoid leaks.
+    const leavingSlots: SlotKey[] = mode === 'manual' ? ['doc-14', 'doc-15'] : ['support-14', 'support-15'];
+    this.fileEntries.update((entries) => {
+      const updated = { ...entries };
+      for (const slot of leavingSlots) {
+        for (const entry of entries[slot]) URL.revokeObjectURL(entry.objectUrl);
+        updated[slot] = [];
+      }
+      return updated;
+    });
     this.activeMode.set(mode);
   }
 
@@ -533,6 +554,7 @@ export class FillDisclosureComponent {
       // 4. Persist the disclosure record.
       await firstValueFrom(this.disclosureService.submitDisclosure(payload));
 
+      this.hasPendingDocChanges.set(false);
       this.location.back();
     } catch (err) {
       this.saveError.set(
@@ -550,6 +572,7 @@ export class FillDisclosureComponent {
       list.splice(index, 1);
       return { ...docs, [typedKey]: list };
     });
+    this.hasPendingDocChanges.set(true);
   }
 
   async viewSavedDoc(filepath: string): Promise<void> {
