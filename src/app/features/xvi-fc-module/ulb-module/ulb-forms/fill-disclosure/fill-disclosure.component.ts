@@ -34,10 +34,6 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-
-GlobalWorkerOptions.workerSrc = '/assets/pdfjs/pdf.worker.min.mjs';
-
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_FILES_PER_SLOT = 2;
@@ -608,71 +604,29 @@ export class FillDisclosureComponent {
   }
 
   private async validatePdfNotBlank(file: File): Promise<{ valid: boolean; error?: string; pageCount?: number }> {
-    let data: Uint8Array;
     try {
-      data = new Uint8Array(await file.arrayBuffer());
-    } catch {
-      return { valid: false, error: 'Could not read the file. Please try again.' };
-    }
+      // Read just the first 1 KB — enough to check the PDF header and detect encryption.
+      const header = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
 
-    const loadingTask = getDocument({ data });
-    let isPasswordProtected = false;
-    loadingTask.onPassword = () => {
-      isPasswordProtected = true;
-      loadingTask.destroy();
-    };
+      // A valid PDF must start with %PDF-
+      const pdfMagic = [0x25, 0x50, 0x44, 0x46, 0x2D]; // %PDF-
+      if (!pdfMagic.every((byte, i) => header[i] === byte)) {
+        return { valid: false, error: 'The file does not appear to be a valid PDF.' };
+      }
 
-    let pdf: Awaited<typeof loadingTask.promise>;
-    try {
-      pdf = await loadingTask.promise;
-    } catch (err) {
-      if (isPasswordProtected || (err as { name?: string })?.name === 'PasswordException') {
+      // Detect password-protected PDFs by looking for /Encrypt in the header region.
+      const headerText = new TextDecoder().decode(header);
+      if (headerText.includes('/Encrypt')) {
         return {
           valid: false,
           error: 'Password-protected files are not allowed. Please upload an unlocked file.',
         };
       }
-      return { valid: false, error: 'Could not read the PDF. Please upload a valid file.' };
+
+      return { valid: true };
+    } catch {
+      return { valid: false, error: 'Could not read the file. Please try again.' };
     }
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      try {
-        const page = await pdf.getPage(i);
-
-        // Fast path: extractable text means the page has content.
-        const textContent = await page.getTextContent();
-        if (textContent.items.length > 0) {
-          return { valid: true, pageCount: pdf.numPages };
-        }
-
-        // Slow path: render at low resolution and check for any non-white pixel.
-        // This catches image-only content, scanned documents, and vector drawings,
-        // and avoids false positives from state-only operators (q, Q, cm, gs…)
-        // that appear even on blank pages.
-        const scale    = 0.3;
-        const viewport = page.getViewport({ scale });
-        const canvas   = document.createElement('canvas');
-        canvas.width   = Math.floor(viewport.width);
-        canvas.height  = Math.floor(viewport.height);
-        const ctx      = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          await page.render({ canvas, canvasContext: ctx, viewport }).promise;
-          const { data: pixels } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          for (let p = 0; p < pixels.length; p += 4) {
-            // Threshold of 240 tolerates JPEG compression artifacts near white.
-            if (pixels[p] < 240 || pixels[p + 1] < 240 || pixels[p + 2] < 240) {
-              return { valid: true, pageCount: pdf.numPages };
-            }
-          }
-        }
-      } catch {
-        // Treat unreadable page as blank; continue to remaining pages.
-      }
-    }
-
-    return { valid: false, error: 'The uploaded PDF appears to be blank. Please upload a document with visible content.' };
   }
 
   // ── Private: data loading ────────────────────────────────────────────────────
