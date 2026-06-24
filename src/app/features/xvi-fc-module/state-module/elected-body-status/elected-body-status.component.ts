@@ -46,7 +46,7 @@ import {
   isValidEulbFileValue,
 } from './eulb-status.utils';
 import { EulbStatusService } from './eulb-status.service';
-import { EulbRowsDialogComponent } from './eulb-rows-dialog/eulb-rows-dialog.component';
+import { EulbRowsDialogComponent } from './dialogs/rows-dialog/eulb-rows-dialog.component';
 import {
   FORM_STATUS,
   FormActor,

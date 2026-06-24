@@ -108,7 +108,9 @@
                 }
               </button>
             }
-          } @else if (canShowPostSubmissionUpdate()) {
+          }
+
+          @if (canShowPostSubmissionUpdate()) {
             <div class="row gap-2 align-items-center justify-content-between w-100">
               <p class="col p-0 m-0">
                 ULBs without an elected body are currently excluded. After elections, update the status and upload proof

@@ -2,10 +2,11 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { AbstractControl } from '@angular/forms';
 import { of, Subject, throwError } from 'rxjs';
-import { UtilityService } from '../../../../../core/services/utility.service';
-import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
-import { XvifcModuleService } from '../../../xvi-fc-module.service';
+import { UtilityService } from '../../../../../../core/services/utility.service';
+import { FileService } from '../../../../../../shared/dynamic-form/components/file/file.service';
+import { XvifcModuleService } from '../../../../xvi-fc-module.service';
 import {
   EulbPostSubmissionUpdateDocument,
   EulbPostSubmissionUpdateMetadata,
@@ -13,8 +14,8 @@ import {
   EulbPostSubmissionUpdateRowsData,
   EulbPostSubmissionUpdateSubmitResponse,
   EulbPostSubmissionUpdateValidateResponse,
-} from '../eulb-status.models';
-import { EulbStatusService } from '../eulb-status.service';
+} from '../../eulb-status.models';
+import { EulbStatusService } from '../../eulb-status.service';
 import { EulbPostUpdateComponent } from './eulb-post-update.component';
 
 describe('EulbPostUpdateComponent', () => {
@@ -342,6 +343,44 @@ describe('EulbPostUpdateComponent', () => {
     expect(fixture.debugElement.query(By.css('input[aria-label="Remarks"]'))).not.toBeNull();
   });
 
+  it('keeps editable field cells as native td elements without wrapper components', () => {
+    fixture.detectChanges();
+
+    const fieldCells = fixture.debugElement.queryAll(By.css('tbody tr td[app-eulb-editable-field-cell]'));
+
+    expect(fieldCells).toHaveSize(4);
+    expect(fixture.debugElement.query(By.css('app-eulb-editable-field-cell'))).toBeNull();
+  });
+
+  it('clicking an errored post-update cell enters edit mode and preserves the focus selector', fakeAsync(() => {
+    service.getPostSubmissionUpdateRows.and.returnValue(
+      of(
+        createRowsData({
+          rows: [
+            createRow({
+              errors: [{ field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' }],
+              validationStatus: 'INVALID',
+            }),
+          ],
+        }),
+      ),
+    );
+    fixture.detectChanges();
+
+    const dateOfExpiryCell = fixture.debugElement.query(
+      By.css('td[app-eulb-editable-field-cell][field="dateOfExpiry"]'),
+    );
+    dateOfExpiryCell.nativeElement.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const dateOfExpiryInput = fixture.debugElement.query(By.css('[data-eulb-post-edit-field="dateOfExpiry"]'));
+    expect(component.editingRowId()).toBe('row-1');
+    expect(dateOfExpiryInput).not.toBeNull();
+    expect(dateOfExpiryInput.nativeElement.getAttribute('data-eulb-post-edit-field')).toBe('dateOfExpiry');
+  }));
+
   it('does not expose Exempt in the edit status dropdown', () => {
     fixture.detectChanges();
 
@@ -593,9 +632,8 @@ describe('EulbPostUpdateComponent', () => {
   it('sets updateDocument when proofOfElectionForm receives a valid file value', () => {
     fixture.detectChanges();
 
-    // FormGroup<{}> infers AbstractControl<never> for dynamic keys; cast to any to call setValue.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (component.proofOfElectionForm.get('proofOfElection') as any).setValue({
+    // FormGroup<{}> infers AbstractControl<never> for dynamic keys; widen to unknown to call setValue.
+    (component.proofOfElectionForm.get('proofOfElection') as AbstractControl<unknown>).setValue({
       fileName: 'combined.pdf',
       fileUrl: 'state/eulb/combined.pdf',
       fileSize: 1024,
@@ -611,8 +649,7 @@ describe('EulbPostUpdateComponent', () => {
     fixture.detectChanges();
     component.updateDocument.set(createDocument());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (component.proofOfElectionForm.get('proofOfElection') as any).setValue({
+    (component.proofOfElectionForm.get('proofOfElection') as AbstractControl<unknown>).setValue({
       fileName: '',
       fileUrl: '',
       fileSize: null,
@@ -626,8 +663,7 @@ describe('EulbPostUpdateComponent', () => {
     fixture.detectChanges();
     component.updateDocument.set(createDocument());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (component.proofOfElectionForm.get('proofOfElection') as any).setValue(null);
+    (component.proofOfElectionForm.get('proofOfElection') as AbstractControl<unknown>).setValue(null);
 
     expect(component.updateDocument()).toBeNull();
   });

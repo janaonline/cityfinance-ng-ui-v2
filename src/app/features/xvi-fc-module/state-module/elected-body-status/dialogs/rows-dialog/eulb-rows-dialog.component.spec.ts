@@ -1,18 +1,19 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { By } from '@angular/platform-browser';
 import { of, Subject, throwError } from 'rxjs';
-import { UtilityService } from '../../../../../core/services/utility.service';
-import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
-import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
-import { EulbStatusService } from '../eulb-status.service';
+import { UtilityService } from '../../../../../../core/services/utility.service';
+import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
+import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
+import { EulbStatusService } from '../../eulb-status.service';
 import {
   EulbRow,
   EulbRowsApiResponse,
   EulbRowsDialogData,
   EulbUpdateRowResponse,
   EulbValidationSummary,
-} from '../eulb-status.models';
+} from '../../eulb-status.models';
 import { EulbRowsDialogComponent } from './eulb-rows-dialog.component';
 
 describe('EulbRowsDialogComponent', () => {
@@ -73,6 +74,38 @@ describe('EulbRowsDialogComponent', () => {
     });
     expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith('Row updated successfully.');
   });
+
+  it('keeps the dialog Type column and editable field cells as native td elements', () => {
+    fixture.detectChanges();
+
+    const rowCells = fixture.debugElement.queryAll(By.css('tbody tr td'));
+    const fieldCells = fixture.debugElement.queryAll(By.css('tbody tr td[app-eulb-editable-field-cell]'));
+
+    expect(rowCells[1].nativeElement.textContent.trim()).toBe('DB');
+    expect(fieldCells).toHaveSize(4);
+    expect(fixture.debugElement.query(By.css('app-eulb-editable-field-cell'))).toBeNull();
+  });
+
+  it('clicking an errored dialog cell enters edit mode and preserves the focus selector', fakeAsync(() => {
+    const errorRow: EulbRow = {
+      ...row,
+      errors: [{ field: 'remarks', code: 'invalid', message: 'Remarks are required.' }],
+    };
+    service.getRows.and.returnValue(of({ data: { rows: [errorRow], total: 1, page: 1, limit: 20 } }));
+    component.rowEditFields.set(createRowEditFields());
+    fixture.detectChanges();
+
+    const remarksCell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell][field="remarks"]'));
+    remarksCell.nativeElement.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const remarksInput = fixture.debugElement.query(By.css('[data-eulb-edit-field="remarks"]'));
+    expect(component.editingRowId()).toBe(row._id);
+    expect(remarksInput).not.toBeNull();
+    expect(remarksInput.nativeElement.getAttribute('data-eulb-edit-field')).toBe('remarks');
+  }));
 
   it('saveRow applies backend row update field errors', () => {
     component.rows.set([row]);
@@ -373,6 +406,20 @@ describe('EulbRowsDialogComponent', () => {
       validationStatus: 'INVALID',
       activeDatasetVersion: 1,
     };
+  }
+
+  function createRowEditFields(): ConditionalFieldConfig[] {
+    return [
+      {
+        key: 'electedBodyStatus',
+        label: 'Elected Body Status',
+        formFieldType: 'select',
+        options: ['Constituted', 'Not Constituted', 'Exempt'],
+      },
+      { key: 'dateOfConstitution', label: 'Date of Constitution', formFieldType: 'date' },
+      { key: 'dateOfExpiry', label: 'Date of Expiry', formFieldType: 'date' },
+      { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
+    ];
   }
 
   function createRow(): EulbRow {

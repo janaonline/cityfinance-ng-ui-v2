@@ -40,7 +40,7 @@ const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'elected-body-post-update',
     loadComponent: () =>
-      import('./elected-body-status/eulb-post-update/eulb-post-update.component').then(
+      import('./elected-body-status/pages/post-update/eulb-post-update.component').then(
         (m) => m.EulbPostUpdateComponent,
       ),
   },
