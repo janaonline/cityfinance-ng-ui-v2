@@ -19,25 +19,13 @@ import { IULB } from '../../../core/models/ulb';
 import { CommonService } from '../../../core/services/common.service';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../core/services/utility.service';
-import { OcrService } from '../ocr.service';
+import { OcrService, SelectOption } from '../ocr.service';
 import {
   OcrFinancialSummary,
   OcrValidationJobTracker,
   OcrValidationResult,
   OcrValidationStatus,
 } from './ocr-validation-models';
-
-interface ModelOption {
-  value: string;
-  label: string;
-  pricing?: { inputPerM: number; outputPerM: number; thinkingPerM: number };
-  deprecated?: boolean;
-}
-
-interface SelectOption<T = string> {
-  value: T;
-  label: string;
-}
 
 interface UsageStep {
   name: string;
@@ -81,36 +69,10 @@ export class OcrValidationComponent implements OnInit {
 
   readonly maxFileSizeMb = 50;
 
-  readonly models: ModelOption[] = [
-    { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', pricing: { inputPerM: 1.50, outputPerM: 9.00, thinkingPerM: 9.00 } },
-    { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 } },
-    { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 }, deprecated: true },
-    { value: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
-    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
-    { value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
-    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', pricing: { inputPerM: 1.25, outputPerM: 10.00, thinkingPerM: 10.00 } },
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', pricing: { inputPerM: 0.15, outputPerM: 0.60, thinkingPerM: 3.50 } },
-  ];
+  readonly models = this.ocrService.models;
 
-  readonly documentTypes: SelectOption[] = [
-    { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
-    { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
-    { value: 'INCOME_EXPENDITURE', label: 'Income and Expenditure' },
-    { value: 'INCOME_EXPENDITURE_SCHEDULE', label: 'Income and Expenditure Schedule' },
-    { value: 'CASH_FLOW', label: 'Cash Flow Statement' },
-    { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
-  ];
-
-  readonly financialYears: SelectOption[] = [
-    { value: '2025-26', label: '2025-26' },
-    { value: '2024-25', label: '2024-25' },
-    { value: '2023-24', label: '2023-24' },
-    { value: '2022-23', label: '2022-23' },
-    { value: '2021-22', label: '2021-22' },
-    { value: '2020-21', label: '2020-21' },
-    { value: '2019-20', label: '2019-20' },
-  ];
+  readonly documentTypes = this.ocrService.documentTypes;
+  readonly financialYears = this.ocrService.financialYears;
 
   readonly orientationCheckOptions: SelectOption<boolean>[] = [
     { value: false, label: 'False' },
@@ -256,8 +218,9 @@ export class OcrValidationComponent implements OnInit {
           error: (err) => {
             this.utilityService.swalPopup(
               'Submission failed',
-              err?.error?.detail || err?.error?.message || 'Failed to submit job.',
+              this.parseApiError(err),
               'error',
+              true,
             );
           },
         });
@@ -296,8 +259,9 @@ export class OcrValidationComponent implements OnInit {
           error: (err) => {
             this.utilityService.swalPopup(
               'Submission failed',
-              err?.error?.detail || err?.error?.message || 'Failed to submit batch.',
+              this.parseApiError(err),
               'error',
+              true,
             );
           },
         });
@@ -563,8 +527,8 @@ export class OcrValidationComponent implements OnInit {
         const bc = isPass ? '#22c55e' : '#f43f5e';
         const bbg = isPass ? '#f0fdf4' : '#fff1f2';
         const btxt = isPass ? '#166534' : '#991b1b';
-        const failedItems = r.basic_validation.failed_checks?.length
-          ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.basic_validation.failed_checks.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
+        const failedItems = r.error_messages?.length
+          ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.error_messages.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
           : '';
         const detail = r.basic_validation.validation_details
           ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`
@@ -838,7 +802,7 @@ export class OcrValidationComponent implements OnInit {
   }
 
   private startPolling(jobId: string): void {
-    timer(0, 3000)
+    timer(0, 5000)
       .pipe(
         switchMap(() => this.ocrService.getOcrValidationJobStatus(jobId)),
         tap((status) => {
@@ -876,6 +840,16 @@ export class OcrValidationComponent implements OnInit {
         this.updateJob(jobId, { message: 'Job completed but result could not be fetched.' });
       },
     });
+  }
+
+  private parseApiError(err: unknown): string {
+    const error = (err as any)?.error;
+    const detail = error?.detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      return detail.map((e: any) => e.msg ?? JSON.stringify(e)).join('; ');
+    }
+    if (typeof detail === 'string') return detail;
+    return error?.message ?? 'An unexpected error occurred.';
   }
 
   private loadJobById(jobId: string): void {
