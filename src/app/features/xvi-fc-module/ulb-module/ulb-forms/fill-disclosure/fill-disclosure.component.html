@@ -1,142 +1,389 @@
-<input #fileInput type="file" accept=".pdf,.jpg,.jpeg,.png" class="d-none" (change)="onFileSelected($event)" />
+<input
+  #fileInput
+  type="file"
+  accept=".pdf,.jpg,.jpeg,.png"
+  class="d-none"
+  aria-hidden="true"
+  (change)="onFileSelected($event)"
+/>
 
-<div class="fill-disclosure-page container py-3">
-
-  <button mat-button class="back-btn mb-3 ps-0" type="button" (click)="goBack()">
-    <mat-icon>arrow_back</mat-icon>
+<div class="container py-3">
+  <!-- Back navigation -->
+  <button
+    class="btn btn-link text-secondary text-decoration-none ps-0 mb-3 d-inline-flex align-items-center gap-1 small"
+    type="button"
+    (click)="goBack()"
+  >
+    <i class="bi bi-arrow-left" aria-hidden="true"></i>
     Back to Conditions
   </button>
 
-  <h1 class="page-heading fw-bold mb-1">FC Unspent Balance Disclosure</h1>
+  <!-- Page header -->
+  <h1 class="fs-4 fw-bold mb-1">{{ pageTitle }}</h1>
 
   @if (ulbDetails(); as details) {
-    <p class="page-subtitle text-muted mb-3">
+    <p class="small text-muted mb-3">
       <span class="text-primary fw-semibold">{{ details.ulbName }}</span>
       &nbsp;·&nbsp;{{ details.selectedYear }}
     </p>
   }
 
-  <p class="upload-description body-sm mb-3">
-    Declare the unspent grant balance from the 14th and 15th Finance Commission periods, along with the bank account
-    where those funds are held. Upload a supporting bank document (passbook, bank statement, or equivalent) as evidence
-    for each period.
-  </p>
+  <p class="small text-secondary mb-3">{{ pageDescription }}</p>
 
-  <div class="mode-toggle mb-3">
-    <button
-      class="mode-btn"
-      [class.mode-btn--active]="activeMode() === 'manual'"
-      type="button"
-      (click)="setMode('manual')"
-    >Manual Entry</button>
-    <button
-      class="mode-btn"
-      [class.mode-btn--active]="activeMode() === 'document-assisted'"
-      type="button"
-      (click)="setMode('document-assisted')"
-    >Document-assisted</button>
-  </div>
-
-  <div class="info-banner rounded-2 px-3 py-2 mb-3">
-    <p class="body-xs mb-0">{{ infoBannerText() }}</p>
-  </div>
-
-  @for (period of periods; track period.key) {
-    <div class="period-card rounded-3 p-3 mb-3">
-
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <mat-icon class="period-icon">account_balance</mat-icon>
-        <span class="period-label fw-semibold">{{ period.label }}</span>
-        @if (period.disclosureOnly) {
-          <span class="disclosure-badge">Disclosure only — not used for current eligibility</span>
-        }
-      </div>
-
-      @if (activeMode() === 'document-assisted') {
-        <div class="doc-step-box rounded-2 border p-3 mb-3">
-          <p class="field-label mb-2">Step 1 — Upload bank document</p>
-          <div class="d-flex align-items-center gap-2">
-            <button
-              mat-stroked-button
-              class="choose-file-btn"
-              type="button"
-              (click)="triggerFile('doc-' + period.key)"
-            >
-              <mat-icon>upload</mat-icon> Choose file
-            </button>
-            <span class="body-xs text-muted">
-              {{ files()['doc-' + period.key]?.name ?? 'No file chosen' }}
-            </span>
-          </div>
-        </div>
+  <!-- Mode toggle -->
+  <mat-button-toggle-group
+    class="mode-toggle mb-3"
+    [value]="activeMode()"
+    (change)="setMode($event.value)"
+    aria-label="Entry mode"
+    [disabled]="isReadOnly()"
+  >
+    @for (opt of modeOptions; track opt.value) {
+      @if (opt.disabled) {
+        <span
+          [matTooltip]="opt.tooltip"
+          matTooltipPosition="above"
+          class="d-inline-block"
+          style="cursor: not-allowed"
+          [attr.aria-label]="opt.label + ' - ' + opt.tooltip"
+        >
+          <mat-button-toggle [value]="opt.value" [disabled]="true" style="pointer-events: none">
+            {{ opt.label }}
+          </mat-button-toggle>
+        </span>
+      } @else {
+        <mat-button-toggle [value]="opt.value">{{ opt.label }}</mat-button-toggle>
       }
+    }
+  </mat-button-toggle-group>
 
-      <form [formGroup]="period.form">
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label class="field-label d-block">
-              Unspent Balance (₹) <span class="text-danger">*</span>
-            </label>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text">₹</span>
-              <input
-                type="text"
-                class="form-control"
-                formControlName="balance"
-                placeholder="Enter amount"
-              />
-            </div>
-          </div>
-          <div class="col-md-6">
-            <label class="field-label d-block">
-              Bank Account Number <span class="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              class="form-control form-control-sm"
-              formControlName="accountNumber"
-              placeholder="e.g. 1234567890"
-            />
-          </div>
-        </div>
-
-        @if (activeMode() === 'manual') {
-          <div>
-            <p class="field-label mb-1">
-              Supporting Document <span class="text-danger">*</span>
-              <span class="supporting-doc-hint ms-1">Passbook, bank statement, or equivalent</span>
-            </p>
-            <div class="d-flex align-items-center gap-2">
-              <button
-                mat-stroked-button
-                class="choose-file-btn"
-                type="button"
-                (click)="triggerFile('support-' + period.key)"
-              >
-                <mat-icon>upload</mat-icon> Choose file
-              </button>
-              <span class="body-xs text-muted">
-                {{ files()['support-' + period.key]?.name ?? 'No file chosen' }}
-              </span>
-            </div>
-          </div>
-        }
-      </form>
-
+  <!-- Info banner (hidden when locked) -->
+  @if (!isReadOnly()) {
+    <div class="alert alert-primary py-2 mb-4 d-flex align-items-start gap-2" role="note">
+      <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+      <p class="small mb-0">{{ infoBannerText() }}</p>
     </div>
   }
 
-  <div class="d-flex align-items-center gap-2 pt-2">
-    <button
-      mat-flat-button
-      class="save-btn"
-      type="button"
-      [disabled]="!canSave()"
-      (click)="saveDisclosure()"
-    >
-      Save Disclosure
-    </button>
-    <button mat-button class="cancel-btn" type="button" (click)="goBack()">Cancel</button>
-  </div>
+  <!-- Lock banner (shown when a submitted disclosure is loaded) -->
+  @if (isReadOnly() && !isLoading()) {
+    <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-4" role="status">
+      <mat-icon aria-hidden="true" style="font-size:1.1rem;width:1.1rem;height:1.1rem">lock</mat-icon>
+      <p class="small mb-0 fw-medium">This disclosure has already been submitted. The form is locked — no edits can be made.</p>
+    </div>
+  }
 
+  <!-- Loading state while fetching existing disclosure -->
+  @if (isLoading()) {
+    <div class="d-flex align-items-center gap-2 text-muted small py-3" role="status" aria-live="polite">
+      <span class="spinner-border spinner-border-sm flex-shrink-0" aria-hidden="true"></span>
+      Loading existing disclosure…
+    </div>
+  }
+
+  <!-- Period cards -->
+  @if (!isLoading()) {
+  @for (period of periods; track period.key) {
+    <div class="card border-0 shadow-sm rounded-3 p-3 mb-3" style="max-width: 540px">
+      <!-- Period header -->
+      <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+        <i class="bi bi-bank text-secondary flex-shrink-0" aria-hidden="true"></i>
+        <span class="fw-semibold" style="font-size: 0.875rem">{{ period.label }}</span>
+        @if (period.disclosureOnly) {
+          <span
+            class="badge rounded-pill bg-light text-secondary border fw-normal text-nowrap"
+            style="font-size: 0.68rem; cursor: default"
+            [matTooltip]="fields.disclosureOnlyTitle"
+            matTooltipPosition="above"
+          >{{ fields.disclosureOnlyLabel }}</span>
+        }
+      </div>
+
+      <!-- Document-assisted upload step -->
+      @if (activeMode() === 'document-assisted') {
+        <div class="bg-light border border-secondary-subtle rounded-2 p-3 mb-3">
+          <p class="form-label fw-semibold small text-secondary mb-2">{{ fields.docStep }}</p>
+          <ng-container *ngTemplateOutlet="fileUploadBlock; context: { $implicit: 'doc-' + period.key }"></ng-container>
+        </div>
+      }
+
+      <!-- Form fields -->
+      <form [formGroup]="period.form" novalidate>
+        <div class="row g-3 mb-3">
+          <!-- Unspent Balance -->
+          <div class="col-md-6">
+            <label [for]="'balance-' + period.key" class="form-label fw-semibold small text-secondary">
+              {{ fields.balance.label }}
+              <span class="text-danger" aria-hidden="true">*</span>
+            </label>
+            <div class="input-group input-group-sm has-validation">
+              <span class="input-group-text">₹</span>
+              <input
+                [id]="'balance-' + period.key"
+                type="text"
+                class="form-control"
+                formControlName="balance"
+                [placeholder]="fields.balance.placeholder"
+                [class.is-invalid]="isFieldInvalid(period.form, 'balance')"
+                [attr.aria-required]="fields.balance.required"
+                [attr.aria-describedby]="isFieldInvalid(period.form, 'balance') ? 'balance-err-' + period.key : null"
+              />
+              @if (isFieldInvalid(period.form, 'balance')) {
+                <div [id]="'balance-err-' + period.key" class="invalid-feedback">
+                  {{ getFieldError(period.form, 'balance') }}
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Bank Account Number -->
+          <div class="col-md-6">
+            <label [for]="'account-' + period.key" class="form-label fw-semibold small text-secondary">
+              {{ fields.accountNumber.label }}
+              <span class="text-danger" aria-hidden="true">*</span>
+            </label>
+            <input
+              [id]="'account-' + period.key"
+              type="text"
+              inputmode="numeric"
+              maxlength="18"
+              class="form-control form-control-sm"
+              formControlName="accountNumber"
+              [placeholder]="fields.accountNumber.placeholder"
+              [class.is-invalid]="isFieldInvalid(period.form, 'accountNumber')"
+              [attr.aria-required]="fields.accountNumber.required"
+              [attr.aria-describedby]="
+                isFieldInvalid(period.form, 'accountNumber') ? 'account-err-' + period.key : null
+              "
+            />
+            @if (isFieldInvalid(period.form, 'accountNumber')) {
+              <div [id]="'account-err-' + period.key" class="invalid-feedback">
+                {{ getFieldError(period.form, 'accountNumber') }}
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Manual mode supporting document upload -->
+        @if (activeMode() === 'manual') {
+          <div>
+            <p class="form-label fw-semibold small text-secondary mb-2">
+              {{ fields.supportDoc.label }}
+              <span class="text-danger" aria-hidden="true">*</span>
+              <span class="fw-normal text-muted ms-1">— {{ fields.supportDoc.hint }}</span>
+            </p>
+
+            <!-- Previously saved documents -->
+            @if (savedDocsFor('support-' + period.key).length > 0) {
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                @for (doc of savedDocsFor('support-' + period.key); track doc.filepath; let i = $index) {
+                  <div class="file-chip file-chip--ready d-flex align-items-center gap-2 rounded-2 px-2 py-1">
+                    <mat-icon class="flex-shrink-0" style="font-size:1rem;width:1rem;height:1rem;color:#15803d" aria-hidden="true">picture_as_pdf</mat-icon>
+                    <span class="small text-truncate" style="max-width:160px" [title]="doc.originalName">{{ doc.originalName }}</span>
+                    <span class="text-muted small flex-shrink-0">{{ doc.pages }}p</span>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      class="chip-icon-btn"
+                      [matTooltip]="'View ' + doc.originalName"
+                      (click)="viewSavedDoc(doc.filepath)"
+                      aria-label="View document"
+                    >
+                      <mat-icon class="chip-icon">visibility</mat-icon>
+                    </button>
+                    @if (!isReadOnly()) {
+                      <button
+                        type="button"
+                        mat-icon-button
+                        class="chip-icon-btn chip-icon-btn--delete"
+                        matTooltip="Remove"
+                        (click)="removeSavedDoc('support-' + period.key, i)"
+                        aria-label="Remove saved document"
+                      >
+                        <mat-icon class="chip-icon">close</mat-icon>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            @if (!isReadOnly()) {
+              <ng-container
+                *ngTemplateOutlet="fileUploadBlock; context: { $implicit: 'support-' + period.key }"
+              ></ng-container>
+            }
+          </div>
+        }
+      </form>
+    </div>
+  }
+
+  <!-- Declaration checkbox — hidden when form is locked -->
+  @if (!isReadOnly()) {
+    <div
+      class="rounded-3 d-flex align-items-start gap-3 p-3 mb-3"
+      style="background: #fffbeb; border: 1px solid #fde68a; max-width: 560px"
+    >
+      <div class="form-check mb-0 d-flex align-items-start gap-3">
+        <input
+          class="form-check-input declaration-checkbox flex-shrink-0"
+          type="checkbox"
+          id="declaration-checkbox"
+          [checked]="declarationChecked()"
+          (change)="onDeclarationChange($event)"
+          aria-describedby="declaration-text"
+        />
+        <label class="form-check-label small text-secondary lh-base" for="declaration-checkbox" id="declaration-text">
+          {{ fields.declaration }}
+        </label>
+      </div>
+    </div>
+  }
+
+  } <!-- end @if (!isLoading()) -->
+
+  <!-- Form actions -->
+  <div class="pt-2">
+    <div class="d-flex align-items-center gap-2">
+      @if (!isReadOnly()) {
+        <button
+          class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+          type="button"
+          [disabled]="!canSave()"
+          (click)="saveDisclosure()"
+          [attr.aria-busy]="isSaving()"
+        >
+          @if (isSaving()) {
+            <span class="spinner-border spinner-border-sm flex-shrink-0" role="status" aria-hidden="true"></span>
+            Saving…
+          } @else {
+            Save Disclosure
+          }
+        </button>
+      }
+      <button
+        class="btn btn-link text-secondary text-decoration-none"
+        type="button"
+        [disabled]="isSaving()"
+        (click)="goBack()"
+      >
+        {{ isReadOnly() ? 'Back' : 'Cancel' }}
+      </button>
+    </div>
+    @if (hasPendingDocChanges()) {
+      <div class="alert alert-warning py-2 px-3 mt-2 small mb-0" role="alert">
+        You have removed a saved document. Click <strong>Save Disclosure</strong> to apply the change.
+      </div>
+    }
+    @if (saveError()) {
+      <div class="alert alert-danger py-2 px-3 mt-2 small mb-0" role="alert">
+        {{ saveError() }}
+      </div>
+    }
+  </div>
 </div>
+
+<!-- ─── Reusable file-upload block ─────────────────────────────────────── -->
+<ng-template #fileUploadBlock let-key>
+  <!-- Uploaded file chips -->
+  @for (entry of entriesFor(key); track entry.id; let i = $index) {
+    <div class="d-flex flex-column gap-1 mb-2">
+      <div
+        class="file-chip--ready d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+        style="max-width: 480px; min-width: 0"
+      >
+        <span
+          class="text-truncate flex-grow-1 fw-semibold text-success small"
+          [matTooltip]="entry.file.name"
+        >{{ entry.file.name }}</span>
+        <span class="flex-shrink-0 text-muted" style="font-size: 0.68rem; white-space: nowrap">
+          · {{ formatFileSize(entry.file.size) }}
+        </span>
+        @if (entry.pageCount) {
+          <span class="flex-shrink-0 text-muted" style="font-size: 0.68rem; white-space: nowrap">
+            · {{ entry.pageCount }} {{ entry.pageCount === 1 ? 'page' : 'pages' }}
+          </span>
+        }
+        <div class="ms-auto d-flex align-items-center gap-1 flex-shrink-0">
+          <button
+            mat-icon-button
+            class="chip-icon-btn"
+            type="button"
+            matTooltip="Preview file"
+            [attr.aria-label]="'Preview ' + entry.file.name"
+            (click)="previewFile(entry)"
+          >
+            <mat-icon class="chip-icon">visibility</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            class="chip-icon-btn chip-icon-btn--delete"
+            type="button"
+            matTooltip="Remove file"
+            [attr.aria-label]="'Remove ' + entry.file.name"
+            (click)="removeFile(key, i)"
+          >
+            <mat-icon class="chip-icon">delete_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Validating state -->
+  @if (isProcessingSlot(key)) {
+    <div
+      class="file-chip--uploading d-flex align-items-center gap-2 px-3 py-2 rounded-2 mb-2"
+      style="max-width: 480px; min-width: 0"
+      role="status"
+      aria-live="polite"
+    >
+      <mat-progress-bar mode="indeterminate" class="flex-grow-1"></mat-progress-bar>
+      <span class="flex-shrink-0 text-muted small">Validating…</span>
+    </div>
+  }
+
+  <!-- Slot-level validation error -->
+  @if (errorFor(key); as err) {
+    <div
+      class="file-chip--error d-flex align-items-center gap-2 px-3 py-2 rounded-2 mb-2"
+      style="max-width: 480px; min-width: 0"
+      role="alert"
+      aria-live="assertive"
+    >
+      <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem; color: #dc2626; flex-shrink: 0">error_outline</mat-icon>
+      <span class="small lh-base" style="color: #991b1b; word-break: break-word; white-space: normal">{{ err }}</span>
+    </div>
+  }
+
+  <!-- Upload button — hidden when slot is full or validating -->
+  @if (entriesFor(key).length < maxFilesPerSlot && !isProcessingSlot(key)) {
+    <button
+      class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mb-2"
+      type="button"
+      (click)="triggerFile(key)"
+    >
+      <i class="bi bi-cloud-upload" aria-hidden="true"></i>
+      {{ entriesFor(key).length === 0 ? 'Choose file' : 'Add another file' }}
+    </button>
+  }
+
+  <!-- Accepted formats + constraints -->
+  <p class="small text-muted mt-1 mb-2">
+    {{ fields.acceptedFormatsText }} &nbsp;·&nbsp; max {{ fields.maxSizeMb }} MB &nbsp;·&nbsp; up to
+    {{ maxFilesPerSlot }} files
+  </p>
+
+  <!-- Sample download -->
+  @if (fields.sampleLink.url) {
+    <a
+      class="small text-primary text-decoration-none d-inline-flex align-items-center gap-1"
+      [href]="fields.sampleLink.url"
+      download
+    >
+      <i class="bi bi-download" aria-hidden="true"></i>
+      {{ fields.sampleLink.label }}
+    </a>
+  }
+</ng-template>
