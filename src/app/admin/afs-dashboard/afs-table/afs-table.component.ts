@@ -220,7 +220,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
     if (this.pageEvent) {
       const page = this.filters().page;
       this.pageEvent.pageIndex = page ? page - 1 : 0;
-      this.pageEvent.pageSize = this.filters().limit || 100;
+      this.pageEvent.pageSize = this.filters().limit || 10;
     }
     // This effect runs initially and whenever this.quantity() changes
     this.getAfsList();

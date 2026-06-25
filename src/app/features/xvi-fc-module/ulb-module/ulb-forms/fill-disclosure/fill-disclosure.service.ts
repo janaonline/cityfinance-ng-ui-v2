@@ -28,15 +28,20 @@ export interface DisclosureDocPayload {
   pages: number;
 }
 
-export interface FcPeriodPayload {
+export interface BankAccountPayload {
+  accountNumber: string;
   unspentBalance: number;
-  bankAccountNumber: string;
   documents: DisclosureDocPayload[];
+}
+
+export interface FcPeriodPayload {
+  manual: {
+    bankAccounts: BankAccountPayload[];
+  };
 }
 
 export interface SubmitDisclosurePayload {
   designYearId: string;
-  mode: string;
   fc14: FcPeriodPayload;
   fc15: FcPeriodPayload;
 }
@@ -45,7 +50,6 @@ export interface DisclosureRecord {
   _id: string;
   ulb: string;
   designYear: string;
-  mode: string;
   fc14: FcPeriodPayload;
   fc15: FcPeriodPayload;
   formStatus: string;
@@ -110,7 +114,13 @@ export class FillDisclosureService {
       .get<{ success: boolean; data: DisclosureRecord | null } | DisclosureRecord | null>(
         `${this.baseUrl}xvi-fc/unspent-balance-disclosure?${params.toString()}`,
       )
-      .pipe(map((res) => (res === null ? null : this.unwrap(res as { success: boolean; data: DisclosureRecord | null } | DisclosureRecord))));
+      .pipe(
+        map((res) =>
+          res === null
+            ? null
+            : this.unwrap(res as { success: boolean; data: DisclosureRecord | null } | DisclosureRecord),
+        ),
+      );
   }
 
   /**

@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   DestroyRef,
@@ -11,6 +12,7 @@ import {
 import { Location, NgTemplateOutlet } from '@angular/common';
 import {
   AbstractControl,
+  FormArray,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
@@ -25,54 +27,38 @@ import {
   FillDisclosureService,
   DISCLOSURE_S3_FOLDER,
   type S3UrlItemDto,
+  type S3UrlResult,
   type DisclosureDocPayload,
+  type BankAccountPayload,
   type SubmitDisclosurePayload,
+  type FcPeriodPayload,
   type DisclosureRecord,
 } from './fill-disclosure.service';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_FILES_PER_SLOT = 2;
-/** Set to the actual URL once the sample document is available. */
 const SAMPLE_DOCUMENT_URL: string | null = null;
 
-/** Integer (whole rupees), positive or negative. */
 const BALANCE_PATTERN = /^-?\d+$/;
 
-/**
- * Bank account number validator.
- * Rules:
- *   - Only digits (0–9) — no alphabets, no special characters, no spaces
- *   - Minimum 9 digits
- *   - Maximum 18 digits
- *
- * Returns specific error keys so the template can show a targeted message
- * for each broken rule instead of one generic message.
- */
+/** 9–18 digits only, character-type rules checked separately for targeted error messages. */
 function accountNumberValidator(): ValidatorFn {
   return (ctrl: AbstractControl): ValidationErrors | null => {
     const value = (ctrl.value as string) ?? '';
-    if (!value) return null; // Validators.required handles the empty case
+    if (!value) return null;
 
     const errors: ValidationErrors = {};
-
-    // Rule 1: no spaces
-    if (/\s/.test(value)) errors['hasSpaces'] = true;
-
-    // Rule 2: no alphabets (a–z, A–Z)
-    if (/[a-zA-Z]/.test(value)) errors['hasAlphabets'] = true;
-
-    // Rule 3: no special characters (anything that is not a digit, letter, or space)
+    if (/\s/.test(value))         errors['hasSpaces']       = true;
+    if (/[a-zA-Z]/.test(value))   errors['hasAlphabets']    = true;
     if (/[^a-zA-Z0-9\s]/.test(value)) errors['hasSpecialChars'] = true;
-
-    // Rules 4 & 5: length — only meaningful once the value is purely numeric
     if (/^\d+$/.test(value)) {
-      if (value.length < 9)  errors['tooShort'] = true; // minimum 9 digits
-      if (value.length > 18) errors['tooLong']  = true; // maximum 18 digits
+      if (value.length < 9)  errors['tooShort'] = true;
+      if (value.length > 18) errors['tooLong']  = true;
     }
 
     return Object.keys(errors).length ? errors : null;
@@ -83,36 +69,32 @@ interface UlbDetails {
   ulbName: string;
   stateName: string;
   selectedYear: string;
-  /** MongoDB ObjectId of the selected design year — required for API submission. */
   designYearId?: string;
-  /** MongoDB ObjectId of the ULB — read from userData in localStorage. */
   ulbId?: string;
 }
 
 interface FileEntry {
   id: string;
   file: File;
-  /** Blob URL — used for the open-in-new-tab preview link. */
   objectUrl: string;
-  /** Total page count — populated for PDFs only. */
   pageCount?: number;
 }
 
-type PeriodForm = FormGroup<{
-  balance: FormControl<string | null>;
+type PeriodKey = '14' | '15';
+
+type AccountForm = FormGroup<{
+  balance:       FormControl<string | null>;
   accountNumber: FormControl<string | null>;
 }>;
 
 interface FcPeriod {
-  key: string;
-  label: string;
+  key:            PeriodKey;
+  label:          string;
   disclosureOnly: boolean;
-  form: PeriodForm;
+  accounts:       FormArray<AccountForm>;
 }
 
-type SlotKey = 'support-14' | 'support-15' | 'doc-14' | 'doc-15';
-
-function createPeriodForm(): PeriodForm {
+function createAccountForm(): AccountForm {
   return new FormGroup({
     balance: new FormControl('', [
       Validators.required,
@@ -133,7 +115,6 @@ function createPeriodForm(): PeriodForm {
     ReactiveFormsModule,
     NgTemplateOutlet,
     MatButtonModule,
-    MatButtonToggleModule,
     MatIconModule,
     MatProgressBarModule,
     MatTooltipModule,
@@ -142,41 +123,31 @@ function createPeriodForm(): PeriodForm {
   styleUrl: './fill-disclosure.component.scss',
 })
 export class FillDisclosureComponent {
-  private readonly location        = inject(Location);
-  private readonly destroyRef      = inject(DestroyRef);
+  private readonly location          = inject(Location);
+  private readonly destroyRef        = inject(DestroyRef);
+  private readonly cdr               = inject(ChangeDetectorRef);
   private readonly disclosureService = inject(FillDisclosureService);
 
   @ViewChild('fileInput') private readonly fileInputRef!: ElementRef<HTMLInputElement>;
-  private pendingFileKey: SlotKey | null = null;
+  private pendingFileKey: string | null = null;
 
-  // ── Static view data ────────────────────────────────────────────────────────
+  // ── Static view data ──────────────────────────────────────────────────────────
 
   readonly pageTitle = 'FC Unspent Balance Disclosure';
   readonly pageDescription =
-    'Declare the unspent grant balance from the 14th and 15th Finance Commission periods, ' +
-    'along with the bank account where those funds are held. Upload a supporting bank document ' +
-    '(passbook, bank statement, or equivalent) as evidence for each period.';
-
-  readonly modeOptions: {
-    value: 'manual' | 'document-assisted';
-    label: string;
-    disabled: boolean;
-    tooltip: string;
-  }[] = [
-    { value: 'manual', label: 'Manual Entry', disabled: false, tooltip: '' },
-    { value: 'document-assisted', label: 'Document-assisted', disabled: true, tooltip: 'Coming soon' },
-  ];
+    'Declare the unspent grant balance from the 14th and 15th Finance Commission periods. ' +
+    'For each bank account where those funds are held, enter the balance, the account number, ' +
+    'and upload a supporting bank document (passbook, bank statement, or equivalent) as evidence.';
 
   readonly fields = {
-    balance: { label: 'Unspent Balance (₹)', placeholder: 'e.g. 15000 or −5000', required: true },
-    accountNumber: { label: 'Bank Account Number', placeholder: 'e.g. 1234567890', required: true },
-    supportDoc: { label: 'Supporting Document', hint: 'Passbook, bank statement, or equivalent' },
-    docStep: 'Step 1 — Upload bank document',
+    balance:       { label: 'Unspent Balance (₹)', placeholder: 'e.g. 15000 or −5000', required: true },
+    accountNumber: { label: 'Bank Account Number',  placeholder: 'e.g. 1234567890',     required: true },
+    supportDoc:    { label: 'Supporting Document',  hint: 'Passbook, bank statement, or equivalent' },
+    sampleLink:    { label: 'Download sample format', url: SAMPLE_DOCUMENT_URL },
+    acceptedFormatsText: 'PDF, JPG or PNG only',
+    maxSizeMb:     MAX_FILE_SIZE_BYTES / (1024 * 1024),
     disclosureOnlyLabel: 'Disclosure only',
     disclosureOnlyTitle: 'Not counted toward current grant eligibility',
-    sampleLink: { label: 'Download sample format', url: SAMPLE_DOCUMENT_URL },
-    acceptedFormatsText: 'PDF, JPG or PNG only',
-    maxSizeMb: MAX_FILE_SIZE_BYTES / (1024 * 1024),
     declaration:
       'I understand that this submission may contain information entered or modified by other ' +
       'users. I have reviewed the final submission and confirm that the information being ' +
@@ -186,79 +157,76 @@ export class FillDisclosureComponent {
   readonly maxFilesPerSlot = MAX_FILES_PER_SLOT;
 
   readonly periods: FcPeriod[] = [
-    { key: '14', label: '14th Finance Commission', disclosureOnly: false, form: createPeriodForm() },
-    { key: '15', label: '15th Finance Commission', disclosureOnly: true, form: createPeriodForm() },
+    { key: '14', label: '14th Finance Commission', disclosureOnly: false, accounts: new FormArray([createAccountForm()]) },
+    { key: '15', label: '15th Finance Commission', disclosureOnly: true,  accounts: new FormArray([createAccountForm()]) },
   ];
 
-  // ── Reactive state ───────────────────────────────────────────────────────────
+  // ── Reactive state ─────────────────────────────────────────────────────────────
 
   readonly ulbDetails         = signal<UlbDetails | null>(this.loadUlbDetails());
-  readonly activeMode         = signal<'manual' | 'document-assisted'>('manual');
   readonly declarationChecked = signal(false);
   readonly isSaving           = signal(false);
   readonly isLoading          = signal(false);
   readonly saveError          = signal<string | null>(null);
 
-  readonly fileEntries = signal<Record<SlotKey, FileEntry[]>>({
-    'support-14': [],
-    'support-15': [],
-    'doc-14': [],
-    'doc-15': [],
+  readonly fileEntries = signal<Record<string, FileEntry[]>>({
+    '14-0': [],
+    '15-0': [],
   });
 
-  /** Documents already saved in the DB — shown as read-only chips with a View button. */
-  readonly savedDocsBySlot = signal<Record<SlotKey, DisclosureDocPayload[]>>({
-    'support-14': [],
-    'support-15': [],
-    'doc-14': [],
-    'doc-15': [],
+  readonly savedDocsBySlot = signal<Record<string, DisclosureDocPayload[]>>({
+    '14-0': [],
+    '15-0': [],
   });
 
-  /** _id of the fetched disclosure record — needed for the signed-URL endpoint. */
   readonly disclosureId = signal<string | null>(null);
 
-  /** True only when a SUBMITTED disclosure was loaded — locks the entire form. */
   private readonly isSubmittedRecord = signal(false);
 
-  /** True when a saved document chip has been removed but not yet persisted via Save. */
   readonly hasPendingDocChanges = signal(false);
 
-  readonly processingKeys = signal<ReadonlySet<SlotKey>>(new Set());
+  readonly processingKeys = signal<ReadonlySet<string>>(new Set());
 
-  readonly slotErrors = signal<Record<SlotKey, string | null>>({
-    'support-14': null,
-    'support-15': null,
-    'doc-14': null,
-    'doc-15': null,
+  readonly slotErrors = signal<Record<string, string | null>>({
+    '14-0': null,
+    '15-0': null,
   });
 
+  /** Tracks the number of bank accounts per period so computed() can react to add/remove. */
+  readonly accountCounts = signal<Record<PeriodKey, number>>({ '14': 1, '15': 1 });
+
   private readonly allFormsValid = toSignal(
-    merge(...this.periods.map((p) => p.form.statusChanges)).pipe(map(() => this.periods.every((p) => p.form.valid))),
+    merge(...this.periods.map((p) => p.accounts.statusChanges)).pipe(
+      map(() => this.periods.every((p) => p.accounts.valid)),
+    ),
     { initialValue: false },
   );
 
   readonly canSave = computed(() => {
-    if (this.isSaving()) return false;
-    const mode = this.activeMode();
+    if (this.isSaving())            return false;
+    if (!this.allFormsValid())      return false;
+    if (!this.declarationChecked()) return false;
+
     const entries = this.fileEntries();
     const saved   = this.savedDocsBySlot();
     const errs    = this.slotErrors();
-    if (!this.allFormsValid()) return false;
-    if (!this.declarationChecked()) return false;
-    const keys: SlotKey[] = mode === 'manual' ? ['support-14', 'support-15'] : ['doc-14', 'doc-15'];
-    return keys.every((k) => (entries[k].length > 0 || saved[k].length > 0) && !errs[k]);
+    const counts  = this.accountCounts();
+
+    for (const period of this.periods) {
+      const count = counts[period.key];
+      for (let i = 0; i < count; i++) {
+        const key    = `${period.key}-${i}`;
+        const hasDoc = (entries[key]?.length ?? 0) > 0 || (saved[key]?.length ?? 0) > 0;
+        if (!hasDoc || errs[key]) return false;
+      }
+    }
+
+    return true;
   });
 
-  /** True only when the loaded disclosure has formStatus === 'SUBMITTED' — locks the form. */
   readonly isReadOnly = computed(() => this.isSubmittedRecord());
 
-  readonly infoBannerText = computed(() =>
-    this.activeMode() === 'manual'
-      ? 'Enter each balance manually and upload the supporting bank document as evidence. All fields are required.'
-      : 'Upload your bank document first. The system will attempt to extract values automatically — review carefully before saving.',
-  );
-
-  // ── Lifecycle ────────────────────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
   constructor() {
     this.destroyRef.onDestroy(() => {
@@ -266,18 +234,16 @@ export class FillDisclosureComponent {
         for (const entry of entries) URL.revokeObjectURL(entry.objectUrl);
       }
     });
-
     this.fetchExistingDisclosure();
   }
 
   private fetchExistingDisclosure(): void {
     const details = this.ulbDetails();
-    const designYearId = details?.designYearId;
-    if (!designYearId) return;
+    if (!details?.designYearId) return;
 
     this.isLoading.set(true);
     this.disclosureService
-      .getDisclosure(designYearId, details?.ulbId)
+      .getDisclosure(details.designYearId, details.ulbId)
       .pipe(
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
@@ -294,48 +260,107 @@ export class FillDisclosureComponent {
     const submitted = disclosure.formStatus === 'SUBMITTED';
     this.isSubmittedRecord.set(submitted);
 
-    const mode = disclosure.mode as 'manual' | 'document-assisted';
-    this.activeMode.set(mode);
+    const newFileEntries:  Record<string, FileEntry[]>           = {};
+    const newSavedDocs:    Record<string, DisclosureDocPayload[]> = {};
+    const newSlotErrors:   Record<string, string | null>          = {};
+    const newCounts:       Record<PeriodKey, number>              = { '14': 1, '15': 1 };
 
-    const prefix = mode === 'manual' ? 'support' : 'doc';
-    const slot14 = `${prefix}-14` as SlotKey;
-    const slot15 = `${prefix}-15` as SlotKey;
+    for (const period of this.periods) {
+      const periodData   = period.key === '14' ? disclosure.fc14 : disclosure.fc15;
+      const bankAccounts = periodData?.manual?.bankAccounts ?? [];
+      const count        = Math.max(bankAccounts.length, 1);
 
-    this.savedDocsBySlot.set({
-      'support-14': [],
-      'support-15': [],
-      'doc-14':     [],
-      'doc-15':     [],
-      [slot14]: disclosure.fc14.documents ?? [],
-      [slot15]: disclosure.fc15.documents ?? [],
-    });
+      // Rebuild the FormArray to exactly match the loaded data.
+      while (period.accounts.length > 0) period.accounts.removeAt(0);
+      for (let i = 0; i < count; i++) period.accounts.push(createAccountForm());
 
-    this.periods[0].form.patchValue({
-      balance:       String(disclosure.fc14.unspentBalance),
-      accountNumber: disclosure.fc14.bankAccountNumber,
-    });
-    this.periods[1].form.patchValue({
-      balance:       String(disclosure.fc15.unspentBalance),
-      accountNumber: disclosure.fc15.bankAccountNumber,
-    });
+      bankAccounts.forEach((acct, i) => {
+        period.accounts.at(i).patchValue({
+          balance:       String(acct.unspentBalance),
+          accountNumber: acct.accountNumber,
+        });
+        const key = `${period.key}-${i}`;
+        newFileEntries[key] = [];
+        newSavedDocs[key]   = acct.documents ?? [];
+        newSlotErrors[key]  = null;
+      });
 
-    if (submitted) {
-      this.periods.forEach((p) => p.form.disable());
+      if (bankAccounts.length === 0) {
+        newFileEntries[`${period.key}-0`] = [];
+        newSavedDocs[`${period.key}-0`]   = [];
+        newSlotErrors[`${period.key}-0`]  = null;
+      }
+
+      if (submitted) period.accounts.disable();
+      newCounts[period.key] = count;
     }
+
+    for (const entries of Object.values(this.fileEntries())) {
+      for (const e of entries) URL.revokeObjectURL(e.objectUrl);
+    }
+
+    this.fileEntries.set(newFileEntries);
+    this.savedDocsBySlot.set(newSavedDocs);
+    this.slotErrors.set(newSlotErrors);
+    this.accountCounts.set(newCounts);
+    this.cdr.markForCheck();
   }
 
-  // ── Template helpers ─────────────────────────────────────────────────────────
+  // ── Account management ────────────────────────────────────────────────────────
 
-  /**
-   * Returns true when a form control is invalid AND has been interacted with,
-   * so validation messages are only shown after the user has touched the field.
-   */
-  isFieldInvalid(form: PeriodForm, field: 'balance' | 'accountNumber'): boolean {
+  addAccount(periodKey: PeriodKey): void {
+    const period = this.periods.find((p) => p.key === periodKey)!;
+    const idx    = period.accounts.length;
+    period.accounts.push(createAccountForm());
+
+    const key = `${periodKey}-${idx}`;
+    this.fileEntries.update((e)  => ({ ...e,  [key]: [] }));
+    this.savedDocsBySlot.update((s) => ({ ...s, [key]: [] }));
+    this.slotErrors.update((e)  => ({ ...e,  [key]: null }));
+    this.accountCounts.update((c) => ({ ...c, [periodKey]: period.accounts.length }));
+    this.cdr.markForCheck();
+  }
+
+  removeAccount(periodKey: PeriodKey, index: number): void {
+    const period = this.periods.find((p) => p.key === periodKey)!;
+    if (period.accounts.length <= 1) return;
+
+    const removedKey = `${periodKey}-${index}`;
+    for (const entry of (this.fileEntries()[removedKey] ?? [])) URL.revokeObjectURL(entry.objectUrl);
+
+    period.accounts.removeAt(index);
+    const remaining = period.accounts.length;
+
+    const rekey = <T>(map: Record<string, T>): Record<string, T> => {
+      const result = { ...map };
+      delete result[removedKey];
+      for (let i = index; i < remaining; i++) {
+        result[`${periodKey}-${i}`]     = result[`${periodKey}-${i + 1}`];
+        delete result[`${periodKey}-${i + 1}`];
+      }
+      return result;
+    };
+
+    this.fileEntries.update((e)  => rekey(e));
+    this.savedDocsBySlot.update((s) => rekey(s));
+    this.slotErrors.update((e)  => rekey(e));
+    this.accountCounts.update((c) => ({ ...c, [periodKey]: remaining }));
+    this.hasPendingDocChanges.set(true);
+    this.cdr.markForCheck();
+  }
+
+  // ── Template helpers ──────────────────────────────────────────────────────────
+
+  accountFormAt(period: FcPeriod, index: number): AccountForm {
+    return period.accounts.at(index);
+  }
+
+  isFieldInvalid(form: AccountForm, field: 'balance' | 'accountNumber'): boolean {
     const ctrl = form.get(field);
     return ctrl ? ctrl.invalid && (ctrl.dirty || ctrl.touched) : false;
   }
 
-  getFieldError(form: PeriodForm, field: 'balance' | 'accountNumber'): string {
+  getFieldError(form: AccountForm, field: 'balance' | 'accountNumber'): string {
     const errors = form.get(field)?.errors;
     if (!errors) return '';
 
@@ -346,7 +371,6 @@ export class FillDisclosureComponent {
 
     if (field === 'accountNumber') {
       if (errors['required'])        return 'Bank Account Number is required.';
-      // Character-type errors take priority over length errors
       if (errors['hasSpaces'])       return 'No spaces allowed.';
       if (errors['hasAlphabets'])    return 'No alphabets allowed. Digits only (0–9).';
       if (errors['hasSpecialChars']) return 'No special characters allowed. Digits only (0–9).';
@@ -357,29 +381,24 @@ export class FillDisclosureComponent {
     return '';
   }
 
-  /**
-   * Typed accessors for template: `let-key` in ng-template is inferred as `any`,
-   * which cannot directly index a typed Record. These helpers cast safely so the
-   * template stays free of `$any()` casts.
-   */
   entriesFor(key: string): FileEntry[] {
-    return this.fileEntries()[key as SlotKey] ?? [];
+    return this.fileEntries()[key] ?? [];
   }
 
   savedDocsFor(key: string): DisclosureDocPayload[] {
-    return this.savedDocsBySlot()[key as SlotKey] ?? [];
+    return this.savedDocsBySlot()[key] ?? [];
   }
 
   errorFor(key: string): string | null {
-    return this.slotErrors()[key as SlotKey] ?? null;
+    return this.slotErrors()[key] ?? null;
   }
 
   isProcessingSlot(key: string): boolean {
-    return this.processingKeys().has(key as SlotKey);
+    return this.processingKeys().has(key);
   }
 
   formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024)        return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
@@ -388,38 +407,23 @@ export class FillDisclosureComponent {
     window.open(entry.objectUrl, '_blank', 'noopener,noreferrer');
   }
 
-  // ── Actions ──────────────────────────────────────────────────────────────────
-
-  setMode(mode: 'manual' | 'document-assisted'): void {
-    if (mode === this.activeMode()) return;
-    // Revoke blob URLs for the slots that are going out of view to avoid leaks.
-    const leavingSlots: SlotKey[] = mode === 'manual' ? ['doc-14', 'doc-15'] : ['support-14', 'support-15'];
-    this.fileEntries.update((entries) => {
-      const updated = { ...entries };
-      for (const slot of leavingSlots) {
-        for (const entry of entries[slot]) URL.revokeObjectURL(entry.objectUrl);
-        updated[slot] = [];
-      }
-      return updated;
-    });
-    this.activeMode.set(mode);
-  }
+  // ── Actions ───────────────────────────────────────────────────────────────────
 
   triggerFile(key: string): void {
-    this.pendingFileKey = key as SlotKey;
+    this.pendingFileKey = key;
     this.fileInputRef.nativeElement.value = '';
     this.fileInputRef.nativeElement.click();
   }
 
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const file  = input.files?.[0];
     if (!file || !this.pendingFileKey) return;
 
     const key = this.pendingFileKey;
     this.pendingFileKey = null;
 
-    if (this.fileEntries()[key].length >= MAX_FILES_PER_SLOT) return;
+    if ((this.fileEntries()[key]?.length ?? 0) >= MAX_FILES_PER_SLOT) return;
 
     this.processingKeys.update((s) => new Set([...s, key]));
     this.slotErrors.update((e) => ({ ...e, [key]: null }));
@@ -439,7 +443,7 @@ export class FillDisclosureComponent {
 
     const objectUrl = URL.createObjectURL(file);
     const entry: FileEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id:        `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       file,
       objectUrl,
       pageCount: result.pageCount,
@@ -447,19 +451,18 @@ export class FillDisclosureComponent {
 
     this.fileEntries.update((entries) => ({
       ...entries,
-      [key]: [...entries[key], entry],
+      [key]: [...(entries[key] ?? []), entry],
     }));
   }
 
   removeFile(key: string, index: number): void {
-    const typedKey = key as SlotKey;
     this.fileEntries.update((entries) => {
-      const list = [...entries[typedKey]];
+      const list = [...(entries[key] ?? [])];
       const [removed] = list.splice(index, 1);
       URL.revokeObjectURL(removed.objectUrl);
-      return { ...entries, [typedKey]: list };
+      return { ...entries, [key]: list };
     });
-    this.slotErrors.update((e) => ({ ...e, [typedKey]: null }));
+    this.slotErrors.update((e) => ({ ...e, [key]: null }));
   }
 
   onDeclarationChange(event: Event): void {
@@ -472,46 +475,51 @@ export class FillDisclosureComponent {
     this.isSaving.set(true);
     this.saveError.set(null);
 
-    const mode      = this.activeMode();
-    const slotKeys  = (mode === 'manual'
-      ? ['support-14', 'support-15']
-      : ['doc-14', 'doc-15']) as SlotKey[];
-    const entries   = this.fileEntries();
-
-    // Flatten all file entries, preserving which slot each belongs to.
-    const fileUploads: Array<{ slotKey: SlotKey; entry: FileEntry }> = slotKeys.flatMap(
-      (k) => entries[k].map((entry) => ({ slotKey: k, entry })),
-    );
+    const designYearId = this.ulbDetails()?.designYearId;
+    if (!designYearId) {
+      this.saveError.set('Design year is missing. Please reload the page and try again.');
+      this.isSaving.set(false);
+      return;
+    }
 
     try {
-      const designYearId = this.ulbDetails()?.designYearId;
-      if (!designYearId) {
-        throw new Error('Design year is missing. Please reload the page and try again.');
+      const entries = this.fileEntries();
+
+      // Collect all new file uploads across every account and period.
+      const fileUploads: Array<{ slotKey: string; entry: FileEntry }> = [];
+      for (const period of this.periods) {
+        for (let i = 0; i < period.accounts.length; i++) {
+          const slotKey = `${period.key}-${i}`;
+          for (const entry of (entries[slotKey] ?? [])) {
+            fileUploads.push({ slotKey, entry });
+          }
+        }
       }
 
       // 1. Request presigned PUT URLs for every file in one batch call.
-      const signItems: S3UrlItemDto[] = fileUploads.map(({ entry }) => ({
-        fileName: entry.file.name,
-        mimeType: entry.file.type,
-        fileSize: entry.file.size,
-        pages:    entry.pageCount ?? 0,
-        folder:   DISCLOSURE_S3_FOLDER,
-      }));
-      const signedUrls = await firstValueFrom(this.disclosureService.getSignedUrls(signItems));
+      let signedUrls: S3UrlResult[] = [];
+      if (fileUploads.length > 0) {
+        const signItems: S3UrlItemDto[] = fileUploads.map(({ entry }) => ({
+          fileName: entry.file.name,
+          mimeType: entry.file.type,
+          fileSize: entry.file.size,
+          pages:    entry.pageCount ?? 0,
+          folder:   DISCLOSURE_S3_FOLDER,
+        }));
+        signedUrls = await firstValueFrom(this.disclosureService.getSignedUrls(signItems));
 
-      // 2. Upload all files to S3 in parallel using the presigned PUT URLs.
-      const uploads$ = signedUrls.length > 0
-        ? forkJoin(signedUrls.map((r, i) => this.disclosureService.uploadToS3(r.url, fileUploads[i].entry.file)))
-        : of(null);
-      await firstValueFrom(uploads$);
+        // 2. Upload all files to S3 in parallel.
+        await firstValueFrom(
+          forkJoin(signedUrls.map((r, i) => this.disclosureService.uploadToS3(r.url, fileUploads[i].entry.file))),
+        );
+      }
 
-      // 3. Build per-slot document payloads from the S3 paths returned.
-      const docsBySlot = new Map<SlotKey, DisclosureDocPayload[]>(
-        slotKeys.map((k) => [k, []]),
-      );
+      // 3. Build a map of slotKey → newly uploaded docs.
+      const newDocsBySlot = new Map<string, DisclosureDocPayload[]>();
       signedUrls.forEach((result, i) => {
         const { slotKey, entry } = fileUploads[i];
-        docsBySlot.get(slotKey)!.push({
+        if (!newDocsBySlot.has(slotKey)) newDocsBySlot.set(slotKey, []);
+        newDocsBySlot.get(slotKey)!.push({
           filepath:     result.path,
           originalName: entry.file.name,
           mimeType:     entry.file.type,
@@ -520,34 +528,36 @@ export class FillDisclosureComponent {
         });
       });
 
-      const prefix     = mode === 'manual' ? 'support' : 'doc';
-      const saved      = this.savedDocsBySlot();
-      const fc14Period = this.periods[0];
-      const fc15Period = this.periods[1];
+      // 4. Build the submission payload.
+      const saved = this.savedDocsBySlot();
+
+      const buildFcPeriod = (period: FcPeriod): FcPeriodPayload => ({
+        manual: {
+          bankAccounts: Array.from<unknown, BankAccountPayload>(
+            { length: period.accounts.length },
+            (_, i) => {
+              const form    = period.accounts.at(i);
+              const slotKey = `${period.key}-${i}`;
+              return {
+                accountNumber:  form.get('accountNumber')?.value ?? '',
+                unspentBalance: Number(form.get('balance')?.value ?? 0),
+                documents: [
+                  ...(saved[slotKey]               ?? []),
+                  ...(newDocsBySlot.get(slotKey)   ?? []),
+                ],
+              };
+            },
+          ),
+        },
+      });
 
       const payload: SubmitDisclosurePayload = {
         designYearId,
-        mode,
-        fc14: {
-          unspentBalance:    Number(fc14Period.form.get('balance')?.value ?? 0),
-          bankAccountNumber: fc14Period.form.get('accountNumber')?.value ?? '',
-          // Keep previously saved docs + append newly uploaded ones.
-          documents: [
-            ...(saved[`${prefix}-14` as SlotKey] ?? []),
-            ...(docsBySlot.get(`${prefix}-14` as SlotKey) ?? []),
-          ],
-        },
-        fc15: {
-          unspentBalance:    Number(fc15Period.form.get('balance')?.value ?? 0),
-          bankAccountNumber: fc15Period.form.get('accountNumber')?.value ?? '',
-          documents: [
-            ...(saved[`${prefix}-15` as SlotKey] ?? []),
-            ...(docsBySlot.get(`${prefix}-15` as SlotKey) ?? []),
-          ],
-        },
+        fc14: buildFcPeriod(this.periods[0]),
+        fc15: buildFcPeriod(this.periods[1]),
       };
 
-      // 4. Persist the disclosure record.
+      // 5. Persist the disclosure record.
       await firstValueFrom(this.disclosureService.submitDisclosure(payload));
 
       this.hasPendingDocChanges.set(false);
@@ -562,11 +572,10 @@ export class FillDisclosureComponent {
   }
 
   removeSavedDoc(key: string, index: number): void {
-    const typedKey = key as SlotKey;
     this.savedDocsBySlot.update((docs) => {
-      const list = [...docs[typedKey]];
+      const list = [...(docs[key] ?? [])];
       list.splice(index, 1);
-      return { ...docs, [typedKey]: list };
+      return { ...docs, [key]: list };
     });
     this.hasPendingDocChanges.set(true);
   }
@@ -588,7 +597,7 @@ export class FillDisclosureComponent {
     this.location.back();
   }
 
-  // ── Private: file validation ─────────────────────────────────────────────────
+  // ── Private: file validation ──────────────────────────────────────────────────
 
   private async validateFile(file: File): Promise<{ valid: boolean; error?: string; pageCount?: number }> {
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
@@ -604,32 +613,65 @@ export class FillDisclosureComponent {
   }
 
   private async validatePdfNotBlank(file: File): Promise<{ valid: boolean; error?: string; pageCount?: number }> {
+    // Fast %PDF- header check before spinning up pdfjs.
     try {
-      // Read just the first 1 KB — enough to check the PDF header and detect encryption.
-      const header = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
-
-      // A valid PDF must start with %PDF-
-      const pdfMagic = [0x25, 0x50, 0x44, 0x46, 0x2D]; // %PDF-
-      if (!pdfMagic.every((byte, i) => header[i] === byte)) {
+      const h = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      if (!(h[0] === 0x25 && h[1] === 0x50 && h[2] === 0x44 && h[3] === 0x46 && h[4] === 0x2d)) {
         return { valid: false, error: 'The file does not appear to be a valid PDF.' };
       }
-
-      // Detect password-protected PDFs by looking for /Encrypt in the header region.
-      const headerText = new TextDecoder().decode(header);
-      if (headerText.includes('/Encrypt')) {
-        return {
-          valid: false,
-          error: 'Password-protected files are not allowed. Please upload an unlocked file.',
-        };
-      }
-
-      return { valid: true };
     } catch {
       return { valid: false, error: 'Could not read the file. Please try again.' };
     }
+
+    // Render-based blank detection via pdfjs.
+    // Pixel brightness is the only reliable way to detect blank pages — byte heuristics
+    // cannot distinguish blank scanned pages from real ones. Worker is loaded from CDN
+    // to avoid MIME-type issues with the Angular dev-server SPA fallback.
+    try {
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+
+      if (pdf.numPages === 0) {
+        return { valid: false, error: 'This PDF has no pages. Please upload a valid document.' };
+      }
+
+      const page     = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 0.15 });
+      const canvas   = document.createElement('canvas');
+      canvas.width   = Math.ceil(viewport.width);
+      canvas.height  = Math.ceil(viewport.height);
+      const ctx      = canvas.getContext('2d')!;
+      ctx.fillStyle  = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let nonWhite = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] < 240 || data[i + 1] < 240 || data[i + 2] < 240) nonWhite++;
+      }
+      if (nonWhite / (canvas.width * canvas.height) < 0.005) {
+        return { valid: false, error: 'The PDF appears to be blank. Please upload a document with visible content.' };
+      }
+
+      return { valid: true, pageCount: pdf.numPages };
+    } catch (err: unknown) {
+      const name = (err as { name?: string })?.name;
+      if (name === 'PasswordException') {
+        return { valid: false, error: 'Password-protected files are not allowed. Please upload an unlocked file.' };
+      }
+      if (name === 'InvalidPDFException') {
+        return { valid: false, error: 'This PDF is corrupted or unreadable. Please upload a valid file.' };
+      }
+      // Worker load failure (e.g. offline) — allow the file through rather than blocking the user.
+      return { valid: true };
+    }
   }
 
-  // ── Private: data loading ────────────────────────────────────────────────────
+  // ── Private: data loading ─────────────────────────────────────────────────────
 
   private loadUlbDetails(): UlbDetails | null {
     try {
@@ -638,7 +680,6 @@ export class FillDisclosureComponent {
       const parsed = JSON.parse(raw) as Partial<UlbDetails>;
       if (!parsed.ulbName || !parsed.stateName || !parsed.selectedYear) return null;
 
-      // userData.ulb is the ULB ObjectId set by the auth layer on login.
       const userDataRaw = localStorage.getItem('userData');
       const ulbId: string | undefined =
         (userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string })?.ulb : undefined) ?? undefined;
@@ -647,7 +688,6 @@ export class FillDisclosureComponent {
         ulbName:      parsed.ulbName,
         stateName:    parsed.stateName,
         selectedYear: parsed.selectedYear,
-        // xvifc_selectedYearId is written by the years-selection component on year change.
         designYearId: parsed.designYearId ?? localStorage.getItem('xvifc_selectedYearId') ?? undefined,
         ulbId,
       };

@@ -4,7 +4,7 @@ let GoogleTagID = 'G-803HPPLFMM';
 let isProduction: boolean = false;
 let STORAGE_BASEURL = 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com';
 let env = 'dev';
-let url3 = baseUrl + '/api/v3/digitization/';
+let url3 = baseUrl + '/api/v3/';
 
 if (window.location.hostname.includes('staging')) {
   env = 'staging';
