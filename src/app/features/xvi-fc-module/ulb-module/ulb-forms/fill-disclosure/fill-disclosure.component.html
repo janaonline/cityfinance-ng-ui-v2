@@ -157,10 +157,10 @@
                     class="form-control form-control-sm"
                     formControlName="accountNumber"
                     [placeholder]="fields.accountNumber.placeholder"
-                    [class.is-invalid]="isFieldInvalid(accountFormAt(period, i), 'accountNumber')"
+                    [class.is-invalid]="isFieldInvalid(accountFormAt(period, i), 'accountNumber') || isDuplicateAccount(period, i)"
                     [attr.aria-required]="fields.accountNumber.required"
                     [attr.aria-describedby]="
-                      isFieldInvalid(accountFormAt(period, i), 'accountNumber')
+                      (isFieldInvalid(accountFormAt(period, i), 'accountNumber') || isDuplicateAccount(period, i))
                         ? 'account-err-' + period.key + '-' + i
                         : null
                     "
@@ -168,6 +168,11 @@
                   @if (isFieldInvalid(accountFormAt(period, i), 'accountNumber')) {
                     <div [id]="'account-err-' + period.key + '-' + i" class="invalid-feedback">
                       {{ getFieldError(accountFormAt(period, i), 'accountNumber') }}
+                    </div>
+                  }
+                  @if (isDuplicateAccount(period, i)) {
+                    <div [id]="'account-err-' + period.key + '-' + i" class="invalid-feedback d-block">
+                      This account number is already used in another entry. All account numbers must be unique.
                     </div>
                   }
                 </div>
@@ -237,8 +242,8 @@
           </div>
         }
 
-        <!-- Add another bank account -->
-        @if (!isReadOnly()) {
+        <!-- Add another bank account (max 2 per period) -->
+        @if (!isReadOnly() && period.accounts.length < maxAccountsPerPeriod) {
           <button
             type="button"
             class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"

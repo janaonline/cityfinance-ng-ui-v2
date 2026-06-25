@@ -44,7 +44,22 @@ const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_FILES_PER_SLOT = 2;
 const SAMPLE_DOCUMENT_URL: string | null = null;
 
-const BALANCE_PATTERN = /^-?\d+$/;
+const BALANCE_MIN = -9_999_999_999;
+const BALANCE_MAX =  9_999_999_999;
+
+/** Validates unspent balance: integer format, rejects −0, enforces range limits. */
+function balanceValidator(): ValidatorFn {
+  return (ctrl: AbstractControl): ValidationErrors | null => {
+    const raw = (ctrl.value as string | null)?.trim() ?? '';
+    if (!raw) return null; // Validators.required handles the empty case
+    // Accepts: 0, 15000, -5000  |  Rejects: -0, 1.5, abc, --5, 01
+    if (!/^(-[1-9]\d*|[1-9]\d*|0)$/.test(raw)) return { balanceFormat: true };
+    const num = Number(raw);
+    if (num < BALANCE_MIN) return { balanceTooLow: true };
+    if (num > BALANCE_MAX) return { balanceTooHigh: true };
+    return null;
+  };
+}
 
 /** 9–18 digits only, character-type rules checked separately for targeted error messages. */
 function accountNumberValidator(): ValidatorFn {
@@ -98,7 +113,7 @@ function createAccountForm(): AccountForm {
   return new FormGroup({
     balance: new FormControl('', [
       Validators.required,
-      Validators.pattern(BALANCE_PATTERN),
+      balanceValidator(),
     ]),
     accountNumber: new FormControl('', [
       Validators.required,
@@ -202,10 +217,31 @@ export class FillDisclosureComponent {
     { initialValue: false },
   );
 
+  /** Flat list of all accountNumber values across both FC periods — updates on every keystroke. */
+  private readonly allAccountNumbers = toSignal(
+    merge(...this.periods.map((p) => p.accounts.valueChanges)).pipe(
+      map(() => this.collectAccountNumbers()),
+    ),
+    { initialValue: this.collectAccountNumbers() },
+  );
+
+  /** Set of account numbers that appear more than once across all periods and all slots. */
+  readonly duplicateAccountNumbers = computed(() => {
+    const seen  = new Set<string>();
+    const dupes = new Set<string>();
+    for (const num of this.allAccountNumbers()) {
+      if (!num) continue;
+      if (seen.has(num)) dupes.add(num);
+      else seen.add(num);
+    }
+    return dupes;
+  });
+
   readonly canSave = computed(() => {
-    if (this.isSaving())            return false;
-    if (!this.allFormsValid())      return false;
-    if (!this.declarationChecked()) return false;
+    if (this.isSaving())                          return false;
+    if (!this.allFormsValid())                    return false;
+    if (!this.declarationChecked())               return false;
+    if (this.duplicateAccountNumbers().size > 0)  return false;
 
     const entries = this.fileEntries();
     const saved   = this.savedDocsBySlot();
@@ -308,8 +344,11 @@ export class FillDisclosureComponent {
 
   // ── Account management ────────────────────────────────────────────────────────
 
+  readonly maxAccountsPerPeriod = 2;
+
   addAccount(periodKey: PeriodKey): void {
     const period = this.periods.find((p) => p.key === periodKey)!;
+    if (period.accounts.length >= this.maxAccountsPerPeriod) return;
     const idx    = period.accounts.length;
     period.accounts.push(createAccountForm());
 
@@ -355,6 +394,11 @@ export class FillDisclosureComponent {
     return period.accounts.at(index);
   }
 
+  isDuplicateAccount(period: FcPeriod, index: number): boolean {
+    const val = (period.accounts.at(index).get('accountNumber')?.value as string | null)?.trim() ?? '';
+    return val.length > 0 && this.duplicateAccountNumbers().has(val);
+  }
+
   isFieldInvalid(form: AccountForm, field: 'balance' | 'accountNumber'): boolean {
     const ctrl = form.get(field);
     return ctrl ? ctrl.invalid && (ctrl.dirty || ctrl.touched) : false;
@@ -365,8 +409,10 @@ export class FillDisclosureComponent {
     if (!errors) return '';
 
     if (field === 'balance') {
-      if (errors['required']) return 'Unspent Balance is required.';
-      if (errors['pattern'])  return 'Enter a whole number. Negative values are allowed (e.g. −5000).';
+      if (errors['required'])       return 'Unspent Balance is required.';
+      if (errors['balanceFormat'])  return 'Enter a whole number (e.g. 15000 or −5000). Zero (0) is allowed; −0 is not.';
+      if (errors['balanceTooLow'])  return 'Value cannot be less than −9,999,999,999.';
+      if (errors['balanceTooHigh']) return 'Value cannot exceed 9,999,999,999.';
     }
 
     if (field === 'accountNumber') {
@@ -595,6 +641,16 @@ export class FillDisclosureComponent {
 
   goBack(): void {
     this.location.back();
+  }
+
+  // ── Private: helpers ─────────────────────────────────────────────────────────
+
+  private collectAccountNumbers(): string[] {
+    return this.periods.flatMap((p) =>
+      Array.from({ length: p.accounts.length }, (_, i) =>
+        (p.accounts.at(i).get('accountNumber')?.value as string | null)?.trim() ?? '',
+      ),
+    );
   }
 
   // ── Private: file validation ──────────────────────────────────────────────────
