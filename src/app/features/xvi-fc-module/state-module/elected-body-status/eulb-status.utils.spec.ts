@@ -99,6 +99,32 @@ describe('EULB status payload builders', () => {
     });
   });
 
+  it('includes censusCode and ulbName in the payload when present in the form value', () => {
+    const payload = buildEulbRowUpdatePayload({
+      electedBodyStatus: undefined,
+      dateOfConstitution: '',
+      dateOfExpiry: '',
+      remarks: '',
+      censusCode: 'NEW001',
+      ulbName: 'New ULB Name',
+    });
+
+    expect(payload.censusCode).toBe('NEW001');
+    expect(payload.ulbName).toBe('New ULB Name');
+  });
+
+  it('omits censusCode and ulbName from the payload when absent from the form value', () => {
+    const payload = buildEulbRowUpdatePayload({
+      electedBodyStatus: 'Constituted',
+      dateOfConstitution: '',
+      dateOfExpiry: '',
+      remarks: '',
+    });
+
+    expect(Object.prototype.hasOwnProperty.call(payload, 'censusCode')).toBeFalse();
+    expect(Object.prototype.hasOwnProperty.call(payload, 'ulbName')).toBeFalse();
+  });
+
   it('returns an empty array when the error body contains no recognisable error entries', () => {
     expect(parseEulbRowUpdateErrors(null)).toEqual([]);
     expect(parseEulbRowUpdateErrors({})).toEqual([]);

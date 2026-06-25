@@ -101,8 +101,34 @@
                 <!-- Edit mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
                 <td class="small">{{ getRowTypeLabel(row.rowType) }}</td>
-                <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '-' }}</td>
-                <td class="small fw-medium text-nowrap">{{ row.ulbName }}</td>
+                @let censusCodeCtrl = getEditFormControl('censusCode');
+                <td
+                  app-eulb-editable-field-cell
+                  class="small text-secondary text-nowrap"
+                  field="censusCode"
+                  [value]="row.censusCode ?? null"
+                  [isEditing]="true"
+                  [fieldEditable]="row.rowType === 'EXTRA_ULB'"
+                  [cellHasError]="hasEditFieldError('censusCode')"
+                  [cellErrorText]="getEditFieldErrorText('censusCode')"
+                  [editControl]="censusCodeCtrl"
+                  editControlExtraClass="eulb-edit-control"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
+                @let ulbNameCtrl = getEditFormControl('ulbName');
+                <td
+                  app-eulb-editable-field-cell
+                  class="small fw-medium text-nowrap"
+                  field="ulbName"
+                  [value]="row.ulbName"
+                  [isEditing]="true"
+                  [fieldEditable]="row.rowType === 'EXTRA_ULB'"
+                  [cellHasError]="hasEditFieldError('ulbName')"
+                  [cellErrorText]="getEditFieldErrorText('ulbName')"
+                  [editControl]="ulbNameCtrl"
+                  editControlExtraClass="eulb-edit-control"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
                 @let electedBodyStatusCtrl = getEditFormControl('electedBodyStatus');
                 <td
                   app-eulb-editable-field-cell
@@ -199,8 +225,30 @@
                 <!-- Read mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
                 <td class="small">{{ getRowTypeLabel(row.rowType) }}</td>
-                <td class="small text-secondary text-nowrap">{{ row.censusCode ?? '-' }}</td>
-                <td class="small fw-medium">{{ row.ulbName }}</td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small text-secondary text-nowrap"
+                  field="censusCode"
+                  [value]="row.censusCode ?? null"
+                  [canEdit]="canEditRows && row.rowType === 'EXTRA_ULB'"
+                  [cellHasError]="!!vm.cellHasError['censusCode']"
+                  [cellErrorText]="vm.cellErrorText['censusCode']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                  (editRequested)="startEditAtField(row, $event)"
+                ></td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small fw-medium"
+                  field="ulbName"
+                  [value]="row.ulbName"
+                  [canEdit]="canEditRows && row.rowType === 'EXTRA_ULB'"
+                  [cellHasError]="!!vm.cellHasError['ulbName']"
+                  [cellErrorText]="vm.cellErrorText['ulbName']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                  (editRequested)="startEditAtField(row, $event)"
+                ></td>
                 <td
                   app-eulb-editable-field-cell
                   class="small"

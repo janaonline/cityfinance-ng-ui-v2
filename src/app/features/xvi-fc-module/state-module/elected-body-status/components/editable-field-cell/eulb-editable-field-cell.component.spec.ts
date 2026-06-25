@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -8,7 +8,7 @@ import {
   EulbEditableFieldCellDataAttribute,
   EulbEditableFieldCellStatusOption,
 } from './eulb-editable-field-cell.component';
-import { EulbBodyStatus, EulbEditableFieldKey } from '../../eulb-status.models';
+import { EulbBodyStatus, EulbFieldCellKey } from '../../eulb-status.models';
 
 @Component({
   imports: [ReactiveFormsModule, EulbEditableFieldCellComponent],
@@ -42,7 +42,7 @@ import { EulbBodyStatus, EulbEditableFieldKey } from '../../eulb-status.models';
   `,
 })
 class HostComponent {
-  field: EulbEditableFieldKey = 'remarks';
+  field: EulbFieldCellKey = 'remarks';
   value: string | null = 'Needs review';
   isEditing = false;
   canEdit = false;
@@ -59,7 +59,7 @@ class HostComponent {
   );
   editFieldDataAttribute: EulbEditableFieldCellDataAttribute = 'data-eulb-edit-field';
   showInvalidCellClass = false;
-  requestedField: EulbEditableFieldKey | null = null;
+  requestedField: EulbFieldCellKey | null = null;
 }
 
 describe('EulbEditableFieldCellComponent', () => {
@@ -141,6 +141,42 @@ describe('EulbEditableFieldCellComponent', () => {
     expect(fixture.debugElement.query(By.css('td')).classes['eulb-cell-invalid']).toBeTrue();
   });
 
+  it('keeps the host cell as the only tooltip source for invalid editable select cells', () => {
+    host.field = 'electedBodyStatus';
+    host.isEditing = true;
+    host.cellHasError = true;
+    host.cellErrorText = 'Elected Body Status is required.';
+    host.editControl = new FormControl<EulbBodyStatus | ''>('');
+    fixture.detectChanges();
+
+    const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell]'));
+    const select = fixture.debugElement.query(By.css('select[aria-label="Elected Body Status"]'));
+    const tooltips = getTooltipSources(cell);
+
+    expect(select).not.toBeNull();
+    expect(tooltips).toHaveSize(1);
+    expect(tooltips[0].message).toBe('Elected Body Status is required.');
+    expect(tooltips[0].disabled).toBeFalse();
+  });
+
+  it('keeps the host cell as the only tooltip source for invalid editable date cells', () => {
+    host.field = 'dateOfConstitution';
+    host.isEditing = true;
+    host.cellHasError = true;
+    host.cellErrorText = 'Date of Constitution is required.';
+    host.editControl = new FormControl<string | null>('');
+    fixture.detectChanges();
+
+    const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell]'));
+    const input = fixture.debugElement.query(By.css('input[aria-label="Date of Constitution"]'));
+    const tooltips = getTooltipSources(cell);
+
+    expect(input).not.toBeNull();
+    expect(tooltips).toHaveSize(1);
+    expect(tooltips[0].message).toBe('Date of Constitution is required.');
+    expect(tooltips[0].disabled).toBeFalse();
+  });
+
   it('exposes the disabled date tooltip reason', () => {
     host.field = 'dateOfExpiry';
     host.isEditing = true;
@@ -175,4 +211,45 @@ describe('EulbEditableFieldCellComponent', () => {
     expect(input.nativeElement.getAttribute('data-eulb-post-edit-field')).toBe('dateOfExpiry');
     expect(input.nativeElement.hasAttribute('data-eulb-edit-field')).toBeFalse();
   });
+
+  it('renders an edit-mode text input for censusCode', () => {
+    host.field = 'censusCode';
+    host.isEditing = true;
+    host.editControl = new FormControl<string | null>('ABC001');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input[aria-label="Census Code"]'));
+    expect(input).not.toBeNull();
+    expect(input.nativeElement.getAttribute('placeholder')).toBe('Census code');
+  });
+
+  it('renders an edit-mode text input for ulbName', () => {
+    host.field = 'ulbName';
+    host.isEditing = true;
+    host.editControl = new FormControl<string | null>('New ULB');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input[aria-label="ULB Name"]'));
+    expect(input).not.toBeNull();
+    expect(input.nativeElement.getAttribute('placeholder')).toBe('ULB name');
+  });
+
+  it('returns the correct aria label for censusCode errors', () => {
+    host.field = 'censusCode';
+    host.canEdit = true;
+    host.cellHasError = true;
+    host.cellErrorText = 'Census code is invalid.';
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('button[aria-label="Census code has a validation error"]'));
+    expect(icon).not.toBeNull();
+  });
+
+  function getTooltipSources(cell: DebugElement): MatTooltip[] {
+    const sources = new Set<MatTooltip>([cell.injector.get(MatTooltip)]);
+    for (const tooltipElement of cell.queryAll(By.directive(MatTooltip))) {
+      sources.add(tooltipElement.injector.get(MatTooltip));
+    }
+    return [...sources];
+  }
 });

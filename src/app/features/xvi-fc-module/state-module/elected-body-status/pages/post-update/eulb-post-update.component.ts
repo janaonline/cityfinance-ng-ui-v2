@@ -41,6 +41,7 @@ import {
   EulbPostSubmissionUpdateValidateData,
   EulbPostSubmissionUpdateValidateResponse,
   EulbPostSubmissionUpdateValidateRowPayload,
+  EulbStatusSummary,
 } from '../../eulb-status.models';
 import { EulbStatusService } from '../../eulb-status.service';
 import { isRecord } from '../../eulb-status.utils';
@@ -60,6 +61,13 @@ import {
 } from './eulb-post-update-state.adapter';
 
 type EulbPostUpdateEditableFieldKey = EulbEditableFieldKey;
+
+interface EulbStatusSummaryCard {
+  readonly count: number;
+  readonly label: string;
+  readonly borderClass: string;
+  readonly textClass: string;
+}
 
 interface EulbPostUpdateRequestContext {
   readonly stateId: string;
@@ -129,6 +137,7 @@ export class EulbPostUpdateComponent implements OnInit {
   readonly isSubmitting = signal(false);
   readonly metadata = signal<EulbPostSubmissionUpdateMetadata | null>(null);
   readonly rows = signal<EulbPostSubmissionUpdateRow[]>([]);
+  readonly statusSummary = signal<EulbStatusSummary | null>(null);
   readonly changedRows = signal<ReadonlyMap<string, EulbPostSubmissionUpdateValidateRowPayload>>(new Map());
   readonly updateDocument = signal<EulbPostSubmissionUpdateDocument | null>(null);
   readonly validationState = signal<EulbPostUpdateValidationState>('NOT_VALIDATED');
@@ -189,6 +198,31 @@ export class EulbPostUpdateComponent implements OnInit {
   readonly rowViewModels = computed(() =>
     this.rows().map((row) => buildEulbModifiedRowViewModel(row, this.changedRows())),
   );
+
+  readonly statusSummaryCards = computed<EulbStatusSummaryCard[]>(() => {
+    const summary = this.statusSummary();
+    if (!summary) return [];
+    return [
+      {
+        count: summary.constitutedCount,
+        label: 'Eligible - elected body constituted',
+        borderClass: 'border-success',
+        textClass: 'text-success',
+      },
+      {
+        count: summary.notConstitutedCount,
+        label: 'Ineligible - no elected body',
+        borderClass: 'border-danger',
+        textClass: 'text-danger',
+      },
+      {
+        count: summary.exemptCount,
+        label: 'Exempt (Cantonment / NAC)',
+        borderClass: 'border-secondary',
+        textClass: '',
+      },
+    ];
+  });
 
   readonly isFormViewAllowed = computed(() => {
     const metadata = this.metadata();
@@ -429,6 +463,7 @@ export class EulbPostUpdateComponent implements OnInit {
     this.rowState.storeLoadedRows(data.rows);
     this.rows.set(this.rowState.overlayRowsWithLocalState(data.rows));
     this.total.set(data.total);
+    this.statusSummary.set(data.statusSummary ?? null);
     this.isLoadingRows.set(false);
   }
 
