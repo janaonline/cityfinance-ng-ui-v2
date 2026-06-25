@@ -1,6 +1,8 @@
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
 import { By } from '@angular/platform-browser';
 import { of, Subject, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../../core/services/utility.service';
@@ -164,6 +166,54 @@ describe('EulbRowsDialogComponent', () => {
 
     expect(censusIcon).not.toBeNull();
     expect(ulbNameIcon).not.toBeNull();
+  });
+
+  it('renders one tooltip source for an invalid electedBodyStatus dialog cell', () => {
+    const errorRow: EulbRow = {
+      ...row,
+      errors: [
+        {
+          field: 'electedBodyStatus',
+          code: 'required',
+          message: 'Elected Body Status is required.',
+        },
+      ],
+    };
+    service.getRows.and.returnValue(of({ data: { rows: [errorRow], total: 1, page: 1, limit: 20 } }));
+    fixture.detectChanges();
+
+    const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell][field="electedBodyStatus"]'));
+    const tooltips = getTooltipSources(cell);
+
+    expect(tooltips).toHaveSize(1);
+    expect(tooltips[0].message).toBe('Elected Body Status is required.');
+    expect(tooltips[0].disabled).toBeFalse();
+    expect(cell.classes['eulb-cell-invalid']).toBeTrue();
+    expect(cell.query(By.css('button[aria-label="Elected body status has a validation error"]'))).not.toBeNull();
+  });
+
+  it('renders one tooltip source for an invalid date dialog cell', () => {
+    const errorRow: EulbRow = {
+      ...row,
+      errors: [
+        {
+          field: 'dateOfConstitution',
+          code: 'required',
+          message: 'Date of Constitution is required.',
+        },
+      ],
+    };
+    service.getRows.and.returnValue(of({ data: { rows: [errorRow], total: 1, page: 1, limit: 20 } }));
+    fixture.detectChanges();
+
+    const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell][field="dateOfConstitution"]'));
+    const tooltips = getTooltipSources(cell);
+
+    expect(tooltips).toHaveSize(1);
+    expect(tooltips[0].message).toBe('Date of Constitution is required.');
+    expect(tooltips[0].disabled).toBeFalse();
+    expect(cell.classes['eulb-cell-invalid']).toBeTrue();
+    expect(cell.query(By.css('button[aria-label="Date of constitution has a validation error"]'))).not.toBeNull();
   });
 
   it('clicking an errored dialog cell enters edit mode and preserves the focus selector', fakeAsync(() => {
@@ -524,6 +574,14 @@ describe('EulbRowsDialogComponent', () => {
       validationStatus: 'INVALID',
       errors: [],
     };
+  }
+
+  function getTooltipSources(cell: DebugElement): MatTooltip[] {
+    const sources = new Set<MatTooltip>([cell.injector.get(MatTooltip)]);
+    for (const tooltipElement of cell.queryAll(By.directive(MatTooltip))) {
+      sources.add(tooltipElement.injector.get(MatTooltip));
+    }
+    return [...sources];
   }
 });
 

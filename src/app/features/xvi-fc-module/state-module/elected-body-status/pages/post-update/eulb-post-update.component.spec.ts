@@ -1,8 +1,10 @@
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { AbstractControl } from '@angular/forms';
+import { MatTooltip } from '@angular/material/tooltip';
 import { of, Subject, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../../core/services/utility.service';
 import { FileService } from '../../../../../../shared/dynamic-form/components/file/file.service';
@@ -361,6 +363,68 @@ describe('EulbPostUpdateComponent', () => {
 
     expect(fieldCells).toHaveSize(4);
     expect(fixture.debugElement.query(By.css('app-eulb-editable-field-cell'))).toBeNull();
+  });
+
+  it('renders one tooltip source for an invalid electedBodyStatus post-update cell', () => {
+    service.getPostSubmissionUpdateRows.and.returnValue(
+      of(
+        createRowsData({
+          rows: [
+            createRow({
+              errors: [
+                {
+                  field: 'electedBodyStatus',
+                  code: 'required',
+                  message: 'Elected Body Status is required.',
+                },
+              ],
+              validationStatus: 'INVALID',
+            }),
+          ],
+        }),
+      ),
+    );
+    fixture.detectChanges();
+
+    const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell][field="electedBodyStatus"]'));
+    const tooltips = getTooltipSources(cell);
+
+    expect(tooltips).toHaveSize(1);
+    expect(tooltips[0].message).toBe('Elected Body Status is required.');
+    expect(tooltips[0].disabled).toBeFalse();
+    expect(cell.classes['eulb-cell-invalid']).toBeTrue();
+    expect(cell.query(By.css('button[aria-label="Elected body status has a validation error"]'))).not.toBeNull();
+  });
+
+  it('renders one tooltip source for an invalid date post-update cell', () => {
+    service.getPostSubmissionUpdateRows.and.returnValue(
+      of(
+        createRowsData({
+          rows: [
+            createRow({
+              errors: [
+                {
+                  field: 'dateOfExpiry',
+                  code: 'minDate',
+                  message: 'Date of expiry cannot be in the past.',
+                },
+              ],
+              validationStatus: 'INVALID',
+            }),
+          ],
+        }),
+      ),
+    );
+    fixture.detectChanges();
+
+    const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell][field="dateOfExpiry"]'));
+    const tooltips = getTooltipSources(cell);
+
+    expect(tooltips).toHaveSize(1);
+    expect(tooltips[0].message).toBe('Date of expiry cannot be in the past.');
+    expect(tooltips[0].disabled).toBeFalse();
+    expect(cell.classes['eulb-cell-invalid']).toBeTrue();
+    expect(cell.query(By.css('button[aria-label="Date of expiry has a validation error"]'))).not.toBeNull();
   });
 
   it('clicking an errored post-update cell enters edit mode and preserves the focus selector', fakeAsync(() => {
@@ -1018,4 +1082,12 @@ describe('EulbPostUpdateComponent', () => {
     expect(component.total()).toBe(21);
     expect(component.isLoadingRows()).toBeFalse();
   });
+
+  function getTooltipSources(cell: DebugElement): MatTooltip[] {
+    const sources = new Set<MatTooltip>([cell.injector.get(MatTooltip)]);
+    for (const tooltipElement of cell.queryAll(By.directive(MatTooltip))) {
+      sources.add(tooltipElement.injector.get(MatTooltip));
+    }
+    return [...sources];
+  }
 });

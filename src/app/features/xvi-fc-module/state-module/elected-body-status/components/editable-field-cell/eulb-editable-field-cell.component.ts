@@ -28,7 +28,7 @@ export type EulbEditableFieldCellControl =
 
 @Component({
   selector: 'td[app-eulb-editable-field-cell]',
-  imports: [CommonModule, ReactiveFormsModule, MatTooltip],
+  imports: [CommonModule, ReactiveFormsModule],
   hostDirectives: [MatTooltip],
   template: `
     @if (isEditing) {
@@ -38,10 +38,6 @@ export type EulbEditableFieldCellControl =
             <select
               [class]="selectControlClass"
               [class.is-invalid]="cellHasError"
-              [matTooltip]="cellErrorText ?? ''"
-              [matTooltipDisabled]="!cellHasError"
-              matTooltipPosition="above"
-              [matTooltipShowDelay]="100"
               aria-label="Elected Body Status"
               [attr.aria-invalid]="cellHasError || null"
               [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
@@ -61,10 +57,6 @@ export type EulbEditableFieldCellControl =
               [class.is-invalid]="cellHasError"
               [attr.min]="dateMin"
               [attr.max]="dateMax"
-              [matTooltip]="cellErrorText ?? ''"
-              [matTooltipDisabled]="!cellHasError"
-              matTooltipPosition="above"
-              [matTooltipShowDelay]="100"
               aria-label="Date of Constitution"
               [attr.aria-invalid]="cellHasError || null"
               [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
@@ -79,10 +71,6 @@ export type EulbEditableFieldCellControl =
               [class.is-invalid]="cellHasError"
               [attr.min]="dateMin"
               [attr.max]="dateMax"
-              [matTooltip]="cellErrorText ?? ''"
-              [matTooltipDisabled]="!cellHasError"
-              matTooltipPosition="above"
-              [matTooltipShowDelay]="100"
               aria-label="Date of Expiry"
               [attr.aria-invalid]="cellHasError || null"
               [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
@@ -95,10 +83,6 @@ export type EulbEditableFieldCellControl =
               type="text"
               [class]="inputControlClass"
               [class.is-invalid]="cellHasError"
-              [matTooltip]="cellErrorText ?? ''"
-              [matTooltipDisabled]="!cellHasError"
-              matTooltipPosition="above"
-              [matTooltipShowDelay]="100"
               aria-label="Remarks"
               [attr.aria-invalid]="cellHasError || null"
               placeholder="Remarks"
@@ -112,10 +96,6 @@ export type EulbEditableFieldCellControl =
               type="text"
               [class]="inputControlClass"
               [class.is-invalid]="cellHasError"
-              [matTooltip]="cellErrorText ?? ''"
-              [matTooltipDisabled]="!cellHasError"
-              matTooltipPosition="above"
-              [matTooltipShowDelay]="100"
               aria-label="Census Code"
               [attr.aria-invalid]="cellHasError || null"
               placeholder="Census code"
@@ -129,10 +109,6 @@ export type EulbEditableFieldCellControl =
               type="text"
               [class]="inputControlClass"
               [class.is-invalid]="cellHasError"
-              [matTooltip]="cellErrorText ?? ''"
-              [matTooltipDisabled]="!cellHasError"
-              matTooltipPosition="above"
-              [matTooltipShowDelay]="100"
               aria-label="ULB Name"
               [attr.aria-invalid]="cellHasError || null"
               placeholder="ULB name"
@@ -260,19 +236,23 @@ export class EulbEditableFieldCellComponent implements OnChanges {
   }
 
   private get hostTooltipMessage(): string {
-    if (this.isEditing && this.isDateField) {
+    if (this.cellHasError) {
+      return this.cellErrorText ?? '';
+    }
+
+    if (this.hasDisabledDateReason) {
       return this.disabledReason;
     }
 
-    return this.cellErrorText ?? '';
+    return '';
   }
 
   private get hostTooltipDisabled(): boolean {
-    if (this.isEditing && this.isDateField) {
-      return this.fieldEnabled;
-    }
+    return !this.cellHasError && !this.hasDisabledDateReason;
+  }
 
-    return !this.cellHasError;
+  private get hasDisabledDateReason(): boolean {
+    return this.isEditing && this.isDateField && !this.fieldEnabled && this.disabledReason.trim().length > 0;
   }
 
   private formatDateValue(value: string | null | undefined): string {

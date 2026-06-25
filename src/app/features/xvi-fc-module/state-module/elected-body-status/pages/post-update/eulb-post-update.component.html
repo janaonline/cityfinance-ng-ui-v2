@@ -273,6 +273,8 @@
                                 [statusOptions]="electedBodyStatusOptions"
                                 [editControl]="editForm.controls.electedBodyStatus"
                                 editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
                                 (editRequested)="startEditAtField(row, $event)"
                               ></td>
                               <td
@@ -291,6 +293,8 @@
                                 [cellErrorText]="vm.cellErrorText['dateOfConstitution'] ?? ''"
                                 [editControl]="editForm.controls.dateOfConstitution"
                                 editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
                                 (editRequested)="startEditAtField(row, $event)"
                               ></td>
                               <td
@@ -309,6 +313,8 @@
                                 [cellErrorText]="vm.cellErrorText['dateOfExpiry'] ?? ''"
                                 [editControl]="editForm.controls.dateOfExpiry"
                                 editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
                                 (editRequested)="startEditAtField(row, $event)"
                               ></td>
                               <td
@@ -323,6 +329,8 @@
                                 [cellErrorText]="vm.cellErrorText['remarks'] ?? ''"
                                 [editControl]="editForm.controls.remarks"
                                 editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
                                 (editRequested)="startEditAtField(row, $event)"
                               ></td>
 
