@@ -1,46 +1,36 @@
-<div class="row g-0 min-vh-100 bg-white">
-
+<div class="row g-0 bg-white">
   <!-- ═══ LEFT: Info Panel ════════════════════════════════════════════════════ -->
   <div class="col-12 col-lg-6 d-none d-lg-block">
     <div class="login-left h-100 position-relative overflow-hidden d-flex align-items-stretch">
-
-      <div class="deco" aria-hidden="true">
-        <div class="deco__dots"></div>
-        <div class="deco__orb deco__orb--1"></div>
-        <div class="deco__orb deco__orb--2"></div>
-        <div class="deco__orb deco__orb--3"></div>
-      </div>
-
       <!-- z-index: 1 keeps content above the decorative layer -->
-      <div class="d-flex flex-column position-relative w-100 p-5" style="z-index:1">
-
+      <div class="d-flex flex-column position-relative w-100 p-5" style="z-index: 1">
         <div class="d-flex align-items-center gap-3 mb-5">
-          <div class="brand-logo d-inline-flex align-items-center justify-content-center">
+          <div class="brand-logo rounded-circle flex-shrink-0 d-inline-flex align-items-center justify-content-center">
             <i class="bi bi-bank2"></i>
           </div>
-          <span class="fw-bold small text-uppercase" style="letter-spacing:0.15em;color:rgba(255,255,255,0.6)">
+          <span class="fw-bold small text-uppercase" style="letter-spacing: 0.15em; color: rgba(255, 255, 255, 0.6)">
             CITY FINANCE
           </span>
         </div>
 
-        <h1 class="hero-title">
-          {{ panelContent().titleLine1 }}<br />{{ panelContent().titleLine2 }}
-        </h1>
+        <h1 class="hero-title text-white m-0">{{ panelContent().titleLine1 }}<br />{{ panelContent().titleLine2 }}</h1>
 
         @for (desc of panelContent().descriptions; track $index) {
-          <p class="hero-desc mb-0 mt-3"
-             [class.hero-desc--dim]="desc.secondary"
-             [innerHTML]="desc.html"></p>
+          <p class="hero-desc mb-0 mt-3" [class.hero-desc--dim]="desc.secondary" [innerHTML]="desc.html"></p>
         }
 
         @if (panelContent().showStats) {
-          <div class="row g-2 mt-4">
+          <div class="row g-3 mt-3 stats-grid">
             @for (stat of stats; track stat.label) {
               <div class="col-6">
-                <div class="stat-card p-3 h-100">
-                  <div class="stat-card__icon mb-2"><i class="bi {{ stat.icon }}"></i></div>
-                  <div class="stat-card__value">{{ stat.value }}</div>
-                  <div class="stat-card__label mt-1">{{ stat.label }}</div>
+                <div class="stat-card d-flex align-items-center gap-2 p-3 h-100">
+                  <div class="stat-card__icon flex-shrink-0 d-flex align-items-center justify-content-center">
+                    <i class="bi {{ stat.icon }}"></i>
+                  </div>
+                  <div>
+                    <div class="stat-card__value text-white mb-1">{{ stat.value }}</div>
+                    <div class="stat-card__label text-uppercase fw-semibold">{{ stat.label }}</div>
+                  </div>
                 </div>
               </div>
             }
@@ -49,7 +39,7 @@
 
         @if (panelContent().showResourceActions) {
           <div class="d-flex align-items-start gap-2 mt-4">
-            <button mat-stroked-button type="button" class="res-btn" (click)="openReferenceDocuments()">
+            <button mat-stroked-button type="button" class="res-btn fw-semibold" (click)="openReferenceDocuments()">
               <i class="bi bi-file-earmark-text me-2"></i>Reference Documents
             </button>
           </div>
@@ -57,351 +47,168 @@
 
         @if (panelContent().showDocuments) {
           <div class="mt-4">
-            <h5 class="fw-bold small text-uppercase mb-3"
-                style="color:rgba(255,255,255,0.7);letter-spacing:0.05em">
+            <h5
+              class="fw-bold small text-uppercase mb-3"
+              style="color: rgba(255, 255, 255, 0.7); letter-spacing: 0.05em"
+            >
               Reference Documents
             </h5>
             @for (doc of documents; track doc.title) {
-              <a [href]="doc.file" target="_blank" rel="noopener"
-                 class="doc-item d-flex align-items-center gap-2 text-decoration-none mb-2">
-                <div class="doc-icon d-flex align-items-center justify-content-center flex-shrink-0">
+              <a
+                [href]="doc.file"
+                target="_blank"
+                rel="noopener"
+                class="doc-item rounded-3 d-flex align-items-center gap-2 text-decoration-none mb-2"
+              >
+                <div class="doc-icon rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
                   <i class="bi bi-file-earmark-pdf-fill"></i>
                 </div>
-                <span class="fw-semibold small text-truncate" style="color:rgba(255,255,255,0.75)">
+                <span class="fw-semibold small text-truncate" style="color: rgba(255, 255, 255, 0.75)">
                   {{ doc.title }}
                 </span>
               </a>
             }
           </div>
         }
-
       </div>
     </div>
   </div>
 
   <!-- ═══ RIGHT: Login Form ════════════════════════════════════════════════════ -->
   <div class="col-12 col-lg-6 bg-light">
-    <div class="d-flex justify-content-center align-items-start min-vh-100 p-4 p-md-5">
-      <div class="w-100" style="max-width:440px">
-
-        <div class="login-card">
-
+    <div class="d-flex justify-content-center align-items-start p-4 p-md-5">
+      <div class="w-100" style="max-width: 440px">
+        <div class="login-card bg-white rounded-4 shadow p-4">
           <div class="mb-4">
-            <h2 class="fw-bold mb-1" style="font-size:1.5rem;color:#082c35;letter-spacing:-0.03em">
-              Sign In
-            </h2>
-            @if (loginPanel().subtitle) {
-              <p class="text-muted mb-0 small">{{ loginPanel().subtitle }}</p>
+            <h2 class="fw-bold mb-1" style="font-size: 1.5rem; color: #082c35; letter-spacing: -0.03em">Sign In</h2>
+            @if (loginSubtitle()) {
+              <p class="text-muted mb-0 small">{{ loginSubtitle() }}</p>
             }
           </div>
 
-          <!-- ───── 16th FC Multi-Step Wizard ───── -->
-          @if (typeKey() === '16thFC') {
-            <form [formGroup]="loginForm" novalidate>
-
-              @if (fc16Step() === 'identifier') {
-
-                <div class="role-grid role-grid--fc16 mb-3"
-                     [class.role-grid--five]="roleOptions().length === 5"
-                     role="radiogroup" aria-label="User role">
-                  @for (role of roleOptions(); track trackByRole($index, role)) {
-                    <button type="button" class="role-card"
-                            [attr.data-role]="role.icon"
-                            [class.role-card--active]="isRoleSelected(role.id)"
-                            [class.role-card--disabled]="role.disabled"
-                            [disabled]="role.disabled || null"
-                            role="radio"
-                            [attr.aria-checked]="isRoleSelected(role.id)"
-                            (click)="selectRole(role)">
-                      @if (role.badge) {
-                        <span class="role-card__badge">{{ role.badge }}</span>
-                      }
-                      @if (isRoleSelected(role.id)) {
-                        <span class="role-card__check" aria-hidden="true">
-                          <i class="bi bi-check-lg"></i>
-                        </span>
-                      }
-                      <span class="role-card__icon"
-                            [class.role-card__icon--ulb]="role.icon === 'ulb'"
-                            [class.role-card__icon--state]="role.icon === 'state'"
-                            [class.role-card__icon--mohua]="role.icon === 'mohua'"
-                            [class.role-card__icon--doe]="role.icon === 'doe'"
-                            [class.role-card__icon--inst]="role.icon === 'institutional'">
-                        <i class="bi {{ role.biIcon }}"></i>
-                      </span>
-                      <span class="role-card__label">{{ role.label }}</span>
-                    </button>
-                  }
-                </div>
-
-                @if (hasControlError('role', 'required')) {
-                  <p class="text-danger small fw-semibold mb-2">Please select your role to continue.</p>
-                }
-
-                <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100 mt-1">
-                  <mat-label>Mobile / Email / Census Code</mat-label>
-                  <input matInput type="text" formControlName="identifier"
-                         autocomplete="username"
-                         placeholder="10-digit mobile, email, or census code"
-                         (input)="onIdentifierInput16()" />
-                  @if (identifierType16() !== null) {
-                    <span matSuffix>
-                      @if (identifierType16() === 'mobile') {
-                        <i class="bi bi-phone-fill text-success me-1"></i>
-                      } @else if (identifierType16() === 'email') {
-                        <i class="bi bi-envelope-fill text-success me-1"></i>
-                      } @else {
-                        <i class="bi bi-building-fill me-1" style="color:#1f7273"></i>
-                      }
-                    </span>
-                  }
-                </mat-form-field>
-
-                @if (identifierType16() !== null) {
-                  <p class="text-success fw-semibold small d-flex align-items-center gap-1 mt-1 mb-0">
-                    <i class="bi bi-check-circle-fill"></i>
-                    @if (identifierType16() === 'mobile') { Valid mobile number }
-                    @else if (identifierType16() === 'email') { Valid email address }
-                    @else { Census code }
-                  </p>
-                }
-
-                @if (hasControlError('identifier', 'required')) {
-                  <p class="text-danger small fw-semibold mt-1 mb-0">Mobile, email or Census Code is required.</p>
-                }
-                @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'invalidInput')) {
-                  <p class="text-danger small fw-semibold mt-1 mb-0">
-                    Enter a valid 10-digit mobile, email address, or numeric census code.
-                  </p>
-                }
-
-                @if (errorMessage()) {
-                  <div class="api-error mt-3">{{ errorMessage() }}</div>
-                }
-
-                <button mat-flat-button type="button" class="cta-btn mt-3 w-100"
-                        [disabled]="fc16CheckingUser()"
-                        (click)="onCheckIdentifier16()">
-                  @if (fc16CheckingUser()) { Checking... } @else {
-                    <span class="d-flex align-items-center justify-content-center gap-2">
-                      Continue <i class="bi bi-arrow-right"></i>
-                    </span>
-                  }
-                </button>
-              }
-
-              @if (fc16Step() === 'password') {
-                <div class="d-flex align-items-center gap-2 mb-3 bg-light border rounded-2 p-2 small">
-                  <i class="bi bi-person-circle text-muted flex-shrink-0"></i>
-                  <span class="flex-fill text-truncate fw-semibold">
-                    {{ loginForm.controls.identifier.value }}
-                  </span>
-                  <button type="button" class="link-btn" (click)="onBackToIdentifier16()">Change</button>
-                </div>
-
-                <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100">
-                  <mat-label>Password</mat-label>
-                  <input matInput [type]="isPasswordVisible ? 'text' : 'password'"
-                         formControlName="password" autocomplete="current-password" />
-                  <button mat-icon-button matSuffix type="button" class="pwd-toggle"
-                          (click)="togglePasswordVisibility()"
-                          [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'">
-                    <i class="bi" [class.bi-eye]="!isPasswordVisible" [class.bi-eye-slash]="isPasswordVisible"></i>
-                  </button>
-                </mat-form-field>
-
-                @if (hasControlError('password', 'required')) {
-                  <p class="text-danger small fw-semibold mt-1 mb-0">Password is required.</p>
-                }
-                @if (!hasControlError('password', 'required') && hasControlError('password', 'minlength')) {
-                  <p class="text-danger small fw-semibold mt-1 mb-0">Password must be at least 6 characters.</p>
-                }
-
-                @if (errorMessage()) {
-                  <div class="api-error mt-3">{{ errorMessage() }}</div>
-                }
-
-                <button mat-flat-button type="button" class="cta-btn mt-3 w-100"
-                        [disabled]="isSubmitting()" (click)="onSubmit()">
-                  @if (isSubmitting()) { Signing in... } @else {
-                    <span class="d-flex align-items-center justify-content-center gap-2">
-                      Sign In <i class="bi bi-box-arrow-in-right"></i>
-                    </span>
-                  }
-                </button>
-
-                <div class="d-flex justify-content-center mt-2">
-                  <button type="button" class="link-btn" (click)="onForgotPassword()">Forgot password?</button>
-                </div>
-              }
-
-              @if (fc16Step() === 'otp-send') {
-                <div class="notice notice--info d-flex align-items-start gap-3 mb-3">
-                  <i class="bi bi-shield-lock-fill flex-shrink-0 mt-1"></i>
-                  <div>
-                    <p class="fw-semibold mb-1 small">Account verification required</p>
-                    <p class="mb-0 small">
-                      We will send a one-time password to
-                      <strong>{{ fc16MaskedContact() || loginForm.controls.identifier.value }}</strong>.
-                    </p>
-                  </div>
-                </div>
-
-                @if (errorMessage()) { <div class="api-error mb-3">{{ errorMessage() }}</div> }
-
-                <button mat-flat-button type="button" class="cta-btn w-100"
-                        [disabled]="fc16OtpSending()" (click)="triggerSendOtp16(true)">
-                  @if (fc16OtpSending()) { Sending OTP... } @else {
-                    <span class="d-flex align-items-center justify-content-center gap-2">
-                      Send OTP <i class="bi bi-send-fill"></i>
-                    </span>
-                  }
-                </button>
-
-                <div class="d-flex justify-content-center mt-2">
-                  <button type="button" class="link-btn" (click)="onBackToIdentifier16()">
-                    <i class="bi bi-arrow-left me-1"></i>Back
-                  </button>
-                </div>
-              }
-
-              @if (fc16Step() === 'otp-verify') {
-                <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded-2 small"
-                     style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534">
-                  <i class="bi bi-check-circle-fill flex-shrink-0"></i>
-                  <span>OTP sent to <strong>{{ fc16MaskedContact() }}</strong></span>
-                </div>
-
-                <div class="d-flex justify-content-end mb-2">
-                  @if (fc16OtpCountdownActive()) {
-                    <span class="text-muted small fw-semibold">Resend in {{ fc16OtpCountdown() }}s</span>
-                  } @else {
-                    <button type="button" class="link-btn" [disabled]="fc16OtpSending() || null"
-                            (click)="triggerSendOtp16(false)">
-                      {{ fc16OtpSending() ? 'Sending...' : 'Resend OTP' }}
-                    </button>
-                  }
-                </div>
-
-                <app-dynamic-form [field]="otpFieldConfig" [group]="loginForm"></app-dynamic-form>
-
-                @if (errorMessage()) { <div class="api-error mt-3">{{ errorMessage() }}</div> }
-
-                <button mat-flat-button type="button" class="cta-btn mt-3 w-100"
-                        [disabled]="fc16OtpVerifying() || loginForm.controls.otp.value.length < otpLength"
-                        (click)="onVerifyOtp16()">
-                  @if (fc16OtpVerifying()) { Verifying... } @else {
-                    <span class="d-flex align-items-center justify-content-center gap-2">
-                      Verify OTP <i class="bi bi-shield-check"></i>
-                    </span>
-                  }
-                </button>
-
-                <div class="d-flex justify-content-center mt-2">
-                  <button type="button" class="link-btn" (click)="onBackToOtpSend16()">
-                    <i class="bi bi-arrow-left me-1"></i>Back
-                  </button>
-                </div>
-              }
-
-              @if (fc16Step() === 'set-password') {
-                <div class="notice notice--success d-flex align-items-start gap-3 mb-4">
-                  <i class="bi bi-check2-circle flex-shrink-0 mt-1"></i>
-                  <p class="mb-0 small">
-                    Identity verified. Set a password to complete your account activation.
-                  </p>
-                </div>
-
-                <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100 mb-2">
-                  <mat-label>New Password</mat-label>
-                  <input matInput [type]="isNewPasswordVisible ? 'text' : 'password'"
-                         formControlName="newPassword" autocomplete="new-password"
-                         placeholder="At least 6 characters" />
-                  <button mat-icon-button matSuffix type="button" class="pwd-toggle"
-                          (click)="toggleNewPasswordVisibility()"
-                          [attr.aria-label]="isNewPasswordVisible ? 'Hide' : 'Show'">
-                    <i class="bi" [class.bi-eye]="!isNewPasswordVisible" [class.bi-eye-slash]="isNewPasswordVisible"></i>
-                  </button>
-                </mat-form-field>
-
-                <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100">
-                  <mat-label>Confirm Password</mat-label>
-                  <input matInput [type]="isConfirmPasswordVisible ? 'text' : 'password'"
-                         formControlName="confirmPassword" autocomplete="new-password"
-                         placeholder="Re-enter your password" />
-                  <button mat-icon-button matSuffix type="button" class="pwd-toggle"
-                          (click)="toggleConfirmPasswordVisibility()"
-                          [attr.aria-label]="isConfirmPasswordVisible ? 'Hide' : 'Show'">
-                    <i class="bi" [class.bi-eye]="!isConfirmPasswordVisible" [class.bi-eye-slash]="isConfirmPasswordVisible"></i>
-                  </button>
-                </mat-form-field>
-
-                @if (fc16PasswordError()) {
-                  <p class="text-danger small fw-semibold mt-1 mb-0">{{ fc16PasswordError() }}</p>
-                }
-                @if (errorMessage()) { <div class="api-error mt-2">{{ errorMessage() }}</div> }
-
-                <button mat-flat-button type="button" class="cta-btn mt-3 w-100"
-                        [disabled]="fc16PasswordSetting()" (click)="onSetPassword16()">
-                  @if (fc16PasswordSetting()) { Activating account... } @else {
-                    <span class="d-flex align-items-center justify-content-center gap-2">
-                      Set Password &amp; Sign In <i class="bi bi-box-arrow-in-right"></i>
-                    </span>
-                  }
-                </button>
-              }
-
-            </form>
-
-          <!-- ───── Standard Login ───── -->
-          } @else {
-
-            @if (!isOtpLogin()) {
-              <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
-
-                @if (loginPanel().showRoleGrid) {
-                  <div class="role-grid mb-3"
-                       [class.role-grid--five]="roleOptions().length === 5"
-                       role="radiogroup" aria-label="User role">
-                    @for (role of roleOptions(); track trackByRole($index, role)) {
-                      <button type="button" class="role-card"
-                              [class.role-card--active]="isRoleSelected(role.id)"
-                              [class.role-card--disabled]="role.disabled"
-                              [disabled]="role.disabled || null"
-                              role="radio"
-                              [attr.aria-checked]="isRoleSelected(role.id)"
-                              (click)="selectRole(role)">
-                        @if (role.badge) {
-                          <span class="role-card__badge">{{ role.badge }}</span>
-                        }
-                        <span class="role-card__icon"
-                              [class.role-card__icon--ulb]="role.icon === 'ulb'"
-                              [class.role-card__icon--state]="role.icon === 'state'"
-                              [class.role-card__icon--mohua]="role.icon === 'mohua'"
-                              [class.role-card__icon--doe]="role.icon === 'doe'"
-                              [class.role-card__icon--inst]="role.icon === 'institutional'">
-                          <i class="bi {{ role.biIcon }}"></i>
-                        </span>
-                        <span class="role-card__label">{{ role.label }}</span>
-                      </button>
+          <!-- ── Step 1: Role selection (16thFC and 15thFC only) ── -->
+          @if (showRoleStep()) {
+            <div class="step-pane" [class.step-pane--enter-left]="slideDirection() === 'back'">
+              <div
+                class="role-grid d-grid gap-2 mb-3"
+                [class.role-grid--fc]="isMultiStep()"
+                role="radiogroup"
+                aria-label="User role"
+              >
+                @for (role of roleOptions(); track trackByRole($index, role)) {
+                  <button
+                    type="button"
+                    class="role-card position-relative overflow-hidden d-flex flex-column align-items-center justify-content-center gap-2 bg-white"
+                    [attr.data-role]="role.icon"
+                    [class.role-card--active]="isRoleSelected(role.id)"
+                    [class.role-card--disabled]="role.disabled"
+                    [disabled]="role.disabled || null"
+                    role="radio"
+                    [attr.aria-checked]="isRoleSelected(role.id)"
+                    (click)="selectRole(role)"
+                  >
+                    @if (role.badge) {
+                      <span class="role-card__badge">{{ role.badge }}</span>
                     }
-                  </div>
-
-                  @if (hasControlError('role', 'required')) {
-                    <p class="text-danger small fw-semibold mb-2">Please select your role to continue.</p>
-                  }
+                    @if (isRoleSelected(role.id)) {
+                      <span
+                        class="role-card__check position-absolute d-inline-flex align-items-center justify-content-center rounded-circle"
+                        aria-hidden="true"
+                      >
+                        <i class="bi bi-check-lg"></i>
+                      </span>
+                    }
+                    <span
+                      class="role-card__icon d-flex align-items-center justify-content-center flex-shrink-0"
+                      [class.role-card__icon--ulb]="role.icon === 'ulb'"
+                      [class.role-card__icon--state]="role.icon === 'state'"
+                      [class.role-card__icon--mohua]="role.icon === 'mohua'"
+                      [class.role-card__icon--doe]="role.icon === 'doe'"
+                      [class.role-card__icon--inst]="role.icon === 'institutional'"
+                    >
+                      <i class="bi {{ role.biIcon }} d-block lh-1"></i>
+                    </span>
+                    <span class="role-card__label text-center">{{ role.label }}</span>
+                  </button>
                 }
+              </div>
+            </div>
+          } @else {
+            <!-- ── Step 2 / Simple credentials (all types) ── -->
+            <div class="step-pane" [class.step-pane--enter-right]="slideDirection() === 'forward'">
+              @if (isMultiStep()) {
+                <div class="d-flex align-items-center gap-2 mb-3 bg-light border rounded-2 p-2 small">
+                  <span class="text-muted fw-semibold flex-shrink-0">Role :</span>
+                  <span
+                    class="role-card__icon d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width: 24px; height: 24px; border-radius: 6px"
+                    [class.role-card__icon--ulb]="selectedRole()?.icon === 'ulb'"
+                    [class.role-card__icon--state]="selectedRole()?.icon === 'state'"
+                    [class.role-card__icon--mohua]="selectedRole()?.icon === 'mohua'"
+                    [class.role-card__icon--doe]="selectedRole()?.icon === 'doe'"
+                    [class.role-card__icon--inst]="selectedRole()?.icon === 'institutional'"
+                  >
+                    <i class="bi {{ selectedRole()?.biIcon }} d-block lh-1" style="font-size: 12px"></i>
+                  </span>
+                  <span class="flex-fill fw-semibold">{{ selectedRole()?.label }}</span>
+                  <button
+                    type="button"
+                    class="btn btn-link p-0 small fw-semibold text-secondary text-decoration-none"
+                    (click)="onBackToRole()"
+                    style="font-size: 13px"
+                  >
+                    Change
+                  </button>
+                </div>
+              }
 
-                <app-dynamic-form [field]="identifierFieldConfig" [group]="loginForm"></app-dynamic-form>
+              <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+                <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100">
+                  <mat-label>{{ identifierLabel() }}</mat-label>
+                  <input
+                    matInput
+                    [type]="identifierType()"
+                    formControlName="identifier"
+                    [attr.autocomplete]="identifierAutocomplete()"
+                    [attr.inputmode]="identifierInputMode()"
+                    [placeholder]="identifierPlaceholder()"
+                  />
+                </mat-form-field>
+                @if (hasControlError('identifier', 'required')) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">{{ identifierRequiredMessage() }}</p>
+                }
+                @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'maxlength')) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Input is too long.</p>
+                }
+                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && hasControlError('identifier', 'minlength')) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Invalid format for the selected role.</p>
+                }
+                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && !hasControlError('identifier', 'minlength') && hasControlError('identifier', 'unsafeInput')) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Input contains invalid characters.</p>
+                }
+                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && !hasControlError('identifier', 'minlength') && !hasControlError('identifier', 'unsafeInput') && hasControlError('identifier', 'invalidIdentifier')) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Enter a valid email address or numeric census code.</p>
+                }
+                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && !hasControlError('identifier', 'minlength') && !hasControlError('identifier', 'unsafeInput') && (hasControlError('identifier', 'emailNotAllowed') || hasControlError('identifier', 'email'))) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Invalid format for the selected role.</p>
+                }
 
                 <div class="mt-2">
                   <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100">
                     <mat-label>Password</mat-label>
-                    <input matInput [type]="isPasswordVisible ? 'text' : 'password'"
-                           formControlName="password" autocomplete="current-password" />
-                    <button mat-icon-button matSuffix type="button" class="pwd-toggle"
-                            (click)="togglePasswordVisibility()"
-                            [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'">
+                    <input
+                      matInput
+                      [type]="isPasswordVisible ? 'text' : 'password'"
+                      formControlName="password"
+                      autocomplete="current-password"
+                    />
+                    <button
+                      mat-icon-button
+                      matSuffix
+                      type="button"
+                      (click)="togglePasswordVisibility()"
+                      [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+                    >
                       <i class="bi" [class.bi-eye]="!isPasswordVisible" [class.bi-eye-slash]="isPasswordVisible"></i>
                     </button>
                   </mat-form-field>
@@ -411,89 +218,70 @@
                   @if (!hasControlError('password', 'required') && hasControlError('password', 'minlength')) {
                     <p class="text-danger small fw-semibold mt-1 mb-0">Password must be at least 6 characters.</p>
                   }
-                </div>
-
-                @if (errorMessage()) { <div class="api-error mt-3">{{ errorMessage() }}</div> }
-
-                <div class="d-flex justify-content-end mt-1 mb-2">
-                  <button type="button" class="link-btn" (click)="onForgotPassword()">Forgot password?</button>
-                </div>
-
-                <button mat-flat-button type="submit" class="cta-btn w-100" [disabled]="isSubmitting()">
-                  @if (isSubmitting()) { Signing in... } @else { Sign In }
-                </button>
-
-              </form>
-
-              <div class="otp-divider my-3"><span>or</span></div>
-
-              <button mat-stroked-button type="button" class="otp-btn w-100"
-                      [disabled]="isSubmitting()" (click)="startOtpFlow()">
-                <i class="bi bi-phone me-2"></i>Get OTP on phone &amp; email
-              </button>
-
-            } @else {
-
-              <div class="d-flex align-items-start gap-2 mb-3 p-3 bg-light border rounded-2 small">
-                <i class="bi bi-phone-fill flex-shrink-0 mt-1" style="color:#0b414d"></i>
-                <p class="mb-0">
-                  OTP sent to
-                  @if (otpCreds.mobile) { <strong>{{ otpCreds.mobile }}</strong> and }
-                  <strong>{{ otpCreds.email }}</strong>
-                </p>
-              </div>
-
-              <form [formGroup]="loginForm" (ngSubmit)="submitOtp()" novalidate>
-                <div class="d-flex justify-content-end mb-2">
-                  @if (otpCountdownActive()) {
-                    <span class="text-muted small fw-semibold">Resend in {{ otpCountdown() }}s</span>
-                  } @else {
-                    <button type="button" class="link-btn" (click)="startOtpFlow()">Resend OTP</button>
+                  @if (!hasControlError('password', 'required') && hasControlError('password', 'maxlength')) {
+                    <p class="text-danger small fw-semibold mt-1 mb-0">Password is too long.</p>
+                  }
+                  @if (!hasControlError('password', 'required') && !hasControlError('password', 'minlength') && !hasControlError('password', 'maxlength') && hasControlError('password', 'unsafeInput')) {
+                    <p class="text-danger small fw-semibold mt-1 mb-0">Password contains invalid characters.</p>
                   }
                 </div>
 
-                <app-dynamic-form [field]="otpFieldConfig" [group]="loginForm"></app-dynamic-form>
+                @if (errorMessage()) {
+                  <div
+                    class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small fw-medium"
+                    role="alert"
+                  >
+                    <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                    {{ errorMessage() }}
+                  </div>
+                }
 
-                @if (errorMessage()) { <div class="api-error mt-3">{{ errorMessage() }}</div> }
+                <div class="d-flex justify-content-end mt-1 mb-2">
+                  <button
+                    type="button"
+                    class="btn btn-link p-0 small fw-semibold text-secondary text-decoration-none"
+                    (click)="onForgotPassword()"
+                    style="font-size: 13px"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
 
-                <button mat-flat-button type="submit" class="cta-btn mt-3 w-100"
-                        [disabled]="isSubmitting() || loginForm.controls.otp.invalid">
-                  @if (isSubmitting()) { Verifying... } @else { Sign In }
+                <button
+                  type="submit"
+                  class="btn w-100 fw-bold py-2 rounded-3 text-white"
+                  style="background: #1f7273"
+                  [disabled]="isSubmitting()"
+                >
+                  @if (isSubmitting()) {
+                    Signing in...
+                  } @else {
+                    Sign In
+                  }
                 </button>
-
               </form>
-
-              <div class="otp-divider my-3"><span>or</span></div>
-
-              <button mat-stroked-button type="button" class="otp-btn w-100" (click)="switchToPassword()">
-                <i class="bi bi-lock me-2"></i>Sign in with password
-              </button>
-
-            }
+            </div>
           }
-
         </div>
-        <!-- /login-card -->
 
         <p class="text-muted text-center mt-3 mb-0 small">
           Protected by reCAPTCHA —
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted">Privacy</a> &amp;
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted">Privacy</a>
+          &amp;
           <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted">Terms</a>
         </p>
 
         <div class="help-card mt-3 p-3">
-          <h3 class="fw-bold mb-1 small" style="color:#24464c">Need Help?</h3>
-          <p class="text-muted mb-0" style="font-size:0.8rem">
+          <h3 class="fw-bold mb-1 small" style="color: #24464c">Need Help?</h3>
+          <p class="text-muted mb-0" style="font-size: 0.8rem">
             Email
-            <a [href]="'mailto:' + supportEmail()" class="fw-semibold" style="color:#1d6769">
+            <a [href]="'mailto:' + supportEmail()" class="fw-semibold" style="color: #1d6769">
               {{ supportEmail() }}
             </a>
             — we respond within 24 hours.
           </p>
         </div>
-
       </div>
     </div>
   </div>
-
 </div>

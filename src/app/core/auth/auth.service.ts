@@ -1,12 +1,13 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, Observable, catchError, finalize, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, finalize, map, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AuthService as LegacyAuthService } from '../services/auth.service';
 import {
   AuthUser,
+  ForgotPasswordOtpResult,
   OtpPurpose,
   ResetPasswordPayload,
   ResetPasswordResponse,
@@ -15,6 +16,7 @@ import {
 } from './otp.models';
 
 const TOKEN_KEY = 'cf_access_token';
+
 
 @Injectable({ providedIn: 'root' })
 export class OtpAuthService {
@@ -35,6 +37,19 @@ export class OtpAuthService {
       `${environment.api.url2}auth/sendOtp`,
       { identifier, purpose },
       { withCredentials: true },
+    );
+  }
+
+  /**
+   * Forgot-password OTP send. Normalizes both real-account and fake-account backend responses
+   * into the same shape. For real accounts, `maskedContact` is the already-masked mobile or
+   * email from the backend (e.g. "94******22"). For fake accounts both fields are absent so
+   * `maskedContact` is undefined — the component falls back to masking the entered identifier
+   * on the frontend. Either way the UI message format is identical, preventing account enumeration.
+   */
+  sendForgotPasswordOtp(identifier: string): Observable<ForgotPasswordOtpResult> {
+    return this.sendOtp(identifier, 'forgot-password').pipe(
+      map((res) => ({ maskedContact: res.mobile ?? res.email })),
     );
   }
 

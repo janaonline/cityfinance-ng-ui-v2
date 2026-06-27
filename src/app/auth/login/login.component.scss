@@ -2,7 +2,9 @@
 
 // ─── Host ─────────────────────────────────────────────────────────────────────
 
-:host { display: block; }
+:host {
+  display: block;
+}
 
 // ─── Left panel gradient + top accent line ────────────────────────────────────
 
@@ -25,56 +27,30 @@
     );
     z-index: 2;
   }
-}
 
-// ─── Decorative background elements (aria-hidden, not replaceable with Bootstrap)
-
-.deco { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-
-.deco__dots {
-  position: absolute;
-  inset: 0;
-  @include theme.grant-band-dot-pattern;
-}
-
-.deco__orb { position: absolute; border-radius: 50%; }
-
-.deco__orb--1 {
-  width: 480px; height: 480px; top: -160px; right: -120px;
-  background: radial-gradient(circle, rgba(29, 201, 211, 0.16) 0%, transparent 70%);
-  filter: blur(70px);
-  animation: float 14s ease-in-out infinite;
-}
-
-.deco__orb--2 {
-  width: 320px; height: 320px; bottom: 60px; left: -90px;
-  background: radial-gradient(circle, rgba(15, 120, 145, 0.24) 0%, transparent 70%);
-  filter: blur(65px);
-}
-
-.deco__orb--3 {
-  width: 240px; height: 240px; top: 42%; right: 6%;
-  background: radial-gradient(circle, rgba(40, 185, 205, 0.13) 0%, transparent 70%);
-  filter: blur(55px);
-  animation: float 20s ease-in-out infinite reverse;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-20px); }
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    @include theme.grant-band-dot-pattern;
+  }
 }
 
 // ─── Brand logo (rgba colors + specific sizing) ────────────────────────────────
 
 .brand-logo {
-  width: 36px; height: 36px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #2dd4bf;
-  flex-shrink: 0;
 
-  i { font-size: 15px; line-height: 1; }
+  i {
+    font-size: 15px;
+    line-height: 1;
+  }
 }
 
 // ─── Hero title (clamp sizing + custom tracking) ──────────────────────────────
@@ -84,8 +60,6 @@
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.04em;
-  color: #ffffff;
-  margin: 0;
 }
 
 // ─── Hero description (rgba text + link colors on dark background) ─────────────
@@ -95,9 +69,17 @@
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.62);
 
-  a { color: #2dd4bf; text-decoration-color: rgba(45, 212, 191, 0.4); &:hover { color: #6eecec; } }
+  a {
+    color: #2dd4bf;
+    text-decoration-color: rgba(45, 212, 191, 0.4);
+    &:hover {
+      color: #6eecec;
+    }
+  }
 
-  &--dim { color: rgba(255, 255, 255, 0.42); }
+  &--dim {
+    color: rgba(255, 255, 255, 0.42);
+  }
 }
 
 // ─── Stat cards (glassmorphism — rgba Bootstrap can't compose this) ────────────
@@ -106,43 +88,66 @@
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 
-  &:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.18); }
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
 }
 
 .stat-card__icon {
-  width: 30px; height: 30px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
-  display: inline-flex; align-items: center; justify-content: center;
-  i { font-size: 14px; line-height: 1; }
+  i {
+    font-size: 14px;
+    line-height: 1;
+  }
 }
 
-.stat-card:nth-child(1) .stat-card__icon { color: #2dd4bf; background: rgba(45, 212, 191, 0.15); }
-.stat-card:nth-child(2) .stat-card__icon { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
-.stat-card:nth-child(3) .stat-card__icon { color: #34d399; background: rgba(52, 211, 153, 0.15); }
-.stat-card:nth-child(4) .stat-card__icon { color: #60a5fa; background: rgba(96, 165, 250, 0.15); }
+.stats-grid > .col-6:nth-child(1) .stat-card__icon {
+  color: #2dd4bf;
+  background: rgba(45, 212, 191, 0.15);
+}
+.stats-grid > .col-6:nth-child(2) .stat-card__icon {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+}
+.stats-grid > .col-6:nth-child(3) .stat-card__icon {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+}
+.stats-grid > .col-6:nth-child(4) .stat-card__icon {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+}
 
 .stat-card__value {
-  font-size: clamp(18px, 2vw, 22px);
-  font-weight: 800; letter-spacing: -0.03em; color: #ffffff; line-height: 1.1;
+  font-size: clamp(13px, 1.5vw, 16px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .stat-card__label {
-  font-size: 10px; font-weight: 600;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.45);
-  text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.4;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
 }
 
 // ─── Resource buttons (Material stroked on dark bg — needs rgba overrides) ─────
 
 .res-btn {
-  height: 40px; padding: 0 18px !important;
+  height: 40px;
+  padding: 0 18px !important;
   border-radius: 8px !important;
   border-color: rgba(255, 255, 255, 0.22) !important;
   color: rgba(255, 255, 255, 0.82) !important;
   background: rgba(255, 255, 255, 0.08) !important;
-  font-weight: 600;
 
   &:hover {
     background: rgba(255, 255, 255, 0.14) !important;
@@ -155,216 +160,222 @@
 
 .doc-item {
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px; padding: 7px 10px;
+  padding: 7px 10px;
   background: rgba(255, 255, 255, 0.04);
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
   min-width: 0;
-  &:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.18); }
+  &:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
 }
 
 .doc-icon {
-  width: 34px; height: 34px; border-radius: 8px;
+  width: 34px;
+  height: 34px;
   background: rgba(45, 212, 191, 0.14);
-  i { color: #2dd4bf; font-size: 16px; }
+  i {
+    color: #2dd4bf;
+    font-size: 16px;
+  }
 }
 
-// ─── Login card (box-shadow not in Bootstrap utilities) ───────────────────────
+// ─── Role grid — d-grid gap-2 applied via HTML; only fc columns stay here ──────
 
-.login-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 1px 4px rgba(8, 44, 53, 0.06), 0 8px 32px rgba(8, 44, 53, 0.07);
-}
-
-// ─── Role grid (CSS Grid — Bootstrap 12-col can't do 4/5-equal-column cards) ──
-
-.role-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.role-grid--five {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-  .role-card { min-height: 76px; padding: 8px 4px; }
-  .role-card__label { font-size: 10px; }
-}
-
-// ─── Role card (interactive hover/active/disabled states) ─────────────────────
+// ─── Role card (only properties Bootstrap can't express) ─────────────────────
+// Layout (d-flex flex-column align-items-center justify-content-center),
+// position-relative, overflow-hidden, bg-white are applied via HTML classes.
 
 .role-card {
-  position: relative;
   min-height: 88px;
-  border: 1.5px solid #dce7ea; border-radius: 10px;
-  background: #ffffff;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; padding: 10px 6px;
+  border: 1.5px solid #dce7ea;
+  border-radius: 10px;
+  padding: 10px 6px;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.2s;
-  overflow: hidden;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s,
+    background 0.2s;
 
-  &:hover:not(.role-card--disabled) { transform: translateY(-2px); border-color: #aac5cb; box-shadow: 0 6px 20px rgba(8, 44, 53, 0.08); }
-  &--active  { border-color: #8ab8bf; background: #f3fafb; }
-  &--disabled { opacity: 0.45; cursor: not-allowed; background: #f6f8f9; }
+  &:hover:not(.role-card--disabled) {
+    transform: translateY(-2px);
+    border-color: #aac5cb;
+    box-shadow: 0 6px 20px rgba(8, 44, 53, 0.08);
+  }
+  &--active {
+    border-color: #2dd4bf;
+    background: #f0fdfa;
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+  }
+  &--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f6f8f9;
+  }
 }
 
-// Per-role icon backgrounds (can't be Bootstrap — custom brand palette) ─────────
+// ─── Per-role icon (custom brand palette — can't use Bootstrap color utilities) ──
+// d-inline-flex align-items-center justify-content-center applied via HTML.
 
 .role-card__icon {
-  width: 28px; height: 28px; border-radius: 8px;
-  display: inline-flex; align-items: center; justify-content: center;
-  i { font-size: 14px; line-height: 1; }
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  i {
+    font-size: 14px;
+  }
 
-  &--ulb   { color: #347d7f; background: #e6f3f1; }
-  &--state { color: #3f77d8; background: #eaf1fe; }
-  &--mohua { color: #d37b48; background: #fff1e8; }
-  &--doe   { color: #88979c; background: #eef2f3; }
-  &--inst  { color: #6d5bd0; background: #f0edff; }
+  &--ulb {
+    color: #347d7f;
+    background: #e6f3f1;
+  }
+  &--state {
+    color: #3f77d8;
+    background: #eaf1fe;
+  }
+  &--mohua {
+    color: #d37b48;
+    background: #fff1e8;
+  }
+  &--doe {
+    color: #88979c;
+    background: #eef2f3;
+  }
+  &--inst {
+    color: #6d5bd0;
+    background: #f0edff;
+  }
 }
 
-// ─── 16th FC role grid — per-role gradient active states + ::after accent bar ──
+// ─── Enhanced FC role grid (15thFC and 16thFC) — all 5 in one row ────────────
 
-.role-grid--fc16 {
+.role-grid--fc {
+  grid-template-columns: repeat(5, 1fr);
+
   .role-card {
-    min-height: 100px; border-radius: 13px;
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s, border-color 0.22s, background 0.22s;
+    min-height: 96px;
+    border-radius: 12px;
+    padding: 12px 4px 10px;
+    gap: 7px;
+    transition:
+      transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.22s,
+      border-color 0.22s,
+      background 0.22s;
 
-    &::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: transparent; transition: background 0.22s; }
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      transition: background 0.22s;
+    }
 
     &:hover:not(.role-card--disabled):not(.role-card--active) {
       transform: translateY(-3px);
       box-shadow: 0 10px 28px rgba(8, 44, 53, 0.1);
-      &::after { background: rgba(45, 212, 191, 0.4); }
+      &::after {
+        background: rgba(45, 212, 191, 0.4);
+      }
     }
   }
 
-  .role-card__icon { width: 36px; height: 36px; border-radius: 10px; i { font-size: 16px; } }
-
-  [data-role='ulb'].role-card--active {
-    background: linear-gradient(145deg, #edf9f8 0%, #cff4ee 100%) !important;
-    border-color: #2dd4bf !important; box-shadow: 0 4px 20px rgba(45, 212, 191, 0.25) !important;
-    &::after { background: #2dd4bf !important; }
-    .role-card__icon--ulb { background: #1f7273; color: #fff; }
-    .role-card__label     { color: #0b5c60; }
+  .role-card__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    i {
+      font-size: 17px;
+    }
   }
 
-  [data-role='state'].role-card--active {
-    background: linear-gradient(145deg, #eff3fd 0%, #d8e4fb 100%) !important;
-    border-color: #4a82e3 !important; box-shadow: 0 4px 20px rgba(74, 130, 227, 0.22) !important;
-    &::after { background: #4a82e3 !important; }
-    .role-card__icon--state { background: #4a82e3; color: #fff; }
-    .role-card__label       { color: #1d3a7e; }
-  }
-
-  [data-role='mohua'].role-card--active {
-    background: linear-gradient(145deg, #fef5ee 0%, #fddec8 100%) !important;
-    border-color: #d37b48 !important; box-shadow: 0 4px 20px rgba(211, 123, 72, 0.22) !important;
-    &::after { background: #d37b48 !important; }
-    .role-card__icon--mohua { background: #d37b48; color: #fff; }
-    .role-card__label       { color: #7a3b12; }
-  }
-
-  [data-role='institutional'].role-card--active {
-    background: linear-gradient(145deg, #f3f0ff 0%, #ddd6fe 100%) !important;
-    border-color: #7c3aed !important; box-shadow: 0 4px 20px rgba(109, 91, 208, 0.24) !important;
-    &::after { background: #7c3aed !important; }
-    .role-card__icon--inst { background: #6d5bd0; color: #fff; }
-    .role-card__label      { color: #4c1d95; }
-  }
-
-  [data-role='doe'].role-card--active {
-    background: linear-gradient(145deg, #f3f6f8 0%, #dfe6ea 100%) !important;
-    border-color: #7b9aa2 !important;
-    &::after { background: #7b9aa2 !important; }
-    .role-card__label { color: #3a4e54; }
+  .role-card__label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1a3c42;
+    line-height: 1.25;
   }
 }
 
 // ─── Role card check badge (animated, absolutely positioned) ───────────────────
+// rounded-circle, d-inline-flex, align-items-center, justify-content-center in HTML.
 
 .role-card__check {
-  position: absolute; top: 7px; right: 7px;
-  width: 18px; height: 18px; border-radius: 50%;
+  top: 7px;
+  right: 7px;
+  width: 18px;
+  height: 18px;
   background: #2dd4bf;
-  display: inline-flex; align-items: center; justify-content: center;
   animation: check-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  i { font-size: 10px; color: #ffffff; line-height: 1; }
+  i {
+    font-size: 10px;
+    color: #fff;
+    line-height: 1;
+  }
 }
 
 @keyframes check-pop {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-
-// ─── Material button overrides (need !important to pierce Material) ────────────
-
-.cta-btn {
-  height: 46px !important; border-radius: 9px !important;
-  background: #1f7273 !important; color: #ffffff !important;
-  font-size: 14px !important; font-weight: 700 !important;
-  box-shadow: none !important; letter-spacing: 0.01em;
-  transition: background 0.18s !important;
-  &:hover:not(:disabled) { background: #175f60 !important; }
-  &:disabled { opacity: 0.58 !important; }
-}
-
-.otp-btn {
-  height: 44px !important; border-radius: 9px !important;
-  border-color: #c5d8db !important; color: #1f6a74 !important;
-  font-size: 13px !important; font-weight: 600 !important;
-  background: transparent !important;
-  &:hover:not(:disabled) { background: rgba(31, 114, 115, 0.06) !important; border-color: #9bbcc1 !important; }
-}
-
-.link-btn {
-  border: 0; background: transparent; padding: 0;
-  color: #89a4a9; font-size: 13px; font-weight: 600;
-  cursor: pointer; line-height: 1;
-  &:hover { color: #1d6769; text-decoration: underline; }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-}
-
-.pwd-toggle {
-  width: 32px !important; height: 32px !important; line-height: 1 !important;
-  i { font-size: 17px; color: #3d6167; }
-}
-
-// ─── Error / notice banners (custom brand colors) ─────────────────────────────
-
-.api-error {
-  padding: 10px 14px; font-size: 13px; font-weight: 500;
-  color: #b71c1c; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 7px;
-}
-
-.notice {
-  padding: 12px 16px; border-radius: 10px;
-  &--info    { background: #f0f9ff; border: 1px solid #bae0fd; color: #0c4a6e; }
-  &--success { background: linear-gradient(135deg, #f0fbf9 0%, #e4f5f2 100%); border: 1px solid #a8ddd6; color: #0d4a50; }
-}
-
-// ─── OTP divider (flex + ::before/::after lines — no Bootstrap equivalent) ─────
-
-.otp-divider {
-  display: flex; align-items: center; gap: 10px;
-  color: #b0bec5; font-size: 12px; font-weight: 600;
-  &::before, &::after { content: ''; flex: 1; height: 1px; background: #e0e8ea; }
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 // ─── Help card background (Bootstrap bg-light is too light) ───────────────────
 
-.help-card { background: #edf4f5; border: 1px solid #d5e4e6; border-radius: 10px; }
+.help-card {
+  background: #edf4f5;
+  border: 1px solid #d5e4e6;
+  border-radius: 10px;
+}
+
+// ─── Step slide animations ────────────────────────────────────────────────────
+
+.step-pane--enter-right {
+  animation: step-slide-in-right 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.step-pane--enter-left {
+  animation: step-slide-in-left 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes step-slide-in-right {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes step-slide-in-left {
+  from {
+    transform: translateX(-28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 
 // ─── Responsive (role-grid breakpoints only — layout handled by Bootstrap) ─────
 
-@media (max-width: 767.98px) {
-  .login-card { padding: 1.5rem; }
-  .role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .role-grid--five { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-}
-
-@media (max-width: 575.98px) {
-  .login-card { padding: 1.25rem; }
-  .role-grid--fc16 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+@media (max-width: 480px) {
+  .role-grid--fc {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
 }
