@@ -1,4 +1,5 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Subscription, fromEvent } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -72,9 +73,10 @@ function resolveRouteRole(userRole: string): Roles {
   templateUrl: './years-selection.component.html',
   styleUrl: './years-selection.component.scss',
 })
-export class YearsSelectionComponent implements OnInit {
+export class YearsSelectionComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
+  private popstateSub?: Subscription;
 
   private yearItems: YearItem[] = [];
 
@@ -84,7 +86,17 @@ export class YearsSelectionComponent implements OnInit {
 
   selectedYear = signal<string>('');
 
+  ngOnDestroy(): void {
+    this.popstateSub?.unsubscribe();
+  }
+
   ngOnInit(): void {
+    // Block back navigation — years selection is the entry point; only logout exits
+    history.pushState(null, '', window.location.href);
+    this.popstateSub = fromEvent<PopStateEvent>(window, 'popstate').subscribe(() => {
+      history.pushState(null, '', window.location.href);
+    });
+
     this.http.get<any>(`${environment.api.url2}xvi-fc/years`).subscribe({
       next: (response) => {
         const items: YearItem[] = Array.isArray(response)

@@ -1,15 +1,32 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { Subscription, fromEvent } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
 import { ProfileVerificationService } from './profile-verification.service';
-import { EntityProfilesResponse, ProfileItem } from './profile-verification.models';
+import { StateProfile, UlbEntityInfo } from './profile-verification.models';
+import {
+  IDENTIFIER_SECURITY_VALIDATORS,
+  noHtmlOrScript,
+  noMongoOperators,
+} from '../../../../auth/validators/auth-security.validators';
 import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
+import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
 
 type ProfileRole = 'state' | 'ulb' | 'mohua';
 
@@ -39,11 +56,15 @@ const ROUTE_ROLE_MAP: Record<string, Roles> = {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatCardModule,
+    MatDividerModule,
+    PageErrorStateComponent,
   ],
   templateUrl: './profile-verification.component.html',
   styleUrl: './profile-verification.component.scss',
 })
-export class ProfileVerificationComponent implements OnInit {
+export class ProfileVerificationComponent implements OnInit, OnDestroy {
+  private popstateSub?: Subscription;
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(ProfileVerificationService);
   private readonly router = inject(Router);
@@ -54,36 +75,98 @@ export class ProfileVerificationComponent implements OnInit {
   private year = '';
   private entityId = '';
 
-  readonly entityInfo = signal<EntityProfilesResponse | null>(null);
+  // ── Shared ───────────────────────────────────────────────────
   readonly isLoading = signal(true);
+  readonly loadError = signal('');
   readonly errorMsg = signal('');
+  readonly isSaving = signal(false);
 
-  // OTP flow per-profile
-  readonly expandedKey = signal<string | null>(null);
-  readonly sendingOtpKey = signal<string | null>(null);
-  readonly otpSentKey = signal<string | null>(null);
-  readonly verifyingKey = signal<string | null>(null);
-  readonly editedMobiles = signal<Record<string, string>>({});
-  readonly editedEmails = signal<Record<string, string>>({});
-  readonly otpValues = signal<Partial<Record<string, string>>>({});
+  // ── ULB flow ─────────────────────────────────────────────────
+  readonly entityDetails = signal<UlbEntityInfo | null>(null);
+  readonly editingCommissioner = signal(false);
+  readonly editingAccountant = signal(false);
 
-  // Add-form
-  readonly showAddForm = signal(false);
-  readonly addFormOtpSent = signal(false);
-  readonly addFormSendingOtp = signal(false);
-  readonly addFormVerifying = signal(false);
-  readonly addFormOtpValue = signal('');
+  private static readonly NAME_PATTERN = /^[a-zA-Z\s.\-']+$/;
 
-  readonly skeletonRows = [1, 2, 3];
-
-  addForm = this.fb.group({
-    name: ['', Validators.required],
-    designation: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    mobile: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
+  readonly commissionerForm = this.fb.nonNullable.group({
+    commissionerName: ['', [
+      Validators.maxLength(100),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    commissionerEmail: ['', [Validators.email, ...IDENTIFIER_SECURITY_VALIDATORS]],
+    commissionerConatactNumber: ['', Validators.pattern(/^[6-9]\d{9}$/)],
   });
 
+  readonly accountantForm = this.fb.nonNullable.group({
+    accountantName: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(100),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    accountantEmail: ['', [
+      Validators.required,
+      Validators.email,
+      Validators.maxLength(254),
+      ...IDENTIFIER_SECURITY_VALIDATORS,
+    ]],
+    accountantConatactNumber: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
+  });
+
+  private readonly _accountantStatus = toSignal(this.accountantForm.statusChanges, {
+    initialValue: this.accountantForm.status as FormControlStatus,
+  });
+
+  readonly canProceed = computed(() => this._accountantStatus() === 'VALID' && !this.isSaving());
+
+  // ── State / MoHUA flow ───────────────────────────────────────
+  readonly stateProfile = signal<StateProfile | null>(null);
+  readonly editingStateProfile = signal(false);
+  readonly otpStep = signal(false);
+  readonly otpValue = signal('');
+  readonly sendingOtp = signal(false);
+
+  readonly stateForm = this.fb.nonNullable.group({
+    name: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(100),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    email: [{ value: '', disabled: true }],
+    mobile: ['', [Validators.pattern(/^[6-9]\d{9}$/), noHtmlOrScript, noMongoOperators]],
+    designation: ['', [Validators.maxLength(100), Validators.pattern(ProfileVerificationComponent.NAME_PATTERN), noHtmlOrScript, noMongoOperators]],
+  });
+
+  private readonly _stateFormStatus = toSignal(this.stateForm.statusChanges, {
+    initialValue: this.stateForm.status as FormControlStatus,
+  });
+
+  readonly canSaveStateProfile = computed(
+    () => this._stateFormStatus() === 'VALID' && !this.isSaving() && !this.sendingOtp(),
+  );
+  readonly stateFormHasErrors = computed(() => this._stateFormStatus() === 'INVALID');
+  readonly canConfirmOtp = computed(() => this.otpValue().trim().length === 6 && !this.isSaving());
+
+  // ── Lifecycle ────────────────────────────────────────────────
+  ngOnDestroy(): void {
+    this.popstateSub?.unsubscribe();
+  }
+
   ngOnInit(): void {
+    // Intercept browser back button: redirect to year selection instead of going back in history
+    history.pushState(null, '', window.location.href);
+    this.popstateSub = fromEvent<PopStateEvent>(window, 'popstate').subscribe(() => {
+      history.pushState(null, '', window.location.href);
+      void this.router.navigate(['/xvifc/year'], { replaceUrl: true });
+    });
+
     this.year = this.route.snapshot.queryParamMap.get('year') ?? '';
     this.entityId = this.route.snapshot.queryParamMap.get('entityId') ?? '';
     this.role = this.getRoleFromStorage();
@@ -93,253 +176,163 @@ export class ProfileVerificationComponent implements OnInit {
       return;
     }
 
-    this.loadProfiles();
+    if (this.role === 'ulb') {
+      this.entityDetails.set(this.profileService.readUlbEntityInfo());
+      this.loadUlbContacts();
+    } else {
+      this.loadStateProfile();
+    }
   }
 
-  loadProfiles(): void {
+  // ── ULB methods ──────────────────────────────────────────────
+  private loadUlbContacts(): void {
+    const userId = this.getLoggedInUserId();
+    if (!userId) {
+      this.loadError.set('Unable to identify your account. Please log in again.');
+      this.isLoading.set(false);
+      return;
+    }
     this.isLoading.set(true);
-    this.errorMsg.set('');
-    this.profileService.getEntityProfiles(this.role).subscribe({
-      next: (data) => {
-        this.entityInfo.set(data);
+    this.loadError.set('');
+    this.profileService.getProfileContacts(userId).subscribe({
+      next: (contacts) => {
+        this.commissionerForm.patchValue(contacts);
+        this.accountantForm.patchValue(contacts);
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMsg.set('Failed to load profiles. Please try again.');
+        this.loadError.set('Failed to load your contact details. Please check your connection and try again.');
         this.isLoading.set(false);
       },
     });
   }
 
-  // ── Profile key ──────────────────────────────────────────────
-  getProfileKey(profile: ProfileItem): string {
-    return profile.id ?? `${profile.email ?? ''}_${profile.mobile ?? ''}`;
-  }
-
-  // ── Mobile / email edit ───────────────────────────────────────
-  getMobile(profile: ProfileItem): string {
-    return this.editedMobiles()[this.getProfileKey(profile)] ?? profile.mobile;
-  }
-
-  getEmail(profile: ProfileItem): string {
-    return this.editedEmails()[this.getProfileKey(profile)] ?? profile.email ?? '';
-  }
-
-  onMobileInput(key: string, event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.editedMobiles.update((m) => ({ ...m, [key]: val }));
-  }
-
-  onEmailInput(key: string, event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.editedEmails.update((e) => ({ ...e, [key]: val }));
-  }
-
-  onOtpInput(key: string, event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.otpValues.update((v) => ({ ...v, [key]: val }));
-  }
-
-  // ── OTP flow ──────────────────────────────────────────────────
-  toggleExpand(key: string): void {
-    const prev = this.expandedKey();
-    this.expandedKey.update((k) => (k === key ? null : key));
-    // Reset OTP state whenever we collapse OR switch to a different card
-    if (prev !== this.expandedKey()) {
-      this.otpSentKey.set(null);
-      this.sendingOtpKey.set(null);
+  retryLoad(): void {
+    if (this.role === 'ulb') {
+      this.loadUlbContacts();
+    } else {
+      this.loadStateProfile();
     }
-    this.errorMsg.set('');
   }
 
-  sendOtp(profile: ProfileItem): void {
-    const key = this.getProfileKey(profile);
-    if (this.expandedKey() !== key) return;
-    const mobile = this.getMobile(profile);
-    const email = this.getEmail(profile);
-    if (!mobile || mobile.length < 10) {
-      this.errorMsg.set('Please enter a valid 10-digit mobile number.');
+  openEditCommissioner(): void {
+    this.commissionerForm.markAsUntouched();
+    this.editingCommissioner.set(true);
+  }
+
+  openEditAccountant(): void {
+    this.accountantForm.markAsUntouched();
+    this.editingAccountant.set(true);
+  }
+
+  onSaveAndContinue(): void {
+    if (this.accountantForm.invalid) {
+      this.openEditAccountant();
       return;
     }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      this.errorMsg.set('Please enter a valid email address.');
-      return;
-    }
-    this.sendingOtpKey.set(key);
+    const userId = this.getLoggedInUserId();
+    this.isSaving.set(true);
     this.errorMsg.set('');
-    this.profileService.sendMobileVerifyOtp(mobile).subscribe({
-      next: () => {
-        this.otpSentKey.set(key);
-        this.sendingOtpKey.set(null);
-      },
-      error: (err: unknown) => {
-        this.errorMsg.set(
-          (err as { error?: { message?: string } })?.error?.message ??
-            'Failed to send OTP. Please try again.',
-        );
-        this.sendingOtpKey.set(null);
-      },
-    });
-  }
 
-  confirmVerify(profile: ProfileItem): void {
-    const key = this.getProfileKey(profile);
-    if (this.expandedKey() !== key) return;
-    const otp = this.otpValues()[key] ?? '';
-    if (!otp || otp.length < 4) {
-      this.errorMsg.set('Please enter the OTP sent to your mobile.');
-      return;
-    }
-    const mobile = this.getMobile(profile);
-    const email = this.getEmail(profile);
-    this.verifyingKey.set(key);
-    this.errorMsg.set('');
-    const loggedInUserId = this.getLoggedInUserId();
     this.profileService
-      .verifyMobileOtp(mobile, otp)
-      .pipe(
-        switchMap(() =>
-          this.profileService.updateProfileContacts(
-            loggedInUserId,
-            profile.name,
-            email,
-            mobile,
-            profile.designation,
-          ),
-        ),
-      )
+      .saveUlbContacts(userId, {
+        ...this.commissionerForm.getRawValue(),
+        ...this.accountantForm.getRawValue(),
+      })
       .subscribe({
         next: () => {
           this.markVerifiedInStorage();
-          this.snackBar.open('Profile verified successfully!', 'Close', {
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
+          this.snackBar.open('Profile saved successfully!', 'Close', {
+            duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
             panelClass: ['snack-success'],
           });
           void this.navigateToHome();
         },
-        error: (err: unknown) => {
-          this.errorMsg.set(
-            (err as { error?: { message?: string } })?.error?.message ??
-              'Verification failed. Please try again.',
-          );
-          this.verifyingKey.set(null);
+        error: () => {
+          this.isSaving.set(false);
+          this.errorMsg.set('Failed to save contacts. Please try again.');
         },
       });
   }
 
-  // ── Add form ──────────────────────────────────────────────────
-  toggleAddForm(): void {
-    this.showAddForm.update((v) => !v);
-    if (!this.showAddForm()) {
-      this.addFormOtpSent.set(false);
-      this.addFormSendingOtp.set(false);
-      this.addFormVerifying.set(false);
-      this.addFormOtpValue.set('');
-      this.errorMsg.set('');
-    }
+  // ── State / MoHUA methods ────────────────────────────────────
+  private loadStateProfile(): void {
+    const profile = this.profileService.readStateProfile();
+    this.stateProfile.set(profile);
+    this.stateForm.patchValue(profile);
+    this.stateForm.markAllAsTouched();
+    this.isLoading.set(false);
   }
 
-  onAddFormOtpInput(event: Event): void {
-    this.addFormOtpValue.set((event.target as HTMLInputElement).value);
+  openEditStateProfile(): void {
+    this.editingStateProfile.set(true);
   }
 
-  sendAddFormOtp(): void {
-    if (this.addForm.invalid) {
-      this.addForm.markAllAsTouched();
-      this.errorMsg.set('Please fill in all fields before sending OTP.');
+  onSaveStateProfile(): void {
+    if (this.stateForm.invalid) {
+      this.stateForm.markAllAsTouched();
       return;
     }
-    const mobile = this.addForm.controls.mobile.value ?? '';
-    this.addFormSendingOtp.set(true);
-    this.addFormOtpSent.set(false);
-    this.addFormOtpValue.set('');
+    const email = this.stateProfile()?.email ?? '';
+    this.sendingOtp.set(true);
     this.errorMsg.set('');
-    this.profileService.sendMobileVerifyOtp(mobile).subscribe({
+
+    this.profileService.sendProfileOtp(email).subscribe({
       next: () => {
-        this.addFormOtpSent.set(true);
-        this.addFormSendingOtp.set(false);
+        this.sendingOtp.set(false);
+        this.editingStateProfile.set(false);
+        this.otpStep.set(true);
+        this.otpValue.set('');
+        this.errorMsg.set('');
       },
-      error: (err: unknown) => {
-        this.errorMsg.set(
-          (err as { error?: { message?: string } })?.error?.message ??
-            'Failed to send OTP. Please try again.',
-        );
-        this.addFormSendingOtp.set(false);
+      error: () => {
+        this.sendingOtp.set(false);
+        this.errorMsg.set('Failed to send OTP. Please try again.');
       },
     });
   }
 
-  submitAddForm(): void {
-    if (this.addForm.invalid) {
-      this.addForm.markAllAsTouched();
-      return;
-    }
-    const otp = this.addFormOtpValue();
-    if (!otp || otp.length < 4) {
-      this.errorMsg.set('Please enter the OTP sent to your mobile.');
-      return;
-    }
-    const val = this.addForm.value;
-    const mobile = val.mobile ?? '';
-    this.addFormVerifying.set(true);
+  onConfirmOtp(): void {
+    const otp = this.otpValue().trim();
+    if (otp.length !== 6) return;
+
+    const email = this.stateProfile()?.email ?? '';
+    this.isSaving.set(true);
     this.errorMsg.set('');
-    const loggedInUserId = this.getLoggedInUserId();
-    this.profileService
-      .verifyMobileOtp(mobile, otp)
-      .pipe(
-        switchMap(() =>
-          this.profileService.updateProfileContacts(
-            loggedInUserId,
-            val.name ?? '',
-            val.email ?? '',
-            mobile,
-            val.designation ?? '',
-          ),
-        ),
-      )
-      .subscribe({
-        next: () => {
-          this.markVerifiedInStorage(val.name ?? '', val.email ?? '', mobile, val.designation ?? '');
-          this.snackBar.open('Profile verified successfully!', 'Close', {
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-            panelClass: ['snack-success'],
-          });
-          void this.navigateToHome();
-        },
-        error: (err: unknown) => {
-          this.errorMsg.set(
-            (err as { error?: { message?: string } })?.error?.message ??
-              'Verification failed. Please try again.',
-          );
-          this.addFormVerifying.set(false);
-        },
-      });
+
+    this.profileService.verifyProfileOtp(email, otp).subscribe({
+      next: ({ verified }) => {
+        if (!verified) {
+          this.isSaving.set(false);
+          this.errorMsg.set('Invalid or expired OTP. Please check your email and try again.');
+          return;
+        }
+
+        const userId = this.getLoggedInUserId();
+        const { name, mobile, designation } = this.stateForm.getRawValue();
+
+        this.profileService.saveStateProfile(userId, { name, mobile, designation }).subscribe({
+          next: () => {
+            this.markVerifiedInStorage({ name, mobile, designation });
+            this.snackBar.open('Profile verified successfully!', 'Close', {
+              duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+              panelClass: ['snack-success'],
+            });
+            void this.navigateToHome();
+          },
+          error: () => {
+            this.isSaving.set(false);
+            this.errorMsg.set('Profile save failed. Please try again.');
+          },
+        });
+      },
+    });
   }
 
-  // ── Helpers ───────────────────────────────────────────────────
-  getInitials(name: string): string {
-    return name
-      .split(' ')
-      .slice(0, 2)
-      .map((p) => p[0] ?? '')
-      .join('')
-      .toUpperCase();
-  }
-
-  getRoleBadgeLabel(): string {
-    if (this.role === 'ulb') return 'ULB';
-    if (this.role === 'mohua') return 'MoHUA';
-    return 'State';
-  }
-
-  getRoleIcon(): string {
-    if (this.role === 'ulb') return 'bi-bank2';
-    if (this.role === 'mohua') return 'bi-buildings-fill';
-    return 'bi-geo-alt-fill';
+  resendOtp(): void {
+    this.otpStep.set(false);
+    this.otpValue.set('');
+    this.onSaveStateProfile();
   }
 
   // ── Storage helpers ───────────────────────────────────────────
@@ -351,28 +344,25 @@ export class ProfileVerificationComponent implements OnInit {
         const user = JSON.parse(raw) as { isXVIFCProfileVerified?: boolean };
         return user.isXVIFCProfileVerified === true;
       }
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
     return false;
   }
 
-  private markVerifiedInStorage(name?: string, email?: string, mobile?: string, designation?: string): void {
+  private markVerifiedInStorage(profileUpdates?: { name?: string; mobile?: string; designation?: string }): void {
     localStorage.setItem('isXVIFCProfileVerified', 'true');
     try {
       const raw = localStorage.getItem('userData');
       if (raw) {
         const user = JSON.parse(raw) as Record<string, unknown>;
         user['isXVIFCProfileVerified'] = true;
-        if (name) user['name'] = name;
-        if (email) user['email'] = email;
-        if (mobile) user['mobile'] = mobile;
-        if (designation) user['designation'] = designation;
+        if (profileUpdates) {
+          if (profileUpdates.name !== undefined) user['name'] = profileUpdates.name;
+          if (profileUpdates.mobile !== undefined) user['mobile'] = profileUpdates.mobile;
+          if (profileUpdates.designation !== undefined) user['designation'] = profileUpdates.designation;
+        }
         localStorage.setItem('userData', JSON.stringify(user));
       }
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }
 
   private navigateToHome(): Promise<boolean> {
@@ -388,9 +378,7 @@ export class ProfileVerificationComponent implements OnInit {
       if (!raw) return '';
       const user = JSON.parse(raw) as { _id?: string; id?: string };
       return user._id ?? user.id ?? '';
-    } catch {
-      return '';
-    }
+    } catch { return ''; }
   }
 
   private getRoleFromStorage(): ProfileRole {
@@ -399,9 +387,7 @@ export class ProfileVerificationComponent implements OnInit {
       if (!raw) return 'state';
       const user = JSON.parse(raw) as { role: string };
       return ROLE_MAP[user.role] ?? 'state';
-    } catch {
-      return 'state';
-    }
+    } catch { return 'state'; }
   }
 
   private getRouteRoleFromStorage(): Roles {
@@ -410,8 +396,6 @@ export class ProfileVerificationComponent implements OnInit {
       if (!raw) return 'STATE';
       const user = JSON.parse(raw) as { role: string };
       return ROUTE_ROLE_MAP[user.role] ?? 'STATE';
-    } catch {
-      return 'STATE';
-    }
+    } catch { return 'STATE'; }
   }
 }

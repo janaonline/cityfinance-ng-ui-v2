@@ -1,8 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { EntityProfilesResponse, ProfileItem } from './profile-verification.models';
+import { StateProfile, UlbContacts, UlbEntityInfo } from './profile-verification.models';
 
 interface StoredUserData {
   _id?: string;
@@ -16,107 +16,81 @@ interface StoredUserData {
   stateName?: string;
   ulbCode?: string;
   ulbType?: string;
+  censusCode?: string;
   [key: string]: unknown;
 }
 
-interface UsersListResponse {
-  success: boolean;
-  data: {
-    ulbDetails?: { name?: string; code?: string; stateName?: string };
-    stateDetails?: { name?: string; code?: string; stateName?: string };
-    data: ProfileItem[];
-  };
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class ProfileVerificationService {
   constructor(private http: HttpClient) {}
 
-  getEntityProfiles(role: 'state' | 'ulb' | 'mohua'): Observable<EntityProfilesResponse> {
-    const user = this.readStoredUser();
-    const paramKey = role === 'state' ? 'stateId' : 'ulbId';
-    const entityId = role === 'state' ? (user.state ?? '') : (user.ulb ?? '');
-    const params = new HttpParams().set(paramKey, entityId);
-
+  getProfileContacts(userId: string): Observable<UlbContacts> {
     return this.http
-      .get<any>(`${environment.api.url2}users/list`, { params })
+      .get<{ success: boolean; data: UlbContacts }>(`${environment.api.url2}users/${userId}/profile-contacts`)
+      .pipe(map((resp) => resp?.data ?? (resp as unknown as UlbContacts)));
+  }
+
+  saveUlbContacts(userId: string, contacts: UlbContacts): Observable<unknown> {
+    return this.http.patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
+      ...contacts,
+      isXVIFCProfileVerified: true,
+    });
+  }
+
+  sendProfileOtp(email: string): Observable<unknown> {
+    return this.http.post(`${environment.api.url2}email/sendOtp`, { email });
+  }
+
+  verifyProfileOtp(email: string, otp: string): Observable<{ verified: boolean }> {
+    return this.http
+      .post<{ success: boolean; data: { isOtpVerified: boolean } }>(
+        `${environment.api.url2}email/verifyOtp`,
+        { email, otp },
+      )
       .pipe(
-        map((resp) => {
-          const payload: UsersListResponse['data'] =
-            resp?.data && !Array.isArray(resp.data) && typeof resp.data === 'object'
-              ? resp.data
-              : (resp as unknown as UsersListResponse['data']);
-          const details = payload?.ulbDetails ?? payload?.stateDetails;
-          const profiles = (payload?.data ?? []).map((p: ProfileItem, i: number) => {
-            const raw = p as unknown as Record<string, unknown>;
-            const id =
-              (raw['_id'] as string | undefined) ??
-              (raw['id'] as string | undefined) ??
-              `profile-${i}`;
-            return { ...p, id, designation: p.designation || p.designantion || '' };
-          });
-          return {
-            entityName: details?.name ?? user.name ?? '',
-            entityCode: details?.code ?? user.ulbCode,
-            entityType: user.ulbType,
-            stateName: details?.stateName ?? user.stateName ?? '',
-            profiles,
-          };
-        }),
-        catchError(() => of(this.buildFallbackProfiles(role))),
+        map((resp) => ({ verified: resp?.data?.isOtpVerified === true })),
+        catchError(() => of({ verified: false })),
       );
   }
 
-  sendMobileVerifyOtp(mobile: string): Observable<{ success?: boolean; message?: string; mobile?: string }> {
-    return this.http.post<{ success?: boolean; message?: string; mobile?: string }>(
-      `${environment.api.url2}auth/sendOtp`,
-      { identifier: mobile, purpose: 'mobile-verify' },
-    );
+  saveStateProfile(
+    userId: string,
+    profile: Pick<StateProfile, 'name' | 'mobile' | 'designation'>,
+  ): Observable<unknown> {
+    return this.http.patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
+      name: profile.name,
+      mobile: profile.mobile,
+      designation: profile.designation,
+      isXVIFCProfileVerified: true,
+    });
   }
 
-  verifyMobileOtp(mobile: string, otp: string): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${environment.api.url2}auth/verifyMobileOtp`, { identifier: mobile, otp });
-  }
-
-  updateProfileContacts(
-    id: string,
-    name: string,
-    email: string,
-    mobile: string,
-    designation: string,
-  ): Observable<{ success: boolean }> {
-    return this.http.patch<{ success: boolean }>(
-      `${environment.api.url2}users/${id}/profile-contacts`,
-      { name, email, mobile, designation, isXVIFCProfileVerified: true },
-    );
-  }
-
-  private buildFallbackProfiles(role: 'state' | 'ulb' | 'mohua'): EntityProfilesResponse {
-    const user = this.readStoredUser();
-    const profile: ProfileItem = {
-      id: '1',
-      name: user.name ?? '',
-      designation: user.designation ?? '',
-      email: user.email ?? '',
-      mobile: user.mobile ?? '',
-    };
-    return {
-      entityName: role === 'ulb' ? (user.name ?? '') : (user.stateName ?? ''),
-      entityCode: user.ulbCode,
-      entityType: user.ulbType,
-      stateName: user.stateName ?? '',
-      profiles: profile.name ? [profile] : [],
-    };
-  }
-
-  private readStoredUser(): StoredUserData {
+  readStoredUser(): StoredUserData {
     try {
       const raw = localStorage.getItem('userData');
       return raw ? (JSON.parse(raw) as StoredUserData) : {};
-    } catch {
-      return {};
-    }
+    } catch { return {}; }
+  }
+
+  readStateProfile(): StateProfile {
+    const user = this.readStoredUser();
+    return {
+      name: user.name ?? '',
+      email: user.email ?? '',
+      mobile: user.mobile ?? '',
+      designation: user.designation ?? '',
+    };
+  }
+
+  readUlbEntityInfo(): UlbEntityInfo | null {
+    const user = this.readStoredUser();
+    if (!user.name) return null;
+    return {
+      name: user.name,
+      ulbCode: user.ulbCode,
+      censusCode: user.censusCode,
+      ulbType: user.ulbType,
+      stateName: user.stateName,
+    };
   }
 }

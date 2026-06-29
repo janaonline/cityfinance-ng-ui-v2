@@ -1,306 +1,139 @@
-// ─── XVI FC Theme palette ─────────────────────────────────────
-$primary:        #114551;   // palette-25
-$primary-30:     #1b4d59;
-$primary-40:     #366571;
-$primary-80:     #9fcedc;   // light accent on dark bg
-$primary-accent: #f1fbff;   // palette-98 (very light teal bg)
-$primary-shadow: rgba(17, 69, 81, 0.16);
+@use '../../styles/xvi-fc-theme' as theme;
 
-// Card accent colors (kept for contact differentiation)
-$c0: #114551;
-$c1: #295965;
-$c2: #1b4d59;
-$c3: #366571;
-
-$text-dark:  #111827;
-$text-mid:   #4b5563;
-$text-muted: #9ca3af;
-$border:     #e5e7eb;
-$surface:    #f9fafb;
-
-:host { display: block; }
-
-// ─── Page ─────────────────────────────────────────────────────
-.pv-page {
-  min-height: 100vh;
-  background: #f0f4f5;
+// Sets Montserrat font + all XVI FC CSS vars (--color-*, --grant-band-*, --nav-*) on this component.
+// Material button and input colors are handled by the theme class on the root div (see styles.scss).
+:host {
+  @include theme.xvifc-theme-tokens;
+  display: block;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  LEFT HERO CARD  — XVI FC dark teal theme
-// ══════════════════════════════════════════════════════════════
-.pv-hero {
-  border-radius: 14px;
-  background: linear-gradient(135deg, #114551 0%, #0f4c4d 60%, #0a5a56 100%);
-  box-shadow: 0 8px 32px $primary-shadow;
-  padding: 20px 22px 22px;
+.pv-page {
+  min-height: 100vh;
+  background: var(--color-primary-accent);
+}
+
+// ══ LEFT SIDEBAR ══════════════════════════════════════════════
+// grant-band-* vars are already in scope from :host (via xvifc-theme-tokens → grant-band-tokens)
+.pv-sidebar {
+  @include theme.grant-band-surface;
+  border-radius: 12px;
+  padding: 24px 20px;
+  position: relative;
   overflow: hidden;
 
-  // Subtle dot-grid overlay — matches XVI FC overview card
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
-    background-size: 22px 22px;
-    pointer-events: none;
-  }
-
-  // Left shine strip — matches XVI FC overview card
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.06) 100%);
-    border-radius: 14px 0 0 14px;
-  }
+  &::before { @include theme.grant-band-overlay; }
+  &::after  { @include theme.grant-band-left-bar; }
 
   > * { position: relative; z-index: 1; }
 
-  &__fc-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 10.5px;
+  &__label {
+    display: inline-block;
+    font-size: 10px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.62);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    padding: 3px 10px;
-    border-radius: 20px;
-    margin-bottom: 10px;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
 
-    i   { color: $primary-80; font-size: 11px; }
     sup { font-size: 7px; }
   }
 
   &__name {
-    font-size: clamp(17px, 2.4vw, 21px);
+    font-size: clamp(16px, 2.2vw, 20px);
     font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    margin: 0 0 10px;
+    color: var(--color-on-primary);
+    line-height: 1.25;
+    margin: 0 0 18px;
   }
 
-  &__divider {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.12);
-    margin: 13px 0 12px;
-  }
-
-  &__welcome-title {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.94);
-    margin: 0 0 5px;
-  }
-
-  &__welcome-sub {
-    font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.56);
-    line-height: 1.58;
-    margin: 0 0 16px;
-
-    strong { color: $primary-80; font-weight: 700; }
-  }
-
-  &__footer {
+  &__meta {
+    border-top: 1px solid var(--nav-drawer-border);
+    padding-top: 16px;
     display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.38);
-
-    i { color: $primary-80; font-size: 12px; }
+    flex-direction: column;
+    gap: 12px;
   }
 }
 
-// ─── Entity chips (glass style on dark bg) ───────────────────
-.pv-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 11px;
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.88);
+.pv-meta-row { display: flex; justify-content: space-between; gap: 8px; }
 
-  i { font-size: 10.5px; color: $primary-80; }
-}
-
-// ─── Step indicator (on dark bg) ─────────────────────────────
-.pv-steps { display: flex; align-items: center; }
-
-.pv-step {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-shrink: 0;
-
-  &__dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    border: 1.5px solid rgba(255, 255, 255, 0.18);
-    transition: background 0.2s, border-color 0.2s;
-  }
-
-  &__lbl {
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.48);
-    white-space: nowrap;
-  }
-
-  &--active {
-    .pv-step__dot {
-      background: $primary-80;
-      border-color: $primary-80;
-      color: $primary;
-      box-shadow: 0 2px 8px rgba($primary-80, 0.4);
-    }
-    .pv-step__lbl { color: rgba(255, 255, 255, 0.92); font-weight: 700; }
-  }
-}
-
-.pv-step__line {
-  flex: 1;
-  min-width: 14px;
-  height: 1.5px;
-  background: rgba(255, 255, 255, 0.14);
-  margin: 0 5px;
-}
-
-// ─── Skeleton on dark background ─────────────────────────────
-.pv-sk-dark {
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0.07) 25%,
-    rgba(255,255,255,0.14) 50%,
-    rgba(255,255,255,0.07) 75%);
-  background-size: 200% 100%;
-  animation: pvShimmer 1.6s infinite;
-  border-radius: 6px;
-  display: block;
-}
-
-// ─── Section heading ──────────────────────────────────────────
-.pv-section-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: rgba($primary, 0.08);
-  border: 1px solid rgba($primary, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  i { font-size: 12px; color: $primary; }
-}
-
-.pv-section-title {
-  font-size: 11.5px;
+.pv-meta-label {
+  font-size: 10px;
   font-weight: 700;
-  color: $text-dark;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  flex-shrink: 0;
 }
 
-.pv-count-badge {
-  padding: 3px 12px;
-  border-radius: 20px;
-  background: #fff;
-  border: 1px solid $border;
-  font-size: 12px;
+.pv-meta-val {
+  font-size: 12.5px;
   font-weight: 700;
-  color: $primary;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  color: var(--color-on-primary);
+  text-align: right;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  PROFILE CARDS
-// ══════════════════════════════════════════════════════════════
-.pv-card-shell {
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid $border;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+// ══ ULB CONTACT CARDS ════════════════════════════════════════
+.pv-required-card { border-top: 3px solid #dc3545 !important; }
+
+.pv-card-header {
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 16px !important;
 }
 
+.pv-card-title {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #111827 !important;
+  margin: 0 !important;
+}
+
+// View-mode field display
+.pv-field {
+  padding: 14px 16px;
+
+  &-bordered { border-left: 1px solid #e5e7eb; }
+
+  &-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+    margin-bottom: 4px;
+  }
+
+  &-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    word-break: break-all;
+  }
+}
+
+// ══ PROFILE CARDS (state / mohua) ════════════════════════════
 .pv-card {
   background: #fff;
-  border-radius: 12px;
-  border: 1px solid $border;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  transition: box-shadow 0.22s ease, transform 0.18s ease;
 
-  &:hover {
-    box-shadow: 0 6px 24px $primary-shadow;
-    transform: translateY(-2px);
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
   }
-
-  // Top accent stripe per card
-  &--0 { border-top: 3px solid $c0; }
-  &--1 { border-top: 3px solid $c1; }
-  &--2 { border-top: 3px solid $c2; }
-  &--3 { border-top: 3px solid $c3; }
 }
 
-// ─── Card layout: avatar | info | verify-btn ─────────────────
-.pv-card__main {
-  display: flex;
-  align-items: center;
-}
-
-.pv-card__action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 14px;
-  background: $primary-accent;
-  border-right: 1px solid $border;
-  align-self: stretch;
-  flex-shrink: 0;
-}
-
-.pv-card__info {
-  flex: 1;
-  min-width: 0;
-  padding: 12px 16px;
-}
-
-.pv-card__btn-col {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 16px;
-  flex-shrink: 0;
-  border-left: 1px solid $border;
-  align-self: stretch;
-}
-
-// ─── Avatar initials ──────────────────────────────────────────
 .pv-avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   flex-shrink: 0;
   display: flex;
@@ -310,389 +143,30 @@ $surface:    #f9fafb;
   font-weight: 700;
   color: #fff;
 
-  &--0 { background: linear-gradient(135deg, $c0, darken($c0, 10%)); box-shadow: 0 3px 8px rgba($c0, 0.3); }
-  &--1 { background: linear-gradient(135deg, $c1, darken($c1, 10%)); box-shadow: 0 3px 8px rgba($c1, 0.3); }
-  &--2 { background: linear-gradient(135deg, $c2, darken($c2, 10%)); box-shadow: 0 3px 8px rgba($c2, 0.3); }
-  &--3 { background: linear-gradient(135deg, $c3, darken($c3, 10%)); box-shadow: 0 3px 8px rgba($c3, 0.3); }
+  &--0 { background: var(--color-primary); }
+  &--1 { background: #295965; }
+  &--2 { background: #1b4d59; }
+  &--3 { background: #366571; }
 }
 
-// ─── Card text ────────────────────────────────────────────────
-.pv-card__name        { font-size: 14px; font-weight: 700; color: $text-dark; }
-.pv-card__num         { font-size: 10px; font-weight: 700; color: $text-muted; background: $surface; padding: 2px 7px; border-radius: 20px; border: 1px solid $border; }
-.pv-card__designation { font-size: 12.5px; color: $text-mid; }
-
-.pv-contact {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: $text-muted;
-
-  i { font-size: 10.5px; color: $primary-40; }
-}
-
-// ─── Verify button (right-panel action) ──────────────────────
-.pv-verify-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  font-weight: 700;
-  font-family: inherit;
-  border: none;
-  cursor: pointer;
-  color: #fff;
-  white-space: nowrap;
-  transition: opacity 0.15s, transform 0.15s;
-
-  &--0 { background: $c0; box-shadow: 0 2px 8px rgba($c0, 0.35); }
-  &--1 { background: $c1; box-shadow: 0 2px 8px rgba($c1, 0.32); }
-  &--2 { background: $c2; box-shadow: 0 2px 8px rgba($c2, 0.3);  }
-  &--3 { background: $c3; box-shadow: 0 2px 8px rgba($c3, 0.3);  }
-
-  &:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
-  &:disabled             { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
-
-  &--cancel {
-    background: #e9ecef !important;
-    color: #6c757d !important;
-    box-shadow: none !important;
-  }
-}
-
-// ─── Card expand / collapse ───────────────────────────────────
-.pv-card__expand {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.pv-card--expanded .pv-card__expand { max-height: 480px; }
-
-// ─── OTP panel ────────────────────────────────────────────────
 .pv-otp-panel {
   padding: 14px 16px;
-  background: $surface;
-  border-top: 1px solid $border;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
 }
 
-.pv-otp-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: $text-mid;
-  margin: 0 0 12px;
-
-  i { color: $primary; flex-shrink: 0; }
-}
-
-.pv-otp-sent-notice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
-  font-size: 12.5px;
-  font-weight: 500;
-  margin-bottom: 12px;
-
-  i { color: #10b981; }
-  strong { font-weight: 700; }
-}
-
-.pv-resend-btn {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: $primary;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.pv-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 40px;
-  padding: 0 18px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: inherit;
-  border: none;
-  cursor: pointer;
-  color: #fff;
-  white-space: nowrap;
-  transition: opacity 0.15s, transform 0.15s;
-
-  &:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-  &:disabled             { opacity: 0.48; cursor: not-allowed; transform: none; }
-
-  &--send    { background: $primary;    box-shadow: 0 3px 10px $primary-shadow; }
-  &--confirm { background: $primary-30; box-shadow: 0 3px 10px $primary-shadow; }
-}
-
-// ─── Inline input fields ──────────────────────────────────────
-.pv-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 12px;
-  border: 1.5px solid $border;
-  border-radius: 8px;
-  background: #fff;
-  transition: border-color 0.18s, box-shadow 0.18s;
-
-  &:focus-within {
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.08);
-  }
-}
-
-.pv-input-icon { font-size: 12px; color: $primary; flex-shrink: 0; }
-
-.pv-bare-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 13.5px;
-  color: $text-dark;
-  min-width: 0;
-
-  &::placeholder { color: $text-muted; font-size: 12.5px; }
-}
-
-.pv-otp-input { font-family: monospace; letter-spacing: 0.2em; font-size: 16px; }
-
-.pv-edit-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  color: $text-muted;
-  white-space: nowrap;
-
-  i { font-size: 9px; }
-}
-
-// ─── Empty state ──────────────────────────────────────────────
-.pv-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 48px 24px;
-  background: #fff;
-  border-radius: 12px;
-  border: 1.5px dashed $border;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-
-  &__icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: $primary-accent;
-    border: 2px solid rgba($primary, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: $primary-40;
-    margin-bottom: 14px;
-  }
-
-  &__title { font-size: 14.5px; font-weight: 700; color: $text-dark; margin: 0 0 6px; }
-  &__sub   { font-size: 13px; color: $text-muted; line-height: 1.6; margin: 0; }
-}
-
-// ══════════════════════════════════════════════════════════════
-//  REQUEST ACCESS
-// ══════════════════════════════════════════════════════════════
-.pv-request {
-  background: #fff;
-  border-radius: 12px;
-  border: 1.5px solid $border;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  overflow: hidden;
-  transition: border-color 0.22s, box-shadow 0.22s;
-
-  &--open {
-    border-color: rgba($primary, 0.35);
-    box-shadow: 0 4px 20px $primary-shadow;
-  }
-}
-
-.pv-request__trigger {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 14px 18px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  text-align: left;
-  transition: background 0.15s;
-
-  &:hover { background: $primary-accent; }
-
-  > .bi { font-size: 13px; color: $text-muted; flex-shrink: 0; }
-}
-
-.pv-req-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  flex-shrink: 0;
-  background: rgba($primary, 0.08);
-  border: 1px solid rgba($primary, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  i { font-size: 13px; color: $primary; }
-}
-
-.pv-request__text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.pv-request__title { font-size: 13.5px; font-weight: 700; color: $text-dark; }
-.pv-request__sub   { font-size: 11.5px; color: $text-muted; }
-
-.pv-request__badge {
-  flex-shrink: 0;
-  padding: 3px 11px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  background: rgba($primary, 0.08);
-  color: $primary;
-  border: 1px solid rgba($primary, 0.22);
-}
-
-.pv-request__body {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.pv-request--open .pv-request__body { max-height: 640px; }
-
-.pv-request__inner {
-  padding: 0 18px 20px;
-  border-top: 1px solid $border;
-}
-
-.pv-info-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 9px 13px;
-  border-radius: 8px;
-  background: $primary-accent;
-  border: 1px solid rgba($primary, 0.14);
-  font-size: 12.5px;
-  color: $primary;
-  line-height: 1.5;
-  margin: 14px 0;
-
-  i { color: $primary-40; flex-shrink: 0; font-size: 14px; margin-top: 1px; }
-}
-
-.pv-form-section-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: $text-muted;
-  margin: 0 0 8px;
-
-  i { color: $primary; font-size: 11px; }
-}
-
-.pv-submit-btn {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 7px;
-  height: 40px !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-}
-
-// ─── Skeleton shimmer (light bg) ─────────────────────────────
-.pv-sk {
-  background: linear-gradient(90deg, #e0eaed 25%, #eef4f6 50%, #e0eaed 75%);
-  background-size: 200% 100%;
-  animation: pvShimmer 1.5s infinite;
-  border-radius: 6px;
-  display: block;
-
-  &--avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
-}
-
-@keyframes pvShimmer {
-  from { background-position: 200% center; }
-  to   { background-position: -200% center; }
-}
-
-// ─── Spinner ──────────────────────────────────────────────────
+// ══ SPINNER ═══════════════════════════════════════════════════
 .pv-spin {
   display: inline-block;
   width: 14px;
   height: 14px;
   vertical-align: middle;
-  border: 2px solid rgba($primary, 0.2);
-  border-top-color: $primary;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: pvSpin 0.7s linear infinite;
 
-  &--light { border-color: rgba(#fff, 0.3); border-top-color: #fff; }
+  &--light { border-color: rgba(255, 255, 255, 0.3); border-top-color: #fff; }
 }
 
 @keyframes pvSpin { to { transform: rotate(360deg); } }
-
-// ─── Responsive ───────────────────────────────────────────────
-@media (max-width: 576px) {
-  .pv-hero { padding: 16px 16px 18px; }
-
-  .pv-step__lbl  { display: none; }
-  .pv-step__line { min-width: 10px; }
-
-  .pv-card__action  { padding: 12px 10px; }
-  .pv-card__btn-col { padding: 10px 12px; border-left: none; border-top: 1px solid $border; align-self: auto; }
-  .pv-card__main    { flex-wrap: wrap; }
-  .pv-card__info    { flex-basis: 100%; order: 2; }
-  .pv-card__btn-col { flex-basis: 100%; order: 3; }
-
-  .pv-verify-btn { width: 100%; justify-content: center; }
-
-  .pv-submit-btn { width: 100% !important; justify-content: center; }
-  .pv-action-btn { width: 100%; justify-content: center; }
-
-  .pv-request__trigger { padding: 12px 14px; }
-  .pv-otp-panel        { padding: 12px 14px; }
-  .pv-request__badge   { display: none; }
-}

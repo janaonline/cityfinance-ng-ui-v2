@@ -3,7 +3,15 @@
 // ─── Host ─────────────────────────────────────────────────────────────────────
 
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  // Row stretches to fill the full viewport height
+  > .row {
+    flex: 1;
+    min-height: 100vh;
+  }
 }
 
 // ─── Left panel gradient + top accent line ────────────────────────────────────
