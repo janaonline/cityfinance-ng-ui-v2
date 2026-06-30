@@ -1,302 +1,350 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, TemplateRef, ViewChild, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, map, of } from 'rxjs';
+import { trigger, state, style, transition, animate } from '@angular/animations';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
+import { environment } from '../../../../../environments/environment';
+import { UlbContacts } from '../../shared/profile-verification/profile-verification.models';
+import { ProfileVerificationService } from '../../shared/profile-verification/profile-verification.service';
+import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
+import {
+  IDENTIFIER_SECURITY_VALIDATORS,
+  noHtmlOrScript,
+  noMongoOperators,
+} from '../../../../auth/validators/auth-security.validators';
 
-type TeamMemberRole = 'Submitter' | 'Editor' | 'Viewer' | null;
-type TeamMemberStatus = 'active' | 'inactive' | 'invited';
+type ContactType = 'commissioner' | 'accountant';
 
-interface UlbTeamProfile {
-  initials: string;
+interface UlbBandInfo {
   name: string;
   code: string;
-  category: string;
-  state: string;
-}
-
-interface TeamMember {
-  id: number;
+  stateName: string;
   initials: string;
-  name: string;
-  phone: string;
-  email: string;
-  designation: string;
-  role: TeamMemberRole;
-  status: TeamMemberStatus;
-  lastActive: string | null;
 }
 
-interface RolesTeamOverviewResponse {
-  profile: UlbTeamProfile;
-  members: TeamMember[];
+interface RegisteredMunicipalInfo {
+  stateName: string;
+  ulbType: string;
+  censusCode: string;
+  ulbCode: string;
+  area: number | null;
+  population: number | null;
+  wards: number | null;
 }
 
-interface PermissionMatrixRow {
-  permission: string;
-  submitter: boolean;
-  editor: boolean;
-  viewer: boolean;
-}
-
-interface PendingRoleChange {
-  memberId: number;
-  newRole: string;
-  currentRole: string;
-  memberName: string;
+interface ProfileContactsApiResponse extends UlbContacts {
+  ulbDetails?: { name: string; code: string; stateName: string } | null;
+  registeredMunicipalInfo?: RegisteredMunicipalInfo | null;
 }
 
 @Component({
   selector: 'app-roles-teams-overview',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
+    ReactiveFormsModule,
+    MatSnackBarModule,
     MatCardModule,
-    MatDialogModule,
+    MatButtonModule,
     MatFormFieldModule,
-    MatIconModule,
     MatInputModule,
-    MatSelectModule,
+    MatIconModule,
+    MatDividerModule,
     MatTableModule,
+    PageErrorStateComponent,
   ],
   templateUrl: './roles-teams-overview.component.html',
   styleUrl: './roles-teams-overview.component.scss',
+  animations: [
+    trigger('detailExpand', [
+      // maxHeight keeps height:auto on the wrapper so errors appearing after
+      // expansion are not clipped by a frozen pixel height.
+      state('collapsed', style({ maxHeight: '0px', opacity: 0 })),
+      state('expanded', style({ maxHeight: '600px', opacity: 1 })),
+      transition('collapsed => expanded', animate('240ms 40ms cubic-bezier(0.4, 0, 0.2, 1)')),
+      transition('expanded => collapsed', animate('180ms cubic-bezier(0.4, 0, 0.2, 1)')),
+    ]),
+  ],
 })
 export class RolesTeamsOverviewComponent implements OnInit {
-  @ViewChild('addMemberDialog') private addMemberDialog?: TemplateRef<unknown>;
-  @ViewChild('activateDialog') private activateDialog?: TemplateRef<unknown>;
-  @ViewChild('roleConfirmDialog') private roleConfirmDialog?: TemplateRef<unknown>;
+  private readonly http = inject(HttpClient);
+  private readonly fb = inject(FormBuilder);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly profileService = inject(ProfileVerificationService);
+  private readonly baseUrl = environment.api.url2;
 
-  private readonly dialog = inject(MatDialog);
-  private addMemberDialogRef?: MatDialogRef<unknown>;
-  private activateDialogRef?: MatDialogRef<unknown>;
-  private roleConfirmDialogRef?: MatDialogRef<unknown>;
+  // Literal space (not \s) intentionally excludes \t, \n, \r from valid name characters.
+  private static readonly NAME_PATTERN = /^[a-zA-Z .\-']+$/;
 
-  profile: UlbTeamProfile | null = null;
-  members: TeamMember[] = [];
-  isLoading = true;
-  errorMessage = '';
-  showPermissionMatrix = false;
+  private userId = '';
+  private ulbCode = '';
+  private localStateName = '';
 
-  // Role change confirmation state
-  memberRoleSelections: Record<number, string> = {};
-  pendingRoleChange: PendingRoleChange | null = null;
+  readonly displayedColumns = ['name', 'designation', 'contact'];
 
-  // Activate flow state
-  activatingMember: TeamMember | null = null;
-  activateMobile = '';
-  activateEmail = '';
-  activateOtpSent = false;
-  activateOtp = '';
-  sendingOtp = false;
-  confirmingActivate = false;
+  readonly isLoading = signal(true);
+  readonly hasError = signal(false);
+  readonly ulbInfo = signal<UlbBandInfo | null>(null);
+  readonly contacts = signal<UlbContacts | null>(null);
+  readonly municipalInfo = signal<RegisteredMunicipalInfo | null>(null);
+  readonly editingContact = signal<ContactType | null>(null);
+  readonly isSaving = signal(false);
+  readonly saveError = signal<string | null>(null);
 
-  readonly memberColumns = ['member', 'designation', 'role', 'status', 'action'];
-  readonly permissionColumns = ['permission', 'submitter', 'editor', 'viewer'];
-  readonly availableRoles: Exclude<TeamMemberRole, 'Submitter' | null>[] = ['Editor', 'Viewer'];
-  readonly inviteRoles = [
-    { value: 'Editor', label: 'Editor - prepares, uploads and verifies documents' },
-    { value: 'Viewer', label: 'Viewer - can view status and reports' },
-  ];
-  readonly permissionMatrix: PermissionMatrixRow[] = [
-    { permission: 'View status and reports', submitter: true, editor: true, viewer: true },
-    { permission: 'Upload documents', submitter: true, editor: true, viewer: false },
-    { permission: 'Message users', submitter: true, editor: true, viewer: false },
-    { permission: 'Final submit to State DMA', submitter: true, editor: false, viewer: false },
-    { permission: 'Manage users', submitter: true, editor: false, viewer: false },
-  ];
+  readonly contactRows = computed(() => {
+    const c = this.contacts();
+    if (!c) return [];
+    // 'Conatact' typo in field names is from the API contract — do not rename here.
+    return [
+      this.mkRow('commissioner', 'Municipal Commissioner / Executive Officer',
+        c.commissionerName ?? '', c.commissionerEmail ?? '', c.commissionerConatactNumber ?? ''),
+      this.mkRow('accountant', 'ULB Nodal Officer',
+        c.accountantName ?? '', c.accountantEmail ?? '', c.accountantConatactNumber ?? ''),
+    ];
+  });
+
+  readonly municipalFields = computed(() => {
+    const m = this.municipalInfo();
+    if (!m) return [];
+    return [
+      { label: 'STATE', value: m.stateName, icon: 'map' },
+      { label: 'ULB TYPE', value: m.ulbType, icon: 'account_balance' },
+      { label: 'CENSUS CODE', value: m.censusCode, icon: 'fingerprint' },
+      { label: 'ULB CODE', value: m.ulbCode, icon: 'badge' },
+      { label: 'AREA', value: this.formatArea(m.area), icon: 'straighten' },
+      { label: 'POPULATION (CENSUS 2011)', value: this.formatPopulation(m.population), icon: 'people' },
+      { label: 'NO. OF WARDS', value: m.wards != null ? String(m.wards) : '', icon: 'grid_view' },
+    ];
+  });
+
+  readonly editForm = this.fb.nonNullable.group({
+    name: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+        Validators.pattern(RolesTeamsOverviewComponent.NAME_PATTERN),
+        noHtmlOrScript,
+        noMongoOperators,
+      ],
+    ],
+    mobile: [
+      '',
+      [
+        Validators.required,
+        Validators.pattern(/^[6-9]\d{9}$/),
+        noHtmlOrScript,
+        noMongoOperators,
+      ],
+    ],
+    email: [
+      '',
+      [
+        Validators.email,
+        Validators.maxLength(254),
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ],
+    ],
+  });
 
   ngOnInit(): void {
-    void this.loadRolesTeamsOverview();
+    this.resolveFromStorage();
+    this.loadData();
   }
 
-  async loadRolesTeamsOverview(): Promise<void> {
-    this.isLoading = true;
-    this.errorMessage = '';
-    try {
-      const response = await this.getRolesTeamsOverviewFromDummyApi();
-      this.profile = response.profile;
-      this.members = response.members;
-      this.memberRoleSelections = Object.fromEntries(
-        response.members
-          .filter((m) => m.role && m.role !== 'Submitter')
-          .map((m) => [m.id, m.role as string]),
-      );
-    } catch (error) {
-      console.error('Failed to load roles and teams overview', error);
-      this.errorMessage = 'Unable to load people and roles right now.';
-    } finally {
-      this.isLoading = false;
+  private resolveFromStorage(): void {
+    const u = this.profileService.readStoredUser();
+    this.userId = u._id ?? u.id ?? '';
+    this.ulbCode = u.ulbCode ?? '';
+    this.localStateName = u.stateName ?? '';
+  }
+
+  loadData(): void {
+    if (!this.userId) {
+      this.hasError.set(true);
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.hasError.set(false);
+
+    this.http
+      .get<{ success: boolean; data: ProfileContactsApiResponse } | ProfileContactsApiResponse>(
+        `${this.baseUrl}users/${this.userId}/profile-contacts`,
+      )
+      .pipe(
+        map((r) => ('success' in r ? r.data : r) as ProfileContactsApiResponse),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          if (!res) {
+            this.hasError.set(true);
+            this.isLoading.set(false);
+            return;
+          }
+
+          this.contacts.set({
+            commissionerName: res.commissionerName,
+            commissionerEmail: res.commissionerEmail,
+            commissionerConatactNumber: res.commissionerConatactNumber,
+            accountantName: res.accountantName,
+            accountantEmail: res.accountantEmail,
+            accountantConatactNumber: res.accountantConatactNumber,
+          });
+
+          const d = res.ulbDetails;
+          const entityName = d?.name ?? '';
+          this.ulbInfo.set({
+            name: entityName,
+            code: d?.code ?? this.ulbCode,
+            stateName: d?.stateName ?? this.localStateName,
+            initials: this.getInitials(entityName || this.ulbCode),
+          });
+
+          this.municipalInfo.set(res.registeredMunicipalInfo ?? null);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.hasError.set(true);
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  rowHasWarning(_index: number, row: { nameInvalid: boolean; mobileInvalid: boolean }): boolean {
+    return row.nameInvalid || row.mobileInvalid;
+  }
+
+  toggleEdit(type: ContactType): void {
+    if (this.editingContact() === type) {
+      this.cancelEdit();
+    } else {
+      this.startEdit(type);
     }
   }
 
-  // ── Role change ──────────────────────────────────────────────────────────
-  onRoleChangeRequest(memberId: number, newRole: string): void {
-    const member = this.members.find((m) => m.id === memberId);
-    if (!member || !member.role || !this.isAssignableRole(newRole)) return;
-    if (newRole === member.role) return; // no change or revert — skip
+  startEdit(type: ContactType): void {
+    const c = this.contacts();
+    if (!c) return;
 
-    this.memberRoleSelections[memberId] = newRole;
-    this.pendingRoleChange = {
-      memberId,
-      newRole,
-      currentRole: member.role,
-      memberName: member.name,
+    const isComm = type === 'commissioner';
+    this.editForm.reset({
+      name:   isComm ? (c.commissionerName ?? '')          : (c.accountantName ?? ''),
+      mobile: isComm ? (c.commissionerConatactNumber ?? '') : (c.accountantConatactNumber ?? ''),
+      email:  isComm ? (c.commissionerEmail ?? '')          : (c.accountantEmail ?? ''),
+    });
+    this.saveError.set(null);
+    this.editingContact.set(type);
+    this.editForm.markAllAsTouched();
+  }
+
+  cancelEdit(): void {
+    this.editingContact.set(null);
+    this.saveError.set(null);
+  }
+
+  saveEdit(): void {
+    // Guard must be first — prevents a second call racing through before isSaving signal updates the DOM.
+    if (this.isSaving()) return;
+    if (this.editForm.invalid) {
+      this.editForm.markAllAsTouched();
+      return;
+    }
+    const type = this.editingContact();
+    if (!type || !this.userId) return;
+
+    this.isSaving.set(true);
+    this.saveError.set(null);
+
+    const { name, mobile, email } = this.editForm.getRawValue();
+    const isComm = type === 'commissioner';
+
+    const payload = isComm
+      ? { commissionerName: name, commissionerEmail: email, commissionerConatactNumber: mobile }
+      : { accountantName: name, accountantEmail: email, accountantConatactNumber: mobile };
+
+    this.http
+      .patch(`${this.baseUrl}users/${this.userId}/profile-contacts`, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          const cur = this.contacts()!;
+          this.contacts.set(
+            isComm
+              ? { ...cur, commissionerName: name, commissionerEmail: email, commissionerConatactNumber: mobile }
+              : { ...cur, accountantName: name, accountantEmail: email, accountantConatactNumber: mobile },
+          );
+          this.editingContact.set(null);
+          this.isSaving.set(false);
+          this.snackBar.open(
+            `${isComm ? 'Commissioner' : 'Nodal Officer'} details updated.`,
+            'Dismiss',
+            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
+          );
+        },
+        error: (err: HttpErrorResponse) => {
+          this.isSaving.set(false);
+          this.saveError.set(err.error?.message ?? 'Failed to save. Please try again.');
+        },
+      });
+  }
+
+  onMobileInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/\D/g, '').slice(0, 10);
+    input.value = cleaned;
+    this.editForm.get('mobile')?.setValue(cleaned, { emitEvent: true });
+  }
+
+  formatArea(area: number | null): string {
+    return area != null ? `${area.toLocaleString('en-IN')} Sq kms` : '—';
+  }
+
+  formatPopulation(pop: number | null): string {
+    return pop != null ? pop.toLocaleString('en-IN') : '—';
+  }
+
+  getInitials(name: string): string {
+    return name
+      .trim()
+      .split(/[\s@.]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? '')
+      .join('');
+  }
+
+  private mkRow(type: ContactType, label: string, name: string, email: string, mobile: string) {
+    return {
+      type,
+      label,
+      name,
+      email,
+      mobile,
+      nameInvalid: !!name && !RolesTeamsOverviewComponent.NAME_PATTERN.test(name),
+      mobileInvalid: !!mobile && !/^[6-9]\d{9}$/.test(mobile),
     };
-
-    if (!this.roleConfirmDialog) return;
-    this.roleConfirmDialogRef = this.dialog.open(this.roleConfirmDialog, {
-      width: 'min(400px, calc(100vw - 32px))',
-      panelClass: 'roles-dialog-panel',
-    });
-  }
-
-  onConfirmRoleChange(): void {
-    if (!this.pendingRoleChange) return;
-    const { memberId, newRole } = this.pendingRoleChange;
-    this.members = this.members.map((m) =>
-      m.id === memberId ? { ...m, role: newRole as TeamMemberRole } : m,
-    );
-    this.memberRoleSelections[memberId] = newRole;
-    this.pendingRoleChange = null;
-    this.roleConfirmDialogRef?.close();
-  }
-
-  onCancelRoleChange(): void {
-    if (this.pendingRoleChange) {
-      // Revert the displayed value in the dropdown
-      this.memberRoleSelections[this.pendingRoleChange.memberId] = this.pendingRoleChange.currentRole;
-    }
-    this.pendingRoleChange = null;
-    this.roleConfirmDialogRef?.close();
-  }
-
-  // ── Activate flow ────────────────────────────────────────────────────────
-  onActivate(member: TeamMember): void {
-    this.activatingMember = { ...member };
-    this.activateMobile = member.phone.replace(/\D/g, '').slice(-10);
-    this.activateEmail = member.email ?? '';
-    this.activateOtpSent = false;
-    this.activateOtp = '';
-    this.sendingOtp = false;
-    this.confirmingActivate = false;
-
-    if (!this.activateDialog) return;
-    this.activateDialogRef = this.dialog.open(this.activateDialog, {
-      autoFocus: 'first-tabbable',
-      maxHeight: 'calc(100vh - 48px)',
-      panelClass: 'roles-dialog-panel',
-      width: 'min(460px, calc(100vw - 32px))',
-    });
-  }
-
-  onCloseActivateDialog(): void {
-    this.activateDialogRef?.close();
-    this.activatingMember = null;
-  }
-
-  onSendActivateOtp(): void {
-    if (this.sendingOtp) return;
-    this.sendingOtp = true;
-    setTimeout(() => {
-      this.activateOtpSent = true;
-      this.sendingOtp = false;
-    }, 1000);
-  }
-
-  onConfirmActivate(): void {
-    if (!this.activatingMember || this.confirmingActivate) return;
-    this.confirmingActivate = true;
-    setTimeout(() => {
-      this.members = this.members.map((m) =>
-        m.id === this.activatingMember!.id ? { ...m, status: 'active' as TeamMemberStatus } : m,
-      );
-      this.confirmingActivate = false;
-      this.onCloseActivateDialog();
-    }, 1000);
-  }
-
-  // ── Other member actions ─────────────────────────────────────────────────
-  onDisable(member: TeamMember): void {
-    console.log('Disable member', member);
-  }
-
-  onResend(member: TeamMember): void {
-    console.log('Resend invite to', member);
-  }
-
-  onOpenPermissionMatrix(): void {
-    this.showPermissionMatrix = !this.showPermissionMatrix;
-  }
-
-  onAddMember(): void {
-    if (!this.addMemberDialog) return;
-    this.addMemberDialogRef = this.dialog.open(this.addMemberDialog, {
-      autoFocus: 'first-tabbable',
-      maxHeight: 'calc(100vh - 48px)',
-      panelClass: 'roles-dialog-panel',
-      width: 'min(440px, calc(100vw - 32px))',
-    });
-  }
-
-  onCloseAddMemberDialog(): void {
-    this.addMemberDialogRef?.close();
-  }
-
-  onSendInvite(): void {
-    console.log('Send member invite');
-    this.onCloseAddMemberDialog();
-  }
-
-  onTransferOwnership(): void {
-    console.log('Transfer submitter ownership');
-  }
-
-  private isAssignableRole(role: string): role is Exclude<TeamMemberRole, 'Submitter' | null> {
-    return role === 'Editor' || role === 'Viewer';
-  }
-
-  private getRolesTeamsOverviewFromDummyApi(): Promise<RolesTeamOverviewResponse> {
-    return Promise.resolve({
-      profile: {
-        initials: 'GVMC',
-        name: 'Greater Visakhapatnam Municipal Corporation',
-        code: 'AP067',
-        category: 'Municipal Corporation',
-        state: 'Andhra Pradesh',
-      },
-      members: [
-        {
-          id: 1,
-          initials: 'RK',
-          name: 'Ravi Kumar',
-          phone: '+91 98765 43210',
-          email: '',
-          designation: 'Municipal Commissioner',
-          role: 'Submitter',
-          status: 'active',
-          lastActive: 'Mar 12, 2026',
-        },
-        {
-          id: 2,
-          initials: 'PN',
-          name: 'Priya Nair',
-          phone: '+91 98765 43211',
-          email: '',
-          designation: 'Accounts Officer',
-          role: 'Editor',
-          status: 'inactive',
-          lastActive: 'Mar 9, 2026',
-        },
-      ],
-    });
   }
 }

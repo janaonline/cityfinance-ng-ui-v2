@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -21,8 +21,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
 import { environment } from '../../../../../environments/environment';
-import { UlbContacts } from '../profile-verification/profile-verification.models';
-import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
+import { UlbContacts } from '../../shared/profile-verification/profile-verification.models';
+import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
 import {
   IDENTIFIER_SECURITY_VALIDATORS,
   noHtmlOrScript,
@@ -134,13 +134,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
     const m = this.municipalInfo();
     if (!m) return [];
     return [
-      { label: 'STATE', value: m.stateName },
-      { label: 'ULB TYPE', value: m.ulbType },
-      { label: 'CENSUS CODE', value: m.censusCode },
-      { label: 'ULB CODE', value: m.ulbCode },
-      { label: 'AREA', value: this.formatArea(m.area) },
-      { label: 'POPULATION (CENSUS 2011)', value: this.formatPopulation(m.population) },
-      { label: 'NO. OF WARDS', value: m.wards ? String(m.wards) : '' },
+      { label: 'STATE', value: m.stateName, icon: 'map' },
+      { label: 'ULB TYPE', value: m.ulbType, icon: 'account_balance' },
+      { label: 'CENSUS CODE', value: m.censusCode, icon: 'fingerprint' },
+      { label: 'ULB CODE', value: m.ulbCode, icon: 'badge' },
+      { label: 'AREA', value: this.formatArea(m.area), icon: 'straighten' },
+      { label: 'POPULATION (CENSUS 2011)', value: this.formatPopulation(m.population), icon: 'people' },
+      { label: 'NO. OF WARDS', value: m.wards ? String(m.wards) : '', icon: 'grid_view' },
     ];
   });
 
@@ -337,11 +337,11 @@ export class RolesTeamsOverviewComponent implements OnInit {
   }
 
   formatArea(area: number): string {
-    return area ? `${area.toLocaleString('en-IN')} Sq kms` : '—';
+    return area ? `${area.toLocaleString('en-IN')} Sq kms` : 'â€”';
   }
 
   formatPopulation(pop: number): string {
-    return pop ? pop.toLocaleString('en-IN') : '—';
+    return pop ? pop.toLocaleString('en-IN') : 'â€”';
   }
 
   getInitials(name: string): string {
@@ -354,3 +354,4 @@ export class RolesTeamsOverviewComponent implements OnInit {
       .join('');
   }
 }
+
