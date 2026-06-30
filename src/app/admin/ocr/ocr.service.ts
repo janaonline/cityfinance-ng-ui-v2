@@ -62,15 +62,52 @@ export class OcrService {
   private readonly http = inject(HttpClient);
 
   readonly models: ModelOption[] = [
-    { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', pricing: { inputPerM: 1.50, outputPerM: 9.00, thinkingPerM: 9.00 } },
-    { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 } },
-    { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview', pricing: { inputPerM: 0.25, outputPerM: 1.50, thinkingPerM: 1.50 }, deprecated: true },
-    { value: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
-    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
-    { value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image Preview', pricing: { inputPerM: 2.00, outputPerM: 12.00, thinkingPerM: 12.00 } },
-    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview', pricing: { inputPerM: 0.50, outputPerM: 3.00, thinkingPerM: 3.00 } },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', pricing: { inputPerM: 1.25, outputPerM: 10.00, thinkingPerM: 10.00 } },
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', pricing: { inputPerM: 0.15, outputPerM: 0.60, thinkingPerM: 3.50 } },
+    {
+      value: 'gemini-3.5-flash',
+      label: 'Gemini 3.5 Flash',
+      pricing: { inputPerM: 1.5, outputPerM: 9.0, thinkingPerM: 9.0 },
+    },
+    {
+      value: 'gemini-3.1-flash-lite',
+      label: 'Gemini 3.1 Flash Lite',
+      pricing: { inputPerM: 0.25, outputPerM: 1.5, thinkingPerM: 1.5 },
+    },
+    {
+      value: 'gemini-3.1-flash-lite-preview',
+      label: 'Gemini 3.1 Flash Lite Preview',
+      pricing: { inputPerM: 0.25, outputPerM: 1.5, thinkingPerM: 1.5 },
+      deprecated: true,
+    },
+    {
+      value: 'gemini-3.1-flash-image-preview',
+      label: 'Gemini 3.1 Flash Image Preview',
+      pricing: { inputPerM: 0.5, outputPerM: 3.0, thinkingPerM: 3.0 },
+    },
+    {
+      value: 'gemini-3.1-pro-preview',
+      label: 'Gemini 3.1 Pro Preview',
+      pricing: { inputPerM: 2.0, outputPerM: 12.0, thinkingPerM: 12.0 },
+    },
+    {
+      value: 'gemini-3-pro-image-preview',
+      label: 'Gemini 3 Pro Image Preview',
+      pricing: { inputPerM: 2.0, outputPerM: 12.0, thinkingPerM: 12.0 },
+    },
+    {
+      value: 'gemini-3-flash-preview',
+      label: 'Gemini 3 Flash Preview',
+      pricing: { inputPerM: 0.5, outputPerM: 3.0, thinkingPerM: 3.0 },
+    },
+    {
+      value: 'gemini-2.5-pro',
+      label: 'Gemini 2.5 Pro',
+      pricing: { inputPerM: 1.25, outputPerM: 10.0, thinkingPerM: 10.0 },
+    },
+    {
+      value: 'gemini-2.5-flash',
+      label: 'Gemini 2.5 Flash',
+      pricing: { inputPerM: 0.15, outputPerM: 0.6, thinkingPerM: 3.5 },
+    },
   ];
 
   readonly documentTypes: SelectOption[] = [
@@ -123,10 +160,7 @@ export class OcrService {
     } else {
       formData.append('ulb_name', ulb ? ulb.trim() : '');
     }
-    return this.http.post(
-      environment.api.url3 + 'sarvam-validate/combined-gemini-validate',
-      formData,
-    );
+    return this.http.post(environment.api.url3 + 'sarvam-validate/combined-gemini-validate', formData);
   }
 
   getOcrDetails(params: { jobId?: string; filename?: string; ocrMethod: string }) {
@@ -142,10 +176,9 @@ export class OcrService {
       queryParams['filename'] = params.filename;
     }
 
-    return this.http.get<OcrApiResponse>(
-      environment.api.url3 + 'sarvam-validate/tasks/latest',
-      { params: queryParams },
-    );
+    return this.http.get<OcrApiResponse>(environment.api.url3 + 'sarvam-validate/tasks/latest', {
+      params: queryParams,
+    });
   }
   getulb(ulb: IULB | string | null | undefined): string {
     if (ulb && typeof ulb === 'object') {
@@ -191,10 +224,7 @@ export class OcrService {
     if (enableQualityCheck !== undefined) {
       formData.append('enable_quality_check', String(enableQualityCheck));
     }
-    return this.http.post<OcrValidationJobSubmitResponse>(
-      environment.api.url3 + 'ocr-validation/jobs',
-      formData,
-    );
+    return this.http.post<OcrValidationJobSubmitResponse>(environment.api.url3 + 'ocr-validation/jobs', formData);
   }
 
   submitOcrValidationBatch(
@@ -228,15 +258,11 @@ export class OcrService {
   }
 
   getOcrValidationJobStatus(jobId: string) {
-    return this.http.get<OcrValidationJobStatusResponse>(
-      environment.api.url3 + `ocr-validation/jobs/${jobId}`,
-    );
+    return this.http.get<OcrValidationJobStatusResponse>(environment.api.url3 + `ocr-validation/jobs/${jobId}/status`);
   }
 
   getOcrValidationJobResult(jobId: string) {
-    return this.http.get<OcrValidationJobResult>(
-      environment.api.url3 + `ocr-validation/jobs/${jobId}/result`,
-    );
+    return this.http.get<OcrValidationJobResult>(environment.api.url3 + `ocr-validation/jobs/${jobId}/result`);
   }
 
   retryOcrValidationJob(jobId: string) {
@@ -247,10 +273,7 @@ export class OcrService {
   }
 
   downloadOcrJobFile(jobId: string) {
-    return this.http.get(
-      environment.api.url3 + `ocr-validation/jobs/${jobId}/download`,
-      { responseType: 'blob' },
-    );
+    return this.http.get(environment.api.url3 + `ocr-validation/jobs/${jobId}/download`, { responseType: 'blob' });
   }
 
   listOcrValidationJobs(params?: {
@@ -285,17 +308,18 @@ export class OcrService {
     if (params?.error_code) queryParams['error_code'] = params.error_code;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
-    if (params?.match_status_overall !== undefined) queryParams['match_status_overall'] = String(params.match_status_overall);
+    if (params?.match_status_overall !== undefined)
+      queryParams['match_status_overall'] = String(params.match_status_overall);
     if (params?.match_ulb_name !== undefined) queryParams['match_ulb_name'] = String(params.match_ulb_name);
-    if (params?.match_financial_year !== undefined) queryParams['match_financial_year'] = String(params.match_financial_year);
+    if (params?.match_financial_year !== undefined)
+      queryParams['match_financial_year'] = String(params.match_financial_year);
     if (params?.match_doc_type !== undefined) queryParams['match_doc_type'] = String(params.match_doc_type);
     if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
     if (params?.skip !== undefined) queryParams['skip'] = params.skip;
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
-    return this.http.get<OcrValidationJobsListResponse>(
-      environment.api.url3 + 'ocr-validation/jobs',
-      { params: queryParams },
-    );
+    return this.http.get<OcrValidationJobsListResponse>(environment.api.url3 + 'ocr-validation/jobs', {
+      params: queryParams,
+    });
   }
 
   dumpOcrValidationJobs(params?: {
@@ -327,14 +351,16 @@ export class OcrService {
     if (params?.error_code) queryParams['error_code'] = params.error_code;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
-    if (params?.match_status_overall !== undefined) queryParams['match_status_overall'] = String(params.match_status_overall);
+    if (params?.match_status_overall !== undefined)
+      queryParams['match_status_overall'] = String(params.match_status_overall);
     if (params?.match_ulb_name !== undefined) queryParams['match_ulb_name'] = String(params.match_ulb_name);
-    if (params?.match_financial_year !== undefined) queryParams['match_financial_year'] = String(params.match_financial_year);
+    if (params?.match_financial_year !== undefined)
+      queryParams['match_financial_year'] = String(params.match_financial_year);
     if (params?.match_doc_type !== undefined) queryParams['match_doc_type'] = String(params.match_doc_type);
-    return this.http.get(
-      environment.api.url3 + 'ocr-validation/jobs/dump',
-      { params: queryParams, responseType: 'blob' },
-    );
+    return this.http.get(environment.api.url3 + 'ocr-validation/jobs/dump', {
+      params: queryParams,
+      responseType: 'blob',
+    });
   }
 
   getOcrTasks(params: {
