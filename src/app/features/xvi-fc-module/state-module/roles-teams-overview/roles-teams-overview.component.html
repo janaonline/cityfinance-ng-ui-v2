@@ -1,329 +1,468 @@
-<main class="roles-page container-fluid py-4 py-lg-5 xvifc-theme">
-
+<main class="team-page container-fluid py-4 py-lg-5 xvifc-theme">
   @if (hasError()) {
     <app-page-error-state
-      title="Failed to load contacts"
-      message="We couldn't load the profile contacts. Please check your connection and try again."
-      (retry)="loadData()"
+      title="Failed to load team"
+      message="We couldn't load the team members. Please check your connection and try again."
+      (retry)="loadMembers()"
     />
   } @else {
 
-    <!-- ═══ ULB Band ═══════════════════════════════════════════════════════════════ -->
-    <div class="profile-hero mb-4" role="banner">
-      <span class="profile-deco profile-deco--1" aria-hidden="true"></span>
-      <span class="profile-deco profile-deco--2" aria-hidden="true"></span>
+    <!-- ══ Page Header ═══════════════════════════════════════════════════════════════ -->
+    <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-3">
+      <div>
+        <h1 class="fs-4 fw-bold mb-1">Team &amp; Roles</h1>
+        <p class="text-muted small mb-0">Manage who has access and what they can do.</p>
+      </div>
+    </div>
 
-      @if (isLoading()) {
-        <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
-          <span class="loading-block loading-block--logo"></span>
-          <div class="flex-grow-1">
-            <span class="loading-block loading-block--title d-block"></span>
-            <span class="loading-block loading-block--meta d-block mt-2"></span>
-          </div>
-        </div>
-      } @else if (ulbInfo()) {
-        <div class="row align-items-center gy-3 position-relative" style="z-index:1">
-          <div class="col-12 col-lg">
-            <p class="band-eyebrow mb-2">ULB PROFILE</p>
-            <div class="d-flex align-items-center gap-3">
-              <div class="band-logo flex-shrink-0" aria-hidden="true">{{ ulbInfo()!.initials }}</div>
-              <div class="min-w-0">
-                <h1 class="band-name mb-1">{{ ulbInfo()!.name }}</h1>
-                <p class="band-meta mb-0">
-                  {{ ulbInfo()!.code }}&nbsp;&middot;&nbsp;Urban Local Body&nbsp;&middot;&nbsp;{{ ulbInfo()!.stateName }}
-                </p>
-              </div>
-            </div>
-          </div>
+    <!-- ══ Info Banner ════════════════════════════════════════════════════════════════ -->
+    <div class="info-banner d-flex align-items-start gap-2 rounded-3 px-3 py-3 mb-4 small">
+      <i class="bi bi-info-circle-fill info-banner__icon flex-shrink-0" aria-hidden="true"></i>
+      <span><strong>How access works:</strong> <span [innerHTML]="infoBannerText"></span></span>
+    </div>
 
-          <div class="col-12 col-lg-auto">
-            <div class="d-flex gap-2 flex-wrap">
-              <div class="band-chip">
-                <span class="band-chip__label">ULB CODE</span>
-                <strong class="band-chip__value">{{ ulbInfo()!.code }}</strong>
-              </div>
-              <div class="band-chip">
-                <span class="band-chip__label">STATE</span>
-                <strong class="band-chip__value">{{ ulbInfo()!.stateName }}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- ══ Action Bar ═════════════════════════════════════════════════════════════════ -->
+    <div class="d-flex align-items-center justify-content-end gap-2 mb-3 flex-wrap">
+      @for (btn of actionButtons(); track btn.label) {
+        @if (btn.variant === 'flat') {
+          <button
+            mat-flat-button
+            type="button"
+            [color]="btn.color"
+            [disabled]="btn.disabled"
+            [matTooltip]="btn.tooltip"
+            matTooltipPosition="above"
+            (click)="btn.onClick()"
+          >
+            <i [class]="btn.iconClass" aria-hidden="true"></i>
+            {{ btn.label }}
+          </button>
+        } @else {
+          <button
+            mat-stroked-button
+            type="button"
+            [class.active-toggle]="btn.isActive"
+            [disabled]="btn.disabled"
+            [matTooltip]="btn.tooltip"
+            matTooltipPosition="above"
+            (click)="btn.onClick()"
+          >
+            <i [class]="btn.iconClass" aria-hidden="true"></i>
+            {{ btn.label }}
+            @if (btn.showChevron) {
+              <i class="bi ms-1"
+                [class.bi-chevron-up]="btn.isActive"
+                [class.bi-chevron-down]="!btn.isActive"
+                aria-hidden="true"></i>
+            }
+          </button>
+        }
       }
     </div>
 
-    <!-- ═══ Registered Municipal Information ══════════════════════════════════════ -->
-    <mat-card class="info-mat-card mb-4">
+    <!-- ══ Permission Matrix Panel ════════════════════════════════════════════════════ -->
+    @if (showPermissionMatrix()) {
+      <div @panelSlide class="mb-4">
+        <mat-card class="perm-card">
+          <div class="d-flex align-items-center justify-content-between px-4 py-3">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-shield-fill-check perm-card__icon" aria-hidden="true"></i>
+              <span class="fw-bold text-uppercase perm-card__title">Role Permission Matrix</span>
+            </div>
+            <span class="small text-muted d-none d-md-inline">What each role can do across the platform.</span>
+          </div>
+          <mat-divider></mat-divider>
 
-      <!-- Coloured header -->
-      <div class="info-card-header d-flex align-items-center justify-content-between px-4 py-3">
-        <div class="d-flex align-items-center gap-2">
-          <mat-icon class="info-card-header__icon">location_city</mat-icon>
-          <span class="fw-bold text-uppercase info-card-header__title">
-            Registered Municipal Information
-          </span>
-        </div>
-        <span class="badge rounded-pill info-card-header__badge d-inline-flex align-items-center gap-1">
-          <mat-icon style="font-size:0.7rem;width:0.7rem;height:0.7rem;line-height:1">lock</mat-icon>
-          Read-only
-        </span>
+          <div class="table-responsive">
+            <table class="w-100 perm-table" aria-label="Role permission matrix">
+              <thead>
+                <tr>
+                  <th class="perm-table__col-label">Permission</th>
+                  <th class="perm-table__col-role text-center">
+                    <span class="role-badge role-badge--submitter">Submitter</span>
+                  </th>
+                  <th class="perm-table__col-role text-center">
+                    <span class="role-badge role-badge--editor">Editor</span>
+                  </th>
+                  <th class="perm-table__col-role text-center">
+                    <span class="role-badge role-badge--viewer">Viewer</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of permissionMatrix(); track p.label) {
+                  <tr class="perm-table__row">
+                    <td class="perm-table__cell-label small">{{ p.label }}</td>
+                    <td class="text-center">
+                      <span class="perm-dot"
+                        [class.perm-dot--yes]="p.submitter" [class.perm-dot--no]="!p.submitter"
+                        [attr.aria-label]="p.submitter ? 'Allowed' : 'Not allowed'"></span>
+                    </td>
+                    <td class="text-center">
+                      <span class="perm-dot"
+                        [class.perm-dot--yes]="p.editor" [class.perm-dot--no]="!p.editor"
+                        [attr.aria-label]="p.editor ? 'Allowed' : 'Not allowed'"></span>
+                    </td>
+                    <td class="text-center">
+                      <span class="perm-dot"
+                        [class.perm-dot--yes]="p.viewer" [class.perm-dot--no]="!p.viewer"
+                        [attr.aria-label]="p.viewer ? 'Allowed' : 'Not allowed'"></span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
       </div>
-      <mat-divider></mat-divider>
+    }
+
+    <!-- ══ Add Member Panel ═══════════════════════════════════════════════════════════ -->
+    @if (showAddMember()) {
+      <div @panelSlide class="mb-4">
+        <mat-card class="add-card">
+          <div class="px-4 py-3 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-person-plus-fill add-card__icon" aria-hidden="true"></i>
+              <span class="fw-bold text-uppercase add-card__title">Add New Member</span>
+            </div>
+            <button type="button" (click)="cancelAddMember()" aria-label="Close add member form" class="close-btn">
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
+          <mat-divider></mat-divider>
+
+          <div class="px-4 py-4">
+            <form [formGroup]="addForm" (ngSubmit)="submitAddMember()" novalidate>
+              <div class="row g-3">
+
+                @for (field of addFormFields; track field.controlName) {
+                  <div class="col-12 col-md-6 col-xl-4">
+                    <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>{{ field.label }}</mat-label>
+
+                      @if (field.type === 'select') {
+                        <mat-select
+                          [formControlName]="field.controlName"
+                          [attr.aria-describedby]="'add-' + field.controlName + '-err'"
+                        >
+                          @for (opt of field.options!; track opt.value) {
+                            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                          }
+                        </mat-select>
+                      } @else {
+                        <input
+                          matInput
+                          [formControlName]="field.controlName"
+                          [type]="field.type"
+                          [placeholder]="field.placeholder"
+                          [autocomplete]="field.autocomplete"
+                          [attr.maxlength]="field.maxlength ?? null"
+                          [attr.inputmode]="field.inputmode ?? null"
+                          [attr.aria-describedby]="'add-' + field.controlName + '-err'"
+                          (input)="field.onInput && field.onInput($event)"
+                        />
+                      }
+
+                    </mat-form-field>
+
+                    <div [id]="'add-' + field.controlName + '-err'" aria-live="polite" aria-atomic="true">
+                      @if (getFirstError(field.controlName, field.errors); as msg) {
+                        <p class="text-danger small mt-1 mb-0">{{ msg }}</p>
+                      }
+                    </div>
+                  </div>
+                }
+
+              </div>
+
+              <!-- API error -->
+              <div aria-live="assertive" aria-atomic="true">
+                @if (addError()) {
+                  <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small" role="alert">
+                    <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                    {{ addError() }}
+                  </div>
+                }
+              </div>
+
+              <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
+                <button mat-stroked-button type="button" [disabled]="isAdding()" (click)="cancelAddMember()">
+                  Cancel
+                </button>
+                <button mat-flat-button color="primary" type="submit" [disabled]="isAdding()">
+                  @if (isAdding()) {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    Sending Invite…
+                  } @else {
+                    <ng-container>
+                      <i class="bi bi-send-fill me-1" aria-hidden="true"></i>
+                      Send Invite
+                    </ng-container>
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </mat-card>
+      </div>
+    }
+
+    <!-- ══ Members Table ══════════════════════════════════════════════════════════════ -->
+    <mat-card class="members-card mb-4">
 
       @if (isLoading()) {
-        <div class="row g-3 p-4">
-          @for (i of [1,2,3,4,5,6,7]; track i) {
-            <div class="col-6 col-md-4">
-              <span class="loading-block--light d-block mb-1 rounded" style="width:70px;height:10px"></span>
-              <span class="loading-block--light d-block rounded" style="width:130px;height:14px"></span>
+        @for (i of [1, 2, 3]; track i) {
+          <div class="d-flex align-items-center gap-3 px-4 py-3" [class.border-bottom]="i < 3">
+            <span class="skeleton skeleton--circle flex-shrink-0"></span>
+            <div class="flex-grow-1">
+              <span class="skeleton skeleton--line d-block mb-2" style="width:160px"></span>
+              <span class="skeleton skeleton--line d-block" style="width:110px;height:10px"></span>
             </div>
-          }
+            <span class="skeleton skeleton--line d-none d-md-block" style="width:120px"></span>
+            <span class="skeleton skeleton--line d-none d-lg-block" style="width:70px"></span>
+          </div>
+        }
+
+      } @else if (members().length === 0) {
+        <div class="text-center py-5 px-4" role="status">
+          <i class="bi bi-people-fill text-muted d-block mx-auto mb-2 empty-state-icon" aria-hidden="true"></i>
+          <p class="fw-semibold text-muted mb-1">No team members yet</p>
+          <p class="small text-muted mb-0">Use <strong>Add Member</strong> to invite your first team member.</p>
         </div>
-      } @else if (municipalFields().length) {
-        <div class="row g-0">
-          @for (field of municipalFields(); track field.label) {
-            <div class="col-6 col-md-4 info-field">
-              <div class="d-flex align-items-center gap-1 mb-1">
-                <mat-icon class="info-field__icon">{{ field.icon }}</mat-icon>
-                <span class="info-field__label">{{ field.label }}</span>
-              </div>
-              <strong class="info-field__value">{{ field.value || '—' }}</strong>
-            </div>
-          }
-        </div>
-        <mat-divider></mat-divider>
-        <div class="px-4 py-2 d-flex align-items-center gap-1">
-          <mat-icon class="flex-shrink-0 info-card-info-icon">info</mat-icon>
-          <p class="small text-muted mb-0">
-            To request corrections, email
-            <a href="mailto:16fcgrant@mohua.gov.in" class="info-link">16fcgrant&#64;mohua.gov.in</a>
-          </p>
-        </div>
+
       } @else {
-        <div class="px-4 py-3">
-          <p class="text-muted small mb-0">Municipal information not available.</p>
+        <div class="table-responsive">
+          <table mat-table [dataSource]="members()" [trackBy]="trackByMemberId"
+            class="w-100" aria-label="State team members">
+
+            @for (col of tableColumns; track col.key) {
+              <ng-container [matColumnDef]="col.key">
+                <th mat-header-cell *matHeaderCellDef [class]="col.thClass">{{ col.header }}</th>
+                <td mat-cell *matCellDef="let row" [class]="col.tdClass">
+
+                  @switch (col.cellType) {
+
+                    @case ('member') {
+                      <div class="d-flex align-items-center gap-3">
+                        <span class="member-avatar member-avatar--{{ row.subRole | lowercase }}" aria-hidden="true">
+                          {{ getInitials(row.name) }}
+                        </span>
+                        <div class="member-text-wrap">
+                          <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="fw-semibold member-name-text"
+                              [matTooltip]="row.name" matTooltipShowDelay="400" matTooltipPosition="above">
+                              {{ row.name }}
+                            </span>
+                            @if (isCurrentUser(row._id)) {
+                              <span class="you-badge">
+                                <i class="bi bi-person-check-fill me-1" aria-hidden="true"></i>You
+                              </span>
+                            }
+                          </div>
+                          <span class="text-muted" style="font-size:0.75rem">+91&nbsp;{{ row.mobile }}</span>
+                        </div>
+                      </div>
+                    }
+
+                    @case ('designation') {
+                      <span class="designation-text small text-muted"
+                        [matTooltip]="row.designation" matTooltipShowDelay="400" matTooltipPosition="above">
+                        {{ row.designation || '—' }}
+                      </span>
+                    }
+
+                    @case ('role') {
+                      @if (row.subRole === 'SUBMITTER') {
+                        <span class="role-badge role-badge--submitter">SUBMITTER</span>
+                      } @else if (roleChangingId() === row._id) {
+                        <div class="d-flex align-items-center gap-2">
+                          <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{ row.subRole | titlecase }}</span>
+                          <span class="spinner-border spinner-border-sm text-primary flex-shrink-0"
+                            style="width:12px;height:12px"
+                            role="status" [attr.aria-label]="'Updating role for ' + row.name"></span>
+                        </div>
+                      } @else if (editingRoleId() === row._id) {
+                        <div class="role-select-enter">
+                          <mat-select [value]="row.subRole" class="role-select"
+                            [attr.aria-label]="'Change role for ' + row.name"
+                            (selectionChange)="changeRole(row, $event.value)"
+                            (openedChange)="onRoleSelectClose($event, row._id)">
+                            <mat-option value="EDITOR">Editor</mat-option>
+                            <mat-option value="VIEWER">Viewer</mat-option>
+                          </mat-select>
+                        </div>
+                      } @else {
+                        <div class="d-flex align-items-center gap-2 role-label-view">
+                          <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{ row.subRole | titlecase }}</span>
+                          @if (isSubmitter()) {
+                            <button type="button" class="role-edit-btn"
+                              [attr.aria-label]="'Edit role for ' + row.name"
+                              (click)="editingRoleId.set(row._id)">
+                              <i class="bi bi-pencil-fill" aria-hidden="true"></i>
+                            </button>
+                          }
+                        </div>
+                      }
+                    }
+
+                    @case ('status') {
+                      <span class="badge rounded-pill status-badge"
+                        [class.text-bg-success]="row.isActive"
+                        [class.text-bg-secondary]="!row.isActive">
+                        {{ row.isActive ? 'ACTIVE' : 'INACTIVE' }}
+                      </span>
+                    }
+
+                    @case ('lastActive') {
+                      <span class="small text-muted">{{ formatLastActive(row.lastActive) }}</span>
+                    }
+
+                    @case ('actions') {
+                      @if (isCurrentUser(row._id) || row.subRole === 'SUBMITTER') {
+                        <span class="text-muted small">—</span>
+                      } @else if (confirmDisableId() === row._id) {
+                        <div class="d-inline-flex align-items-center gap-1">
+                          <span class="small text-danger fw-semibold me-1 d-none d-md-inline">Sure?</span>
+                          <button type="button" class="action-icon-btn action-icon-btn--warn"
+                            [attr.aria-label]="'Confirm ' + (row.isActive ? 'disable' : 'enable') + ' for ' + row.name"
+                            (click)="confirmToggle(row)">
+                            <i class="bi bi-check-lg" aria-hidden="true"></i>
+                          </button>
+                          <button type="button" class="action-icon-btn"
+                            aria-label="Cancel" (click)="cancelToggle()">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                          </button>
+                        </div>
+                      } @else if (togglingId() === row._id) {
+                        <span class="spinner-border spinner-border-sm text-muted"
+                          style="width:16px;height:16px"
+                          role="status" [attr.aria-label]="'Updating ' + row.name"></span>
+                      } @else {
+                        <button mat-stroked-button type="button" class="action-btn"
+                          [color]="row.isActive ? 'warn' : 'primary'"
+                          [disabled]="togglingId() !== null"
+                          [attr.aria-label]="(row.isActive ? 'Disable ' : 'Enable ') + row.name"
+                          (click)="requestToggle(row._id)">
+                          {{ row.isActive ? 'Disable' : 'Enable' }}
+                        </button>
+                      }
+                    }
+
+                  }
+
+                </td>
+              </ng-container>
+            }
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"
+              class="member-row"
+              [class.opacity-50]="!row.isActive"
+              [class.table-active]="isCurrentUser(row._id)">
+            </tr>
+
+          </table>
         </div>
       }
     </mat-card>
 
-    <!-- ═══ People & Roles ════════════════════════════════════════════════════════ -->
-    <section aria-labelledby="contacts-heading">
+    <!-- ══ Transfer Ownership (Submitter only) ════════════════════════════════════════ -->
+    @if (isSubmitter()) {
+      <mat-card class="transfer-card">
 
-      <div class="mb-3">
-        <h2 id="contacts-heading" class="fs-5 fw-bold mb-1">People &amp; Roles</h2>
-        @if (ulbInfo()?.name) {
-          <p class="text-muted small mb-0">Mapped contacts for {{ ulbInfo()!.name }}</p>
-        }
-      </div>
-
-      <mat-card class="contacts-mat-card">
-
-        @if (isLoading()) {
-          @for (i of [1, 2]; track i) {
-            <div class="d-flex align-items-center gap-3 p-4" [class.border-bottom]="i === 1">
-              <span class="loading-block--light rounded-circle flex-shrink-0" style="width:38px;height:38px"></span>
-              <div class="flex-grow-1">
-                <span class="loading-block--light d-block mb-2 rounded" style="width:160px;height:13px"></span>
-                <span class="loading-block--light d-block rounded" style="width:100px;height:11px"></span>
-              </div>
-              <span class="loading-block--light d-none d-md-block rounded" style="width:120px;height:13px"></span>
+        @if (!showTransferPanel()) {
+          <div class="d-flex align-items-start justify-content-between gap-3 px-4 py-3">
+            <div>
+              <p class="fw-bold text-danger mb-1 small text-uppercase" style="letter-spacing:0.05em">
+                Transfer Ownership
+              </p>
+              <p class="small text-muted mb-0">
+                Transfer full Submitter access to another team member. This action is irreversible —
+                you will be moved to Editor immediately after confirmation.
+              </p>
             </div>
-          }
-        } @else {
-
-          <div class="table-responsive">
-            <table
-              mat-table
-              [dataSource]="contactRows()"
-              multiTemplateDataRows
-              class="w-100"
-              aria-label="Commissioner and nodal officer contacts"
-            >
-
-              <!-- Name column (includes edit pencil + avatar) -->
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef>NAME</th>
-                <td mat-cell *matCellDef="let row">
-                  <div class="d-flex align-items-center gap-2">
-                    <button
-                      mat-icon-button
-                      type="button"
-                      class="edit-icon-btn"
-                      [color]="editingContact() === row.type ? undefined : 'primary'"
-                      [class.is-active]="editingContact() === row.type"
-                      [disabled]="editingContact() !== null && editingContact() !== row.type"
-                      [attr.aria-label]="(editingContact() === row.type ? 'Cancel editing ' : 'Edit ') + row.label"
-                      (click)="toggleEdit(row.type)"
-                    >
-                      <mat-icon>{{ editingContact() === row.type ? 'close' : 'edit' }}</mat-icon>
-                    </button>
-                    <span class="member-avatar" aria-hidden="true">
-                      {{ row.name ? getInitials(row.name) : '?' }}
-                    </span>
-                    <div class="min-w-0">
-                      <span class="contact-name d-block">{{ row.name || '—' }}</span>
-                      @if (row.email) {
-                        <span class="contact-email d-block d-md-none">{{ row.email }}</span>
-                      }
-                    </div>
-                  </div>
-                </td>
-              </ng-container>
-
-              <!-- Designation column (hidden on mobile) -->
-              <ng-container matColumnDef="designation">
-                <th mat-header-cell *matHeaderCellDef class="d-none d-md-table-cell">DESIGNATION</th>
-                <td mat-cell *matCellDef="let row" class="d-none d-md-table-cell">
-                  <span class="designation-badge">{{ row.label }}</span>
-                </td>
-              </ng-container>
-
-              <!-- Contact column -->
-              <ng-container matColumnDef="contact">
-                <th mat-header-cell *matHeaderCellDef>CONTACT</th>
-                <td mat-cell *matCellDef="let row">
-                  <span class="contact-mobile">{{ row.mobile || '—' }}</span>
-                </td>
-              </ng-container>
-
-              <!-- Warning banner row (spans all columns, only for rows with invalid stored data) -->
-              <ng-container matColumnDef="warningBanner">
-                <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length" class="warn-banner-cell">
-                  <div class="d-flex align-items-center gap-2 px-4 py-2 bg-warning-subtle border-bottom">
-                    <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0" style="font-size:0.75rem"></i>
-                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">Click edit to fix:</span>
-                    <div class="d-flex gap-1">
-                      @if (row.nameInvalid) {
-                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name</span>
-                      }
-                      @if (row.mobileInvalid) {
-                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Mobile</span>
-                      }
-                    </div>
-                  </div>
-                </td>
-              </ng-container>
-
-              <!-- Expanded edit form row (spans all columns) -->
-              <ng-container matColumnDef="expandedDetail">
-                <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
-                  <div
-                    class="edit-panel-wrapper"
-                    [@detailExpand]="editingContact() === row.type ? 'expanded' : 'collapsed'"
-                  >
-                    <div class="edit-panel">
-
-                      <p class="edit-panel__heading mb-3">
-                        <mat-icon class="align-middle me-1" style="font-size:1rem;width:1rem;height:1rem">edit</mat-icon>
-                        Editing {{ row.label }}
-                      </p>
-
-                      <form [formGroup]="editForm" (ngSubmit)="saveEdit()" novalidate>
-                        <div class="row g-3">
-
-                          <div class="col-12 col-md-4">
-                            <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
-                              <mat-label>Full Name</mat-label>
-                              <input matInput formControlName="name" placeholder="e.g. Ramesh Kumar" maxlength="100" autocomplete="name" />
-                            </mat-form-field>
-                            @if (editForm.get('name')?.touched) {
-                              @if (editForm.get('name')?.hasError('required')) {
-                                <p class="text-danger small mt-1 mb-0">Name is required.</p>
-                              } @else if (editForm.get('name')?.hasError('minlength')) {
-                                <p class="text-danger small mt-1 mb-0">Name must be at least 2 characters.</p>
-                              } @else if (editForm.get('name')?.hasError('pattern')) {
-                                <p class="text-danger small mt-1 mb-0">Only letters, spaces, hyphens, dots, and apostrophes are allowed — no numbers or special characters.</p>
-                              } @else if (editForm.get('name')?.hasError('unsafeInput')) {
-                                <p class="text-danger small mt-1 mb-0">Name contains disallowed characters.</p>
-                              }
-                            }
-                          </div>
-
-                          <div class="col-12 col-md-4">
-                            <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
-                              <mat-label>Mobile</mat-label>
-                              <input matInput type="tel" formControlName="mobile" placeholder="10-digit number" inputmode="numeric" maxlength="10" autocomplete="tel" (input)="onMobileInput($event)" />
-                            </mat-form-field>
-                            @if (editForm.get('mobile')?.touched) {
-                              @if (editForm.get('mobile')?.hasError('required')) {
-                                <p class="text-danger small mt-1 mb-0">Mobile number is required.</p>
-                              } @else if (editForm.get('mobile')?.hasError('pattern')) {
-                                <p class="text-danger small mt-1 mb-0">Enter a valid 10-digit number starting with 6–9.</p>
-                              } @else if (editForm.get('mobile')?.hasError('unsafeInput')) {
-                                <p class="text-danger small mt-1 mb-0">Mobile number contains disallowed characters.</p>
-                              }
-                            }
-                          </div>
-
-                          <div class="col-12 col-md-4">
-                            <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
-                              <mat-label>Email <span class="fw-normal text-muted">(optional)</span></mat-label>
-                              <input matInput type="email" formControlName="email" placeholder="official@ulb.gov.in" autocomplete="email" />
-                            </mat-form-field>
-                            @if (editForm.get('email')?.touched) {
-                              @if (editForm.get('email')?.hasError('email')) {
-                                <p class="text-danger small mt-1 mb-0">Enter a valid email address.</p>
-                              } @else if (editForm.get('email')?.hasError('maxlength')) {
-                                <p class="text-danger small mt-1 mb-0">Email must not exceed 254 characters.</p>
-                              } @else if (editForm.get('email')?.hasError('unsafeInput')) {
-                                <p class="text-danger small mt-1 mb-0">Email contains disallowed characters.</p>
-                              }
-                            }
-                          </div>
-
-                        </div>
-
-                        @if (saveError()) {
-                          <div
-                            class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small"
-                            role="alert"
-                          >
-                            <mat-icon class="flex-shrink-0" style="font-size:1rem;width:1rem;height:1rem">error</mat-icon>
-                            {{ saveError() }}
-                          </div>
-                        }
-
-                        <div class="d-flex gap-2 justify-content-end mt-3 pt-2 border-top">
-                          <button mat-stroked-button type="button" [disabled]="isSaving()" (click)="cancelEdit()">
-                            Cancel
-                          </button>
-                          <button
-                            mat-flat-button
-                            color="primary"
-                            type="submit"
-                            [disabled]="editForm.invalid || isSaving()"
-                          >
-                            @if (isSaving()) {
-                              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                              Saving…
-                            } @else {
-                              Save Changes
-                            }
-                          </button>
-                        </div>
-                      </form>
-
-                    </div>
-                  </div>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: ['warningBanner']; when: rowHasWarning" class="warn-banner-row"></tr>
-              <tr
-                mat-row
-                *matRowDef="let row; columns: displayedColumns"
-                class="contact-row"
-                [class.contact-row--editing]="editingContact() === row.type"
-              ></tr>
-              <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
-
-            </table>
+            <button mat-stroked-button color="warn" type="button" class="flex-shrink-0" (click)="openTransferPanel()">
+              Transfer
+            </button>
           </div>
 
+        } @else {
+          <div class="px-4 py-4">
+            <p class="fw-bold text-danger mb-3 d-flex align-items-center gap-1 small text-uppercase"
+              style="letter-spacing:0.05em">
+              <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+              Transfer Ownership
+            </p>
+
+            @if (eligibleTransferTargets().length === 0) {
+              <div class="alert alert-warning d-flex align-items-center gap-2 py-2 px-3 small mb-3" role="alert">
+                <i class="bi bi-info-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                No active Editor or Viewer members available. Add team members first.
+              </div>
+            } @else {
+              <div class="row g-3 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Transfer to</mat-label>
+                    <mat-select
+                      [value]="transferTargetId()"
+                      (selectionChange)="transferTargetId.set($event.value)"
+                      aria-label="Select member to transfer ownership to"
+                    >
+                      @for (m of eligibleTransferTargets(); track m._id) {
+                        <mat-option [value]="m._id">{{ m.name }} — {{ m.designation }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div>
+            }
+
+            <div class="alert alert-danger d-flex align-items-start gap-2 py-2 px-3 small mb-3" role="note">
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+              <span>
+                <strong>This action is irreversible.</strong> The selected member will become
+                Submitter with full access. Your role changes to Editor immediately.
+              </span>
+            </div>
+
+            <div aria-live="assertive" aria-atomic="true">
+              @if (transferError()) {
+                <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 small mb-3" role="alert">
+                  <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                  {{ transferError() }}
+                </div>
+              }
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end pt-3 border-top">
+              <button mat-stroked-button type="button" [disabled]="isTransferring()" (click)="cancelTransfer()">
+                Cancel
+              </button>
+              <button
+                mat-flat-button
+                color="warn"
+                type="button"
+                [disabled]="isTransferring() || !transferTargetId() || eligibleTransferTargets().length === 0"
+                (click)="confirmTransfer()"
+              >
+                @if (isTransferring()) {
+                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  Transferring…
+                } @else {
+                  <ng-container>
+                    <i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>
+                    Confirm Transfer
+                  </ng-container>
+                }
+              </button>
+            </div>
+          </div>
         }
+
       </mat-card>
-    </section>
+    }
 
   }
 </main>

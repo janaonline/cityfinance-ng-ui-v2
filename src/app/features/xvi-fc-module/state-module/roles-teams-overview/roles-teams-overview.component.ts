@@ -1,4 +1,4 @@
-﻿import {
+import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -8,7 +8,7 @@
   signal,
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, map, of } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
@@ -17,11 +17,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { LowerCasePipe, TitleCasePipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
-import { UlbContacts } from '../../shared/profile-verification/profile-verification.models';
+import { ProfileVerificationService } from '../../shared/profile-verification/profile-verification.service';
 import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
 import {
   IDENTIFIER_SECURITY_VALIDATORS,
@@ -29,29 +31,66 @@ import {
   noMongoOperators,
 } from '../../../../auth/validators/auth-security.validators';
 
-type ContactType = 'commissioner' | 'accountant';
+export type StateSubRole = 'SUBMITTER' | 'EDITOR' | 'VIEWER';
 
-interface UlbBandInfo {
+export interface StateMember {
+  _id: string;
   name: string;
-  code: string;
-  stateName: string;
-  initials: string;
+  mobile: string;
+  designation: string;
+  subRole: StateSubRole;
+  isActive: boolean;
+  lastActive: string | null;
+  email?: string;
 }
 
-interface RegisteredMunicipalInfo {
-  stateName: string;
-  ulbType: string;
-  censusCode: string;
-  ulbCode: string;
-  area: number;
-  population: number;
-  wards: number;
+interface PermissionRow {
+  label: string;
+  submitter: boolean;
+  editor: boolean;
+  viewer: boolean;
 }
 
-interface ProfileContactsApiResponse extends UlbContacts {
-  ulbDetails?: { name: string; code: string; stateName: string } | null;
-  registeredMunicipalInfo?: RegisteredMunicipalInfo | null;
+interface ActionButton {
+  label: string;
+  iconClass: string;
+  variant: 'stroked' | 'flat';
+  color?: string;
+  tooltip: string;
+  isActive: boolean;
+  showChevron: boolean;
+  disabled: boolean;
+  onClick: () => void;
 }
+
+type CellType = 'member' | 'designation' | 'role' | 'status' | 'lastActive' | 'actions';
+
+interface TableColumn {
+  key: string;
+  header: string;
+  thClass: string;
+  tdClass: string;
+  cellType: CellType;
+}
+
+interface FormFieldConfig {
+  controlName: string;
+  label: string;
+  placeholder: string;
+  iconClass: string;
+  type: 'text' | 'email' | 'tel' | 'select';
+  autocomplete: string;
+  maxlength?: number;
+  inputmode?: string;
+  options?: { value: string; label: string }[];
+  onInput?: (e: Event) => void;
+  errors: { key: string; message: string }[];
+}
+
+// Literal space — intentionally excludes \t, \n, \r from valid name characters.
+const NAME_PATTERN = /^[a-zA-Z .\-']+$/;
+
+
 
 @Component({
   selector: 'app-roles-teams-overview',
@@ -64,21 +103,22 @@ interface ProfileContactsApiResponse extends UlbContacts {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatIconModule,
     MatDividerModule,
     MatTableModule,
+    MatSelectModule,
+    MatTooltipModule,
+    LowerCasePipe,
+    TitleCasePipe,
     PageErrorStateComponent,
   ],
   templateUrl: './roles-teams-overview.component.html',
   styleUrl: './roles-teams-overview.component.scss',
   animations: [
-    trigger('detailExpand', [
-      // maxHeight animation keeps height:auto on the wrapper so error messages
-      // that appear after expansion don't get clipped by a frozen px height.
-      state('collapsed', style({ maxHeight: '0px', opacity: 0 })),
-      state('expanded', style({ maxHeight: '600px', opacity: 1 })),
-      transition('collapsed => expanded', animate('240ms 40ms cubic-bezier(0.4, 0, 0.2, 1)')),
-      transition('expanded => collapsed', animate('180ms cubic-bezier(0.4, 0, 0.2, 1)')),
+    trigger('panelSlide', [
+      state('void', style({ maxHeight: '0px', opacity: 0, overflow: 'hidden' })),
+      state('*',    style({ maxHeight: '900px', opacity: 1, overflow: 'hidden' })),
+      transition(':enter', animate('220ms cubic-bezier(0.4, 0, 0.2, 1)')),
+      transition(':leave', animate('160ms cubic-bezier(0.4, 0, 0.2, 1)')),
     ]),
   ],
 })
@@ -87,160 +127,245 @@ export class RolesTeamsOverviewComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly profileService = inject(ProfileVerificationService);
   private readonly baseUrl = environment.api.url2;
 
-  private userId = '';
-  private ulbCode = '';
-  private localStateName = '';
+  readonly permissionMatrix = signal<PermissionRow[]>([]);
 
-  readonly displayedColumns = ['name', 'designation', 'contact'];
+  readonly tableColumns: TableColumn[] = [
+    { key: 'member',      header: 'Name & Phone', thClass: '',                       tdClass: '',                       cellType: 'member' },
+    { key: 'designation', header: 'Designation',  thClass: 'd-none d-md-table-cell', tdClass: 'd-none d-md-table-cell', cellType: 'designation' },
+    { key: 'role',        header: 'Role',          thClass: '',                       tdClass: '',                       cellType: 'role' },
+    { key: 'status',      header: 'Status',        thClass: 'd-none d-lg-table-cell', tdClass: 'd-none d-lg-table-cell', cellType: 'status' },
+    { key: 'lastActive',  header: 'Last Active',   thClass: 'd-none d-xl-table-cell', tdClass: 'd-none d-xl-table-cell', cellType: 'lastActive' },
+    { key: 'actions',     header: 'Actions',       thClass: 'text-end pe-3',          tdClass: 'text-end pe-3',          cellType: 'actions' },
+  ];
 
+  readonly displayedColumns = this.tableColumns.map(c => c.key);
+
+  readonly addFormFields: FormFieldConfig[] = [
+    {
+      controlName: 'name',
+      label: 'Full Name',
+      placeholder: 'e.g. Anjali Sharma',
+      iconClass: 'bi bi-person',
+      type: 'text',
+      autocomplete: 'name',
+      maxlength: 100,
+      onInput: (e: Event) => this.onNameInput(e),
+      errors: [
+        { key: 'required',    message: 'Full name is required.' },
+        { key: 'minlength',   message: 'Name must be at least 2 characters.' },
+        { key: 'pattern',     message: 'Numbers and special characters are not allowed in name.' },
+        { key: 'unsafeInput', message: 'Name contains disallowed characters.' },
+      ],
+    },
+    {
+      controlName: 'designation',
+      label: 'Designation',
+      placeholder: 'e.g. Deputy Director',
+      iconClass: 'bi bi-person-badge',
+      type: 'text',
+      autocomplete: 'organization-title',
+      maxlength: 100,
+      onInput: (e: Event) => this.onDesignationInput(e),
+      errors: [
+        { key: 'required',    message: 'Designation is required.' },
+        { key: 'minlength',   message: 'Must be at least 2 characters.' },
+        { key: 'pattern',     message: 'Numbers and special characters are not allowed in designation.' },
+        { key: 'unsafeInput', message: 'Contains disallowed characters.' },
+      ],
+    },
+    {
+      controlName: 'subRole',
+      label: 'Assign Role',
+      placeholder: '',
+      iconClass: 'bi bi-person-gear',
+      type: 'select',
+      autocomplete: '',
+      options: [
+        { value: 'EDITOR', label: 'Editor' },
+        { value: 'VIEWER', label: 'Viewer' },
+      ],
+      errors: [
+        { key: 'required', message: 'Role is required.' },
+      ],
+    },
+    {
+      controlName: 'email',
+      label: 'Email Address',
+      placeholder: 'official@state.gov.in',
+      iconClass: 'bi bi-envelope',
+      type: 'email',
+      autocomplete: 'email',
+      errors: [
+        { key: 'required',    message: 'Email address is required.' },
+        { key: 'email',       message: 'Enter a valid email — e.g. name@domain.com.' },
+        { key: 'maxlength',   message: 'Email must not exceed 254 characters.' },
+        { key: 'unsafeInput', message: 'Email contains disallowed characters.' },
+      ],
+    },
+    {
+      controlName: 'mobile',
+      label: 'Mobile Number',
+      placeholder: '10-digit number',
+      iconClass: 'bi bi-telephone',
+      type: 'tel',
+      autocomplete: 'tel',
+      maxlength: 10,
+      inputmode: 'numeric',
+      onInput: (e: Event) => this.onMobileInput(e),
+      errors: [
+        { key: 'required',    message: 'Mobile number is required.' },
+        { key: 'pattern',     message: 'Must be 10 digits, starting with 6, 7, 8, or 9. Letters and special characters are not allowed.' },
+        { key: 'unsafeInput', message: 'Mobile contains disallowed characters.' },
+      ],
+    },
+  ];
+
+  readonly infoBannerText =
+    'Staff whose details are on record from the 15th Finance Commission can sign in directly ' +
+    'using their registered email ID and password. To give access to someone new, use ' +
+    '<strong>Add Member</strong> below — they will receive an email invitation to set up their login.';
+
+  private currentUserId = '';
+  private stateId = '';
+
+  // Signals
+  readonly currentSubRole = signal<StateSubRole>('VIEWER');
   readonly isLoading = signal(true);
   readonly hasError = signal(false);
-  readonly ulbInfo = signal<UlbBandInfo | null>(null);
-  readonly contacts = signal<UlbContacts | null>(null);
-  readonly municipalInfo = signal<RegisteredMunicipalInfo | null>(null);
-  readonly editingContact = signal<ContactType | null>(null);
-  readonly isSaving = signal(false);
-  readonly saveError = signal<string | null>(null);
+  readonly members = signal<StateMember[]>([]);
 
-  readonly contactRows = computed(() => {
-    const c = this.contacts();
-    if (!c) return [];
-    const mkRow = (
-      type: ContactType,
-      label: string,
-      name: string,
-      email: string,
-      mobile: string,
-    ) => ({
-      type,
-      label,
-      name,
-      email,
-      mobile,
-      nameInvalid: !!name && !RolesTeamsOverviewComponent.NAME_PATTERN.test(name),
-      mobileInvalid: !!mobile && !/^[6-9]\d{9}$/.test(mobile),
-    });
-    return [
-      mkRow('commissioner', 'Municipal Commissioner / Executive Officer',
-        c.commissionerName ?? '', c.commissionerEmail ?? '', c.commissionerConatactNumber ?? ''),
-      mkRow('accountant', 'ULB Nodal Officer',
-        c.accountantName ?? '', c.accountantEmail ?? '', c.accountantConatactNumber ?? ''),
-    ];
-  });
+  // Panel visibility
+  readonly showPermissionMatrix = signal(false);
+  readonly showAddMember = signal(false);
+  readonly isAdding = signal(false);
+  readonly addError = signal<string | null>(null);
 
-  readonly municipalFields = computed(() => {
-    const m = this.municipalInfo();
-    if (!m) return [];
-    return [
-      { label: 'STATE', value: m.stateName, icon: 'map' },
-      { label: 'ULB TYPE', value: m.ulbType, icon: 'account_balance' },
-      { label: 'CENSUS CODE', value: m.censusCode, icon: 'fingerprint' },
-      { label: 'ULB CODE', value: m.ulbCode, icon: 'badge' },
-      { label: 'AREA', value: this.formatArea(m.area), icon: 'straighten' },
-      { label: 'POPULATION (CENSUS 2011)', value: this.formatPopulation(m.population), icon: 'people' },
-      { label: 'NO. OF WARDS', value: m.wards ? String(m.wards) : '', icon: 'grid_view' },
-    ];
-  });
+  // Per-row action states
+  readonly roleChangingId  = signal<string | null>(null);
+  readonly editingRoleId   = signal<string | null>(null);
+  readonly togglingId      = signal<string | null>(null);
+  readonly confirmDisableId = signal<string | null>(null);
 
-  // Same NAME_PATTERN as profile-verification: letters, spaces, dots, hyphens, apostrophes only.
-  // Blocks digits and special characters.
-  private static readonly NAME_PATTERN = /^[a-zA-Z\s.\-']+$/;
+  // Transfer ownership
+  readonly showTransferPanel = signal(false);
+  readonly isTransferring = signal(false);
+  readonly transferError = signal<string | null>(null);
+  readonly transferTargetId = signal<string>('');
 
-  readonly editForm = this.fb.nonNullable.group({
-    name: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(100),
-        Validators.pattern(RolesTeamsOverviewComponent.NAME_PATTERN),
-        noHtmlOrScript,
-        noMongoOperators,
-      ],
-    ],
-    mobile: [
-      '',
-      [
-        Validators.required,
-        Validators.pattern(/^[6-9]\d{9}$/),
-        noHtmlOrScript,
-        noMongoOperators,
-      ],
-    ],
-    email: [
-      '',
-      [
-        Validators.email,
-        Validators.maxLength(254),
-        ...IDENTIFIER_SECURITY_VALIDATORS,
-      ],
-    ],
+  readonly isSubmitter = computed(() => this.currentSubRole() === 'SUBMITTER');
+
+  readonly eligibleTransferTargets = computed(() =>
+    this.members().filter(m => m._id !== this.currentUserId && m.isActive && m.subRole !== 'SUBMITTER')
+  );
+
+  readonly actionButtons = computed<ActionButton[]>(() => [
+    {
+      label: 'Permission matrix',
+      iconClass: 'bi bi-shield-fill-check me-1',
+      variant: 'stroked',
+      tooltip: 'Click to see permission matrix',
+      isActive: this.showPermissionMatrix(),
+      showChevron: true,
+      disabled: false,
+      onClick: () => this.togglePermissionMatrix(),
+    },
+    {
+      label: 'Add Member',
+      iconClass: 'bi bi-plus-lg me-1',
+      variant: 'flat',
+      color: 'primary',
+      tooltip: this.isSubmitter()
+        ? 'Click to add a new team member'
+        : 'Only the Submitter can add new members',
+      isActive: false,
+      showChevron: false,
+      disabled: !this.isSubmitter(),
+      onClick: () => this.openAddMember(),
+    },
+  ]);
+
+  readonly addForm = this.fb.nonNullable.group({
+    name: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(100),
+      Validators.pattern(NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    email: ['', [
+      Validators.required,
+      Validators.email,
+      Validators.maxLength(254),
+      ...IDENTIFIER_SECURITY_VALIDATORS,
+    ]],
+    mobile: ['', [
+      Validators.required,
+      Validators.pattern(/^[6-9]\d{9}$/),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    designation: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(100),
+      Validators.pattern(/^[a-zA-Z .\-]+$/),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    subRole: [('EDITOR' as StateSubRole), Validators.required],
   });
 
   ngOnInit(): void {
-    this.resolveFromStorage();
-    this.loadData();
+    const u = this.profileService.readStoredUser();
+    this.currentUserId = u._id ?? u.id ?? '';
+    this.stateId = String(u['state'] ?? '');
+    this.currentSubRole.set((u['subRole'] as StateSubRole | undefined) ?? 'SUBMITTER');
+    this.loadMembers();
+    this.loadPermissionMatrix();
   }
 
-  private resolveFromStorage(): void {
-    try {
-      const raw = localStorage.getItem('userData');
-      if (!raw) return;
-      const u = JSON.parse(raw) as Record<string, string>;
-      this.userId = u['_id'] ?? u['id'] ?? '';
-      this.ulbCode = u['ulbCode'] ?? '';
-      this.localStateName = u['stateName'] ?? '';
-    } catch { /* ignore */ }
+  private loadPermissionMatrix(): void {
+    this.http
+      .get<{ success: boolean; data: PermissionRow[] } | PermissionRow[]>(
+        `${this.baseUrl}users/permission-matrix`,
+      )
+      .pipe(
+        map((r): PermissionRow[] =>
+          'success' in r && Array.isArray((r as { data: unknown }).data)
+            ? (r as { success: boolean; data: PermissionRow[] }).data
+            : (r as PermissionRow[]),
+        ),
+        catchError(() => of([])),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((rows) => this.permissionMatrix.set(rows));
   }
 
-  loadData(): void {
-    if (!this.userId) {
-      this.hasError.set(true);
-      this.isLoading.set(false);
-      return;
-    }
-
+  loadMembers(): void {
     this.isLoading.set(true);
     this.hasError.set(false);
 
     this.http
-      .get<{ success: boolean; data: ProfileContactsApiResponse } | ProfileContactsApiResponse>(
-        `${this.baseUrl}users/${this.userId}/profile-contacts`,
+      .get<{ success: boolean; data: StateMember[] } | StateMember[]>(
+        `${this.baseUrl}users/state-members`,
       )
       .pipe(
-        map((r) => ('success' in r ? r.data : r) as ProfileContactsApiResponse),
+        // Dev server returns raw array; local NestJS ResponseTransformInterceptor wraps { success, data }
+        map((r): StateMember[] =>
+          'success' in r && Array.isArray((r as { data: unknown }).data)
+            ? (r as { success: boolean; data: StateMember[] }).data
+            : (r as StateMember[]),
+        ),
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (res) => {
-          if (!res) {
-            this.hasError.set(true);
-            this.isLoading.set(false);
-            return;
-          }
-
-          this.contacts.set({
-            commissionerName: res.commissionerName,
-            commissionerEmail: res.commissionerEmail,
-            commissionerConatactNumber: res.commissionerConatactNumber,
-            accountantName: res.accountantName,
-            accountantEmail: res.accountantEmail,
-            accountantConatactNumber: res.accountantConatactNumber,
-          });
-
-          const d = res.ulbDetails;
-          const entityName = d?.name ?? '';
-          this.ulbInfo.set({
-            name: entityName,
-            code: d?.code ?? this.ulbCode,
-            stateName: d?.stateName ?? this.localStateName,
-            initials: this.getInitials(entityName || this.ulbCode),
-          });
-
-          this.municipalInfo.set(res.registeredMunicipalInfo ?? null);
+        next: (members) => {
+          if (!members) { this.hasError.set(true); } else { this.members.set(members); }
           this.isLoading.set(false);
         },
         error: () => {
@@ -250,108 +375,216 @@ export class RolesTeamsOverviewComponent implements OnInit {
       });
   }
 
-  rowHasWarning(_index: number, row: { nameInvalid: boolean; mobileInvalid: boolean }): boolean {
-    return row.nameInvalid || row.mobileInvalid;
-  }
-
-  toggleEdit(type: ContactType): void {
-    if (this.editingContact() === type) {
-      this.cancelEdit();
-    } else {
-      this.startEdit(type);
+  togglePermissionMatrix(): void {
+    const opening = !this.showPermissionMatrix();
+    if (opening) {
+      this.cancelAddMember();
     }
+    this.showPermissionMatrix.set(opening);
   }
 
-  startEdit(type: ContactType): void {
-    const c = this.contacts();
-    if (!c) return;
-
-    const isComm = type === 'commissioner';
-    this.editForm.reset({
-      name: isComm ? (c.commissionerName ?? '') : (c.accountantName ?? ''),
-      mobile: isComm ? (c.commissionerConatactNumber ?? '') : (c.accountantConatactNumber ?? ''),
-      email: isComm ? (c.commissionerEmail ?? '') : (c.accountantEmail ?? ''),
-    });
-    this.saveError.set(null);
-    this.editingContact.set(type);
-    // Show validation errors immediately if pre-filled data is already invalid
-    this.editForm.markAllAsTouched();
+  openAddMember(): void {
+    this.showPermissionMatrix.set(false);
+    this.addForm.reset({ subRole: 'EDITOR' });
+    this.addError.set(null);
+    this.showAddMember.set(true);
   }
 
-  cancelEdit(): void {
-    this.editingContact.set(null);
-    this.saveError.set(null);
+  cancelAddMember(): void {
+    this.showAddMember.set(false);
+    this.addForm.reset({ subRole: 'EDITOR' });
+    this.addError.set(null);
   }
 
-  saveEdit(): void {
-    if (this.editForm.invalid) {
-      this.editForm.markAllAsTouched();
-      return;
-    }
-    if (this.isSaving()) return;
-    const type = this.editingContact();
-    if (!type || !this.userId) return;
+  submitAddMember(): void {
+    if (this.isAdding()) return;
+    if (this.addForm.invalid) { this.addForm.markAllAsTouched(); return; }
 
-    this.isSaving.set(true);
-    this.saveError.set(null);
-
-    const { name, mobile, email } = this.editForm.getRawValue();
-    const isComm = type === 'commissioner';
-
-    const payload = isComm
-      ? { commissionerName: name, commissionerEmail: email, commissionerConatactNumber: mobile }
-      : { accountantName: name, accountantEmail: email, accountantConatactNumber: mobile };
+    this.isAdding.set(true);
+    this.addError.set(null);
+    const payload = { ...this.addForm.getRawValue(), stateId: this.stateId };
 
     this.http
-      .patch(`${this.baseUrl}users/${this.userId}/profile-contacts`, payload)
+      .post<{ success: boolean; data: StateMember } | StateMember>(
+        `${this.baseUrl}users/invite-state-member`, payload,
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          const cur = this.contacts()!;
-          this.contacts.set(
-            isComm
-              ? { ...cur, commissionerName: name, commissionerEmail: email, commissionerConatactNumber: mobile }
-              : { ...cur, accountantName: name, accountantEmail: email, accountantConatactNumber: mobile },
-          );
-          this.editingContact.set(null);
-          this.isSaving.set(false);
-          this.snackBar.open(
-            `${isComm ? 'Commissioner' : 'Nodal Officer'} details updated.`,
-            'Dismiss',
-            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
-          );
+        next: res => {
+          const member = ('success' in res ? res.data : res) as StateMember;
+          this.members.update(list => [...list, member]);
+          this.isAdding.set(false);
+          this.cancelAddMember();
+          this.snackBar.open(`${payload.name} has been invited.`, 'Dismiss',
+            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
-        error: (err: { error?: { message?: string } }) => {
-          this.isSaving.set(false);
-          this.saveError.set(err?.error?.message ?? 'Failed to save. Please try again.');
+        error: (err: HttpErrorResponse) => {
+          this.isAdding.set(false);
+          this.addError.set(err.error?.message ?? 'Failed to invite member. Please try again.');
         },
       });
   }
 
+  onRoleSelectClose(opened: boolean, rowId: string): void {
+    if (!opened && this.roleChangingId() === null) {
+      this.editingRoleId.set(null);
+    }
+  }
+
+  changeRole(member: StateMember, newRole: StateSubRole): void {
+    if (newRole === member.subRole || this.roleChangingId()) return;
+
+    this.editingRoleId.set(null);
+    const previousRole = member.subRole;
+    this.roleChangingId.set(member._id);
+    // Optimistic update — revert on failure
+    this.members.update(list => list.map(m => m._id === member._id ? { ...m, subRole: newRole } : m));
+
+    this.http
+      .patch(`${this.baseUrl}users/${member._id}/sub-role`, { subRole: newRole })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.roleChangingId.set(null);
+          this.snackBar.open(`${member.name}'s role updated to ${newRole}.`, 'Dismiss',
+            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.members.update(list => list.map(m => m._id === member._id ? { ...m, subRole: previousRole } : m));
+          this.roleChangingId.set(null);
+          this.snackBar.open(err.error?.message ?? 'Role update failed. Please try again.', 'Dismiss',
+            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-error'] });
+        },
+      });
+  }
+
+  requestToggle(memberId: string): void {
+    this.confirmDisableId.set(memberId);
+  }
+
+  cancelToggle(): void {
+    this.confirmDisableId.set(null);
+  }
+
+  confirmToggle(member: StateMember): void {
+    if (this.togglingId()) return;
+    this.togglingId.set(member._id);
+    this.confirmDisableId.set(null);
+
+    const action = member.isActive ? 'deactivate' : 'activate';
+    this.http
+      .patch(`${this.baseUrl}users/${member._id}/${action}`, {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.members.update(list =>
+            list.map(m => m._id === member._id ? { ...m, isActive: !m.isActive } : m)
+          );
+          this.togglingId.set(null);
+          this.snackBar.open(
+            `${member.name} has been ${member.isActive ? 'disabled' : 'enabled'}.`,
+            'Dismiss',
+            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
+          );
+        },
+        error: (err: HttpErrorResponse) => {
+          this.togglingId.set(null);
+          this.snackBar.open(err.error?.message ?? 'Status update failed.', 'Dismiss',
+            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-error'] });
+        },
+      });
+  }
+
+  openTransferPanel(): void {
+    this.transferTargetId.set('');
+    this.transferError.set(null);
+    this.showTransferPanel.set(true);
+  }
+
+  cancelTransfer(): void {
+    this.showTransferPanel.set(false);
+    this.transferError.set(null);
+  }
+
+  confirmTransfer(): void {
+    if (this.isTransferring()) return;
+    const toUserId = this.transferTargetId();
+    if (!toUserId) {
+      this.transferError.set('Please select a team member to transfer ownership to.');
+      return;
+    }
+
+    this.isTransferring.set(true);
+    this.transferError.set(null);
+
+    this.http
+      .post(`${this.baseUrl}users/transfer-submitter`, { fromUserId: this.currentUserId, toUserId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.currentSubRole.set('EDITOR');
+          this.isTransferring.set(false);
+          this.showTransferPanel.set(false);
+          this.loadMembers();
+          this.snackBar.open('Ownership transferred. Your role is now Editor.', 'Dismiss',
+            { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.isTransferring.set(false);
+          this.transferError.set(err.error?.message ?? 'Transfer failed. Please try again.');
+        },
+      });
+  }
+
+  isCurrentUser(memberId: string): boolean {
+    return memberId === this.currentUserId;
+  }
+
+  canToggle(member: StateMember): boolean {
+    return !this.isCurrentUser(member._id) && member.subRole !== 'SUBMITTER';
+  }
+
+  onDesignationInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/[^a-zA-Z .\-]/g, '');
+    input.value = cleaned;
+    this.addForm.get('designation')?.setValue(cleaned, { emitEvent: true });
+  }
+
+  onNameInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    // Strip digits and anything not in the allowed set in real time
+    const cleaned = input.value.replace(/[^a-zA-Z .\-']/g, '');
+    input.value = cleaned;
+    this.addForm.get('name')?.setValue(cleaned, { emitEvent: true });
+  }
+
   onMobileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
+    // Strip all non-digits in real time; cap at 10 characters
     const cleaned = input.value.replace(/\D/g, '').slice(0, 10);
     input.value = cleaned;
-    this.editForm.get('mobile')?.setValue(cleaned, { emitEvent: false });
-    this.editForm.get('mobile')?.updateValueAndValidity();
+    this.addForm.get('mobile')?.setValue(cleaned, { emitEvent: true });
   }
 
-  formatArea(area: number): string {
-    return area ? `${area.toLocaleString('en-IN')} Sq kms` : 'â€”';
+  getFirstError(controlName: string, errors: { key: string; message: string }[]): string | null {
+    const ctrl = this.addForm.get(controlName);
+    if (!ctrl?.touched) return null;
+    return errors.find(e => ctrl.hasError(e.key))?.message ?? null;
   }
 
-  formatPopulation(pop: number): string {
-    return pop ? pop.toLocaleString('en-IN') : 'â€”';
+  formatLastActive(date: string | null): string {
+    if (!date) return '—';
+    try {
+      return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        .format(new Date(date));
+    } catch { return '—'; }
   }
 
   getInitials(name: string): string {
-    return name
-      .trim()
-      .split(/[\s@.]+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? '')
-      .join('');
+    return name.trim().split(/\s+/).filter(Boolean).slice(0, 2)
+      .map(w => w[0]?.toUpperCase() ?? '').join('');
   }
-}
 
+  trackByMemberId(_: number, m: StateMember): string { return m._id; }
+}
