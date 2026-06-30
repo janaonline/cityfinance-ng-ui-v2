@@ -1,13 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnDestroy,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -16,26 +8,27 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import {
+  IDENTIFIER_SECURITY_VALIDATORS,
+  PASSWORD_SECURITY_VALIDATORS,
+  noEmailFormat,
+} from '../validators/auth-security.validators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatCardModule } from '@angular/material/card';
-import { Subscription, timer } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { DynamicFormComponent } from '../../shared/dynamic-form/dynamic-form.component';
-import { FieldConfig } from '../../shared/dynamic-form/field.interface';
 import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
-import { LoginService, OtpCredentials } from './login.service';
+import { LoginService } from './login.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type LoginRole = 'ULB' | 'STATE' | 'MOHUA' | 'DOE' | 'PARTNER';
 type RoleIcon = 'ulb' | 'state' | 'mohua' | 'doe' | 'institutional';
-type LoginControlName = 'role' | 'identifier' | 'password' | 'otp' | 'newPassword' | 'confirmPassword';
-type Fc16Step = 'identifier' | 'password' | 'otp-send' | 'otp-verify' | 'set-password';
+type LoginControlName = 'role' | 'identifier' | 'password';
+type LoginStep = 'role' | 'credentials';
 
 export const LOGIN_TYPES = ['16thFC', '15thFC', 'XVIFC', 'ranking', 'state-dashboard'] as const;
 export type LoginType = (typeof LOGIN_TYPES)[number];
@@ -65,31 +58,7 @@ interface PanelContent {
   showResourceActions: boolean;
 }
 
-interface LoginPanelData {
-  subtitle: string;
-  showRoleGrid: boolean;
-}
-
-type LoginFormModel = {
-  role: FormControl<LoginRole | ''>;
-  identifier: FormControl<string>;
-  password: FormControl<string>;
-  otp: FormControl<string>;
-  newPassword: FormControl<string>;
-  confirmPassword: FormControl<string>;
-};
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const OTP_LENGTH = 4;
-const OTP_VALIDATORS = [
-  Validators.required,
-  Validators.minLength(OTP_LENGTH),
-  Validators.maxLength(OTP_LENGTH),
-  Validators.pattern(new RegExp(`^\\d{${OTP_LENGTH}}$`)),
-];
-
-// ─── Validators ───────────────────────────────────────────────────────────────
+// ─── Local validator ──────────────────────────────────────────────────────────
 
 function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
   const value = (control.value as string)?.trim();
@@ -99,83 +68,39 @@ function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
   return { invalidIdentifier: true };
 }
 
-function mobileEmailOrCensusCode(control: AbstractControl): ValidationErrors | null {
-  const value = (control.value as string)?.trim();
-  if (!value) return null;
-  if (/^[6-9]\d{9}$/.test(value)) return null;
-  if (/^\d{2,}$/.test(value)) return null;
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return null;
-  return { invalidInput: true };
-}
-
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    MatCardModule,
-    DynamicFormComponent,
-  ],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatIconModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [LoginService],
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly loginService = inject(LoginService);
   private readonly xvifcService = inject(XvifcModuleService);
 
-  // ─── Public signals ───────────────────────────────────────────────────────────
+  // ─── Signals ─────────────────────────────────────────────────────────────────
 
   readonly typeKey = signal<LoginType | null>('15thFC');
-
+  protected readonly step = signal<LoginStep>('role');
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
-  protected readonly isOtpLogin = signal(false);
 
   protected readonly supportEmail = computed(() =>
     this.typeKey() === '15thFC' ? '15fcgrant@cityfinance.in' : '16fcgrant@cityfinance.in',
   );
 
-  // ─── OTP countdown (non-16thFC) ───────────────────────────────────────────────
-
-  protected readonly otpCountdown = signal(0);
-  protected readonly otpCountdownActive = signal(false);
-  private countdownSub: Subscription | null = null;
-
-  // ─── 16th FC wizard ───────────────────────────────────────────────────────────
-
-  protected readonly fc16Step = signal<Fc16Step>('identifier');
-  protected readonly fc16CheckingUser = signal(false);
-  protected readonly fc16OtpSending = signal(false);
-  protected readonly fc16OtpVerifying = signal(false);
-  protected readonly fc16PasswordSetting = signal(false);
-  protected readonly fc16MaskedContact = signal('');
-  protected readonly fc16PasswordError = signal('');
-  protected readonly fc16OtpCountdown = signal(0);
-  protected readonly fc16OtpCountdownActive = signal(false);
-  protected readonly identifierType16 = signal<'mobile' | 'censusCode' | 'email' | null>(null);
-  private fc16CountdownSub: Subscription | null = null;
-
-  // ─── Non-signal view state ────────────────────────────────────────────────────
+  // ─── View state ──────────────────────────────────────────────────────────────
 
   protected isPasswordVisible = false;
-  protected isNewPasswordVisible = false;
-  protected isConfirmPasswordVisible = false;
   protected isSubmitted = false;
-  protected otpCreds: OtpCredentials = {};
 
   // ─── Static data ─────────────────────────────────────────────────────────────
-
-  protected readonly otpLength = OTP_LENGTH;
 
   protected readonly stats = [
     { label: 'Eligible Urban Local Bodies', value: '4,485', icon: 'bi-buildings-fill' },
@@ -204,45 +129,81 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   // ─── Form ─────────────────────────────────────────────────────────────────────
 
-  protected readonly loginForm = new FormGroup<LoginFormModel>({
+  protected readonly loginForm = new FormGroup({
     role: new FormControl<LoginRole | ''>('', { nonNullable: true, validators: [Validators.required] }),
-    identifier: new FormControl('', { nonNullable: true, validators: [Validators.required, emailOrCensusCode] }),
-    password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(6)] }),
-    otp: new FormControl('', { nonNullable: true }),
-    newPassword: new FormControl('', { nonNullable: true }),
-    confirmPassword: new FormControl('', { nonNullable: true }),
+    identifier: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.maxLength(254),
+        emailOrCensusCode,
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ],
+    }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(6),
+        Validators.maxLength(128),
+        ...PASSWORD_SECURITY_VALIDATORS,
+      ],
+    }),
   });
 
-  // ─── Dynamic field configs (used with DynamicFormComponent) ───────────────────
+  // ─── Computed ─────────────────────────────────────────────────────────────────
 
-  protected readonly identifierFieldConfig: FieldConfig = {
-    key: 'identifier',
-    label: 'Email / Census Code',
-    formFieldType: 'text',
-    placeholder: 'Enter your email or census code',
-    validations: [
-      { name: 'required', validator: Validators.required, message: 'Email or Census Code is required.' },
-      {
-        name: 'invalidIdentifier',
-        validator: emailOrCensusCode,
-        message: 'Enter a valid email address or numeric census code.',
-      },
-    ],
-  };
+  protected readonly selectedRole = signal<RoleOption | null>(null);
+  protected readonly slideDirection = signal<'forward' | 'back' | 'none'>('none');
 
-  protected readonly otpFieldConfig: FieldConfig = {
-    key: 'otp',
-    label: 'One-Time Password',
-    formFieldType: 'text',
-    placeholder: `Enter ${OTP_LENGTH}-digit OTP`,
-    validations: [
-      { name: 'required', validator: Validators.required, message: 'OTP is required.' },
-      { name: 'minlength', validator: null!, message: `OTP must be ${OTP_LENGTH} digits.` },
-      { name: 'pattern', validator: null!, message: `Enter a valid ${OTP_LENGTH}-digit numeric OTP.` },
-    ],
-  };
+  protected readonly isMultiStep = computed(() => {
+    const type = this.typeKey();
+    return type === '16thFC' || type === '15thFC';
+  });
 
-  // ─── Computed signals ─────────────────────────────────────────────────────────
+  protected readonly showRoleStep = computed(() => this.isMultiStep() && this.step() === 'role');
+
+  protected readonly loginSubtitle = computed(() => {
+    if (this.showRoleStep()) return 'Select your role to continue';
+    if (this.isMultiStep()) return 'Enter your credentials';
+    return '';
+  });
+
+  protected readonly identifierLabel = computed(() => {
+    const role = this.selectedRole();
+    if (!role) return 'Email / Census Code';
+    return role.id === 'ULB' ? 'Census Code' : 'Email';
+  });
+
+  protected readonly identifierPlaceholder = computed(() => {
+    const role = this.selectedRole();
+    if (!role) return 'Enter your email or census code';
+    return role.id === 'ULB' ? 'Enter your census code' : 'Enter your email address';
+  });
+
+  protected readonly identifierType = computed(() => {
+    const role = this.selectedRole();
+    if (!role || role.id === 'ULB') return 'text';
+    return 'email';
+  });
+
+  protected readonly identifierInputMode = computed<string | null>(() => {
+    const role = this.selectedRole();
+    if (!role) return null;
+    return role.id === 'ULB' ? 'numeric' : 'email';
+  });
+
+  protected readonly identifierAutocomplete = computed(() => {
+    const role = this.selectedRole();
+    if (!role) return 'username';
+    return role.id === 'ULB' ? 'off' : 'email';
+  });
+
+  protected readonly identifierRequiredMessage = computed(() => {
+    const role = this.selectedRole();
+    if (!role) return 'Email or Census Code is required.';
+    return role.id === 'ULB' ? 'Census Code is required.' : 'Email is required.';
+  });
 
   protected readonly roleOptions = computed<readonly RoleOption[]>(() => {
     const type = this.typeKey();
@@ -251,8 +212,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     const options: RoleOption[] = [
       { id: 'ULB', label: 'ULB', icon: 'ulb', biIcon: 'bi-buildings-fill' },
-      { id: 'STATE', label: 'State DMA', icon: 'state', biIcon: 'bi-bank' },
-      { id: 'MOHUA', label: 'MoHUA', icon: 'mohua', biIcon: 'bi-bullseye' },
+      { id: 'STATE', label: 'STATE', icon: 'state', biIcon: 'bi-bank' },
+      { id: 'MOHUA', label: 'MOHUA', icon: 'mohua', biIcon: 'bi-bullseye' },
     ];
 
     if (is15thFC || is16thFC) {
@@ -261,8 +222,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     options.push(
       is15thFC
-        ? { id: 'DOE', label: 'DoE', icon: 'doe', biIcon: 'bi-shield-lock' }
-        : { id: 'DOE', label: 'DoE', icon: 'doe', biIcon: 'bi-shield-lock', disabled: true, badge: 'SOON' },
+        ? { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock' }
+        : { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock', disabled: true },
     );
 
     return options;
@@ -344,9 +305,7 @@ export class LoginComponent implements OnInit, OnDestroy {
               ),
             },
             {
-              html: trust(
-                'Access is available to State Urban Development Departments and State DMA officers.',
-              ),
+              html: trust('Access is available to State Urban Development Departments and State DMA officers.'),
               secondary: true,
             },
           ],
@@ -355,7 +314,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           showResourceActions: false,
         };
 
-      default:
+      default: // 15thFC
         return {
           titleLine1: '15th Finance Commission',
           titleLine2: 'Grant Management System',
@@ -379,37 +338,12 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
   });
 
-  protected readonly loginPanel = computed<LoginPanelData>(() => {
-    const type = this.typeKey();
-    if (type === '16thFC') {
-      const subtitles: Record<Fc16Step, string> = {
-        identifier: 'Select your role, then enter your credentials',
-        password: 'Enter your password to continue',
-        'otp-send': 'Verify your account to activate access',
-        'otp-verify': 'Enter the OTP sent to your registered number',
-        'set-password': 'Set a password to activate your account',
-      };
-      return { subtitle: subtitles[this.fc16Step()], showRoleGrid: true };
-    }
-    const hideRoles = type === 'XVIFC' || type === 'state-dashboard';
-    return {
-      subtitle: hideRoles ? '' : 'Select your role to continue',
-      showRoleGrid: !hideRoles,
-    };
-  });
-
   // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     this.setLoginType();
     this.xvifcService.clearResolvedContext();
-    this.enablePasswordMode();
     this.loginService.loadRecaptchaScript();
-  }
-
-  ngOnDestroy(): void {
-    this.clearCountdown();
-    this.clearFc16Countdown();
   }
 
   // ─── Route type detection ─────────────────────────────────────────────────────
@@ -447,7 +381,15 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (role.disabled) return;
     this.loginForm.controls.role.setValue(role.id);
     this.loginForm.controls.role.markAsTouched();
-    this.loginForm.controls.role.markAsDirty();
+    this.selectedRole.set(role);
+    if (this.isMultiStep()) {
+      // Clear any stale value from a previous role selection before moving forward.
+      this.loginForm.controls.identifier.reset('');
+      this.updateIdentifierValidatorsForRole(role.id);
+      this.slideDirection.set('forward');
+      this.step.set('credentials');
+      this.errorMessage.set('');
+    }
   }
 
   protected isRoleSelected(roleId: LoginRole): boolean {
@@ -464,20 +406,18 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isPasswordVisible = !this.isPasswordVisible;
   }
 
-  protected toggleNewPasswordVisibility(): void {
-    this.isNewPasswordVisible = !this.isNewPasswordVisible;
-  }
-
-  protected toggleConfirmPasswordVisibility(): void {
-    this.isConfirmPasswordVisible = !this.isConfirmPasswordVisible;
-  }
-
   protected onForgotPassword(): void {
     void this.router.navigate(['/auth/forgot-password'], { queryParams: { type: this.typeKey() } });
   }
 
-  protected onSignup(): void {
-    void this.router.navigate(['/auth/signup'], { queryParams: { type: this.typeKey(), role: 'ULB' } });
+  protected onBackToRole(): void {
+    this.slideDirection.set('back');
+    this.step.set('role');
+    this.errorMessage.set('');
+    this.isSubmitted = false;
+    this.isPasswordVisible = false; // U1: reset password visibility
+    this.loginForm.controls.password.reset(''); // B5: clear stale password value + touched state
+    this.resetIdentifierToDefault();
   }
 
   protected openReferenceDocuments(): void {
@@ -488,18 +428,14 @@ export class LoginComponent implements OnInit, OnDestroy {
     );
   }
 
-  // ─── 16thFC identifier type detection ────────────────────────────────────────
-
-  protected onIdentifierInput16(): void {
-    const value = this.loginForm.controls.identifier.value.trim();
-    this.identifierType16.set(this.loginService.detectIdentifierType(value));
-  }
-
-  // ─── Password login ───────────────────────────────────────────────────────────
+  // ─── Submit ───────────────────────────────────────────────────────────────────
 
   protected onSubmit(): void {
     this.isSubmitted = true;
-    if (this.loginForm.invalid) { this.loginForm.markAllAsTouched(); return; }
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
     if (this.isSubmitting()) return;
 
     this.isSubmitting.set(true);
@@ -521,293 +457,55 @@ export class LoginComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ─── Non-16thFC OTP login ─────────────────────────────────────────────────────
-
-  protected startOtpFlow(): void {
-    const identifier = this.loginForm.controls.identifier.value.trim();
-    if (!identifier) {
-      this.loginForm.controls.identifier.markAsTouched();
-      this.errorMessage.set('Please enter your Email or Census Code first.');
-      return;
-    }
-    if (this.otpCountdownActive()) return;
-
-    this.isSubmitting.set(true);
-    this.errorMessage.set('');
-
-    this.loginService
-      .requestOtp(identifier)
-      .pipe(finalize(() => this.isSubmitting.set(false)))
-      .subscribe({
-        next: (res) => {
-          this.otpCreds = res;
-          this.enableOtpMode();
-          this.isOtpLogin.set(true);
-          this.startCountdown();
-        },
-        error: (err: { error?: { message?: string } }) => {
-          this.errorMessage.set(err?.error?.message ?? 'Failed to send OTP. Please try again.');
-        },
-      });
-  }
-
-  protected submitOtp(): void {
-    if (this.loginForm.controls.otp.invalid) {
-      this.loginForm.controls.otp.markAsTouched();
-      return;
-    }
-    if (this.isSubmitting()) return;
-
-    this.isSubmitting.set(true);
-    this.errorMessage.set('');
-
-    this.loginService
-      .verifyOtp(
-        this.loginForm.controls.identifier.value.trim(),
-        this.loginForm.controls.otp.value,
-      )
-      .pipe(finalize(() => this.isSubmitting.set(false)))
-      .subscribe({
-        next: (res) => {
-          const user = this.loginService.extractUser(res) ?? this.loginService.getCurrentUser();
-          void this.loginService.navigateAfterLogin(user, this.typeKey());
-        },
-        error: (err: { error?: { message?: string } }) => {
-          this.errorMessage.set(err?.error?.message ?? 'Invalid OTP. Please try again.');
-        },
-      });
-  }
-
-  protected switchToPassword(): void {
-    this.isOtpLogin.set(false);
-    this.clearCountdown();
-    this.enablePasswordMode();
-    this.errorMessage.set('');
-  }
-
-  // ─── 16th FC multi-step wizard ────────────────────────────────────────────────
-
-  protected onCheckIdentifier16(): void {
-    this.isSubmitted = true;
-    const identCtrl = this.loginForm.controls.identifier;
-    const roleCtrl = this.loginForm.controls.role;
-    identCtrl.markAsTouched();
-    roleCtrl.markAsTouched();
-    if (identCtrl.invalid || roleCtrl.invalid) return;
-
-    this.fc16CheckingUser.set(true);
-    this.errorMessage.set('');
-
-    this.loginService
-      .check16FCIdentifier(identCtrl.value.trim(), roleCtrl.value as string)
-      .pipe(finalize(() => this.fc16CheckingUser.set(false)))
-      .subscribe({
-        next: (res) => {
-          const identType = this.identifierType16();
-          const verified = !!res.isXVIFCProfileVerified;
-          const isPending = res.status?.toUpperCase() === 'PENDING';
-
-          if (identType === 'censusCode' || identType === 'email') {
-            this.fc16MaskedContact.set(res.maskedContact ?? '');
-            this.enablePasswordMode();
-            this.fc16Step.set('password');
-            return;
-          }
-
-          if (identType === 'mobile' && isPending && !verified) {
-            this.fc16MaskedContact.set(res.maskedContact ?? identCtrl.value.trim());
-            this.fc16Step.set('otp-send');
-            return;
-          }
-
-          this.fc16MaskedContact.set(res.maskedContact ?? '');
-          this.enablePasswordMode();
-          this.fc16Step.set('password');
-        },
-        error: (err: { error?: { message?: string } }) => {
-          this.errorMessage.set(err?.error?.message ?? 'User not found. Please check your details.');
-        },
-      });
-  }
-
-  /** Sends or resends the 16th FC SMS OTP. Pass `moveToVerify=true` for the first send. */
-  protected triggerSendOtp16(moveToVerify: boolean): void {
-    if (this.fc16OtpSending() || this.fc16OtpCountdownActive()) return;
-
-    this.fc16OtpSending.set(true);
-    this.errorMessage.set('');
-
-    this.loginService
-      .send16FCOtp(this.loginForm.controls.identifier.value.trim())
-      .pipe(finalize(() => this.fc16OtpSending.set(false)))
-      .subscribe({
-        next: (res) => {
-          if (res.mobile) this.fc16MaskedContact.set(res.mobile);
-          if (moveToVerify) {
-            this.loginForm.controls.otp.setValue('');
-            this.fc16Step.set('otp-verify');
-          }
-          this.startFc16Countdown();
-        },
-        error: (err: { error?: { message?: string } }) => {
-          this.errorMessage.set(
-            err?.error?.message ??
-              (moveToVerify ? 'Failed to send OTP. Please try again.' : 'Failed to resend OTP. Please try again.'),
-          );
-        },
-      });
-  }
-
-  protected onVerifyOtp16(): void {
-    const otpCtrl = this.loginForm.controls.otp;
-    otpCtrl.markAsTouched();
-    const otpValue = otpCtrl.value.trim();
-    if (!otpValue || otpValue.length < OTP_LENGTH) return;
-    if (this.fc16OtpVerifying()) return;
-
-    this.fc16OtpVerifying.set(true);
-    this.errorMessage.set('');
-
-    this.loginService
-      .verify16FCOtp(this.loginForm.controls.identifier.value.trim(), otpValue)
-      .pipe(finalize(() => this.fc16OtpVerifying.set(false)))
-      .subscribe({
-        next: () => {
-          localStorage.setItem('isXVIFCProfileVerified', 'true');
-          this.clearFc16Countdown();
-          this.loginForm.controls.newPassword.setValue('');
-          this.loginForm.controls.confirmPassword.setValue('');
-          this.fc16PasswordError.set('');
-          this.fc16Step.set('set-password');
-        },
-        error: (err: { error?: { message?: string } }) => {
-          this.errorMessage.set(err?.error?.message ?? 'Invalid OTP. Please try again.');
-        },
-      });
-  }
-
-  protected onSetPassword16(): void {
-    const newPwd = this.loginForm.controls.newPassword.value;
-    const confirmPwd = this.loginForm.controls.confirmPassword.value;
-
-    if (!newPwd || newPwd.length < 6) {
-      this.fc16PasswordError.set('Password must be at least 6 characters.');
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      this.fc16PasswordError.set('Passwords do not match.');
-      return;
-    }
-
-    this.fc16PasswordSetting.set(true);
-    this.fc16PasswordError.set('');
-    this.errorMessage.set('');
-
-    this.loginService
-      .setPassword(this.loginForm.controls.identifier.value.trim(), newPwd, confirmPwd)
-      .pipe(finalize(() => this.fc16PasswordSetting.set(false)))
-      .subscribe({
-        next: () => void this.loginService.navigateAfterLogin(this.loginService.getCurrentUser(), this.typeKey()),
-        error: (err: { error?: { message?: string } }) => {
-          this.errorMessage.set(err?.error?.message ?? 'Failed to set password. Please try again.');
-        },
-      });
-  }
-
-  protected onBackToIdentifier16(): void {
-    this.fc16Step.set('identifier');
-    this.errorMessage.set('');
-    this.isSubmitted = false;
-    this.loginForm.controls.otp.setValue('');
-    this.loginForm.controls.newPassword.setValue('');
-    this.loginForm.controls.confirmPassword.setValue('');
-    this.fc16PasswordError.set('');
-    this.clearFc16Countdown();
-  }
-
-  protected onBackToOtpSend16(): void {
-    this.fc16Step.set('otp-send');
-    this.errorMessage.set('');
-    this.loginForm.controls.otp.setValue('');
-    this.clearFc16Countdown();
-  }
-
-  // ─── Private: validator switching ────────────────────────────────────────────
+  // ─── Private ─────────────────────────────────────────────────────────────────
 
   private updateValidatorsForType(type: LoginType): void {
+    const isMultiStep = type === '16thFC' || type === '15thFC';
     const roleCtrl = this.loginForm.controls.role;
-    const identCtrl = this.loginForm.controls.identifier;
-    const hideRoles = type === 'XVIFC' || type === 'state-dashboard';
 
-    if (hideRoles) {
-      roleCtrl.clearValidators();
-    } else {
+    if (isMultiStep) {
       roleCtrl.setValidators([Validators.required]);
+      this.step.set('role');
+    } else {
+      roleCtrl.clearValidators();
+      this.step.set('credentials');
     }
     roleCtrl.updateValueAndValidity();
+    roleCtrl.reset('');
+    this.resetIdentifierToDefault();
+    this.selectedRole.set(null);
+    this.errorMessage.set('');
+  }
 
-    if (type === '16thFC') {
-      identCtrl.setValidators([Validators.required, mobileEmailOrCensusCode]);
-      this.identifierType16.set(null);
-      this.fc16Step.set('identifier');
-      this.errorMessage.set('');
+  private updateIdentifierValidatorsForRole(role: LoginRole): void {
+    const ctrl = this.loginForm.controls.identifier;
+    if (role === 'ULB') {
+      ctrl.setValidators([
+        Validators.required,
+        Validators.minLength(6), // U6: census codes are at minimum 6 digits
+        Validators.maxLength(254),
+        noEmailFormat,
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ]);
     } else {
-      identCtrl.setValidators([Validators.required, emailOrCensusCode]);
+      ctrl.setValidators([
+        Validators.required,
+        Validators.maxLength(254),
+        Validators.email,
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ]);
     }
-    identCtrl.updateValueAndValidity();
+    ctrl.updateValueAndValidity();
   }
 
-  private enablePasswordMode(): void {
-    this.loginForm.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
-    this.loginForm.controls.otp.clearValidators();
-    this.loginForm.controls.otp.setValue('', { emitEvent: false });
-    this.loginForm.controls.password.updateValueAndValidity();
-    this.loginForm.controls.otp.updateValueAndValidity();
+  private resetIdentifierToDefault(): void {
+    const ctrl = this.loginForm.controls.identifier;
+    ctrl.setValidators([
+      Validators.required,
+      Validators.maxLength(254),
+      emailOrCensusCode,
+      ...IDENTIFIER_SECURITY_VALIDATORS,
+    ]);
+    ctrl.updateValueAndValidity();
   }
-
-  private enableOtpMode(): void {
-    this.loginForm.controls.password.clearValidators();
-    this.loginForm.controls.otp.setValidators(OTP_VALIDATORS);
-    this.loginForm.controls.password.updateValueAndValidity();
-    this.loginForm.controls.otp.updateValueAndValidity();
-  }
-
-  // ─── Private: OTP countdown ───────────────────────────────────────────────────
-
-  private startCountdown(): void {
-    this.clearCountdown();
-    this.otpCountdown.set(60);
-    this.otpCountdownActive.set(true);
-    this.countdownSub = timer(1000, 1000).subscribe(() => {
-      const next = this.otpCountdown() - 1;
-      this.otpCountdown.set(next);
-      if (next <= 0) this.clearCountdown();
-    });
-  }
-
-  private clearCountdown(): void {
-    this.countdownSub?.unsubscribe();
-    this.countdownSub = null;
-    this.otpCountdownActive.set(false);
-    this.otpCountdown.set(0);
-  }
-
-  private startFc16Countdown(): void {
-    this.clearFc16Countdown();
-    this.fc16OtpCountdown.set(60);
-    this.fc16OtpCountdownActive.set(true);
-    this.fc16CountdownSub = timer(1000, 1000).subscribe(() => {
-      const next = this.fc16OtpCountdown() - 1;
-      this.fc16OtpCountdown.set(next);
-      if (next <= 0) this.clearFc16Countdown();
-    });
-  }
-
-  private clearFc16Countdown(): void {
-    this.fc16CountdownSub?.unsubscribe();
-    this.fc16CountdownSub = null;
-    this.fc16OtpCountdownActive.set(false);
-    this.fc16OtpCountdown.set(0);
-  }
-
 }

@@ -229,7 +229,7 @@ export class OcrService {
 
   getOcrValidationJobStatus(jobId: string) {
     return this.http.get<OcrValidationJobStatusResponse>(
-      environment.api.url3 + `ocr-validation/jobs/${jobId}`,
+      environment.api.url3 + `ocr-validation/jobs/${jobId}/status`,
     );
   }
 

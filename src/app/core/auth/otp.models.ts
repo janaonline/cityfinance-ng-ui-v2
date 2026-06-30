@@ -98,6 +98,11 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface ForgotPasswordOtpResult {
+  /** Backend-masked contact (mobile or email) for real accounts; undefined for fake accounts. */
+  maskedContact: string | undefined;
+}
+
 export const OtpErrorMessage = {
   PLEASE_WAIT: 'Please wait before requesting another OTP.',
   MAX_RESEND: 'Maximum OTP requests reached. Please try again later.',
