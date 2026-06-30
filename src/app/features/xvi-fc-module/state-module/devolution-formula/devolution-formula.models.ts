@@ -59,6 +59,17 @@ export interface DevolutionGrantAllocationSummary {
   total: number;
 }
 
+export interface DevolutionInstallmentAccessItem {
+  canSelect: boolean;
+  locked: boolean;
+  lockReason: string | null;
+}
+
+export interface DevolutionInstallmentAccess {
+  installment1: DevolutionInstallmentAccessItem;
+  installment2: DevolutionInstallmentAccessItem;
+}
+
 export interface DevolutionValidationSummary {
   validationStatus: DfValidationStatus;
   excelRowCount: number;
@@ -70,6 +81,7 @@ export interface DevolutionValidationSummary {
   allUlbsCovered: boolean;
   allocationBalanced: boolean;
   activeDatasetVersion: number;
+  newUlbCount?: number;
 }
 
 // ─── Field / form types ───────────────────────────────────────────────────────
@@ -114,6 +126,8 @@ export interface DevolutionFormResponseData {
   validationSummary?: DevolutionValidationSummary;
   grantAllocationSummary?: DevolutionGrantAllocationSummary;
   errorExcelFile?: DevolutionFileRef;
+  rowEditFields?: ConditionalFieldConfig[];
+  installmentAccess?: DevolutionInstallmentAccess;
   instructions?: unknown[];
   meta?: { version: number };
 }
@@ -125,6 +139,7 @@ export interface SaveDraftDevolutionPayload {
   yearId: string;
   installment: DfInstallment;
   data?: {
+    ulbCount?: number;
     excelFile?: DevolutionFileRef;
     checkboxConfirmation?: boolean;
   };
@@ -135,6 +150,7 @@ export interface FinalSubmitDevolutionPayload {
   yearId: string;
   installment: DfInstallment;
   data: {
+    ulbCount: number;
     excelFile: DevolutionFileRef;
     checkboxConfirmation: boolean;
   };
@@ -181,7 +197,6 @@ export interface DevolutionRow {
   rowNumber: number;
   ulbId: string | null;
   censusCode: string;
-  sbCode: string;
   ulbName: string;
   totalGrantAllocation: number;
   installment1Amount: number;
@@ -209,6 +224,7 @@ export interface DevolutionRowsDialogData {
   yearId: string;
   installment: DfInstallment;
   canEdit: boolean;
+  rowEditFields: ConditionalFieldConfig[];
 }
 
 export interface DevolutionRowsDialogResult {

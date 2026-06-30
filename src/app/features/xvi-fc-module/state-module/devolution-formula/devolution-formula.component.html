@@ -21,29 +21,33 @@
 
           <div class="d-flex align-items-center gap-2 mt-3">
             <span class="text-secondary small fw-medium">Installment:</span>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Select installment">
+            <div class="d-flex align-items-center gap-2" role="group" aria-label="Select installment">
               <button
                 type="button"
-                class="btn"
-                [class.btn-primary]="installment() === 1"
-                [class.btn-outline-secondary]="installment() !== 1"
+                [matButton]="installment() === 1 ? 'filled' : 'outlined'"
                 [disabled]="isLoading() || isSubmitting() || isValidating() || isDeleting()"
+                [attr.aria-pressed]="installment() === 1"
                 (click)="switchInstallment(1)"
                 data-cy="df-installment-1-btn"
               >
                 Installment 1
               </button>
-              <button
-                type="button"
-                class="btn"
-                [class.btn-primary]="installment() === 2"
-                [class.btn-outline-secondary]="installment() !== 2"
-                [disabled]="isLoading() || isSubmitting() || isValidating() || isDeleting()"
-                (click)="switchInstallment(2)"
-                data-cy="df-installment-2-btn"
+              <span
+                [matTooltip]="isInstallment2Locked() ? installment2LockReason() : ''"
+                [matTooltipDisabled]="!isInstallment2Locked()"
               >
-                Installment 2
-              </button>
+                <button
+                  type="button"
+                  [matButton]="installment() === 2 ? 'filled' : 'outlined'"
+                  [disabled]="isLoading() || isSubmitting() || isValidating() || isDeleting() || isInstallment2Locked()"
+                  [attr.aria-disabled]="isInstallment2Locked()"
+                  [attr.aria-pressed]="installment() === 2"
+                  (click)="switchInstallment(2)"
+                  data-cy="df-installment-2-btn"
+                >
+                  Installment 2
+                </button>
+              </span>
             </div>
           </div>
         </div>
@@ -55,174 +59,19 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
         } @else {
-          @if (isInstallment2Locked()) {
+          @if (installment() === 2 && isInstallment2Locked()) {
             <div
               class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-0"
               role="alert"
               data-cy="df-installment2-locked-alert"
             >
               <i class="bi bi-lock-fill flex-shrink-0" aria-hidden="true"></i>
-              <span class="small"
-                >Installment 2 is locked until at least one Installment 1 claim batch is acknowledged by MoHUA.</span
-              >
+              <span class="small">{{ installment2LockReason() }}</span>
             </div>
           }
 
           @if (actors().length) {
             <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
-            <hr class="my-0 text-body-tertiary" />
-          }
-
-          @if (validationSummary(); as vs) {
-            <div class="d-flex flex-column gap-3" data-cy="df-summary-section">
-              <!-- Grant Allocation -->
-              <div>
-                <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">Grant Allocation</div>
-                @if (grantAllocationSummary(); as ga) {
-                  <div class="row g-2">
-                    <div class="col-6 col-md-4">
-                      <div class="p-3 border rounded-2 h-100">
-                        <div class="text-secondary small mb-1">Basic</div>
-                        <div class="fw-semibold" data-cy="df-grant-basic">{{ formatRupees(ga.basic) }}</div>
-                      </div>
-                    </div>
-                    <div class="col-6 col-md-4">
-                      <div class="p-3 border rounded-2 h-100">
-                        <div class="text-secondary small mb-1">Performance</div>
-                        <div class="fw-semibold" data-cy="df-grant-performance">{{ formatRupees(ga.performance) }}</div>
-                      </div>
-                    </div>
-                    <div class="col-6 col-md-4">
-                      <div class="p-3 border rounded-2 h-100">
-                        <div class="text-secondary small mb-1">Total</div>
-                        <div class="fw-semibold" data-cy="df-grant-total">{{ formatRupees(ga.total) }}</div>
-                      </div>
-                    </div>
-                  </div>
-                } @else {
-                  <div
-                    class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-0"
-                    role="alert"
-                    data-cy="df-grant-allocation-warning"
-                  >
-                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0" aria-hidden="true"></i>
-                    <span class="small">Grant allocation data is not yet available for this state and year.</span>
-                  </div>
-                }
-              </div>
-
-              <!-- Devolution Allocation -->
-              <div>
-                <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
-                  Devolution Allocation
-                </div>
-                <div class="row g-2">
-                  <div class="col-6 col-md-4">
-                    <div class="p-3 border rounded-2 h-100">
-                      <div class="text-secondary small mb-1">MoHUA Allocation</div>
-                      <div class="fw-semibold" data-cy="df-mohua-allocation">
-                        {{ formatRupees(vs.totalMoHUAAllocation) }}
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <div class="p-3 border rounded-2 h-100">
-                      <div class="text-secondary small mb-1">Allocated Sum</div>
-                      <div class="fw-semibold" data-cy="df-allocated-sum">
-                        {{ formatRupees(vs.totalAllocatedSum) }}
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <div class="p-3 border rounded-2 h-100">
-                      <div class="text-secondary small mb-1">Remaining</div>
-                      <div
-                        class="fw-semibold"
-                        [class.text-success]="(allocationDifference() ?? 1) === 0"
-                        [class.text-danger]="(allocationDifference() ?? 0) !== 0"
-                        data-cy="df-allocation-difference"
-                      >
-                        {{ formatRupees(allocationDifference()) }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Excel Validation -->
-              <div>
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                  <div class="text-secondary text-uppercase fw-semibold custom-font-size-7">Excel Validation</div>
-                  <span
-                    class="badge"
-                    [class.text-bg-success]="vs.validationStatus === 'VALID'"
-                    [class.text-bg-danger]="vs.validationStatus === 'INVALID'"
-                    [class.text-bg-secondary]="vs.validationStatus === 'NOT_VALIDATED'"
-                    data-cy="df-validation-status-badge"
-                    >{{ getDfValidationStatusLabel(vs.validationStatus) }}</span
-                  >
-                </div>
-                <div class="row g-2 mb-2">
-                  <div class="col-6 col-md-3">
-                    <div class="p-3 bg-body-secondary rounded-2 h-100">
-                      <div class="text-secondary small mb-1">Excel Rows</div>
-                      <div class="fw-semibold" data-cy="df-excel-row-count">{{ vs.excelRowCount }}</div>
-                    </div>
-                  </div>
-                  <div class="col-6 col-md-3">
-                    <div class="p-3 bg-body-secondary rounded-2 h-100">
-                      <div class="text-secondary small mb-1">Valid Rows</div>
-                      <div class="fw-semibold text-success" data-cy="df-valid-row-count">{{ vs.validRowCount }}</div>
-                    </div>
-                  </div>
-                  <div class="col-6 col-md-3">
-                    <div
-                      class="p-3 rounded-2 h-100"
-                      [class.bg-body-secondary]="vs.errorRowCount === 0"
-                      [class.bg-danger-subtle]="vs.errorRowCount > 0"
-                    >
-                      <div class="text-secondary small mb-1">Error Rows</div>
-                      <div class="fw-semibold" [class.text-danger]="vs.errorRowCount > 0" data-cy="df-error-row-count">
-                        {{ vs.errorRowCount }}
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-6 col-md-3">
-                    <div
-                      class="p-3 rounded-2 h-100"
-                      [class.bg-body-secondary]="vs.missingUlbCount === 0"
-                      [class.bg-danger-subtle]="vs.missingUlbCount > 0"
-                    >
-                      <div class="text-secondary small mb-1">Missing ULBs</div>
-                      <div
-                        class="fw-semibold"
-                        [class.text-danger]="vs.missingUlbCount > 0"
-                        data-cy="df-missing-ulb-count"
-                      >
-                        {{ vs.missingUlbCount }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                  <span
-                    class="badge"
-                    [class.text-bg-success]="vs.allUlbsCovered"
-                    [class.text-bg-danger]="!vs.allUlbsCovered"
-                    data-cy="df-all-ulbs-covered-badge"
-                    >All ULBs Covered: {{ vs.allUlbsCovered ? 'Yes' : 'No' }}</span
-                  >
-                  <span
-                    class="badge"
-                    [class.text-bg-success]="vs.allocationBalanced"
-                    [class.text-bg-danger]="!vs.allocationBalanced"
-                    data-cy="df-allocation-balanced-badge"
-                    >Allocation Balanced: {{ vs.allocationBalanced ? 'Yes' : 'No' }}</span
-                  >
-                  <span class="text-secondary small">Dataset v{{ vs.activeDatasetVersion }}</span>
-                </div>
-              </div>
-            </div>
             <hr class="my-0 text-body-tertiary" />
           }
 
@@ -285,7 +134,7 @@
                 matButton="filled"
                 [disabled]="
                   !canFinalSubmit() ||
-                  isInstallment2Locked() ||
+                  (installment() === 2 && isInstallment2Locked()) ||
                   isSubmitting() ||
                   isLoading() ||
                   isValidating() ||

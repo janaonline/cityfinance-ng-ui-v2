@@ -7,6 +7,7 @@ import {
   extractValidationSummaryFromError,
   formatRupees,
   getDfValidationStatusLabel,
+  getRegisterUlbErrorMessage,
   hasPersistedValidationData,
   isDfRowValidationStatus,
   isRecord,
@@ -292,26 +293,90 @@ describe('buildDevolutionDraftPayloadData', () => {
     const result = buildDevolutionDraftPayloadData({ excelFile: null, checkboxConfirmation: 'yes' });
     expect(result.checkboxConfirmation).toBeUndefined();
   });
+
+  it('includes ulbCount when value is a finite number', () => {
+    const result = buildDevolutionDraftPayloadData({ ulbCount: 100, excelFile: null, checkboxConfirmation: true });
+    expect(result.ulbCount).toBe(100);
+  });
+
+  it('omits ulbCount when value is null or non-numeric', () => {
+    const result = buildDevolutionDraftPayloadData({ ulbCount: null, excelFile: null, checkboxConfirmation: true });
+    expect(result.ulbCount).toBeUndefined();
+  });
+});
+
+// ─── getRegisterUlbErrorMessage ───────────────────────────────────────────────
+
+describe('getRegisterUlbErrorMessage', () => {
+  it('returns the backend message when excelFile has a newUlbsAdded error', () => {
+    const errors = {
+      excelFile: [
+        {
+          field: 'excelFile',
+          code: 'newUlbsAdded',
+          message: 'You have added 3 ULB(s). Please register before proceeding.',
+        },
+      ],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBe('You have added 3 ULB(s). Please register before proceeding.');
+  });
+
+  it('returns null when excelFile errors do not include newUlbsAdded', () => {
+    const errors = {
+      excelFile: [{ field: 'excelFile', code: 'allocationMismatch', message: 'Sums do not match.' }],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBeNull();
+  });
+
+  it('returns null when excelFile key is absent', () => {
+    expect(getRegisterUlbErrorMessage({ checkboxConfirmation: [{ message: 'Required.' }] })).toBeNull();
+  });
+
+  it('returns null when errors is undefined', () => {
+    expect(getRegisterUlbErrorMessage(undefined)).toBeNull();
+  });
 });
 
 // ─── buildDevolutionFinalSubmitPayloadData ────────────────────────────────────
 
 describe('buildDevolutionFinalSubmitPayloadData', () => {
-  it('returns payload when excelFile and checkboxConfirmation are both valid', () => {
+  it('returns payload when ulbCount, excelFile, and checkboxConfirmation are all valid', () => {
     const result = buildDevolutionFinalSubmitPayloadData({
+      ulbCount: 100,
       excelFile: mockFileValue,
       checkboxConfirmation: true,
     });
-    expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
+    expect(result).toEqual({ ulbCount: 100, excelFile: mockFileValue, checkboxConfirmation: true });
   });
 
   it('returns null when excelFile is missing', () => {
-    const result = buildDevolutionFinalSubmitPayloadData({ checkboxConfirmation: true });
+    const result = buildDevolutionFinalSubmitPayloadData({ ulbCount: 100, checkboxConfirmation: true });
     expect(result).toBeNull();
   });
 
   it('returns null when checkboxConfirmation is not a boolean', () => {
-    const result = buildDevolutionFinalSubmitPayloadData({ excelFile: mockFileValue, checkboxConfirmation: 'yes' });
+    const result = buildDevolutionFinalSubmitPayloadData({
+      ulbCount: 100,
+      excelFile: mockFileValue,
+      checkboxConfirmation: 'yes',
+    });
+    expect(result).toBeNull();
+  });
+
+  it('returns null when ulbCount is missing', () => {
+    const result = buildDevolutionFinalSubmitPayloadData({
+      excelFile: mockFileValue,
+      checkboxConfirmation: true,
+    });
+    expect(result).toBeNull();
+  });
+
+  it('returns null when ulbCount is non-numeric', () => {
+    const result = buildDevolutionFinalSubmitPayloadData({
+      ulbCount: 'abc',
+      excelFile: mockFileValue,
+      checkboxConfirmation: true,
+    });
     expect(result).toBeNull();
   });
 });

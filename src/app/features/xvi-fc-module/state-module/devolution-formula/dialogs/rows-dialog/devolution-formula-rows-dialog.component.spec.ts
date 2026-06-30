@@ -3,8 +3,10 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Subject, of, throwError } from 'rxjs';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { UtilityService } from '../../../../../../core/services/utility.service';
+import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
 import { DevolutionFormulaService } from '../../devolution-formula.service';
 import {
   DevolutionRow,
@@ -43,7 +45,6 @@ function makeRow(overrides: Partial<DevolutionRow> = {}): DevolutionRow {
     rowNumber: 1,
     ulbId: 'ulb-1',
     censusCode: 'C001',
-    sbCode: 'SB001',
     ulbName: 'Test ULB',
     totalGrantAllocation: 10000000,
     installment1Amount: 5000000,
@@ -85,11 +86,51 @@ function makeUpdateRowResponse(
   };
 }
 
+const mockRowEditFields: ConditionalFieldConfig[] = [
+  {
+    key: 'totalGrantAllocation',
+    formFieldType: 'number',
+    label: 'Total Grant Allocation',
+    validations: [
+      { name: 'required', validator: null, message: 'Total Grant Allocation is required.' },
+      { name: 'min', validator: 0, message: 'Total Grant Allocation cannot be negative.' },
+    ],
+  },
+  {
+    key: 'installment1Amount',
+    formFieldType: 'number',
+    label: 'Installment 1 Amount',
+    validations: [
+      { name: 'required', validator: null, message: 'Installment 1 Amount is required.' },
+      { name: 'min', validator: 0, message: 'Installment 1 Amount cannot be negative.' },
+    ],
+  },
+  {
+    key: 'installment2Amount',
+    formFieldType: 'number',
+    label: 'Installment 2 Amount',
+    validations: [
+      { name: 'required', validator: null, message: 'Installment 2 Amount is required.' },
+      { name: 'min', validator: 0, message: 'Installment 2 Amount cannot be negative.' },
+    ],
+  },
+  {
+    key: 'devolutionFormula',
+    formFieldType: 'text',
+    label: 'Devolution Formula',
+    validations: [
+      { name: 'required', validator: null, message: 'Devolution Formula is required.' },
+      { name: 'maxLength', validator: 250, message: 'Devolution Formula cannot exceed 250 characters.' },
+    ],
+  },
+];
+
 const dialogData: DevolutionRowsDialogData = {
   stateId: 'state-1',
   yearId: 'year-1',
   installment: 1,
   canEdit: true,
+  rowEditFields: mockRowEditFields,
 };
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
@@ -449,12 +490,6 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       expect(body.nativeElement.textContent).toContain('C999');
     });
 
-    it('renders sbCode in the row', () => {
-      createComponent([makeRow({ sbCode: 'SB999' })]);
-      const body = fixture.debugElement.query(By.css('[data-cy="df-rows-body"]'));
-      expect(body.nativeElement.textContent).toContain('SB999');
-    });
-
     it('renders ulbName in the row', () => {
       createComponent([makeRow({ ulbName: 'My Test ULB' })]);
       const body = fixture.debugElement.query(By.css('[data-cy="df-rows-body"]'));
@@ -533,6 +568,104 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       const icons = fixture.debugElement.queryAll(By.css('.df-error-icon'));
       expect(icons.length).toBe(0);
     });
+
+    it('applies df-cell-invalid and a tooltip to the ulbName cell when identityModified is reported', () => {
+      const row = makeRow({
+        validationStatus: 'INVALID',
+        errors: [{ field: 'ulbName', code: 'identityModified', message: 'ULB name has changed since last upload.' }],
+      });
+      createComponent([row]);
+
+      const ulbNameCell = fixture.debugElement.queryAll(By.css('td.fw-medium'))[0];
+      expect(ulbNameCell.classes['df-cell-invalid']).toBeTrue();
+
+      const tooltip = ulbNameCell.injector.get(MatTooltip);
+      expect(tooltip.disabled).toBeFalse();
+      expect(tooltip.message).toBe('ULB name has changed since last upload.');
+    });
+  });
+
+  // ─── startEditAtField — click-to-edit ─────────────────────────────────────
+
+  describe('startEditAtField — click-to-edit', () => {
+    it('clicking an editable invalid cell enters edit mode', fakeAsync(() => {
+      const row = makeRow({
+        validationStatus: 'INVALID',
+        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+      });
+      createComponent([row]);
+      fixture.detectChanges();
+
+      // column order: #(0), census(1), ulb(2), totalGrantAllocation(3)
+      const tds = fixture.nativeElement.querySelectorAll('[data-cy="df-rows-row"] td');
+      (tds[3] as HTMLElement).click();
+      tick(50);
+      fixture.detectChanges();
+
+      expect(component.editingRowId()).toBe('row-1');
+    }));
+
+    it('error icon in a row cell uses bi-exclamation-triangle-fill', () => {
+      const row = makeRow({
+        validationStatus: 'INVALID',
+        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+      });
+      createComponent([row]);
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('.df-error-icon');
+      expect(icon.classList).toContain('bi-exclamation-triangle-fill');
+      expect(icon.classList).not.toContain('bi-exclamation-circle-fill');
+    });
+
+    it('applies cursor-pointer to an editable invalid cell when canEdit is true', () => {
+      const row = makeRow({
+        validationStatus: 'INVALID',
+        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+      });
+      createComponent([row]);
+      fixture.detectChanges();
+
+      const tds = fixture.nativeElement.querySelectorAll('[data-cy="df-rows-row"] td');
+      expect((tds[3] as HTMLElement).classList).toContain('cursor-pointer');
+    });
+
+    it('clicking a non-editable cell (censusCode) does not enter edit mode', fakeAsync(() => {
+      const row = makeRow({
+        validationStatus: 'INVALID',
+        errors: [{ field: 'censusCode', code: 'INVALID', message: 'Bad census' }],
+      });
+      createComponent([row]);
+      fixture.detectChanges();
+
+      const tds = fixture.nativeElement.querySelectorAll('[data-cy="df-rows-row"] td');
+      (tds[1] as HTMLElement).click(); // censusCode column
+      tick(50);
+      fixture.detectChanges();
+
+      expect(component.editingRowId()).toBeNull();
+    }));
+
+    it('clicking an editable invalid cell when already editing another row does not change editingRowId', fakeAsync(() => {
+      const row1 = makeRow({ _id: 'row-1' });
+      const row2 = makeRow({
+        _id: 'row-2',
+        rowNumber: 2,
+        validationStatus: 'INVALID',
+        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+      });
+      createComponent([row1, row2]);
+      component.startEdit(row1);
+      fixture.detectChanges();
+
+      const rows = fixture.nativeElement.querySelectorAll('[data-cy="df-rows-row"]');
+      const row2Tds = rows[1].querySelectorAll('td');
+      (row2Tds[3] as HTMLElement).click();
+      tick(50);
+      fixture.detectChanges();
+
+      expect(component.editingRowId()).toBe('row-1');
+    }));
   });
 
   // ─── edit button visibility ────────────────────────────────────────────────
@@ -586,12 +719,6 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       expect(component.editForm.get('censusCode')).toBeNull();
     });
 
-    it('sbCode is not a form control when editing', () => {
-      createComponent([makeRow()]);
-      component.startEdit(component.rows()[0]);
-      expect(component.editForm.get('sbCode')).toBeNull();
-    });
-
     it('ulbName is not a form control when editing', () => {
       createComponent([makeRow()]);
       component.startEdit(component.rows()[0]);
@@ -620,6 +747,100 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       createComponent([makeRow()]);
       component.startEdit(component.rows()[0]);
       expect(component.editingRowId()).toBeNull();
+    });
+  });
+
+  // ─── rowEditFields — dynamic validation ────────────────────────────────────
+
+  describe('rowEditFields — dynamic validation', () => {
+    it('builds edit form controls from backend rowEditFields', () => {
+      createComponent([makeRow()]);
+      component.startEdit(component.rows()[0]);
+      expect(component.editForm.contains('totalGrantAllocation')).toBeTrue();
+      expect(component.editForm.contains('installment1Amount')).toBeTrue();
+      expect(component.editForm.contains('installment2Amount')).toBeTrue();
+      expect(component.editForm.contains('devolutionFormula')).toBeTrue();
+    });
+
+    it('uses backend required validator on devolutionFormula', () => {
+      const row = makeRow({ devolutionFormula: '' });
+      createComponent([row]);
+      component.startEdit(row);
+      const ctrl = component.getEditFormControl('devolutionFormula');
+      expect(ctrl?.hasError('required')).toBeTrue();
+    });
+
+    it('uses backend min validator on amount field', () => {
+      createComponent([makeRow()]);
+      component.startEdit(component.rows()[0]);
+      const ctrl = component.getEditFormControl('totalGrantAllocation');
+      ctrl?.setValue(-1);
+      expect(ctrl?.hasError('min')).toBeTrue();
+    });
+
+    it('uses backend maxLength validator on devolutionFormula (normalized to maxlength)', () => {
+      const longFormula = 'x'.repeat(251);
+      createComponent([makeRow()]);
+      component.startEdit(component.rows()[0]);
+      const ctrl = component.getEditFormControl('devolutionFormula');
+      ctrl?.setValue(longFormula);
+      expect(ctrl?.hasError('maxlength')).toBeTrue();
+    });
+
+    it('getEditFieldErrors returns backend message for required error', () => {
+      const row = makeRow({ devolutionFormula: '' });
+      createComponent([row]);
+      component.startEdit(row);
+      const ctrl = component.getEditFormControl('devolutionFormula');
+      ctrl?.markAsTouched();
+      const errors = component.getEditFieldErrors('devolutionFormula');
+      expect(errors).toContain('Devolution Formula is required.');
+    });
+
+    it('getEditFieldErrors returns backend message for maxLength (case-insensitive name match)', () => {
+      const longFormula = 'x'.repeat(251);
+      createComponent([makeRow()]);
+      component.startEdit(component.rows()[0]);
+      const ctrl = component.getEditFormControl('devolutionFormula');
+      ctrl?.setValue(longFormula);
+      ctrl?.markAsTouched();
+      const errors = component.getEditFieldErrors('devolutionFormula');
+      expect(errors).toContain('Devolution Formula cannot exceed 250 characters.');
+    });
+
+    it('blocks save when dynamic form has a required error', () => {
+      const row = makeRow({ devolutionFormula: '' });
+      createComponent([row]);
+      component.startEdit(row);
+      component.saveRow(row._id);
+      expect(dfService.updateRow).not.toHaveBeenCalled();
+    });
+
+    it('preserves PATCH payload keys and values when the dynamic form is valid', () => {
+      const row = makeRow({
+        totalGrantAllocation: 1000,
+        installment1Amount: 400,
+        installment2Amount: 600,
+        devolutionFormula: 'Formula A',
+      });
+      createComponent([row]);
+      component.startEdit(row);
+      dfService.updateRow.and.returnValue(of(makeUpdateRowResponse(row)));
+
+      component.saveRow(row._id);
+
+      expect(dfService.updateRow).toHaveBeenCalledWith(
+        'state-1',
+        'year-1',
+        1,
+        row._id,
+        jasmine.objectContaining({
+          totalGrantAllocation: 1000,
+          installment1Amount: 400,
+          installment2Amount: 600,
+          devolutionFormula: 'Formula A',
+        }),
+      );
     });
   });
 
@@ -894,7 +1115,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       );
     });
 
-    it('sbCode API error (no form control) does not crash and surfaces snackbar', () => {
+    it('unknown field API error (no form control) does not crash and surfaces snackbar', () => {
       const row = makeRow();
       createComponent([row]);
       component.startEdit(row);
@@ -902,7 +1123,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
         throwError(() => ({
           error: {
             errors: {
-              sbCode: [{ field: 'sbCode', message: 'SB code mismatch.', code: 'SB_MISMATCH' }],
+              unknownField: [{ field: 'unknownField', message: 'Unknown field error.', code: 'UNKNOWN' }],
             },
           },
         })),
@@ -910,7 +1131,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
 
       expect(() => component.saveRow('row-1')).not.toThrow();
 
-      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('SB code mismatch.', 'snackbar-danger');
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Unknown field error.', 'snackbar-danger');
     });
 
     it('cancelEdit clears stale API errors from the previous edit session', () => {

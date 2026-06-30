@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import FileSaver from 'file-saver';
 import { filter, finalize, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -34,6 +35,7 @@ import {
   ApiErrorMap,
   DevolutionFileRef,
   DevolutionGrantAllocationSummary,
+  DevolutionInstallmentAccess,
   DevolutionPermissions,
   DevolutionRowsDialogData,
   DevolutionRowsDialogResult,
@@ -50,9 +52,8 @@ import {
   buildDevolutionFinalSubmitPayloadData,
   extractApiErrorResponse,
   extractValidationSummaryFromError,
-  formatRupees,
-  getDfValidationStatusLabel,
   getHttpStatus,
+  getRegisterUlbErrorMessage,
   hasDevolutionFileRef,
   hasPersistedValidationData,
   isValidDevolutionFileRef,
@@ -75,6 +76,7 @@ const DF_SUPPORTING_ACTION = {
     DynamicFormComponent,
     PreLoaderComponent,
     MatButtonModule,
+    MatTooltipModule,
     FormProgressComponent,
   ],
   templateUrl: './devolution-formula.component.html',
@@ -101,6 +103,8 @@ export class DevolutionFormulaComponent implements OnInit {
   readonly permissions = signal<DevolutionPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
   readonly validationSummary = signal<DevolutionValidationSummary | null>(null);
   readonly grantAllocationSummary = signal<DevolutionGrantAllocationSummary | null>(null);
+  readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
+  readonly installmentAccess = signal<DevolutionInstallmentAccess | null>(null);
 
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
@@ -114,24 +118,18 @@ export class DevolutionFormulaComponent implements OnInit {
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
 
-  /** True when installment 2 is selected; final submit is blocked until the backend unlocks it. */
-  readonly isInstallment2Locked = computed(() => this.installment() === 2);
+  /** Backend-driven lock state for installment 2; missing access metadata defaults to locked. */
+  readonly isInstallment2Locked = computed(() => this.installmentAccess()?.installment2?.locked ?? true);
 
-  /** Difference between MoHUA allocation and state-allocated sum. Null when no summary loaded. */
-  readonly allocationDifference = computed<number | null>(() => {
-    const s = this.validationSummary();
-    return s !== null ? s.totalMoHUAAllocation - s.totalAllocatedSum : null;
-  });
+  readonly installment2LockReason = computed(
+    () =>
+      this.installmentAccess()?.installment2?.lockReason ??
+      'Installment 2 is locked until at least one Installment 1 claim batch is acknowledged by MoHUA.',
+  );
 
-  /** True when the validation summary indicates any rows, ULBs, or allocation issues. */
-  readonly hasValidationErrors = computed(() => {
-    const s = this.validationSummary();
-    if (!s) return false;
-    return s.errorRowCount > 0 || s.missingUlbCount > 0 || !s.allocationBalanced;
-  });
-
-  protected readonly getDfValidationStatusLabel = getDfValidationStatusLabel;
-  protected readonly formatRupees = formatRupees;
+  readonly canSelectInstallment2 = computed(
+    () => this.installmentAccess()?.installment2?.canSelect === true && !this.isInstallment2Locked(),
+  );
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -180,6 +178,7 @@ export class DevolutionFormulaComponent implements OnInit {
    */
   switchInstallment(installment: DfInstallment): void {
     if (this.isLoading() || this.installment() === installment) return;
+    if (installment === 2 && this.isInstallment2Locked()) return;
     this.resetFormSubscriptions();
     this.form = this.fb.group({});
     this.fields.set([]);
@@ -227,6 +226,8 @@ export class DevolutionFormulaComponent implements OnInit {
           this.lastPersistedExcelFile = isValidDevolutionFileRef(fileField?.value) ? fileField.value : null;
 
           this.fields.set(data.questions);
+          this.rowEditFields.set(data.rowEditFields ?? []);
+          this.installmentAccess.set(data.installmentAccess ?? null);
           this.createFormControls();
           this.isLoading.set(false);
         },
@@ -368,12 +369,15 @@ export class DevolutionFormulaComponent implements OnInit {
 
           if (hasPersistedValidationData(err)) {
             if (response?.errors) {
+              this.applyApiErrors(response.errors);
               this.pendingPostReloadErrors = response.errors;
             }
             this.reloadForm();
           } else if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
+
+          this.notifyRegisterUlbError(response?.errors);
         },
       });
   }
@@ -513,14 +517,16 @@ export class DevolutionFormulaComponent implements OnInit {
       yearId: this.yearId,
       installment: this.installment(),
       canEdit: this.canEdit(),
+      rowEditFields: this.rowEditFields(),
     };
     const panelClasses = this.themeClass ? [this.themeClass, 'df-rows-dialog-panel'] : ['df-rows-dialog-panel'];
     const ref = this.dialog.open(DevolutionFormulaRowsDialogComponent, {
       data,
       panelClass: panelClasses,
-      width: '1140px',
+      width: '95vw',
       maxWidth: '95vw',
-      maxHeight: '90vh',
+      height: '95vh',
+      maxHeight: '95vh',
       autoFocus: false,
     });
     ref
@@ -621,6 +627,8 @@ export class DevolutionFormulaComponent implements OnInit {
           if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
+
+          this.notifyRegisterUlbError(response?.errors);
         },
       });
   }
@@ -630,7 +638,7 @@ export class DevolutionFormulaComponent implements OnInit {
    * before delegating to `executeSaveDraft` or `executeFinalSubmit`.
    */
   onSubmit(action: SubmitType): void {
-    if (action === 'finalSubmit' && this.isInstallment2Locked()) {
+    if (action === 'finalSubmit' && this.installment() === 2 && this.isInstallment2Locked()) {
       this.utilityService.triggerSnackbar(
         'Final submit is not available for Installment 2 at this time.',
         'snackbar-danger',
@@ -779,6 +787,14 @@ export class DevolutionFormulaComponent implements OnInit {
         if (!confirmed) return;
         this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
       });
+  }
+
+  /** Shows a snackbar with the backend message when a validate/revalidate error reports `newUlbsAdded`. */
+  private notifyRegisterUlbError(errors: ApiErrorMap | undefined): void {
+    const message = getRegisterUlbErrorMessage(errors);
+    if (message) {
+      this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+    }
   }
 
   private applyApiErrors(errors: ApiErrorMap): void {

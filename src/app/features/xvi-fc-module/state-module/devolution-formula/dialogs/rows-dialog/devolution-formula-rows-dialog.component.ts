@@ -1,12 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged, merge, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../../../core/services/utility.service';
+import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
+import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
 import { DevolutionValidationBadgeComponent } from '../../components/validation-badge/devolution-validation-badge.component';
 import {
   DevolutionRow,
@@ -52,7 +63,9 @@ function toStringArray(value: unknown): string[] {
 export class DevolutionFormulaRowsDialogComponent implements OnInit {
   private readonly service = inject(DevolutionFormulaService);
   private readonly utilityService = inject(UtilityService);
+  private readonly dynamicService = inject(DynamicFormService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly elementRef = inject(ElementRef);
   private readonly dialogRef = inject(MatDialogRef<DevolutionFormulaRowsDialogComponent>);
   private readonly data = inject<DevolutionRowsDialogData>(MAT_DIALOG_DATA);
   private readonly fb = inject(FormBuilder);
@@ -61,6 +74,8 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
   readonly yearId = this.data.yearId;
   readonly installment = this.data.installment;
   readonly canEdit = this.data.canEdit;
+  readonly rowEditFields = signal<ConditionalFieldConfig[]>(this.data.rowEditFields ?? []);
+  private currentEditFields: ConditionalFieldConfig[] = [];
 
   readonly rows = signal<DevolutionRow[]>([]);
   readonly total = signal(0);
@@ -140,6 +155,15 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
     this.clearAllEditApiErrors();
     this.editingRowId.set(row._id);
     this.buildEditForm(row);
+  }
+
+  startEditAtField(row: DevolutionRow, field: string): void {
+    if (!this.canEdit || this.editingRowId() !== null || !this.hasCellError(row, field)) return;
+    this.startEdit(row);
+    setTimeout(() => {
+      const el = this.elementRef.nativeElement.querySelector(`[data-df-edit-field="${field}"]`);
+      if (el instanceof HTMLElement) el.focus();
+    }, 50);
   }
 
   cancelEdit(): void {
@@ -240,15 +264,31 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
       required: 'This field is required.',
       min: 'Value is below the minimum allowed.',
       max: 'Value exceeds the maximum allowed.',
+      minlength: 'Value is too short.',
+      maxlength: 'Value is too long.',
       pattern: 'Invalid format.',
     };
 
     for (const key of Object.keys(errors)) {
       if (key === 'apiErrors') continue;
-      addMessage(fallbacks[key] ?? 'Invalid value.');
+      addMessage(this.getValidationMessage(field, key) || fallbacks[key] || 'Invalid value.');
     }
 
     return messages;
+  }
+
+  // Case-insensitive fallback handles Angular normalizing maxLength → maxlength.
+  private getValidationMessage(fieldKey: string, validationName: string): string | null {
+    const validations = this.getRowEditFieldConfig(fieldKey)?.validations;
+    if (!validations) return null;
+    const cfg =
+      validations.find((v) => v.name === validationName) ??
+      validations.find((v) => v.name.toLowerCase() === validationName.toLowerCase());
+    return cfg?.message ?? null;
+  }
+
+  private getRowEditFieldConfig(fieldKey: string): ConditionalFieldConfig | undefined {
+    return this.currentEditFields.find((f) => f.key === fieldKey);
   }
 
   getEditFieldErrorText(field: string): string {
@@ -262,26 +302,46 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
 
   private buildEditForm(row: DevolutionRow): void {
     this.resetEditFormSubscriptions();
-    this.editForm = this.fb.group({
-      totalGrantAllocation: this.fb.control<number | null>(row.totalGrantAllocation, [Validators.min(0)]),
-      installment1Amount: this.fb.control<number | null>(row.installment1Amount, [Validators.min(0)]),
-      installment2Amount: this.fb.control<number | null>(row.installment2Amount, [Validators.min(0)]),
-      devolutionFormula: this.fb.control<string | null>(row.devolutionFormula),
-    });
+    this.editForm = this.fb.group({});
+    this.currentEditFields = this.rowEditFields();
 
-    for (const key of [
+    const EDITABLE_KEYS = new Set([
       'totalGrantAllocation',
       'installment1Amount',
       'installment2Amount',
       'devolutionFormula',
-    ] as const) {
-      this.editForm
-        .get(key)
-        ?.valueChanges.pipe(takeUntil(this.editFormTeardown$), takeUntilDestroyed(this.destroyRef))
+    ]);
+
+    for (const field of this.currentEditFields) {
+      const key = field.key;
+      if (!key || !field.formFieldType || !EDITABLE_KEYS.has(key)) continue;
+
+      const rawValue = (row as unknown as Record<string, unknown>)[key];
+      // Normalize maxLength/minLength → maxlength/minlength so DynamicFormService.bindValidations recognizes them.
+      const validations = field.validations?.map((v) =>
+        v.name === 'maxLength' || v.name === 'minLength' ? { ...v, name: v.name.toLowerCase() } : v,
+      );
+      const fieldForControl: ConditionalFieldConfig = {
+        ...field,
+        validations,
+        value: rawValue ?? null,
+        readonly: false,
+      };
+
+      const control = this.dynamicService.createContorl(fieldForControl, false, false);
+      this.editForm.addControl(key, control);
+      control.updateValueAndValidity({ emitEvent: false });
+
+      control.valueChanges
+        .pipe(takeUntil(this.editFormTeardown$), takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.clearApiError(key);
         });
     }
+  }
+
+  private hasCellError(row: DevolutionRow, field: string): boolean {
+    return buildDfRowViewModel(row).cellHasError[field] ?? false;
   }
 
   private clearApiError(field: string): void {
@@ -314,7 +374,7 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
     for (const [field, messages] of Object.entries(grouped)) {
       const control = this.editForm.get(field);
       if (!control) {
-        // Field has no editable control (e.g. censusCode, sbCode, unknownUlb).
+        // Field has no editable control (e.g. censusCode, unknownUlb).
         // Collect the messages so they can be surfaced to the user.
         unmatchedMessages.push(...messages);
         continue;

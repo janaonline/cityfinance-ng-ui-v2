@@ -19,7 +19,7 @@
           id="df-rows-search"
           type="text"
           class="form-control form-control-sm"
-          placeholder="Census code, SB code or ULB name"
+          placeholder="Census code or ULB name"
           formControlName="search"
           data-cy="df-rows-filter-search"
         />
@@ -57,7 +57,6 @@
         <colgroup>
           <col class="df-col-row-number" />
           <col class="df-col-census" />
-          <col class="df-col-sb-code" />
           <col class="df-col-ulb-name" />
           <col class="df-col-amount" />
           <col class="df-col-amount" />
@@ -72,7 +71,6 @@
           <tr>
             <th class="ps-3 text-nowrap small fw-semibold">#</th>
             <th class="text-nowrap small fw-semibold">Census Code</th>
-            <th class="text-nowrap small fw-semibold">SB Code</th>
             <th class="text-nowrap small fw-semibold">ULB Name</th>
             <th class="text-nowrap small fw-semibold">Total Allocation</th>
             <th class="text-nowrap small fw-semibold">Installment 1</th>
@@ -97,7 +95,6 @@
 
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
                 <td class="small text-secondary text-nowrap">{{ row.censusCode }}</td>
-                <td class="small text-secondary text-nowrap">{{ row.sbCode }}</td>
                 <td class="small fw-medium">{{ row.ulbName }}</td>
 
                 <td [class.df-cell-invalid]="hasEditFieldError('totalGrantAllocation')">
@@ -212,68 +209,111 @@
                   [matTooltip]="vm.cellErrorText['censusCode'] ?? ''"
                   [matTooltipDisabled]="!vm.cellHasError['censusCode']"
                 >
-                  {{ row.censusCode }}
-                  @if (vm.cellHasError['censusCode']) {
-                    <i
-                      class="bi bi-exclamation-circle-fill text-danger ms-1 df-error-icon"
-                      aria-label="Validation error"
-                    ></i>
-                  }
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span>{{ row.censusCode }}</span>
+                    @if (vm.cellHasError['censusCode']) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
+                        aria-label="Validation error"
+                      ></i>
+                    }
+                  </div>
                 </td>
-                <td class="small text-nowrap">{{ row.sbCode }}</td>
                 <td
                   class="small fw-medium"
                   [class.df-cell-invalid]="!!vm.cellHasError['ulbName']"
                   [matTooltip]="vm.cellErrorText['ulbName'] ?? ''"
                   [matTooltipDisabled]="!vm.cellHasError['ulbName']"
                 >
-                  {{ row.ulbName }}
-                  @if (vm.cellHasError['ulbName']) {
-                    <i
-                      class="bi bi-exclamation-circle-fill text-danger ms-1 df-error-icon"
-                      aria-label="Validation error"
-                    ></i>
-                  }
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span>{{ row.ulbName }}</span>
+                    @if (vm.cellHasError['ulbName']) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
+                        aria-label="Validation error"
+                      ></i>
+                    }
+                  </div>
                 </td>
-                <td class="small text-nowrap" [class.df-cell-invalid]="!!vm.cellHasError['totalGrantAllocation']">
-                  {{ formatRupees(row.totalGrantAllocation) }}
-                  @if (vm.cellHasError['totalGrantAllocation']) {
-                    <i
-                      class="bi bi-exclamation-circle-fill text-danger ms-1 df-error-icon"
-                      aria-label="Validation error"
-                      [matTooltip]="vm.cellErrorText['totalGrantAllocation'] ?? ''"
-                    ></i>
-                  }
+                <td
+                  class="small text-nowrap"
+                  [class.df-cell-invalid]="!!vm.cellHasError['totalGrantAllocation']"
+                  [class.cursor-pointer]="
+                    !!vm.cellHasError['totalGrantAllocation'] && canEdit && editingRowId() === null
+                  "
+                  [matTooltip]="vm.cellErrorText['totalGrantAllocation'] ?? ''"
+                  [matTooltipDisabled]="!vm.cellHasError['totalGrantAllocation']"
+                  (click)="startEditAtField(vm.row, 'totalGrantAllocation')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span>{{ formatRupees(row.totalGrantAllocation) }}</span>
+                    @if (vm.cellHasError['totalGrantAllocation']) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
+                        aria-label="Validation error"
+                      ></i>
+                    }
+                  </div>
                 </td>
-                <td class="small text-nowrap" [class.df-cell-invalid]="!!vm.cellHasError['installment1Amount']">
-                  {{ formatRupees(row.installment1Amount) }}
-                  @if (vm.cellHasError['installment1Amount']) {
-                    <i
-                      class="bi bi-exclamation-circle-fill text-danger ms-1 df-error-icon"
-                      aria-label="Validation error"
-                      [matTooltip]="vm.cellErrorText['installment1Amount'] ?? ''"
-                    ></i>
-                  }
+                <td
+                  class="small text-nowrap"
+                  [class.df-cell-invalid]="!!vm.cellHasError['installment1Amount']"
+                  [class.df-cell-clickable]="
+                    !!vm.cellHasError['installment1Amount'] && canEdit && editingRowId() === null
+                  "
+                  [matTooltip]="vm.cellErrorText['installment1Amount'] ?? ''"
+                  [matTooltipDisabled]="!vm.cellHasError['installment1Amount']"
+                  (click)="startEditAtField(vm.row, 'installment1Amount')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span>{{ formatRupees(row.installment1Amount) }}</span>
+                    @if (vm.cellHasError['installment1Amount']) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
+                        aria-label="Validation error"
+                      ></i>
+                    }
+                  </div>
                 </td>
-                <td class="small text-nowrap" [class.df-cell-invalid]="!!vm.cellHasError['installment2Amount']">
-                  {{ formatRupees(row.installment2Amount) }}
-                  @if (vm.cellHasError['installment2Amount']) {
-                    <i
-                      class="bi bi-exclamation-circle-fill text-danger ms-1 df-error-icon"
-                      aria-label="Validation error"
-                      [matTooltip]="vm.cellErrorText['installment2Amount'] ?? ''"
-                    ></i>
-                  }
+                <td
+                  class="small text-nowrap"
+                  [class.df-cell-invalid]="!!vm.cellHasError['installment2Amount']"
+                  [class.df-cell-clickable]="
+                    !!vm.cellHasError['installment2Amount'] && canEdit && editingRowId() === null
+                  "
+                  [matTooltip]="vm.cellErrorText['installment2Amount'] ?? ''"
+                  [matTooltipDisabled]="!vm.cellHasError['installment2Amount']"
+                  (click)="startEditAtField(vm.row, 'installment2Amount')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span>{{ formatRupees(row.installment2Amount) }}</span>
+                    @if (vm.cellHasError['installment2Amount']) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
+                        aria-label="Validation error"
+                      ></i>
+                    }
+                  </div>
                 </td>
-                <td class="small df-cell-formula" [class.df-cell-invalid]="!!vm.cellHasError['devolutionFormula']">
-                  {{ row.devolutionFormula }}
-                  @if (vm.cellHasError['devolutionFormula']) {
-                    <i
-                      class="bi bi-exclamation-circle-fill text-danger ms-1 df-error-icon"
-                      aria-label="Validation error"
-                      [matTooltip]="vm.cellErrorText['devolutionFormula'] ?? ''"
-                    ></i>
-                  }
+                <td
+                  class="small df-cell-formula"
+                  [class.df-cell-invalid]="!!vm.cellHasError['devolutionFormula']"
+                  [class.df-cell-clickable]="
+                    !!vm.cellHasError['devolutionFormula'] && canEdit && editingRowId() === null
+                  "
+                  [matTooltip]="vm.cellErrorText['devolutionFormula'] ?? ''"
+                  [matTooltipDisabled]="!vm.cellHasError['devolutionFormula']"
+                  (click)="startEditAtField(vm.row, 'devolutionFormula')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span class="text-truncate min-w-0">{{ row.devolutionFormula }}</span>
+                    @if (vm.cellHasError['devolutionFormula']) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
+                        aria-label="Validation error"
+                      ></i>
+                    }
+                  </div>
                 </td>
                 <td>
                   <span
