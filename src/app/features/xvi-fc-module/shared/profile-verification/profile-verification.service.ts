@@ -45,36 +45,36 @@ export class ProfileVerificationService {
 
   sendProfileOtp(email: string): Observable<{ sent: boolean }> {
     return this.http
-      .post<{ success: boolean; data: { isOtpSent: boolean } }>(
+      .post<{ success?: boolean; data?: { isOtpSent: boolean }; isOtpSent?: boolean }>(
         `${environment.api.url2}email/sendProfileOtp`,
         { email },
       )
       .pipe(
-        map((resp) => ({ sent: resp?.data?.isOtpSent === true })),
+        map((resp) => ({ sent: (resp?.data ?? resp)?.isOtpSent === true })),
         catchError(() => of({ sent: false })),
       );
   }
 
   verifyProfileOtp(email: string, otp: string): Observable<{ verified: boolean }> {
     return this.http
-      .post<{ success: boolean; data: { isOtpVerified: boolean } }>(
+      .post<{ success?: boolean; data?: { isOtpVerified: boolean }; isOtpVerified?: boolean }>(
         `${environment.api.url2}email/verifyProfileOtp`,
         { email, otp },
       )
       .pipe(
-        map((resp) => ({ verified: resp?.data?.isOtpVerified === true })),
+        map((resp) => ({ verified: (resp?.data ?? resp)?.isOtpVerified === true })),
         catchError(() => of({ verified: false })),
       );
   }
 
   issueProfileSaveToken(userId: string): Observable<{ token: string }> {
     return this.http
-      .post<{ success: boolean; data: { token: string } }>(
+      .post<{ success?: boolean; data?: { token: string }; token?: string }>(
         `${environment.api.url2}users/${userId}/issue-profile-save-token`,
         {},
       )
       .pipe(
-        map((resp) => ({ token: resp?.data?.token ?? '' })),
+        map((resp) => ({ token: (resp?.data ?? resp)?.token ?? '' })),
         catchError(() => of({ token: '' })),
       );
   }
