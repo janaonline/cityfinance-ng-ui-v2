@@ -7,6 +7,7 @@ import { StateProfile, UlbContacts, UlbEntityInfo } from './profile-verification
 interface StoredUserData {
   _id?: string;
   id?: string;
+  role?: string;
   ulb?: string;
   state?: string;
   name?: string;
@@ -30,21 +31,34 @@ export class ProfileVerificationService {
       .pipe(map((resp) => resp?.data ?? (resp as unknown as UlbContacts)));
   }
 
-  saveUlbContacts(userId: string, contacts: UlbContacts): Observable<unknown> {
-    return this.http.patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
-      ...contacts,
-      isXVIFCProfileVerified: true,
-    });
+  saveUlbContacts(userId: string, contacts: UlbContacts): Observable<{ ok: boolean }> {
+    return this.http
+      .patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
+        ...contacts,
+        isXVIFCProfileVerified: true,
+      })
+      .pipe(
+        map(() => ({ ok: true })),
+        catchError(() => of({ ok: false })),
+      );
   }
 
-  sendProfileOtp(email: string): Observable<unknown> {
-    return this.http.post(`${environment.api.url2}email/sendOtp`, { email });
+  sendProfileOtp(email: string): Observable<{ sent: boolean }> {
+    return this.http
+      .post<{ success: boolean; data: { isOtpSent: boolean } }>(
+        `${environment.api.url2}email/sendProfileOtp`,
+        { email },
+      )
+      .pipe(
+        map((resp) => ({ sent: resp?.data?.isOtpSent === true })),
+        catchError(() => of({ sent: false })),
+      );
   }
 
   verifyProfileOtp(email: string, otp: string): Observable<{ verified: boolean }> {
     return this.http
       .post<{ success: boolean; data: { isOtpVerified: boolean } }>(
-        `${environment.api.url2}email/verifyOtp`,
+        `${environment.api.url2}email/verifyProfileOtp`,
         { email, otp },
       )
       .pipe(
@@ -53,16 +67,35 @@ export class ProfileVerificationService {
       );
   }
 
+  issueProfileSaveToken(userId: string): Observable<{ token: string }> {
+    return this.http
+      .post<{ success: boolean; data: { token: string } }>(
+        `${environment.api.url2}users/${userId}/issue-profile-save-token`,
+        {},
+      )
+      .pipe(
+        map((resp) => ({ token: resp?.data?.token ?? '' })),
+        catchError(() => of({ token: '' })),
+      );
+  }
+
   saveStateProfile(
     userId: string,
     profile: Pick<StateProfile, 'name' | 'mobile' | 'designation'>,
-  ): Observable<unknown> {
-    return this.http.patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
-      name: profile.name,
-      mobile: profile.mobile,
-      designation: profile.designation,
-      isXVIFCProfileVerified: true,
-    });
+    saveToken: string,
+  ): Observable<{ ok: boolean }> {
+    return this.http
+      .patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
+        name: profile.name,
+        mobile: profile.mobile,
+        designation: profile.designation,
+        saveToken,
+        isXVIFCProfileVerified: true,
+      })
+      .pipe(
+        map(() => ({ ok: true })),
+        catchError(() => of({ ok: false })),
+      );
   }
 
   readStoredUser(): StoredUserData {

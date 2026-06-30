@@ -14,6 +14,16 @@
   }
 }
 
+// ─── Right panel — sticky so the card never moves when the left side grows ────
+
+.login-right {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  align-self: flex-start;
+}
+
 // ─── Left panel gradient + top accent line ────────────────────────────────────
 
 .login-left {

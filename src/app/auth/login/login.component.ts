@@ -103,10 +103,10 @@ export class LoginComponent implements OnInit {
   // ─── Static data ─────────────────────────────────────────────────────────────
 
   protected readonly stats = [
-    { label: 'Eligible Urban Local Bodies', value: '4,485',        icon: 'bi-buildings-fill' },
-    { label: 'Special Grant Categories',    value: '2',            icon: 'bi-tags-fill' },
-    { label: 'Total Grants Allocated',      value: '₹1,29,987 Cr', icon: 'bi-cash-stack' },
-    { label: 'Year 1 Disbursement',         value: '₹37,272 Cr',   icon: 'bi-send-fill' },
+    { label: 'Eligible Urban Local Bodies', value: '4,485', icon: 'bi-buildings-fill' },
+    { label: 'Special Grant Categories', value: '2', icon: 'bi-tags-fill' },
+    { label: 'Total Grants Allocated', value: '₹1,29,987 Cr', icon: 'bi-cash-stack' },
+    { label: 'Year 1 Disbursement', value: '₹37,272 Cr', icon: 'bi-send-fill' },
   ] as const;
 
   protected readonly documents = [
@@ -133,11 +133,21 @@ export class LoginComponent implements OnInit {
     role: new FormControl<LoginRole | ''>('', { nonNullable: true, validators: [Validators.required] }),
     identifier: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(254), emailOrCensusCode, ...IDENTIFIER_SECURITY_VALIDATORS],
+      validators: [
+        Validators.required,
+        Validators.maxLength(254),
+        emailOrCensusCode,
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ],
     }),
     password: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(6), Validators.maxLength(128), ...PASSWORD_SECURITY_VALIDATORS],
+      validators: [
+        Validators.required,
+        Validators.minLength(6),
+        Validators.maxLength(128),
+        ...PASSWORD_SECURITY_VALIDATORS,
+      ],
     }),
   });
 
@@ -201,7 +211,7 @@ export class LoginComponent implements OnInit {
     const is16thFC = type === '16thFC';
 
     const options: RoleOption[] = [
-      { id: 'ULB',   label: 'ULB',   icon: 'ulb',   biIcon: 'bi-buildings-fill' },
+      { id: 'ULB', label: 'ULB', icon: 'ulb', biIcon: 'bi-buildings-fill' },
       { id: 'STATE', label: 'STATE', icon: 'state', biIcon: 'bi-bank' },
       { id: 'MOHUA', label: 'MOHUA', icon: 'mohua', biIcon: 'bi-bullseye' },
     ];
@@ -213,7 +223,7 @@ export class LoginComponent implements OnInit {
     options.push(
       is15thFC
         ? { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock' }
-        : { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock', disabled: true, badge: 'SOON' },
+        : { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock', disabled: true },
     );
 
     return options;
@@ -405,8 +415,8 @@ export class LoginComponent implements OnInit {
     this.step.set('role');
     this.errorMessage.set('');
     this.isSubmitted = false;
-    this.isPasswordVisible = false;                    // U1: reset password visibility
-    this.loginForm.controls.password.reset('');        // B5: clear stale password value + touched state
+    this.isPasswordVisible = false; // U1: reset password visibility
+    this.loginForm.controls.password.reset(''); // B5: clear stale password value + touched state
     this.resetIdentifierToDefault();
   }
 
@@ -472,20 +482,30 @@ export class LoginComponent implements OnInit {
     if (role === 'ULB') {
       ctrl.setValidators([
         Validators.required,
-        Validators.minLength(6),   // U6: census codes are at minimum 6 digits
+        Validators.minLength(6), // U6: census codes are at minimum 6 digits
         Validators.maxLength(254),
         noEmailFormat,
         ...IDENTIFIER_SECURITY_VALIDATORS,
       ]);
     } else {
-      ctrl.setValidators([Validators.required, Validators.maxLength(254), Validators.email, ...IDENTIFIER_SECURITY_VALIDATORS]);
+      ctrl.setValidators([
+        Validators.required,
+        Validators.maxLength(254),
+        Validators.email,
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ]);
     }
     ctrl.updateValueAndValidity();
   }
 
   private resetIdentifierToDefault(): void {
     const ctrl = this.loginForm.controls.identifier;
-    ctrl.setValidators([Validators.required, Validators.maxLength(254), emailOrCensusCode, ...IDENTIFIER_SECURITY_VALIDATORS]);
+    ctrl.setValidators([
+      Validators.required,
+      Validators.maxLength(254),
+      emailOrCensusCode,
+      ...IDENTIFIER_SECURITY_VALIDATORS,
+    ]);
     ctrl.updateValueAndValidity();
   }
 }

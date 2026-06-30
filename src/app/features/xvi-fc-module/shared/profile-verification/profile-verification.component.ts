@@ -1,17 +1,18 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   OnDestroy,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { Subscription, fromEvent } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Subscription, filter, fromEvent, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -65,6 +66,8 @@ const ROUTE_ROLE_MAP: Record<string, Roles> = {
 })
 export class ProfileVerificationComponent implements OnInit, OnDestroy {
   private popstateSub?: Subscription;
+  private resendTimer?: number;
+  private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(ProfileVerificationService);
   private readonly router = inject(Router);
@@ -74,6 +77,9 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   role: ProfileRole = 'state';
   private year = '';
   private entityId = '';
+  // M3 — cached from single localStorage parse in ngOnInit
+  private userId = '';
+  private routeRole: Roles = 'STATE';
 
   // ── Shared ───────────────────────────────────────────────────
   readonly isLoading = signal(true);
@@ -129,6 +135,8 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   readonly otpStep = signal(false);
   readonly otpValue = signal('');
   readonly sendingOtp = signal(false);
+  // C2 — resend cooldown countdown (seconds)
+  readonly resendCooldown = signal(0);
 
   readonly stateForm = this.fb.nonNullable.group({
     name: ['', [
@@ -141,7 +149,12 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     ]],
     email: [{ value: '', disabled: true }],
     mobile: ['', [Validators.pattern(/^[6-9]\d{9}$/), noHtmlOrScript, noMongoOperators]],
-    designation: ['', [Validators.maxLength(100), Validators.pattern(ProfileVerificationComponent.NAME_PATTERN), noHtmlOrScript, noMongoOperators]],
+    designation: ['', [
+      Validators.maxLength(100),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
   });
 
   private readonly _stateFormStatus = toSignal(this.stateForm.statusChanges, {
@@ -152,24 +165,40 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     () => this._stateFormStatus() === 'VALID' && !this.isSaving() && !this.sendingOtp(),
   );
   readonly stateFormHasErrors = computed(() => this._stateFormStatus() === 'INVALID');
-  readonly canConfirmOtp = computed(() => this.otpValue().trim().length === 6 && !this.isSaving());
+  // H3 — enforce 6 numeric digits
+  readonly canConfirmOtp = computed(() => /^\d{6}$/.test(this.otpValue()) && !this.isSaving());
+  // C2 — resend allowed only after cooldown expires
+  readonly canResend = computed(() => this.resendCooldown() === 0 && !this.sendingOtp());
 
   // ── Lifecycle ────────────────────────────────────────────────
   ngOnDestroy(): void {
     this.popstateSub?.unsubscribe();
+    if (this.resendTimer) window.clearInterval(this.resendTimer);
   }
 
   ngOnInit(): void {
-    // Intercept browser back button: redirect to year selection instead of going back in history
+    // Intercept browser back button: redirect to year selection
     history.pushState(null, '', window.location.href);
     this.popstateSub = fromEvent<PopStateEvent>(window, 'popstate').subscribe(() => {
       history.pushState(null, '', window.location.href);
       void this.router.navigate(['/xvifc/year'], { replaceUrl: true });
     });
 
+    // H1 — validate year param; redirect if missing
     this.year = this.route.snapshot.queryParamMap.get('year') ?? '';
+    if (!this.year) {
+      void this.router.navigate(['/xvifc/year'], { replaceUrl: true });
+      return;
+    }
+
     this.entityId = this.route.snapshot.queryParamMap.get('entityId') ?? '';
-    this.role = this.getRoleFromStorage();
+
+    // M3 — parse localStorage exactly once; cache role, userId, routeRole
+    const stored = this.profileService.readStoredUser();
+    const rawRole = stored.role ?? '';
+    this.role = ROLE_MAP[rawRole] ?? 'state';
+    this.routeRole = ROUTE_ROLE_MAP[rawRole] ?? 'STATE';
+    this.userId = stored._id ?? stored.id ?? '';
 
     if (this.isAlreadyVerified()) {
       void this.navigateToHome();
@@ -177,34 +206,36 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     }
 
     if (this.role === 'ulb') {
+      // H4 — guard empty userId early for ULB
+      if (!this.userId) {
+        this.loadError.set('Unable to identify your account. Please log in again.');
+        this.isLoading.set(false);
+        return;
+      }
       this.entityDetails.set(this.profileService.readUlbEntityInfo());
       this.loadUlbContacts();
     } else {
-      this.loadStateProfile();
+      this.loadStateProfile(stored);
     }
   }
 
   // ── ULB methods ──────────────────────────────────────────────
   private loadUlbContacts(): void {
-    const userId = this.getLoggedInUserId();
-    if (!userId) {
-      this.loadError.set('Unable to identify your account. Please log in again.');
-      this.isLoading.set(false);
-      return;
-    }
     this.isLoading.set(true);
     this.loadError.set('');
-    this.profileService.getProfileContacts(userId).subscribe({
-      next: (contacts) => {
-        this.commissionerForm.patchValue(contacts);
-        this.accountantForm.patchValue(contacts);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.loadError.set('Failed to load your contact details. Please check your connection and try again.');
-        this.isLoading.set(false);
-      },
-    });
+    this.profileService.getProfileContacts(this.userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (contacts) => {
+          this.commissionerForm.patchValue(contacts);
+          this.accountantForm.patchValue(contacts);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.loadError.set('Failed to load your contact details. Please check your connection and try again.');
+          this.isLoading.set(false);
+        },
+      });
   }
 
   retryLoad(): void {
@@ -230,17 +261,27 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       this.openEditAccountant();
       return;
     }
-    const userId = this.getLoggedInUserId();
+    // H4 — guard empty userId
+    if (!this.userId) {
+      this.errorMsg.set('Session expired. Please log in again.');
+      return;
+    }
     this.isSaving.set(true);
     this.errorMsg.set('');
 
     this.profileService
-      .saveUlbContacts(userId, {
+      .saveUlbContacts(this.userId, {
         ...this.commissionerForm.getRawValue(),
         ...this.accountantForm.getRawValue(),
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: ({ ok }) => {
+          if (!ok) {
+            this.isSaving.set(false);
+            this.errorMsg.set('Failed to save contacts. Please try again.');
+            return;
+          }
           this.markVerifiedInStorage();
           this.snackBar.open('Profile saved successfully!', 'Close', {
             duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
@@ -248,16 +289,18 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
           });
           void this.navigateToHome();
         },
-        error: () => {
-          this.isSaving.set(false);
-          this.errorMsg.set('Failed to save contacts. Please try again.');
-        },
       });
   }
 
   // ── State / MoHUA methods ────────────────────────────────────
-  private loadStateProfile(): void {
-    const profile = this.profileService.readStateProfile();
+  private loadStateProfile(stored?: Record<string, unknown>): void {
+    const user = stored ?? this.profileService.readStoredUser();
+    const profile: StateProfile = {
+      name: (user['name'] as string) ?? '',
+      email: (user['email'] as string) ?? '',
+      mobile: ((user['mobile'] as string) ?? ''),
+      designation: (user['designation'] as string) ?? '',
+    };
     this.stateProfile.set(profile);
     this.stateForm.patchValue(profile);
     this.stateForm.markAllAsTouched();
@@ -273,66 +316,122 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       this.stateForm.markAllAsTouched();
       return;
     }
+    // H2 — guard empty email
     const email = this.stateProfile()?.email ?? '';
+    if (!email) {
+      this.errorMsg.set('No email address found. Please log in again.');
+      return;
+    }
+    // H4 — guard empty userId
+    if (!this.userId) {
+      this.errorMsg.set('Session expired. Please log in again.');
+      return;
+    }
     this.sendingOtp.set(true);
     this.errorMsg.set('');
 
-    this.profileService.sendProfileOtp(email).subscribe({
-      next: () => {
-        this.sendingOtp.set(false);
-        this.editingStateProfile.set(false);
-        this.otpStep.set(true);
-        this.otpValue.set('');
-        this.errorMsg.set('');
-      },
-      error: () => {
-        this.sendingOtp.set(false);
-        this.errorMsg.set('Failed to send OTP. Please try again.');
-      },
-    });
+    this.profileService.sendProfileOtp(email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ sent }) => {
+          this.sendingOtp.set(false);
+          if (!sent) {
+            this.errorMsg.set('Failed to send OTP. Please try again.');
+            return;
+          }
+          this.editingStateProfile.set(false);
+          this.otpStep.set(true);
+          this.otpValue.set('');
+          this.errorMsg.set('');
+          this.startResendCooldown(); // C2
+        },
+      });
   }
 
   onConfirmOtp(): void {
-    const otp = this.otpValue().trim();
-    if (otp.length !== 6) return;
+    const otp = this.otpValue();
+    if (!/^\d{6}$/.test(otp)) return; // H3
 
+    // H2 — guard empty email
     const email = this.stateProfile()?.email ?? '';
+    if (!email) {
+      this.errorMsg.set('No email address found. Please log in again.');
+      return;
+    }
+    // H4 — guard empty userId
+    if (!this.userId) {
+      this.errorMsg.set('Session expired. Please log in again.');
+      return;
+    }
+
+    const { name, mobile, designation } = this.stateForm.getRawValue();
     this.isSaving.set(true);
     this.errorMsg.set('');
 
-    this.profileService.verifyProfileOtp(email, otp).subscribe({
-      next: ({ verified }) => {
+    // C3 — flat pipe chain (no nested subscribes); C1 — issue save token after OTP
+    this.profileService.verifyProfileOtp(email, otp).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      filter(({ verified }) => {
         if (!verified) {
           this.isSaving.set(false);
           this.errorMsg.set('Invalid or expired OTP. Please check your email and try again.');
+        }
+        return verified;
+      }),
+      switchMap(() => this.profileService.issueProfileSaveToken(this.userId)),
+      filter(({ token }) => {
+        if (!token) {
+          this.isSaving.set(false);
+          this.errorMsg.set('Could not secure save session. Please verify your email again.');
+        }
+        return token.length > 0;
+      }),
+      switchMap(({ token }) =>
+        this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token),
+      ),
+    ).subscribe({
+      next: ({ ok }) => {
+        if (!ok) {
+          this.isSaving.set(false);
+          this.errorMsg.set('Profile save failed. Please try again.');
           return;
         }
-
-        const userId = this.getLoggedInUserId();
-        const { name, mobile, designation } = this.stateForm.getRawValue();
-
-        this.profileService.saveStateProfile(userId, { name, mobile, designation }).subscribe({
-          next: () => {
-            this.markVerifiedInStorage({ name, mobile, designation });
-            this.snackBar.open('Profile verified successfully!', 'Close', {
-              duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
-              panelClass: ['snack-success'],
-            });
-            void this.navigateToHome();
-          },
-          error: () => {
-            this.isSaving.set(false);
-            this.errorMsg.set('Profile save failed. Please try again.');
-          },
+        // M1 — update sidebar signal with saved values
+        this.stateProfile.set({ name, mobile, designation, email });
+        this.markVerifiedInStorage({ name, mobile, designation });
+        this.snackBar.open('Profile verified successfully!', 'Close', {
+          duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+          panelClass: ['snack-success'],
         });
+        void this.navigateToHome();
       },
     });
   }
 
   resendOtp(): void {
+    if (!this.canResend()) return;
     this.otpStep.set(false);
     this.otpValue.set('');
     this.onSaveStateProfile();
+  }
+
+  // L4 — typed event handler (no $any); H3 — strip non-digits
+  onOtpInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 6);
+    input.value = digits;
+    this.otpValue.set(digits);
+  }
+
+  // C2 — 60-second countdown before resend is allowed
+  private startResendCooldown(): void {
+    if (this.resendTimer) window.clearInterval(this.resendTimer);
+    this.resendCooldown.set(60);
+    this.resendTimer = window.setInterval(() => {
+      const next = this.resendCooldown() - 1;
+      this.resendCooldown.set(next);
+      if (next <= 0) window.clearInterval(this.resendTimer);
+    }, 1000);
   }
 
   // ── Storage helpers ───────────────────────────────────────────
@@ -367,35 +466,8 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
 
   private navigateToHome(): Promise<boolean> {
     return this.router.navigate(
-      buildXvifcFeatureLink(this.getRouteRoleFromStorage(), this.entityId, this.year, 'overview'),
+      buildXvifcFeatureLink(this.routeRole, this.entityId, this.year, 'overview'),
       { replaceUrl: true },
     );
-  }
-
-  private getLoggedInUserId(): string {
-    try {
-      const raw = localStorage.getItem('userData');
-      if (!raw) return '';
-      const user = JSON.parse(raw) as { _id?: string; id?: string };
-      return user._id ?? user.id ?? '';
-    } catch { return ''; }
-  }
-
-  private getRoleFromStorage(): ProfileRole {
-    try {
-      const raw = localStorage.getItem('userData');
-      if (!raw) return 'state';
-      const user = JSON.parse(raw) as { role: string };
-      return ROLE_MAP[user.role] ?? 'state';
-    } catch { return 'state'; }
-  }
-
-  private getRouteRoleFromStorage(): Roles {
-    try {
-      const raw = localStorage.getItem('userData');
-      if (!raw) return 'STATE';
-      const user = JSON.parse(raw) as { role: string };
-      return ROUTE_ROLE_MAP[user.role] ?? 'STATE';
-    } catch { return 'STATE'; }
   }
 }
