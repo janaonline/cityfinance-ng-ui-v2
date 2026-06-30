@@ -54,12 +54,17 @@
 
     <!-- ═══ Registered Municipal Information ══════════════════════════════════════ -->
     <mat-card class="info-mat-card mb-4">
-      <div class="d-flex align-items-center justify-content-between px-4 pt-3 pb-2">
-        <span class="fw-bold text-uppercase text-secondary" style="font-size:0.7rem;letter-spacing:0.08em">
-          Registered Municipal Information
-        </span>
-        <span class="badge border fw-normal text-secondary bg-white d-inline-flex align-items-center gap-1" style="font-size:0.68rem">
-          <mat-icon style="font-size:0.75rem;width:0.75rem;height:0.75rem;line-height:1">lock</mat-icon>
+
+      <!-- Coloured header -->
+      <div class="info-card-header d-flex align-items-center justify-content-between px-4 py-3">
+        <div class="d-flex align-items-center gap-2">
+          <mat-icon class="info-card-header__icon">location_city</mat-icon>
+          <span class="fw-bold text-uppercase info-card-header__title">
+            Registered Municipal Information
+          </span>
+        </div>
+        <span class="badge rounded-pill info-card-header__badge d-inline-flex align-items-center gap-1">
+          <mat-icon style="font-size:0.7rem;width:0.7rem;height:0.7rem;line-height:1">lock</mat-icon>
           Read-only
         </span>
       </div>
@@ -78,14 +83,17 @@
         <div class="row g-0">
           @for (field of municipalFields(); track field.label) {
             <div class="col-6 col-md-4 info-field">
-              <span class="info-field__label">{{ field.label }}</span>
+              <div class="d-flex align-items-center gap-1 mb-1">
+                <mat-icon class="info-field__icon">{{ field.icon }}</mat-icon>
+                <span class="info-field__label">{{ field.label }}</span>
+              </div>
               <strong class="info-field__value">{{ field.value || '—' }}</strong>
             </div>
           }
         </div>
         <mat-divider></mat-divider>
         <div class="px-4 py-2 d-flex align-items-center gap-1">
-          <mat-icon class="text-secondary flex-shrink-0" style="font-size:0.9rem;width:0.9rem;height:0.9rem;line-height:1">info</mat-icon>
+          <mat-icon class="flex-shrink-0 info-card-info-icon">info</mat-icon>
           <p class="small text-muted mb-0">
             To request corrections, email
             <a href="mailto:16fcgrant@mohua.gov.in" class="info-link">16fcgrant&#64;mohua.gov.in</a>
