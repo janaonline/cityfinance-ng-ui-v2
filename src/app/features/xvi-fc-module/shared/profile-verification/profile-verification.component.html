@@ -336,6 +336,152 @@
               [message]="loadError()"
               (retry)="retryLoad()"
             />
+          <!-- ══ STEP 2: SET NEW PASSWORD (new users, all roles) ══════ -->
+          } @else if (passwordStep()) {
+            <h5 class="fw-bold mb-1">Set your new password</h5>
+            <p class="text-muted small mb-3">
+              Your email has been verified. Choose a strong password — at least 8 characters with
+              uppercase, lowercase, a number, and a special character (&#64;#$%^&amp;*!).
+            </p>
+
+            @if (errorMsg()) {
+              <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="flex-grow-1">{{ errorMsg() }}</span>
+                <button type="button" class="btn-close" (click)="errorMsg.set('')"></button>
+              </div>
+            }
+
+            <mat-card appearance="outlined" class="mb-3">
+              <mat-card-content class="pt-3 pb-2">
+                <form [formGroup]="passwordForm" novalidate>
+                  <div class="row g-3">
+                    <div class="col-sm-6">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                        <mat-label>New Password</mat-label>
+                        <input
+                          matInput
+                          [type]="showNewPassword() ? 'text' : 'password'"
+                          formControlName="newPassword"
+                          autocomplete="new-password"
+                          placeholder="Min. 8 characters"
+                        />
+                        <button mat-icon-button matSuffix type="button"
+                          (click)="showNewPassword.set(!showNewPassword())"
+                          [attr.aria-label]="showNewPassword() ? 'Hide password' : 'Show password'">
+                          <i [class]="showNewPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                      </mat-form-field>
+                      @if (passwordForm.controls.newPassword.touched) {
+                        @if (passwordForm.controls.newPassword.hasError('required')) {
+                          <p class="text-danger small mt-1 mb-0">Password is required</p>
+                        } @else if (passwordForm.controls.newPassword.hasError('minlength')) {
+                          <p class="text-danger small mt-1 mb-0">Must be at least 8 characters</p>
+                        } @else if (passwordForm.controls.newPassword.hasError('pattern')) {
+                          <p class="text-danger small mt-1 mb-0">Must include uppercase, lowercase, a number, and &#64;#$%^&amp;*!</p>
+                        }
+                      }
+                    </div>
+                    <div class="col-sm-6">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                        <mat-label>Confirm Password</mat-label>
+                        <input
+                          matInput
+                          [type]="showConfirmPassword() ? 'text' : 'password'"
+                          formControlName="confirmPassword"
+                          autocomplete="new-password"
+                          placeholder="Repeat password"
+                        />
+                        <button mat-icon-button matSuffix type="button"
+                          (click)="showConfirmPassword.set(!showConfirmPassword())"
+                          [attr.aria-label]="showConfirmPassword() ? 'Hide' : 'Show'">
+                          <i [class]="showConfirmPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                      </mat-form-field>
+                      @if (passwordForm.controls.confirmPassword.touched) {
+                        @if (passwordForm.controls.confirmPassword.hasError('required')) {
+                          <p class="text-danger small mt-1 mb-0">Please confirm your password</p>
+                        } @else if (passwordForm.hasError('passwordsMismatch')) {
+                          <p class="text-danger small mt-1 mb-0">Passwords do not match</p>
+                        }
+                      }
+                    </div>
+                  </div>
+                </form>
+              </mat-card-content>
+            </mat-card>
+
+            <div class="d-flex justify-content-end mt-2">
+              <button mat-flat-button color="primary" [disabled]="!canSetNewPassword()" (click)="onSetNewPassword()">
+                @if (isSaving()) {
+                  <span class="pv-spin pv-spin--light me-1"></span> Saving…
+                } @else {
+                  <i class="bi bi-lock-fill me-1"></i> Set Password &amp; Continue
+                }
+              </button>
+            </div>
+
+          <!-- ══ MOHUA NEW USER: email verify (no profile form) ══════════ -->
+          } @else if (role === 'mohua' && isNewUser()) {
+            <h5 class="fw-bold mb-1">Verify your email address</h5>
+            <p class="text-muted small mb-3">
+              We'll send a 6-digit code to your registered email. Enter it below to proceed and set your new password.
+            </p>
+
+            @if (errorMsg()) {
+              <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="flex-grow-1">{{ errorMsg() }}</span>
+                <button type="button" class="btn-close" (click)="errorMsg.set('')"></button>
+              </div>
+            }
+
+            @if (otpStep()) {
+              <div class="border rounded-3 p-3 bg-white">
+                <p class="small text-secondary mb-1">
+                  <i class="bi bi-envelope-check me-1"></i>
+                  OTP sent to your registered email. Enter it below.
+                </p>
+                <p class="small text-muted mb-3"><i class="bi bi-clock me-1"></i>Valid for 10 minutes.</p>
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width:180px">
+                    <mat-label>Enter OTP</mat-label>
+                    <input matInput type="tel" inputmode="numeric" maxlength="6" placeholder="6-digit OTP"
+                      [value]="otpValue()" (input)="onOtpInput($event)" autocomplete="one-time-code" />
+                  </mat-form-field>
+                  <div class="d-flex gap-2 flex-wrap align-items-center mt-1">
+                    <button mat-flat-button color="primary" [disabled]="!canConfirmOtp()" (click)="onConfirmOtp()">
+                      @if (isSaving()) {
+                        <span class="pv-spin pv-spin--light me-1"></span> Verifying…
+                      } @else {
+                        <i class="bi bi-shield-check me-1"></i> Verify
+                      }
+                    </button>
+                    <button mat-stroked-button (click)="resendOtp()" [disabled]="!canResend()">
+                      @if (sendingOtp()) {
+                        <span class="pv-spin me-1"></span> Sending…
+                      } @else if (resendCooldown() > 0) {
+                        <i class="bi bi-clock me-1"></i> Resend in {{ resendCooldown() }}s
+                      } @else {
+                        <i class="bi bi-arrow-repeat me-1"></i> Resend OTP
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="mt-2">
+                <button mat-flat-button color="primary" [disabled]="sendingOtp()" (click)="onMohuaSendOtp()">
+                  @if (sendingOtp()) {
+                    <span class="pv-spin pv-spin--light me-1"></span> Sending OTP…
+                  } @else {
+                    <i class="bi bi-envelope me-1"></i> Send Verification Code
+                  }
+                </button>
+              </div>
+            }
+
+          <!-- ══ STATE / MOHUA EXISTING USER: profile form ═══════════════ -->
           } @else {
             <h5 class="fw-bold mb-1">Verify your profile</h5>
             <p class="text-muted small mb-3">

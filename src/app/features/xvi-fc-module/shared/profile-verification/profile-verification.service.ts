@@ -98,6 +98,15 @@ export class ProfileVerificationService {
       );
   }
 
+  setNewPassword(newPassword: string, saveToken: string): Observable<{ ok: boolean }> {
+    return this.http
+      .patch(`${environment.api.url2}auth/set-new-password`, { newPassword, saveToken })
+      .pipe(
+        map(() => ({ ok: true })),
+        catchError(() => of({ ok: false })),
+      );
+  }
+
   readStoredUser(): StoredUserData {
     try {
       const raw = localStorage.getItem('userData');

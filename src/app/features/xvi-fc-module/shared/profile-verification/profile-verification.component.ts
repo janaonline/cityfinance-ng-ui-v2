@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Subscription, filter, fromEvent, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -93,6 +93,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   readonly editingAccountant = signal(false);
 
   private static readonly NAME_PATTERN = /^[a-zA-Z\s.\-']+$/;
+  private static readonly PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!])/;
 
   readonly commissionerForm = this.fb.nonNullable.group({
     commissionerName: ['', [
@@ -137,6 +138,39 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   readonly sendingOtp = signal(false);
   // C2 — resend cooldown countdown (seconds)
   readonly resendCooldown = signal(0);
+
+  // ── New-user onboarding ──────────────────────────────────────
+  readonly isNewUser = signal(false);
+  readonly passwordStep = signal(false);
+  readonly showNewPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
+  private profileSaveToken = '';
+
+  private passwordsMatch(group: AbstractControl): ValidationErrors | null {
+    const pass = group.get('newPassword')?.value as string;
+    const confirm = group.get('confirmPassword')?.value as string;
+    return pass && confirm && pass !== confirm ? { passwordsMismatch: true } : null;
+  }
+
+  readonly passwordForm = this.fb.nonNullable.group(
+    {
+      newPassword: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(ProfileVerificationComponent.PASSWORD_PATTERN),
+      ]],
+      confirmPassword: ['', [Validators.required]],
+    },
+    { validators: this.passwordsMatch },
+  );
+
+  private readonly _passwordFormStatus = toSignal(this.passwordForm.statusChanges, {
+    initialValue: this.passwordForm.status as FormControlStatus,
+  });
+
+  readonly canSetNewPassword = computed(
+    () => this._passwordFormStatus() === 'VALID' && !this.isSaving(),
+  );
 
   readonly stateForm = this.fb.nonNullable.group({
     name: ['', [
@@ -199,8 +233,10 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.role = ROLE_MAP[rawRole] ?? 'state';
     this.routeRole = ROUTE_ROLE_MAP[rawRole] ?? 'STATE';
     this.userId = stored._id ?? stored.id ?? '';
+    this.isNewUser.set(stored['isNewUser'] === true);
 
-    if (this.isAlreadyVerified()) {
+    // New users must complete the onboarding flow regardless of isXVIFCProfileVerified
+    if (!this.isNewUser() && this.isAlreadyVerified()) {
       void this.navigateToHome();
       return;
     }
@@ -352,23 +388,44 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     const otp = this.otpValue();
     if (!/^\d{6}$/.test(otp)) return; // H3
 
-    // H2 — guard empty email
     const email = this.stateProfile()?.email ?? '';
-    if (!email) {
-      this.errorMsg.set('No email address found. Please log in again.');
-      return;
-    }
-    // H4 — guard empty userId
-    if (!this.userId) {
-      this.errorMsg.set('Session expired. Please log in again.');
-      return;
-    }
+    if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
+    if (!this.userId) { this.errorMsg.set('Session expired. Please log in again.'); return; }
 
     const { name, mobile, designation } = this.stateForm.getRawValue();
     this.isSaving.set(true);
     this.errorMsg.set('');
 
-    // C3 — flat pipe chain (no nested subscribes); C1 — issue save token after OTP
+    if (this.role === 'mohua') {
+      // MOHUA: OTP verify → issue save token (proves OTP completed) → show password step
+      this.profileService.verifyProfileOtp(email, otp).pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter(({ verified }) => {
+          if (!verified) {
+            this.isSaving.set(false);
+            this.errorMsg.set('Invalid or expired OTP. Please check your email and try again.');
+          }
+          return verified;
+        }),
+        switchMap(() => this.profileService.issueProfileSaveToken(this.userId)),
+        filter(({ token }) => {
+          if (!token) {
+            this.isSaving.set(false);
+            this.errorMsg.set('Could not secure save session. Please verify your email again.');
+          }
+          return token.length > 0;
+        }),
+      ).subscribe({
+        next: ({ token }) => {
+          this.isSaving.set(false);
+          this.profileSaveToken = token;
+          this.passwordStep.set(true);
+        },
+      });
+      return;
+    }
+
+    // STATE: OTP verify → issue save token → if isNewUser: show password step; else: save profile
     this.profileService.verifyProfileOtp(email, otp).pipe(
       takeUntilDestroyed(this.destroyRef),
       filter(({ verified }) => {
@@ -386,17 +443,96 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
         }
         return token.length > 0;
       }),
-      switchMap(({ token }) =>
+    ).subscribe({
+      next: ({ token }) => {
+        if (this.isNewUser()) {
+          this.isSaving.set(false);
+          this.profileSaveToken = token;
+          this.passwordStep.set(true);
+        } else {
+          this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: ({ ok }) => {
+                if (!ok) {
+                  this.isSaving.set(false);
+                  this.errorMsg.set('Profile save failed. Please try again.');
+                  return;
+                }
+                this.stateProfile.set({ name, mobile, designation, email });
+                this.markVerifiedInStorage({ name, mobile, designation });
+                this.snackBar.open('Profile verified successfully!', 'Close', {
+                  duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+                  panelClass: ['snack-success'],
+                });
+                void this.navigateToHome();
+              },
+            });
+        }
+      },
+    });
+  }
+
+  // Sends OTP for MOHUA new users who have no profile form to submit first
+  onMohuaSendOtp(): void {
+    const email = this.stateProfile()?.email ?? '';
+    if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
+    this.sendingOtp.set(true);
+    this.errorMsg.set('');
+    this.profileService.sendProfileOtp(email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ sent }) => {
+          this.sendingOtp.set(false);
+          if (!sent) { this.errorMsg.set('Failed to send OTP. Please try again.'); return; }
+          this.otpStep.set(true);
+          this.otpValue.set('');
+          this.errorMsg.set('');
+          this.startResendCooldown();
+        },
+      });
+  }
+
+  onSetNewPassword(): void {
+    if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
+    const { newPassword } = this.passwordForm.getRawValue();
+    const { name, mobile, designation } = this.stateForm.getRawValue();
+    const email = this.stateProfile()?.email ?? '';
+    this.isSaving.set(true);
+    this.errorMsg.set('');
+
+    const token = this.profileSaveToken;
+
+    if (this.role === 'mohua') {
+      this.profileService.setNewPassword(newPassword, token)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ({ ok }) => {
+            if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
+            this.markVerifiedInStorage();
+            this.snackBar.open('Password set! Welcome to CityFinance.', 'Close', {
+              duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+              panelClass: ['snack-success'],
+            });
+            void this.navigateToHome();
+          },
+        });
+      return;
+    }
+
+    // STATE: set password then save profile using the stored save token
+    this.profileService.setNewPassword(newPassword, token).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      filter(({ ok }) => {
+        if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); }
+        return ok;
+      }),
+      switchMap(() =>
         this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token),
       ),
     ).subscribe({
       next: ({ ok }) => {
-        if (!ok) {
-          this.isSaving.set(false);
-          this.errorMsg.set('Profile save failed. Please try again.');
-          return;
-        }
-        // M1 — update sidebar signal with saved values
+        if (!ok) { this.isSaving.set(false); this.errorMsg.set('Profile save failed. Please try again.'); return; }
         this.stateProfile.set({ name, mobile, designation, email });
         this.markVerifiedInStorage({ name, mobile, designation });
         this.snackBar.open('Profile verified successfully!', 'Close', {
@@ -412,7 +548,11 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     if (!this.canResend()) return;
     this.otpStep.set(false);
     this.otpValue.set('');
-    this.onSaveStateProfile();
+    if (this.role === 'mohua') {
+      this.onMohuaSendOtp();
+    } else {
+      this.onSaveStateProfile();
+    }
   }
 
   // L4 — typed event handler (no $any); H3 — strip non-digits
@@ -454,6 +594,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       if (raw) {
         const user = JSON.parse(raw) as Record<string, unknown>;
         user['isXVIFCProfileVerified'] = true;
+        user['isNewUser'] = false;
         if (profileUpdates) {
           if (profileUpdates.name !== undefined) user['name'] = profileUpdates.name;
           if (profileUpdates.mobile !== undefined) user['mobile'] = profileUpdates.mobile;
@@ -465,6 +606,9 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   }
 
   private navigateToHome(): Promise<boolean> {
+    if (this.role === 'mohua') {
+      return this.router.navigate(['/xvifc', this.year], { replaceUrl: true });
+    }
     return this.router.navigate(
       buildXvifcFeatureLink(this.routeRole, this.entityId, this.year, 'overview'),
       { replaceUrl: true },

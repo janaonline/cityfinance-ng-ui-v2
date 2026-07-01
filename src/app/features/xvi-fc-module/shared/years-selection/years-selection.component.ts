@@ -31,6 +31,7 @@ interface StoredUser {
   ulb?: string;
   state?: string;
   isXVIFCProfileVerified?: boolean;
+  isNewUser?: boolean;
 }
 
 /**
@@ -133,10 +134,11 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
     const standaloneKey = localStorage.getItem('isXVIFCProfileVerified');
     const userDataRaw = localStorage.getItem('userData');
     let userDataVerified = false;
+    let isNewUser = false;
     try {
-      userDataVerified = userDataRaw
-        ? (JSON.parse(userDataRaw) as StoredUser)?.isXVIFCProfileVerified === true
-        : false;
+      const parsedUser = userDataRaw ? (JSON.parse(userDataRaw) as StoredUser) : null;
+      userDataVerified = parsedUser?.isXVIFCProfileVerified === true;
+      isNewUser = parsedUser?.isNewUser === true;
     } catch {
       /* ignore */
     }
@@ -147,6 +149,15 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
     localStorage.setItem(XVIFC_LS_KEYS.selectedYearString, `FY-${yearString}`);
     localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, yearId);
     localStorage.setItem(XVIFC_LS_KEYS.documentYears, JSON.stringify(DOCUMENT_YEARS));
+
+    // New users must always go through profile-verify (to set password), regardless of role
+    if (isNewUser) {
+      this.router.navigate(['/xvifc', 'profile-verify'], {
+        queryParams: { year: yearId },
+        replaceUrl: true,
+      });
+      return;
+    }
 
     // MOHUA is a central-level role — no entity scoping and no profile verification step
     if (routeRole === 'MOHUA') {
