@@ -81,6 +81,15 @@ export interface EvalRunJobResult {
   expected_ulb_name: string;
   expected_financial_year: string;
   expected_doc_type: string;
+  // Benchmark: original stored extraction + its match vs expected
+  benchmark_ulb_name: string;
+  benchmark_financial_year: string;
+  benchmark_doc_type: string;
+  benchmark_ulb_name_match: boolean | null;
+  benchmark_financial_year_match: boolean | null;
+  benchmark_doc_type_match: boolean | null;
+  benchmark_overall_match: boolean | null;
+  // New eval extraction + its match vs expected
   extracted_ulb_name: string;
   extracted_financial_year: string;
   extracted_doc_type: string;
@@ -445,6 +454,12 @@ export class OcrService {
 
   getEvalRunDetail(evalRunId: string) {
     return this.http.get<EvalRunDetail>(environment.api.url3 + `ocr-validation/evals/runs/${evalRunId}`);
+  }
+
+  exportEvalRun(evalRunId: string) {
+    return this.http.get(environment.api.url3 + `ocr-validation/evals/runs/${evalRunId}/export`, {
+      responseType: 'blob',
+    });
   }
 
   getOcrTasks(params: {

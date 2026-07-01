@@ -18,6 +18,19 @@
           </div>
           <div class="hero-actions">
             <span class="status-badge" [ngClass]="getStatusClass(r.status)">{{ r.status | titlecase }}</span>
+            <button
+              type="button"
+              mat-icon-button
+              [disabled]="loading() || exporting()"
+              (click)="downloadDump()"
+              title="Download Excel dump"
+            >
+              @if (exporting()) {
+                <mat-icon>hourglass_empty</mat-icon>
+              } @else {
+                <mat-icon>download</mat-icon>
+              }
+            </button>
             <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
               <mat-icon>refresh</mat-icon>
             </button>
@@ -96,7 +109,7 @@
               </td>
             </ng-container>
 
-            <!-- Expected -->
+            <!-- Expected (ground truth) -->
             <ng-container matColumnDef="expected">
               <th mat-header-cell *matHeaderCellDef>Expected</th>
               <td mat-cell *matCellDef="let row">
@@ -108,38 +121,88 @@
               </td>
             </ng-container>
 
-            <!-- Extracted -->
-            <ng-container matColumnDef="extracted">
-              <th mat-header-cell *matHeaderCellDef>Extracted</th>
+            <!-- Benchmark (original stored extraction) -->
+            <ng-container matColumnDef="benchmark">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="col-header-badge col-header-badge--bmk">Benchmark</div>
+                <div class="col-header-sub">Original extraction</div>
+              </th>
               <td mat-cell *matCellDef="let row">
-                <div class="field-grid">
-                  <div><span class="cell-label">ULB</span><span class="cell-value" [title]="row.extractedUlb">{{ truncate(row.extractedUlb, 22) }}</span></div>
-                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.extractedFy }}</span></div>
-                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.extractedDocType }}</span></div>
+                <div class="extraction-cell">
+                  <div class="extr-row">
+                    <span class="cell-label">ULB</span>
+                    <span class="cell-value" [title]="row.bmkUlb">{{ truncate(row.bmkUlb, 20) }}</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkUlbMatch)">{{ matchIcon(row.bmkUlbMatch) }}</mat-icon>
+                  </div>
+                  <div class="extr-row">
+                    <span class="cell-label">FY</span>
+                    <span class="cell-value">{{ row.bmkFy }}</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkFyMatch)">{{ matchIcon(row.bmkFyMatch) }}</mat-icon>
+                  </div>
+                  <div class="extr-row">
+                    <span class="cell-label">Type</span>
+                    <span class="cell-value">{{ row.bmkDocType }}</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkDocTypeMatch)">{{ matchIcon(row.bmkDocTypeMatch) }}</mat-icon>
+                  </div>
+                  <div class="extr-row extr-row--overall">
+                    <span class="cell-label">Overall</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkOverallMatch)">{{ matchIcon(row.bmkOverallMatch) }}</mat-icon>
+                  </div>
                 </div>
               </td>
             </ng-container>
 
-            <!-- Match -->
-            <ng-container matColumnDef="match">
-              <th mat-header-cell *matHeaderCellDef>Match</th>
+            <!-- New extraction -->
+            <ng-container matColumnDef="newRun">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="col-header-badge col-header-badge--new">New Run</div>
+                <div class="col-header-sub">This eval's extraction</div>
+              </th>
               <td mat-cell *matCellDef="let row">
-                <div class="match-grid">
-                  <div class="match-row">
+                <div class="extraction-cell">
+                  <div class="extr-row">
                     <span class="cell-label">ULB</span>
-                    <mat-icon class="match-icon" [ngClass]="matchClass(row.ulbMatch)">{{ matchIcon(row.ulbMatch) }}</mat-icon>
+                    <span class="cell-value" [title]="row.newUlb">{{ truncate(row.newUlb, 20) }}</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newUlbMatch)">{{ matchIcon(row.newUlbMatch) }}</mat-icon>
                   </div>
-                  <div class="match-row">
+                  <div class="extr-row">
                     <span class="cell-label">FY</span>
-                    <mat-icon class="match-icon" [ngClass]="matchClass(row.fyMatch)">{{ matchIcon(row.fyMatch) }}</mat-icon>
+                    <span class="cell-value">{{ row.newFy }}</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newFyMatch)">{{ matchIcon(row.newFyMatch) }}</mat-icon>
                   </div>
-                  <div class="match-row">
+                  <div class="extr-row">
                     <span class="cell-label">Type</span>
-                    <mat-icon class="match-icon" [ngClass]="matchClass(row.docTypeMatch)">{{ matchIcon(row.docTypeMatch) }}</mat-icon>
+                    <span class="cell-value">{{ row.newDocType }}</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newDocTypeMatch)">{{ matchIcon(row.newDocTypeMatch) }}</mat-icon>
                   </div>
-                  <div class="match-row match-row--overall">
+                  <div class="extr-row extr-row--overall">
                     <span class="cell-label">Overall</span>
-                    <mat-icon class="match-icon" [ngClass]="matchClass(row.overallMatch)">{{ matchIcon(row.overallMatch) }}</mat-icon>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newOverallMatch)">{{ matchIcon(row.newOverallMatch) }}</mat-icon>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Change (benchmark → new) -->
+            <ng-container matColumnDef="change">
+              <th mat-header-cell *matHeaderCellDef>Change</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="change-grid">
+                  <div class="change-row">
+                    <span class="cell-label">ULB</span>
+                    <mat-icon class="change-icon" [ngClass]="changeClass(row.ulbChange)">{{ changeIcon(row.ulbChange) }}</mat-icon>
+                  </div>
+                  <div class="change-row">
+                    <span class="cell-label">FY</span>
+                    <mat-icon class="change-icon" [ngClass]="changeClass(row.fyChange)">{{ changeIcon(row.fyChange) }}</mat-icon>
+                  </div>
+                  <div class="change-row">
+                    <span class="cell-label">Type</span>
+                    <mat-icon class="change-icon" [ngClass]="changeClass(row.docTypeChange)">{{ changeIcon(row.docTypeChange) }}</mat-icon>
+                  </div>
+                  <div class="change-row change-row--overall">
+                    <span class="cell-label">Overall</span>
+                    <mat-icon class="change-icon" [ngClass]="changeClass(row.overallChange)">{{ changeIcon(row.overallChange) }}</mat-icon>
                   </div>
                 </div>
               </td>
