@@ -291,11 +291,6 @@ mat-card {
 .role-label-view { animation: roleFadeSlide 180ms ease forwards; }
 .role-select-enter { animation: roleFadeSlide 220ms 60ms ease both; }
 
-.action-btn {
-  --mdc-outlined-button-container-height: 30px;
-  font-size: 0.78rem !important;
-  padding: 0 12px !important;
-}
 
 .action-icon-btn {
   display: inline-flex;
@@ -315,12 +310,48 @@ mat-card {
 
   &:hover { background: #f3f4f6; }
 
-  &--warn { color: #dc2626; border-color: #fca5a5; &:hover { background: #fef2f2; } }
+  &--warn   { color: #dc2626; border-color: #fca5a5; &:hover { background: #fef2f2; } }
+  &--delete { border-color: transparent; color: #9ca3af; &:hover { color: #dc2626; border-color: #fca5a5; background: #fef2f2; } }
+}
+
+// ─── Member Avatar – small variant ───────────────────────────────────────────
+.member-avatar--sm {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  font-size: 0.62rem;
 }
 
 // ─── Transfer Card ────────────────────────────────────────────────────────────
 .transfer-card {
   border-left: 3px solid #dc2626 !important;
+
+  &__icon-wrap {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.08);
+    font-size: 1rem;
+  }
+}
+
+// ─── Transfer Preview ─────────────────────────────────────────────────────────
+.transfer-preview {
+  font-size: 0.82rem;
+
+  &__badge--from {
+    background: rgba(220, 38, 38, 0.1);
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+
+  &__badge--to {
+    background: rgba(5, 150, 105, 0.1);
+    color: #065f46;
+    border: 1px solid rgba(5, 150, 105, 0.2);
+  }
 }
 
 // ─── Skeleton Loading ─────────────────────────────────────────────────────────
@@ -382,6 +413,9 @@ mat-card {
   .mat-mdc-select { font-size: 0.82rem; }
   .mat-mdc-select-trigger { padding: 4px 8px; }
 }
+
+// CDK overlay panel escapes view encapsulation — must be at root level
+::ng-deep .role-select-panel { min-width: 140px !important; }
 
 // ─── Animations ───────────────────────────────────────────────────────────────
 @keyframes shimmer { 100% { transform: translateX(100%); } }

@@ -1,0 +1,157 @@
+@use '../../styles/xvi-fc-theme' as theme;
+
+:host { display: block; }
+
+.team-page {
+  max-width: 1160px;
+  margin: 0 auto;
+  color: #172033;
+}
+
+mat-card {
+  background: #ffffff !important;
+  border: 1px solid #cfdce3 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 16px rgba(23, 32, 51, 0.05) !important;
+  overflow: hidden;
+}
+
+// ─── Members card top accent ──────────────────────────────────────────────────
+.members-card {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, #1a56db, #0ea5e9, #38bdf8);
+    z-index: 1;
+  }
+}
+
+// ─── Member Avatar ────────────────────────────────────────────────────────────
+.member-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+
+  &--mohua {
+    background: linear-gradient(135deg, #1a56db, #0ea5e9);
+    box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.12);
+  }
+}
+
+// ─── YOU badge ───────────────────────────────────────────────────────────────
+.you-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: #fff8e1;
+  color: #b45309;
+  border: 1px solid #f59e0b;
+  i { font-size: 0.6rem; }
+}
+
+// ─── Text truncation ──────────────────────────────────────────────────────────
+.member-text-wrap {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.member-name-text {
+  display: block;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  cursor: default;
+}
+
+.designation-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  cursor: default;
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+.status-badge {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+}
+
+// ─── Skeleton Loading ─────────────────────────────────────────────────────────
+.skeleton {
+  background: #e8eef2;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+
+  &--circle { width: 40px; height: 40px; border-radius: 50%; }
+  &--line   { height: 13px; }
+}
+
+// ─── mat-table overrides ──────────────────────────────────────────────────────
+.members-card ::ng-deep {
+  .mat-mdc-table { width: 100%; background: transparent; border-collapse: collapse; }
+
+  .mat-mdc-header-row {
+    background: #ffffff;
+    border-bottom: 1px solid #e9eef2;
+  }
+
+  .mat-mdc-header-cell {
+    padding: 14px 16px;
+    color: #647085;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: none;
+    white-space: nowrap;
+  }
+
+  .mat-mdc-cell {
+    padding: 14px 16px;
+    color: #243047;
+    font-size: 0.875rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #edf2f3;
+  }
+
+  .mat-mdc-row {
+    background: #ffffff;
+    transition: background-color 120ms ease;
+    &:hover { background: #f8f9fa; }
+    &:last-of-type .mat-mdc-cell { border-bottom: none; }
+  }
+}
+
+@keyframes shimmer { 100% { transform: translateX(100%); } }

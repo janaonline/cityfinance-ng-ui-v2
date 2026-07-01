@@ -21,8 +21,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { LowerCasePipe, TitleCasePipe } from '@angular/common';
+import { LowerCasePipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
+import { AuthService } from '../../../../core/services/auth.service';
 import { ProfileVerificationService } from '../../shared/profile-verification/profile-verification.service';
 import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
 import {
@@ -33,6 +34,12 @@ import {
 
 export type StateSubRole = 'SUBMITTER' | 'EDITOR' | 'VIEWER';
 
+export const SUBROLE_LABEL: Record<StateSubRole, string> = {
+  SUBMITTER: 'Admin',
+  EDITOR: 'Reviewer',
+  VIEWER: 'Viewer',
+};
+
 export interface StateMember {
   _id: string;
   name: string;
@@ -40,6 +47,7 @@ export interface StateMember {
   designation: string;
   subRole: StateSubRole;
   isActive: boolean;
+  isXVIFCProfileVerified: boolean;
   lastActive: string | null;
   email?: string;
 }
@@ -108,7 +116,6 @@ const NAME_PATTERN = /^[a-zA-Z .\-']+$/;
     MatSelectModule,
     MatTooltipModule,
     LowerCasePipe,
-    TitleCasePipe,
     PageErrorStateComponent,
   ],
   templateUrl: './roles-teams-overview.component.html',
@@ -128,17 +135,18 @@ export class RolesTeamsOverviewComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly profileService = inject(ProfileVerificationService);
+  private readonly authService = inject(AuthService);
   private readonly baseUrl = environment.api.url2;
 
   readonly permissionMatrix = signal<PermissionRow[]>([]);
 
   readonly tableColumns: TableColumn[] = [
-    { key: 'member',      header: 'Name & Phone', thClass: '',                       tdClass: '',                       cellType: 'member' },
+    { key: 'member',      header: 'Name, Phone & Email', thClass: '',                       tdClass: '',                       cellType: 'member' },
     { key: 'designation', header: 'Designation',  thClass: 'd-none d-md-table-cell', tdClass: 'd-none d-md-table-cell', cellType: 'designation' },
     { key: 'role',        header: 'Role',          thClass: '',                       tdClass: '',                       cellType: 'role' },
     { key: 'status',      header: 'Status',        thClass: 'd-none d-lg-table-cell', tdClass: 'd-none d-lg-table-cell', cellType: 'status' },
     { key: 'lastActive',  header: 'Last Active',   thClass: 'd-none d-xl-table-cell', tdClass: 'd-none d-xl-table-cell', cellType: 'lastActive' },
-    { key: 'actions',     header: 'Actions',       thClass: 'text-end pe-3',          tdClass: 'text-end pe-3',          cellType: 'actions' },
+    { key: 'actions',     header: '',              thClass: 'text-end pe-3',          tdClass: 'text-end pe-3',          cellType: 'actions' },
   ];
 
   readonly displayedColumns = this.tableColumns.map(c => c.key);
@@ -184,7 +192,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
       type: 'select',
       autocomplete: '',
       options: [
-        { value: 'EDITOR', label: 'Editor' },
+        { value: 'EDITOR', label: 'Reviewer' },
         { value: 'VIEWER', label: 'Viewer' },
       ],
       errors: [
@@ -233,6 +241,11 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   // Signals
   readonly currentSubRole = signal<StateSubRole>('VIEWER');
+  readonly currentUserName = signal<string>('');
+
+  getRoleLabel(subRole: string): string {
+    return SUBROLE_LABEL[subRole as StateSubRole] ?? subRole;
+  }
   readonly isLoading = signal(true);
   readonly hasError = signal(false);
   readonly members = signal<StateMember[]>([]);
@@ -241,13 +254,14 @@ export class RolesTeamsOverviewComponent implements OnInit {
   readonly showPermissionMatrix = signal(false);
   readonly showAddMember = signal(false);
   readonly isAdding = signal(false);
-  readonly addError = signal<string | null>(null);
+  readonly addError    = signal<string | null>(null);
+  readonly addConflict = signal<{ name: string; designation: string } | null>(null);
 
   // Per-row action states
-  readonly roleChangingId  = signal<string | null>(null);
-  readonly editingRoleId   = signal<string | null>(null);
-  readonly togglingId      = signal<string | null>(null);
-  readonly confirmDisableId = signal<string | null>(null);
+  readonly roleChangingId   = signal<string | null>(null);
+  readonly editingRoleId    = signal<string | null>(null);
+  readonly deletingId       = signal<string | null>(null);
+  readonly confirmDeleteId  = signal<string | null>(null);
 
   // Transfer ownership
   readonly showTransferPanel = signal(false);
@@ -258,7 +272,16 @@ export class RolesTeamsOverviewComponent implements OnInit {
   readonly isSubmitter = computed(() => this.currentSubRole() === 'SUBMITTER');
 
   readonly eligibleTransferTargets = computed(() =>
-    this.members().filter(m => m._id !== this.currentUserId && m.isActive && m.subRole !== 'SUBMITTER')
+    this.members().filter(m =>
+      m._id !== this.currentUserId &&
+      m.isActive &&
+      m.isXVIFCProfileVerified &&
+      m.subRole !== 'SUBMITTER',
+    )
+  );
+
+  readonly selectedTransferTarget = computed(() =>
+    this.eligibleTransferTargets().find(m => m._id === this.transferTargetId()) ?? null
   );
 
   readonly actionButtons = computed<ActionButton[]>(() => [
@@ -279,7 +302,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
       color: 'primary',
       tooltip: this.isSubmitter()
         ? 'Click to add a new team member'
-        : 'Only the Submitter can add new members',
+        : 'Only the Admin can add new members',
       isActive: false,
       showChevron: false,
       disabled: !this.isSubmitter(),
@@ -324,6 +347,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.currentUserId = u._id ?? u.id ?? '';
     this.stateId = String(u['state'] ?? '');
     this.currentSubRole.set((u['subRole'] as StateSubRole | undefined) ?? 'SUBMITTER');
+    this.currentUserName.set(String(u['name'] ?? ''));
     this.loadMembers();
     this.loadPermissionMatrix();
   }
@@ -365,7 +389,14 @@ export class RolesTeamsOverviewComponent implements OnInit {
       )
       .subscribe({
         next: (members) => {
-          if (!members) { this.hasError.set(true); } else { this.members.set(members); }
+          if (!members) {
+            this.hasError.set(true);
+          } else {
+            this.members.set(members);
+            // Derive role from fresh API data — localStorage subRole can be stale
+            const me = members.find(m => m._id === this.currentUserId);
+            if (me) this.currentSubRole.set(me.subRole);
+          }
           this.isLoading.set(false);
         },
         error: () => {
@@ -387,6 +418,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.showPermissionMatrix.set(false);
     this.addForm.reset({ subRole: 'EDITOR' });
     this.addError.set(null);
+    this.addConflict.set(null);
     this.showAddMember.set(true);
   }
 
@@ -394,33 +426,50 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.showAddMember.set(false);
     this.addForm.reset({ subRole: 'EDITOR' });
     this.addError.set(null);
+    this.addConflict.set(null);
+  }
+
+  backToForm(): void {
+    this.addConflict.set(null);
+    this.addError.set(null);
   }
 
   submitAddMember(): void {
     if (this.isAdding()) return;
     if (this.addForm.invalid) { this.addForm.markAllAsTouched(); return; }
+    this.submitInvite('invite');
+  }
 
+  restoreMember(): void  { this.submitInvite('restore'); }
+  createFreshMember(): void { this.submitInvite('force-new'); }
+
+  private submitInvite(action: 'invite' | 'restore' | 'force-new'): void {
     this.isAdding.set(true);
     this.addError.set(null);
-    const payload = { ...this.addForm.getRawValue(), stateId: this.stateId };
+    this.addConflict.set(null);
+
+    const payload = { ...this.addForm.getRawValue(), action };
 
     this.http
-      .post<{ success: boolean; data: StateMember } | StateMember>(
-        `${this.baseUrl}users/invite-state-member`, payload,
-      )
+      .post<unknown>(`${this.baseUrl}users/invite-state-member`, payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: res => {
-          const member = ('success' in res ? res.data : res) as StateMember;
-          this.members.update(list => [...list, member]);
+        next: () => {
           this.isAdding.set(false);
           this.cancelAddMember();
-          this.snackBar.open(`${payload.name} has been invited.`, 'Dismiss',
+          this.loadMembers();
+          this.snackBar.open(`${payload.name} has been invited successfully.`, 'Dismiss',
             { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
           this.isAdding.set(false);
-          this.addError.set(err.error?.message ?? 'Failed to invite member. Please try again.');
+          const body: Record<string, unknown> = err.error ?? {};
+          if (body['code'] === 'EMAIL_PREVIOUSLY_REGISTERED') {
+            const deleted = body['deletedUser'] as { name: string; designation: string } | undefined;
+            this.addConflict.set({ name: deleted?.name ?? '', designation: deleted?.designation ?? '' });
+          } else {
+            this.addError.set((body['message'] as string) ?? 'Failed to invite member. Please try again.');
+          }
         },
       });
   }
@@ -446,7 +495,8 @@ export class RolesTeamsOverviewComponent implements OnInit {
       .subscribe({
         next: () => {
           this.roleChangingId.set(null);
-          this.snackBar.open(`${member.name}'s role updated to ${newRole}.`, 'Dismiss',
+          this.loadMembers();
+          this.snackBar.open(`${member.name}'s role updated to ${SUBROLE_LABEL[newRole]}.`, 'Dismiss',
             { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
@@ -458,38 +508,35 @@ export class RolesTeamsOverviewComponent implements OnInit {
       });
   }
 
-  requestToggle(memberId: string): void {
-    this.confirmDisableId.set(memberId);
+  requestDelete(memberId: string): void {
+    this.confirmDeleteId.set(memberId);
   }
 
-  cancelToggle(): void {
-    this.confirmDisableId.set(null);
+  cancelDelete(): void {
+    this.confirmDeleteId.set(null);
   }
 
-  confirmToggle(member: StateMember): void {
-    if (this.togglingId()) return;
-    this.togglingId.set(member._id);
-    this.confirmDisableId.set(null);
+  confirmDelete(member: StateMember): void {
+    if (this.deletingId()) return;
+    this.deletingId.set(member._id);
+    this.confirmDeleteId.set(null);
 
-    const action = member.isActive ? 'deactivate' : 'activate';
     this.http
-      .patch(`${this.baseUrl}users/${member._id}/${action}`, {})
+      .delete(`${this.baseUrl}users/${member._id}`)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.members.update(list =>
-            list.map(m => m._id === member._id ? { ...m, isActive: !m.isActive } : m)
-          );
-          this.togglingId.set(null);
+          this.members.update(list => list.filter(m => m._id !== member._id));
+          this.deletingId.set(null);
           this.snackBar.open(
-            `${member.name} has been ${member.isActive ? 'disabled' : 'enabled'}.`,
+            `${member.name} has been removed from the team.`,
             'Dismiss',
             { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
           );
         },
         error: (err: HttpErrorResponse) => {
-          this.togglingId.set(null);
-          this.snackBar.open(err.error?.message ?? 'Status update failed.', 'Dismiss',
+          this.deletingId.set(null);
+          this.snackBar.open(err.error?.message ?? 'Failed to remove member. Please try again.', 'Dismiss',
             { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-error'] });
         },
       });
@@ -518,7 +565,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.transferError.set(null);
 
     this.http
-      .post(`${this.baseUrl}users/transfer-submitter`, { fromUserId: this.currentUserId, toUserId })
+      .post(`${this.baseUrl}users/transfer-submitter`, { toUserId })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -526,7 +573,10 @@ export class RolesTeamsOverviewComponent implements OnInit {
           this.isTransferring.set(false);
           this.showTransferPanel.set(false);
           this.loadMembers();
-          this.snackBar.open('Ownership transferred. Your role is now Editor.', 'Dismiss',
+          this.authService.refreshAccessToken().pipe(
+            takeUntilDestroyed(this.destroyRef),
+          ).subscribe();
+          this.snackBar.open('Ownership transferred. Your role is now Reviewer.', 'Dismiss',
             { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
@@ -540,7 +590,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     return memberId === this.currentUserId;
   }
 
-  canToggle(member: StateMember): boolean {
+  canDelete(member: StateMember): boolean {
     return !this.isCurrentUser(member._id) && member.subRole !== 'SUBMITTER';
   }
 

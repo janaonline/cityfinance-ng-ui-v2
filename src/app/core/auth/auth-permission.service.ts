@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Permission } from './permissions';
-import { ACCESS_LEVEL_PERMISSIONS, MOHUA_ACCESS_LEVEL_PERMISSIONS } from './permission.map';
+import { STATE_ACCESS_LEVEL_PERMISSIONS, MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS } from './permission.map';
 import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
 
 @Injectable({
@@ -32,9 +32,9 @@ export class AuthPermissionService {
 
     let base: Permission[];
     if (user.role === 'STATE') {
-      base = ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? ACCESS_LEVEL_PERMISSIONS.VIEWER;
+      base = STATE_ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
     } else if (user.role === 'MoHUA') {
-      base = MOHUA_ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? MOHUA_ACCESS_LEVEL_PERMISSIONS.VIEWER;
+      base = MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
     } else {
       return false;
     }

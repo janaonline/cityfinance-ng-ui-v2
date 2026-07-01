@@ -21,7 +21,7 @@ function isStateUserRole(role: string): boolean {
 
 const isUlbRole: CanMatchFn = () => isUlbUserRole(readUserRole());
 const isStateRole: CanMatchFn = () => isStateUserRole(readUserRole());
-const isMohuaRole: CanMatchFn = () => readUserRole() === 'MoHUA';
+const isMohuaRole: CanMatchFn = () => readUserRole().toUpperCase() === 'MOHUA';
 const isAdminRole: CanMatchFn = () => readUserRole().toUpperCase() === 'ADMIN';
 
 export const XVIFC_ROUTES: Routes = [

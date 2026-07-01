@@ -8,7 +8,7 @@ import { AccessLevel, Permission } from './permissions';
  * xviFcSubrole: reviewer → accessLevel: EDITOR  (Editor)
  * xviFcSubrole: viewer   → accessLevel: VIEWER  (Viewer)
  */
-export const ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
+export const STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
   ADMIN: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
@@ -39,13 +39,10 @@ export const ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
     Permission.RECOMMEND_EXEMPTIONS,
     Permission.VIEW_STATE_FORMS,
     Permission.EDIT_STATE_FORMS,
-    Permission.VIEW_MANAGED_USERS,
   ],
   VIEWER: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
-    Permission.VIEW_STATE_FORMS,
-    Permission.VIEW_MANAGED_USERS,
   ],
 };
 
@@ -57,7 +54,7 @@ export const ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
  * Editor   (EDITOR)  — review, reminders, information requests
  * Viewer   (VIEWER)  — read-only
  */
-export const MOHUA_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
+export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
   ADMIN: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,

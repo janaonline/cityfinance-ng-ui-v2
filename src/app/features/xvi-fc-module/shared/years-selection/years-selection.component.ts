@@ -148,6 +148,12 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
     localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, yearId);
     localStorage.setItem(XVIFC_LS_KEYS.documentYears, JSON.stringify(DOCUMENT_YEARS));
 
+    // MOHUA is a central-level role — no entity scoping and no profile verification step
+    if (routeRole === 'MOHUA') {
+      this.router.navigate(['/xvifc', yearId], { replaceUrl: true });
+      return;
+    }
+
     if (isVerified) {
       this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
         replaceUrl: true,

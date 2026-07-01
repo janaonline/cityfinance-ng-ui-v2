@@ -1,0 +1,128 @@
+<div class="team-page px-3 py-4">
+
+  <!-- Page header -->
+  <div class="d-flex align-items-center gap-2 mb-1">
+    <i class="bi bi-people-fill text-primary fs-5" aria-hidden="true"></i>
+    <h1 class="h5 fw-bold mb-0">Team & Roles</h1>
+  </div>
+  <p class="text-muted small mb-4">MoHUA team members with access to the XVI FC workspace.</p>
+
+  <!-- Members card -->
+  <mat-card class="members-card">
+
+    <!-- Loading skeleton -->
+    @if (isLoading()) {
+      <div class="p-4">
+        @for (_ of [1,2,3]; track $index) {
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="skeleton skeleton--circle"></div>
+            <div class="flex-grow-1">
+              <div class="skeleton skeleton--line mb-2" style="width:40%"></div>
+              <div class="skeleton skeleton--line" style="width:25%"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Error state -->
+    @else if (hasError()) {
+      <div class="p-4">
+        <app-page-error-state
+          message="Could not load team members."
+          (retry)="loadMembers()">
+        </app-page-error-state>
+      </div>
+    }
+
+    <!-- Members table -->
+    @else {
+      <mat-table [dataSource]="members()" [trackBy]="trackByMemberId" aria-label="MoHUA team members">
+
+        <!-- Member column -->
+        <ng-container matColumnDef="member">
+          <mat-header-cell *matHeaderCellDef [class]="tableColumns[0].thClass">
+            {{ tableColumns[0].header }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row" [class]="tableColumns[0].tdClass">
+            <div class="d-flex align-items-center gap-3">
+              <span class="member-avatar member-avatar--mohua flex-shrink-0" aria-hidden="true">
+                {{ getInitials(row.name) }}
+              </span>
+              <div class="member-text-wrap">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <span class="member-name-text fw-semibold"
+                    [matTooltip]="row.name" matTooltipShowDelay="600">
+                    {{ row.name }}
+                  </span>
+                  @if (isCurrentUser(row)) {
+                    <span class="you-badge">
+                      <i class="bi bi-person-fill me-1" aria-hidden="true"></i>YOU
+                    </span>
+                  }
+                </div>
+                <span class="text-muted small d-block">+91 {{ row.mobile }}</span>
+                @if (row.email) {
+                  <span class="text-muted small d-block">{{ row.email }}</span>
+                }
+              </div>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Designation column -->
+        <ng-container matColumnDef="designation">
+          <mat-header-cell *matHeaderCellDef [class]="tableColumns[1].thClass">
+            {{ tableColumns[1].header }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row" [class]="tableColumns[1].tdClass">
+            <span class="designation-text text-muted small"
+              [matTooltip]="row.designation" matTooltipShowDelay="600">
+              {{ row.designation || '—' }}
+            </span>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Status column -->
+        <ng-container matColumnDef="status">
+          <mat-header-cell *matHeaderCellDef [class]="tableColumns[2].thClass">
+            {{ tableColumns[2].header }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row" [class]="tableColumns[2].tdClass">
+            <span class="badge status-badge fw-semibold text-uppercase"
+              [class.text-bg-success]="row.isActive"
+              [class.text-bg-secondary]="!row.isActive">
+              {{ row.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Last Active column -->
+        <ng-container matColumnDef="lastActive">
+          <mat-header-cell *matHeaderCellDef [class]="tableColumns[3].thClass">
+            {{ tableColumns[3].header }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row" [class]="tableColumns[3].tdClass">
+            <span class="text-muted small">{{ formatLastActive(row.lastActive) }}</span>
+          </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"
+          [class.table-active]="isCurrentUser(row)"
+          [class.opacity-50]="!row.isActive">
+        </mat-row>
+
+      </mat-table>
+
+      @if (members().length === 0) {
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-people fs-1 opacity-25" aria-hidden="true"></i>
+          <p class="small mt-2 mb-0">No MoHUA team members found.</p>
+        </div>
+      }
+    }
+
+  </mat-card>
+
+</div>
