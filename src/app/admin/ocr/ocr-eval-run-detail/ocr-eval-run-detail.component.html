@@ -1,0 +1,180 @@
+<div class="wrapper app-wrapper">
+  <section class="eval-run-page">
+
+    @if (loading() && !run()) {
+      <div class="hero-card">
+        <h3>Loading eval run...</h3>
+      </div>
+    }
+
+    @if (run(); as r) {
+
+      <!-- Hero -->
+      <div class="hero-card">
+        <div class="hero-row">
+          <div>
+            <h3>Eval Run Results</h3>
+            <p class="subcopy mono" style="font-size:0.82rem;">{{ r.eval_run_id }}</p>
+          </div>
+          <div class="hero-actions">
+            <span class="status-badge" [ngClass]="getStatusClass(r.status)">{{ r.status | titlecase }}</span>
+            <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="hero-meta">
+          <span><span class="meta-lbl">Benchmark</span> {{ r.benchmark_id }}</span>
+          <span><span class="meta-lbl">Extract</span> {{ r.extraction_model }}</span>
+          <span><span class="meta-lbl">Validate</span> {{ r.validation_model }}</span>
+          <span><span class="meta-lbl">Started</span> {{ formatDate(r.created_at) }}</span>
+          @if (r.completed_at) {
+            <span><span class="meta-lbl">Completed</span> {{ formatDate(r.completed_at) }}</span>
+          }
+        </div>
+        @if (r.error) {
+          <p class="hero-error">{{ r.error }}</p>
+        }
+      </div>
+
+      <!-- Metrics -->
+      @if (r.status === 'completed' && r.metrics) {
+        <div class="metrics-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Jobs</div>
+            <div class="stat-value">{{ r.metrics['total'] ?? '—' }}</div>
+          </div>
+          <div class="stat-card stat-card--green">
+            <div class="stat-label">Successful</div>
+            <div class="stat-value">{{ r.metrics['successful'] ?? '—' }}</div>
+          </div>
+          <div class="stat-card stat-card--red">
+            <div class="stat-label">Errored</div>
+            <div class="stat-value">{{ r.metrics['errored'] ?? '—' }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">ULB Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['ulb_name_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">FY Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['financial_year_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Doc Type Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['doc_type_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--indigo">
+            <div class="stat-label">Overall Accuracy</div>
+            <div class="stat-value stat-value--lg">{{ acc(r.metrics['overall_accuracy']) }}</div>
+          </div>
+        </div>
+      }
+
+      <!-- Results table -->
+      <section class="panel">
+        <div class="section-header">
+          <div>
+            <h4>Per-Job Results</h4>
+            <p>{{ dataSource.data.length }} job{{ dataSource.data.length === 1 ? '' : 's' }}</p>
+          </div>
+        </div>
+
+        <div class="table-shell">
+          <table mat-table [dataSource]="dataSource" class="results-table">
+
+            <!-- Job / File -->
+            <ng-container matColumnDef="jobFile">
+              <th mat-header-cell *matHeaderCellDef>Job / File</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="id-line">
+                  <span class="mono dim" style="font-size:0.7rem;" [title]="row.jobId">{{ truncate(row.jobId, 22) }}</span>
+                </div>
+                <div class="id-line" style="margin-top:0.3rem;">
+                  <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 26) }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Expected -->
+            <ng-container matColumnDef="expected">
+              <th mat-header-cell *matHeaderCellDef>Expected</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="field-grid">
+                  <div><span class="cell-label">ULB</span><span class="cell-value" [title]="row.expectedUlb">{{ truncate(row.expectedUlb, 22) }}</span></div>
+                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.expectedFy }}</span></div>
+                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.expectedDocType }}</span></div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Extracted -->
+            <ng-container matColumnDef="extracted">
+              <th mat-header-cell *matHeaderCellDef>Extracted</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="field-grid">
+                  <div><span class="cell-label">ULB</span><span class="cell-value" [title]="row.extractedUlb">{{ truncate(row.extractedUlb, 22) }}</span></div>
+                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.extractedFy }}</span></div>
+                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.extractedDocType }}</span></div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Match -->
+            <ng-container matColumnDef="match">
+              <th mat-header-cell *matHeaderCellDef>Match</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="match-grid">
+                  <div class="match-row">
+                    <span class="cell-label">ULB</span>
+                    <mat-icon class="match-icon" [ngClass]="matchClass(row.ulbMatch)">{{ matchIcon(row.ulbMatch) }}</mat-icon>
+                  </div>
+                  <div class="match-row">
+                    <span class="cell-label">FY</span>
+                    <mat-icon class="match-icon" [ngClass]="matchClass(row.fyMatch)">{{ matchIcon(row.fyMatch) }}</mat-icon>
+                  </div>
+                  <div class="match-row">
+                    <span class="cell-label">Type</span>
+                    <mat-icon class="match-icon" [ngClass]="matchClass(row.docTypeMatch)">{{ matchIcon(row.docTypeMatch) }}</mat-icon>
+                  </div>
+                  <div class="match-row match-row--overall">
+                    <span class="cell-label">Overall</span>
+                    <mat-icon class="match-icon" [ngClass]="matchClass(row.overallMatch)">{{ matchIcon(row.overallMatch) }}</mat-icon>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Error -->
+            <ng-container matColumnDef="error">
+              <th mat-header-cell *matHeaderCellDef>Error</th>
+              <td mat-cell *matCellDef="let row">
+                @if (row.error !== '—') {
+                  <span class="error-text" [title]="row.error">{{ truncate(row.error, 40) }}</span>
+                } @else {
+                  <span class="dim">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
+                @if (loading()) { Loading results... } @else { No results available yet. }
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [pageSize]="25"
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          showFirstLastButtons
+        />
+      </section>
+
+    }
+
+  </section>
+</div>
