@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   FieldSupportingAction,
   FieldSupportingActionEvent,
@@ -16,6 +17,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DynamicFieldSupportingContentComponent {
+  private readonly router = inject(Router);
+
   /** All supporting content items configured for the parent field. */
   readonly supportingContent = input<FieldSupportingContent[] | undefined>(undefined);
 
@@ -108,5 +111,37 @@ export class DynamicFieldSupportingContentComponent {
   handleAction(action: FieldSupportingAction): void {
     if (action.disabled || action.loading || action.url) return;
     this.supportingAction.emit({ fieldKey: this.fieldKey(), actionId: action.id, meta: action.meta });
+  }
+
+  /** Internal app routes only — never prefixed with a host/domain. */
+  isInternalActionUrl(url: string): boolean {
+    return url.startsWith('/');
+  }
+
+  isExternalActionUrl(url: string): boolean {
+    return url.startsWith('https://');
+  }
+
+  /**
+   * Routes an action's `url` through the Angular router for internal paths or
+   * `window.open` for `https://` external links. Invalid/unrecognized URL shapes
+   * are blocked (no-op) rather than falling back to a raw same-tab navigation.
+   */
+  onActionUrlClick(event: MouseEvent, action: FieldSupportingAction): void {
+    if (!action.url || action.disabled || action.loading) return;
+
+    if (this.isInternalActionUrl(action.url)) {
+      event.preventDefault();
+      this.router.navigateByUrl(action.url);
+      return;
+    }
+
+    if (this.isExternalActionUrl(action.url)) {
+      event.preventDefault();
+      window.open(action.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    event.preventDefault();
   }
 }
