@@ -11,12 +11,12 @@ function readUserRole(): string {
 
 function isUlbUserRole(role: string): boolean {
   const r = role.toUpperCase();
-  return r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-');
+  return r === 'ULB' || r === 'XVIFC';
 }
 
 function isStateUserRole(role: string): boolean {
   const r = role.toUpperCase();
-  return r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-');
+  return r === 'STATE' || r === 'XVIFC_STATE';
 }
 
 const isUlbRole: CanMatchFn = () => isUlbUserRole(readUserRole());

@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Permission } from './permissions';
-import { ROLE_PERMISSIONS } from './permission.map';
+import { ACCESS_LEVEL_PERMISSIONS, MOHUA_ACCESS_LEVEL_PERMISSIONS } from './permission.map';
 import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
 
 @Injectable({
@@ -11,8 +11,8 @@ export class AuthPermissionService {
 
   readonly user = computed(() => this.userSignal());
   readonly role = computed(() => this.userSignal()?.role ?? null);
-  readonly scope = computed(() => this.userSignal()?.scope ?? null);
   readonly accessLevel = computed(() => this.userSignal()?.accessLevel ?? null);
+  readonly subRole = computed(() => this.userSignal()?.subRole ?? null);
 
   setUser(user: IUserLoggedInDetails): void {
     localStorage.setItem('userData', JSON.stringify(user));
@@ -30,9 +30,16 @@ export class AuthPermissionService {
     const user = this.userSignal();
     if (!user?.role) return false;
 
-    const base = ROLE_PERMISSIONS[user.role] ?? [];
-    const allowed = new Set<Permission>(base);
+    let base: Permission[];
+    if (user.role === 'STATE') {
+      base = ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? ACCESS_LEVEL_PERMISSIONS.VIEWER;
+    } else if (user.role === 'MoHUA') {
+      base = MOHUA_ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? MOHUA_ACCESS_LEVEL_PERMISSIONS.VIEWER;
+    } else {
+      return false;
+    }
 
+    const allowed = new Set<Permission>(base);
     user.permissionOverrides?.allow?.forEach((p) => allowed.add(p));
     user.permissionOverrides?.deny?.forEach((p) => allowed.delete(p));
 
@@ -47,6 +54,22 @@ export class AuthPermissionService {
     return permissions.every((p) => this.hasPermission(p));
   }
 
+  // ── Role predicates ───────────────────────────────────────────────────────────
+
+  isUlbUser(): boolean {
+    return this.role() === 'ULB';
+  }
+
+  isStateUser(): boolean {
+    return this.role() === 'STATE';
+  }
+
+  isMohuaUser(): boolean {
+    return this.role() === 'MoHUA';
+  }
+
+  // ── Access-level predicates (apply to any role with subroles) ────────────────
+
   isAdmin(): boolean {
     return this.accessLevel() === 'ADMIN';
   }
@@ -59,13 +82,11 @@ export class AuthPermissionService {
     return this.accessLevel() === 'VIEWER';
   }
 
-  isUlbUser(): boolean {
-    return this.scope() === 'ULB';
+  isSubmitter(): boolean {
+    return this.subRole() === 'SUBMITTER';
   }
 
-  isStateUser(): boolean {
-    return this.scope() === 'STATE';
-  }
+  // ── User management ───────────────────────────────────────────────────────────
 
   canViewManagedUsers(): boolean {
     return this.hasPermission(Permission.VIEW_MANAGED_USERS);
@@ -75,26 +96,54 @@ export class AuthPermissionService {
     return this.hasPermission(Permission.CREATE_MANAGED_USER);
   }
 
-  canEdit(): boolean {
-    return this.hasAnyPermission([Permission.UPLOAD_DOCUMENTS, Permission.UPLOAD_STATE_LEVEL_DOCUMENTS]);
+  // ── STATE form actions ────────────────────────────────────────────────────────
+
+  canViewStateForms(): boolean {
+    return this.hasPermission(Permission.VIEW_STATE_FORMS);
   }
 
-  canSubmit(): boolean {
-    return this.hasAnyPermission([Permission.FINAL_SUBMIT_TO_STATE_DMA, Permission.FINAL_SUBMIT_TO_MOHUA]);
+  canEditStateForms(): boolean {
+    return this.hasPermission(Permission.EDIT_STATE_FORMS);
   }
 
-  // ── Annual Accounts document upload ──────────────────────────────────────────
+  canSubmitStateForms(): boolean {
+    return this.hasPermission(Permission.FINAL_SUBMIT_STATE_FORMS);
+  }
+
+  canSubmitToMohua(): boolean {
+    return this.hasPermission(Permission.FINAL_SUBMIT_TO_MOHUA);
+  }
+
+  // ── MoHUA actions ─────────────────────────────────────────────────────────────
+
+  canReviewStateSubmissions(): boolean {
+    return this.hasPermission(Permission.REVIEW_STATE_SUBMISSIONS);
+  }
+
+  canApproveStateSubmissions(): boolean {
+    return this.hasPermission(Permission.APPROVE_STATE_SUBMISSIONS);
+  }
+
+  canIssueOfficeMemorandum(): boolean {
+    return this.hasPermission(Permission.ISSUE_OFFICE_MEMORANDUM);
+  }
+
+  canSubmitToDoe(): boolean {
+    return this.hasPermission(Permission.FINAL_SUBMIT_TO_DOE);
+  }
+
+  // ── ULB actions — no granular permissions in this phase; any ULB user has full access ──
 
   canUploadDocuments(): boolean {
-    return this.hasPermission(Permission.UPLOAD_DOCUMENTS);
+    return this.isUlbUser();
   }
 
   canDeleteDocuments(): boolean {
-    return this.hasPermission(Permission.DELETE_DOCUMENTS);
+    return this.isUlbUser();
   }
 
   canSubmitToStateDma(): boolean {
-    return this.hasPermission(Permission.FINAL_SUBMIT_TO_STATE_DMA);
+    return this.isUlbUser();
   }
 
   private getStoredUser(): IUserLoggedInDetails | null {

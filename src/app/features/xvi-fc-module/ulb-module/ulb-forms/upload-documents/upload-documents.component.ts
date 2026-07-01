@@ -803,8 +803,6 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private roleLabel(role: string): string {
     const map: Record<string, string> = {
       ULB: 'ULB User',
-      'ULB-EDITOR': 'ULB Editor',
-      'ULB-VIEWER': 'ULB Viewer',
       STATE: 'State User',
     };
     return map[role] ?? role;
