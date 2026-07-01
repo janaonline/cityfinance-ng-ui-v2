@@ -95,13 +95,13 @@
                     <td class="perm-table__cell-label small">{{ p.label }}</td>
                     <td class="text-center">
                       <span class="perm-dot"
-                        [class.perm-dot--yes]="p.submitter" [class.perm-dot--no]="!p.submitter"
-                        [attr.aria-label]="p.submitter ? 'Allowed' : 'Not allowed'"></span>
+                        [class.perm-dot--yes]="p.admin" [class.perm-dot--no]="!p.admin"
+                        [attr.aria-label]="p.admin ? 'Allowed' : 'Not allowed'"></span>
                     </td>
                     <td class="text-center">
                       <span class="perm-dot"
-                        [class.perm-dot--yes]="p.editor" [class.perm-dot--no]="!p.editor"
-                        [attr.aria-label]="p.editor ? 'Allowed' : 'Not allowed'"></span>
+                        [class.perm-dot--yes]="p.reviewer" [class.perm-dot--no]="!p.reviewer"
+                        [attr.aria-label]="p.reviewer ? 'Allowed' : 'Not allowed'"></span>
                     </td>
                     <td class="text-center">
                       <span class="perm-dot"

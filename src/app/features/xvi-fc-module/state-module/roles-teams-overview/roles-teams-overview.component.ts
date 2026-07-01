@@ -46,8 +46,8 @@ export interface StateMember {
 
 interface PermissionRow {
   label: string;
-  submitter: boolean;
-  editor: boolean;
+  admin: boolean;
+  reviewer: boolean;
   viewer: boolean;
 }
 
