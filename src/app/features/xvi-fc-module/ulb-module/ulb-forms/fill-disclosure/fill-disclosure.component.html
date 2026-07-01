@@ -7,7 +7,7 @@
   (change)="onFileSelected($event)"
 />
 
-<div class="container py-3">
+<div class="container py-3 xvifc-theme">
   <!-- Back navigation -->
   <button
     class="btn btn-link text-secondary text-decoration-none ps-0 mb-3 d-inline-flex align-items-center gap-1 small"
@@ -35,8 +35,9 @@
     <div class="alert alert-primary py-2 mb-4 d-flex align-items-start gap-2" role="note">
       <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
       <p class="small mb-0">
-        Enter each bank account's unspent balance, account number, and upload a supporting document.
-        Use <strong>Add Another Bank Account</strong> if funds are spread across multiple accounts within the same FC period.
+        Enter each bank account's unspent balance, account number, and upload a supporting document. Use
+        <strong>Add Another Bank Account</strong> if funds are spread across multiple accounts within the same FC
+        period.
       </p>
     </div>
   }
@@ -44,8 +45,10 @@
   <!-- Lock banner -->
   @if (isReadOnly() && !isLoading()) {
     <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-4" role="status">
-      <mat-icon aria-hidden="true" style="font-size:1.1rem;width:1.1rem;height:1.1rem">lock</mat-icon>
-      <p class="small mb-0 fw-medium">This disclosure has already been submitted. The form is locked — no edits can be made.</p>
+      <mat-icon aria-hidden="true" style="font-size: 1.1rem; width: 1.1rem; height: 1.1rem">lock</mat-icon>
+      <p class="small mb-0 fw-medium">
+        This disclosure has already been submitted. The form is locked — no edits can be made.
+      </p>
     </div>
   }
 
@@ -58,11 +61,9 @@
   }
 
   @if (!isLoading()) {
-
     <!-- FC Period cards -->
     @for (period of periods; track period.key) {
       <div class="card border-0 shadow-sm rounded-3 p-3 mb-4" style="max-width: 600px">
-
         <!-- Period header -->
         <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
           <i class="bi bi-bank text-secondary flex-shrink-0" aria-hidden="true"></i>
@@ -73,7 +74,8 @@
               style="font-size: 0.68rem; cursor: default"
               [matTooltip]="fields.disclosureOnlyTitle"
               matTooltipPosition="above"
-            >{{ fields.disclosureOnlyLabel }}</span>
+              >{{ fields.disclosureOnlyLabel }}</span
+            >
           }
         </div>
 
@@ -97,7 +99,7 @@
                   (click)="removeAccount(period.key, i)"
                   [attr.aria-label]="'Remove bank account ' + (i + 1) + ' from ' + period.label"
                 >
-                  <mat-icon style="font-size:1rem;width:1rem;height:1rem">remove_circle_outline</mat-icon>
+                  <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem">remove_circle_outline</mat-icon>
                   Remove
                 </button>
               }
@@ -106,13 +108,9 @@
             <!-- Form fields -->
             <form [formGroup]="accountFormAt(period, i)" novalidate>
               <div class="row g-3 mb-3">
-
                 <!-- Unspent Balance -->
                 <div class="col-md-6">
-                  <label
-                    [for]="'balance-' + period.key + '-' + i"
-                    class="form-label fw-semibold small text-secondary"
-                  >
+                  <label [for]="'balance-' + period.key + '-' + i" class="form-label fw-semibold small text-secondary">
                     {{ fields.balance.label }}
                     <span class="text-danger" aria-hidden="true">*</span>
                   </label>
@@ -142,10 +140,7 @@
 
                 <!-- Bank Account Number -->
                 <div class="col-md-6">
-                  <label
-                    [for]="'account-' + period.key + '-' + i"
-                    class="form-label fw-semibold small text-secondary"
-                  >
+                  <label [for]="'account-' + period.key + '-' + i" class="form-label fw-semibold small text-secondary">
                     {{ fields.accountNumber.label }}
                     <span class="text-danger" aria-hidden="true">*</span>
                   </label>
@@ -157,10 +152,12 @@
                     class="form-control form-control-sm"
                     formControlName="accountNumber"
                     [placeholder]="fields.accountNumber.placeholder"
-                    [class.is-invalid]="isFieldInvalid(accountFormAt(period, i), 'accountNumber')"
+                    [class.is-invalid]="
+                      isFieldInvalid(accountFormAt(period, i), 'accountNumber') || isDuplicateAccount(period, i)
+                    "
                     [attr.aria-required]="fields.accountNumber.required"
                     [attr.aria-describedby]="
-                      isFieldInvalid(accountFormAt(period, i), 'accountNumber')
+                      isFieldInvalid(accountFormAt(period, i), 'accountNumber') || isDuplicateAccount(period, i)
                         ? 'account-err-' + period.key + '-' + i
                         : null
                     "
@@ -170,8 +167,12 @@
                       {{ getFieldError(accountFormAt(period, i), 'accountNumber') }}
                     </div>
                   }
+                  @if (isDuplicateAccount(period, i)) {
+                    <div [id]="'account-err-' + period.key + '-' + i" class="invalid-feedback d-block">
+                      This account number is already used in another entry. All account numbers must be unique.
+                    </div>
+                  }
                 </div>
-
               </div>
 
               <!-- Supporting documents -->
@@ -191,14 +192,13 @@
                       <div class="file-chip file-chip--ready d-flex align-items-center gap-2 rounded-2 px-2 py-1">
                         <mat-icon
                           class="flex-shrink-0"
-                          style="font-size:1rem;width:1rem;height:1rem;color:#15803d"
+                          style="font-size: 1rem; width: 1rem; height: 1rem; color: #15803d"
                           aria-hidden="true"
-                        >picture_as_pdf</mat-icon>
-                        <span
-                          class="small text-truncate"
-                          style="max-width:160px"
-                          [title]="doc.originalName"
-                        >{{ doc.originalName }}</span>
+                          >picture_as_pdf</mat-icon
+                        >
+                        <span class="small text-truncate" style="max-width: 160px" [title]="doc.originalName">{{
+                          doc.originalName
+                        }}</span>
                         <span class="text-muted small flex-shrink-0">{{ doc.pages }}p</span>
                         <button
                           type="button"
@@ -237,8 +237,8 @@
           </div>
         }
 
-        <!-- Add another bank account -->
-        @if (!isReadOnly()) {
+        <!-- Add another bank account (max 2 per period) -->
+        @if (!isReadOnly() && period.accounts.length < maxAccountsPerPeriod) {
           <button
             type="button"
             class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
@@ -249,7 +249,6 @@
             Add Another Bank Account
           </button>
         }
-
       </div>
     }
 
@@ -268,18 +267,14 @@
             (change)="onDeclarationChange($event)"
             aria-describedby="declaration-text"
           />
-          <label
-            class="form-check-label small text-secondary lh-base"
-            for="declaration-checkbox"
-            id="declaration-text"
-          >
+          <label class="form-check-label small text-secondary lh-base" for="declaration-checkbox" id="declaration-text">
             {{ fields.declaration }}
           </label>
         </div>
       </div>
     }
-
-  } <!-- end @if (!isLoading()) -->
+  }
+  <!-- end @if (!isLoading()) -->
 
   <!-- Form actions -->
   <div class="pt-2">
@@ -326,7 +321,6 @@
 
 <!-- ─── Reusable file-upload block ──────────────────────────────────────────── -->
 <ng-template #fileUploadBlock let-key>
-
   <!-- Uploaded file chips (new, not yet saved) -->
   @for (entry of entriesFor(key); track entry.id; let i = $index) {
     <div class="d-flex flex-column gap-1 mb-2">
@@ -334,10 +328,9 @@
         class="file-chip--ready d-flex align-items-center gap-2 px-3 py-2 rounded-2"
         style="max-width: 480px; min-width: 0"
       >
-        <span
-          class="text-truncate flex-grow-1 fw-semibold text-success small"
-          [matTooltip]="entry.file.name"
-        >{{ entry.file.name }}</span>
+        <span class="text-truncate flex-grow-1 fw-semibold text-success small" [matTooltip]="entry.file.name">{{
+          entry.file.name
+        }}</span>
         <span class="flex-shrink-0 text-muted" style="font-size: 0.68rem; white-space: nowrap">
           · {{ formatFileSize(entry.file.size) }}
         </span>
@@ -393,7 +386,9 @@
       role="alert"
       aria-live="assertive"
     >
-      <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem; color: #dc2626; flex-shrink: 0">error_outline</mat-icon>
+      <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem; color: #dc2626; flex-shrink: 0"
+        >error_outline</mat-icon
+      >
       <span class="small lh-base" style="color: #991b1b; word-break: break-word; white-space: normal">{{ err }}</span>
     </div>
   }

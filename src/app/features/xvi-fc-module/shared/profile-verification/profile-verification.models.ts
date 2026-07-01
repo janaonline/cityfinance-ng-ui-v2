@@ -1,17 +1,23 @@
-export interface ProfileItem {
-  id?: string;
-  _id?: string;
-  name: string;
-  designation: string;
-  designantion?: string; // API variant (typo handled in service)
-  email: string;
-  mobile: string;
+export interface UlbContacts {
+  commissionerName: string;
+  commissionerEmail: string;
+  commissionerConatactNumber: string;
+  accountantName: string;
+  accountantEmail: string;
+  accountantConatactNumber: string;
 }
 
-export interface EntityProfilesResponse {
-  entityName: string;
-  entityCode?: string;
-  entityType?: string;
-  stateName: string;
-  profiles: ProfileItem[];
+export interface UlbEntityInfo {
+  name: string;
+  ulbCode?: string;
+  censusCode?: string;
+  ulbType?: string;
+  stateName?: string;
+}
+
+export interface StateProfile {
+  name: string;
+  email: string;
+  mobile: string;
+  designation: string;
 }
