@@ -1,0 +1,107 @@
+@use '@angular/material' as mat;
+
+:host {
+  @include mat.button-density(-2);
+}
+
+mat-dialog-content.df-rows-dialog-content {
+  max-height: none;
+}
+
+.df-filter-search {
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.df-filter-validation {
+  min-width: 140px;
+}
+
+.df-rows-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.df-col-row-number {
+  width: 48px;
+}
+
+.df-col-census {
+  width: 110px;
+}
+
+.df-col-sb-code {
+  width: 90px;
+}
+
+.df-col-ulb-name {
+  width: 180px;
+}
+
+.df-col-amount {
+  width: 130px;
+}
+
+.df-col-formula {
+  width: 160px;
+}
+
+.df-col-validation {
+  width: 80px;
+}
+
+.df-col-actions {
+  width: 84px;
+}
+
+.df-actions-col {
+  width: 84px;
+  min-width: 84px;
+  max-width: 84px;
+  white-space: nowrap;
+}
+
+.df-actions-col .d-flex {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+
+/* !important overrides Material's hardcoded .mat-mdc-button-base { min-width: 64px } */
+.df-row-btn {
+  width: 32px;
+  min-width: 32px !important;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  line-height: 1;
+}
+
+.df-edit-control {
+  width: 100%;
+  min-height: 31px;
+}
+
+.df-rows-table td {
+  overflow: hidden;
+  vertical-align: middle;
+  height: 48px;
+}
+
+.df-rows-table tbody tr {
+  min-height: 48px;
+}
+
+.df-cell-formula {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.df-cell-invalid {
+  background-color: var(--bs-danger-bg-subtle);
+  box-shadow: inset 3px 0 0 var(--bs-danger);
+}
+
+.df-error-icon {
+  line-height: 1;
+}

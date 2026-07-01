@@ -86,13 +86,14 @@
         @if (action.url) {
           <a
             [href]="action.url"
-            target="_blank"
-            rel="noopener noreferrer"
+            [target]="isExternalActionUrl(action.url) ? '_blank' : '_self'"
+            [attr.rel]="isExternalActionUrl(action.url) ? 'noopener noreferrer' : null"
             [class]="
-              'btn btn-link p-0 small fw-semibold d-inline-flex align-items-center gap-1 ' +
+              'btn btn-sm btn-link p-0 fw-semibold d-inline-flex align-items-center gap-1 ' +
               actionToneClass(action) +
               (action.className ? ' ' + action.className : '')
             "
+            (click)="onActionUrlClick($event, action)"
           >
             @if (action.icon) {
               <i [class]="action.icon"></i>
