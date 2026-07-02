@@ -112,6 +112,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         actionLabel: 'Fill Disclosure',
         route: 'fill-disclosure',
       },
+      {
+        id: 'xvi-fc-bank-account',
+        title: 'XVI-FC Bank Account (PFMS)',
+        subtitle: 'Confirm a dedicated bank account exists for XVI-FC grants',
+        status: 'pending',
+        actionLabel: 'Open',
+        route: 'xvi-fc-bank-account',
+      },
     ],
   },
   {

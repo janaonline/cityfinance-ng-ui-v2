@@ -13,42 +13,40 @@ export const ULB_ROUTES: Routes = [
       },
       {
         path: 'overview',
-        loadComponent: () =>
-          import('./overview/overview.component').then((m) => m.OverviewComponent),
+        loadComponent: () => import('./overview/overview.component').then((m) => m.OverviewComponent),
       },
       {
         path: 'support-hours',
-        loadComponent: () =>
-          import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
+        loadComponent: () => import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
       },
       {
         path: 'ulb-forms',
-        loadComponent: () =>
-          import('./ulb-forms/ulb-forms.component').then((m) => m.UlbFormsComponent),
+        loadComponent: () => import('./ulb-forms/ulb-forms.component').then((m) => m.UlbFormsComponent),
       },
       {
         path: 'upload-audited',
         loadComponent: () =>
-          import('./ulb-forms/upload-documents/upload-documents.component').then(
-            (m) => m.UploadDocumentsComponent,
-          ),
+          import('./ulb-forms/upload-documents/upload-documents.component').then((m) => m.UploadDocumentsComponent),
         data: { uploadType: 'audited' },
         canDeactivate: [uploadDocumentsDeactivateGuard],
       },
       {
         path: 'upload-provisional',
         loadComponent: () =>
-          import('./ulb-forms/upload-documents/upload-documents.component').then(
-            (m) => m.UploadDocumentsComponent,
-          ),
+          import('./ulb-forms/upload-documents/upload-documents.component').then((m) => m.UploadDocumentsComponent),
         data: { uploadType: 'provisional' },
         canDeactivate: [uploadDocumentsDeactivateGuard],
       },
       {
         path: 'fill-disclosure',
         loadComponent: () =>
-          import('./ulb-forms/fill-disclosure/fill-disclosure.component').then(
-            (m) => m.FillDisclosureComponent,
+          import('./ulb-forms/fill-disclosure/fill-disclosure.component').then((m) => m.FillDisclosureComponent),
+      },
+      {
+        path: 'xvi-fc-bank-account',
+        loadComponent: () =>
+          import('./ulb-forms/xvi-fc-bank-account/xvi-fc-bank-account.component').then(
+            (m) => m.XviFcBankAccountComponent,
           ),
       },
       {
