@@ -319,6 +319,19 @@ export class OcrValidationComponent implements OnInit {
     return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
+  getConfidenceClass(score: number | null): string {
+    if (score === null) {
+      return 'text-secondary';
+    }
+    if (score >= 70) {
+      return 'text-success';
+    }
+    if (score >= 40) {
+      return 'text-warning';
+    }
+    return 'text-danger';
+  }
+
   getFinancialFigureEntries(
     figures: Record<string, number | null>,
   ): Array<{ key: string; value: number | null }> {
