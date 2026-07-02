@@ -150,8 +150,8 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
     localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, yearId);
     localStorage.setItem(XVIFC_LS_KEYS.documentYears, JSON.stringify(DOCUMENT_YEARS));
 
-    // New users must always go through profile-verify (to set password), regardless of role
-    if (isNewUser) {
+    // New users and unverified users must go through profile-verify, regardless of role
+    if (isNewUser || !isVerified) {
       this.router.navigate(['/xvifc', 'profile-verify'], {
         queryParams: { year: yearId },
         replaceUrl: true,
@@ -159,21 +159,13 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // MOHUA is a central-level role — no entity scoping and no profile verification step
+    // MOHUA has no entity scope — navigate directly to the year root
     if (routeRole === 'MOHUA') {
       this.router.navigate(['/xvifc', yearId], { replaceUrl: true });
       return;
     }
 
-    if (isVerified) {
-      this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
-        replaceUrl: true,
-      });
-      return;
-    }
-
-    this.router.navigate(['/xvifc', 'profile-verify'], {
-      queryParams: { year: yearId },
+    this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
       replaceUrl: true,
     });
   }

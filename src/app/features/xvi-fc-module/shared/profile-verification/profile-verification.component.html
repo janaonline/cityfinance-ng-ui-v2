@@ -115,6 +115,31 @@
               <mat-divider />
 
               @if (!editingCommissioner()) {
+                @if (!commissionerForm.value.commissionerName || commissionerForm.controls.commissionerName.invalid ||
+                     !commissionerForm.value.commissionerConatactNumber || commissionerForm.controls.commissionerConatactNumber.invalid ||
+                     (commissionerForm.controls.commissionerEmail.invalid && commissionerForm.value.commissionerEmail)) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
+                    <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0" style="font-size:0.8rem" aria-hidden="true"></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">
+                      Click <strong>Edit</strong> to update:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (!commissionerForm.value.commissionerName) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name missing</span>
+                      } @else if (commissionerForm.controls.commissionerName.invalid) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name invalid</span>
+                      }
+                      @if (commissionerForm.controls.commissionerEmail.invalid && commissionerForm.value.commissionerEmail) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Email invalid</span>
+                      }
+                      @if (!commissionerForm.value.commissionerConatactNumber) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No missing</span>
+                      } @else if (commissionerForm.controls.commissionerConatactNumber.invalid) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No invalid</span>
+                      }
+                    </div>
+                  </div>
+                }
                 <mat-card-content class="p-0">
                   <div class="row g-0">
                     <div class="col-sm-4 pv-field">
@@ -212,6 +237,38 @@
               <mat-divider />
 
               @if (!editingAccountant()) {
+                @if (accountantForm.invalid) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
+                    <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0" style="font-size:0.8rem" aria-hidden="true"></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">
+                      Click <strong>Edit</strong> to update:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (accountantForm.controls.accountantName.hasError('required')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name missing</span>
+                      } @else if (accountantForm.controls.accountantName.hasError('minlength')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name too short</span>
+                      } @else if (accountantForm.controls.accountantName.hasError('maxlength') ||
+                                  accountantForm.controls.accountantName.hasError('pattern') ||
+                                  accountantForm.controls.accountantName.hasError('unsafeInput')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name invalid</span>
+                      }
+                      @if (accountantForm.controls.accountantEmail.hasError('required')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Email missing</span>
+                      } @else if (accountantForm.controls.accountantEmail.hasError('email') ||
+                                  accountantForm.controls.accountantEmail.hasError('maxlength') ||
+                                  accountantForm.controls.accountantEmail.hasError('unsafeInput')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Email invalid</span>
+                      }
+                      @if (accountantForm.controls.accountantConatactNumber.hasError('required')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No missing</span>
+                      } @else if (accountantForm.controls.accountantConatactNumber.hasError('pattern') ||
+                                  accountantForm.controls.accountantConatactNumber.hasError('unsafeInput')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No invalid</span>
+                      }
+                    </div>
+                  </div>
+                }
                 <mat-card-content class="p-0">
                   <div class="row g-0">
                     <div class="col-sm-4 pv-field">
@@ -421,67 +478,7 @@
               </button>
             </div>
 
-          <!-- ══ MOHUA NEW USER: email verify (no profile form) ══════════ -->
-          } @else if (role === 'mohua' && isNewUser()) {
-            <h5 class="fw-bold mb-1">Verify your email address</h5>
-            <p class="text-muted small mb-3">
-              We'll send a 6-digit code to your registered email. Enter it below to proceed and set your new password.
-            </p>
-
-            @if (errorMsg()) {
-              <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <span class="flex-grow-1">{{ errorMsg() }}</span>
-                <button type="button" class="btn-close" (click)="errorMsg.set('')"></button>
-              </div>
-            }
-
-            @if (otpStep()) {
-              <div class="border rounded-3 p-3 bg-white">
-                <p class="small text-secondary mb-1">
-                  <i class="bi bi-envelope-check me-1"></i>
-                  OTP sent to your registered email. Enter it below.
-                </p>
-                <p class="small text-muted mb-3"><i class="bi bi-clock me-1"></i>Valid for 10 minutes.</p>
-                <div class="d-flex align-items-start gap-3 flex-wrap">
-                  <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width:180px">
-                    <mat-label>Enter OTP</mat-label>
-                    <input matInput type="tel" inputmode="numeric" maxlength="6" placeholder="6-digit OTP"
-                      [value]="otpValue()" (input)="onOtpInput($event)" autocomplete="one-time-code" />
-                  </mat-form-field>
-                  <div class="d-flex gap-2 flex-wrap align-items-center mt-1">
-                    <button mat-flat-button color="primary" [disabled]="!canConfirmOtp()" (click)="onConfirmOtp()">
-                      @if (isSaving()) {
-                        <span class="pv-spin pv-spin--light me-1"></span> Verifying…
-                      } @else {
-                        <i class="bi bi-shield-check me-1"></i> Verify
-                      }
-                    </button>
-                    <button mat-stroked-button (click)="resendOtp()" [disabled]="!canResend()">
-                      @if (sendingOtp()) {
-                        <span class="pv-spin me-1"></span> Sending…
-                      } @else if (resendCooldown() > 0) {
-                        <i class="bi bi-clock me-1"></i> Resend in {{ resendCooldown() }}s
-                      } @else {
-                        <i class="bi bi-arrow-repeat me-1"></i> Resend OTP
-                      }
-                    </button>
-                  </div>
-                </div>
-              </div>
-            } @else {
-              <div class="mt-2">
-                <button mat-flat-button color="primary" [disabled]="sendingOtp()" (click)="onMohuaSendOtp()">
-                  @if (sendingOtp()) {
-                    <span class="pv-spin pv-spin--light me-1"></span> Sending OTP…
-                  } @else {
-                    <i class="bi bi-envelope me-1"></i> Send Verification Code
-                  }
-                </button>
-              </div>
-            }
-
-          <!-- ══ STATE / MOHUA EXISTING USER: profile form ═══════════════ -->
+          <!-- ══ STATE / MOHUA: profile form (new + existing users) ══════ -->
           } @else {
             <h5 class="fw-bold mb-1">Verify your profile</h5>
             <p class="text-muted small mb-3">

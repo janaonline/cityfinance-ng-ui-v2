@@ -397,7 +397,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.errorMsg.set('');
 
     if (this.role === 'mohua') {
-      // MOHUA: OTP verify → issue save token (proves OTP completed) → show password step
+      // MOHUA: OTP verify → issue save token → if isNewUser: set password; else: mark verified
       this.profileService.verifyProfileOtp(email, otp).pipe(
         takeUntilDestroyed(this.destroyRef),
         filter(({ verified }) => {
@@ -417,9 +417,29 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
         }),
       ).subscribe({
         next: ({ token }) => {
-          this.isSaving.set(false);
-          this.profileSaveToken = token;
-          this.passwordStep.set(true);
+          if (this.isNewUser()) {
+            this.isSaving.set(false);
+            this.profileSaveToken = token;
+            this.passwordStep.set(true);
+          } else {
+            this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token, { isXVIFCDeleted: false })
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe({
+                next: ({ ok }) => {
+                  if (!ok) {
+                    this.isSaving.set(false);
+                    this.errorMsg.set('Profile save failed. Please try again.');
+                    return;
+                  }
+                  this.markVerifiedInStorage();
+                  this.snackBar.open('Email verified successfully!', 'Close', {
+                    duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+                    panelClass: ['snack-success'],
+                  });
+                  void this.navigateToHome();
+                },
+              });
+          }
         },
       });
       return;
@@ -473,26 +493,6 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Sends OTP for MOHUA new users who have no profile form to submit first
-  onMohuaSendOtp(): void {
-    const email = this.stateProfile()?.email ?? '';
-    if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
-    this.sendingOtp.set(true);
-    this.errorMsg.set('');
-    this.profileService.sendProfileOtp(email)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ({ sent }) => {
-          this.sendingOtp.set(false);
-          if (!sent) { this.errorMsg.set('Failed to send OTP. Please try again.'); return; }
-          this.otpStep.set(true);
-          this.otpValue.set('');
-          this.errorMsg.set('');
-          this.startResendCooldown();
-        },
-      });
-  }
-
   onSetNewPassword(): void {
     if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
     const { newPassword } = this.passwordForm.getRawValue();
@@ -509,7 +509,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
         .subscribe({
           next: ({ ok }) => {
             if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
-            this.markVerifiedInStorage();
+            this.markVerifiedInStorage({ name, mobile, designation });
             this.snackBar.open('Password set! Welcome to CityFinance.', 'Close', {
               duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
               panelClass: ['snack-success'],
@@ -548,11 +548,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     if (!this.canResend()) return;
     this.otpStep.set(false);
     this.otpValue.set('');
-    if (this.role === 'mohua') {
-      this.onMohuaSendOtp();
-    } else {
-      this.onSaveStateProfile();
-    }
+    this.onSaveStateProfile();
   }
 
   // L4 — typed event handler (no $any); H3 — strip non-digits
