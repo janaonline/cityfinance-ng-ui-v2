@@ -1,44 +1,34 @@
-import { Permission } from './permissions';
+import { AccessLevel, Permission } from './permissions';
 
-export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+/**
+ * Permissions for STATE users, keyed by accessLevel (derived from xviFcSubrole on the backend).
+ * Mirrors backend XVIFC_STATE_PERMISSIONS.
+ *
+ * xviFcSubrole: admin    → accessLevel: ADMIN   (Submitter)
+ * xviFcSubrole: reviewer → accessLevel: EDITOR  (Editor)
+ * xviFcSubrole: viewer   → accessLevel: VIEWER  (Viewer)
+ */
+export const STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
   ADMIN: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
-    Permission.UPLOAD_DOCUMENTS,
     Permission.UPLOAD_STATE_LEVEL_DOCUMENTS,
     Permission.REVIEW_ULB_SUBMISSIONS,
     Permission.MESSAGE_USERS,
     Permission.APPROVE_ULB_SUBMISSIONS,
     Permission.PREPARE_GRANT_LETTERS,
     Permission.RECOMMEND_EXEMPTIONS,
-    Permission.FINAL_SUBMIT_TO_STATE_DMA,
     Permission.FINAL_SUBMIT_TO_MOHUA,
+    Permission.VIEW_STATE_FORMS,
+    Permission.EDIT_STATE_FORMS,
+    Permission.FINAL_SUBMIT_STATE_FORMS,
     Permission.MANAGE_USERS,
     Permission.VIEW_MANAGED_USERS,
     Permission.CREATE_MANAGED_USER,
     Permission.UPDATE_MANAGED_USER,
     Permission.DELETE_MANAGED_USER,
   ],
-  ULB: [
-    Permission.VIEW_STATUS_REPORTS,
-    Permission.UPLOAD_DOCUMENTS,
-    Permission.MESSAGE_USERS,
-    Permission.DELETE_DOCUMENTS,
-    Permission.FINAL_SUBMIT_TO_STATE_DMA,
-    Permission.MANAGE_USERS,
-    Permission.VIEW_MANAGED_USERS,
-    Permission.CREATE_MANAGED_USER,
-    Permission.UPDATE_MANAGED_USER,
-    Permission.DELETE_MANAGED_USER,
-  ],
-  'ULB-EDITOR': [
-    Permission.VIEW_STATUS_REPORTS,
-    Permission.UPLOAD_DOCUMENTS,
-    Permission.DELETE_DOCUMENTS,
-    Permission.MESSAGE_USERS,
-  ],
-  'ULB-VIEWER': [Permission.VIEW_STATUS_REPORTS],
-  STATE: [
+  EDITOR: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
     Permission.UPLOAD_STATE_LEVEL_DOCUMENTS,
@@ -47,47 +37,48 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.APPROVE_ULB_SUBMISSIONS,
     Permission.PREPARE_GRANT_LETTERS,
     Permission.RECOMMEND_EXEMPTIONS,
-    Permission.FINAL_SUBMIT_TO_MOHUA,
+    Permission.VIEW_STATE_FORMS,
+    Permission.EDIT_STATE_FORMS,
+  ],
+  VIEWER: [
+    Permission.VIEW_STATUS_REPORTS,
+    Permission.VIEW_DASHBOARDS,
+  ],
+};
+
+/**
+ * Permissions for MoHUA users, keyed by accessLevel.
+ * Mirrors backend XVIFC_MOHUA_PERMISSIONS.
+ *
+ * Submitter (ADMIN)  — full MoHUA access including final submit to DoE and team management
+ * Editor   (EDITOR)  — review, reminders, information requests
+ * Viewer   (VIEWER)  — read-only
+ */
+export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
+  ADMIN: [
+    Permission.VIEW_STATUS_REPORTS,
+    Permission.VIEW_DASHBOARDS,
+    Permission.REVIEW_STATE_SUBMISSIONS,
+    Permission.SEND_REMINDERS_TO_STATES,
+    Permission.REQUEST_INFO_FROM_STATES,
+    Permission.APPROVE_STATE_SUBMISSIONS,
+    Permission.ISSUE_OFFICE_MEMORANDUM,
+    Permission.FINAL_SUBMIT_TO_DOE,
     Permission.MANAGE_USERS,
     Permission.VIEW_MANAGED_USERS,
     Permission.CREATE_MANAGED_USER,
     Permission.UPDATE_MANAGED_USER,
     Permission.DELETE_MANAGED_USER,
   ],
-  'STATE-EDITOR': [
+  EDITOR: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
-    Permission.UPLOAD_STATE_LEVEL_DOCUMENTS,
-    Permission.REVIEW_ULB_SUBMISSIONS,
-    Permission.MESSAGE_USERS,
+    Permission.REVIEW_STATE_SUBMISSIONS,
+    Permission.SEND_REMINDERS_TO_STATES,
+    Permission.REQUEST_INFO_FROM_STATES,
   ],
-  'STATE-VIEWER': [Permission.VIEW_STATUS_REPORTS, Permission.VIEW_DASHBOARDS],
-  // Legacy roles mapped to equivalent permission sets
-  // XVIFC: [
-  //   Permission.VIEW_STATUS_REPORTS,
-  //   Permission.UPLOAD_DOCUMENTS,
-  //   Permission.MESSAGE_USERS,
-  //   Permission.FINAL_SUBMIT_TO_STATE_DMA,
-  //   Permission.MANAGE_USERS,
-  //   Permission.VIEW_MANAGED_USERS,
-  //   Permission.CREATE_MANAGED_USER,
-  //   Permission.UPDATE_MANAGED_USER,
-  //   Permission.DELETE_MANAGED_USER,
-  // ],
-  // XVIFC_STATE: [
-  //   Permission.VIEW_STATUS_REPORTS,
-  //   Permission.VIEW_DASHBOARDS,
-  //   Permission.UPLOAD_STATE_LEVEL_DOCUMENTS,
-  //   Permission.REVIEW_ULB_SUBMISSIONS,
-  //   Permission.MESSAGE_USERS,
-  //   Permission.APPROVE_ULB_SUBMISSIONS,
-  //   Permission.PREPARE_GRANT_LETTERS,
-  //   Permission.RECOMMEND_EXEMPTIONS,
-  //   Permission.FINAL_SUBMIT_TO_MOHUA,
-  //   Permission.MANAGE_USERS,
-  //   Permission.VIEW_MANAGED_USERS,
-  //   Permission.CREATE_MANAGED_USER,
-  //   Permission.UPDATE_MANAGED_USER,
-  //   Permission.DELETE_MANAGED_USER,
-  // ],
+  VIEWER: [
+    Permission.VIEW_STATUS_REPORTS,
+    Permission.VIEW_DASHBOARDS,
+  ],
 };

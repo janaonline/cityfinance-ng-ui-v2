@@ -233,8 +233,8 @@ export class RolesTeamsOverviewComponent implements OnInit {
       });
   }
 
-  rowHasWarning(_index: number, row: { nameInvalid: boolean; mobileInvalid: boolean }): boolean {
-    return row.nameInvalid || row.mobileInvalid;
+  rowHasWarning(_index: number, row: { nameInvalid: boolean; emailInvalid: boolean; mobileInvalid: boolean }): boolean {
+    return row.nameInvalid || row.emailInvalid || row.mobileInvalid;
   }
 
   toggleEdit(type: ContactType): void {
@@ -337,14 +337,17 @@ export class RolesTeamsOverviewComponent implements OnInit {
   }
 
   private mkRow(type: ContactType, label: string, name: string, email: string, mobile: string) {
+    const emailTrimmed = email.trim();
     return {
       type,
       label,
       name,
       email,
       mobile,
-      nameInvalid: !!name && !RolesTeamsOverviewComponent.NAME_PATTERN.test(name),
-      mobileInvalid: !!mobile && !/^[6-9]\d{9}$/.test(mobile),
+      nameInvalid: !name.trim() || !RolesTeamsOverviewComponent.NAME_PATTERN.test(name),
+      // Email is optional — only flag if a value is present but malformed
+      emailInvalid: emailTrimmed.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed),
+      mobileInvalid: !mobile.trim() || !/^[6-9]\d{9}$/.test(mobile),
     };
   }
 }

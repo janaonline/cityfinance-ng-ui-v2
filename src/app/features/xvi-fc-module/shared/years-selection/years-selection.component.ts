@@ -31,6 +31,7 @@ interface StoredUser {
   ulb?: string;
   state?: string;
   isXVIFCProfileVerified?: boolean;
+  isNewUser?: boolean;
 }
 
 /**
@@ -133,10 +134,11 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
     const standaloneKey = localStorage.getItem('isXVIFCProfileVerified');
     const userDataRaw = localStorage.getItem('userData');
     let userDataVerified = false;
+    let isNewUser = false;
     try {
-      userDataVerified = userDataRaw
-        ? (JSON.parse(userDataRaw) as StoredUser)?.isXVIFCProfileVerified === true
-        : false;
+      const parsedUser = userDataRaw ? (JSON.parse(userDataRaw) as StoredUser) : null;
+      userDataVerified = parsedUser?.isXVIFCProfileVerified === true;
+      isNewUser = parsedUser?.isNewUser === true;
     } catch {
       /* ignore */
     }
@@ -148,15 +150,22 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
     localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, yearId);
     localStorage.setItem(XVIFC_LS_KEYS.documentYears, JSON.stringify(DOCUMENT_YEARS));
 
-    if (isVerified) {
-      this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
+    // New users and unverified users must go through profile-verify, regardless of role
+    if (isNewUser || !isVerified) {
+      this.router.navigate(['/xvifc', 'profile-verify'], {
+        queryParams: { year: yearId },
         replaceUrl: true,
       });
       return;
     }
 
-    this.router.navigate(['/xvifc', 'profile-verify'], {
-      queryParams: { year: yearId },
+    // MOHUA has no entity scope — navigate directly to the year root
+    if (routeRole === 'MOHUA') {
+      this.router.navigate(['/xvifc', yearId], { replaceUrl: true });
+      return;
+    }
+
+    this.router.navigate(buildXvifcFeatureLink(routeRole, entityId, yearId, 'overview'), {
       replaceUrl: true,
     });
   }

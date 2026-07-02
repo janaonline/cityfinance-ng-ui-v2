@@ -164,10 +164,13 @@ function handleError(
   return throwError(() => error);
 }
 
+const INLINE_HANDLED_CODES = new Set(['EMAIL_ALREADY_ACTIVE', 'EMAIL_PREVIOUSLY_REGISTERED']);
+
 function shouldShowError(
   error: HttpErrorResponse,
   options: { logoutOnUnauthorized: boolean },
 ) {
+  if (INLINE_HANDLED_CODES.has(error.error?.code)) return false;
   return error.status !== 401 || !options.logoutOnUnauthorized;
 }
 

@@ -193,12 +193,21 @@
                   <div class="d-flex align-items-center gap-2 px-4 py-2 bg-warning-subtle border-bottom">
                     <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0" style="font-size:0.75rem" aria-hidden="true"></i>
                     <span class="small fw-medium text-warning-emphasis flex-shrink-0">{{ row.label }}: click edit to fix</span>
-                    <div class="d-flex gap-1">
+                    <div class="d-flex gap-1 flex-wrap">
                       @if (row.nameInvalid) {
-                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name</span>
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">
+                          {{ row.name ? 'Name invalid' : 'Name missing' }}
+                        </span>
+                      }
+                      @if (row.emailInvalid) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">
+                          Email invalid
+                        </span>
                       }
                       @if (row.mobileInvalid) {
-                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Mobile</span>
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">
+                          {{ row.mobile ? 'Mobile invalid' : 'Mobile missing' }}
+                        </span>
                       }
                     </div>
                   </div>
