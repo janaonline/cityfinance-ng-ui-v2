@@ -1,3 +1,5 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { UlbListComponent } from './ulb-list.component';
@@ -8,9 +10,8 @@ describe('UlbListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UlbListComponent]
-    })
-    .compileComponents();
+      imports: [HttpClientTestingModule, RouterTestingModule, UlbListComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(UlbListComponent);
     component = fixture.componentInstance;

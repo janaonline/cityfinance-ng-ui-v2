@@ -1,0 +1,21 @@
+.mat-mdc-table .mat-mdc-header-cell {
+  background: var(--clr-secondary) !important;
+  color: #fff;
+  border-bottom: 0.5px solid lightgrey;
+  border-right: 0.5px solid lightgrey;
+}
+
+.mat-mdc-table .mdc-data-table__cell {
+  border-bottom: 0.5px solid lightgrey;
+  border-right: 0.5px solid lightgrey;
+}
+
+.table-container {
+  position: relative;
+  max-height: 110vh;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+}

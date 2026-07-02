@@ -1,0 +1,40 @@
+<p class="fw-bold m-2 p-1 mb-0 pb-0 fs-4">{{ data.action }} ULB</p>
+<mat-dialog-content>
+  <mat-card-content class="p-2 row d-flex" [formGroup]="form">
+    <div>
+      <mat-form-field appearance="outline" class="demo-full-width">
+        <mat-label>State</mat-label>
+        <mat-select formControlName="state" placeholder="Select a state">
+          @for (state of data.states; track state._id) {
+            <mat-option [value]="state._id">{{ state.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.get('state')?.hasError('required') && form.get('state')?.touched) {
+          <mat-error>State is required.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div>
+      <mat-form-field appearance="outline" class="demo-full-width">
+        <mat-label>ULB Type</mat-label>
+        <mat-select formControlName="ulbType" placeholder="Select a ULB type">
+          @for (type of data.ulbTypes; track type._id) {
+            <mat-option [value]="type._id">{{ type.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.get('ulbType')?.hasError('required') && form.get('ulbType')?.touched) {
+          <mat-error>ULB type is required.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @for (field of data.ulbTemplate; track field.key) {
+      <app-dynamic-form [field]="field" [group]="form"></app-dynamic-form>
+    }
+  </mat-card-content>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="btn btn-cfPrimary mx-2" (click)="save()">Save</button>
+  <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Cancel</button>
+</mat-dialog-actions>
