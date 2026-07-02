@@ -100,9 +100,13 @@ export class ProfileVerificationService {
       );
   }
 
-  setNewPassword(newPassword: string, saveToken: string): Observable<{ ok: boolean }> {
+  setNewPassword(
+    newPassword: string,
+    saveToken: string,
+    profile?: { name?: string; mobile?: string; designation?: string },
+  ): Observable<{ ok: boolean }> {
     return this.http
-      .patch(`${environment.api.url2}auth/set-new-password`, { newPassword, saveToken })
+      .patch(`${environment.api.url2}auth/set-new-password`, { newPassword, saveToken, ...profile })
       .pipe(
         map(() => ({ ok: true })),
         catchError(() => of({ ok: false })),

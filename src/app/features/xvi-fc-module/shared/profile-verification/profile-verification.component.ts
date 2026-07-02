@@ -520,28 +520,21 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // STATE: set password then save profile using the stored save token
-    this.profileService.setNewPassword(newPassword, token).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      filter(({ ok }) => {
-        if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); }
-        return ok;
-      }),
-      switchMap(() =>
-        this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token),
-      ),
-    ).subscribe({
-      next: ({ ok }) => {
-        if (!ok) { this.isSaving.set(false); this.errorMsg.set('Profile save failed. Please try again.'); return; }
-        this.stateProfile.set({ name, mobile, designation, email });
-        this.markVerifiedInStorage({ name, mobile, designation });
-        this.snackBar.open('Profile verified successfully!', 'Close', {
-          duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
-          panelClass: ['snack-success'],
-        });
-        void this.navigateToHome();
-      },
-    });
+    // STATE: set password + save profile fields in one call (single-use token)
+    this.profileService.setNewPassword(newPassword, token, { name, mobile, designation })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ ok }) => {
+          if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
+          this.stateProfile.set({ name, mobile, designation, email });
+          this.markVerifiedInStorage({ name, mobile, designation });
+          this.snackBar.open('Profile verified successfully!', 'Close', {
+            duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
+          void this.navigateToHome();
+        },
+      });
   }
 
   resendOtp(): void {
