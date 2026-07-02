@@ -161,7 +161,7 @@ mat-card {
   }
 }
 
-// ─── Role Select (inline, not inside form group) ──────────────────────────────
+// ─── Role Select (inline) ─────────────────────────────────────────────────────
 .role-select {
   font-size: 0.82rem;
   min-width: 90px;
@@ -200,8 +200,8 @@ mat-card {
   }
 
   &--editor {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    background: linear-gradient(135deg, #0369a1, #0ea5e9);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
   }
 
   &--viewer {
@@ -209,8 +209,6 @@ mat-card {
     box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.1);
   }
 }
-
-// inactive rows → Bootstrap opacity-50 | self row → Bootstrap table-active
 
 // ─── Current-user badge ───────────────────────────────────────────────────────
 .you-badge {
@@ -288,10 +286,10 @@ mat-card {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.role-label-view { animation: roleFadeSlide 180ms ease forwards; }
+.role-label-view  { animation: roleFadeSlide 180ms ease forwards; }
 .role-select-enter { animation: roleFadeSlide 220ms 60ms ease both; }
 
-
+// ─── Action icon buttons ─────────────────────────────────────────────────────
 .action-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -374,6 +372,9 @@ mat-card {
   &--line   { height: 13px; }
 }
 
+// ─── Empty state icon ─────────────────────────────────────────────────────────
+.empty-state-icon { font-size: 2.5rem; }
+
 // ─── mat-table overrides ──────────────────────────────────────────────────────
 .members-card ::ng-deep {
   .mat-mdc-table { width: 100%; background: transparent; border-collapse: collapse; }
@@ -409,12 +410,11 @@ mat-card {
     &:last-of-type .mat-mdc-cell { border-bottom: none; }
   }
 
-  // Compact role-select inside cell
   .mat-mdc-select { font-size: 0.82rem; }
   .mat-mdc-select-trigger { padding: 4px 8px; }
 }
 
-// CDK overlay panel escapes view encapsulation — must be at root level
+// CDK overlay panel
 ::ng-deep .role-select-panel { min-width: 140px !important; }
 
 // ─── Animations ───────────────────────────────────────────────────────────────

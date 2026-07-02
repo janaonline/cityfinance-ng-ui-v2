@@ -32,20 +32,20 @@ import {
   noMongoOperators,
 } from '../../../../auth/validators/auth-security.validators';
 
-export type StateSubRole = 'SUBMITTER' | 'EDITOR' | 'VIEWER';
+export type MohuaSubRole = 'SUBMITTER' | 'EDITOR' | 'VIEWER';
 
-export const SUBROLE_LABEL: Record<StateSubRole, string> = {
+export const MOHUA_SUBROLE_LABEL: Record<MohuaSubRole, string> = {
   SUBMITTER: 'Admin',
   EDITOR: 'Reviewer',
-  VIEWER: 'Viewer',
+  VIEWER: 'Editor',
 };
 
-export interface StateMember {
+export interface MohuaMember {
   _id: string;
   name: string;
   mobile: string;
   designation: string;
-  subRole: StateSubRole;
+  subRole: MohuaSubRole;
   isActive: boolean;
   isXVIFCProfileVerified: boolean;
   lastActive: string | null;
@@ -95,13 +95,10 @@ interface FormFieldConfig {
   errors: { key: string; message: string }[];
 }
 
-// Literal space — intentionally excludes \t, \n, \r from valid name characters.
 const NAME_PATTERN = /^[a-zA-Z .\-']+$/;
 
-
-
 @Component({
-  selector: 'app-roles-teams-overview',
+  selector: 'app-mohua-roles-teams-overview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
@@ -129,7 +126,7 @@ const NAME_PATTERN = /^[a-zA-Z .\-']+$/;
     ]),
   ],
 })
-export class RolesTeamsOverviewComponent implements OnInit {
+export class MohuaRolesTeamsOverviewComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
@@ -141,12 +138,12 @@ export class RolesTeamsOverviewComponent implements OnInit {
   readonly permissionMatrix = signal<PermissionRow[]>([]);
 
   readonly tableColumns: TableColumn[] = [
-    { key: 'member',      header: 'Name, Phone & Email', thClass: '',                       tdClass: '',                       cellType: 'member' },
-    { key: 'designation', header: 'Designation',  thClass: 'd-none d-md-table-cell', tdClass: 'd-none d-md-table-cell', cellType: 'designation' },
-    { key: 'role',        header: 'Role',          thClass: '',                       tdClass: '',                       cellType: 'role' },
-    { key: 'status',      header: 'Status',        thClass: 'd-none d-lg-table-cell', tdClass: 'd-none d-lg-table-cell', cellType: 'status' },
-    { key: 'lastActive',  header: 'Last Active',   thClass: 'd-none d-xl-table-cell', tdClass: 'd-none d-xl-table-cell', cellType: 'lastActive' },
-    { key: 'actions',     header: '',              thClass: 'text-end pe-3',          tdClass: 'text-end pe-3',          cellType: 'actions' },
+    { key: 'member',      header: 'Name, Phone & Email', thClass: '',                       tdClass: '',                       cellType: 'member'      },
+    { key: 'designation', header: 'Designation',          thClass: 'd-none d-md-table-cell', tdClass: 'd-none d-md-table-cell', cellType: 'designation' },
+    { key: 'role',        header: 'Role',                 thClass: '',                       tdClass: '',                       cellType: 'role'        },
+    { key: 'status',      header: 'Status',               thClass: 'd-none d-lg-table-cell', tdClass: 'd-none d-lg-table-cell', cellType: 'status'      },
+    { key: 'lastActive',  header: 'Last Active',          thClass: 'd-none d-xl-table-cell', tdClass: 'd-none d-xl-table-cell', cellType: 'lastActive'  },
+    { key: 'actions',     header: '',                     thClass: 'text-end pe-3',          tdClass: 'text-end pe-3',          cellType: 'actions'     },
   ];
 
   readonly displayedColumns = this.tableColumns.map(c => c.key);
@@ -192,17 +189,15 @@ export class RolesTeamsOverviewComponent implements OnInit {
       type: 'select',
       autocomplete: '',
       options: [
-        { value: 'EDITOR', label: 'Reviewer' },
+        { value: 'EDITOR', label: 'Editor' },
         { value: 'VIEWER', label: 'Viewer' },
       ],
-      errors: [
-        { key: 'required', message: 'Role is required.' },
-      ],
+      errors: [{ key: 'required', message: 'Role is required.' }],
     },
     {
       controlName: 'email',
       label: 'Email Address',
-      placeholder: 'official@state.gov.in',
+      placeholder: 'official@mohua.gov.in',
       iconClass: 'bi bi-envelope',
       type: 'email',
       autocomplete: 'email',
@@ -225,45 +220,41 @@ export class RolesTeamsOverviewComponent implements OnInit {
       onInput: (e: Event) => this.onMobileInput(e),
       errors: [
         { key: 'required',    message: 'Mobile number is required.' },
-        { key: 'pattern',     message: 'Must be 10 digits, starting with 6, 7, 8, or 9. Letters and special characters are not allowed.' },
+        { key: 'pattern',     message: 'Must be 10 digits, starting with 6, 7, 8, or 9.' },
         { key: 'unsafeInput', message: 'Mobile contains disallowed characters.' },
       ],
     },
   ];
 
   readonly infoBannerText =
-    'Staff whose details are on record from the 15th Finance Commission can sign in directly ' +
-    'using their registered email ID and password. To give access to someone new, use ' +
-    '<strong>Add Member</strong> below — they will receive an email invitation to set up their login.';
+    'MoHUA staff with existing access can sign in directly using their registered email ID and password. ' +
+    'To give access to a new team member, use <strong>Add Member</strong> below — ' +
+    'they will receive an email invitation to set up their login.';
 
   private currentUserId = '';
-  private stateId = '';
 
-  // Signals
-  readonly currentSubRole = signal<StateSubRole>('VIEWER');
+  readonly currentSubRole = signal<MohuaSubRole>('VIEWER');
   readonly currentUserName = signal<string>('');
 
   getRoleLabel(subRole: string): string {
-    return SUBROLE_LABEL[subRole as StateSubRole] ?? subRole;
+    return MOHUA_SUBROLE_LABEL[subRole as MohuaSubRole] ?? subRole;
   }
+
   readonly isLoading = signal(true);
   readonly hasError = signal(false);
-  readonly members = signal<StateMember[]>([]);
+  readonly members = signal<MohuaMember[]>([]);
 
-  // Panel visibility
   readonly showPermissionMatrix = signal(false);
   readonly showAddMember = signal(false);
   readonly isAdding = signal(false);
   readonly addError    = signal<string | null>(null);
   readonly addConflict = signal<{ name: string; designation: string } | null>(null);
 
-  // Per-row action states
-  readonly roleChangingId   = signal<string | null>(null);
-  readonly editingRoleId    = signal<string | null>(null);
-  readonly deletingId       = signal<string | null>(null);
-  readonly confirmDeleteId  = signal<string | null>(null);
+  readonly roleChangingId  = signal<string | null>(null);
+  readonly editingRoleId   = signal<string | null>(null);
+  readonly deletingId      = signal<string | null>(null);
+  readonly confirmDeleteId = signal<string | null>(null);
 
-  // Transfer ownership
   readonly showTransferPanel = signal(false);
   readonly isTransferring = signal(false);
   readonly transferError = signal<string | null>(null);
@@ -339,14 +330,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
       noHtmlOrScript,
       noMongoOperators,
     ]],
-    subRole: [('EDITOR' as StateSubRole), Validators.required],
+    subRole: [('EDITOR' as MohuaSubRole), Validators.required],
   });
 
   ngOnInit(): void {
     const u = this.profileService.readStoredUser();
     this.currentUserId = u._id ?? u.id ?? '';
-    this.stateId = String(u['state'] ?? '');
-    this.currentSubRole.set((u['subRole'] as StateSubRole | undefined) ?? 'SUBMITTER');
+    this.currentSubRole.set((u['subRole'] as MohuaSubRole | undefined) ?? 'VIEWER');
     this.currentUserName.set(String(u['name'] ?? ''));
     this.loadMembers();
     this.loadPermissionMatrix();
@@ -355,7 +345,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   private loadPermissionMatrix(): void {
     this.http
       .get<{ success: boolean; data: PermissionRow[] } | PermissionRow[]>(
-        `${this.baseUrl}users/permission-matrix`,
+        `${this.baseUrl}users/mohua-permission-matrix`,
       )
       .pipe(
         map((r): PermissionRow[] =>
@@ -374,15 +364,14 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.hasError.set(false);
 
     this.http
-      .get<{ success: boolean; data: StateMember[] } | StateMember[]>(
-        `${this.baseUrl}users/state-members`,
+      .get<{ success: boolean; data: MohuaMember[] } | MohuaMember[]>(
+        `${this.baseUrl}users/mohua-members`,
       )
       .pipe(
-        // Dev server returns raw array; local NestJS ResponseTransformInterceptor wraps { success, data }
-        map((r): StateMember[] =>
+        map((r): MohuaMember[] =>
           'success' in r && Array.isArray((r as { data: unknown }).data)
-            ? (r as { success: boolean; data: StateMember[] }).data
-            : (r as StateMember[]),
+            ? (r as { success: boolean; data: MohuaMember[] }).data
+            : (r as MohuaMember[]),
         ),
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
@@ -393,7 +382,6 @@ export class RolesTeamsOverviewComponent implements OnInit {
             this.hasError.set(true);
           } else {
             this.members.set(members);
-            // Derive role from fresh API data — localStorage subRole can be stale
             const me = members.find(m => m._id === this.currentUserId);
             if (me) this.currentSubRole.set(me.subRole);
           }
@@ -408,9 +396,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   togglePermissionMatrix(): void {
     const opening = !this.showPermissionMatrix();
-    if (opening) {
-      this.cancelAddMember();
-    }
+    if (opening) this.cancelAddMember();
     this.showPermissionMatrix.set(opening);
   }
 
@@ -440,7 +426,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.submitInvite('invite');
   }
 
-  restoreMember(): void  { this.submitInvite('restore'); }
+  restoreMember(): void   { this.submitInvite('restore'); }
   createFreshMember(): void { this.submitInvite('force-new'); }
 
   private submitInvite(action: 'invite' | 'restore' | 'force-new'): void {
@@ -451,7 +437,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     const payload = { ...this.addForm.getRawValue(), action };
 
     this.http
-      .post<unknown>(`${this.baseUrl}users/invite-state-member`, payload)
+      .post<unknown>(`${this.baseUrl}users/invite-mohua-member`, payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -480,23 +466,22 @@ export class RolesTeamsOverviewComponent implements OnInit {
     }
   }
 
-  changeRole(member: StateMember, newRole: StateSubRole): void {
+  changeRole(member: MohuaMember, newRole: MohuaSubRole): void {
     if (newRole === member.subRole || this.roleChangingId()) return;
 
     this.editingRoleId.set(null);
     const previousRole = member.subRole;
     this.roleChangingId.set(member._id);
-    // Optimistic update — revert on failure
     this.members.update(list => list.map(m => m._id === member._id ? { ...m, subRole: newRole } : m));
 
     this.http
-      .patch(`${this.baseUrl}users/${member._id}/sub-role`, { subRole: newRole })
+      .patch(`${this.baseUrl}users/mohua-members/${member._id}/sub-role`, { subRole: newRole })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.roleChangingId.set(null);
           this.loadMembers();
-          this.snackBar.open(`${member.name}'s role updated to ${SUBROLE_LABEL[newRole]}.`, 'Dismiss',
+          this.snackBar.open(`${member.name}'s role updated to ${MOHUA_SUBROLE_LABEL[newRole]}.`, 'Dismiss',
             { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
@@ -508,31 +493,23 @@ export class RolesTeamsOverviewComponent implements OnInit {
       });
   }
 
-  requestDelete(memberId: string): void {
-    this.confirmDeleteId.set(memberId);
-  }
+  requestDelete(memberId: string): void { this.confirmDeleteId.set(memberId); }
+  cancelDelete(): void { this.confirmDeleteId.set(null); }
 
-  cancelDelete(): void {
-    this.confirmDeleteId.set(null);
-  }
-
-  confirmDelete(member: StateMember): void {
+  confirmDelete(member: MohuaMember): void {
     if (this.deletingId()) return;
     this.deletingId.set(member._id);
     this.confirmDeleteId.set(null);
 
     this.http
-      .delete(`${this.baseUrl}users/${member._id}`)
+      .delete(`${this.baseUrl}users/mohua-members/${member._id}`)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.members.update(list => list.filter(m => m._id !== member._id));
           this.deletingId.set(null);
-          this.snackBar.open(
-            `${member.name} has been removed from the team.`,
-            'Dismiss',
-            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
-          );
+          this.snackBar.open(`${member.name} has been removed from the team.`, 'Dismiss',
+            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
           this.deletingId.set(null);
@@ -565,7 +542,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.transferError.set(null);
 
     this.http
-      .post(`${this.baseUrl}users/transfer-submitter`, { toUserId })
+      .post(`${this.baseUrl}users/mohua-members/transfer-submitter`, { toUserId })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -576,7 +553,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
           this.authService.refreshAccessToken().pipe(
             takeUntilDestroyed(this.destroyRef),
           ).subscribe();
-          this.snackBar.open('Ownership transferred. Your role is now Reviewer.', 'Dismiss',
+          this.snackBar.open('Ownership transferred. Your role is now Editor.', 'Dismiss',
             { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
@@ -586,11 +563,9 @@ export class RolesTeamsOverviewComponent implements OnInit {
       });
   }
 
-  isCurrentUser(memberId: string): boolean {
-    return memberId === this.currentUserId;
-  }
+  isCurrentUser(memberId: string): boolean { return memberId === this.currentUserId; }
 
-  canDelete(member: StateMember): boolean {
+  canDelete(member: MohuaMember): boolean {
     return !this.isCurrentUser(member._id) && member.subRole !== 'SUBMITTER';
   }
 
@@ -603,7 +578,6 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   onNameInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    // Strip digits and anything not in the allowed set in real time
     const cleaned = input.value.replace(/[^a-zA-Z .\-']/g, '');
     input.value = cleaned;
     this.addForm.get('name')?.setValue(cleaned, { emitEvent: true });
@@ -611,7 +585,6 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   onMobileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    // Strip all non-digits in real time; cap at 10 characters
     const cleaned = input.value.replace(/\D/g, '').slice(0, 10);
     input.value = cleaned;
     this.addForm.get('mobile')?.setValue(cleaned, { emitEvent: true });
@@ -636,5 +609,5 @@ export class RolesTeamsOverviewComponent implements OnInit {
       .map(w => w[0]?.toUpperCase() ?? '').join('');
   }
 
-  trackByMemberId(_: number, m: StateMember): string { return m._id; }
+  trackByMemberId(_: number, m: MohuaMember): string { return m._id; }
 }

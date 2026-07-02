@@ -7,21 +7,21 @@
     />
   } @else {
 
-    <!-- ══ Page Header ═══════════════════════════════════════════════════════════════ -->
+    <!-- ══ Page Header ══════════════════════════════════════════════════════════════ -->
     <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-3">
       <div>
         <h1 class="fs-4 fw-bold mb-1">Team &amp; Roles</h1>
-        <p class="text-muted small mb-0">Manage who has access and what they can do.</p>
+        <p class="text-muted small mb-0">Manage who has access to the MoHUA XVI FC workspace.</p>
       </div>
     </div>
 
-    <!-- ══ Info Banner ════════════════════════════════════════════════════════════════ -->
+    <!-- ══ Info Banner ═══════════════════════════════════════════════════════════════ -->
     <div class="info-banner d-flex align-items-start gap-2 rounded-3 px-3 py-3 mb-4 small">
       <i class="bi bi-info-circle-fill info-banner__icon flex-shrink-0" aria-hidden="true"></i>
       <span><strong>How access works:</strong> <span [innerHTML]="infoBannerText"></span></span>
     </div>
 
-    <!-- ══ Action Bar ═════════════════════════════════════════════════════════════════ -->
+    <!-- ══ Action Bar ════════════════════════════════════════════════════════════════ -->
     <div class="d-flex align-items-center justify-content-end gap-2 mb-3 flex-wrap">
       @for (btn of actionButtons(); track btn.label) {
         @if (btn.variant === 'flat') {
@@ -60,7 +60,7 @@
       }
     </div>
 
-    <!-- ══ Permission Matrix Panel ════════════════════════════════════════════════════ -->
+    <!-- ══ Permission Matrix Panel ═══════════════════════════════════════════════════ -->
     @if (showPermissionMatrix()) {
       <div @panelSlide class="mb-4">
         <mat-card class="perm-card">
@@ -85,7 +85,7 @@
                     <span class="role-badge role-badge--editor">Reviewer</span>
                   </th>
                   <th class="perm-table__col-role text-center">
-                    <span class="role-badge role-badge--viewer">Viewer</span>
+                    <span class="role-badge role-badge--viewer">Editor</span>
                   </th>
                 </tr>
               </thead>
@@ -117,7 +117,7 @@
       </div>
     }
 
-    <!-- ══ Add Member Panel ═══════════════════════════════════════════════════════════ -->
+    <!-- ══ Add Member Panel ══════════════════════════════════════════════════════════ -->
     @if (showAddMember()) {
       <div @panelSlide class="mb-4">
         <mat-card class="add-card">
@@ -136,7 +136,7 @@
 
             @if (addConflict(); as conflict) {
 
-              <!-- ── Conflict: previously registered email ─────────────────── -->
+              <!-- ── Conflict: previously registered email ──────────────────── -->
               <div aria-live="assertive" aria-atomic="true">
                 <div class="alert alert-warning d-flex gap-3 py-3 px-3 mb-4" role="alert">
                   <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1 text-warning" aria-hidden="true"></i>
@@ -151,7 +151,6 @@
                   </div>
                 </div>
 
-                <!-- Summary of what will be applied -->
                 <div class="rounded border bg-light px-3 py-2 mb-4 small">
                   <div class="row g-1 text-muted">
                     <div class="col-6 col-md-3"><span class="fw-semibold d-block">Name</span>{{ addForm.get('name')?.value }}</div>
@@ -234,7 +233,6 @@
 
                 </div>
 
-                <!-- API error (active email conflict or generic) -->
                 <div aria-live="assertive" aria-atomic="true">
                   @if (addError()) {
                     <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small" role="alert">
@@ -267,7 +265,7 @@
       </div>
     }
 
-    <!-- ══ Members Table ══════════════════════════════════════════════════════════════ -->
+    <!-- ══ Members Table ════════════════════════════════════════════════════════════ -->
     <mat-card class="members-card mb-4">
 
       @if (isLoading()) {
@@ -293,7 +291,7 @@
       } @else {
         <div class="table-responsive">
           <table mat-table [dataSource]="members()" [trackBy]="trackByMemberId"
-            class="w-100" aria-label="State team members">
+            class="w-100" aria-label="MoHUA team members">
 
             @for (col of tableColumns; track col.key) {
               <ng-container [matColumnDef]="col.key">
@@ -336,7 +334,7 @@
 
                     @case ('role') {
                       @if (row.subRole === 'SUBMITTER') {
-                        <span class="role-badge role-badge--submitter">Admin</span>
+                        <span class="role-badge role-badge--submitter">{{ getRoleLabel(row.subRole) }}</span>
                       } @else if (roleChangingId() === row._id) {
                         <div class="d-flex align-items-center gap-2">
                           <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{ getRoleLabel(row.subRole) }}</span>
@@ -351,14 +349,14 @@
                             [attr.aria-label]="'Change role for ' + row.name"
                             (selectionChange)="changeRole(row, $event.value)"
                             (openedChange)="onRoleSelectClose($event, row._id)">
-                            <mat-option value="EDITOR">Reviewer</mat-option>
+                            <mat-option value="EDITOR">Editor</mat-option>
                             <mat-option value="VIEWER">Viewer</mat-option>
                           </mat-select>
                         </div>
                       } @else {
                         <div class="d-flex align-items-center gap-2 role-label-view">
                           <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{ getRoleLabel(row.subRole) }}</span>
-                          @if (isSubmitter()) {
+                          @if (isSubmitter() && !isCurrentUser(row._id)) {
                             <button type="button" class="role-edit-btn"
                               [attr.aria-label]="'Edit role for ' + row.name"
                               (click)="editingRoleId.set(row._id)">
@@ -388,7 +386,7 @@
                         <div class="d-inline-flex align-items-center gap-1">
                           <span class="small text-danger fw-semibold me-1 d-none d-md-inline">Sure?</span>
                           <button type="button" class="action-icon-btn action-icon-btn--warn"
-                            [attr.aria-label]="'Confirm delete ' + row.name"
+                            [attr.aria-label]="'Confirm remove ' + row.name"
                             (click)="confirmDelete(row)">
                             <i class="bi bi-check-lg" aria-hidden="true"></i>
                           </button>
@@ -429,7 +427,7 @@
       }
     </mat-card>
 
-    <!-- ══ Transfer Ownership (Admin only) ══════════════════════════════════════════ -->
+    <!-- ══ Transfer Ownership (Submitter only) ══════════════════════════════════════ -->
     @if (isSubmitter()) {
       <mat-card class="transfer-card">
 

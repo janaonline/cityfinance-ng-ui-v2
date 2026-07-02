@@ -115,6 +115,31 @@
               <mat-divider />
 
               @if (!editingCommissioner()) {
+                @if (!commissionerForm.value.commissionerName || commissionerForm.controls.commissionerName.invalid ||
+                     !commissionerForm.value.commissionerConatactNumber || commissionerForm.controls.commissionerConatactNumber.invalid ||
+                     (commissionerForm.controls.commissionerEmail.invalid && commissionerForm.value.commissionerEmail)) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
+                    <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0" style="font-size:0.8rem" aria-hidden="true"></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">
+                      Click <strong>Edit</strong> to update:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (!commissionerForm.value.commissionerName) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name missing</span>
+                      } @else if (commissionerForm.controls.commissionerName.invalid) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name invalid</span>
+                      }
+                      @if (commissionerForm.controls.commissionerEmail.invalid && commissionerForm.value.commissionerEmail) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Email invalid</span>
+                      }
+                      @if (!commissionerForm.value.commissionerConatactNumber) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No missing</span>
+                      } @else if (commissionerForm.controls.commissionerConatactNumber.invalid) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No invalid</span>
+                      }
+                    </div>
+                  </div>
+                }
                 <mat-card-content class="p-0">
                   <div class="row g-0">
                     <div class="col-sm-4 pv-field">
@@ -212,6 +237,38 @@
               <mat-divider />
 
               @if (!editingAccountant()) {
+                @if (accountantForm.invalid) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
+                    <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0" style="font-size:0.8rem" aria-hidden="true"></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">
+                      Click <strong>Edit</strong> to update:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (accountantForm.controls.accountantName.hasError('required')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name missing</span>
+                      } @else if (accountantForm.controls.accountantName.hasError('minlength')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name too short</span>
+                      } @else if (accountantForm.controls.accountantName.hasError('maxlength') ||
+                                  accountantForm.controls.accountantName.hasError('pattern') ||
+                                  accountantForm.controls.accountantName.hasError('unsafeInput')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Name invalid</span>
+                      }
+                      @if (accountantForm.controls.accountantEmail.hasError('required')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Email missing</span>
+                      } @else if (accountantForm.controls.accountantEmail.hasError('email') ||
+                                  accountantForm.controls.accountantEmail.hasError('maxlength') ||
+                                  accountantForm.controls.accountantEmail.hasError('unsafeInput')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Email invalid</span>
+                      }
+                      @if (accountantForm.controls.accountantConatactNumber.hasError('required')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No missing</span>
+                      } @else if (accountantForm.controls.accountantConatactNumber.hasError('pattern') ||
+                                  accountantForm.controls.accountantConatactNumber.hasError('unsafeInput')) {
+                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">Contact No invalid</span>
+                      }
+                    </div>
+                  </div>
+                }
                 <mat-card-content class="p-0">
                   <div class="row g-0">
                     <div class="col-sm-4 pv-field">
@@ -336,6 +393,92 @@
               [message]="loadError()"
               (retry)="retryLoad()"
             />
+          <!-- ══ STEP 2: SET NEW PASSWORD (new users, all roles) ══════ -->
+          } @else if (passwordStep()) {
+            <h5 class="fw-bold mb-1">Set your new password</h5>
+            <p class="text-muted small mb-3">
+              Your email has been verified. Choose a strong password — at least 8 characters with
+              uppercase, lowercase, a number, and a special character (&#64;#$%^&amp;*!).
+            </p>
+
+            @if (errorMsg()) {
+              <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="flex-grow-1">{{ errorMsg() }}</span>
+                <button type="button" class="btn-close" (click)="errorMsg.set('')"></button>
+              </div>
+            }
+
+            <mat-card appearance="outlined" class="mb-3">
+              <mat-card-content class="pt-3 pb-2">
+                <form [formGroup]="passwordForm" novalidate>
+                  <div class="row g-3">
+                    <div class="col-sm-6">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                        <mat-label>New Password</mat-label>
+                        <input
+                          matInput
+                          [type]="showNewPassword() ? 'text' : 'password'"
+                          formControlName="newPassword"
+                          autocomplete="new-password"
+                          placeholder="Min. 8 characters"
+                        />
+                        <button mat-icon-button matSuffix type="button"
+                          (click)="showNewPassword.set(!showNewPassword())"
+                          [attr.aria-label]="showNewPassword() ? 'Hide password' : 'Show password'">
+                          <i [class]="showNewPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                      </mat-form-field>
+                      @if (passwordForm.controls.newPassword.touched) {
+                        @if (passwordForm.controls.newPassword.hasError('required')) {
+                          <p class="text-danger small mt-1 mb-0">Password is required</p>
+                        } @else if (passwordForm.controls.newPassword.hasError('minlength')) {
+                          <p class="text-danger small mt-1 mb-0">Must be at least 8 characters</p>
+                        } @else if (passwordForm.controls.newPassword.hasError('pattern')) {
+                          <p class="text-danger small mt-1 mb-0">Must include uppercase, lowercase, a number, and &#64;#$%^&amp;*!</p>
+                        }
+                      }
+                    </div>
+                    <div class="col-sm-6">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                        <mat-label>Confirm Password</mat-label>
+                        <input
+                          matInput
+                          [type]="showConfirmPassword() ? 'text' : 'password'"
+                          formControlName="confirmPassword"
+                          autocomplete="new-password"
+                          placeholder="Repeat password"
+                        />
+                        <button mat-icon-button matSuffix type="button"
+                          (click)="showConfirmPassword.set(!showConfirmPassword())"
+                          [attr.aria-label]="showConfirmPassword() ? 'Hide' : 'Show'">
+                          <i [class]="showConfirmPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                      </mat-form-field>
+                      @if (passwordForm.controls.confirmPassword.touched) {
+                        @if (passwordForm.controls.confirmPassword.hasError('required')) {
+                          <p class="text-danger small mt-1 mb-0">Please confirm your password</p>
+                        } @else if (passwordForm.hasError('passwordsMismatch')) {
+                          <p class="text-danger small mt-1 mb-0">Passwords do not match</p>
+                        }
+                      }
+                    </div>
+                  </div>
+                </form>
+              </mat-card-content>
+            </mat-card>
+
+            <div class="d-flex justify-content-end mt-2">
+              <button mat-flat-button color="primary" [disabled]="!canSetNewPassword()" (click)="onSetNewPassword()">
+                @if (isSaving()) {
+                  <span class="pv-spin pv-spin--light me-1"></span> Saving…
+                } @else {
+                  <i class="bi bi-lock-fill me-1"></i> Set Password &amp; Continue
+                }
+              </button>
+            </div>
+
+          <!-- ══ STATE / MOHUA: profile form (new + existing users) ══════ -->
           } @else {
             <h5 class="fw-bold mb-1">Verify your profile</h5>
             <p class="text-muted small mb-3">
