@@ -674,11 +674,18 @@
                       Click <strong>Edit</strong> to update:
                     </span>
                     <div class="d-flex flex-wrap gap-1">
-                      @if (stateForm.controls.name.invalid) {
+                      @if (stateForm.controls.firstName.invalid) {
                         <span
                           class="badge rounded-pill text-bg-warning"
                           style="font-size: 10px; padding: 3px 10px; font-weight: 500"
-                          >Name</span
+                          >First Name</span
+                        >
+                      }
+                      @if (stateForm.controls.lastName.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 10px; font-weight: 500"
+                          >Last Name</span
                         >
                       }
                       @if (stateForm.controls.mobile.invalid) {
@@ -704,9 +711,9 @@
                       <span class="pv-field-label">Name</span>
                       <span
                         class="pv-field-value text-truncate d-block"
-                        [class.text-muted]="!stateForm.value.name"
-                        [title]="stateForm.value.name || ''"
-                        >{{ stateForm.value.name || '—' }}</span
+                        [class.text-muted]="!stateForm.value.firstName && !stateForm.value.lastName"
+                        [title]="fullName"
+                        >{{ fullName }}</span
                       >
                     </div>
                     <div class="col-sm-3 pv-field pv-field-bordered">
@@ -741,27 +748,51 @@
                     <div class="row g-3">
                       <div class="col-sm-6">
                         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
-                          <mat-label>Name</mat-label>
-                          <!-- L1 -->
+                          <mat-label>First Name</mat-label>
                           <input
                             matInput
-                            formControlName="name"
-                            placeholder="Full name"
-                            maxlength="100"
-                            autocomplete="name"
+                            formControlName="firstName"
+                            placeholder="First name"
+                            maxlength="50"
+                            autocomplete="given-name"
                           />
                         </mat-form-field>
-                        @if (stateForm.controls.name.touched) {
-                          @if (stateForm.controls.name.hasError('required')) {
-                            <p class="text-danger small mt-1 mb-0">Name is required</p>
-                          } @else if (stateForm.controls.name.hasError('minlength')) {
-                            <p class="text-danger small mt-1 mb-0">Name must be at least 2 characters</p>
-                          } @else if (stateForm.controls.name.hasError('maxlength')) {
-                            <p class="text-danger small mt-1 mb-0">Name cannot exceed 100 characters</p>
-                          } @else if (stateForm.controls.name.hasError('pattern')) {
+                        @if (stateForm.controls.firstName.touched) {
+                          @if (stateForm.controls.firstName.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">First name is required</p>
+                          } @else if (stateForm.controls.firstName.hasError('minlength')) {
+                            <p class="text-danger small mt-1 mb-0">First name must be at least 2 characters</p>
+                          } @else if (stateForm.controls.firstName.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">First name cannot exceed 50 characters</p>
+                          } @else if (stateForm.controls.firstName.hasError('pattern')) {
                             <p class="text-danger small mt-1 mb-0">Only letters, spaces and hyphens are allowed</p>
-                          } @else if (stateForm.controls.name.hasError('unsafeInput')) {
-                            <p class="text-danger small mt-1 mb-0">Name contains invalid characters</p>
+                          } @else if (stateForm.controls.firstName.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">First name contains invalid characters</p>
+                          }
+                        }
+                      </div>
+                      <div class="col-sm-6">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Last Name</mat-label>
+                          <input
+                            matInput
+                            formControlName="lastName"
+                            placeholder="Last name"
+                            maxlength="50"
+                            autocomplete="family-name"
+                          />
+                        </mat-form-field>
+                        @if (stateForm.controls.lastName.touched) {
+                          @if (stateForm.controls.lastName.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Last name is required</p>
+                          } @else if (stateForm.controls.lastName.hasError('minlength')) {
+                            <p class="text-danger small mt-1 mb-0">Last name must be at least 2 characters</p>
+                          } @else if (stateForm.controls.lastName.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">Last name cannot exceed 50 characters</p>
+                          } @else if (stateForm.controls.lastName.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Only letters, spaces and hyphens are allowed</p>
+                          } @else if (stateForm.controls.lastName.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">Last name contains invalid characters</p>
                           }
                         }
                       </div>

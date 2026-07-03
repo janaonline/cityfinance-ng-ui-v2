@@ -17,6 +17,8 @@ export interface UlbEntityInfo {
 
 export interface StateProfile {
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   mobile: string;
   designation: string;
