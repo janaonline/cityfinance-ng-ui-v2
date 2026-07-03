@@ -85,7 +85,7 @@
                     <span class="role-badge role-badge--editor">Reviewer</span>
                   </th>
                   <th class="perm-table__col-role text-center">
-                    <span class="role-badge role-badge--viewer">Editor</span>
+                    <span class="role-badge role-badge--viewer">Viewer</span>
                   </th>
                 </tr>
               </thead>
@@ -340,7 +340,7 @@
                             [attr.aria-label]="'Change role for ' + row.name"
                             (selectionChange)="changeRole(row, $event.value)"
                             (openedChange)="onRoleSelectClose($event, row._id)">
-                            <mat-option value="EDITOR">Editor</mat-option>
+                            <mat-option value="EDITOR">Reviewer</mat-option>
                             <mat-option value="VIEWER">Viewer</mat-option>
                           </mat-select>
                         </div>

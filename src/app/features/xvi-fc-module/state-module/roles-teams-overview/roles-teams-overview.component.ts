@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -98,8 +90,6 @@ interface FormFieldConfig {
 // Literal space — intentionally excludes \t, \n, \r from valid name characters.
 const NAME_PATTERN = /^[a-zA-Z .\-']+$/;
 
-
-
 @Component({
   selector: 'app-roles-teams-overview',
   standalone: true,
@@ -123,7 +113,7 @@ const NAME_PATTERN = /^[a-zA-Z .\-']+$/;
   animations: [
     trigger('panelSlide', [
       state('void', style({ maxHeight: '0px', opacity: 0, overflow: 'hidden' })),
-      state('*',    style({ maxHeight: '900px', opacity: 1, overflow: 'hidden' })),
+      state('*', style({ maxHeight: '900px', opacity: 1, overflow: 'hidden' })),
       transition(':enter', animate('220ms cubic-bezier(0.4, 0, 0.2, 1)')),
       transition(':leave', animate('160ms cubic-bezier(0.4, 0, 0.2, 1)')),
     ]),
@@ -141,15 +131,33 @@ export class RolesTeamsOverviewComponent implements OnInit {
   readonly permissionMatrix = signal<PermissionRow[]>([]);
 
   readonly tableColumns: TableColumn[] = [
-    { key: 'member',      header: 'Name, Phone & Email', thClass: '',                       tdClass: '',                       cellType: 'member' },
-    { key: 'designation', header: 'Designation',  thClass: 'd-none d-md-table-cell', tdClass: 'd-none d-md-table-cell', cellType: 'designation' },
-    { key: 'role',        header: 'Role',          thClass: '',                       tdClass: '',                       cellType: 'role' },
-    { key: 'status',      header: 'Status',        thClass: 'd-none d-lg-table-cell', tdClass: 'd-none d-lg-table-cell', cellType: 'status' },
-    { key: 'lastActive',  header: 'Last Active',   thClass: 'd-none d-xl-table-cell', tdClass: 'd-none d-xl-table-cell', cellType: 'lastActive' },
-    { key: 'actions',     header: '',              thClass: 'text-end pe-3',          tdClass: 'text-end pe-3',          cellType: 'actions' },
+    { key: 'member', header: 'Name, Phone & Email', thClass: '', tdClass: '', cellType: 'member' },
+    {
+      key: 'designation',
+      header: 'Designation',
+      thClass: 'd-none d-md-table-cell',
+      tdClass: 'd-none d-md-table-cell',
+      cellType: 'designation',
+    },
+    { key: 'role', header: 'Role', thClass: '', tdClass: '', cellType: 'role' },
+    {
+      key: 'status',
+      header: 'Status',
+      thClass: 'd-none d-lg-table-cell',
+      tdClass: 'd-none d-lg-table-cell',
+      cellType: 'status',
+    },
+    {
+      key: 'lastActive',
+      header: 'Last Active',
+      thClass: 'd-none d-xl-table-cell',
+      tdClass: 'd-none d-xl-table-cell',
+      cellType: 'lastActive',
+    },
+    { key: 'actions', header: '', thClass: 'text-end pe-3', tdClass: 'text-end pe-3', cellType: 'actions' },
   ];
 
-  readonly displayedColumns = this.tableColumns.map(c => c.key);
+  readonly displayedColumns = this.tableColumns.map((c) => c.key);
 
   readonly addFormFields: FormFieldConfig[] = [
     {
@@ -162,9 +170,9 @@ export class RolesTeamsOverviewComponent implements OnInit {
       maxlength: 100,
       onInput: (e: Event) => this.onNameInput(e),
       errors: [
-        { key: 'required',    message: 'Full name is required.' },
-        { key: 'minlength',   message: 'Name must be at least 2 characters.' },
-        { key: 'pattern',     message: 'Numbers and special characters are not allowed in name.' },
+        { key: 'required', message: 'Full name is required.' },
+        { key: 'minlength', message: 'Name must be at least 2 characters.' },
+        { key: 'pattern', message: 'Numbers and special characters are not allowed in name.' },
         { key: 'unsafeInput', message: 'Name contains disallowed characters.' },
       ],
     },
@@ -178,9 +186,9 @@ export class RolesTeamsOverviewComponent implements OnInit {
       maxlength: 100,
       onInput: (e: Event) => this.onDesignationInput(e),
       errors: [
-        { key: 'required',    message: 'Designation is required.' },
-        { key: 'minlength',   message: 'Must be at least 2 characters.' },
-        { key: 'pattern',     message: 'Numbers and special characters are not allowed in designation.' },
+        { key: 'required', message: 'Designation is required.' },
+        { key: 'minlength', message: 'Must be at least 2 characters.' },
+        { key: 'pattern', message: 'Numbers and special characters are not allowed in designation.' },
         { key: 'unsafeInput', message: 'Contains disallowed characters.' },
       ],
     },
@@ -195,9 +203,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
         { value: 'EDITOR', label: 'Reviewer' },
         { value: 'VIEWER', label: 'Viewer' },
       ],
-      errors: [
-        { key: 'required', message: 'Role is required.' },
-      ],
+      errors: [{ key: 'required', message: 'Role is required.' }],
     },
     {
       controlName: 'email',
@@ -207,9 +213,9 @@ export class RolesTeamsOverviewComponent implements OnInit {
       type: 'email',
       autocomplete: 'email',
       errors: [
-        { key: 'required',    message: 'Email address is required.' },
-        { key: 'email',       message: 'Enter a valid email — e.g. name@domain.com.' },
-        { key: 'maxlength',   message: 'Email must not exceed 254 characters.' },
+        { key: 'required', message: 'Email address is required.' },
+        { key: 'email', message: 'Enter a valid email — e.g. name@domain.com.' },
+        { key: 'maxlength', message: 'Email must not exceed 254 characters.' },
         { key: 'unsafeInput', message: 'Email contains disallowed characters.' },
       ],
     },
@@ -224,8 +230,11 @@ export class RolesTeamsOverviewComponent implements OnInit {
       inputmode: 'numeric',
       onInput: (e: Event) => this.onMobileInput(e),
       errors: [
-        { key: 'required',    message: 'Mobile number is required.' },
-        { key: 'pattern',     message: 'Must be 10 digits, starting with 6, 7, 8, or 9. Letters and special characters are not allowed.' },
+        { key: 'required', message: 'Mobile number is required.' },
+        {
+          key: 'pattern',
+          message: 'Must be 10 digits, starting with 6, 7, 8, or 9. Letters and special characters are not allowed.',
+        },
         { key: 'unsafeInput', message: 'Mobile contains disallowed characters.' },
       ],
     },
@@ -234,7 +243,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   readonly infoBannerText =
     'Staff whose details are on record from the 15th Finance Commission can sign in directly ' +
     'using their registered email ID and password. To give access to someone new, use ' +
-    '<strong>Add Member</strong> below — they will receive an email invitation to set up their login.';
+    '<strong>Add Member</strong> below - they will receive an email invitation to set up their login.';
 
   private currentUserId = '';
   private stateId = '';
@@ -254,14 +263,14 @@ export class RolesTeamsOverviewComponent implements OnInit {
   readonly showPermissionMatrix = signal(false);
   readonly showAddMember = signal(false);
   readonly isAdding = signal(false);
-  readonly addError    = signal<string | null>(null);
+  readonly addError = signal<string | null>(null);
   readonly addConflict = signal<{ name: string; designation: string } | null>(null);
 
   // Per-row action states
-  readonly roleChangingId   = signal<string | null>(null);
-  readonly editingRoleId    = signal<string | null>(null);
-  readonly deletingId       = signal<string | null>(null);
-  readonly confirmDeleteId  = signal<string | null>(null);
+  readonly roleChangingId = signal<string | null>(null);
+  readonly editingRoleId = signal<string | null>(null);
+  readonly deletingId = signal<string | null>(null);
+  readonly confirmDeleteId = signal<string | null>(null);
 
   // Transfer ownership
   readonly showTransferPanel = signal(false);
@@ -272,16 +281,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
   readonly isSubmitter = computed(() => this.currentSubRole() === 'SUBMITTER');
 
   readonly eligibleTransferTargets = computed(() =>
-    this.members().filter(m =>
-      m._id !== this.currentUserId &&
-      m.isActive &&
-      m.isXVIFCProfileVerified &&
-      m.subRole !== 'SUBMITTER',
-    )
+    this.members().filter(
+      (m) => m._id !== this.currentUserId && m.isActive && m.isXVIFCProfileVerified && m.subRole !== 'SUBMITTER',
+    ),
   );
 
-  readonly selectedTransferTarget = computed(() =>
-    this.eligibleTransferTargets().find(m => m._id === this.transferTargetId()) ?? null
+  readonly selectedTransferTarget = computed(
+    () => this.eligibleTransferTargets().find((m) => m._id === this.transferTargetId()) ?? null,
   );
 
   readonly actionButtons = computed<ActionButton[]>(() => [
@@ -300,9 +306,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
       iconClass: 'bi bi-plus-lg me-1',
       variant: 'flat',
       color: 'primary',
-      tooltip: this.isSubmitter()
-        ? 'Click to add a new team member'
-        : 'Only the Admin can add new members',
+      tooltip: this.isSubmitter() ? 'Click to add a new team member' : 'Only the Admin can add new members',
       isActive: false,
       showChevron: false,
       disabled: !this.isSubmitter(),
@@ -311,35 +315,31 @@ export class RolesTeamsOverviewComponent implements OnInit {
   ]);
 
   readonly addForm = this.fb.nonNullable.group({
-    name: ['', [
-      Validators.required,
-      Validators.minLength(2),
-      Validators.maxLength(100),
-      Validators.pattern(NAME_PATTERN),
-      noHtmlOrScript,
-      noMongoOperators,
-    ]],
-    email: ['', [
-      Validators.required,
-      Validators.email,
-      Validators.maxLength(254),
-      ...IDENTIFIER_SECURITY_VALIDATORS,
-    ]],
-    mobile: ['', [
-      Validators.required,
-      Validators.pattern(/^[6-9]\d{9}$/),
-      noHtmlOrScript,
-      noMongoOperators,
-    ]],
-    designation: ['', [
-      Validators.required,
-      Validators.minLength(2),
-      Validators.maxLength(100),
-      Validators.pattern(/^[a-zA-Z .\-]+$/),
-      noHtmlOrScript,
-      noMongoOperators,
-    ]],
-    subRole: [('EDITOR' as StateSubRole), Validators.required],
+    name: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+        Validators.pattern(NAME_PATTERN),
+        noHtmlOrScript,
+        noMongoOperators,
+      ],
+    ],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(254), ...IDENTIFIER_SECURITY_VALIDATORS]],
+    mobile: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/), noHtmlOrScript, noMongoOperators]],
+    designation: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+        Validators.pattern(/^[a-zA-Z .\-]+$/),
+        noHtmlOrScript,
+        noMongoOperators,
+      ],
+    ],
+    subRole: ['EDITOR' as StateSubRole, Validators.required],
   });
 
   ngOnInit(): void {
@@ -354,9 +354,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   private loadPermissionMatrix(): void {
     this.http
-      .get<{ success: boolean; data: PermissionRow[] } | PermissionRow[]>(
-        `${this.baseUrl}users/permission-matrix`,
-      )
+      .get<{ success: boolean; data: PermissionRow[] } | PermissionRow[]>(`${this.baseUrl}users/permission-matrix`)
       .pipe(
         map((r): PermissionRow[] =>
           'success' in r && Array.isArray((r as { data: unknown }).data)
@@ -374,9 +372,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.hasError.set(false);
 
     this.http
-      .get<{ success: boolean; data: StateMember[] } | StateMember[]>(
-        `${this.baseUrl}users/state-members`,
-      )
+      .get<{ success: boolean; data: StateMember[] } | StateMember[]>(`${this.baseUrl}users/state-members`)
       .pipe(
         // Dev server returns raw array; local NestJS ResponseTransformInterceptor wraps { success, data }
         map((r): StateMember[] =>
@@ -394,7 +390,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
           } else {
             this.members.set(members);
             // Derive role from fresh API data — localStorage subRole can be stale
-            const me = members.find(m => m._id === this.currentUserId);
+            const me = members.find((m) => m._id === this.currentUserId);
             if (me) this.currentSubRole.set(me.subRole);
           }
           this.isLoading.set(false);
@@ -436,11 +432,16 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   submitAddMember(): void {
     if (this.isAdding()) return;
-    if (this.addForm.invalid) { this.addForm.markAllAsTouched(); return; }
+    if (this.addForm.invalid) {
+      this.addForm.markAllAsTouched();
+      return;
+    }
     this.submitInvite('invite');
   }
 
-  restoreMember(): void { this.submitInvite('restore'); }
+  restoreMember(): void {
+    this.submitInvite('restore');
+  }
 
   private submitInvite(action: 'invite' | 'restore'): void {
     this.isAdding.set(true);
@@ -457,8 +458,12 @@ export class RolesTeamsOverviewComponent implements OnInit {
           this.isAdding.set(false);
           this.cancelAddMember();
           this.loadMembers();
-          this.snackBar.open(`${payload.name} has been invited successfully.`, 'Dismiss',
-            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
+          this.snackBar.open(`${payload.name} has been invited successfully.`, 'Dismiss', {
+            duration: 4000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
         },
         error: (err: HttpErrorResponse) => {
           this.isAdding.set(false);
@@ -486,7 +491,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
     const previousRole = member.subRole;
     this.roleChangingId.set(member._id);
     // Optimistic update — revert on failure
-    this.members.update(list => list.map(m => m._id === member._id ? { ...m, subRole: newRole } : m));
+    this.members.update((list) => list.map((m) => (m._id === member._id ? { ...m, subRole: newRole } : m)));
 
     this.http
       .patch(`${this.baseUrl}users/${member._id}/sub-role`, { subRole: newRole })
@@ -495,14 +500,22 @@ export class RolesTeamsOverviewComponent implements OnInit {
         next: () => {
           this.roleChangingId.set(null);
           this.loadMembers();
-          this.snackBar.open(`${member.name}'s role updated to ${SUBROLE_LABEL[newRole]}.`, 'Dismiss',
-            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
+          this.snackBar.open(`${member.name}'s role updated to ${SUBROLE_LABEL[newRole]}.`, 'Dismiss', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
         },
         error: (err: HttpErrorResponse) => {
-          this.members.update(list => list.map(m => m._id === member._id ? { ...m, subRole: previousRole } : m));
+          this.members.update((list) => list.map((m) => (m._id === member._id ? { ...m, subRole: previousRole } : m)));
           this.roleChangingId.set(null);
-          this.snackBar.open(err.error?.message ?? 'Role update failed. Please try again.', 'Dismiss',
-            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-error'] });
+          this.snackBar.open(err.error?.message ?? 'Role update failed. Please try again.', 'Dismiss', {
+            duration: 4000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['snack-error'],
+          });
         },
       });
   }
@@ -525,18 +538,23 @@ export class RolesTeamsOverviewComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.members.update(list => list.filter(m => m._id !== member._id));
+          this.members.update((list) => list.filter((m) => m._id !== member._id));
           this.deletingId.set(null);
-          this.snackBar.open(
-            `${member.name} has been removed from the team.`,
-            'Dismiss',
-            { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] },
-          );
+          this.snackBar.open(`${member.name} has been removed from the team.`, 'Dismiss', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
         },
         error: (err: HttpErrorResponse) => {
           this.deletingId.set(null);
-          this.snackBar.open(err.error?.message ?? 'Failed to remove member. Please try again.', 'Dismiss',
-            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-error'] });
+          this.snackBar.open(err.error?.message ?? 'Failed to remove member. Please try again.', 'Dismiss', {
+            duration: 4000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['snack-error'],
+          });
         },
       });
   }
@@ -572,11 +590,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
           this.isTransferring.set(false);
           this.showTransferPanel.set(false);
           this.loadMembers();
-          this.authService.refreshAccessToken().pipe(
-            takeUntilDestroyed(this.destroyRef),
-          ).subscribe();
-          this.snackBar.open('Ownership transferred. Your role is now Reviewer.', 'Dismiss',
-            { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
+          this.authService.refreshAccessToken().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+          this.snackBar.open('Ownership transferred. Your role is now Reviewer.', 'Dismiss', {
+            duration: 5000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
         },
         error: (err: HttpErrorResponse) => {
           this.isTransferring.set(false);
@@ -619,21 +639,31 @@ export class RolesTeamsOverviewComponent implements OnInit {
   getFirstError(controlName: string, errors: { key: string; message: string }[]): string | null {
     const ctrl = this.addForm.get(controlName);
     if (!ctrl?.touched) return null;
-    return errors.find(e => ctrl.hasError(e.key))?.message ?? null;
+    return errors.find((e) => ctrl.hasError(e.key))?.message ?? null;
   }
 
   formatLastActive(date: string | null): string {
     if (!date) return '—';
     try {
-      return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-        .format(new Date(date));
-    } catch { return '—'; }
+      return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(
+        new Date(date),
+      );
+    } catch {
+      return '—';
+    }
   }
 
   getInitials(name: string): string {
-    return name.trim().split(/\s+/).filter(Boolean).slice(0, 2)
-      .map(w => w[0]?.toUpperCase() ?? '').join('');
+    return name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? '')
+      .join('');
   }
 
-  trackByMemberId(_: number, m: StateMember): string { return m._id; }
+  trackByMemberId(_: number, m: StateMember): string {
+    return m._id;
+  }
 }

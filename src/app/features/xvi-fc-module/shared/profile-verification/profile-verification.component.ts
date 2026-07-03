@@ -305,13 +305,14 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.isSaving.set(true);
     this.errorMsg.set('');
 
-    // Strip empty strings from optional commissioner fields — the backend's
-    // @IsEmail/@IsString validators reject "" (only undefined/null is skipped by @IsOptional).
+    // Always send all commissioner fields even when empty — backend transforms "" → null
+    // so the DB field is explicitly cleared rather than left with its old value.
     const commRaw = this.commissionerForm.getRawValue();
-    const commissionerPayload: Partial<typeof commRaw> = {};
-    if (commRaw.commissionerName) commissionerPayload.commissionerName = commRaw.commissionerName;
-    if (commRaw.commissionerEmail) commissionerPayload.commissionerEmail = commRaw.commissionerEmail;
-    if (commRaw.commissionerConatactNumber) commissionerPayload.commissionerConatactNumber = commRaw.commissionerConatactNumber;
+    const commissionerPayload = {
+      commissionerName: commRaw.commissionerName,
+      commissionerEmail: commRaw.commissionerEmail,
+      commissionerConatactNumber: commRaw.commissionerConatactNumber,
+    };
 
     this.profileService
       .saveUlbContacts(this.userId, {

@@ -37,7 +37,7 @@ export type MohuaSubRole = 'SUBMITTER' | 'EDITOR' | 'VIEWER';
 export const MOHUA_SUBROLE_LABEL: Record<MohuaSubRole, string> = {
   SUBMITTER: 'Admin',
   EDITOR: 'Reviewer',
-  VIEWER: 'Editor',
+  VIEWER: 'Viewer',
 };
 
 export interface MohuaMember {
@@ -189,7 +189,7 @@ export class MohuaRolesTeamsOverviewComponent implements OnInit {
       type: 'select',
       autocomplete: '',
       options: [
-        { value: 'EDITOR', label: 'Editor' },
+        { value: 'EDITOR', label: 'Reviewer' },
         { value: 'VIEWER', label: 'Viewer' },
       ],
       errors: [{ key: 'required', message: 'Role is required.' }],
@@ -552,7 +552,7 @@ export class MohuaRolesTeamsOverviewComponent implements OnInit {
           this.authService.refreshAccessToken().pipe(
             takeUntilDestroyed(this.destroyRef),
           ).subscribe();
-          this.snackBar.open('Ownership transferred. Your role is now Editor.', 'Dismiss',
+          this.snackBar.open('Ownership transferred. Your role is now Reviewer.', 'Dismiss',
             { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
