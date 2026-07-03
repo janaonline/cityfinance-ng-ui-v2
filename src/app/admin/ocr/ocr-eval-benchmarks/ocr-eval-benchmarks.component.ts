@@ -1,17 +1,23 @@
 import { CommonModule, formatDate } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { finalize } from 'rxjs';
 import { MaterialModule } from '../../../material.module';
 import { UtilityService } from '../../../core/services/utility.service';
-import { EvalBenchmark, EvalRunInfo, OcrService } from '../ocr.service';
+import {
+  BenchmarkCompareMetrics,
+  BenchmarkCompareRow,
+  EvalBenchmark,
+  EvalRunInfo,
+  OcrService,
+} from '../ocr.service';
 
 @Component({
   standalone: true,
   selector: 'app-ocr-eval-benchmarks',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, MaterialModule, MatTableModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, MaterialModule, MatTableModule],
   templateUrl: './ocr-eval-benchmarks.component.html',
   styleUrl: './ocr-eval-benchmarks.component.scss',
 })
@@ -20,15 +26,26 @@ export class OcrEvalBenchmarksComponent implements OnInit {
   private readonly ocrService = inject(OcrService);
   private readonly utilityService = inject(UtilityService);
 
+  @ViewChild('excelFileInput') excelFileInput?: ElementRef<HTMLInputElement>;
+
   readonly benchmarks = signal<EvalBenchmark[]>([]);
   readonly loading = signal(false);
   readonly creating = signal(false);
+
+  readonly createMode = signal<'jobs' | 'excel'>('jobs');
+  readonly excelFile = signal<File | null>(null);
+  readonly excelName = signal('');
 
   readonly selectedBenchmark = signal<EvalBenchmark | null>(null);
   readonly runsDataSource = new MatTableDataSource<EvalRunInfo>([]);
   readonly runsLoading = signal(false);
   readonly runSubmitting = signal(false);
   readonly showRunForm = signal(false);
+
+  readonly compareResults = signal<BenchmarkCompareRow[]>([]);
+  readonly compareMetrics = signal<BenchmarkCompareMetrics | null>(null);
+  readonly comparing = signal(false);
+  readonly hasCompared = signal(false);
 
   readonly createForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -45,6 +62,16 @@ export class OcrEvalBenchmarksComponent implements OnInit {
 
   readonly benchmarkColumns = ['name', 'jobCount', 'createdAt', 'action'];
   readonly runColumns = ['evalRunId', 'models', 'status', 'metrics', 'createdAt', 'action'];
+  readonly compareColumns = [
+    'ulb',
+    'docType',
+    'financialYear',
+    'language',
+    'seal',
+    'signature',
+    'table',
+    'overall',
+  ];
 
   ngOnInit(): void {
     this.loadBenchmarks();
@@ -91,16 +118,124 @@ export class OcrEvalBenchmarksComponent implements OnInit {
       });
   }
 
+  onExcelFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    if (!file) {
+      this.clearExcelFile();
+      return;
+    }
+    const isExcel =
+      /\.(xlsx|xls)$/i.test(file.name) ||
+      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.type === 'application/vnd.ms-excel';
+    if (!isExcel) {
+      this.resetExcelFileInput();
+      this.utilityService.swalPopup('Invalid file', 'Please select an Excel (.xlsx/.xls) file.', 'error');
+      return;
+    }
+    this.excelFile.set(file);
+  }
+
+  openExcelFilePicker(): void {
+    this.excelFileInput?.nativeElement.click();
+  }
+
+  clearExcelFile(): void {
+    this.excelFile.set(null);
+    this.resetExcelFileInput();
+  }
+
+  private resetExcelFileInput(): void {
+    if (this.excelFileInput?.nativeElement) {
+      this.excelFileInput.nativeElement.value = '';
+    }
+  }
+
+  createBenchmarkFromExcel(): void {
+    const name = this.excelName().trim();
+    const file = this.excelFile();
+    if (!name) {
+      this.utilityService.swalPopup('Name required', 'Give this benchmark a name.', 'warning');
+      return;
+    }
+    if (!file) {
+      this.utilityService.swalPopup('File required', 'Please choose an Excel file first.', 'warning');
+      return;
+    }
+    this.creating.set(true);
+    this.ocrService
+      .createEvalBenchmarkFromExcel(name, file)
+      .pipe(finalize(() => this.creating.set(false)))
+      .subscribe({
+        next: () => {
+          this.excelName.set('');
+          this.clearExcelFile();
+          this.loadBenchmarks();
+        },
+        error: (err) =>
+          this.utilityService.swalPopup(
+            'Create failed',
+            err?.error?.detail || 'Please try again.',
+            'error',
+          ),
+      });
+  }
+
   selectBenchmark(b: EvalBenchmark): void {
     this.selectedBenchmark.set(b);
     this.showRunForm.set(false);
-    this.loadRuns(b.benchmark_id);
+    this.compareResults.set([]);
+    this.compareMetrics.set(null);
+    this.hasCompared.set(false);
+    if (b.job_ids?.length) {
+      this.loadRuns(b.benchmark_id);
+    }
   }
 
   back(): void {
     this.selectedBenchmark.set(null);
     this.runsDataSource.data = [];
     this.showRunForm.set(false);
+    this.compareResults.set([]);
+    this.compareMetrics.set(null);
+    this.hasCompared.set(false);
+  }
+
+  runCompare(): void {
+    const b = this.selectedBenchmark();
+    if (!b) return;
+    this.comparing.set(true);
+    this.ocrService
+      .compareBenchmark(b.benchmark_id)
+      .pipe(finalize(() => this.comparing.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.compareResults.set(res.results);
+          this.compareMetrics.set(res.metrics);
+          this.hasCompared.set(true);
+        },
+        error: (err) =>
+          this.utilityService.swalPopup(
+            'Compare failed',
+            err?.error?.detail || 'Please try again.',
+            'error',
+          ),
+      });
+  }
+
+  matchLabel(value: boolean | null | undefined): string {
+    if (value === null || value === undefined) return '—';
+    return value ? 'Match' : 'Mismatch';
+  }
+
+  matchClass(value: boolean | null | undefined): string {
+    if (value === null || value === undefined) return 'match-badge--na';
+    return value ? 'match-badge--yes' : 'match-badge--no';
+  }
+
+  boolText(value: boolean | null | undefined): string {
+    if (value === null || value === undefined) return '—';
+    return value ? 'Yes' : 'No';
   }
 
   loadRuns(benchmarkId: string): void {

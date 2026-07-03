@@ -93,6 +93,37 @@
   color: #475569;
 }
 
+/* Mode toggle */
+
+.mode-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: #f1f5f9;
+  width: max-content;
+}
+
+.mode-toggle__btn {
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { color: #1d4ed8; }
+}
+
+.mode-toggle__btn--active {
+  background: #fff;
+  color: #1d4ed8;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
 /* Forms */
 
 .create-form,
@@ -117,6 +148,59 @@
   align-items: center;
 }
 
+/* File picker (Excel upload) */
+
+.file-picker {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-drop-box {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px dashed #93c5fd;
+  border-radius: 16px;
+  background: #f8fbff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+}
+
+.file-box-name {
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.file-box-placeholder {
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.file-box-meta {
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.file-picker__label {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 /* Table */
 
 .table-shell {
@@ -129,6 +213,10 @@
   width: 100%;
   min-width: 600px;
   background: #fff;
+}
+
+.compare-table {
+  min-width: 900px;
 }
 
 /* Cells */
@@ -150,6 +238,35 @@
   color: #1d4ed8;
   border: 1px solid #bfdbfe;
 }
+
+.count-chip--excel {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+/* Compare cells */
+
+.compare-cell {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.match-badge--yes { background: #dcfce7; color: #166534; }
+.match-badge--no   { background: #fee2e2; color: #b91c1c; }
+.match-badge--na   { background: #f1f5f9; color: #94a3b8; }
 
 .cell-label {
   font-size: 0.62rem;

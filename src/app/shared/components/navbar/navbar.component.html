@@ -42,9 +42,15 @@
             </li>
             <mat-menu #DashboardMenu="matMenu">
               @for (childMenu of menu.child; track childMenu) {
-                <a mat-menu-item [href]="childMenu.href" class="" routerLinkActive="active">
-                  {{ childMenu.name }}
-                </a>
+                @if (childMenu.link) {
+                  <a mat-menu-item [routerLink]="childMenu.link" class="" routerLinkActive="active">
+                    {{ childMenu.name }}
+                  </a>
+                } @else {
+                  <a mat-menu-item [href]="childMenu.href" class="" routerLinkActive="active">
+                    {{ childMenu.name }}
+                  </a>
+                }
               }
             </mat-menu>
           } @else {

@@ -26,6 +26,19 @@ export class NavbarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly accessChecker = new AccessChecker();
 
+  readonly ocrMenu = {
+    name: 'OCR',
+    href: '',
+    child: [
+      { name: 'Jobs List', link: '/ocr/list' },
+      { name: 'Upload', link: '/ocr/upload' },
+      { name: 'Job Details', link: '/ocr/details' },
+      { name: 'Validation', link: '/ocr/validation' },
+      { name: 'Validation List', link: '/ocr/validation-list' },
+      { name: 'Eval Benchmarks', link: '/ocr/eval-benchmarks' },
+    ],
+  };
+
   readonly defaultMenus: any[] = [
     {
       name: 'Dashboard',
@@ -39,6 +52,7 @@ export class NavbarComponent implements OnInit {
       ],
     },
     { name: 'Resources', href: '/resources-dashboard/data-sets/income_statement' },
+    this.ocrMenu,
   ];
 
   isProd = false;
@@ -162,6 +176,7 @@ export class NavbarComponent implements OnInit {
 
     // const role = this.user.role;
     this.menus = [
+      this.ocrMenu,
       // ...(role === USER_TYPE.ULB ? [{ name: 'XVI FC Data Collection', link: '/xvifc-form' }] : []),
       // ...(role === USER_TYPE.ULB
       //   ? [

@@ -55,12 +55,72 @@ export interface OcrTaskListResponse {
   total_count?: number;
 }
 
+export interface BenchmarkValueRow {
+  ulb_name: string;
+  doc_type: string | null;
+  financial_year: string | null;
+  language: string | null;
+  seal_present: boolean | null;
+  signature_present: boolean | null;
+  table_presence: boolean | null;
+}
+
 export interface EvalBenchmark {
   benchmark_id: string;
   name: string;
   job_ids: string[];
+  benchmark_values: BenchmarkValueRow[];
   created_at: string;
   updated_at: string;
+}
+
+export interface BenchmarkCompareRow {
+  ulb_name: string;
+  doc_type: string | null;
+  financial_year: string | null;
+  matched: boolean;
+  job_id: string | null;
+  filename: string | null;
+  benchmark_language: string | null;
+  benchmark_seal_present: boolean | null;
+  benchmark_signature_present: boolean | null;
+  benchmark_table_presence: boolean | null;
+  extracted_ulb_name: string | null;
+  extracted_doc_type: string | null;
+  extracted_financial_year: string | null;
+  extracted_language: string | null;
+  extracted_seal_present: boolean | null;
+  extracted_signature_present: boolean | null;
+  extracted_table_presence: boolean | null;
+  ulb_name_match: boolean | null;
+  doc_type_match: boolean | null;
+  financial_year_match: boolean | null;
+  language_match: boolean | null;
+  seal_present_match: boolean | null;
+  signature_present_match: boolean | null;
+  table_presence_match: boolean | null;
+  overall_match: boolean | null;
+  note: string | null;
+}
+
+export interface BenchmarkCompareMetrics {
+  total: number;
+  matched: number;
+  unmatched: number;
+  ulb_name_accuracy: number | null;
+  doc_type_accuracy: number | null;
+  financial_year_accuracy: number | null;
+  language_accuracy: number | null;
+  seal_present_accuracy: number | null;
+  signature_present_accuracy: number | null;
+  table_presence_accuracy: number | null;
+  overall_accuracy: number | null;
+}
+
+export interface BenchmarkCompareResponse {
+  benchmark_id: string;
+  results: BenchmarkCompareRow[];
+  metrics: BenchmarkCompareMetrics;
 }
 
 export interface EvalRunInfo {
@@ -428,6 +488,23 @@ export class OcrService {
 
   listEvalBenchmarks() {
     return this.http.get<EvalBenchmark[]>(environment.api.url3 + 'ocr-validation/evals/benchmark');
+  }
+
+  createEvalBenchmarkFromExcel(name: string, file: File) {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('file', file);
+    return this.http.post<EvalBenchmark>(
+      environment.api.url3 + 'ocr-validation/evals/benchmark/from-excel',
+      formData,
+    );
+  }
+
+  compareBenchmark(benchmarkId: string) {
+    return this.http.post<BenchmarkCompareResponse>(
+      environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/compare`,
+      {},
+    );
   }
 
   runBenchmarkEval(
