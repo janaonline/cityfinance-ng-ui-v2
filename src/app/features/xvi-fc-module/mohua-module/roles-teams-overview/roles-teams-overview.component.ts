@@ -566,7 +566,7 @@ export class MohuaRolesTeamsOverviewComponent implements OnInit {
   isCurrentUser(memberId: string): boolean { return memberId === this.currentUserId; }
 
   canDelete(member: MohuaMember): boolean {
-    return !this.isCurrentUser(member._id) && member.subRole !== 'SUBMITTER';
+    return this.isSubmitter() && !this.isCurrentUser(member._id) && member.subRole !== 'SUBMITTER';
   }
 
   onDesignationInput(event: Event): void {
