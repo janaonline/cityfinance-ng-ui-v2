@@ -130,7 +130,7 @@ export const ULB_TEMPLATE: FieldConfig[] = [
     validations: [{ name: 'maxlength', validator: 100, message: 'Must not exceed 100 characters.' }],
   },
   {
-    key: 'gazetteNotification',
+    key: 'gazetteNotificationFile',
     required: true,
     label: 'Gazette Notification',
     formFieldType: 'file',

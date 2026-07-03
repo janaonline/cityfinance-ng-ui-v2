@@ -22,7 +22,7 @@ const REGISTER_ULB_FIELD_KEYS = [
   'censusCode',
   'dateOfConstitution',
   'gazetteNotificationNumber',
-  'gazetteNotification',
+  'gazetteNotificationFile',
 ] as const;
 
 @Component({

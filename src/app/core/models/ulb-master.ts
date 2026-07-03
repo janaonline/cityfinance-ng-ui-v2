@@ -11,6 +11,7 @@ export interface IUlbGazetteFile {
   fileUrl: string;
   fileSize: number | null;
   mimeType?: string;
+  noOfPage: number | null;
 }
 
 /** ULB master-data record, as returned by the cf-nest-api-v2 `master/ulb` CRUD endpoints. */
@@ -35,7 +36,7 @@ export interface IUlbMaster {
   regionalName?: string;
   dateOfConstitution?: string | null;
   gazetteNotificationNumber?: string | null;
-  gazetteNotification?: IUlbGazetteFile | null;
+  gazetteNotificationFile?: IUlbGazetteFile | null;
   isActive: boolean;
   isPublish: boolean;
   approval: IUlbApproval;
