@@ -373,3 +373,23 @@ mat-form-field {
   }
 }
 
+.custom-mat-card {
+  position: relative;
+  box-shadow: 0 12px 32px rgba(23, 32, 51, 0.06) !important;
+  animation-delay: 60ms;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, #0f6f49, #087b7f, #82ccba);
+    z-index: 1;
+  }
+}
+// ─── Status badge ─────────────────────────────────────────────────────────────
+.status-badge {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+}

@@ -19,7 +19,7 @@
     <button class="btn btn-cfPrimary" (click)="openDialog('Create')">Create ULB</button>
     }
   </div>
-  <mat-card class="contacts-mat-card">
+  <mat-card class="custom-mat-card mat-elevation-z1">
     <div class="table-container mat-elevation-z8 mb-4">
       @if (dataSource.data.length <= 0) { <p class="text-center p-2 mt-2">No ULBs found for the selected filters.</p>
         } @else {
@@ -52,7 +52,8 @@
           <ng-container matColumnDef="approvalStatus">
             <th mat-header-cell *matHeaderCellDef>Approval</th>
             <td mat-cell *matCellDef="let element">
-              <span class="badge" [class.text-bg-warning]="element.approval?.status === 'PENDING'"
+              <span class="badge rounded-pill status-badge"
+                [class.text-bg-warning]="element.approval?.status === 'PENDING'"
                 [class.text-bg-success]="!element.approval || element.approval.status === 'APPROVED'"
                 [class.text-bg-danger]="element.approval?.status === 'REJECTED'"
                 [title]="element.approval?.status === 'REJECTED' ? element.approval.rejectReason : ''">

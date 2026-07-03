@@ -1,17 +1,3 @@
-.contacts-mat-card {
-  position: relative;
-  box-shadow: 0 12px 32px rgba(23, 32, 51, 0.06) !important;
-  animation-delay: 60ms;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto;
-    height: 4px;
-    background: linear-gradient(90deg, #0f6f49, #087b7f, #82ccba);
-    z-index: 1;
-  }
-}
 .mat-mdc-table {
   width: 100%;
   background: transparent;
@@ -55,12 +41,12 @@
   }
 }
 
-.table-container {
-  position: relative;
-  max-height: 110vh;
-  overflow: auto;
-}
+// .table-container {
+//   position: relative;
+//   max-height: 110vh;
+//   overflow: auto;
+// }
 
-table {
-  width: 100%;
-}
+// table {
+//   width: 100%;
+// }
