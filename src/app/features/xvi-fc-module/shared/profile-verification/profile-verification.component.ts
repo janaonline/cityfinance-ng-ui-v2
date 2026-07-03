@@ -173,10 +173,18 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   );
 
   readonly stateForm = this.fb.nonNullable.group({
-    name: ['', [
+    firstName: ['', [
       Validators.required,
       Validators.minLength(2),
-      Validators.maxLength(100),
+      Validators.maxLength(50),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    lastName: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(50),
       Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
       noHtmlOrScript,
       noMongoOperators,
@@ -190,6 +198,12 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       noMongoOperators,
     ]],
   });
+
+  get fullName(): string {
+    const f = this.stateForm.value.firstName ?? '';
+    const l = this.stateForm.value.lastName ?? '';
+    return (f + (f && l ? ' ' : '') + l) || '—';
+  }
 
   private readonly _stateFormStatus = toSignal(this.stateForm.statusChanges, {
     initialValue: this.stateForm.status as FormControlStatus,
@@ -305,9 +319,18 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.isSaving.set(true);
     this.errorMsg.set('');
 
+    // Always send all commissioner fields even when empty — backend transforms "" → null
+    // so the DB field is explicitly cleared rather than left with its old value.
+    const commRaw = this.commissionerForm.getRawValue();
+    const commissionerPayload = {
+      commissionerName: commRaw.commissionerName,
+      commissionerEmail: commRaw.commissionerEmail,
+      commissionerConatactNumber: commRaw.commissionerConatactNumber,
+    };
+
     this.profileService
       .saveUlbContacts(this.userId, {
-        ...this.commissionerForm.getRawValue(),
+        ...commissionerPayload,
         ...this.accountantForm.getRawValue(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -331,14 +354,20 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   // ── State / MoHUA methods ────────────────────────────────────
   private loadStateProfile(stored?: Record<string, unknown>): void {
     const user = stored ?? this.profileService.readStoredUser();
+    const fullName = ((user['name'] as string) ?? '').trim();
+    const spaceIdx = fullName.indexOf(' ');
+    const firstName = spaceIdx >= 0 ? fullName.slice(0, spaceIdx).trim() : fullName;
+    const lastName = spaceIdx >= 0 ? fullName.slice(spaceIdx + 1).trim() : '';
     const profile: StateProfile = {
-      name: (user['name'] as string) ?? '',
+      name: fullName,
+      firstName,
+      lastName,
       email: (user['email'] as string) ?? '',
       mobile: ((user['mobile'] as string) ?? ''),
       designation: (user['designation'] as string) ?? '',
     };
     this.stateProfile.set(profile);
-    this.stateForm.patchValue(profile);
+    this.stateForm.patchValue({ firstName, lastName, email: profile.email, mobile: profile.mobile, designation: profile.designation });
     this.stateForm.markAllAsTouched();
     this.isLoading.set(false);
   }
@@ -392,7 +421,8 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
     if (!this.userId) { this.errorMsg.set('Session expired. Please log in again.'); return; }
 
-    const { name, mobile, designation } = this.stateForm.getRawValue();
+    const { firstName, lastName, mobile, designation } = this.stateForm.getRawValue();
+    const name = [firstName, lastName].filter(Boolean).join(' ');
     this.isSaving.set(true);
     this.errorMsg.set('');
 
@@ -479,7 +509,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
                   this.errorMsg.set('Profile save failed. Please try again.');
                   return;
                 }
-                this.stateProfile.set({ name, mobile, designation, email });
+                this.stateProfile.set({ name, firstName, lastName, mobile, designation, email });
                 this.markVerifiedInStorage({ name, mobile, designation });
                 this.snackBar.open('Profile verified successfully!', 'Close', {
                   duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
@@ -496,7 +526,8 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   onSetNewPassword(): void {
     if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
     const { newPassword } = this.passwordForm.getRawValue();
-    const { name, mobile, designation } = this.stateForm.getRawValue();
+    const { firstName, lastName, mobile, designation } = this.stateForm.getRawValue();
+    const name = [firstName, lastName].filter(Boolean).join(' ');
     const email = this.stateProfile()?.email ?? '';
     this.isSaving.set(true);
     this.errorMsg.set('');
@@ -526,7 +557,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ({ ok }) => {
           if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
-          this.stateProfile.set({ name, mobile, designation, email });
+          this.stateProfile.set({ name, firstName, lastName, mobile, designation, email });
           this.markVerifiedInStorage({ name, mobile, designation });
           this.snackBar.open('Profile verified successfully!', 'Close', {
             duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
