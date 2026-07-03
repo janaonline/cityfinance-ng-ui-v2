@@ -136,17 +136,18 @@
 
             @if (addConflict(); as conflict) {
 
-              <!-- ── Conflict: previously registered email ──────────────────── -->
+              <!-- ── Conflict: previously removed XVI-FC member ─────────────── -->
               <div aria-live="assertive" aria-atomic="true">
                 <div class="alert alert-warning d-flex gap-3 py-3 px-3 mb-4" role="alert">
                   <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1 text-warning" aria-hidden="true"></i>
                   <div>
-                    <p class="fw-semibold mb-1">Email previously registered</p>
+                    <p class="fw-semibold mb-1">Previously removed member</p>
                     <p class="mb-0 small">
-                      This email was previously registered under
+                      This email belongs to
                       <strong>{{ conflict.name }}</strong>
-                      @if (conflict.designation) { <span class="text-muted">({{ conflict.designation }})</span> }.
-                      Would you like to restore this user with your new details, or create a fresh account?
+                      @if (conflict.designation) { <span class="text-muted">({{ conflict.designation }})</span> }
+                      who was previously removed from the team.
+                      Restoring will update their details and send a new invitation.
                     </p>
                   </div>
                 </div>
@@ -165,25 +166,15 @@
                     <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
                     Back
                   </button>
-                  <div class="d-flex gap-2">
-                    <button mat-stroked-button color="primary" type="button" [disabled]="isAdding()" (click)="createFreshMember()">
-                      @if (isAdding()) {
-                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                      } @else {
-                        <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
-                      }
-                      Create New Account
-                    </button>
-                    <button mat-flat-button color="primary" type="button" [disabled]="isAdding()" (click)="restoreMember()">
-                      @if (isAdding()) {
-                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                        Restoring…
-                      } @else {
-                        <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
-                        Restore User
-                      }
-                    </button>
-                  </div>
+                  <button mat-flat-button color="primary" type="button" [disabled]="isAdding()" (click)="restoreMember()">
+                    @if (isAdding()) {
+                      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      Restoring…
+                    } @else {
+                      <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+                      Restore Member
+                    }
+                  </button>
                 </div>
               </div>
 
@@ -427,12 +418,12 @@
       }
     </mat-card>
 
-    <!-- ══ Transfer Ownership (Submitter only) ══════════════════════════════════════ -->
+    <!-- ══ Transfer Ownership (Submitter only) — temporarily hidden ════════════════ -->
+    <!-- TODO: re-enable after fixing isNodalOfficer sync on transfer + restore
     @if (isSubmitter()) {
       <mat-card class="transfer-card">
 
         @if (!showTransferPanel()) {
-          <!-- Collapsed -->
           <div class="d-flex align-items-center gap-3 px-4 py-3">
             <div class="transfer-card__icon-wrap flex-shrink-0">
               <i class="bi bi-arrow-left-right text-danger" aria-hidden="true"></i>
@@ -451,10 +442,8 @@
           </div>
 
         } @else {
-          <!-- Expanded -->
           <div class="px-4 pt-4 pb-3">
 
-            <!-- Header -->
             <div class="d-flex align-items-center justify-content-between mb-3">
               <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-shield-exclamation text-danger fs-5" aria-hidden="true"></i>
@@ -476,7 +465,6 @@
                 No active verified members available. Members must complete profile setup before ownership can be transferred to them.
               </div>
             } @else {
-              <!-- Member select -->
               <mat-form-field class="w-100 mb-2" appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Select new Admin</mat-label>
                 <mat-select
@@ -493,7 +481,6 @@
                 </mat-select>
               </mat-form-field>
 
-              <!-- Transfer preview -->
               @if (selectedTransferTarget(); as target) {
                 <div class="transfer-preview rounded border bg-light px-3 py-2 mb-3">
                   <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -521,7 +508,6 @@
               }
             }
 
-            <!-- Irreversible warning -->
             <div class="alert alert-danger d-flex align-items-start gap-2 py-2 px-3 small mb-3" role="note">
               <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1 text-danger" aria-hidden="true"></i>
               <span>
@@ -530,7 +516,6 @@
               </span>
             </div>
 
-            <!-- API error -->
             <div aria-live="assertive" aria-atomic="true">
               @if (transferError()) {
                 <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 small mb-3" role="alert">
@@ -542,7 +527,6 @@
 
           </div>
 
-          <!-- Footer -->
           <div class="d-flex gap-2 justify-content-end px-4 py-3 border-top">
             <button mat-stroked-button type="button" [disabled]="isTransferring()" (click)="cancelTransfer()">
               Cancel
@@ -563,6 +547,7 @@
 
       </mat-card>
     }
+    -->
 
   }
 </main>

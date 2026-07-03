@@ -1,7 +1,7 @@
 export interface UlbContacts {
-  commissionerName: string;
-  commissionerEmail: string;
-  commissionerConatactNumber: string;
+  commissionerName?: string;
+  commissionerEmail?: string;
+  commissionerConatactNumber?: string;
   accountantName: string;
   accountantEmail: string;
   accountantConatactNumber: string;
