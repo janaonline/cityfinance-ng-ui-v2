@@ -422,7 +422,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
             this.profileSaveToken = token;
             this.passwordStep.set(true);
           } else {
-            this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token, { isXVIFCDeleted: false })
+            this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token, { isXviFcdeleted: false })
               .pipe(takeUntilDestroyed(this.destroyRef))
               .subscribe({
                 next: ({ ok }) => {
