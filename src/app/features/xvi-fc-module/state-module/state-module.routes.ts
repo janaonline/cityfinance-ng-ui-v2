@@ -65,13 +65,11 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'roles-teams-unified-view',
     loadComponent: () =>
-      import('./roles-teams-overview/roles-teams-overview.component').then(
-        (m) => m.RolesTeamsOverviewComponent,
-      ),
+      import('./roles-teams-overview/roles-teams-overview.component').then((m) => m.RolesTeamsOverviewComponent),
   },
   {
     path: 'register-ulb',
-    loadComponent: () => import('./register-ulb/register-ulb.component').then((m) => m.RegisterUlbComponent),
+    loadComponent: () => import('./ulb-list/register-ulb/register-ulb.component').then((m) => m.RegisterUlbComponent),
   },
   {
     path: 'ulb-list',

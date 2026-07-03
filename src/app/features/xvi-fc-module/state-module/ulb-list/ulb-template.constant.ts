@@ -115,4 +115,28 @@ export const ULB_TEMPLATE: FieldConfig[] = [
     formFieldType: 'input',
     validations: [],
   },
+  {
+    key: 'dateOfConstitution',
+    required: true,
+    label: 'Date of Constitution',
+    formFieldType: 'date',
+    validations: [{ name: 'required', validator: null, message: 'Date of constitution is required.' }],
+  },
+  {
+    key: 'gazetteNotificationNumber',
+    required: false,
+    label: 'Gazette Notification Number',
+    formFieldType: 'input',
+    validations: [{ name: 'maxlength', validator: 100, message: 'Must not exceed 100 characters.' }],
+  },
+  {
+    key: 'gazetteNotification',
+    required: true,
+    label: 'Gazette Notification',
+    formFieldType: 'file',
+    allowedFileTypes: ['pdf'],
+    maxFileSize: 5,
+    folderPath: 'ulb/gazette-notification',
+    validations: [{ name: 'required', validator: null, message: 'Gazette notification PDF is required.' }],
+  },
 ];

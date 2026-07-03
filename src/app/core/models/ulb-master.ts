@@ -6,6 +6,13 @@ export interface IUlbApproval {
   rejectReason?: string;
 }
 
+export interface IUlbGazetteFile {
+  fileName: string;
+  fileUrl: string;
+  fileSize: number | null;
+  mimeType?: string;
+}
+
 /** ULB master-data record, as returned by the cf-nest-api-v2 `master/ulb` CRUD endpoints. */
 export interface IUlbMaster {
   _id: string;
@@ -26,6 +33,9 @@ export interface IUlbMaster {
   amrut?: string;
   lgdCode?: string;
   regionalName?: string;
+  dateOfConstitution?: string | null;
+  gazetteNotificationNumber?: string | null;
+  gazetteNotification?: IUlbGazetteFile | null;
   isActive: boolean;
   isPublish: boolean;
   approval: IUlbApproval;

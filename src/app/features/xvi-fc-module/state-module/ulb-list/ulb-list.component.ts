@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { GlobalLoaderService } from '../../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -20,7 +21,7 @@ const errMsg = 'An unexpected error occurred. Please try again later.';
 
 @Component({
   selector: 'app-ulb-list',
-  imports: [MatTableModule, MatPaginatorModule, MaterialModule, FormsModule],
+  imports: [MatTableModule, MatPaginatorModule, MaterialModule, FormsModule, RouterLink],
   templateUrl: './ulb-list.component.html',
   styleUrl: './ulb-list.component.scss',
 })
@@ -30,8 +31,8 @@ export class UlbListComponent implements OnInit {
   private readonly loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   readonly isAdmin = this.loggedInUserDetails?.role === 'ADMIN';
   readonly isState = this.loggedInUserDetails?.role === 'STATE';
-  readonly canCreate = this.isAdmin || this.isState;
-  private readonly ownStateId: string | null = this.loggedInUserDetails?.state ?? null;
+  /** ADMIN accounts have no home state to default to, so the simplified Register ULB page is STATE-only. */
+  readonly canCreate = this.isState;
 
   displayedColumns: string[] = ['code', 'name', 'district', 'ulbType', 'approvalStatus', 'isActive'];
 
@@ -67,7 +68,7 @@ export class UlbListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // this.loadLookups();
+    this.loadLookups();
     this.getUlbs();
   }
 
@@ -130,50 +131,26 @@ export class UlbListComponent implements OnInit {
     return this.ulbTypeNameById.get(id) ?? '—';
   }
 
-  openDialog(action: 'Create' | 'Edit', ulb?: IUlbMaster): void {
-    // A STATE user's submissions are always pinned to their own state on the backend;
-    // lock the field client-side too so the form reflects what will actually be saved.
-    const lockState = action === 'Create' && this.isState;
-    const initialUlb = ulb ?? (lockState && this.ownStateId ? ({ state: this.ownStateId } as Partial<IUlbMaster>) : undefined);
-
+  /** Editing still uses the modal dialog; creation now happens on the dedicated Register ULB page. */
+  openEditDialog(ulb: IUlbMaster): void {
     const dialogRef = this.dialog.open(UlbDialogComponent, {
       data: {
-        action,
+        action: 'Edit',
         ulbTemplate: structuredClone(this.ulbTemplate).map((field) => ({
           ...field,
-          value: ulb ? (ulb as unknown as Record<string, unknown>)[field.key] : field.value,
+          value: (ulb as unknown as Record<string, unknown>)[field.key],
         })),
-        ulbId: ulb?._id ?? null,
+        ulbId: ulb._id,
         states: this.states,
         ulbTypes: this.ulbTypes,
-        ulb: initialUlb,
-        lockState,
+        ulb,
       },
       width: '700px',
     });
 
     dialogRef.afterClosed().subscribe((result: UlbDialogResponse) => {
-      if (!result?.payload) return;
-      if (result.action === 'Create') {
-        this.createUlb(result.payload);
-      } else if (result.ulbId) {
-        this.updateUlb(result.ulbId, result.payload);
-      }
-    });
-  }
-
-  createUlb(payload: Record<string, unknown>): void {
-    this.globalLoader.showLoader();
-    this.ulbMasterService.create(payload).subscribe({
-      next: () => {
-        this.globalLoader.stopLoader();
-        this.utilityService.swalPopup('Success!', 'ULB has been created successfully.');
-        this.getUlbs();
-      },
-      error: (error: { error?: { message?: string | string[] } }) => {
-        this.globalLoader.stopLoader();
-        this.utilityService.swalPopup('Failed!', this.extractErrorMessage(error), 'error');
-      },
+      if (!result?.payload || !result.ulbId) return;
+      this.updateUlb(result.ulbId, result.payload);
     });
   }
 

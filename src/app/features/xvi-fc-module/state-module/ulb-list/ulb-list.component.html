@@ -16,7 +16,7 @@
     </div>
 
     @if (canCreate) {
-    <button class="btn btn-cfPrimary" (click)="openDialog('Create')">Create ULB</button>
+    <a class="btn btn-cfPrimary" [routerLink]="['../register-ulb']">Create ULB</a>
     }
   </div>
   <mat-card class="custom-mat-card mat-elevation-z1">
@@ -79,7 +79,7 @@
                   <i class="bi bi-x-circle-fill"></i>
                 </button>
                 }
-                <button class="btn btn-link p-0 border-0" (click)="openDialog('Edit', element)">
+                <button class="btn btn-link p-0 border-0" (click)="openEditDialog(element)">
                   <i class="bi bi-pencil-square"></i>
                 </button>
                 <button class="btn btn-link p-0 border-0" (click)="removeUlb(element)">
