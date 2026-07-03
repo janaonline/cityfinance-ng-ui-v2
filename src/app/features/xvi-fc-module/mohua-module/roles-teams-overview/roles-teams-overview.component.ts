@@ -37,7 +37,7 @@ export type MohuaSubRole = 'SUBMITTER' | 'EDITOR' | 'VIEWER';
 export const MOHUA_SUBROLE_LABEL: Record<MohuaSubRole, string> = {
   SUBMITTER: 'Admin',
   EDITOR: 'Reviewer',
-  VIEWER: 'Editor',
+  VIEWER: 'Viewer',
 };
 
 export interface MohuaMember {
@@ -189,7 +189,7 @@ export class MohuaRolesTeamsOverviewComponent implements OnInit {
       type: 'select',
       autocomplete: '',
       options: [
-        { value: 'EDITOR', label: 'Editor' },
+        { value: 'EDITOR', label: 'Reviewer' },
         { value: 'VIEWER', label: 'Viewer' },
       ],
       errors: [{ key: 'required', message: 'Role is required.' }],
@@ -426,10 +426,9 @@ export class MohuaRolesTeamsOverviewComponent implements OnInit {
     this.submitInvite('invite');
   }
 
-  restoreMember(): void   { this.submitInvite('restore'); }
-  createFreshMember(): void { this.submitInvite('force-new'); }
+  restoreMember(): void { this.submitInvite('restore'); }
 
-  private submitInvite(action: 'invite' | 'restore' | 'force-new'): void {
+  private submitInvite(action: 'invite' | 'restore'): void {
     this.isAdding.set(true);
     this.addError.set(null);
     this.addConflict.set(null);
@@ -450,9 +449,9 @@ export class MohuaRolesTeamsOverviewComponent implements OnInit {
         error: (err: HttpErrorResponse) => {
           this.isAdding.set(false);
           const body: Record<string, unknown> = err.error ?? {};
-          if (body['code'] === 'EMAIL_PREVIOUSLY_REGISTERED') {
-            const deleted = body['deletedUser'] as { name: string; designation: string } | undefined;
-            this.addConflict.set({ name: deleted?.name ?? '', designation: deleted?.designation ?? '' });
+          if (body['code'] === 'EMAIL_XVIFC_REMOVED') {
+            const removed = body['removedUser'] as { name: string; designation: string } | undefined;
+            this.addConflict.set({ name: removed?.name ?? '', designation: removed?.designation ?? '' });
           } else {
             this.addError.set((body['message'] as string) ?? 'Failed to invite member. Please try again.');
           }
@@ -553,7 +552,7 @@ export class MohuaRolesTeamsOverviewComponent implements OnInit {
           this.authService.refreshAccessToken().pipe(
             takeUntilDestroyed(this.destroyRef),
           ).subscribe();
-          this.snackBar.open('Ownership transferred. Your role is now Editor.', 'Dismiss',
+          this.snackBar.open('Ownership transferred. Your role is now Reviewer.', 'Dismiss',
             { duration: 5000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snack-success'] });
         },
         error: (err: HttpErrorResponse) => {
