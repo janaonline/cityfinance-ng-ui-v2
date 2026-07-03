@@ -591,7 +591,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
   }
 
   canDelete(member: StateMember): boolean {
-    return !this.isCurrentUser(member._id) && member.subRole !== 'SUBMITTER';
+    return this.isSubmitter() && !this.isCurrentUser(member._id) && member.subRole !== 'SUBMITTER';
   }
 
   onDesignationInput(event: Event): void {
