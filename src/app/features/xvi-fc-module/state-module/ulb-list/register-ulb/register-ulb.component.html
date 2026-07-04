@@ -6,77 +6,7 @@
 
   @if (form) {
     <form [formGroup]="form" (ngSubmit)="submit()">
-      <mat-card class="section-card mb-3">
-        <mat-card-content>
-          <h6 class="section-title">
-            <i class="bi bi-bank" aria-hidden="true"></i> ULB IDENTITY
-          </h6>
-
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="field-label">ULB Name <span class="text-danger">*</span></label>
-              <app-dynamic-form [field]="fieldConfig('name')" [group]="form"></app-dynamic-form>
-            </div>
-
-            <div class="col-md-6">
-              <label class="field-label">ULB Type <span class="text-danger">*</span></label>
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-select formControlName="ulbType" placeholder="Select type...">
-                  @for (type of ulbTypes; track type._id) {
-                    <mat-option [value]="type._id">{{ type.name }}</mat-option>
-                  }
-                </mat-select>
-                @if (form.get('ulbType')?.hasError('required') && form.get('ulbType')?.touched) {
-                  <mat-error>ULB type is required.</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="col-md-6">
-              <label class="field-label">District <span class="text-danger">*</span></label>
-              <app-dynamic-form [field]="fieldConfig('district')" [group]="form"></app-dynamic-form>
-            </div>
-
-            <div class="col-md-6">
-              <label class="field-label">2011 Census Code <span class="text-muted fw-normal">(if available)</span></label>
-              <app-dynamic-form [field]="fieldConfig('censusCode')" [group]="form"></app-dynamic-form>
-              <small class="text-body-secondary d-block mt-1">
-                Not available? Enter <strong>999999</strong> as a 6-digit placeholder.
-              </small>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="section-card mb-3">
-        <mat-card-content>
-          <h6 class="section-title">
-            <i class="bi bi-journal-text" aria-hidden="true"></i> CONSTITUTION &amp; LEGAL BASIS
-          </h6>
-
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="field-label">Date of Constitution <span class="text-danger">*</span></label>
-              <app-dynamic-form [field]="fieldConfig('dateOfConstitution')" [group]="form"></app-dynamic-form>
-            </div>
-
-            <div class="col-md-6">
-              <label class="field-label">
-                Gazette Notification Number <span class="text-muted fw-normal">(if available)</span>
-              </label>
-              <app-dynamic-form [field]="fieldConfig('gazetteNotificationNumber')" [group]="form"></app-dynamic-form>
-            </div>
-
-            <div class="col-12">
-              <label class="field-label">
-                Gazette Notification <span class="text-danger">*</span>
-                <span class="text-muted fw-normal">— upload the PDF of the gazette notifying constitution</span>
-              </label>
-              <app-dynamic-form [field]="fieldConfig('gazetteNotificationFile')" [group]="form"></app-dynamic-form>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
+      <app-form-section-grid [sections]="sections" [group]="form"></app-form-section-grid>
 
       <div class="d-flex align-items-center flex-wrap gap-3 mt-2 mb-4">
         <button type="submit" class="btn btn-cfPrimary d-inline-flex align-items-center gap-2">

@@ -18,21 +18,21 @@ import { MaterialModule } from '../../../../material.module';
   <mat-select
     [formControlName]="field.key"
     [multiple]="field.multiple"
-    placeholder="Select an Option"
+    [placeholder]="field.placeholder || 'Select an Option'"
     [panelWidth]="parentField ? 400 : 'auto'"
     [attr.data-cy]="field.key ? field.key + '-test' : null"
     >
     <!-- <mat-option value="">Select an Option</mat-option> -->
     @if (parentField?.options) {
       @for (item of parentField?.options; track $index; let last = $last) {
-        <mat-option [value]="item">{{ item }}</mat-option>
+        <mat-option [value]="optionValue(item)">{{ optionLabel(item) }}</mat-option>
         @if (!last) {
           <mat-divider></mat-divider>
         }
       }
     } @else {
       @for (item of field.options; track $index; let last = $last) {
-        <mat-option [value]="item">{{ item }}</mat-option>
+        <mat-option [value]="optionValue(item)">{{ optionLabel(item) }}</mat-option>
         @if (!last) {
           <mat-divider></mat-divider>
         }
@@ -84,5 +84,14 @@ export class SelectComponent implements OnInit, OnChanges {
   hasError(key: string, name: string): boolean {
     const control = this.group.get(key);
     return !!control?.hasError(name) && (control.touched || control.dirty);
+  }
+
+  /** Accepts plain strings ('YES') as well as `{ id, label }` objects (e.g. live-loaded lookups). */
+  optionValue(item: any): any {
+    return item && typeof item === 'object' ? (item.id ?? item.value ?? item._id) : item;
+  }
+
+  optionLabel(item: any): any {
+    return item && typeof item === 'object' ? (item.label ?? item.name ?? item) : item;
   }
 }

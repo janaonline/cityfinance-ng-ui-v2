@@ -140,3 +140,50 @@ export const ULB_TEMPLATE: FieldConfig[] = [
     validations: [{ name: 'required', validator: null, message: 'Gazette notification PDF is required.' }],
   },
 ];
+
+/** Per-field grid width and hint text for one field on the Register ULB page. Resolved against
+ *  ULB_TEMPLATE (or a page-supplied field, e.g. `ulbType`) by `key` — this constant carries only
+ *  layout, not field definitions, so ULB_TEMPLATE stays the single source of truth for those. */
+export interface RegisterUlbFieldLayout {
+  key: string;
+  grid: string;
+  labelHint?: string;
+  hintText?: string;
+}
+
+export interface RegisterUlbSectionLayout {
+  title: string;
+  icon: string;
+  fields: RegisterUlbFieldLayout[];
+}
+
+export const REGISTER_ULB_SECTIONS: RegisterUlbSectionLayout[] = [
+  {
+    title: 'ULB Identity',
+    icon: 'bi-bank',
+    fields: [
+      { key: 'name', grid: 'col-12' },
+      { key: 'ulbType', grid: 'col-md-6' },
+      { key: 'district', grid: 'col-md-6' },
+      {
+        key: 'censusCode',
+        grid: 'col-md-6',
+        labelHint: '(if available)',
+        hintText: 'Not available? Enter 999999 as a 6-digit placeholder.',
+      },
+    ],
+  },
+  {
+    title: 'Constitution & Legal Basis',
+    icon: 'bi-journal-text',
+    fields: [
+      { key: 'dateOfConstitution', grid: 'col-md-6' },
+      { key: 'gazetteNotificationNumber', grid: 'col-md-6', labelHint: '(if available)' },
+      {
+        key: 'gazetteNotificationFile',
+        grid: 'col-12',
+        labelHint: '— upload the PDF of the gazette notifying constitution',
+      },
+    ],
+  },
+];

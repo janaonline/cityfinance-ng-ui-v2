@@ -4,30 +4,31 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { GlobalLoaderService } from '../../../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { UserUtility } from '../../../../../core/util/user/user';
-import { MaterialModule } from '../../../../../material.module';
-import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
+import { FormSectionGridComponent } from '../../../../../shared/dynamic-form/components/form-section-grid/form-section-grid.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
-import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
-import { IUlbType } from '../../../../../core/models/ulb-master';
+import { FieldConfig, FormSectionConfig } from '../../../../../shared/dynamic-form/field.interface';
 import { UlbMasterService } from '../../ulb-list/ulb-master.service';
-import { ULB_TEMPLATE } from '../../ulb-list/ulb-template.constant';
+import { REGISTER_ULB_SECTIONS, ULB_TEMPLATE } from '../../ulb-list/ulb-template.constant';
 
 const errMsg = 'An unexpected error occurred. Please try again later.';
 
-/** Only these ULB_TEMPLATE fields appear on this page — everything else (ULB Code, SB Code, Population,
- *  etc.) is either auto-generated server-side or out of scope for this simplified registration form. */
-const REGISTER_ULB_FIELD_KEYS = [
-  'name',
-  'district',
-  'censusCode',
-  'dateOfConstitution',
-  'gazetteNotificationNumber',
-  'gazetteNotificationFile',
-] as const;
+/** Live-loaded ULB types render through the generic `app-select`; the field itself isn't part of
+ *  ULB_TEMPLATE (that's shared with the Edit dialog, which renders its own dedicated ULB Type select). */
+function buildUlbTypeField(): FieldConfig {
+  return {
+    key: 'ulbType',
+    label: 'ULB Type',
+    formFieldType: 'select',
+    required: true,
+    placeholder: 'Select type...',
+    options: [],
+    validations: [{ name: 'required', validator: null, message: 'ULB type is required.' }],
+  };
+}
 
 @Component({
   selector: 'app-register-ulb',
-  imports: [ReactiveFormsModule, MaterialModule, RouterLink, DynamicFormComponent],
+  imports: [ReactiveFormsModule, RouterLink, FormSectionGridComponent],
   templateUrl: './register-ulb.component.html',
   styleUrl: './register-ulb.component.scss',
 })
@@ -39,13 +40,10 @@ export class RegisterUlbComponent implements OnInit {
   readonly yearId = this.route.snapshot.paramMap.get('yearId');
 
   form!: FormGroup;
-  ulbTypes: IUlbType[] = [];
+  sections: FormSectionConfig[] = [];
 
-  /** Cloned so `hideLabel` doesn't leak into the shared Edit dialog, which reuses ULB_TEMPLATE directly. */
-  private readonly fields: FieldConfig[] = structuredClone(ULB_TEMPLATE)
-    .filter((field) => (REGISTER_ULB_FIELD_KEYS as readonly string[]).includes(field.key))
-    .map((field) => ({ ...field, hideLabel: true }));
-  private readonly fieldsByKey = new Map(this.fields.map((field) => [field.key, field]));
+  private fields: FieldConfig[] = [];
+  private fieldsByKey = new Map<string, FieldConfig>();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -63,8 +61,11 @@ export class RegisterUlbComponent implements OnInit {
       return;
     }
 
+    this.sections = this.buildSections();
+    this.fields = this.sections.flatMap((section) => section.fields);
+    this.fieldsByKey = new Map(this.fields.map((field) => [field.key, field]));
+
     this.form = this.formService.toFormGroup(this.fields);
-    this.form.addControl('ulbType', new FormControl('', Validators.required));
     this.form.addControl(
       'state',
       new FormControl({ value: this.ownStateId ?? '', disabled: true }, Validators.required),
@@ -73,17 +74,37 @@ export class RegisterUlbComponent implements OnInit {
     this.loadUlbTypes();
   }
 
-  fieldConfig(key: string): FieldConfig {
-    const field = this.fieldsByKey.get(key);
-    if (!field) throw new Error(`Unknown ULB field: ${key}`);
-    return field;
+  /** Resolves each REGISTER_ULB_SECTIONS field key against ULB_TEMPLATE (or `ulbType`), merging in
+   *  the section's grid width and hint text, and hiding the built-in dynamic-form label — this
+   *  component renders labels itself so it can show required asterisks and label hints uniformly. */
+  private buildSections(): FormSectionConfig[] {
+    const templateByKey = new Map(structuredClone(ULB_TEMPLATE).map((field) => [field.key, field]));
+    templateByKey.set('ulbType', buildUlbTypeField());
+
+    return REGISTER_ULB_SECTIONS.map((section) => ({
+      title: section.title,
+      icon: section.icon,
+      fields: section.fields.map((layout) => {
+        const field = templateByKey.get(layout.key);
+        if (!field) throw new Error(`Unknown ULB field: ${layout.key}`);
+
+        return {
+          ...field,
+          hideLabel: true,
+          grid: layout.grid,
+          labelHint: layout.labelHint,
+          hintText: layout.hintText,
+        };
+      }),
+    }));
   }
 
   private loadUlbTypes(): void {
     this.globalLoader.showLoader();
     this.ulbMasterService.getTypes().subscribe({
       next: (res) => {
-        this.ulbTypes = res.data ?? [];
+        const ulbTypeField = this.fieldsByKey.get('ulbType');
+        if (ulbTypeField) ulbTypeField.options = res.data ?? [];
         this.globalLoader.stopLoader();
       },
       error: () => {

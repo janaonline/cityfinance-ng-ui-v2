@@ -1,0 +1,32 @@
+@for (section of sections; track section.title) {
+  <mat-card class="custom-mat-card form-section-grid__card mb-3">
+    <mat-card-content>
+      <h6 class="form-section-grid__title">
+        @if (section.icon) {
+          <i [class]="'bi ' + section.icon" aria-hidden="true"></i>
+        }
+        {{ section.title }}
+      </h6>
+
+      <div class="row g-3">
+        @for (field of section.fields; track field.key) {
+          <div [class]="field.grid || 'col-12'">
+            <label class="form-section-grid__label">
+              {{ field.label }}
+              @if (field.required) {
+                <span class="text-danger">*</span>
+              }
+              @if (field.labelHint) {
+                <span class="text-muted fw-normal"> {{ field.labelHint }}</span>
+              }
+            </label>
+            <app-dynamic-form [field]="field" [group]="group"></app-dynamic-form>
+            @if (field.hintText) {
+              <small class="text-body-secondary d-block mt-1">{{ field.hintText }}</small>
+            }
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
