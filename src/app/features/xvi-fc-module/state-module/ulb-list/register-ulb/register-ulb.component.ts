@@ -8,23 +8,8 @@ import { FormSectionGridComponent } from '../../../../../shared/dynamic-form/com
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldConfig, FormSectionConfig } from '../../../../../shared/dynamic-form/field.interface';
 import { UlbMasterService } from '../../ulb-list/ulb-master.service';
-import { REGISTER_ULB_SECTIONS, ULB_TEMPLATE } from '../../ulb-list/ulb-template.constant';
 
 const errMsg = 'An unexpected error occurred. Please try again later.';
-
-/** Live-loaded ULB types render through the generic `app-select`; the field itself isn't part of
- *  ULB_TEMPLATE (that's shared with the Edit dialog, which renders its own dedicated ULB Type select). */
-function buildUlbTypeField(): FieldConfig {
-  return {
-    key: 'ulbType',
-    label: 'ULB Type',
-    formFieldType: 'select',
-    required: true,
-    placeholder: 'Select type...',
-    options: [],
-    validations: [{ name: 'required', validator: null, message: 'ULB type is required.' }],
-  };
-}
 
 @Component({
   selector: 'app-register-ulb',
@@ -43,7 +28,6 @@ export class RegisterUlbComponent implements OnInit {
   sections: FormSectionConfig[] = [];
 
   private fields: FieldConfig[] = [];
-  private fieldsByKey = new Map<string, FieldConfig>();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -61,55 +45,31 @@ export class RegisterUlbComponent implements OnInit {
       return;
     }
 
-    this.sections = this.buildSections();
-    this.fields = this.sections.flatMap((section) => section.fields);
-    this.fieldsByKey = new Map(this.fields.map((field) => [field.key, field]));
-
-    this.form = this.formService.toFormGroup(this.fields);
-    this.form.addControl(
-      'state',
-      new FormControl({ value: this.ownStateId ?? '', disabled: true }, Validators.required),
-    );
-
-    this.loadUlbTypes();
-  }
-
-  /** Resolves each REGISTER_ULB_SECTIONS field key against ULB_TEMPLATE (or `ulbType`), merging in
-   *  the section's grid width and hint text, and hiding the built-in dynamic-form label — this
-   *  component renders labels itself so it can show required asterisks and label hints uniformly. */
-  private buildSections(): FormSectionConfig[] {
-    const templateByKey = new Map(structuredClone(ULB_TEMPLATE).map((field) => [field.key, field]));
-    templateByKey.set('ulbType', buildUlbTypeField());
-
-    return REGISTER_ULB_SECTIONS.map((section) => ({
-      title: section.title,
-      icon: section.icon,
-      fields: section.fields.map((layout) => {
-        const field = templateByKey.get(layout.key);
-        if (!field) throw new Error(`Unknown ULB field: ${layout.key}`);
-
-        return {
-          ...field,
-          hideLabel: true,
-          grid: layout.grid,
-          labelHint: layout.labelHint,
-          hintText: layout.hintText,
-        };
-      }),
-    }));
-  }
-
-  private loadUlbTypes(): void {
     this.globalLoader.showLoader();
-    this.ulbMasterService.getTypes().subscribe({
+    console.log('Register ULB form fields: --1', this.fields);
+    this.ulbMasterService.getRegisterSections().subscribe({
       next: (res) => {
-        const ulbTypeField = this.fieldsByKey.get('ulbType');
-        if (ulbTypeField) ulbTypeField.options = res.data ?? [];
+        console.log('Register ULB form fields: --2', this.fields);
+        // The API returns each field fully resolved (label, formFieldType, validations, grid, hints,
+        // live ulbType options, ...); this page only adds `hideLabel` since it renders labels itself
+        // (required asterisks + label hints) rather than the dynamic-form's built-in label.
+        this.sections = (res.data ?? []).map((section) => ({
+          ...section,
+          fields: section.fields.map((field) => ({ ...field, hideLabel: true })),
+        }));
+        this.fields = this.sections.flatMap((section) => section.fields);
+        console.log('Register ULB form sections:', this.sections);
+        console.log('Register ULB form fields:', this.fields);
+        this.form = this.formService.toFormGroup(this.fields);
+        this.form.addControl(
+          'state',
+          new FormControl({ value: this.ownStateId ?? '', disabled: true }, Validators.required),
+        );
         this.globalLoader.stopLoader();
       },
       error: () => {
         this.globalLoader.stopLoader();
-        this.utilityService.swalPopup('Failed!', 'Unable to load ULB types.', 'error');
+        this.utilityService.swalPopup('Failed!', 'Unable to load the registration form.', 'error');
       },
     });
   }

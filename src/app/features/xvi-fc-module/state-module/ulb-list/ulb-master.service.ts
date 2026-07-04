@@ -11,6 +11,7 @@ import {
   IUlbType,
 } from '../../../../core/models/ulb-master';
 import { IStateListResponse } from '../../../../core/models/state/state-response';
+import { FormSectionConfig } from '../../../../shared/dynamic-form/field.interface';
 
 @Injectable({ providedIn: 'root' })
 export class UlbMasterService {
@@ -50,6 +51,16 @@ export class UlbMasterService {
 
   getTypes(): Observable<IApiEnvelope<IUlbType[]>> {
     return this.http.get<IApiEnvelope<IUlbType[]>>(`${this.baseUrl}/types`);
+  }
+
+  /** Fully-resolved section/field config for the Register ULB page (label, validations, grid, hints, live ulbType options — all pre-merged server-side). */
+  getRegisterSections(): Observable<IApiEnvelope<FormSectionConfig[]>> {
+    return this.http.get<IApiEnvelope<FormSectionConfig[]>>(`${this.baseUrl}/register-sections`);
+  }
+
+  /** Fully-resolved section/field config for the Edit ULB dialog (ADMIN only) — covers every ULB field, with live `state` and `ulbType` options pre-merged server-side. */
+  getEditSections(): Observable<IApiEnvelope<FormSectionConfig[]>> {
+    return this.http.get<IApiEnvelope<FormSectionConfig[]>>(`${this.baseUrl}/edit-sections`);
   }
 
   getStates(): Observable<IStateListResponse> {
