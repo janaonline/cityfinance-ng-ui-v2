@@ -2,7 +2,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { AuthService, AuthSessionState } from '../services/auth.service';
 import { authGuard, createAuthGuard } from './auth.guard';
@@ -135,7 +135,7 @@ describe('authGuard / createAuthGuard', () => {
     });
 
     it('redirects on error during auth check', (done) => {
-      authService.waitForAuthReady.and.throwError('network error');
+      authService.waitForAuthReady.and.returnValue(throwError(() => new Error('network error')));
 
       const result = runGuard(xvifcGuard, '/xvifc/year');
       (result as ReturnType<typeof of>).subscribe((value: unknown) => {

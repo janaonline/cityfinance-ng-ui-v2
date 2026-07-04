@@ -136,14 +136,14 @@ describe('TextareaComponent', () => {
   });
 
   it('should render a validation error message when the control has an error', () => {
-    component.field = createField({
+    fixture.componentRef.setInput('field', createField({
       validations: [
         {
           name: 'required',
           message: 'Description is required',
         } as Validator,
       ],
-    });
+    }));
     component.group = new FormGroup({
       description: new FormControl('', Validators.required),
     });
