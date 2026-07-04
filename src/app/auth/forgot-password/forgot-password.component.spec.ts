@@ -196,12 +196,12 @@ describe('ForgotPasswordComponent', () => {
     it('should call sendForgotPasswordOtp with census code for ULB role', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'ABC123' });
+      component.identifyForm.patchValue({ code: '123456' });
 
       component.onContinue();
       tick();
 
-      expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('ABC123');
+      expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('123456');
     }));
 
     it('should call sendForgotPasswordOtp with email for STATE role', fakeAsync(() => {
@@ -218,7 +218,7 @@ describe('ForgotPasswordComponent', () => {
     it('should advance to RESET_PASSWORD step on success', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'ABC123' });
+      component.identifyForm.patchValue({ code: '123456' });
 
       component.onContinue();
       tick();
@@ -229,7 +229,7 @@ describe('ForgotPasswordComponent', () => {
     it('should set maskedIdentifier from response on success for ULB', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'ABC123' });
+      component.identifyForm.patchValue({ code: '123456' });
 
       component.onContinue();
       tick();
@@ -252,7 +252,7 @@ describe('ForgotPasswordComponent', () => {
     it('should set requestError and stay on REQUEST_OTP step on failure', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(throwError(() => ({ error: { message: 'User not found' } })));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'INVALID' });
+      component.identifyForm.patchValue({ code: '123456' });
 
       component.onContinue();
       tick();
@@ -264,7 +264,7 @@ describe('ForgotPasswordComponent', () => {
     it('should set a generic error when server response has no message', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(throwError(() => ({})));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'INVALID' });
+      component.identifyForm.patchValue({ code: '123456' });
 
       component.onContinue();
       tick();
@@ -275,7 +275,7 @@ describe('ForgotPasswordComponent', () => {
     it('should reset isSubmitting to false after success', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'ABC123' });
+      component.identifyForm.patchValue({ code: '123456' });
 
       component.onContinue();
       tick();
@@ -286,7 +286,7 @@ describe('ForgotPasswordComponent', () => {
     it('should reset isSubmitting to false after error', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(throwError(() => ({})));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'BAD' });
+      component.identifyForm.patchValue({ code: '123456' });
 
       component.onContinue();
       tick();
@@ -299,7 +299,7 @@ describe('ForgotPasswordComponent', () => {
     beforeEach(fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'ABC123' });
+      component.identifyForm.patchValue({ code: '123456' });
       component.onContinue();
       tick();
     }));
@@ -326,7 +326,7 @@ describe('ForgotPasswordComponent', () => {
       tick();
 
       expect(authSpy.resetPassword).toHaveBeenCalledWith({
-        identifier: 'ABC123',
+        identifier: '123456',
         otp: '1234',
         newPassword: MOCK_PASSWORD,
         confirmPassword: MOCK_PASSWORD,
@@ -369,7 +369,7 @@ describe('ForgotPasswordComponent', () => {
     beforeEach(fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
-      component.identifyForm.patchValue({ code: 'ABC123' });
+      component.identifyForm.patchValue({ code: '123456' });
       component.onContinue();
       tick();
       authSpy.sendForgotPasswordOtp.calls.reset();
@@ -395,7 +395,7 @@ describe('ForgotPasswordComponent', () => {
       component.onResendOtp();
       tick();
 
-      expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('ABC123');
+      expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('123456');
     }));
 
     it('should mark otpResent true and restart timer on success', fakeAsync(() => {

@@ -1,3 +1,4 @@
+@if (field && field.key) {
 @switch (field.formFieldType) {
   @case ('amount') {
     <!-- {{field | json}}------- -->
@@ -99,3 +100,4 @@
             </mat-form-field>
           }
         }
+}
