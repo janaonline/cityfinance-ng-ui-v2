@@ -15,7 +15,7 @@ describe('UlbDialogComponent', () => {
         { provide: MatDialogRef, useValue: { close: () => undefined } },
         {
           provide: MAT_DIALOG_DATA,
-          useValue: { action: 'Create', ulbTemplate: [], ulbId: null, states: [], ulbTypes: [] },
+          useValue: { action: 'Edit', ulbId: null },
         },
       ],
       imports: [HttpClientTestingModule, RouterTestingModule, UlbDialogComponent],

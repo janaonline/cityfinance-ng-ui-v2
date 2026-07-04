@@ -9,13 +9,11 @@ import { GlobalLoaderService } from '../../../../core/services/loaders/global-lo
 import { UtilityService } from '../../../../core/services/utility.service';
 import { UserUtility } from '../../../../core/util/user/user';
 import { MaterialModule } from '../../../../material.module';
-import { FieldConfig } from '../../../../shared/dynamic-form/field.interface';
 import { IState } from '../../../../core/models/state/state';
 import { IUlbMaster, IUlbType } from '../../../../core/models/ulb-master';
 import { UlbDialogComponent } from './dialog/ulb-dialog.component';
 import { UlbDialogResponse } from './ulb-list.interface';
 import { UlbMasterService } from './ulb-master.service';
-import { ULB_TEMPLATE } from './ulb-template.constant';
 
 const errMsg = 'An unexpected error occurred. Please try again later.';
 
@@ -48,8 +46,6 @@ export class UlbListComponent implements OnInit {
   pageIndex = 0;
   pageSize = 10;
   totalItems = 0;
-
-  ulbTemplate: FieldConfig[] = ULB_TEMPLATE;
 
   constructor(
     public globalLoader: GlobalLoaderService,
@@ -134,17 +130,7 @@ export class UlbListComponent implements OnInit {
   /** Editing still uses the modal dialog; creation now happens on the dedicated Register ULB page. */
   openEditDialog(ulb: IUlbMaster): void {
     const dialogRef = this.dialog.open(UlbDialogComponent, {
-      data: {
-        action: 'Edit',
-        ulbTemplate: structuredClone(this.ulbTemplate).map((field) => ({
-          ...field,
-          value: (ulb as unknown as Record<string, unknown>)[field.key],
-        })),
-        ulbId: ulb._id,
-        states: this.states,
-        ulbTypes: this.ulbTypes,
-        ulb,
-      },
+      data: { action: 'Edit', ulbId: ulb._id, ulb },
       width: '700px',
     });
 

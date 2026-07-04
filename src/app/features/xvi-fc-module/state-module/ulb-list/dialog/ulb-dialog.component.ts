@@ -1,34 +1,54 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
+import { FormGroup } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
+import { FormSectionGridComponent } from '../../../../../shared/dynamic-form/components/form-section-grid/form-section-grid.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
+import { FieldConfig, FormSectionConfig } from '../../../../../shared/dynamic-form/field.interface';
 import { MaterialModule } from '../../../../../material.module';
+import { UlbMasterService } from '../ulb-master.service';
 import { UlbDialogData } from '../ulb-list.interface';
 
 @Component({
   selector: 'app-ulb-dialog',
-  imports: [MatDialogModule, MatCardModule, MaterialModule, DynamicFormComponent],
+  imports: [MatDialogModule, MaterialModule, FormSectionGridComponent],
   templateUrl: './ulb-dialog.component.html',
   styleUrl: './ulb-dialog.component.scss',
 })
 export class UlbDialogComponent implements OnInit {
   form!: FormGroup;
+  sections: FormSectionConfig[] = [];
+  loadFailed = false;
+
+  private fields: FieldConfig[] = [];
 
   constructor(
     private dialogRef: MatDialogRef<UlbDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: UlbDialogData,
-    public formService: DynamicFormService,
+    private formService: DynamicFormService,
+    private ulbMasterService: UlbMasterService,
   ) {}
 
   ngOnInit(): void {
-    this.form = this.formService.toFormGroup(this.data.ulbTemplate);
-    this.form.addControl(
-      'state',
-      new FormControl({ value: this.data.ulb?.state ?? '', disabled: !!this.data.lockState }, Validators.required),
-    );
-    this.form.addControl('ulbType', new FormControl(this.data.ulb?.ulbType ?? '', Validators.required));
+    this.ulbMasterService.getEditSections().subscribe({
+      next: (res) => {
+        const ulbRecord = (this.data.ulb ?? {}) as Record<string, unknown>;
+        // Sections come back as generic field definitions (no values) — hydrate each with the
+        // ULB row being edited, and hide the built-in label since the grid renders its own.
+        this.sections = (res.data ?? []).map((section) => ({
+          ...section,
+          fields: section.fields.map((field) => ({
+            ...field,
+            hideLabel: true,
+            value: ulbRecord[field.key] ?? field.value,
+          })),
+        }));
+        this.fields = this.sections.flatMap((section) => section.fields);
+        this.form = this.formService.toFormGroup(this.fields);
+      },
+      error: () => {
+        this.loadFailed = true;
+      },
+    });
   }
 
   save(): void {
@@ -38,10 +58,8 @@ export class UlbDialogComponent implements OnInit {
     }
 
     const rawValue = this.form.getRawValue() as Record<string, unknown>;
-    const payload = this.formService.serializeFormPayload(this.data.ulbTemplate, rawValue);
+    const payload = this.formService.serializeFormPayload(this.fields, rawValue);
 
-    payload['state'] = rawValue['state'];
-    payload['ulbType'] = rawValue['ulbType'];
     ['population', 'area', 'wards'].forEach((key) => {
       if (payload[key] !== '' && payload[key] !== null && payload[key] !== undefined) {
         payload[key] = Number(payload[key]);
