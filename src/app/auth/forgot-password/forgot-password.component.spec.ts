@@ -12,10 +12,8 @@ const MOCK_PASSWORD = 'Test@1234';
 const MOCK_PASSWORD_ALT = 'Other@1234';
 
 const mockSendOtpResponse = {
-  success: true as const,
-  message: 'OTP sent',
-  mobile: '****1234',
-  email: 'u***@example.com',
+  maskedMobile: '****1234',
+  maskedEmail: 'u***@example.com',
 };
 
 describe('ForgotPasswordComponent', () => {
@@ -25,7 +23,7 @@ describe('ForgotPasswordComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    authSpy = jasmine.createSpyObj('OtpAuthService', ['sendOtp', 'resetPassword']);
+    authSpy = jasmine.createSpyObj('OtpAuthService', ['sendForgotPasswordOtp', 'resetPassword']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
@@ -49,8 +47,8 @@ describe('ForgotPasswordComponent', () => {
   });
 
   describe('initial state', () => {
-    it('should start on the identify step', () => {
-      expect(component.currentStep()).toBe('identify');
+    it('should start on the REQUEST_OTP step', () => {
+      expect(component.currentStep()).toBe('REQUEST_OTP');
     });
 
     it('should default to ULB role', () => {
@@ -176,14 +174,14 @@ describe('ForgotPasswordComponent', () => {
     it('should not submit when already submitting', () => {
       component.isSubmitting.set(true);
       component.onContinue();
-      expect(authSpy.sendOtp).not.toHaveBeenCalled();
+      expect(authSpy.sendForgotPasswordOtp).not.toHaveBeenCalled();
     });
 
     it('should mark form as touched and abort when ULB code is empty', () => {
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: '' });
       component.onContinue();
-      expect(authSpy.sendOtp).not.toHaveBeenCalled();
+      expect(authSpy.sendForgotPasswordOtp).not.toHaveBeenCalled();
       expect(component.identifyForm.touched).toBeTrue();
     });
 
@@ -191,95 +189,91 @@ describe('ForgotPasswordComponent', () => {
       component.onRoleChange('STATE');
       component.identifyForm.patchValue({ email: '' });
       component.onContinue();
-      expect(authSpy.sendOtp).not.toHaveBeenCalled();
+      expect(authSpy.sendForgotPasswordOtp).not.toHaveBeenCalled();
       expect(component.identifyForm.touched).toBeTrue();
     });
 
-    it('should call sendOtp with census code for ULB role', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+    it('should call sendForgotPasswordOtp with census code for ULB role', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'ABC123' });
 
       component.onContinue();
       tick();
 
-      expect(authSpy.sendOtp).toHaveBeenCalledWith('ABC123', 'forgot-password');
+      expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('ABC123');
     }));
 
-    it('should call sendOtp with email for STATE role', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+    it('should call sendForgotPasswordOtp with email for STATE role', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.onRoleChange('STATE');
       component.identifyForm.patchValue({ email: 'state@example.com' });
 
       component.onContinue();
       tick();
 
-      expect(authSpy.sendOtp).toHaveBeenCalledWith('state@example.com', 'forgot-password');
+      expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('state@example.com');
     }));
 
-    it('should advance to reset step on success', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+    it('should advance to RESET_PASSWORD step on success', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'ABC123' });
 
       component.onContinue();
       tick();
 
-      expect(component.currentStep()).toBe('reset');
-      expect(component.otpSent()).toBeTrue();
+      expect(component.currentStep()).toBe('RESET_PASSWORD');
     }));
 
-    it('should populate identifiedUser with masked contact info on success', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+    it('should set maskedIdentifier from response on success for ULB', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'ABC123' });
 
       component.onContinue();
       tick();
 
-      const user = component.identifiedUser();
-      expect(user?.role).toBe('ULB');
-      expect(user?.maskedMobile).toBe('****1234');
-      expect(user?.maskedEmail).toBe('u***@example.com');
-      expect(user?.code).toBe('ABC123');
+      expect(component.selectedRole()).toBe('ULB');
+      expect(component.maskedIdentifier()).toBe('****1234');
     }));
 
-    it('should not set code on identifiedUser for non-ULB roles', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+    it('should set maskedIdentifier from response on success for STATE', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.onRoleChange('STATE');
       component.identifyForm.patchValue({ email: 'state@example.com' });
 
       component.onContinue();
       tick();
 
-      expect(component.identifiedUser()?.code).toBeUndefined();
+      expect(component.maskedIdentifier()).toBe('u***@example.com');
     }));
 
-    it('should set identifyError and stay on identify step on failure', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(throwError(() => ({ error: { message: 'User not found' } })));
+    it('should set requestError and stay on REQUEST_OTP step on failure', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(throwError(() => ({ error: { message: 'User not found' } })));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'INVALID' });
 
       component.onContinue();
       tick();
 
-      expect(component.identifyError()).toBe('User not found');
-      expect(component.currentStep()).toBe('identify');
+      expect(component.requestError()).toBe('Unable to send OTP right now. Please try again.');
+      expect(component.currentStep()).toBe('REQUEST_OTP');
     }));
 
     it('should set a generic error when server response has no message', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(throwError(() => ({})));
+      authSpy.sendForgotPasswordOtp.and.returnValue(throwError(() => ({})));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'INVALID' });
 
       component.onContinue();
       tick();
 
-      expect(component.identifyError()).toBe('Something went wrong. Please try again.');
+      expect(component.requestError()).toBe('Unable to send OTP right now. Please try again.');
     }));
 
     it('should reset isSubmitting to false after success', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'ABC123' });
 
@@ -290,7 +284,7 @@ describe('ForgotPasswordComponent', () => {
     }));
 
     it('should reset isSubmitting to false after error', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(throwError(() => ({})));
+      authSpy.sendForgotPasswordOtp.and.returnValue(throwError(() => ({})));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'BAD' });
 
@@ -303,7 +297,7 @@ describe('ForgotPasswordComponent', () => {
 
   describe('onResetPassword', () => {
     beforeEach(fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'ABC123' });
       component.onContinue();
@@ -339,25 +333,25 @@ describe('ForgotPasswordComponent', () => {
       });
     }));
 
-    it('should advance to success step on success', fakeAsync(() => {
+    it('should advance to SUCCESS step on success', fakeAsync(() => {
       authSpy.resetPassword.and.returnValue(of({ success: true as const, message: 'Reset OK' }));
       component.resetForm.patchValue({ otp: '1234', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
 
       component.onResetPassword();
       tick();
 
-      expect(component.currentStep()).toBe('success');
+      expect(component.currentStep()).toBe('SUCCESS');
     }));
 
-    it('should set resetError and stay on reset step on failure', fakeAsync(() => {
+    it('should set resetError and stay on RESET_PASSWORD step on failure', fakeAsync(() => {
       authSpy.resetPassword.and.returnValue(throwError(() => ({ error: { message: 'Invalid OTP' } })));
       component.resetForm.patchValue({ otp: '9999', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
 
       component.onResetPassword();
       tick();
 
-      expect(component.resetError()).toBe('Invalid OTP');
-      expect(component.currentStep()).toBe('reset');
+      expect(component.resetError()).toBe('Invalid or expired OTP.');
+      expect(component.currentStep()).toBe('RESET_PASSWORD');
     }));
 
     it('should reset isSubmitting after success', fakeAsync(() => {
@@ -373,75 +367,65 @@ describe('ForgotPasswordComponent', () => {
 
   describe('onResendOtp', () => {
     beforeEach(fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.selectedRole.set('ULB');
       component.identifyForm.patchValue({ code: 'ABC123' });
       component.onContinue();
       tick();
-      authSpy.sendOtp.calls.reset();
+      authSpy.sendForgotPasswordOtp.calls.reset();
     }));
 
     it('should not resend while countdown is active', () => {
       component.resendSeconds.set(15);
       component.onResendOtp();
-      expect(authSpy.sendOtp).not.toHaveBeenCalled();
+      expect(authSpy.sendForgotPasswordOtp).not.toHaveBeenCalled();
     });
 
     it('should not resend while already submitting', () => {
       component.resendSeconds.set(0);
       component.isSubmitting.set(true);
       component.onResendOtp();
-      expect(authSpy.sendOtp).not.toHaveBeenCalled();
+      expect(authSpy.sendForgotPasswordOtp).not.toHaveBeenCalled();
     });
 
-    it('should call sendOtp when countdown is 0', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+    it('should call sendForgotPasswordOtp when countdown is 0', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.resendSeconds.set(0);
 
       component.onResendOtp();
       tick();
 
-      expect(authSpy.sendOtp).toHaveBeenCalledWith('ABC123', 'forgot-password');
+      expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('ABC123');
     }));
 
-    it('should mark otpSent true and restart timer on success', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of(mockSendOtpResponse));
+    it('should mark otpResent true and restart timer on success', fakeAsync(() => {
+      authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.resendSeconds.set(0);
-      component.otpSent.set(false);
+      component.otpResent.set(false);
 
       component.onResendOtp();
       tick();
 
-      expect(component.otpSent()).toBeTrue();
+      expect(component.otpResent()).toBeTrue();
       expect(component.resendSeconds()).toBeGreaterThan(0);
     }));
 
-    it('should update maskedMobile on resend success', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(of({ ...mockSendOtpResponse, mobile: '****5678' }));
-      component.resendSeconds.set(0);
-
-      component.onResendOtp();
-      tick();
-
-      expect(component.identifiedUser()?.maskedMobile).toBe('****5678');
-    }));
-
     it('should set resetError on resend failure', fakeAsync(() => {
-      authSpy.sendOtp.and.returnValue(throwError(() => ({ error: { message: 'Rate limited' } })));
+      authSpy.sendForgotPasswordOtp.and.returnValue(throwError(() => ({ error: { message: 'Rate limited' } })));
       component.resendSeconds.set(0);
 
       component.onResendOtp();
       tick();
 
-      expect(component.resetError()).toBe('Rate limited');
+      expect(component.resetError()).toBe('Unable to send OTP right now. Please try again.');
     }));
   });
 
   describe('onBackToIdentify', () => {
-    it('should go back to identify step', () => {
-      component.currentStep.set('reset');
+    it('should go back to REQUEST_OTP step', () => {
+      component.currentStep.set('RESET_PASSWORD');
       component.onBackToIdentify();
-      expect(component.currentStep()).toBe('identify');
+      expect(component.currentStep()).toBe('REQUEST_OTP');
     });
 
     it('should reset the resetForm fields', () => {
@@ -450,11 +434,11 @@ describe('ForgotPasswordComponent', () => {
       expect(component.resetForm.controls.otp.value).toBe('');
     });
 
-    it('should clear otpSent and resetError signals', () => {
-      component.otpSent.set(true);
+    it('should clear otpResent and resetError signals', () => {
+      component.otpResent.set(true);
       component.resetError.set('some error');
       component.onBackToIdentify();
-      expect(component.otpSent()).toBeFalse();
+      expect(component.otpResent()).toBeFalse();
       expect(component.resetError()).toBe('');
     });
   });
