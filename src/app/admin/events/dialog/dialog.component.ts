@@ -33,7 +33,10 @@ export class DialogComponent implements OnInit {
       return;
     }
 
-    const payload = { ...this.form.value };
+    const payload = this.formService.serializeFormPayload(
+      this.data.eventTemplate,
+      this.form.getRawValue() as Record<string, unknown>,
+    ) as Record<string, any>;
     // Convert back to array.
     ARRAY_VALUES.forEach((key) => {
       if (payload[key]) {
@@ -42,8 +45,8 @@ export class DialogComponent implements OnInit {
     });
     
     // Convert eventStatus back to number
-    payload.eventStatus = payload.eventStatus === EVENT_STATUS[1] ? 1 : 2;
-    
+    payload['eventStatus'] = payload['eventStatus'] === EVENT_STATUS[1] ? 1 : 2;
+
     this.dialogRef.close({ payload, action: this.data.action, eventId: this.data.eventId });
   }
 }

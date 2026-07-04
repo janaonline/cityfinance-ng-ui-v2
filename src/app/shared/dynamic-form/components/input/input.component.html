@@ -8,16 +8,20 @@
       class="mat-form-field-warning"
       >
       <!-- <mat-form-field [formGroup]="group"> -->
-      <mat-label>{{ field.label }}</mat-label>
+      @if (!field.hideLabel) {
+        <mat-label>{{ field.label }}</mat-label>
+      }
       <input
+        [placeholder]="field.placeholder || ''"
         onwheel="this.blur()"
         matInput
         [formControlName]="field.key"
         type="number"
         [readonly]="readonly"
         [appDecimalLimit]="decimal"
-        placeholder=""
+        [placeholder]="field.placeholder || ''"
         appNoUpDown
+        [attr.data-cy]="field.key ? field.key + '-test' : null"
         />
         <!-- onKeyPress="if(this.value.length==5) return false;"  -->
         <span matTextPrefix>&#8377;&nbsp;</span>
@@ -32,17 +36,17 @@
       </mat-form-field>
     }
     @default {
-      @if (displayLabel && !displayInlineLabel) {
-        <label class="fw-bold"
+      @if (displayLabel && !displayInlineLabel && !field.hideLabel) {
+        <label [for]="field.key" class="fw-semibold"
           >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label
           >
       }
       <mat-form-field
         [appearance]="readonly ? 'fill' : 'outline'"
-        class="demo-full-width mt-2"
+        class="demo-full-width"
         [formGroup]="group"
         >
-        @if (displayInlineLabel) {
+        @if (displayInlineLabel && !field.hideLabel) {
           <mat-label for="field.key"
             >{{ field.label
             }}@if (field.showAsterisk) {
@@ -52,6 +56,7 @@
           }
           @if (field.formFieldType === 'number') {
             <input
+              [placeholder]="field.placeholder || ''"
               onwheel="this.blur()"
               matInput
               [formControlName]="field.key"
@@ -60,15 +65,19 @@
               [appDecimalLimit]="decimal"
               [readonly]="readonly"
               appNoUpDown
+              [attr.data-cy]="field.key ? field.key + '-test' : null"
               />
             } @else {
               <input
+                [placeholder]="field.placeholder || ''"
                 onwheel="this.blur()"
                 matInput
                 [formControlName]="field.key"
                 [id]="field.key"
                 [type]="field.formFieldType"
                 [readonly]="readonly"
+                appTrimOnBlur
+                [attr.data-cy]="field.key ? field.key + '-test' : null"
                 />
               }
 

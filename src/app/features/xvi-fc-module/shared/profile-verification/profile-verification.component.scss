@@ -1,0 +1,172 @@
+@use '../../styles/xvi-fc-theme' as theme;
+
+// Sets Montserrat font + all XVI FC CSS vars (--color-*, --grant-band-*, --nav-*) on this component.
+// Material button and input colors are handled by the theme class on the root div (see styles.scss).
+:host {
+  @include theme.xvifc-theme-tokens;
+  display: block;
+}
+
+.pv-page {
+  min-height: 100vh;
+  background: var(--color-primary-accent);
+}
+
+// ══ LEFT SIDEBAR ══════════════════════════════════════════════
+// grant-band-* vars are already in scope from :host (via xvifc-theme-tokens → grant-band-tokens)
+.pv-sidebar {
+  @include theme.grant-band-surface;
+  border-radius: 12px;
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+
+  &::before { @include theme.grant-band-overlay; }
+  &::after  { @include theme.grant-band-left-bar; }
+
+  > * { position: relative; z-index: 1; }
+
+  &__label {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+
+    sup { font-size: 7px; }
+  }
+
+  &__name {
+    font-size: clamp(16px, 2.2vw, 20px);
+    font-weight: 800;
+    color: var(--color-on-primary);
+    line-height: 1.25;
+    margin: 0 0 18px;
+  }
+
+  &__meta {
+    border-top: 1px solid var(--nav-drawer-border);
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.pv-meta-row { display: flex; justify-content: space-between; gap: 8px; }
+
+.pv-meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.pv-meta-val {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-on-primary);
+  text-align: right;
+}
+
+// ══ ULB CONTACT CARDS ════════════════════════════════════════
+.pv-required-card { border-top: 3px solid #dc3545 !important; }
+
+.pv-card-header {
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 16px !important;
+}
+
+.pv-card-title {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #111827 !important;
+  margin: 0 !important;
+}
+
+// View-mode field display
+.pv-field {
+  padding: 14px 16px;
+
+  &-bordered { border-left: 1px solid #e5e7eb; }
+
+  &-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+    margin-bottom: 4px;
+  }
+
+  &-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    word-break: break-all;
+  }
+}
+
+// ══ PROFILE CARDS (state / mohua) ════════════════════════════
+.pv-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+}
+
+.pv-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+
+  &--0 { background: var(--color-primary); }
+  &--1 { background: #295965; }
+  &--2 { background: #1b4d59; }
+  &--3 { background: #366571; }
+}
+
+.pv-otp-panel {
+  padding: 14px 16px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+// ══ SPINNER ═══════════════════════════════════════════════════
+.pv-spin {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: pvSpin 0.7s linear infinite;
+
+  &--light { border-color: rgba(255, 255, 255, 0.3); border-top-color: #fff; }
+}
+
+@keyframes pvSpin { to { transform: rotate(360deg); } }

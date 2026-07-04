@@ -1,0 +1,16 @@
+<main class="container-fluid px-3 px-md-4 px-xl-5 py-4 py-lg-5">
+  @if (hasError()) {
+    <app-page-error-state
+      title="Failed to load overview"
+      message="We couldn't load your grant overview. Please check your connection and try again."
+      (retry)="loadOverview()"
+    />
+  } @else {
+    <app-overview-card
+      [overviewData]="ulbOverviewData"
+      [initialSelectedGrantId]="'basic'"
+      [isLoading]="isLoading()"
+      [selectedYear]="selectedYear"
+    />
+  }
+</main>

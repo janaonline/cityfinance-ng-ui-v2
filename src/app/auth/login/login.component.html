@@ -1,63 +1,315 @@
-<section class="vh-100">
-  <div class="container py-5 h-100">
-    <div class="row d-flex align-items-center justify-content-center h-100">
-      <!-- <div class="col-md-8 col-lg-7 col-xl-6">
-        <img
-          src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg"
-          class="img-fluid"
-          alt="Login illustration"
-        />
-      </div> -->
-      <div class="col-md-7 col-lg-5 col-xl-5 offset-xl-1">
-        <form (ngSubmit)="submitLogin()" #loginForm="ngForm">
-          <div class="mb-4">
-            <h2 class="fw-bold mb-1">Sign in</h2>
-            <p class="text-muted mb-0">Use your Cityfinance account to continue.</p>
+<div class="row g-0 bg-white xvifc-theme">
+  <!-- ═══ LEFT: Info Panel ════════════════════════════════════════════════════ -->
+  <div class="col-12 col-lg-6 d-none d-lg-block">
+    <div class="login-left h-100 position-relative overflow-hidden d-flex align-items-stretch">
+      <!-- z-index: 1 keeps content above the decorative layer -->
+      <div class="d-flex flex-column position-relative w-100 p-5" style="z-index: 1">
+        <div class="d-flex align-items-center gap-3 mb-5">
+          <div class="brand-logo rounded-circle flex-shrink-0 d-inline-flex align-items-center justify-content-center">
+            <i class="bi bi-bank2"></i>
           </div>
+          <span class="fw-bold small text-uppercase" style="letter-spacing: 0.15em; color: rgba(255, 255, 255, 0.6)">
+            CITY FINANCE
+          </span>
+        </div>
 
-          <div *ngIf="infoMessage" class="alert alert-info" role="alert">
-            {{ infoMessage }}
+        <h1 class="hero-title text-white m-0">{{ panelContent().titleLine1 }}<br />{{ panelContent().titleLine2 }}</h1>
+
+        @for (desc of panelContent().descriptions; track $index) {
+          <p class="hero-desc mb-0 mt-3" [class.hero-desc--dim]="desc.secondary" [innerHTML]="desc.html"></p>
+        }
+
+        @if (panelContent().showStats) {
+          <div class="row g-3 mt-3 stats-grid">
+            @for (stat of stats; track stat.label) {
+              <div class="col-6">
+                <div class="stat-card d-flex align-items-center gap-2 p-3 h-100">
+                  <div class="stat-card__icon flex-shrink-0 d-flex align-items-center justify-content-center">
+                    <i class="bi {{ stat.icon }}"></i>
+                  </div>
+                  <div>
+                    <div class="stat-card__value text-white mb-1">{{ stat.value }}</div>
+                    <div class="stat-card__label text-uppercase fw-semibold">{{ stat.label }}</div>
+                  </div>
+                </div>
+              </div>
+            }
           </div>
+        }
 
-          <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
-            {{ errorMessage }}
+        @if (panelContent().showResourceActions) {
+          <div class="d-flex align-items-start gap-2 mt-4">
+            <button mat-stroked-button type="button" class="res-btn fw-semibold" (click)="openReferenceDocuments()">
+              <i class="bi bi-file-earmark-text me-2"></i>Reference Documents
+            </button>
           </div>
+        }
 
-          <div class="form-outline mb-4">
-            <input
-              type="text"
-              id="loginIdentifier"
-              class="form-control form-control-lg"
-              [(ngModel)]="credentials.identifier"
-              name="identifier"
-              required
-              autocomplete="username"
-            />
-            <label class="form-label" for="loginIdentifier">Email or census code</label>
+        @if (panelContent().showDocuments) {
+          <div class="mt-4">
+            <h5
+              class="fw-bold small text-uppercase mb-3"
+              style="color: rgba(255, 255, 255, 0.7); letter-spacing: 0.05em"
+            >
+              Reference Documents
+            </h5>
+            @for (doc of documents; track doc.title) {
+              <a
+                [href]="doc.file"
+                target="_blank"
+                rel="noopener"
+                class="doc-item rounded-3 d-flex align-items-center gap-2 text-decoration-none mb-2"
+              >
+                <div class="doc-icon rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="bi bi-file-earmark-pdf-fill"></i>
+                </div>
+                <span class="fw-semibold small text-truncate" style="color: rgba(255, 255, 255, 0.75)">
+                  {{ doc.title }}
+                </span>
+              </a>
+            }
           </div>
-
-          <div class="form-outline mb-4">
-            <input
-              type="password"
-              id="loginPassword"
-              class="form-control form-control-lg"
-              [(ngModel)]="credentials.password"
-              name="password"
-              required
-              autocomplete="current-password"
-            />
-            <label class="form-label" for="loginPassword">Password</label>
-          </div>
-
-          <button
-            type="submit"
-            class="btn btn-primary btn-lg btn-block w-100"
-            [disabled]="isSubmitting || loginForm.invalid"
-          >
-            {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
-          </button>
-        </form>
+        }
       </div>
     </div>
   </div>
-</section>
+
+  <!-- ═══ RIGHT: Login Form ════════════════════════════════════════════════════ -->
+  <div class="col-12 col-lg-6 bg-light login-right">
+    <div class="d-flex justify-content-center align-items-center p-4 p-md-5" style="min-height: 100%">
+      <div class="w-100" style="max-width: 440px">
+        <div class="login-card bg-white rounded-4 shadow p-4">
+          <div class="mb-4">
+            <h2 class="fw-bold mb-1" style="font-size: 1.5rem; color: #082c35; letter-spacing: -0.03em">Sign In</h2>
+            @if (loginSubtitle()) {
+              <p class="text-muted mb-0 small">{{ loginSubtitle() }}</p>
+            }
+          </div>
+
+          <!-- ── Step 1: Role selection (16thFC and 15thFC only) ── -->
+          @if (showRoleStep()) {
+            <div class="step-pane" [class.step-pane--enter-left]="slideDirection() === 'back'">
+              <div
+                class="role-grid d-grid gap-2 mb-3"
+                [class.role-grid--fc]="isMultiStep()"
+                role="radiogroup"
+                aria-label="User role"
+              >
+                @for (role of roleOptions(); track trackByRole($index, role)) {
+                  <button
+                    type="button"
+                    class="role-card position-relative overflow-hidden d-flex flex-column align-items-center justify-content-center gap-2 bg-white"
+                    [attr.data-role]="role.icon"
+                    [class.role-card--active]="isRoleSelected(role.id)"
+                    [class.role-card--disabled]="role.disabled"
+                    [disabled]="role.disabled || null"
+                    role="radio"
+                    [attr.aria-checked]="isRoleSelected(role.id)"
+                    (click)="selectRole(role)"
+                  >
+                    @if (role.badge) {
+                      <span class="role-card__badge">{{ role.badge }}</span>
+                    }
+                    @if (isRoleSelected(role.id)) {
+                      <span
+                        class="role-card__check position-absolute d-inline-flex align-items-center justify-content-center rounded-circle"
+                        aria-hidden="true"
+                      >
+                        <i class="bi bi-check-lg"></i>
+                      </span>
+                    }
+                    <span
+                      class="role-card__icon d-flex align-items-center justify-content-center flex-shrink-0"
+                      [class.role-card__icon--ulb]="role.icon === 'ulb'"
+                      [class.role-card__icon--state]="role.icon === 'state'"
+                      [class.role-card__icon--mohua]="role.icon === 'mohua'"
+                      [class.role-card__icon--doe]="role.icon === 'doe'"
+                      [class.role-card__icon--inst]="role.icon === 'institutional'"
+                    >
+                      <i class="bi {{ role.biIcon }} d-block lh-1"></i>
+                    </span>
+                    <span class="role-card__label text-center">{{ role.label }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          } @else {
+            <!-- ── Step 2 / Simple credentials (all types) ── -->
+            <div class="step-pane" [class.step-pane--enter-right]="slideDirection() === 'forward'">
+              @if (isMultiStep()) {
+                <div class="d-flex align-items-center gap-2 mb-3 bg-light border rounded-2 p-2 small">
+                  <span class="text-muted fw-semibold flex-shrink-0">Role :</span>
+                  <span
+                    class="role-card__icon d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width: 24px; height: 24px; border-radius: 6px"
+                    [class.role-card__icon--ulb]="selectedRole()?.icon === 'ulb'"
+                    [class.role-card__icon--state]="selectedRole()?.icon === 'state'"
+                    [class.role-card__icon--mohua]="selectedRole()?.icon === 'mohua'"
+                    [class.role-card__icon--doe]="selectedRole()?.icon === 'doe'"
+                    [class.role-card__icon--inst]="selectedRole()?.icon === 'institutional'"
+                  >
+                    <i class="bi {{ selectedRole()?.biIcon }} d-block lh-1" style="font-size: 12px"></i>
+                  </span>
+                  <span class="flex-fill fw-semibold">{{ selectedRole()?.label }}</span>
+                  <button
+                    type="button"
+                    class="btn btn-link p-0 small fw-semibold text-secondary text-decoration-none"
+                    (click)="onBackToRole()"
+                    style="font-size: 13px"
+                  >
+                    Change
+                  </button>
+                </div>
+              }
+
+              <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+                <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100">
+                  <mat-label>{{ identifierLabel() }}</mat-label>
+                  <input
+                    matInput
+                    [type]="identifierType()"
+                    formControlName="identifier"
+                    [attr.autocomplete]="identifierAutocomplete()"
+                    [attr.inputmode]="identifierInputMode()"
+                    [placeholder]="identifierPlaceholder()"
+                  />
+                </mat-form-field>
+                @if (hasControlError('identifier', 'required')) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">{{ identifierRequiredMessage() }}</p>
+                }
+                @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'maxlength')) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Input is too long.</p>
+                }
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  hasControlError('identifier', 'minlength')
+                ) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Invalid format for the selected role.</p>
+                }
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  !hasControlError('identifier', 'minlength') &&
+                  hasControlError('identifier', 'unsafeInput')
+                ) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Input contains invalid characters.</p>
+                }
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  !hasControlError('identifier', 'minlength') &&
+                  !hasControlError('identifier', 'unsafeInput') &&
+                  hasControlError('identifier', 'invalidIdentifier')
+                ) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">
+                    Enter a valid email address or numeric census code.
+                  </p>
+                }
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  !hasControlError('identifier', 'minlength') &&
+                  !hasControlError('identifier', 'unsafeInput') &&
+                  (hasControlError('identifier', 'emailNotAllowed') || hasControlError('identifier', 'email'))
+                ) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">Invalid format for the selected role.</p>
+                }
+
+                <div class="mt-2">
+                  <mat-form-field subscriptSizing="dynamic" appearance="outline" class="w-100">
+                    <mat-label>Password</mat-label>
+                    <input
+                      matInput
+                      [type]="isPasswordVisible ? 'text' : 'password'"
+                      formControlName="password"
+                      autocomplete="current-password"
+                    />
+                    <button
+                      mat-icon-button
+                      matSuffix
+                      type="button"
+                      (click)="togglePasswordVisibility()"
+                      [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+                    >
+                      <i class="bi" [class.bi-eye]="!isPasswordVisible" [class.bi-eye-slash]="isPasswordVisible"></i>
+                    </button>
+                  </mat-form-field>
+                  @if (hasControlError('password', 'required')) {
+                    <p class="text-danger small fw-semibold mt-1 mb-0">Password is required.</p>
+                  }
+                  @if (!hasControlError('password', 'required') && hasControlError('password', 'minlength')) {
+                    <p class="text-danger small fw-semibold mt-1 mb-0">Password must be at least 6 characters.</p>
+                  }
+                  @if (!hasControlError('password', 'required') && hasControlError('password', 'maxlength')) {
+                    <p class="text-danger small fw-semibold mt-1 mb-0">Password is too long.</p>
+                  }
+                  @if (
+                    !hasControlError('password', 'required') &&
+                    !hasControlError('password', 'minlength') &&
+                    !hasControlError('password', 'maxlength') &&
+                    hasControlError('password', 'unsafeInput')
+                  ) {
+                    <p class="text-danger small fw-semibold mt-1 mb-0">Password contains invalid characters.</p>
+                  }
+                </div>
+
+                @if (errorMessage()) {
+                  <div
+                    class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small fw-medium"
+                    role="alert"
+                  >
+                    <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                    {{ errorMessage() }}
+                  </div>
+                }
+
+                <div class="d-flex justify-content-end mt-1 mb-2">
+                  <button
+                    type="button"
+                    class="btn btn-link p-0 small fw-semibold text-secondary text-decoration-none"
+                    (click)="onForgotPassword()"
+                    style="font-size: 13px"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn w-100 fw-bold py-2 rounded-3 text-white"
+                  style="background: #1f7273"
+                  [disabled]="isSubmitting()"
+                >
+                  @if (isSubmitting()) {
+                    Signing in...
+                  } @else {
+                    Sign In
+                  }
+                </button>
+              </form>
+            </div>
+          }
+        </div>
+
+        <p class="text-muted text-center mt-3 mb-0 small">
+          Protected by reCAPTCHA —
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted">Privacy</a>
+          &amp;
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted">Terms</a>
+        </p>
+
+        <div class="help-card mt-3 p-3">
+          <h3 class="fw-bold mb-1 small" style="color: #24464c">Need Help?</h3>
+          <p class="text-muted mb-0" style="font-size: 0.8rem">
+            Email
+            <a [href]="'mailto:' + supportEmail()" class="fw-semibold" style="color: #1d6769">
+              {{ supportEmail() }}
+            </a>
+            - we respond within 24 hours.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

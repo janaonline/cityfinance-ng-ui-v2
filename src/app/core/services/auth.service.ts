@@ -5,7 +5,7 @@ import { BehaviorSubject, Observable, Subject, catchError, filter, finalize, map
 
 import { environment } from '../../../environments/environment';
 import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
-
+import { AuthPermissionService } from '../auth/auth-permission.service';
 export interface AuthSessionState {
   isAuthenticated: boolean;
   isRefreshing: boolean;
@@ -19,9 +19,9 @@ export interface AuthSessionState {
 export class AuthService {
   private readonly accessTokenStorageKey = 'id_token';
   private readonly sessionHintStorageKey = 'auth_session_hint';
-  private readonly loginUrl = `${environment.api.url}login`;
-  private readonly logoutUrl = `${environment.api.url}logout`;
-  private readonly refreshTokenUrl = `${environment.api.url}refresh`;
+  private readonly loginUrl = `${environment.api.url2}auth/login`;
+  private readonly logoutUrl = `${environment.api.url2}auth/logout`;
+  private readonly refreshTokenUrl = `${environment.api.url2}auth/refresh`;
   private readonly jwtHelper = new JwtHelperService();
 
   private accessToken: string | null = this.readStoredAccessToken();
@@ -43,7 +43,10 @@ export class AuthService {
   readonly currentUser$ = this.currentUserSubject.asObservable();
   readonly sessionState$ = this.sessionStateSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private authPermissionService: AuthPermissionService,
+  ) {
     this.removeLegacyRefreshTokenStorage();
     this.publishSessionState();
   }
@@ -93,21 +96,21 @@ export class AuthService {
     this.refreshRequest$ = this.http
       .post(this.refreshTokenUrl, {}, { withCredentials: true })
       .pipe(
-        map((response: any) => {
-          this.applyAuthResponse(response);
-          return response;
-        }),
-        catchError((error) => {
-          this.handleRefreshFailure(error);
-          return throwError(() => error);
-        }),
-        finalize(() => {
-          this.refreshRequest$ = null;
-          this.isRefreshing = false;
-          this.publishSessionState();
-        }),
-        shareReplay(1),
-      );
+      map((response: any) => {
+        this.applyAuthResponse(response);
+        return response;
+      }),
+      catchError((error) => {
+        this.handleRefreshFailure(error);
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.refreshRequest$ = null;
+        this.isRefreshing = false;
+        this.publishSessionState();
+      }),
+      shareReplay(1),
+    );
 
     return this.refreshRequest$;
   }
@@ -254,7 +257,19 @@ export class AuthService {
   }
 
   extractUser(authResponse: any): IUserLoggedInDetails | null {
-    return authResponse?.user ?? authResponse?.data?.user ?? null;
+    const user = authResponse?.user ?? authResponse?.data?.user ?? null;
+    if (!user) return null;
+    return { ...user, subRole: this.deriveSubRole(user.accessLevel, user.role) };
+  }
+
+  private deriveSubRole(
+    accessLevel?: string,
+    role?: string,
+  ): 'SUBMITTER' | 'EDITOR' | 'VIEWER' | undefined {
+    if (role !== 'STATE') return undefined;
+    if (accessLevel === 'ADMIN') return 'SUBMITTER';
+    if (accessLevel === 'EDITOR') return 'EDITOR';
+    return 'VIEWER';
   }
 
   isRefreshRequest(url: string) {
@@ -284,7 +299,7 @@ export class AuthService {
   }
 
   shouldAttachAccessToken(url: string) {
-    return this.isApiRequest(url) && !this.isAuthRequest(url);
+    return this.isApiRequest(url) && (!this.isAuthRequest(url) || this.isLogoutRequest(url));
   }
 
   shouldSendCredentials(url: string) {
@@ -295,7 +310,7 @@ export class AuthService {
     return this.http.post<{ success: boolean; message: string }>(
       `${environment.api.url}captcha_validate`,
       {
-        recaptcha,
+      recaptcha,
       },
     );
   }
@@ -304,10 +319,10 @@ export class AuthService {
     const request$ = this.http
       .post(this.logoutUrl, {}, { withCredentials: true })
       .pipe(
-        catchError(() => of(null)),
-        finalize(() => this.clearLocalStorage()),
-        shareReplay(1),
-      );
+      catchError(() => of(null)),
+      finalize(() => this.clearLocalStorage()),
+      shareReplay(1),
+    );
 
     request$.subscribe({
       next: () => { },
@@ -318,15 +333,51 @@ export class AuthService {
   }
 
   otpSignIn(body: any) {
-    return this.http.post(`${environment.api.url}sendOtp`, body, {
+    return this.http.post(`${environment.api.url2}auth/sendOtp`, body, {
       withCredentials: true,
     });
   }
 
   otpVerify(body: any) {
-    return this.http.post(`${environment.api.url}verifyOtp`, body, {
-      withCredentials: true,
-    });
+    return this.http
+      .post(`${environment.api.url2}auth/verifyOtp`, body, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((response: any) => {
+          this.applyAuthResponse(response);
+          return response;
+        }),
+      );
+  }
+
+  checkUser(identifier: string, role: string): Observable<{
+    status?: string;
+    isXVIFCProfileVerified?: boolean;
+    maskedContact?: string;
+    loginFlow?: string;
+    message?: string;
+  }> {
+    return this.http.post<any>(`${environment.api.url2}auth/check-user`, { identifier, role }).pipe(
+      map((res: any) => (res?.data ?? res) as {
+            status?: string;
+            isXVIFCProfileVerified?: boolean;
+            maskedContact?: string;
+            loginFlow?: string;
+            message?: string;
+      }),
+    );
+  }
+
+  setPassword(identifier: string, newPassword: string, confirmPassword: string): Observable<{
+    success: boolean;
+    data: { message: string };
+  }> {
+    return this.http.post<{ success: boolean; data: { message: string } }>(
+      `${environment.api.url2}auth/set-password`,
+      { identifier, newPassword, confirmPassword },
+      { withCredentials: true },
+    );
   }
 
   clearLocalStorage(excludeKeys = ['userInfo']) {
@@ -345,6 +396,7 @@ export class AuthService {
     sessionStorage.removeItem('sessionID');
     this.loginLogoutCheck.next(false);
     this.currentUserSubject.next(null);
+    this.authPermissionService.clearUser();
     this.isRefreshing = false;
     this.isRestoringSession = false;
     this.publishSessionState();
@@ -354,6 +406,7 @@ export class AuthService {
     localStorage.removeItem(key);
     if (key === 'userData') {
       this.currentUserSubject.next(null);
+      this.authPermissionService.clearUser();
       this.publishSessionState();
     }
   }
@@ -404,8 +457,8 @@ export class AuthService {
 
     if (currentUser) {
       localStorage.setItem('userData', JSON.stringify(currentUser));
+      this.authPermissionService.setUser(currentUser);
     }
-
     this.currentUserSubject.next(currentUser);
     this.removeLegacyRefreshTokenStorage();
     this.publishSessionState();

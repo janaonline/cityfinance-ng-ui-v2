@@ -1,0 +1,496 @@
+<!--
+  Guard: post-submission update is only meaningful once the elected body form has been
+  submitted to MoHUA (status ∈ POST_SUBMISSION_UPDATE_STATUS). If the user lands here
+  with any other status we show an explanation and auto-redirect to elected-body-status
+  after 2.5 s (the effect in the component class drives the timed navigation).
+-->
+@if (isFormViewAllowed()) {
+  <div class="d-flex justify-content-center align-items-center p-5">
+    <div class="text-center col-md-8 col-lg-6">
+      <i class="bi bi-arrow-left-circle-fill fs-1 text-secondary mb-3 d-block"></i>
+      <h2 class="fs-5 fw-semibold mb-2">Post-submission update unavailable</h2>
+      <p class="text-secondary small mb-4">
+        This page is only accessible after the Elected Body Status form has been submitted or approved. You will be
+        redirected to Elected Body Status shortly.
+      </p>
+      <button type="button" matButton="outlined" (click)="goToElectedBodyForm()">
+        <i class="bi bi-arrow-left me-1"></i> Go to Elected Body Status
+      </button>
+    </div>
+  </div>
+} @else {
+  <div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+    <div class="form-container">
+      <div class="top-accent"></div>
+
+      <div class="content-wrap p-3 p-md-4">
+        <div class="content-stack d-flex flex-column gap-4">
+          <div>
+            <!-- <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+            16th Finance Commission
+            @if (stateName()) {
+              &nbsp;&middot;&nbsp; {{ stateName() }}
+            }
+          </div> -->
+
+            <button
+              class="btn btn-sm btn-link"
+              type="button"
+              (click)="goToElectedBodyForm()"
+              data-cy="update-elected-body-test"
+              title="Update Elected Urban Local Bodies"
+            >
+              &larr; Back to Elected Body Status
+            </button>
+
+            <h1 class="page-title my-2">Update Elected Body Status</h1>
+
+            <p class="page-subtitle text-secondary mb-0">
+              Use this form to update the status of ULBs that did not have a constituted elected body at the time of
+              your earlier submission, once elections have since been held. Submitting this update will forward it to
+              MoHUA for review. If approved, those ULBs become eligible and can be included in the next available claim
+              letter.
+            </p>
+          </div>
+
+          <hr class="my-0 text-body-tertiary" />
+
+          <!-- Summary -->
+          @if (statusSummary(); as summary) {
+            <div data-testid="status-summary-section">
+              <div class="alert alert-success border-success d-flex gap-2" role="alert">
+                <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                <div>
+                  <p class="m-0 p-0 fs-5 fw-semibold text-success">Elected Body Status submitted</p>
+                  <p class="m-0 p-0" data-testid="status-summary-message">
+                    {{ summary.constitutedCount }} of {{ summary.totalUlbCount }} ULBs confirmed as having constituted
+                    elected bodies. This has been recorded and will be used in assessing grant eligibility.
+                  </p>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                @for (card of statusSummaryCards(); track card.label) {
+                  <div
+                    class="border shadow-sm rounded p-3 flex-fill"
+                    style="min-width: 250px"
+                    [ngClass]="card.borderClass"
+                    data-testid="status-summary-card"
+                  >
+                    <p class="m-0 fs-5 fw-semibold" [ngClass]="card.textClass">{{ card.count }}</p>
+                    <p class="m-0">{{ card.label }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <hr class="my-0 text-body-tertiary" />
+
+          <!-- Show table only if ineligible rows/ ULBs are available. -->
+          @if (!rowViewModels().length) {
+            <div class="alert alert-info d-flex gap-2" role="alert">
+              <i class="bi bi-check-circle-fill"></i>
+              <p class="m-0 p-0">
+                No ULBs have been flagged as ineligible in your Elected Body Status submission. You do not need to take
+                any action.
+              </p>
+            </div>
+          } @else {
+            <div class="alert alert-info d-flex gap-2" role="alert">
+              <i class="bi bi-info-circle-fill"></i>
+              <p class="m-0 p-0">
+                How this update works Elected body status is assessed per ULB and is not tied to any fixed cutoff. A ULB
+                that did not have a constituted elected body in your earlier submission is simply excluded from claim
+                letters until its status is updated and approved.
+                <br />
+                If elections have since been held, certify that below and attach the supporting details. MoHUA will
+                review your update and supporting documents. Once approved, the ULB becomes eligible and can be included
+                in the next available claim letter — there is no penalty for a later election.
+              </p>
+            </div>
+
+            @if (isLoadingMeta()) {
+              <app-pre-loader></app-pre-loader>
+              <app-pre-loader></app-pre-loader>
+              <app-pre-loader></app-pre-loader>
+            } @else if (metadataErrorMessage()) {
+              <div class="alert alert-danger" role="alert">
+                {{ metadataErrorMessage() }}
+              </div>
+            } @else if (!canView()) {
+              <div class="alert alert-secondary" role="alert">
+                Post-submission update is available only after the Elected Urban Local Bodies form is submitted or
+                approved.
+              </div>
+            } @else {
+              <div>
+                <p class="text-secondary text-uppercase fw-semibold m-0 p-0 my-1">
+                  Select ULBs where elections have been conducted
+                </p>
+                <p class="p-0 m-0">
+                  There {{ rowViewModels().length === 1 ? 'is' : 'are' }}
+                  {{ rowViewModels().length }}
+                  {{ rowViewModels().length === 1 ? 'ULB' : 'ULBs' }}
+                  flagged as ineligible in your Elected Body Status submission. For each one you select, enter the date
+                  the body was duly constituted and its date of expiry.
+                </p>
+                <!-- Data entry summary -->
+                <div class="my-2 d-flex gap-2">
+                  <p class="m-0 p-2 bg-light small border rounded">
+                    Eligible rows:
+                    <span class="fw-semibold" data-testid="eligible-row-count">{{ eligibleRowCount() }}</span>
+                  </p>
+
+                  <p class="m-0 p-2 bg-light small border rounded">
+                    Modified rows:
+                    <span class="fw-semibold" data-testid="modified-row-count">{{ changedRowCount() }}</span>
+                  </p>
+
+                  <p class="m-0 p-2 bg-light small border rounded">
+                    Validation:
+                    <span
+                      class="fw-semibold"
+                      [ngClass]="getUpdateValidationStateBadgeClass()"
+                      data-testid="validation-state"
+                    >
+                      {{ getUpdateValidationStateLabel() }}
+                    </span>
+                  </p>
+                </div>
+
+                <div class="p-1 card bg-light">
+                  <!-- Search/ Filters -->
+                  <form [formGroup]="filterForm" class="pt-2 pb-3 px-3 d-flex flex-wrap gap-2 align-items-end">
+                    <div class="flex-grow-1">
+                      <label class="form-label small fw-semibold mb-1" for="eulb-post-search">Search</label>
+                      <input
+                        id="eulb-post-search"
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Census code or ULB name"
+                        formControlName="search"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="form-label small fw-semibold mb-1" for="eulb-post-body-status">Body status</label>
+                      <select
+                        id="eulb-post-body-status"
+                        class="form-select form-select-sm"
+                        formControlName="electedBodyStatus"
+                      >
+                        <option value="">All</option>
+                        @for (opt of electedBodyStatusOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="form-label small fw-semibold mb-1" for="eulb-post-vstatus">Validation</label>
+                      <select
+                        id="eulb-post-vstatus"
+                        class="form-select form-select-sm"
+                        formControlName="validationStatus"
+                      >
+                        <option value="">All</option>
+                        @for (opt of validationStatusOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                  </form>
+
+                  @if (rowsErrorMessage()) {
+                    <div class="alert alert-danger py-2" role="alert">
+                      {{ rowsErrorMessage() }}
+                    </div>
+                  }
+
+                  <!-- Table content -->
+                  <div class="table-responsive">
+                    @if (isLoadingRows()) {
+                      <div class="d-flex justify-content-center align-items-center py-5">
+                        <div
+                          class="spinner-border spinner-border-sm text-primary me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></div>
+                        <span class="small text-secondary">Loading rows...</span>
+                      </div>
+                    } @else if (!rows().length) {
+                      <div class="text-center py-5 text-secondary small">
+                        No eligible rows found for the current filters.
+                      </div>
+                    } @else {
+                      <table class="table table-sm table-hover align-middle mb-0">
+                        <caption class="visually-hidden">
+                          Eligible ULBs for post-submission elected body status update
+                        </caption>
+                        <thead class="table-light border-bottom border-top">
+                          <tr class="py-3">
+                            <th scope="col" class="small text-nowrap fw-semibold">#</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Census Code</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">ULB Name</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Elected Body Status</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Date of Constitution</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Date of Expiry</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Remarks</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Validation</th>
+                            @if (canEditRows()) {
+                              <th scope="col" class="small fw-semibold">Actions</th>
+                            }
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (vm of rowViewModels(); track vm.row._id) {
+                            @let row = vm.row;
+                            <tr>
+                              <td class="small text-muted">{{ row.rowNumber }}</td>
+                              <td class="small">{{ row.censusCode }}</td>
+                              <td class="small fw-medium">
+                                <div class="d-flex align-items-center gap-2">
+                                  <span>{{ row.ulbName }}</span>
+                                  @if (vm.isModified) {
+                                    <span class="badge rounded px-1 small text-bg-warning rounded-pill">
+                                      Modified
+                                    </span>
+                                  }
+                                </div>
+                              </td>
+
+                              <td
+                                app-eulb-editable-field-cell
+                                class="small"
+                                field="electedBodyStatus"
+                                [value]="row.electedBodyStatus"
+                                [isEditing]="editingRowId() === row._id"
+                                [canEdit]="canEditRows()"
+                                [fieldEditable]="isFieldEditable('electedBodyStatus')"
+                                [cellHasError]="!!vm.cellHasError['electedBodyStatus']"
+                                [cellErrorText]="vm.cellErrorText['electedBodyStatus'] ?? ''"
+                                [statusOptions]="electedBodyStatusOptions"
+                                [editControl]="editForm.controls.electedBodyStatus"
+                                editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
+                                (editRequested)="startEditAtField(row, $event)"
+                              ></td>
+                              <td
+                                app-eulb-editable-field-cell
+                                class="small"
+                                field="dateOfConstitution"
+                                [value]="row.dateOfConstitution"
+                                [isEditing]="editingRowId() === row._id"
+                                [canEdit]="canEditRows()"
+                                [fieldEditable]="isFieldEditable('dateOfConstitution')"
+                                [fieldEnabled]="isEditFieldEnabled('dateOfConstitution')"
+                                [disabledReason]="getEditFieldDisabledReason('dateOfConstitution')"
+                                [dateMin]="getEditDateMin('dateOfConstitution')"
+                                [dateMax]="getEditDateMax('dateOfConstitution')"
+                                [cellHasError]="!!vm.cellHasError['dateOfConstitution']"
+                                [cellErrorText]="vm.cellErrorText['dateOfConstitution'] ?? ''"
+                                [editControl]="editForm.controls.dateOfConstitution"
+                                editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
+                                (editRequested)="startEditAtField(row, $event)"
+                              ></td>
+                              <td
+                                app-eulb-editable-field-cell
+                                class="small"
+                                field="dateOfExpiry"
+                                [value]="row.dateOfExpiry"
+                                [isEditing]="editingRowId() === row._id"
+                                [canEdit]="canEditRows()"
+                                [fieldEditable]="isFieldEditable('dateOfExpiry')"
+                                [fieldEnabled]="isEditFieldEnabled('dateOfExpiry')"
+                                [disabledReason]="getEditFieldDisabledReason('dateOfExpiry')"
+                                [dateMin]="getEditDateMin('dateOfExpiry')"
+                                [dateMax]="getEditDateMax('dateOfExpiry')"
+                                [cellHasError]="!!vm.cellHasError['dateOfExpiry']"
+                                [cellErrorText]="vm.cellErrorText['dateOfExpiry'] ?? ''"
+                                [editControl]="editForm.controls.dateOfExpiry"
+                                editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
+                                (editRequested)="startEditAtField(row, $event)"
+                              ></td>
+                              <td
+                                app-eulb-editable-field-cell
+                                class="small"
+                                field="remarks"
+                                [value]="row.remarks"
+                                [isEditing]="editingRowId() === row._id"
+                                [canEdit]="canEditRows()"
+                                [fieldEditable]="isFieldEditable('remarks')"
+                                [cellHasError]="!!vm.cellHasError['remarks']"
+                                [cellErrorText]="vm.cellErrorText['remarks'] ?? ''"
+                                [editControl]="editForm.controls.remarks"
+                                editFieldDataAttribute="data-eulb-post-edit-field"
+                                errorIconExtraClass="eulb-error-icon"
+                                [showInvalidCellClass]="true"
+                                (editRequested)="startEditAtField(row, $event)"
+                              ></td>
+
+                              <td>
+                                <span
+                                  app-eulb-validation-badge
+                                  [validationStatus]="row.validationStatus"
+                                  class="badge rounded px-1 small"
+                                ></span>
+                              </td>
+
+                              @if (canEditRows()) {
+                                <td>
+                                  @if (editingRowId() === row._id) {
+                                    <div class="d-flex gap-1 flex-nowrap">
+                                      <button
+                                        type="button"
+                                        matButton="outlined"
+                                        aria-label="Done editing"
+                                        (click)="finishEdit(row._id)"
+                                      >
+                                        <i class="bi bi-check-lg"></i>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        matButton="outlined"
+                                        color="warn"
+                                        aria-label="Reset row"
+                                        [disabled]="!isRowModified(row._id)"
+                                        (click)="resetRow(row._id)"
+                                      >
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                      </button>
+                                    </div>
+                                  } @else {
+                                    <div class="d-flex gap-1 flex-nowrap">
+                                      <button
+                                        type="button"
+                                        matButton="outlined"
+                                        aria-label="Edit row"
+                                        [disabled]="editingRowId() !== null"
+                                        (click)="startEdit(row)"
+                                      >
+                                        <i class="bi bi-pencil"></i>
+                                      </button>
+                                      @if (vm.isModified) {
+                                        <button
+                                          type="button"
+                                          matButton="outlined"
+                                          color="warn"
+                                          aria-label="Reset row"
+                                          [disabled]="editingRowId() !== null"
+                                          (click)="resetRow(row._id)"
+                                        >
+                                          <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                      }
+                                    </div>
+                                  }
+                                </td>
+                              }
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
+                  </div>
+
+                  @if (total() > 0) {
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                      <span class="small text-muted"
+                        >Showing {{ startIndex() }}-{{ endIndex() }} of {{ total() }} rows</span
+                      >
+                      <div class="d-flex align-items-center gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-success"
+                          [disabled]="!hasPrev()"
+                          (click)="goToPage(page() - 1)"
+                          aria-label="Previous page"
+                        >
+                          <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span class="small px-2">Page {{ page() }} of {{ totalPages() }}</span>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-success"
+                          [disabled]="!hasNext()"
+                          (click)="goToPage(page() + 1)"
+                          aria-label="Next page"
+                        >
+                          <i class="bi bi-chevron-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Upload proof of election document via dynamic form. -->
+              <div>
+                <p class="p-0 m-0 mb-2">
+                  Upload a single supporting document covering all the ULBs selected above — for example, the State
+                  Election Commission notification confirming the election results.
+                </p>
+                <app-dynamic-form [field]="proofOfElectionField" [group]="proofOfElectionForm"></app-dynamic-form>
+                @if (documentErrorMessage()) {
+                  <div class="alert alert-danger py-2 mt-2" role="alert">
+                    {{ documentErrorMessage() }}
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Acknowledgement section: cancel, save, final submit -->
+      <!-- Show only if ineligle rows/ ULBs are available -->
+      @if (rowViewModels().length) {
+        <div class="acknowledgement border-top p-3">
+          <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+            @if (canView()) {
+              <button
+                type="button"
+                matButton="outlined"
+                [disabled]="isValidating() || changedRowCount() === 0"
+                [matTooltip]="changedRowCount() === 0 ? 'Edit rows first to enable validation' : ''"
+                matTooltipPosition="above"
+                [matTooltipShowDelay]="100"
+                (click)="validateChanges()"
+              >
+                @if (isValidating()) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                } @else {
+                  <i class="bi bi-check2-circle"></i>
+                }
+                <span class="mx-1">Validate Changes</span>
+              </button>
+              <button
+                type="button"
+                matButton="filled"
+                [disabled]="!canSubmitUpdate()"
+                [matTooltip]="getSubmitDisabledReason()"
+                [matTooltipDisabled]="canSubmitUpdate()"
+                matTooltipPosition="above"
+                [matTooltipShowDelay]="100"
+                (click)="submitUpdate()"
+              >
+                @if (isSubmitting()) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                } @else {
+                  <i class="bi bi-send"></i>
+                }
+                <span class="mx-1">Submit Update</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

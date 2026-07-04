@@ -61,14 +61,17 @@ export class UserInfoDialogComponent implements OnInit {
 
   public submitUserInfo(): void {
     if (this.userInfo.valid) {
-      let payload = { ...this.userInfo.value };
+      let payload = this.dynamicFormService.serializeFormPayload(
+        this.fields,
+        this.userInfo.getRawValue() as Record<string, unknown>,
+      );
 
       // If saveToLocalStorage is true then store data in localStorage.
       if (this.matDialogData?.moduleInfo?.saveToLocalStorage) {
-        localStorage.setItem('userInfo', JSON.stringify(this.userInfo.value));
+        localStorage.setItem('userInfo', JSON.stringify(payload));
 
         payload = {
-          ...this.userInfo.value,
+          ...payload,
           ...this.matDialogData.downloadInfo,
         };
       }

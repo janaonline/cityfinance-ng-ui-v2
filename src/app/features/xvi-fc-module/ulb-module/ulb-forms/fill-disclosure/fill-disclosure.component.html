@@ -1,0 +1,425 @@
+<input
+  #fileInput
+  type="file"
+  accept=".pdf,.jpg,.jpeg,.png"
+  class="d-none"
+  aria-hidden="true"
+  (change)="onFileSelected($event)"
+/>
+
+<div class="container py-3 xvifc-theme">
+  <!-- Back navigation -->
+  <button
+    class="btn btn-link text-secondary text-decoration-none ps-0 mb-3 d-inline-flex align-items-center gap-1 small"
+    type="button"
+    (click)="goBack()"
+  >
+    <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    Back to Conditions
+  </button>
+
+  <!-- Page header -->
+  <h1 class="fs-4 fw-bold mb-1">{{ pageTitle }}</h1>
+
+  @if (ulbDetails(); as details) {
+    <p class="small text-muted mb-3">
+      <span class="text-primary fw-semibold">{{ details.ulbName }}</span>
+      &nbsp;·&nbsp;{{ details.selectedYear }}
+    </p>
+  }
+
+  <p class="small text-secondary mb-4">{{ pageDescription }}</p>
+
+  <!-- Info banner -->
+  @if (!isReadOnly()) {
+    <div class="alert alert-primary py-2 mb-4 d-flex align-items-start gap-2" role="note">
+      <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+      <p class="small mb-0">
+        Enter each bank account's unspent balance, account number, and upload a supporting document. Use
+        <strong>Add Another Bank Account</strong> if funds are spread across multiple accounts within the same FC
+        period.
+      </p>
+    </div>
+  }
+
+  <!-- Lock banner -->
+  @if (isReadOnly() && !isLoading()) {
+    <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-4" role="status">
+      <mat-icon aria-hidden="true" style="font-size: 1.1rem; width: 1.1rem; height: 1.1rem">lock</mat-icon>
+      <p class="small mb-0 fw-medium">
+        This disclosure has already been submitted. The form is locked — no edits can be made.
+      </p>
+    </div>
+  }
+
+  <!-- Loading state -->
+  @if (isLoading()) {
+    <div class="d-flex align-items-center gap-2 text-muted small py-3" role="status" aria-live="polite">
+      <span class="spinner-border spinner-border-sm flex-shrink-0" aria-hidden="true"></span>
+      Loading existing disclosure…
+    </div>
+  }
+
+  @if (!isLoading()) {
+    <!-- FC Period cards -->
+    @for (period of periods; track period.key) {
+      <div class="card border-0 shadow-sm rounded-3 p-3 mb-4" style="max-width: 600px">
+        <!-- Period header -->
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+          <i class="bi bi-bank text-secondary flex-shrink-0" aria-hidden="true"></i>
+          <span class="fw-semibold" style="font-size: 0.875rem">{{ period.label }}</span>
+          @if (period.disclosureOnly) {
+            <span
+              class="badge rounded-pill bg-light text-secondary border fw-normal text-nowrap"
+              style="font-size: 0.68rem; cursor: default"
+              [matTooltip]="fields.disclosureOnlyTitle"
+              matTooltipPosition="above"
+              >{{ fields.disclosureOnlyLabel }}</span
+            >
+          }
+        </div>
+
+        <!-- Bank account entries -->
+        @for (account of period.accounts.controls; track $index; let i = $index) {
+          <div
+            class="border rounded-2 p-3 mb-3"
+            [class.border-secondary-subtle]="!isReadOnly()"
+            [class.bg-light]="isReadOnly()"
+          >
+            <!-- Account header -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <span class="small fw-semibold text-secondary d-flex align-items-center gap-1">
+                <i class="bi bi-wallet2" aria-hidden="true"></i>
+                Bank Account {{ i + 1 }}
+              </span>
+              @if (!isReadOnly() && period.accounts.length > 1) {
+                <button
+                  type="button"
+                  class="btn btn-link text-danger p-0 small d-inline-flex align-items-center gap-1"
+                  (click)="removeAccount(period.key, i)"
+                  [attr.aria-label]="'Remove bank account ' + (i + 1) + ' from ' + period.label"
+                >
+                  <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem">remove_circle_outline</mat-icon>
+                  Remove
+                </button>
+              }
+            </div>
+
+            <!-- Form fields -->
+            <form [formGroup]="accountFormAt(period, i)" novalidate>
+              <div class="row g-3 mb-3">
+                <!-- Unspent Balance -->
+                <div class="col-md-6">
+                  <label [for]="'balance-' + period.key + '-' + i" class="form-label fw-semibold small text-secondary">
+                    {{ fields.balance.label }}
+                    <span class="text-danger" aria-hidden="true">*</span>
+                  </label>
+                  <div class="input-group input-group-sm has-validation">
+                    <span class="input-group-text">₹</span>
+                    <input
+                      [id]="'balance-' + period.key + '-' + i"
+                      type="text"
+                      class="form-control"
+                      formControlName="balance"
+                      [placeholder]="fields.balance.placeholder"
+                      [class.is-invalid]="isFieldInvalid(accountFormAt(period, i), 'balance')"
+                      [attr.aria-required]="fields.balance.required"
+                      [attr.aria-describedby]="
+                        isFieldInvalid(accountFormAt(period, i), 'balance')
+                          ? 'balance-err-' + period.key + '-' + i
+                          : null
+                      "
+                    />
+                    @if (isFieldInvalid(accountFormAt(period, i), 'balance')) {
+                      <div [id]="'balance-err-' + period.key + '-' + i" class="invalid-feedback">
+                        {{ getFieldError(accountFormAt(period, i), 'balance') }}
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Bank Account Number -->
+                <div class="col-md-6">
+                  <label [for]="'account-' + period.key + '-' + i" class="form-label fw-semibold small text-secondary">
+                    {{ fields.accountNumber.label }}
+                    <span class="text-danger" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    [id]="'account-' + period.key + '-' + i"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="18"
+                    class="form-control form-control-sm"
+                    formControlName="accountNumber"
+                    [placeholder]="fields.accountNumber.placeholder"
+                    [class.is-invalid]="
+                      isFieldInvalid(accountFormAt(period, i), 'accountNumber') || isDuplicateAccount(period, i)
+                    "
+                    [attr.aria-required]="fields.accountNumber.required"
+                    [attr.aria-describedby]="
+                      isFieldInvalid(accountFormAt(period, i), 'accountNumber') || isDuplicateAccount(period, i)
+                        ? 'account-err-' + period.key + '-' + i
+                        : null
+                    "
+                  />
+                  @if (isFieldInvalid(accountFormAt(period, i), 'accountNumber')) {
+                    <div [id]="'account-err-' + period.key + '-' + i" class="invalid-feedback">
+                      {{ getFieldError(accountFormAt(period, i), 'accountNumber') }}
+                    </div>
+                  }
+                  @if (isDuplicateAccount(period, i)) {
+                    <div [id]="'account-err-' + period.key + '-' + i" class="invalid-feedback d-block">
+                      This account number is already used in another entry. All account numbers must be unique.
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Supporting documents -->
+              <div>
+                <p class="form-label fw-semibold small text-secondary mb-2">
+                  {{ fields.supportDoc.label }}
+                  @if (!isReadOnly()) {
+                    <span class="text-danger" aria-hidden="true">*</span>
+                    <span class="fw-normal text-muted ms-1">— {{ fields.supportDoc.hint }}</span>
+                  }
+                </p>
+
+                <!-- Previously saved documents -->
+                @if (savedDocsFor(period.key + '-' + i).length > 0) {
+                  <div class="d-flex flex-wrap gap-2 mb-2">
+                    @for (doc of savedDocsFor(period.key + '-' + i); track doc.filepath; let di = $index) {
+                      <div class="file-chip file-chip--ready d-flex align-items-center gap-2 rounded-2 px-2 py-1">
+                        <mat-icon
+                          class="flex-shrink-0"
+                          style="font-size: 1rem; width: 1rem; height: 1rem; color: #15803d"
+                          aria-hidden="true"
+                          >picture_as_pdf</mat-icon
+                        >
+                        <span class="small text-truncate" style="max-width: 160px" [title]="doc.originalName">{{
+                          doc.originalName
+                        }}</span>
+                        <span class="text-muted small flex-shrink-0">{{ doc.pages }}p</span>
+                        <button
+                          type="button"
+                          mat-icon-button
+                          class="chip-icon-btn"
+                          [matTooltip]="'View ' + doc.originalName"
+                          (click)="viewSavedDoc(doc.filepath)"
+                          aria-label="View document"
+                        >
+                          <mat-icon class="chip-icon">visibility</mat-icon>
+                        </button>
+                        @if (!isReadOnly()) {
+                          <button
+                            type="button"
+                            mat-icon-button
+                            class="chip-icon-btn chip-icon-btn--delete"
+                            matTooltip="Remove"
+                            (click)="removeSavedDoc(period.key + '-' + i, di)"
+                            aria-label="Remove saved document"
+                          >
+                            <mat-icon class="chip-icon">close</mat-icon>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (!isReadOnly()) {
+                  <ng-container
+                    *ngTemplateOutlet="fileUploadBlock; context: { $implicit: period.key + '-' + i }"
+                  ></ng-container>
+                }
+              </div>
+            </form>
+          </div>
+        }
+
+        <!-- Add another bank account (max 2 per period) -->
+        @if (!isReadOnly() && period.accounts.length < maxAccountsPerPeriod) {
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
+            (click)="addAccount(period.key)"
+            [attr.aria-label]="'Add another bank account for ' + period.label"
+          >
+            <i class="bi bi-plus-circle" aria-hidden="true"></i>
+            Add Another Bank Account
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Declaration checkbox -->
+    @if (!isReadOnly()) {
+      <div
+        class="rounded-3 d-flex align-items-start gap-3 p-3 mb-3"
+        style="background: #fffbeb; border: 1px solid #fde68a; max-width: 600px"
+      >
+        <div class="form-check mb-0 d-flex align-items-start gap-3">
+          <input
+            class="form-check-input declaration-checkbox flex-shrink-0"
+            type="checkbox"
+            id="declaration-checkbox"
+            [checked]="declarationChecked()"
+            (change)="onDeclarationChange($event)"
+            aria-describedby="declaration-text"
+          />
+          <label class="form-check-label small text-secondary lh-base" for="declaration-checkbox" id="declaration-text">
+            {{ fields.declaration }}
+          </label>
+        </div>
+      </div>
+    }
+  }
+  <!-- end @if (!isLoading()) -->
+
+  <!-- Form actions -->
+  <div class="pt-2">
+    <div class="d-flex align-items-center gap-2">
+      @if (!isReadOnly()) {
+        <button
+          class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+          type="button"
+          [disabled]="!canSave()"
+          (click)="saveDisclosure()"
+          [attr.aria-busy]="isSaving()"
+        >
+          @if (isSaving()) {
+            <span class="spinner-border spinner-border-sm flex-shrink-0" role="status" aria-hidden="true"></span>
+            Saving…
+          } @else {
+            Save Disclosure
+          }
+        </button>
+      }
+      <button
+        class="btn btn-link text-secondary text-decoration-none"
+        type="button"
+        [disabled]="isSaving()"
+        (click)="goBack()"
+      >
+        {{ isReadOnly() ? 'Back' : 'Cancel' }}
+      </button>
+    </div>
+
+    @if (hasPendingDocChanges()) {
+      <div class="alert alert-warning py-2 px-3 mt-2 small mb-0" role="alert">
+        You have removed a saved document. Click <strong>Save Disclosure</strong> to apply the change.
+      </div>
+    }
+
+    @if (saveError()) {
+      <div class="alert alert-danger py-2 px-3 mt-2 small mb-0" role="alert">
+        {{ saveError() }}
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ─── Reusable file-upload block ──────────────────────────────────────────── -->
+<ng-template #fileUploadBlock let-key>
+  <!-- Uploaded file chips (new, not yet saved) -->
+  @for (entry of entriesFor(key); track entry.id; let i = $index) {
+    <div class="d-flex flex-column gap-1 mb-2">
+      <div
+        class="file-chip--ready d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+        style="max-width: 480px; min-width: 0"
+      >
+        <span class="text-truncate flex-grow-1 fw-semibold text-success small" [matTooltip]="entry.file.name">{{
+          entry.file.name
+        }}</span>
+        <span class="flex-shrink-0 text-muted" style="font-size: 0.68rem; white-space: nowrap">
+          · {{ formatFileSize(entry.file.size) }}
+        </span>
+        @if (entry.pageCount) {
+          <span class="flex-shrink-0 text-muted" style="font-size: 0.68rem; white-space: nowrap">
+            · {{ entry.pageCount }} {{ entry.pageCount === 1 ? 'page' : 'pages' }}
+          </span>
+        }
+        <div class="ms-auto d-flex align-items-center gap-1 flex-shrink-0">
+          <button
+            mat-icon-button
+            class="chip-icon-btn"
+            type="button"
+            matTooltip="Preview file"
+            [attr.aria-label]="'Preview ' + entry.file.name"
+            (click)="previewFile(entry)"
+          >
+            <mat-icon class="chip-icon">visibility</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            class="chip-icon-btn chip-icon-btn--delete"
+            type="button"
+            matTooltip="Remove file"
+            [attr.aria-label]="'Remove ' + entry.file.name"
+            (click)="removeFile(key, i)"
+          >
+            <mat-icon class="chip-icon">delete_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Validating state -->
+  @if (isProcessingSlot(key)) {
+    <div
+      class="file-chip--uploading d-flex align-items-center gap-2 px-3 py-2 rounded-2 mb-2"
+      style="max-width: 480px; min-width: 0"
+      role="status"
+      aria-live="polite"
+    >
+      <mat-progress-bar mode="indeterminate" class="flex-grow-1"></mat-progress-bar>
+      <span class="flex-shrink-0 text-muted small">Validating…</span>
+    </div>
+  }
+
+  <!-- Slot-level validation error -->
+  @if (errorFor(key); as err) {
+    <div
+      class="file-chip--error d-flex align-items-center gap-2 px-3 py-2 rounded-2 mb-2"
+      style="max-width: 480px; min-width: 0"
+      role="alert"
+      aria-live="assertive"
+    >
+      <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem; color: #dc2626; flex-shrink: 0"
+        >error_outline</mat-icon
+      >
+      <span class="small lh-base" style="color: #991b1b; word-break: break-word; white-space: normal">{{ err }}</span>
+    </div>
+  }
+
+  <!-- Upload button -->
+  @if (entriesFor(key).length < maxFilesPerSlot && !isProcessingSlot(key)) {
+    <button
+      class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mb-2"
+      type="button"
+      (click)="triggerFile(key)"
+    >
+      <i class="bi bi-cloud-upload" aria-hidden="true"></i>
+      {{ entriesFor(key).length === 0 ? 'Choose file' : 'Add another file' }}
+    </button>
+  }
+
+  <!-- Accepted formats -->
+  <p class="small text-muted mt-1 mb-2">
+    {{ fields.acceptedFormatsText }} &nbsp;·&nbsp; max {{ fields.maxSizeMb }} MB &nbsp;·&nbsp; up to
+    {{ maxFilesPerSlot }} files
+  </p>
+
+  <!-- Sample download -->
+  @if (fields.sampleLink.url) {
+    <a
+      class="small text-primary text-decoration-none d-inline-flex align-items-center gap-1"
+      [href]="fields.sampleLink.url"
+      download
+    >
+      <i class="bi bi-download" aria-hidden="true"></i>
+      {{ fields.sampleLink.label }}
+    </a>
+  }
+</ng-template>

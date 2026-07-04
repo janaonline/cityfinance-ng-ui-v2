@@ -20,40 +20,48 @@ export class ResourcesDashboardService {
   getShowCardValue() {
     return this.showCard;
   }
-  setShowCardValue(val) {
+  setShowCardValue(val: any) {
     this.showCard.next(val);
     return;
   }
-  getDataSets(year, type, category, state, ulb, globalName, skip: number = 0) {
+  getDataSets(
+    year: any,
+    type: any,
+    category: any,
+    state: any,
+    ulb: any,
+    globalName: any,
+    skip: number = 0,
+  ) {
     return this.https.get(
       `${environment.api.url}annual-accounts/datasets?year=${year}&type=${type}&category=${category}&state=${state}&ulb=${ulb}&globalName=${globalName}&skip=${skip}`
     );
   }
-  getSearchedData(filter) {
+  getSearchedData(filter: any) {
     return this.https.get(
       `${environment.api.url}?search=${filter}`
     );
   }
-  updateResouceCount(resourceCount) {
+  updateResouceCount(resourceCount: any) {
     this.resourceCount.next(resourceCount);
   }
-  updateSearchedData(hideSearchedData) {
+  updateSearchedData(hideSearchedData: any) {
     this.hideSearchedData.next(hideSearchedData);
   }
 
-  GlobalSearch(input) {
+  GlobalSearch(input: any) {
     return this.https.get(
       `${environment.api.url}resourceDashboard/search?name=${input}`
     );
   }
 
-  getPdfData(pdfInput) {
+  getPdfData(pdfInput: any) {
     return this.https.get(
       `${environment.api.url}resourceDashboard/?toolKitVisible=${pdfInput?.toolKitVisible}&type=PDF&header=${pdfInput?.header}&subHeader=${pdfInput?.subHeader}&globalName=${pdfInput?.globalName}&state=${pdfInput?.state}&ulb=${pdfInput?.ulb}&year=${pdfInput?.year}`
     )
   }
 
-  getStandardizedExcel(body) {
+  getStandardizedExcel(body: any) {
     return this.https.post(
       `${environment.api.url}annual-accounts/datasets`, body, { responseType: "blob" }
     )
@@ -66,10 +74,10 @@ export class ResourcesDashboardService {
   getMunicipalityBondsRepositoryCategories() {
     return this.https.get(`${environment.api.url}main_category/list`);
   }
-  getMunicipalityBondsRepositorySubCategories(categoryId) {
+  getMunicipalityBondsRepositorySubCategories(categoryId: any) {
     return this.https.get(`${environment.api.url}sub_category/list?categoryId=` + categoryId);
   }
-  getMunicipalityBondsRepositoryList(params) {
+  getMunicipalityBondsRepositoryList(params: any) {
     return this.https.get(`${environment.api.url}municipalBondRepository/list`, { params });
   }
 }

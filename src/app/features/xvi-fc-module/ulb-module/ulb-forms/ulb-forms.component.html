@@ -1,0 +1,145 @@
+<div class="ulb-forms-page container-fluid py-3">
+  @if (ulbDetails(); as details) {
+    @let band = grantBand();
+    @let progress = conditionsProgress();
+
+    <div class="text-center mb-3">
+      <p class="page-title fw-bold mb-0">{{ details.selectedYear }} Conditions</p>
+      <p class="page-subtitle text-muted mb-0">{{ details.ulbName }} · {{ details.selectedYear }}</p>
+    </div>
+
+    <div class="grant-band position-relative overflow-hidden rounded-3 p-3 mb-3 mat-elevation-z3">
+      <span class="grant-band__deco grant-band__deco--1" aria-hidden="true"></span>
+      <span class="grant-band__deco grant-band__deco--2" aria-hidden="true"></span>
+      <div class="position-relative">
+        <p class="grant-band__eyebrow text-uppercase fw-bold mb-1">{{ band.eyebrow }}</p>
+        <p class="grant-band__amount fw-bolder mb-1">{{ band.amount }}</p>
+        <p class="grant-band__tag text-uppercase fw-semibold mb-1">{{ band.tag }}</p>
+        <p class="grant-band__note fst-italic mb-0">{{ band.note }}</p>
+      </div>
+    </div>
+
+    <div class="simulator-card rounded-3 p-3 mb-3 mat-elevation-z2">
+      <p class="section-title fw-bold mb-1">Try the "What if" simulator</p>
+      <p class="simulator-subtitle body-sm mb-2">
+        Select a scenario to understand how it affects your grant eligibility and what actions can improve your chances.
+      </p>
+
+      <mat-form-field appearance="outline" class="w-100 simulator-field">
+        <mat-select
+          placeholder="Choose a scenario to explore..."
+          [value]="selectedScenarioId()"
+          (selectionChange)="selectedScenarioId.set($event.value)"
+        >
+          <mat-option [value]="null">Choose a scenario to explore...</mat-option>
+          @for (scenario of scenarios; track scenario.id) {
+            <mat-option [value]="scenario.id">{{ scenario.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (selectedScenario(); as result) {
+        <div class="mt-1">
+          <p class="simulator-grant-label text-uppercase fw-bold mb-1">CHANCES OF GETTING GRANTS</p>
+          <div class="progress-wrap mb-2">
+            <mat-progress-bar
+              mode="determinate"
+              [value]="result.likelihood"
+              [style.--mdc-linear-progress-active-indicator-color]="severityColor(result)"
+            ></mat-progress-bar>
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="simulator-badge" [class]="'simulator-badge ' + badgeClass(result)">{{ result.likelihoodLabel }}</span>
+            <span class="body-xs text-muted">· {{ result.likelihood }}% likelihood</span>
+          </div>
+          <p class="simulator-desc rounded-2 p-2 body-xs mb-0">{{ result.description }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <p class="section-title fw-bold mb-0">Conditions Progress</p>
+        <span class="body-xs text-muted">{{ progress.complete }} of {{ progress.total }} complete</span>
+      </div>
+
+      <div class="conditions-progress-wrap mb-2">
+        <mat-progress-bar mode="determinate" [value]="progress.pct"></mat-progress-bar>
+      </div>
+
+      @for (group of conditionGroups; track group.deadline) {
+        <div class="d-flex align-items-center gap-2 mb-2 mt-3">
+          <span class="conditions-meta-label text-uppercase fw-bold">CONDITIONS TO BE MET BY</span>
+          <span class="conditions-deadline-badge">{{ group.deadline }}</span>
+        </div>
+
+        <div class="conditions-card rounded-3 overflow-hidden mb-2 mat-elevation-z2">
+          @for (condition of group.conditions; track condition.id; let last = $last) {
+            @let effectiveStatus = resolveStatus(condition);
+            @let submitted = isSubmitted(condition);
+            <div class="condition-row d-flex align-items-center gap-3 px-3 py-2" [class.border-bottom]="!last">
+
+              @if (effectiveStatus === 'complete') {
+                <span class="condition-icon condition-icon--complete flex-shrink-0">
+                  <mat-icon>check</mat-icon>
+                </span>
+              } @else if (effectiveStatus === 'pending') {
+                <span class="condition-icon condition-icon--pending flex-shrink-0" aria-hidden="true"></span>
+              } @else {
+                <span class="condition-icon condition-icon--locked flex-shrink-0" aria-hidden="true"></span>
+              }
+
+              <div class="flex-grow-1 min-w-0">
+                <p class="condition-title fw-semibold mb-0">{{ condition.title }}</p>
+                <p class="condition-subtitle text-muted mb-0">{{ condition.subtitle }}</p>
+              </div>
+
+              @if (submitted) {
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <span class="submitted-badge">
+                    <mat-icon class="submitted-badge__icon">check_circle</mat-icon>
+                    SUBMITTED
+                  </span>
+                  <button
+                    mat-icon-button
+                    class="preview-icon-btn"
+                    type="button"
+                    matTooltip="View uploaded documents"
+                    (click)="navigateTo(condition.route!)"
+                  >
+                    <mat-icon class="preview-icon">visibility</mat-icon>
+                  </button>
+                </div>
+              } @else if (effectiveStatus === 'complete') {
+                <span class="no-action-badge flex-shrink-0">
+                  <span class="no-action-dot" aria-hidden="true"></span>
+                  NO ACTION REQUIRED
+                </span>
+              } @else if (effectiveStatus === 'pending') {
+                <button
+                  mat-flat-button
+                  class="condition-action-btn flex-shrink-0"
+                  type="button"
+                  (click)="navigateTo(condition.route!)"
+                >
+                  {{ condition.actionLabel }}
+                </button>
+              } @else {
+                <button mat-stroked-button class="not-yet-open-btn flex-shrink-0" type="button" disabled>
+                  Not yet open
+                </button>
+              }
+
+            </div>
+          }
+        </div>
+      }
+
+      <div class="conditions-footer-note d-flex align-items-start gap-2 rounded-3 px-3 py-2">
+        <mat-icon class="conditions-footer-note__icon flex-shrink-0">info</mat-icon>
+        <p class="body-xs mb-0">{{ conditionsFooterNote }}</p>
+      </div>
+    </div>
+
+  }
+</div>

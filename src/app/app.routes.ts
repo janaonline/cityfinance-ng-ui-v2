@@ -1,33 +1,10 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, xvifcAuthGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
 
 export const routes: Routes = [
-  // {
-  //   path: '',
-  //   canActivate: [authGuard],
-  //   children: [
-  //     { path: '', component: HomeComponent },
-  //     {
-  //       path: 'xvifc-form',
-  //       loadComponent: () =>
-  //         import('./features/xvi-fc-form/xvi-fc-form.component').then((m) => m.XviFcFormComponent),
-  //       // canActivate: [authGuard],
-  //     },
-  //     {
-  //       path: 'admin',
-  //       loadChildren: () => import('./admin/admin.routes').then((mod) => mod.ADMIN_ROUTES),
-  //     },
-  //     // {
-  //     //     path: 'admin/xvi-fc-review',
-  //     //     loadComponent: () => import('./admin/xvi-fc-review/xvi-fc-review.component').then(m => m.XviFcReviewComponent)
-  //     // },
-  //     // Add other protected routes here
-  //   ],
-  // },
-
   // {
   //   path: '',
   //   // redirectTo: 'cfr',
@@ -46,18 +23,17 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   // { path: 'login', component: LoginComponent },
-  {
-    path: 'login',
-    loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
-  },
+  // {
+  //   path: 'login',
+  //   loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
+  // },
   {
     path: '',
     children: [
       // {
       //   // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
       //   path: 'home', component: HomeComponent,
-      // },      
-
+      // },
     ],
   },
   // {
@@ -85,10 +61,41 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
     canActivate: [authGuard],
   },
+
+  {
+    path: 'ocr',
+    loadChildren: () => import('./admin/ocr/ocr.routes').then((mod) => mod.OCR_ROUTES),
+  },
   {
     path: 'events-dashboard',
     loadComponent: () => import('./admin/events/events.component').then((m) => m.EventsComponent),
     canActivate: [authGuard],
+  },
+  {
+    path: 'xvifc',
+    canActivate: [xvifcAuthGuard],
+    loadChildren: () =>
+      import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
+  },
+  {
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+
+  {
+    path: 'v1',
+    children: [
+      {
+        path: 'fc_grant',
+        canActivate: [
+          () => {
+            window.location.href = window.location.origin;
+            return false;
+          },
+        ],
+        component: ErrorComponent,
+      },
+    ],
   },
   {
     path: 'maintenance',
@@ -97,7 +104,7 @@ export const routes: Routes = [
   // {
   //     path: 'pdf',
   //     loadComponent: () => import('./pdf-content/pdf-content.component').then(m => m.PdfContentComponent),
-  // }, 
+  // },
   {
     path: 'error',
     component: ErrorComponent,
@@ -106,6 +113,6 @@ export const routes: Routes = [
 
   {
     path: '**',
-    redirectTo: 'cfr',
+    redirectTo: 'auth',
   },
 ];

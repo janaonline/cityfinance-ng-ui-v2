@@ -1,0 +1,143 @@
+@for (item of templateDownloadItems(); track item.url) {
+  <div class="mb-2">
+    <a
+      [href]="item.url"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="d-inline-flex align-items-center gap-2 fw-semibold link-primary small"
+    >
+      <i class="bi bi-file-earmark-arrow-down"></i>
+      {{ item.label }}
+    </a>
+    @if (item.description) {
+      <p class="text-body-secondary small mt-1 mb-0">{{ item.description }}</p>
+    }
+  </div>
+}
+
+@for (item of infoItems(); track $index) {
+  <div class="sc-info d-flex gap-2 p-3 rounded border mb-2 small" role="note">
+    <i class="bi bi-info-circle-fill flex-shrink-0 text-primary" aria-hidden="true"></i>
+    <div>
+      @if (item.title) {
+        <div class="fw-semibold mb-1">{{ item.title }}</div>
+      }
+      <div class="text-body-secondary">{{ item.description }}</div>
+    </div>
+  </div>
+}
+
+@for (item of warningItems(); track $index) {
+  <div class="alert alert-warning d-flex gap-2 p-3 rounded mb-2 small" role="alert">
+    <i class="bi bi-exclamation-triangle-fill flex-shrink-0" aria-hidden="true"></i>
+    <div>
+      @if (item.title) {
+        <div class="fw-semibold mb-1">{{ item.title }}</div>
+      }
+      <div>{{ item.description }}</div>
+    </div>
+  </div>
+}
+
+@for (item of sampleColumnsItems(); track $index) {
+  <div class="sc-sample-columns p-3 rounded border mb-2 small">
+    @if (item.title) {
+      <div class="fw-semibold mb-2">{{ item.title }}</div>
+    }
+
+    <div class="">
+      @for (col of item.columns; track col) {
+        <span class="badge text-bg-light border">{{ col }}</span>
+      }
+    </div>
+  </div>
+}
+
+@for (item of readonlyCardItems(); track $index) {
+  <div class="card mb-2">
+    <div class="card-body p-3">
+      @if (item.title) {
+        <div class="fw-semibold mb-2">{{ item.title }}</div>
+      }
+      @if (item.description) {
+        <p class="text-body-secondary small mb-2">{{ item.description }}</p>
+      }
+      @if (item.rows?.length) {
+        <dl class="mb-0 row g-0 small">
+          @for (row of item.rows; track row.label) {
+            <dt class="col-5 col-sm-4 fw-normal text-body-secondary py-1 border-bottom">
+              {{ row.label }}
+            </dt>
+            <dd class="col-7 col-sm-8 mb-0 fw-medium py-1 border-bottom">{{ row.value }}</dd>
+          }
+        </dl>
+      }
+    </div>
+  </div>
+}
+
+@for (item of actionItems(); track $index) {
+  <div [class]="'small' + (item.className ? ' ' + item.className : '')">
+    <div [class]="item.layout === 'stacked' ? 'd-grid gap-2' : 'd-flex flex-wrap align-items-center gap-2 gap-md-3'">
+      @for (action of visibleActions(item.actions); track action.id; let isFirst = $first) {
+        @if (!isFirst && (item.separator ?? 'dot') === 'dot') {
+          <span class="text-body-tertiary" aria-hidden="true">&middot;</span>
+        }
+        @if (action.url) {
+          <a
+            [href]="action.url"
+            [target]="isExternalActionUrl(action.url) ? '_blank' : '_self'"
+            [attr.rel]="isExternalActionUrl(action.url) ? 'noopener noreferrer' : null"
+            [class]="
+              'btn btn-sm btn-link p-0 fw-semibold d-inline-flex align-items-center gap-1 ' +
+              actionToneClass(action) +
+              (action.className ? ' ' + action.className : '')
+            "
+            (click)="onActionUrlClick($event, action)"
+          >
+            @if (action.icon) {
+              <i [class]="action.icon"></i>
+            }
+            {{ action.label }}
+          </a>
+        } @else {
+          <button
+            type="button"
+            [class]="
+              'btn btn-sm btn-link p-0 fw-semibold d-inline-flex align-items-center gap-1 ' +
+              actionToneClass(action) +
+              (action.className ? ' ' + action.className : '')
+            "
+            [disabled]="action.disabled || action.loading"
+            (click)="handleAction(action)"
+          >
+            @if (action.loading) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              {{ action.loadingLabel ?? 'Loading…' }}
+            } @else {
+              @if (action.icon) {
+                <i [class]="action.icon + (action.iconClassName ? ' ' + action.iconClassName : '')"></i>
+              }
+              {{ action.label }}
+            }
+          </button>
+        }
+      }
+    </div>
+    @if (item.description) {
+      <p class="text-body-secondary mt-1 mb-0">{{ item.description }}</p>
+    }
+    @if (visibleBadges(item.badges).length) {
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        @for (badge of visibleBadges(item.badges); track badge.label) {
+          <span [class]="'px-1 badge rounded-pill ' + badgeToneClass(badge)">
+            @if (badge.icon) {
+              <i [class]="badge.icon + ' me-1'"></i>
+            }
+            {{ badge.label }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+}
