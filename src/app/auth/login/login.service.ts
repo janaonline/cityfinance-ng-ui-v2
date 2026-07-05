@@ -34,6 +34,14 @@ export class LoginService {
     this.recaptcha.loadScript();
   }
 
+  showRecaptchaBadge(): void {
+    this.recaptcha.showBadge();
+  }
+
+  hideRecaptchaBadge(): void {
+    this.recaptcha.hideBadge();
+  }
+
   // ─── Auth API ─────────────────────────────────────────────────────────────────
 
   signInWithPassword(identifier: string, password: string, type: string | null): Observable<unknown> {
