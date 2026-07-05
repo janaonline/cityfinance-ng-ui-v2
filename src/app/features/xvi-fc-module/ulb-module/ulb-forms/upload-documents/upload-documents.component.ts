@@ -125,14 +125,6 @@ interface BackendStatusResponse {
   unauditedData: BackendStatusSection | null;
 }
 
-// Shape returned by GET /presign-upload
-interface PresignUploadResponse {
-  uploadId: string;
-  presignedUrl: string;
-  s3Key: string;
-  expiresIn: number;
-}
-
 // Shape returned by POST /confirm-upload
 interface UploadResponse {
   annualAccountId: string;
@@ -329,16 +321,17 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const year = cfg.documentYear;
       const section = cfg.type === 'audited' ? 'auditedData' : 'unauditedData';
 
-      // Step 1 — Get presigned PUT URL from NestJS
-      const presignParams = new URLSearchParams({
-        ulbId, designYearId, section, docId, yearId, year,
-        fileName: file.name,
-        fileSize: String(file.size),
-      });
+      // Step 1 — Get presigned PUT URL from generic S3 endpoint
+      const uploadId = crypto.randomUUID();
+      const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
       const presignResult = await firstValueFrom(
-        this.http.get<unknown>(`${API}xvi-fc/annual-account/presign-upload?${presignParams}`),
+        this.http.post<unknown>(`${API}s3/signed-url`, [
+          { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
+        ]),
       );
-      const { uploadId, presignedUrl, s3Key } = unwrap<PresignUploadResponse>(presignResult);
+      const [presignData] = unwrap<Array<{ url: string; path: string }>>(presignResult);
+      const presignedUrl = presignData.url;
+      const s3Key = presignData.path;
 
       // Step 2 — Upload directly to S3 using fetch (bypasses Angular interceptors — auth headers must not reach S3)
       const s3Response = await fetch(presignedUrl, {
