@@ -288,16 +288,18 @@
                   }
                 </button>
               </form>
+
+              @if (captchaEnabled) {
+                <p class="text-muted text-center mt-3 mb-0 small">
+                  Protected by reCAPTCHA —
+                  <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted">Privacy</a>
+                  &amp;
+                  <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted">Terms</a>
+                </p>
+              }
             </div>
           }
         </div>
-
-        <p class="text-muted text-center mt-3 mb-0 small">
-          Protected by reCAPTCHA —
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted">Privacy</a>
-          &amp;
-          <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted">Terms</a>
-        </p>
 
         <div class="help-card mt-3 p-3">
           <h3 class="fw-bold mb-1 small" style="color: #24464c">Need Help?</h3>

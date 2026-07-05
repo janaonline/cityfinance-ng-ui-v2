@@ -52,10 +52,10 @@ describe('CommonService', () => {
     const received: any[] = [];
 
     service.getWebsiteVisitCount().subscribe((count) => received.push(count));
-    httpMock.expectOne(`${environment.api.url}visit_count`).flush({ data: 25 });
+    httpMock.expectOne(`${environment.api.url2}auth/visit_count`).flush({ data: 25 });
 
     service.getWebsiteVisitCount().subscribe((count) => received.push(count));
-    httpMock.expectOne(`${environment.api.url}visit_count`).flush({});
+    httpMock.expectOne(`${environment.api.url2}auth/visit_count`).flush({});
 
     expect(received).toEqual([25, 0]);
   });

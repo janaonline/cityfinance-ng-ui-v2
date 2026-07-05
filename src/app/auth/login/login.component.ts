@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -22,6 +30,7 @@ import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs/operators';
 import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 import { LoginService } from './login.service';
+import { environment } from '../../../environments/environment';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,7 +86,7 @@ function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [LoginService],
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
@@ -94,6 +103,8 @@ export class LoginComponent implements OnInit {
   protected readonly supportEmail = computed(() =>
     this.typeKey() === '15thFC' ? '15fcgrant@cityfinance.in' : '16fcgrant@cityfinance.in',
   );
+
+  protected readonly captchaEnabled = environment.captchaEnabled;
 
   // ─── View state ──────────────────────────────────────────────────────────────
 
@@ -344,6 +355,11 @@ export class LoginComponent implements OnInit {
     this.setLoginType();
     this.xvifcService.clearResolvedContext();
     this.loginService.loadRecaptchaScript();
+    this.loginService.showRecaptchaBadge();
+  }
+
+  ngOnDestroy(): void {
+    this.loginService.hideRecaptchaBadge();
   }
 
   // ─── Route type detection ─────────────────────────────────────────────────────

@@ -191,7 +191,7 @@ export class FileComponent implements OnInit {
 
     const allowedFileTypes = this.field().allowedFileTypes ?? [];
     if (allowedFileTypes.length) {
-      parts.push(` Accepted formats: ${allowedFileTypes.map((type) => `.${type}`).join(', ')}`);
+      parts.push(`Accepted formats: ${allowedFileTypes.map((type) => `.${type}`).join(', ')}`);
     }
 
     const maxFileSize = this.field().maxFileSize;
@@ -199,7 +199,7 @@ export class FileComponent implements OnInit {
       parts.push(`Max file size: ${maxFileSize} MB`);
     }
 
-    return parts.join(' | ');
+    return parts.join(' · ');
   });
 
   /**
