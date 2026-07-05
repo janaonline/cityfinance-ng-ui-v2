@@ -22,6 +22,7 @@ import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs/operators';
 import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 import { LoginService } from './login.service';
+import { environment } from '../../../environments/environment';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,8 @@ export class LoginComponent implements OnInit {
   protected readonly supportEmail = computed(() =>
     this.typeKey() === '15thFC' ? '15fcgrant@cityfinance.in' : '16fcgrant@cityfinance.in',
   );
+
+  protected readonly captchaEnabled = environment.captchaEnabled;
 
   // ─── View state ──────────────────────────────────────────────────────────────
 
