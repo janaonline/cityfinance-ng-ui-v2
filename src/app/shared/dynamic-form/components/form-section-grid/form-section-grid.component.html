@@ -6,6 +6,9 @@
           <i [class]="'bi ' + section.icon" aria-hidden="true"></i>
         }
         {{ section.title }}
+        @if (section.subtitle) {
+          <span class="text-body-secondary fw-normal small"> {{ section.subtitle }}</span>
+        }
       </h6>
 
       <div class="row g-3">
