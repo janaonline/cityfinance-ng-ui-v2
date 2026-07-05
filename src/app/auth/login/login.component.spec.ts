@@ -36,6 +36,8 @@ describe('LoginComponent', () => {
     recaptchaSpy = jasmine.createSpyObj<RecaptchaService>('RecaptchaService', [
       'execute',
       'loadScript',
+      'showBadge',
+      'hideBadge',
     ]);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
     xvifcSpy = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', [
