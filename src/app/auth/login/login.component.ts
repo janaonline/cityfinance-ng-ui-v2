@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -78,7 +86,7 @@ function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [LoginService],
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
@@ -347,6 +355,11 @@ export class LoginComponent implements OnInit {
     this.setLoginType();
     this.xvifcService.clearResolvedContext();
     this.loginService.loadRecaptchaScript();
+    this.loginService.showRecaptchaBadge();
+  }
+
+  ngOnDestroy(): void {
+    this.loginService.hideRecaptchaBadge();
   }
 
   // ─── Route type detection ─────────────────────────────────────────────────────
