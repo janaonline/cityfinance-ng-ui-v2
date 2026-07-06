@@ -28,6 +28,15 @@ html {
   );
 }
 
+/** Google injects the reCAPTCHA badge globally; keep it hidden outside the login page. */
+.grecaptcha-badge {
+  visibility: hidden;
+}
+
+body.recaptcha-badge-visible .grecaptcha-badge {
+  visibility: visible;
+}
+
 /**
  * Scope the XVI FC Material theme to its feature wrapper only.
  *

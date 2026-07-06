@@ -4,7 +4,6 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
   ComponentFixture,
   TestBed,
-  discardPeriodicTasks,
   fakeAsync,
   tick,
 } from '@angular/core/testing';
@@ -37,6 +36,8 @@ describe('LoginComponent', () => {
     recaptchaSpy = jasmine.createSpyObj<RecaptchaService>('RecaptchaService', [
       'execute',
       'loadScript',
+      'showBadge',
+      'hideBadge',
     ]);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
     xvifcSpy = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', [
@@ -131,9 +132,6 @@ describe('LoginComponent', () => {
       role: 'ULB',
       identifier: '  ulb@example.com  ',
       password: 'secret1',
-      otp: '',
-      newPassword: '',
-      confirmPassword: '',
     });
 
     component['onSubmit']();
@@ -156,9 +154,6 @@ describe('LoginComponent', () => {
       role: 'MOHUA',
       identifier: 'mohua@example.com',
       password: 'secret1',
-      otp: '',
-      newPassword: '',
-      confirmPassword: '',
     });
 
     component['onSubmit']();
@@ -176,9 +171,6 @@ describe('LoginComponent', () => {
       role: 'ULB',
       identifier: '123456',
       password: 'secret1',
-      otp: '',
-      newPassword: '',
-      confirmPassword: '',
     });
 
     component['onSubmit']();
@@ -194,9 +186,6 @@ describe('LoginComponent', () => {
       role: 'ULB',
       identifier: '123456',
       password: 'secret1',
-      otp: '',
-      newPassword: '',
-      confirmPassword: '',
     });
 
     component['onSubmit']();
@@ -206,72 +195,11 @@ describe('LoginComponent', () => {
     expect(component['isSubmitting']()).toBeFalse();
   }));
 
-  it('should navigate to forgot password and signup with the current type', () => {
-    component.onForgotPassword();
-    component.onSignup();
+  it('should navigate to forgot password with the current type', () => {
+    component['onForgotPassword']();
 
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/forgot-password'], {
       queryParams: { type: '16thFC' },
     });
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/signup'], {
-      queryParams: { type: '16thFC', role: 'ULB' },
-    });
   });
-
-  it('should require an identifier before starting OTP login', () => {
-    component['startOtpFlow']();
-
-    expect(authSpy.otpSignIn).not.toHaveBeenCalled();
-    expect(component['errorMessage']()).toBe('Please enter your Email or Census Code first.');
-  });
-
-  it('should start OTP mode and countdown after OTP is sent', fakeAsync(() => {
-    authSpy.otpSignIn.and.returnValue(of({ mobile: '****1234', email: 'u***@example.com' }));
-    component['loginForm'].controls.identifier.setValue('  123456  ');
-
-    component['startOtpFlow']();
-    tick();
-
-    expect(authSpy.otpSignIn).toHaveBeenCalledWith({ identifier: '123456' });
-    expect(component['isOtpLogin']()).toBeTrue();
-    expect(component['otpCountdownActive']()).toBeTrue();
-    expect(component['loginForm'].controls.password.hasValidator).toBeDefined();
-    expect(component['loginForm'].controls.otp.hasError('required')).toBeTrue();
-
-    discardPeriodicTasks();
-  }));
-
-  it('should submit OTP and navigate after verification', fakeAsync(() => {
-    authSpy.otpVerify.and.returnValue(of({ user: { role: USER_TYPE.STATE } }));
-    authSpy.extractUser.and.returnValue({ role: USER_TYPE.STATE } as any);
-    component['loginForm'].controls.identifier.setValue('state@example.com');
-    component['loginForm'].controls.otp.setValidators([
-      (control) => (control.value === '1234' ? null : { invalid: true }),
-    ]);
-    component['loginForm'].controls.otp.setValue('1234');
-
-    component['submitOtp']();
-    tick();
-
-    expect(authSpy.otpVerify).toHaveBeenCalledWith({
-      identifier: 'state@example.com',
-      otp: '1234',
-    });
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/xvifc/year'], { replaceUrl: true });
-  }));
-
-  it('should switch back from OTP login to password login', fakeAsync(() => {
-    authSpy.otpSignIn.and.returnValue(of({ mobile: '****1234', email: 'u***@example.com' }));
-    component['loginForm'].controls.identifier.setValue('123456');
-    component['startOtpFlow']();
-    tick();
-
-    component['switchToPassword']();
-
-    expect(component['isOtpLogin']()).toBeFalse();
-    expect(component['otpCountdownActive']()).toBeFalse();
-    expect(component['loginForm'].controls.otp.value).toBe('');
-
-    discardPeriodicTasks();
-  }));
 });

@@ -164,10 +164,13 @@ export class ForgotPasswordComponent implements OnInit {
       )
       .subscribe({
         next: (res) => {
-          // Real account → use backend-masked contact (already formatted by server).
-          // Fake account → res.maskedContact is undefined, fall back to frontend masking.
-          // Both paths produce the same message format — no enumeration possible.
-          this.maskedIdentifier.set(res.maskedContact ?? this.maskIdentifier(identifier));
+          // ULB identifies by code → OTP sent to mobile; STATE/MoHUA by email → OTP sent to email.
+          // Fall back to frontend masking for fake accounts where the backend returns no contact.
+          const isUlb = this.selectedRole() === 'ULB';
+          const maskedContact = isUlb
+            ? (res.maskedMobile ?? this.maskIdentifier(identifier))
+            : (res.maskedEmail ?? this.maskIdentifier(identifier));
+          this.maskedIdentifier.set(maskedContact);
           this.slideDirection.set('forward');
           this.currentStep.set('RESET_PASSWORD');
           this.startResendTimer();

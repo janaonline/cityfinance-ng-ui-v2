@@ -125,7 +125,7 @@ interface BackendStatusResponse {
   unauditedData: BackendStatusSection | null;
 }
 
-// Shape returned by POST /upload
+// Shape returned by POST /confirm-upload
 interface UploadResponse {
   annualAccountId: string;
   uploadId: string;
@@ -321,18 +321,36 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const year = cfg.documentYear;
       const section = cfg.type === 'audited' ? 'auditedData' : 'unauditedData';
 
-      const form = new FormData();
-      form.append('file', file, file.name);
-      form.append('ulbId', ulbId);
-      form.append('designYearId', designYearId);
-      form.append('section', section);
-      form.append('docId', docId);
-      form.append('yearId', yearId);
-      form.append('year', year);
+      // Step 1 — Get presigned PUT URL from generic S3 endpoint
+      const uploadId = crypto.randomUUID();
+      const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
+      const presignResult = await firstValueFrom(
+        this.http.post<unknown>(`${API}s3/signed-url`, [
+          { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
+        ]),
+      );
+      const [presignData] = unwrap<Array<{ url: string; path: string }>>(presignResult);
+      const presignedUrl = presignData.url;
+      const s3Key = presignData.path;
 
-      const result = await firstValueFrom(this.http.post<unknown>(`${API}xvi-fc/annual-account/upload`, form));
+      // Step 2 — Upload directly to S3 using fetch (bypasses Angular interceptors — auth headers must not reach S3)
+      const s3Response = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': 'application/pdf' },
+      });
+      if (!s3Response.ok) throw new Error(`S3 upload failed: ${s3Response.status}`);
 
-      const upload = unwrap<UploadResponse>(result);
+      // Step 3 — Confirm upload to NestJS (saves metadata + triggers OCR)
+      const confirmResult = await firstValueFrom(
+        this.http.post<unknown>(`${API}xvi-fc/annual-account/confirm-upload`, {
+          uploadId, s3Key, ulbId, designYearId, section, docId, yearId, year,
+          originalName: file.name,
+          fileSize: file.size,
+        }),
+      );
+
+      const upload = unwrap<UploadResponse>(confirmResult);
       this.annualAccountId.set(upload.annualAccountId);
 
       const localPreviewUrl = URL.createObjectURL(file);

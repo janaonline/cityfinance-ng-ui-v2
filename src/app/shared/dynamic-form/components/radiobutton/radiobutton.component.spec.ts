@@ -42,7 +42,7 @@ describe('RadiobuttonComponent', () => {
   describe('error display', () => {
     it('does not show required error on initial page load', () => {
       const { fixture } = setup(BASIC_FIELD);
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('div[role="alert"]');
       expect(error).toBeNull();
     });
 
@@ -53,7 +53,7 @@ describe('RadiobuttonComponent', () => {
       control.markAsTouched();
       fixture.detectChanges();
 
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('div[role="alert"]');
       expect(error).toBeTruthy();
       expect(error.textContent.trim()).toBe('This field is required.');
     });
@@ -65,7 +65,7 @@ describe('RadiobuttonComponent', () => {
       control.markAsDirty();
       fixture.detectChanges();
 
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('div[role="alert"]');
       expect(error).toBeTruthy();
     });
 
@@ -75,7 +75,7 @@ describe('RadiobuttonComponent', () => {
       component.group.markAllAsTouched();
       fixture.detectChanges();
 
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('div[role="alert"]');
       expect(error).toBeTruthy();
       expect(error.textContent.trim()).toBe('This field is required.');
     });
@@ -88,7 +88,7 @@ describe('RadiobuttonComponent', () => {
       control.markAsTouched();
       fixture.detectChanges();
 
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('div[role="alert"]');
       expect(error).toBeNull();
     });
 
@@ -102,7 +102,7 @@ describe('RadiobuttonComponent', () => {
 
       // Disabled control — hasError returns false
       expect(component.hasError('choice', 'required')).toBeFalse();
-      const error = fixture.nativeElement.querySelector('mat-error');
+      const error = fixture.nativeElement.querySelector('div[role="alert"]');
       expect(error).toBeNull();
     });
   });
@@ -133,26 +133,26 @@ describe('RadiobuttonComponent', () => {
   });
 
   describe('radio layout', () => {
-    it('applies radio-group--horizontal class by default (no radioLayout)', () => {
+    it('applies radio-field__group--horizontal class by default (no radioLayout)', () => {
       const { fixture } = setup(BASIC_FIELD);
       const group = fixture.debugElement.query(By.css('mat-radio-group'));
-      expect(group.nativeElement.classList).toContain('radio-group--horizontal');
-      expect(group.nativeElement.classList).not.toContain('radio-group--vertical');
+      expect(group.nativeElement.classList).toContain('radio-field__group--horizontal');
+      expect(group.nativeElement.classList).not.toContain('radio-field__group--vertical');
     });
 
-    it('applies radio-group--vertical class when radioLayout is vertical', () => {
+    it('applies radio-field__group--vertical class when radioLayout is vertical', () => {
       const verticalField: FieldConfig = { ...BASIC_FIELD, radioLayout: 'vertical' };
       const { fixture } = setup(verticalField);
       const group = fixture.debugElement.query(By.css('mat-radio-group'));
-      expect(group.nativeElement.classList).toContain('radio-group--vertical');
-      expect(group.nativeElement.classList).not.toContain('radio-group--horizontal');
+      expect(group.nativeElement.classList).toContain('radio-field__group--vertical');
+      expect(group.nativeElement.classList).not.toContain('radio-field__group--horizontal');
     });
 
-    it('applies radio-group--horizontal class when radioLayout is horizontal', () => {
+    it('applies radio-field__group--horizontal class when radioLayout is horizontal', () => {
       const horizontalField: FieldConfig = { ...BASIC_FIELD, radioLayout: 'horizontal' };
       const { fixture } = setup(horizontalField);
       const group = fixture.debugElement.query(By.css('mat-radio-group'));
-      expect(group.nativeElement.classList).toContain('radio-group--horizontal');
+      expect(group.nativeElement.classList).toContain('radio-field__group--horizontal');
     });
   });
 
