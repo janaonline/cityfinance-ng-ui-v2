@@ -8,6 +8,7 @@ import { FormSectionGridComponent } from '../../../../../shared/dynamic-form/com
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldConfig, FormSectionConfig } from '../../../../../shared/dynamic-form/field.interface';
 import { UlbMasterService } from '../../ulb-list/ulb-master.service';
+// import { ulbFormConfig } from './ulb-json';
 
 const errMsg = 'An unexpected error occurred. Please try again later.';
 
@@ -47,31 +48,36 @@ export class RegisterUlbComponent implements OnInit {
 
     this.globalLoader.showLoader();
     console.log('Register ULB form fields: --1', this.fields);
+    // this.buildFormSections(ulbFormConfig); // for local development, fallback to static config if API fails to load
     this.ulbMasterService.getRegisterSections().subscribe({
       next: (res) => {
-        console.log('Register ULB form fields: --2', this.fields);
-        // The API returns each field fully resolved (label, formFieldType, validations, grid, hints,
-        // live ulbType options, ...); this page only adds `hideLabel` since it renders labels itself
-        // (required asterisks + label hints) rather than the dynamic-form's built-in label.
-        this.sections = (res.data ?? []).map((section) => ({
-          ...section,
-          fields: section.fields.map((field) => ({ ...field, hideLabel: true })),
-        }));
-        this.fields = this.sections.flatMap((section) => section.fields);
-        console.log('Register ULB form sections:', this.sections);
-        console.log('Register ULB form fields:', this.fields);
-        this.form = this.formService.toFormGroup(this.fields);
-        this.form.addControl(
-          'state',
-          new FormControl({ value: this.ownStateId ?? '', disabled: true }, Validators.required),
-        );
-        this.globalLoader.stopLoader();
+        this.buildFormSections(res.data ?? []);
       },
       error: () => {
         this.globalLoader.stopLoader();
         this.utilityService.swalPopup('Failed!', 'Unable to load the registration form.', 'error');
       },
     });
+  }
+
+  buildFormSections(sections: FormSectionConfig[]): void {
+    console.log('Register ULB form fields: --2', this.fields);
+    // The API returns each field fully resolved (label, formFieldType, validations, grid, hints,
+    // live ulbType options, ...); this page only adds `hideLabel` since it renders labels itself
+    // (required asterisks + label hints) rather than the dynamic-form's built-in label.
+    this.sections = sections.map((section) => ({
+      ...section,
+      fields: section.fields.map((field) => ({ ...field, hideLabel: false })),
+    }));
+    this.fields = this.sections.flatMap((section) => section.fields);
+    console.log('Register ULB form sections:', this.sections);
+    console.log('Register ULB form fields:', this.fields);
+    this.form = this.formService.toFormGroup(this.fields);
+    this.form.addControl(
+      'state',
+      new FormControl({ value: this.ownStateId ?? '', disabled: true }, Validators.required),
+    );
+    this.globalLoader.stopLoader();
   }
 
   goBack(): void {

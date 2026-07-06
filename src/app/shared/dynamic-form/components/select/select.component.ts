@@ -79,6 +79,7 @@ export class SelectComponent implements OnInit, OnChanges {
     this.options = this.options || this.field.options;
     this.validations = this.parentField?.validations || this.field.validations;
     this.readonly = this.parentField?.readonly || this.field?.readonly;
+    this.displayInlineLabel = this.field?.displayInlineLabel || false;
   }
 
   hasError(key: string, name: string): boolean {

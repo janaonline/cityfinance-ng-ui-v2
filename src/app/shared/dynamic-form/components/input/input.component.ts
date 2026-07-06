@@ -51,6 +51,7 @@ export class InputComponent implements OnInit, OnChanges {
     this.decimal =
       this.parentField?.decimal || this.parentField?.decimal === 0 ? this.parentField?.decimal : this.field?.decimal;
     this.warnings = this.parentField?.warning;
+    this.displayInlineLabel = this.field?.displayInlineLabel || false;
   }
 
   hasError(key: string, name: string): boolean {
