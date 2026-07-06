@@ -5,16 +5,16 @@
   <h3 class="fw-bold mb-4">Register New ULB</h3>
 
   @if (form) {
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <app-form-section-grid [sections]="sections" [group]="form"></app-form-section-grid>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <app-form-section-grid [sections]="sections" [group]="form"></app-form-section-grid>
 
-      <div class="d-flex align-items-center flex-wrap gap-3 mt-2 mb-4">
-        <button type="submit" class="btn btn-cfPrimary d-inline-flex align-items-center gap-2">
-          Submit to Admin for Approval <i class="bi bi-arrow-right" aria-hidden="true"></i>
-        </button>
-        <span class="text-body-secondary small">Admin will review and activate the ULB.</span>
-        <button type="button" class="btn btn-outline-cfPrimary" (click)="goBack()">Cancel</button>
-      </div>
-    </form>
+    <div class="d-flex align-items-center flex-wrap gap-3 mt-2 mb-4">
+      <button type="submit" class="btn btn-cfPrimary d-inline-flex align-items-center gap-2">
+        Submit to Admin for Approval <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      </button>
+      <span class="text-body-secondary small">Admin will review and activate the ULB.</span>
+      <button type="button" class="btn btn-outline-cfPrimary" (click)="goBack()">Cancel</button>
+    </div>
+  </form>
   }
 </div>

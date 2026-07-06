@@ -83,9 +83,7 @@ export class FileService {
     });
   }
 
-  getFileProcessingStatus(
-    fileId: string,
-  ): Observable<{ message: string; completed: boolean; status: 'FAILED' }> {
+  getFileProcessingStatus(fileId: string): Observable<{ message: string; completed: boolean; status: 'FAILED' }> {
     // IMPORTANT Comment this and uncomment below line. Some changes may be required there...
     // return of({
     //   status: Math.random() > 0.5,

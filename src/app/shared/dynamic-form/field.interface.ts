@@ -182,6 +182,7 @@ export interface FieldConfig {
   labelHint?: string;
   /** Muted helper text rendered below the field control. */
   hintText?: string;
+  displayInlineLabel?: boolean;
 }
 
 /** One card-sectioned group of fields, rendered by `FormSectionGridComponent`. */
