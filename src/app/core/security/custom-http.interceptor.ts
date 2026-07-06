@@ -27,6 +27,10 @@ export const customHttpInterceptor: HttpInterceptorFn = (
 
   return next(preparedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (!authService.isApiRequest(preparedRequest.url)) {
+        return throwError(() => error);
+      }
+
       if (shouldAttemptRefresh(error, preparedRequest, authService)) {
         return authService.refreshAccessToken().pipe(
           switchMap(() =>
@@ -57,7 +61,7 @@ function prepareRequest(
   req: HttpRequest<unknown>,
   authService: AuthService,
 ) {
-  if ((req.body instanceof File || req.body instanceof FormData) && req.method === 'PUT') {
+  if (!authService.isApiRequest(req.url)) {
     return req;
   }
 
