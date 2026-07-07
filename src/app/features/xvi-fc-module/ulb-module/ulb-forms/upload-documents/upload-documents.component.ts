@@ -224,6 +224,32 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
   );
 
+  private static readonly SUPPORT_EMAIL = '16fcgrant@cityfinance.in';
+
+  readonly supportMailto = computed(() => {
+    const details = this.ulbDetails();
+    const cfg = this.config();
+
+    const ulbName = details?.ulbName ?? 'N/A';
+    const documentSet = cfg
+      ? `${cfg.type === 'audited' ? 'Audited' : 'Provisional'} Financial Statements (FY ${cfg.documentYear})`
+      : 'N/A';
+
+    const subject = `Document upload issue – ${ulbName}`;
+    const body = [
+      `ULB: ${ulbName}`,
+      `State: ${details?.stateName ?? 'N/A'}`,
+      `Grant year: ${details?.selectedYear ?? 'N/A'}`,
+      `Document set: ${documentSet}`,
+      '',
+      "Please describe the issue you're facing:",
+      '',
+    ].join('\r\n');
+
+    // encodeURIComponent (not URLSearchParams) — mailto: expects %20 for spaces, not '+'
+    return `mailto:${UploadDocumentsComponent.SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
+
   // Used by deactivate guard — warn user if OCR is still running
   readonly hasUnsavedUploads = this.hasProcessingDocs;
 
