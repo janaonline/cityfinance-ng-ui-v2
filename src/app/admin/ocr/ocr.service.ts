@@ -55,6 +55,60 @@ export interface OcrTaskListResponse {
   total_count?: number;
 }
 
+export interface EvalBenchmark {
+  benchmark_id: string;
+  name: string;
+  job_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EvalRunInfo {
+  eval_run_id: string;
+  benchmark_id: string;
+  status: string;
+  extraction_model: string;
+  validation_model: string;
+  metrics: Record<string, number | null> | null;
+  error: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface EvalRunJobResult {
+  job_id: string;
+  filename: string;
+  expected_ulb_name: string;
+  expected_financial_year: string;
+  expected_doc_type: string;
+  // Benchmark: original stored extraction + its match vs expected
+  benchmark_ulb_name: string;
+  benchmark_financial_year: string;
+  benchmark_doc_type: string;
+  benchmark_ulb_name_match: boolean | null;
+  benchmark_financial_year_match: boolean | null;
+  benchmark_doc_type_match: boolean | null;
+  benchmark_overall_match: boolean | null;
+  // New eval extraction + its match vs expected
+  extracted_ulb_name: string;
+  extracted_financial_year: string;
+  extracted_doc_type: string;
+  extracted_language: string;
+  seal_present: boolean | null;
+  signature_present: boolean | null;
+  ulb_name_match: boolean | null;
+  financial_year_match: boolean | null;
+  doc_type_match: boolean | null;
+  overall_match: boolean;
+  overall_assessment: string;
+  failed_checks: string[];
+  error: string | null;
+}
+
+export interface EvalRunDetail extends EvalRunInfo {
+  results: EvalRunJobResult[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -359,6 +413,51 @@ export class OcrService {
     if (params?.match_doc_type !== undefined) queryParams['match_doc_type'] = String(params.match_doc_type);
     return this.http.get(environment.api.url3 + 'ocr-validation/jobs/dump', {
       params: queryParams,
+      responseType: 'blob',
+    });
+  }
+
+  // ─── Eval Benchmark API ──────────────────────────────────────────────────────
+
+  createEvalBenchmark(name: string, jobIds: string[]) {
+    return this.http.post<EvalBenchmark>(environment.api.url3 + 'ocr-validation/evals/benchmark', {
+      name,
+      job_ids: jobIds,
+    });
+  }
+
+  listEvalBenchmarks() {
+    return this.http.get<EvalBenchmark[]>(environment.api.url3 + 'ocr-validation/evals/benchmark');
+  }
+
+  runBenchmarkEval(
+    benchmarkId: string,
+    extractionModel: string,
+    validationModel: string,
+    enableFinancialValidation = false,
+  ) {
+    return this.http.post<EvalRunInfo>(
+      environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/run`,
+      {
+        extraction_model: extractionModel,
+        validation_model: validationModel,
+        enable_financial_validation: enableFinancialValidation,
+      },
+    );
+  }
+
+  listBenchmarkRuns(benchmarkId: string) {
+    return this.http.get<EvalRunInfo[]>(
+      environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/runs`,
+    );
+  }
+
+  getEvalRunDetail(evalRunId: string) {
+    return this.http.get<EvalRunDetail>(environment.api.url3 + `ocr-validation/evals/runs/${evalRunId}`);
+  }
+
+  exportEvalRun(evalRunId: string) {
+    return this.http.get(environment.api.url3 + `ocr-validation/evals/runs/${evalRunId}/export`, {
       responseType: 'blob',
     });
   }

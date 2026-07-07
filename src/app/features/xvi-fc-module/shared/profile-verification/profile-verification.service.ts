@@ -83,6 +83,7 @@ export class ProfileVerificationService {
     userId: string,
     profile: Pick<StateProfile, 'name' | 'mobile' | 'designation'>,
     saveToken: string,
+    extraFields?: Record<string, unknown>,
   ): Observable<{ ok: boolean }> {
     return this.http
       .patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
@@ -91,7 +92,21 @@ export class ProfileVerificationService {
         designation: profile.designation,
         saveToken,
         isXVIFCProfileVerified: true,
+        ...extraFields,
       })
+      .pipe(
+        map(() => ({ ok: true })),
+        catchError(() => of({ ok: false })),
+      );
+  }
+
+  setNewPassword(
+    newPassword: string,
+    saveToken: string,
+    profile?: { name?: string; mobile?: string; designation?: string },
+  ): Observable<{ ok: boolean }> {
+    return this.http
+      .patch(`${environment.api.url2}auth/set-new-password`, { newPassword, saveToken, ...profile })
       .pipe(
         map(() => ({ ok: true })),
         catchError(() => of({ ok: false })),

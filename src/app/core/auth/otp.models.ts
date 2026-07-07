@@ -99,8 +99,10 @@ export interface ResetPasswordResponse {
 }
 
 export interface ForgotPasswordOtpResult {
-  /** Backend-masked contact (mobile or email) for real accounts; undefined for fake accounts. */
-  maskedContact: string | undefined;
+  /** Backend-masked mobile number; present for ULB accounts (OTP goes to mobile). */
+  maskedMobile: string | undefined;
+  /** Backend-masked email address; present for STATE/MoHUA accounts (OTP goes to email). */
+  maskedEmail: string | undefined;
 }
 
 export const OtpErrorMessage = {

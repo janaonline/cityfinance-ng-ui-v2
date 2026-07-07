@@ -52,7 +52,7 @@ export const ULB_ROUTES: Routes = [
       {
         path: 'roles-teams-unified-view',
         loadComponent: () =>
-          import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+          import('./roles-teams-overview/roles-teams-overview.component').then(
             (m) => m.RolesTeamsOverviewComponent,
           ),
       },

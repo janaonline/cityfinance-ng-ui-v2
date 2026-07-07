@@ -39,5 +39,19 @@ export const OCR_ROUTES: Route[] = [
         (mod) => mod.OcrValidationListComponent,
       ),
   },
+  {
+    path: 'eval-benchmarks',
+    loadComponent: () =>
+      import('./ocr-eval-benchmarks/ocr-eval-benchmarks.component').then(
+        (mod) => mod.OcrEvalBenchmarksComponent,
+      ),
+  },
+  {
+    path: 'eval-run-detail',
+    loadComponent: () =>
+      import('./ocr-eval-run-detail/ocr-eval-run-detail.component').then(
+        (mod) => mod.OcrEvalRunDetailComponent,
+      ),
+  },
 
 ];

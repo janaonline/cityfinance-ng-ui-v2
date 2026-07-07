@@ -33,6 +33,18 @@ export interface OcrValidationJobStatusResponse {
   message: string;
 }
 
+export interface OcrFieldConfidence {
+  ulb_name: number | null;
+  document_type: number | null;
+  financial_year: number | null;
+  as_on_date: number | null;
+  auditor_name: number | null;
+  auditor_firm: number | null;
+  audited_date: number | null;
+  seal_present: number | null;
+  signature_present: number | null;
+}
+
 export interface OcrValidationExtraction {
   ulb_name: string | null;
   original_ulb_name: string | null;
@@ -45,6 +57,15 @@ export interface OcrValidationExtraction {
   auditor_name: string | null;
   auditor_firm: string | null;
   audited_date: string | null;
+  field_confidence: OcrFieldConfidence | null;
+}
+
+export interface OcrPageReadabilityScore {
+  page: number;
+  score: number;
+  confidence: number | null;
+  half_cut_detected: boolean | null;
+  half_cut_confidence: number | null;
 }
 
 export interface OcrValidationBasicCheck {
@@ -59,11 +80,13 @@ export interface OcrValidationBasicCheck {
   table_present: boolean | null;
   table_required: boolean | null;
   table_detection_status: string | null;
+  table_detection_confidence: number | null;
   table_issues: string[];
   multiple_documents_detected: boolean | null;
   detected_document_types: string[];
   expected_document_type: string | null;
   document_type_matches_expected: boolean | null;
+  page_readability_scores: OcrPageReadabilityScore[] | null;
 }
 
 export interface OcrValidationCheck {

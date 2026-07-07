@@ -6,15 +6,14 @@ type DeferredStateRoute = Readonly<{
   exportName: string;
 }>;
 
-const ACTIVE_STATE_CHILD_ROUTES: Routes = [
+export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'overview',
     loadComponent: () => import('./overview/overview.component').then((m) => m.OverviewComponent),
   },
   {
     path: 'ulb-submissions',
-    loadComponent: () =>
-      import('./ulb-submissions/ulb-submissions.component').then((m) => m.UlbSubmissionsComponent),
+    loadComponent: () => import('./ulb-submissions/ulb-submissions.component').then((m) => m.UlbSubmissionsComponent),
   },
   {
     path: 'insights',
@@ -22,20 +21,16 @@ const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   },
   {
     path: 'requirements',
-    loadComponent: () =>
-      import('./requirements/requirements.component').then((m) => m.RequirementsComponent),
+    loadComponent: () => import('./requirements/requirements.component').then((m) => m.RequirementsComponent),
   },
   {
     path: 'sfc-status',
-    loadComponent: () =>
-      import('./sfc-status/sfc-status.component').then((m) => m.SfcStatusComponent),
+    loadComponent: () => import('./sfc-status/sfc-status.component').then((m) => m.SfcStatusComponent),
   },
   {
     path: 'elected-body-status',
     loadComponent: () =>
-      import('./elected-body-status/elected-body-status.component').then(
-        (m) => m.ElectedBodyStatusComponent,
-      ),
+      import('./elected-body-status/elected-body-status.component').then((m) => m.ElectedBodyStatusComponent),
   },
   {
     path: 'elected-body-post-update',
@@ -47,40 +42,36 @@ const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'devolution-formula',
     loadComponent: () =>
-      import('./devolution-formula/devolution-formula.component').then(
-        (m) => m.DevolutionFormulaComponent,
-      ),
+      import('./devolution-formula/devolution-formula.component').then((m) => m.DevolutionFormulaComponent),
   },
   {
     path: 'special-infrastructure',
     loadComponent: () =>
-      import('./special-infrastructure/special-infrastructure.component').then(
-        (m) => m.SpecialInfrastructureComponent,
-      ),
+      import('./special-infrastructure/special-infrastructure.component').then((m) => m.SpecialInfrastructureComponent),
   },
   {
     path: 'urbanisation-premium',
     loadComponent: () =>
-      import('./urbanisation-premium/urbanisation-premium.component').then(
-        (m) => m.UrbanisationPremiumComponent,
-      ),
+      import('./urbanisation-premium/urbanisation-premium.component').then((m) => m.UrbanisationPremiumComponent),
   },
   {
     path: 'doe-status',
-    loadComponent: () =>
-      import('./doe-status/doe-status.component').then((m) => m.DoeStatusComponent),
+    loadComponent: () => import('./doe-status/doe-status.component').then((m) => m.DoeStatusComponent),
   },
   {
     path: 'support-hours',
-    loadComponent: () =>
-      import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
+    loadComponent: () => import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
   },
   {
     path: 'roles-teams-unified-view',
     loadComponent: () =>
-      import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+      import('./roles-teams-overview/roles-teams-overview.component').then(
         (m) => m.RolesTeamsOverviewComponent,
       ),
+  },
+  {
+    path: 'register-ulb',
+    loadComponent: () => import('./register-ulb/register-ulb.component').then((m) => m.RegisterUlbComponent),
   },
 ];
 

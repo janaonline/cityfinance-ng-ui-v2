@@ -304,6 +304,19 @@
                     </div>
                   }
 
+                  <!-- Reusable confidence chip: shows a 0-100 score next to a field value -->
+                  <ng-template #confidenceChip let-score="score">
+                    @if (score !== null && score !== undefined) {
+                      <span
+                        class="confidence-chip ms-1"
+                        [ngClass]="getConfidenceClass(score)"
+                        [title]="'Confidence: ' + score + '%'"
+                      >
+                        {{ score }}%
+                      </span>
+                    }
+                  </ng-template>
+
                   <div class="row g-3">
                     <!-- Extraction metadata -->
                     @if (job.result.extraction) {
@@ -316,7 +329,12 @@
                                 @if (job.result.extraction.ulb_name) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0" style="width:45%">ULB Name</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.ulb_name }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ job.result.extraction.ulb_name }}
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.ulb_name }"
+                                      ></ng-container>
+                                    </td>
                                   </tr>
                                 }
                                 @if (job.result.extraction.original_ulb_name) {
@@ -328,13 +346,23 @@
                                 @if (job.result.extraction.document_type) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0">Document Type</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.document_type }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ job.result.extraction.document_type }}
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.document_type }"
+                                      ></ng-container>
+                                    </td>
                                   </tr>
                                 }
                                 @if (job.result.extraction.financial_year) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0">Financial Year</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.financial_year }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ job.result.extraction.financial_year }}
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.financial_year }"
+                                      ></ng-container>
+                                    </td>
                                   </tr>
                                 }
                                 @if (job.result.extraction.language_detected) {
@@ -354,6 +382,9 @@
                                       >
                                         {{ job.result.extraction.seal_present ? 'Yes' : 'No' }}
                                       </span>
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.seal_present }"
+                                      ></ng-container>
                                     </td>
                                   </tr>
                                 }
@@ -368,31 +399,54 @@
                                       >
                                         {{ job.result.extraction.signature_present ? 'Yes' : 'No' }}
                                       </span>
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.signature_present }"
+                                      ></ng-container>
                                     </td>
                                   </tr>
                                 }
                                 @if (job.result.extraction.as_on_date) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0">As On Date</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.as_on_date }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ job.result.extraction.as_on_date }}
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.as_on_date }"
+                                      ></ng-container>
+                                    </td>
                                   </tr>
                                 }
                                 @if (job.result.extraction.auditor_name) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0">Auditor Name</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.auditor_name }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ job.result.extraction.auditor_name }}
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.auditor_name }"
+                                      ></ng-container>
+                                    </td>
                                   </tr>
                                 }
                                 @if (job.result.extraction.auditor_firm) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0">Auditor Firm</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.auditor_firm }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ job.result.extraction.auditor_firm }}
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.auditor_firm }"
+                                      ></ng-container>
+                                    </td>
                                   </tr>
                                 }
                                 @if (job.result.extraction.audited_date) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0">Audited Date</td>
-                                    <td class="fw-medium pe-0">{{ job.result.extraction.audited_date }}</td>
+                                    <td class="fw-medium pe-0">
+                                      {{ job.result.extraction.audited_date }}
+                                      <ng-container
+                                        *ngTemplateOutlet="confidenceChip; context: { score: job.result.extraction.field_confidence?.audited_date }"
+                                      ></ng-container>
+                                    </td>
                                   </tr>
                                 }
                               </tbody>
@@ -665,6 +719,37 @@
                                       }
                                     </ul>
                                   }
+                                  @if (job.result.basic_validation.page_readability_scores?.length) {
+                                    <div class="mt-2">
+                                      <span class="text-secondary small d-block mb-1">Per-page Readability</span>
+                                      <table class="table table-sm table-borderless mb-0 small">
+                                        <tbody>
+                                          @for (page of job.result.basic_validation.page_readability_scores; track page.page) {
+                                            <tr>
+                                              <td class="text-secondary ps-0">Page {{ page.page }}</td>
+                                              <td class="pe-0">
+                                                <span
+                                                  class="fw-medium"
+                                                  [class.text-success]="page.score >= 80"
+                                                  [class.text-warning]="page.score >= 50 && page.score < 80"
+                                                  [class.text-danger]="page.score < 50"
+                                                >{{ page.score }}/100</span>
+                                                <ng-container
+                                                  *ngTemplateOutlet="confidenceChip; context: { score: page.confidence }"
+                                                ></ng-container>
+                                                @if (page.half_cut_detected) {
+                                                  <span
+                                                    class="badge text-bg-danger ms-1"
+                                                    [title]="'Half-cut confidence: ' + (page.half_cut_confidence ?? '-') + '%'"
+                                                  >Half-cut</span>
+                                                }
+                                              </td>
+                                            </tr>
+                                          }
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  }
                                 </div>
                               </div>
                             </div>
@@ -681,7 +766,12 @@
                                       @if (job.result.basic_validation.table_detection_status) {
                                         <tr>
                                           <td class="text-secondary ps-0">Status</td>
-                                          <td class="fw-medium pe-0">{{ job.result.basic_validation.table_detection_status }}</td>
+                                          <td class="fw-medium pe-0">
+                                            {{ job.result.basic_validation.table_detection_status }}
+                                            <ng-container
+                                              *ngTemplateOutlet="confidenceChip; context: { score: job.result.basic_validation.table_detection_confidence }"
+                                            ></ng-container>
+                                          </td>
                                         </tr>
                                       }
                                       @if (job.result.basic_validation.table_present !== null) {

@@ -1,6 +1,8 @@
 import { ComponentRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { DynamicFieldSupportingContentComponent } from './field-supporting-content.component';
 import { FieldSupportingContent } from '../../field.interface';
@@ -11,7 +13,7 @@ describe('DynamicFieldSupportingContentComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DynamicFieldSupportingContentComponent],
+      imports: [DynamicFieldSupportingContentComponent, RouterTestingModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DynamicFieldSupportingContentComponent);
@@ -267,6 +269,123 @@ describe('DynamicFieldSupportingContentComponent', () => {
       fixture.detectChanges();
       expect(fixture.debugElement.query(By.css('.card'))).toBeTruthy();
       expect(fixture.debugElement.query(By.css('dl'))).toBeNull();
+    });
+  });
+
+  describe('actions — url-based navigation', () => {
+    it('renders the action label and icon', () => {
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [
+            {
+              id: 'register-ulb',
+              label: 'Register ULB',
+              icon: 'bi bi-person-check',
+              tone: 'success',
+              variant: 'link',
+              url: '/xvifc/test-year/register-ulb',
+            },
+          ],
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const link = fixture.debugElement.query(By.css('a'));
+      expect(link.nativeElement.textContent.trim()).toContain('Register ULB');
+      expect(link.query(By.css('i')).nativeElement.className).toContain('bi-person-check');
+    });
+
+    it('applies the success tone class', () => {
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [
+            { id: 'register-ulb', label: 'Register ULB', tone: 'success', url: '/xvifc/test-year/register-ulb' },
+          ],
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const link = fixture.debugElement.query(By.css('a'));
+      expect(link.nativeElement.className).toContain('link-success');
+    });
+
+    it('clicking an internal (slash-prefixed) url navigates via the router and does not open a new tab', () => {
+      const router = TestBed.inject(Router);
+      const navSpy = spyOn(router, 'navigateByUrl').and.returnValue(Promise.resolve(true));
+      const openSpy = spyOn(window, 'open');
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [{ id: 'register-ulb', label: 'Register ULB', url: '/xvifc/test-year/register-ulb' }],
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const link = fixture.debugElement.query(By.css('a'));
+      link.nativeElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+      expect(navSpy).toHaveBeenCalledWith('/xvifc/test-year/register-ulb');
+      expect(openSpy).not.toHaveBeenCalled();
+      expect(link.nativeElement.getAttribute('target')).toBe('_self');
+      expect(link.nativeElement.getAttribute('rel')).toBeNull();
+    });
+
+    it('clicking an https url opens it externally via window.open', () => {
+      const router = TestBed.inject(Router);
+      const navSpy = spyOn(router, 'navigateByUrl');
+      const openSpy = spyOn(window, 'open');
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [{ id: 'docs', label: 'Docs', url: 'https://example.com/docs' }],
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const link = fixture.debugElement.query(By.css('a'));
+      link.nativeElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+      expect(openSpy).toHaveBeenCalledWith('https://example.com/docs', '_blank', 'noopener,noreferrer');
+      expect(navSpy).not.toHaveBeenCalled();
+      expect(link.nativeElement.getAttribute('target')).toBe('_blank');
+      expect(link.nativeElement.getAttribute('rel')).toBe('noopener noreferrer');
+    });
+
+    it('does not render a "/resigter-ulb" typo URL — backend URL is used as-is', () => {
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [{ id: 'register-ulb', label: 'Register ULB', url: '/xvifc/test-year/register-ulb' }],
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const link = fixture.debugElement.query(By.css('a'));
+      expect(link.nativeElement.getAttribute('href')).toBe('/xvifc/test-year/register-ulb');
+      expect(link.nativeElement.getAttribute('href')).not.toContain('resigter-ulb');
+    });
+
+    it('non-url actions (e.g. download-template id) still emit supportingAction and do not navigate', () => {
+      const router = TestBed.inject(Router);
+      const navSpy = spyOn(router, 'navigateByUrl');
+      const emitSpy = jasmine.createSpy('supportingAction');
+      fixture.componentInstance.supportingAction.subscribe(emitSpy);
+      componentRef.setInput('fieldKey', 'excelFile');
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [{ id: 'download-template', label: 'Download template' }],
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const button = fixture.debugElement.query(By.css('button'));
+      button.nativeElement.click();
+
+      expect(emitSpy).toHaveBeenCalledWith({ fieldKey: 'excelFile', actionId: 'download-template', meta: undefined });
+      expect(navSpy).not.toHaveBeenCalled();
     });
   });
 

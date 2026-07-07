@@ -41,15 +41,14 @@ export class OtpAuthService {
   }
 
   /**
-   * Forgot-password OTP send. Normalizes both real-account and fake-account backend responses
-   * into the same shape. For real accounts, `maskedContact` is the already-masked mobile or
-   * email from the backend (e.g. "94******22"). For fake accounts both fields are absent so
-   * `maskedContact` is undefined — the component falls back to masking the entered identifier
-   * on the frontend. Either way the UI message format is identical, preventing account enumeration.
+   * Forgot-password OTP send. Returns both masked contacts so the component can pick the right
+   * one based on role (ULB → maskedMobile, STATE/MoHUA → maskedEmail). For fake accounts both
+   * fields are undefined — the component falls back to masking the entered identifier on the
+   * frontend. Either way the UI message is identical, preventing account enumeration.
    */
   sendForgotPasswordOtp(identifier: string): Observable<ForgotPasswordOtpResult> {
     return this.sendOtp(identifier, 'forgot-password').pipe(
-      map((res) => ({ maskedContact: res.mobile ?? res.email })),
+      map((res) => ({ maskedMobile: res.mobile, maskedEmail: res.email })),
     );
   }
 
