@@ -25,25 +25,23 @@ export class UlbOverviewService {
     disbursementColumns: DisbursementColumn[];
     disbursementRows: DisbursementRow[];
   }> {
-    return this.http
-      .get<any>(`${environment.api.url2}xvi-fc/ulb/${ulbId}`)
-      .pipe(
-        tap((res) => {
-          const d = res?.data ?? res;
-          const raw = localStorage.getItem('xvifc_selectedYearString') ?? '';
-          const selectedYear = raw.replace(/^FY-/, 'FY ');
-          localStorage.setItem(
-            'xvifc_ulb_details',
-            JSON.stringify({ ulbName: d.ulbName, stateName: d.stateName, selectedYear }),
-          );
-        }),
-        map((res) => {
-          const d = res?.data ?? res;
-          const { ulbName, stateName } = d as { ulbName: string; stateName: string };
-          return this.buildViewModel(ulbId, ulbName, stateName);
-        }),
-        catchError(() => of(this.buildViewModel(ulbId, '', ''))),
-      );
+    return this.http.get<any>(`${environment.api.url2}xvi-fc/ulb/${ulbId}`).pipe(
+      tap((res) => {
+        const d = res?.data ?? res;
+        const raw = localStorage.getItem('xvifc_selectedYearString') ?? '';
+        const selectedYear = raw.replace(/^FY-/, 'FY ');
+        localStorage.setItem(
+          'xvifc_ulb_details',
+          JSON.stringify({ ulbName: d.ulbName, stateName: d.stateName, selectedYear }),
+        );
+      }),
+      map((res) => {
+        const d = res?.data ?? res;
+        const { ulbName, stateName } = d as { ulbName: string; stateName: string };
+        return this.buildViewModel(ulbId, ulbName, stateName);
+      }),
+      catchError(() => of(this.buildViewModel(ulbId, '', ''))),
+    );
   }
 
   private buildViewModel(
@@ -74,9 +72,9 @@ export class UlbOverviewService {
     return {
       name: response.ulbName,
       financialYear: 'FY 2026-27',
-      subHeader1: 'BASIC GRANT ONLY',
+      subHeader1: 'ESTIMATED GRANT',
       subHeader2: 'Based on SFC data, population figures, and CF calculations',
-      totalAllocation: '₹___ crore',
+      totalAllocation: 'Allocation will be displayed once the State submits the ULB-wise allocation',
       totalAllocationNote: `For ${response.ulbName}, ${response.stateName}`,
       grantSections: [
         {
@@ -84,13 +82,13 @@ export class UlbOverviewService {
           label: 'Grant Estimate',
           componentLabel: 'Grant Component',
           title: 'Grant Estimate for FY 2026-27',
-          amount: '₹___ crore',
-          description: 'Grant structure:',
-          points: [
-            '₹___ crore — Tied grant (SWM & Water)',
-            '₹___ crore — Untied grant (General use)',
-          ],
-          note: 'Grants cannot be used for salaries or establishment expenditure. Untied: max 20% on roads (₹___ crore).',
+          amount: 'Allocation will be displayed once the State submits the ULB-wise allocation',
+          // description: 'Grant structure:',
+          description: '',
+          // points: ['₹___ crore — Tied grant (SWM & Water)', '₹___ crore — Untied grant (General use)'],
+          points: [],
+          // note: 'Grants cannot be used for salaries or establishment expenditure. Untied: max 20% on roads (₹___ crore).',
+          note: '',
         },
         {
           id: 'eligibilityRequirements',
@@ -103,10 +101,7 @@ export class UlbOverviewService {
             'State confirmation of elected body status for the ULB',
             {
               text: 'ULB submission of financial statements:',
-              subPoints: [
-                'FY 2024-25 audited statements',
-                'FY 2025-26 provisional statements',
-              ],
+              subPoints: ['FY 2024-25 audited statements', 'FY 2025-26 provisional statements'],
             },
           ],
         },

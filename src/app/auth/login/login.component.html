@@ -4,14 +4,14 @@
     <div class="login-left h-100 position-relative overflow-hidden d-flex align-items-stretch">
       <!-- z-index: 1 keeps content above the decorative layer -->
       <div class="d-flex flex-column position-relative w-100 p-5" style="z-index: 1">
-        <div class="d-flex align-items-center gap-3 mb-5">
+        <!-- <div class="d-flex align-items-center gap-3 mb-5">
           <div class="brand-logo rounded-circle flex-shrink-0 d-inline-flex align-items-center justify-content-center">
             <i class="bi bi-bank2"></i>
           </div>
           <span class="fw-bold small text-uppercase" style="letter-spacing: 0.15em; color: rgba(255, 255, 255, 0.6)">
             CITY FINANCE
           </span>
-        </div>
+        </div> -->
 
         <h1 class="hero-title text-white m-0">{{ panelContent().titleLine1 }}<br />{{ panelContent().titleLine2 }}</h1>
 
@@ -292,9 +292,13 @@
               @if (captchaEnabled) {
                 <p class="text-muted text-center mt-3 mb-0 small">
                   Protected by reCAPTCHA —
-                  <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted">Privacy</a>
+                  <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted"
+                    >Privacy</a
+                  >
                   &amp;
-                  <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted">Terms</a>
+                  <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted"
+                    >Terms</a
+                  >
                 </p>
               }
             </div>
