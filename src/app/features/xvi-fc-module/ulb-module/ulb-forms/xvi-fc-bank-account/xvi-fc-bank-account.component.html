@@ -1,0 +1,243 @@
+<input
+  #proofInput
+  type="file"
+  accept=".pdf,.jpg,.jpeg,.png"
+  class="d-none"
+  aria-hidden="true"
+  (change)="onProofSelected($event)"
+/>
+
+<div class="container py-3 xvifc-theme">
+  <button
+    class="btn btn-link text-secondary text-decoration-none ps-0 mb-3 d-inline-flex align-items-center gap-1 small"
+    type="button"
+    (click)="goBack()"
+  >
+    <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    Back to Conditions
+  </button>
+
+  <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
+    <h1 class="fs-4 fw-bold mb-0">{{ pageTitle }}</h1>
+    @if (existingRecord(); as record) {
+      <span class="status-pill small fw-semibold">{{ record.currentFormStatusLabel }}</span>
+    }
+  </div>
+
+  @if (ulbDetails(); as details) {
+    <p class="small text-muted mb-3">
+      <span class="text-primary fw-semibold">{{ details.ulbName }}</span>
+      &nbsp;·&nbsp;
+      {{ details.stateName }}
+      &nbsp;·&nbsp;
+      {{ details.selectedYear }}
+    </p>
+  }
+
+  <p class="small text-secondary mb-4">{{ pageDescription }}</p>
+
+  @if (loadError()) {
+    <div class="alert alert-danger py-2 px-3 small mb-3" role="alert">
+      {{ loadError() }}
+    </div>
+  }
+
+  @if (isRecordLoading()) {
+    <div class="d-flex align-items-center gap-2 text-muted small py-2 mb-3" role="status" aria-live="polite">
+      <span class="spinner-border spinner-border-sm flex-shrink-0" aria-hidden="true"></span>
+      Loading bank account details...
+    </div>
+  }
+
+  @if (!isEditable()) {
+    <div class="alert alert-info py-2 px-3 small mb-3" role="status">
+      This form is not editable in the current status.
+    </div>
+  }
+
+  <section class="card border-0 shadow-sm rounded-3 p-3 mb-4 account-card" aria-labelledby="account-card-title">
+    <div class="account-card__title d-flex align-items-center gap-2 mb-3" id="account-card-title">
+      <i class="bi bi-bank text-secondary flex-shrink-0" aria-hidden="true"></i>
+      <span>Dedicated XVI-FC Bank Account</span>
+    </div>
+
+    @if (existingRecord()?.accountNumberMasked; as maskedAccount) {
+      <div class="masked-account rounded-2 p-3 mb-3">
+        <p class="small text-muted mb-1">Saved account number</p>
+        <p class="fw-semibold mb-0">{{ maskedAccount }}</p>
+      </div>
+    }
+
+    <form [formGroup]="form" novalidate>
+      <div class="mb-3">
+        <label for="ifsc-code" class="form-label fw-semibold small text-secondary">
+          {{ fields.ifscCode.label }}
+          <span class="text-danger" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="ifsc-code"
+          type="text"
+          class="form-control form-control-sm"
+          formControlName="ifscCode"
+          [placeholder]="fields.ifscCode.placeholder"
+          [class.is-invalid]="isInvalid('ifscCode')"
+          [disabled]="!isEditable() || isSubmitting()"
+          aria-required="true"
+        />
+        @if (isInvalid('ifscCode')) {
+          <div class="invalid-feedback">{{ getError('ifscCode') }}</div>
+        }
+      </div>
+
+      @if (isIfscLoading()) {
+        <div class="d-flex align-items-center gap-2 text-muted small py-2 mb-3" role="status" aria-live="polite">
+          <span class="spinner-border spinner-border-sm flex-shrink-0" aria-hidden="true"></span>
+          Searching IFSC details...
+        </div>
+      }
+
+      @if (bankDetails(); as bank) {
+        <div class="bank-details rounded-2 p-3 mb-3" role="status" aria-live="polite">
+          <div class="bank-details__name d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <span>{{ bank.name }}</span>
+          </div>
+          <p class="small mb-1"><strong>Branch:</strong> {{ bank.branch }}</p>
+          <p class="small mb-1"><strong>Address:</strong> {{ bank.address }}</p>
+          <p class="small mb-1"><strong>City:</strong> {{ bank.city }}</p>
+          @if (bank.state) {
+            <p class="small mb-1"><strong>State:</strong> {{ bank.state }}</p>
+          }
+          <p class="small mb-0"><strong>MICR:</strong> {{ bank.micr || 'Not available' }}</p>
+        </div>
+      }
+
+      @if (ifscLookupError()) {
+        <div class="alert alert-warning py-2 px-3 small mb-3" role="alert">
+          {{ ifscLookupError() }}
+        </div>
+      }
+
+      @if (shouldShowAccountNumberInputs()) {
+      <div class="mb-3">
+        <label for="account-number" class="form-label fw-semibold small text-secondary">
+          {{ fields.accountNumber.label }}
+          <span class="text-danger" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="account-number"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          autocomplete="off"
+          maxlength="18"
+          class="form-control form-control-sm"
+          formControlName="accountNumber"
+          [placeholder]="fields.accountNumber.placeholder"
+          [class.is-invalid]="isInvalid('accountNumber')"
+          [disabled]="!isEditable() || isSubmitting()"
+          aria-required="true"
+          (input)="onAccountNumberInput('accountNumber', $event)"
+        />
+        @if (isInvalid('accountNumber')) {
+          <div class="invalid-feedback">{{ getError('accountNumber') }}</div>
+        }
+        @if (accountInputWarning('accountNumber'); as warning) {
+          <div class="text-warning small mt-1" role="alert">{{ warning }}</div>
+        }
+      </div>
+
+      <div class="mb-3">
+        <label for="confirm-account-number" class="form-label fw-semibold small text-secondary">
+          {{ fields.confirmAccountNumber.label }}
+          <span class="text-danger" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="confirm-account-number"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          autocomplete="off"
+          maxlength="18"
+          class="form-control form-control-sm"
+          formControlName="confirmAccountNumber"
+          [placeholder]="fields.confirmAccountNumber.placeholder"
+          [class.is-invalid]="isInvalid('confirmAccountNumber')"
+          [disabled]="!isEditable() || isSubmitting()"
+          aria-required="true"
+          (input)="onAccountNumberInput('confirmAccountNumber', $event)"
+        />
+        @if (isInvalid('confirmAccountNumber')) {
+          <div class="invalid-feedback">{{ getError('confirmAccountNumber') }}</div>
+        }
+        @if (accountInputWarning('confirmAccountNumber'); as warning) {
+          <div class="text-warning small mt-1" role="alert">{{ warning }}</div>
+        }
+      </div>
+      }
+
+      <div class="mb-0">
+        <p class="form-label fw-semibold small text-secondary mb-0">
+          {{ fields.proof.label }}
+          <span class="text-danger" aria-hidden="true">*</span>
+        </p>
+        <p class="small text-muted mb-2">{{ fields.proof.hint }}</p>
+
+        @if (selectedProof(); as proof) {
+          <div class="file-chip--ready d-flex align-items-center gap-2 rounded-2 px-3 py-2 mb-2">
+            <i class="bi bi-file-earmark-check" aria-hidden="true"></i>
+            <span class="text-truncate fw-semibold text-success small">{{ proof.originalName }}</span>
+            <span class="text-muted flex-shrink-0 small">· {{ formatFileSize(proof.sizeKb) }}</span>
+            @if (proof.mimeType === 'application/pdf' && proof.pages !== null) {
+              <span class="text-muted flex-shrink-0 small">· {{ proof.pages }} {{ proof.pages === 1 ? 'page' : 'pages' }}</span>
+            }
+            @if (isEditable()) {
+              <button class="btn btn-link text-danger p-0 ms-auto small" type="button" (click)="removeProof()">
+                Remove
+              </button>
+            }
+          </div>
+        }
+
+        <button
+          class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mb-2"
+          type="button"
+          [disabled]="!isEditable() || isProofUploading() || isSubmitting()"
+          (click)="triggerProofUpload()"
+        >
+          @if (isProofUploading()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Uploading...
+          } @else {
+            <i class="bi bi-cloud-upload" aria-hidden="true"></i>
+            Choose file
+          }
+        </button>
+
+        <p class="small text-muted mt-1 mb-2">
+          {{ fields.proof.acceptedFormatsText }} &nbsp;·&nbsp; max {{ fields.proof.maxSizeMb }} MB
+        </p>
+
+        @if (proofError()) {
+          <div class="text-danger small mt-2" role="alert">{{ proofError() }}</div>
+        }
+      </div>
+    </form>
+  </section>
+
+  @if (isEditable()) {
+    <div class="pt-2">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-success btn-sm d-inline-flex align-items-center gap-2" type="button" [disabled]="!canSubmit()" (click)="submit()">
+          @if (isSubmitting()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Submitting...
+          } @else {
+            Submit
+          }
+        </button>
+        <button class="btn btn-link text-secondary text-decoration-none" type="button" (click)="goBack()">Cancel</button>
+      </div>
+    </div>
+  }
+</div>

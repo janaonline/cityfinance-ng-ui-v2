@@ -113,6 +113,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         route: 'fill-disclosure',
       },
       {
+        id: 'xvi-fc-bank-account',
+        title: 'XVI-FC Bank Account (PFMS)',
+        subtitle: 'Confirm a dedicated bank account exists for XVI-FC grants',
+        status: 'pending',
+        actionLabel: 'Open',
+        route: 'xvi-fc-bank-account',
+      },
+      {
         id: 'slb',
         title: 'Service Level Benchmarks',
         subtitle: 'SLB data for water, sanitation and solid waste — opens in July',
