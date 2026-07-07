@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { AnnualAccountStateService } from '../annual-account-state.service';
+import { FORM_STATUS, FormStatusType } from './xvi-fc-bank-account/xvi-fc-bank-account.models';
 
 interface UlbDetails {
   ulbName: string;
@@ -232,6 +233,9 @@ export class UlbFormsComponent implements OnInit {
       if (condition.id === 'unspent-balance') {
         return status.unspentBalanceDisclosure.form_status === 'SUBMITTED' ? 'complete' : 'pending';
       }
+      if (condition.id === 'xvi-fc-bank-account') {
+        return this.isPfmsSubmittedStatus(status.xviFcBankAccount?.form_status) ? 'complete' : 'pending';
+      }
     }
     return condition.status;
   }
@@ -242,6 +246,9 @@ export class UlbFormsComponent implements OnInit {
     if (condition.id === 'audited-statement') return status.auditedData.form_status === 'UNDER_REVIEW_BY_STATE';
     if (condition.id === 'provisional-statement') return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE';
     if (condition.id === 'unspent-balance') return status.unspentBalanceDisclosure.form_status === 'SUBMITTED';
+    if (condition.id === 'xvi-fc-bank-account') {
+      return this.isPfmsSubmittedStatus(status.xviFcBankAccount?.form_status);
+    }
     return false;
   }
 
@@ -259,6 +266,10 @@ export class UlbFormsComponent implements OnInit {
 
   navigateTo(route: string): void {
     this.router.navigate([route], { relativeTo: this.activatedRoute.parent });
+  }
+
+  private isPfmsSubmittedStatus(status: FormStatusType | null | undefined): boolean {
+    return status != null && status !== FORM_STATUS.NO_STATUS && status !== FORM_STATUS.NOT_STARTED;
   }
 
   private resolveUlbId(): string | null {
