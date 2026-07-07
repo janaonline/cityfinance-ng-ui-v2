@@ -120,11 +120,6 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         actionLabel: 'Open',
         route: 'xvi-fc-bank-account',
       },
-    ],
-  },
-  {
-    deadline: 'Oct 31, 2026',
-    conditions: [
       {
         id: 'slb',
         title: 'Service Level Benchmarks',

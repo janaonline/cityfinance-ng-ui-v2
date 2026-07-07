@@ -1,0 +1,33 @@
+@use '@angular/material' as mat;
+
+// Angular Material's default (density 0) form fields render ~56px tall — much taller than
+// Bootstrap's ~38px `.form-control`. Density -4 brings them down to 40px, close to Bootstrap's
+// sizing, without touching the color/typography inherited from the ancestor theme.
+:host {
+  @include mat.theme(
+    (
+      density: -4,
+    )
+  );
+}
+
+.form-section-grid__card {
+  border-radius: 0.5rem;
+}
+
+.form-section-grid__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bs-primary, #0d6efd);
+  margin-bottom: 1rem;
+}
+
+.form-section-grid__label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}

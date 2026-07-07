@@ -11,14 +11,15 @@ import { TrimOnBlurDirective } from '../../../../core/directives/trim-on-blur.di
   templateUrl: './input.component.html',
   styles: [
     `
-    // * {
-    //     font-family: var(--ff-base) !important;
-    // }
-    .warning-hint {
+      // * {
+      //     font-family: var(--ff-base) !important;
+      // }
+      .warning-hint {
         display: block;
         color: orange;
-    }`,
-  ]
+      }
+    `,
+  ],
 })
 export class InputComponent implements OnInit, OnChanges {
   className: string = 'box1';
@@ -32,7 +33,7 @@ export class InputComponent implements OnInit, OnChanges {
   warnings: any[] = [];
   decimal: number = 0;
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     this.syncFromInputs();
@@ -48,10 +49,9 @@ export class InputComponent implements OnInit, OnChanges {
     this.readonly = this.parentField?.readonly || this.field?.readonly;
     this.validations = this.parentField?.validations || this.field?.validations;
     this.decimal =
-      this.parentField?.decimal || this.parentField?.decimal === 0
-        ? this.parentField?.decimal
-        : this.field?.decimal;
+      this.parentField?.decimal || this.parentField?.decimal === 0 ? this.parentField?.decimal : this.field?.decimal;
     this.warnings = this.parentField?.warning;
+    this.displayInlineLabel = this.field?.displayInlineLabel || false;
   }
 
   hasError(key: string, name: string): boolean {
@@ -80,5 +80,5 @@ export class InputComponent implements OnInit, OnChanges {
     return res;
   }
 
-  onKeypressNumber() { }
+  onKeypressNumber() {}
 }

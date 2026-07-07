@@ -1,0 +1,101 @@
+<div class="container-fluid">
+  <h3 class="fw-bold my-4">ULB Master</h3>
+
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+    <div class="d-flex gap-2 flex-wrap">
+      <input type="text" class="form-control" placeholder="Search by name or code" [(ngModel)]="search"
+        (ngModelChange)="onSearchChange()" />
+      @if (showStateFilter) {
+      <select class="form-select" [(ngModel)]="stateFilter" (ngModelChange)="onSearchChange()">
+        <option value="">All States</option>
+        @for (state of states; track state._id) {
+        <option [value]="state._id">{{ state.name }}</option>
+        }
+      </select>
+      }
+    </div>
+
+    @if (canCreate) {
+    <a class="btn btn-cfPrimary" [routerLink]="['../register-ulb']">Create ULB</a>
+    }
+  </div>
+  <mat-card class="custom-mat-card mat-elevation-z1">
+    <div class="table-container mat-elevation-z8 mb-4">
+      @if (dataSource.data.length <= 0) { <p class="text-center p-2 mt-2">No ULBs found for the selected filters.</p>
+        } @else {
+        <table mat-table [dataSource]="dataSource">
+          <ng-container matColumnDef="code">
+            <th mat-header-cell *matHeaderCellDef>Code</th>
+            <td mat-cell *matCellDef="let element">{{ element.code }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="district">
+            <th mat-header-cell *matHeaderCellDef>District</th>
+            <td mat-cell *matCellDef="let element">{{ element.district }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="state">
+            <th mat-header-cell *matHeaderCellDef>State</th>
+            <td mat-cell *matCellDef="let element">{{ element.stateName || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="ulbType">
+            <th mat-header-cell *matHeaderCellDef>ULB Type</th>
+            <td mat-cell *matCellDef="let element">{{ element.ulbTypeName || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="approvalStatus">
+            <th mat-header-cell *matHeaderCellDef>Approval</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="badge rounded-pill status-badge"
+                [class.text-bg-warning]="element.approval?.status === 'PENDING'"
+                [class.text-bg-success]="!element.approval || element.approval.status === 'APPROVED'"
+                [class.text-bg-danger]="element.approval?.status === 'REJECTED'"
+                [title]="element.approval?.status === 'REJECTED' ? element.approval.rejectReason : ''">
+                {{ element.approval?.status ?? 'APPROVED' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="isActive">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let element">{{ element.isActive ? 'Active' : 'Inactive' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="d-flex justify-content-between">
+                @if (element.approval?.status === 'PENDING') {
+                <button class="btn btn-link p-0 border-0 text-success" title="Approve" (click)="approveUlb(element)">
+                  <i class="bi bi-check-circle-fill"></i>
+                </button>
+                <button class="btn btn-link p-0 border-0 text-danger" title="Reject" (click)="rejectUlb(element)">
+                  <i class="bi bi-x-circle-fill"></i>
+                </button>
+                }
+                <button class="btn btn-link p-0 border-0" (click)="openEditDialog(element)">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button class="btn btn-link p-0 border-0" (click)="removeUlb(element)">
+                  <i class="bi bi-trash-fill text-danger"></i>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+        }
+
+        <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageIndex]="pageIndex"
+          [pageSizeOptions]="[10, 25, 50]" (page)="onPageChange($event)"></mat-paginator>
+    </div>
+  </mat-card>
+</div>

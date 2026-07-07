@@ -10,6 +10,7 @@ import { formatDateForValidationMessage } from '../../../../core/validators/date
 import { resolveDateConstraint } from '../../date-constraint-resolver';
 import { FieldConfig, Validator } from '../../field.interface';
 import { UTC_ISO_DATE_FORMATS, UtcIsoDateAdapter } from './utc-iso-date-adapter';
+import { MaterialModule } from '../../../../material.module';
 
 type DateValidationMessage = Pick<Validator, 'name' | 'message'>;
 type DateConstraintKey = 'minDate' | 'maxDate';
@@ -23,13 +24,23 @@ type DateConstraintKey = 'minDate' | 'maxDate';
     MatDatepickerModule,
     MatNativeDateModule,
     MatIconModule,
+    // MaterialModule,
   ],
   template: `
-    @if (!field.hideLabel) {
+    @if (!displayInlineLabel && !field.hideLabel) {
       <label [for]="field.key" class="fw-semibold">{{ field.label }}</label>
     }
 
     <mat-form-field class="margin-top" [appearance]="appearance" [formGroup]="group">
+      @if (displayInlineLabel && !field.hideLabel) {
+        <mat-label [attr.for]="field.key"
+          >{{ field.label }}
+          @if (field.showAsterisk) {
+            <span class="text-danger"><sup>*</sup></span>
+          }
+        </mat-label>
+      }
+
       <input
         [id]="field.key"
         matInput
@@ -63,6 +74,7 @@ export class DateComponent implements OnChanges {
 
   @Input({ required: true }) field!: FieldConfig;
   @Input({ required: true }) group!: FormGroup;
+  @Input() displayInlineLabel: boolean = false;
 
   minDate: Date | null = null;
   maxDate: Date | null = null;
@@ -74,6 +86,7 @@ export class DateComponent implements OnChanges {
       this.minDate = this.resolveDateBound('minDate');
       this.maxDate = this.resolveDateBound('maxDate');
       this.validationMessages = this.buildValidationMessages();
+      this.displayInlineLabel = this.field?.displayInlineLabel || false;
     }
   }
 
