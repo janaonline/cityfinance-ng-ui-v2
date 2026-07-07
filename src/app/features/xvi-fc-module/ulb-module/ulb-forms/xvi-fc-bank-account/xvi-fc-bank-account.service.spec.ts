@@ -2,15 +2,24 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from '../../../../../../environments/environment';
 import { XviFcBankAccountService } from './xvi-fc-bank-account.service';
-import { SubmitXviFcBankAccountPayload, XviFcBankAccountResponse } from './xvi-fc-bank-account.models';
+import {
+  SubmitXviFcBankAccountPayload,
+  XviFcBankAccountProofFile,
+  XviFcBankAccountResponse,
+} from './xvi-fc-bank-account.models';
 
 const BASE_URL = environment.api.url2;
+const proofPath = 'xvi-fc/bank-account/ulb-id/year-id/proof/cancelled-cheque.pdf';
+const fullProofUrl = `https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com/${proofPath}`;
+const signedPutUrl = `${fullProofUrl}?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=secret`;
 
-const proof = {
-  fileName: 'cancelled-cheque.pdf',
-  fileUrl: 'https://bucket.s3.amazonaws.com/bank-account/proof/cancelled-cheque.pdf',
-  fileSize: 1024,
+const proofFile: XviFcBankAccountProofFile = {
+  originalName: 'cancelled-cheque.pdf',
   mimeType: 'application/pdf',
+  pages: 2,
+  sizeKb: 12.25,
+  s3Key: proofPath,
+  sha256: 'a'.repeat(64),
 };
 
 const responseRecord: XviFcBankAccountResponse = {
@@ -28,7 +37,7 @@ const responseRecord: XviFcBankAccountResponse = {
   },
   accountNumberMasked: '********9012',
   accountNumberLast4: '9012',
-  proof,
+  proofFile,
   currentFormStatus: 3,
   currentFormStatusLabel: 'Under Review by State',
 };
@@ -79,7 +88,7 @@ describe('XviFcBankAccountService', () => {
 
     expect(result).toEqual({ ifscCode: 'UTIB0005157', bankDetails: responseRecord.bankDetails });
   });
-  it('submitBankAccount calls POST /xvi-fc/bank-account with SFC-style proof only', () => {
+  it('submitBankAccount calls POST /xvi-fc/bank-account with proofFile only', () => {
     const payload: SubmitXviFcBankAccountPayload = {
       ulbId: 'ulb-id',
       designYearId: 'year-id',
@@ -87,41 +96,55 @@ describe('XviFcBankAccountService', () => {
       accountNumber: '123456789012',
       confirmAccountNumber: '123456789012',
       bankDetails: responseRecord.bankDetails,
-      proof,
+      proofFile,
     };
 
     service.submitBankAccount(payload).subscribe();
 
     const req = httpMock.expectOne(`${BASE_URL}xvi-fc/bank-account`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body.proof).toEqual(proof);
-    expect(req.request.body.proof).not.toEqual(jasmine.objectContaining({ filepath: jasmine.any(String) }));
-    expect(req.request.body.proof).not.toEqual(jasmine.objectContaining({ originalName: jasmine.any(String) }));
-    expect(req.request.body.proof).not.toEqual(jasmine.objectContaining({ sizeKb: jasmine.any(Number) }));
+    expect(req.request.body.proofFile).toEqual(proofFile);
+    expect(req.request.body).not.toEqual(jasmine.objectContaining({ proof: jasmine.any(Object) }));
+    expect(req.request.body.proofFile.s3Key).toBe(proofPath);
+    expect(req.request.body.proofFile.s3Key).not.toBe(signedPutUrl);
+    expect(req.request.body.proofFile.s3Key).not.toBe(fullProofUrl);
     req.flush({ success: true, data: responseRecord });
   });
 
-  it('getProofSignedUrl calls POST /xvi-fc/bank-account/proof/signed-url', () => {
-    const payload = {
-      ulbId: 'ulb-id',
-      designYearId: 'year-id',
+  it('getSignedUrls calls shared POST /s3/signed-url with an array payload', () => {
+    const payload = [{
       fileName: 'cancelled-cheque.pdf',
-      fileSize: 1024,
+      folder: 'xvi-fc/bank-account/ulb-id/year-id/proof',
       mimeType: 'application/pdf',
-    };
+      uploadId: 'upload-id',
+      expiresIn: 300,
+    }];
 
-    service.getProofSignedUrl(payload).subscribe();
+    let result: unknown;
 
-    const req = httpMock.expectOne(`${BASE_URL}xvi-fc/bank-account/proof/signed-url`);
+    service.getSignedUrls(payload).subscribe((value) => (result = value));
+
+    const req = httpMock.expectOne(`${BASE_URL}s3/signed-url`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
     req.flush({
       success: true,
-      data: {
-        url: 'https://signed.example.com/upload',
-        fileUrl: proof.fileUrl,
-      },
+      data: [{
+        fileAlias: 'cancelled-cheque.pdf',
+        url: signedPutUrl,
+        fileUrl: fullProofUrl,
+        path: proofPath,
+        uploadId: 'upload-id',
+      }],
     });
+
+    expect(result).toEqual([{
+      fileAlias: 'cancelled-cheque.pdf',
+      url: signedPutUrl,
+      fileUrl: fullProofUrl,
+      path: proofPath,
+      uploadId: 'upload-id',
+    }]);
   });
 
   it('uploadProofToS3 sends PUT request to signed URL', async () => {

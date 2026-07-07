@@ -52,30 +52,48 @@ Bank details displayed after IFSC lookup:
 
 - `GET /xvi-fc/bank-account?yearId={designYearId}&ulbId={ulbId}`
 - `POST /xvi-fc/bank-account`
-- `POST /xvi-fc/bank-account/proof/signed-url`
+- `POST /s3/signed-url`
 
-All calls use `environment.api.url2` with the existing `/api/v2/xvi-fc/...` convention.
+All calls use `environment.api.url2`, resolving to `/api/v2/...`.
 
 ## Proof Upload Flow
 
 1. Client validates file type and size.
-2. Client requests signed URL from `POST /xvi-fc/bank-account/proof/signed-url`.
+2. Client requests signed URL from shared `POST /s3/signed-url`.
 3. Client uploads file to S3 with `PUT` against the signed URL.
 4. Client stores returned metadata in component state.
 5. Submit sends metadata only to `POST /xvi-fc/bank-account`.
 
+Signed URL request payload:
+
+```ts
+[
+  {
+    fileName: file.name,
+    folder: `xvi-fc/bank-account/${ulbId}/${designYearId}/proof`,
+    mimeType: file.type,
+    uploadId: generatedUuid,
+    expiresIn: 300,
+  },
+]
+```
+
+Use the returned `path` for `proofFile.s3Key`; do not submit the signed PUT URL with query params or the full S3 `fileUrl`.
+
 Proof metadata shape:
 
 ```ts
-{
-  fileName: string;
-  fileUrl: string;
-  fileSize: number | null;
-  mimeType: string;
+proofFile: {
+  originalName: string;
+  mimeType: 'application/pdf' | 'image/jpeg' | 'image/png';
+  pages: number | null;
+  sizeKb: number;
+  s3Key: string;
+  sha256: string;
 }
 ```
 
-Do not send multipart files to the bank-account submit endpoint. Do not use `filepath`, `originalName`, or `sizeKb`.
+`sha256` is calculated client-side with Web Crypto before submit. PDF page count is calculated with `pdf-lib`; image files use `pages: null`. `sizeKb` is stored in KB. Do not send multipart files to the bank-account submit endpoint and do not submit the deprecated `proof` object.
 
 ## File Validation
 
@@ -121,8 +139,8 @@ Submit is allowed only when:
 - IFSC is valid
 - bank details are resolved
 - account number and confirmation match
-- proof exists
-- proof has no validation/upload error
+- proofFile exists
+- proofFile has no validation/upload error
 - status is editable
 
 ## Error Handling
@@ -130,7 +148,7 @@ Submit is allowed only when:
 The component handles:
 
 - backend validation error maps by applying messages to relevant controls/proof state
-- proof signed-url errors
+- proof signed-url errors from shared `/s3/signed-url`
 - S3 upload errors
 - submit errors
 - missing local context (`ulbId` / `designYearId`)

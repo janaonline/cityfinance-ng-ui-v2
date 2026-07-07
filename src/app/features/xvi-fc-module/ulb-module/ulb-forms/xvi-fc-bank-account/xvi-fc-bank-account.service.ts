@@ -4,7 +4,7 @@ import { Observable, from, map } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import {
   ApiResponse,
-  BankAccountProofSignedUrlPayload,
+  S3SignedUrlRequestItem,
   S3UrlResult,
   SubmitXviFcBankAccountPayload,
   XviFcBankAccountResponse,
@@ -44,11 +44,11 @@ export class XviFcBankAccountService {
       .pipe(map((res) => this.unwrap(res)));
   }
 
-  getProofSignedUrl(payload: BankAccountProofSignedUrlPayload): Observable<S3UrlResult> {
+  getSignedUrls(items: S3SignedUrlRequestItem[]): Observable<S3UrlResult[]> {
     return this.http
-      .post<ApiResponse<S3UrlResult> | S3UrlResult>(
-        `${this.baseUrl}xvi-fc/bank-account/proof/signed-url`,
-        payload,
+      .post<ApiResponse<S3UrlResult[]> | S3UrlResult[]>(
+        `${this.baseUrl}s3/signed-url`,
+        items,
       )
       .pipe(map((res) => this.unwrap(res)));
   }

@@ -2,16 +2,23 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Location } from '@angular/common';
 import { of, throwError } from 'rxjs';
+import { PDFDocument } from 'pdf-lib';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { XviFcBankAccountComponent } from './xvi-fc-bank-account.component';
 import { XviFcBankAccountService } from './xvi-fc-bank-account.service';
-import { FORM_STATUS, XviFcBankAccountResponse } from './xvi-fc-bank-account.models';
+import { FORM_STATUS, XviFcBankAccountProofFile, XviFcBankAccountResponse } from './xvi-fc-bank-account.models';
 
-const proof = {
-  fileName: 'cancelled-cheque.pdf',
-  fileUrl: 'https://bucket.s3.amazonaws.com/bank-account/proof/cancelled-cheque.pdf',
-  fileSize: 1024,
+const proofPath = 'xvi-fc/bank-account/ulb-id/year-id/proof/cancelled-cheque.pdf';
+const fullProofUrl = `https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com/${proofPath}`;
+const signedPutUrl = `${fullProofUrl}?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=secret`;
+
+const proofFile: XviFcBankAccountProofFile = {
+  originalName: 'cancelled-cheque.pdf',
   mimeType: 'application/pdf',
+  pages: 2,
+  sizeKb: 12.25,
+  s3Key: proofPath,
+  sha256: 'a'.repeat(64),
 };
 
 const record = (overrides: Partial<XviFcBankAccountResponse> = {}): XviFcBankAccountResponse => ({
@@ -29,7 +36,7 @@ const record = (overrides: Partial<XviFcBankAccountResponse> = {}): XviFcBankAcc
   },
   accountNumberMasked: '********9012',
   accountNumberLast4: '9012',
-  proof,
+  proofFile,
   currentFormStatus: FORM_STATUS.IN_PROGRESS,
   currentFormStatusLabel: 'In Progress',
   ...overrides,
@@ -54,13 +61,13 @@ describe('XviFcBankAccountComponent', () => {
     service = jasmine.createSpyObj<XviFcBankAccountService>('XviFcBankAccountService', [
       'getBankAccount',
       'submitBankAccount',
-      'getProofSignedUrl',
+      'getSignedUrls',
       'uploadProofToS3',
       'lookupIfsc',
     ]);
     service.getBankAccount.and.returnValue(of(null));
     service.lookupIfsc.and.returnValue(of({ ifscCode: 'UTIB0005157', bankDetails: record().bankDetails }));
-    service.getProofSignedUrl.and.returnValue(of({ url: 'https://signed.example.com/upload', fileUrl: proof.fileUrl }));
+    service.getSignedUrls.and.returnValue(of([{ url: signedPutUrl, fileUrl: fullProofUrl, path: proofPath }]));
     service.uploadProofToS3.and.returnValue(of(void 0));
     service.submitBankAccount.and.returnValue(of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })));
 
@@ -96,7 +103,7 @@ describe('XviFcBankAccountComponent', () => {
       confirmAccountNumber: '123456789012',
     });
     component.bankDetails.set(record().bankDetails);
-    component.selectedProof.set(proof);
+    component.selectedProof.set(proofFile);
     fixture.detectChanges();
   }
 
@@ -241,7 +248,7 @@ describe('XviFcBankAccountComponent', () => {
     await component.onProofSelected({ target: { files: [new File(['x'], 'proof.gif', { type: 'image/gif' })] } } as unknown as Event);
 
     expect(component.proofError()).toBe('Only PDF, JPG, and PNG files are allowed.');
-    expect(service.getProofSignedUrl).not.toHaveBeenCalled();
+    expect(service.getSignedUrls).not.toHaveBeenCalled();
   });
 
   it('rejects file over 5 MB', async () => {
@@ -251,29 +258,53 @@ describe('XviFcBankAccountComponent', () => {
     await component.onProofSelected({ target: { files: [largeFile] } } as unknown as Event);
 
     expect(component.proofError()).toBe('File size must not exceed 5 MB.');
-    expect(service.getProofSignedUrl).not.toHaveBeenCalled();
+    expect(service.getSignedUrls).not.toHaveBeenCalled();
   });
 
   it('uploads valid file through signed-url flow', async () => {
     createComponent();
-    const file = new File(['proof'], 'proof.pdf', { type: 'application/pdf' });
+    spyOn(PDFDocument, 'load').and.resolveTo({ getPageCount: () => 6 } as never);
+    const file = new File([new Uint8Array(2048)], 'cancelled-cheque.pdf', { type: 'application/pdf' });
 
     await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
 
-    expect(service.getProofSignedUrl).toHaveBeenCalledWith({
-      ulbId: 'ulb-id',
-      designYearId: 'year-id',
-      fileName: 'proof.pdf',
-      fileSize: file.size,
+    expect(service.getSignedUrls).toHaveBeenCalledWith([{
+      fileName: 'cancelled-cheque.pdf',
+      folder: 'xvi-fc/bank-account/ulb-id/year-id/proof',
       mimeType: 'application/pdf',
-    });
-    expect(service.uploadProofToS3).toHaveBeenCalledWith('https://signed.example.com/upload', file);
+      uploadId: jasmine.any(String),
+      expiresIn: 300,
+    }]);
+    expect(service.uploadProofToS3).toHaveBeenCalledWith(signedPutUrl, file);
     expect(component.selectedProof()).toEqual({
-      fileName: 'proof.pdf',
-      fileUrl: proof.fileUrl,
-      fileSize: file.size,
+      originalName: 'cancelled-cheque.pdf',
       mimeType: 'application/pdf',
+      pages: 6,
+      sizeKb: 2,
+      s3Key: proofPath,
+      sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
     });
+    expect(component.selectedProof()?.s3Key).toBe(proofPath);
+    expect(component.selectedProof()?.s3Key).not.toBe(signedPutUrl);
+    expect(component.selectedProof()?.s3Key).not.toBe(fullProofUrl);
+  });
+
+  it('uploads image proof with null pages', async () => {
+    const imagePath = 'xvi-fc/bank-account/ulb-id/year-id/proof/cancelled-cheque.png';
+    service.getSignedUrls.and.returnValue(of([{ url: signedPutUrl, fileUrl: fullProofUrl, path: imagePath }]));
+    createComponent();
+    const file = new File([new Uint8Array(1024)], 'cancelled-cheque.png', { type: 'image/png' });
+
+    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
+
+    expect(component.selectedProof()).toEqual(jasmine.objectContaining({
+      originalName: 'cancelled-cheque.png',
+      mimeType: 'image/png',
+      pages: null,
+      sizeKb: 1,
+      s3Key: imagePath,
+      sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
+    }));
   });
 
   it('blocks submit when proof is missing', () => {
@@ -291,7 +322,7 @@ describe('XviFcBankAccountComponent', () => {
     createComponent();
     component.form.patchValue({ ifscCode: 'SBIN0123456', accountNumber: '123456789012', confirmAccountNumber: '123456789013' });
     component.bankDetails.set(record().bankDetails);
-    component.selectedProof.set(proof);
+    component.selectedProof.set(proofFile);
 
     component.submit();
 
@@ -305,11 +336,29 @@ describe('XviFcBankAccountComponent', () => {
     component.submit();
 
     const payload = service.submitBankAccount.calls.mostRecent().args[0];
-    expect(payload.proof).toEqual(proof);
-    expect(payload.proof).not.toEqual(jasmine.objectContaining({ filepath: jasmine.any(String) }));
+    expect(payload.proofFile).toEqual(proofFile);
+    expect(payload.proofFile.s3Key).toBe(proofPath);
+    expect(payload.proofFile.s3Key).not.toBe(signedPutUrl);
+    expect(payload.proofFile.s3Key).not.toBe(fullProofUrl);
+    expect(payload).not.toEqual(jasmine.objectContaining({ proof: jasmine.any(Object) }));
     expect(component.existingRecord()?.accountNumberMasked).toBe('********9012');
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Bank account form submitted successfully.');
     expect(location.back).toHaveBeenCalled();
+  });
+
+  it('locks IFSC editing after successful submit even when response status is editable', () => {
+    service.submitBankAccount.and.returnValue(
+      of(record({ currentFormStatus: FORM_STATUS.IN_PROGRESS, currentFormStatusLabel: 'In Progress' })),
+    );
+    createComponent();
+    hydrateValidForm();
+
+    component.submit();
+    fixture.detectChanges();
+
+    expect(component.isEditable()).toBeFalse();
+    expect(component.form.controls.ifscCode.disabled).toBeTrue();
+    expect((fixture.nativeElement.querySelector('#ifsc-code') as HTMLInputElement).disabled).toBeTrue();
   });
 
   it('maps backend validation errors to controls and proof', () => {
@@ -319,7 +368,7 @@ describe('XviFcBankAccountComponent', () => {
           message: 'Validation failed.',
           errors: {
             accountNumber: 'Invalid account number.',
-            proof: 'Proof is invalid.',
+            proofFile: 'Proof is invalid.',
           },
         },
       })),

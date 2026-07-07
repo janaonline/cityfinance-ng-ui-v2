@@ -186,8 +186,11 @@
         @if (selectedProof(); as proof) {
           <div class="file-chip--ready d-flex align-items-center gap-2 rounded-2 px-3 py-2 mb-2">
             <i class="bi bi-file-earmark-check" aria-hidden="true"></i>
-            <span class="text-truncate fw-semibold text-success small">{{ proof.fileName }}</span>
-            <span class="text-muted flex-shrink-0 small">· {{ formatFileSize(proof.fileSize) }}</span>
+            <span class="text-truncate fw-semibold text-success small">{{ proof.originalName }}</span>
+            <span class="text-muted flex-shrink-0 small">· {{ formatFileSize(proof.sizeKb) }}</span>
+            @if (proof.mimeType === 'application/pdf' && proof.pages !== null) {
+              <span class="text-muted flex-shrink-0 small">· {{ proof.pages }} {{ proof.pages === 1 ? 'page' : 'pages' }}</span>
+            }
             @if (isEditable()) {
               <button class="btn btn-link text-danger p-0 ms-auto small" type="button" (click)="removeProof()">
                 Remove

@@ -11,12 +11,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { firstValueFrom, catchError, debounceTime, distinctUntilChanged, map, of, startWith, switchMap, tap } from 'rxjs';
+import { PDFDocument } from 'pdf-lib';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import {
   FORM_STATUS,
   FormStatusType,
-  XviFcBankAccountProof,
+  XviFcBankAccountProofFile,
   XviFcBankAccountResponse,
   XviFcBankDetails,
 } from './xvi-fc-bank-account.models';
@@ -24,6 +25,7 @@ import { XviFcBankAccountService } from './xvi-fc-bank-account.service';
 
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const PROOF_SIGNED_URL_EXPIRES_IN_SECONDS = 300;
 const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 const EDITABLE_FORM_STATUSES = new Set<FormStatusType>([
   FORM_STATUS.NOT_STARTED,
@@ -114,13 +116,14 @@ export class XviFcBankAccountComponent {
   readonly isSubmitting = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly ifscLookupError = signal<string | null>(null);
-  readonly selectedProof = signal<XviFcBankAccountProof | null>(null);
+  readonly selectedProof = signal<XviFcBankAccountProofFile | null>(null);
   readonly proofError = signal<string | null>(null);
   readonly accountInputWarnings = signal<Record<'accountNumber' | 'confirmAccountNumber', string | null>>({
     accountNumber: null,
     confirmAccountNumber: null,
   });
   readonly submitted = signal(false);
+  readonly submittedSuccessfully = signal(false);
 
   readonly form = new FormGroup(
     {
@@ -153,6 +156,7 @@ export class XviFcBankAccountComponent {
   }
 
   isEditable(): boolean {
+    if (this.submittedSuccessfully()) return false;
     const status = this.existingRecord()?.currentFormStatus;
     return status == null || EDITABLE_FORM_STATUSES.has(status);
   }
@@ -242,7 +246,7 @@ export class XviFcBankAccountComponent {
     }
 
     const details = this.ulbDetails();
-    if (!details?.designYearId) {
+    if (!details?.ulbId || !details.designYearId) {
       this.selectedProof.set(null);
       this.proofError.set('Selected year context is missing. Please reopen this form from the condition tile.');
       return;
@@ -250,23 +254,33 @@ export class XviFcBankAccountComponent {
 
     this.isProofUploading.set(true);
     try {
-      const signedUrl = await firstValueFrom(
-        this.bankAccountService.getProofSignedUrl({
-          ulbId: details.ulbId,
-          designYearId: details.designYearId,
+      const [sha256, pages] = await Promise.all([
+        this.calculateSha256(file),
+        this.getProofPages(file),
+      ]);
+      const folder = this.buildProofFolder(details.ulbId, details.designYearId);
+      const [signedUrl] = await firstValueFrom(
+        this.bankAccountService.getSignedUrls([{
           fileName: file.name,
-          fileSize: file.size,
+          folder,
           mimeType: file.type,
-        }),
+          uploadId: this.generateUploadId(),
+          expiresIn: PROOF_SIGNED_URL_EXPIRES_IN_SECONDS,
+        }]),
       );
+      if (!signedUrl?.url || !signedUrl.path) {
+        throw new Error('Signed URL response is missing upload details.');
+      }
 
       await firstValueFrom(this.bankAccountService.uploadProofToS3(signedUrl.url, file));
 
       this.selectedProof.set({
-        fileName: file.name,
-        fileUrl: signedUrl.fileUrl,
-        fileSize: file.size,
-        mimeType: file.type,
+        originalName: file.name,
+        mimeType: file.type as XviFcBankAccountProofFile['mimeType'],
+        pages,
+        sizeKb: Number((file.size / 1024).toFixed(2)),
+        s3Key: signedUrl.path,
+        sha256,
       });
       this.utilityService.triggerSnackbar('Proof uploaded successfully.');
     } catch (error) {
@@ -319,15 +333,17 @@ export class XviFcBankAccountComponent {
         accountNumber: this.form.controls.accountNumber.value ?? '',
         confirmAccountNumber: this.form.controls.confirmAccountNumber.value ?? '',
         bankDetails,
-        proof,
+        proofFile: proof,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (record) => {
           this.existingRecord.set(record);
           this.bankDetails.set(record.bankDetails);
-          this.selectedProof.set(record.proof);
+          this.selectedProof.set(record.proofFile);
           this.form.patchValue({ accountNumber: '', confirmAccountNumber: '' }, { emitEvent: false });
+          this.submittedSuccessfully.set(true);
+          this.syncFormControlsState();
           this.submitted.set(false);
           this.utilityService.triggerSnackbar('Bank account form submitted successfully.');
           this.location.back();
@@ -341,11 +357,9 @@ export class XviFcBankAccountComponent {
     this.location.back();
   }
 
-  formatFileSize(bytes: number | null): string {
-    if (!bytes) return 'Size unavailable';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  formatFileSize(sizeKb: number | null): string {
+    if (sizeKb === null || sizeKb === undefined) return 'Size unavailable';
+    return `${sizeKb.toFixed(2)} KB`;
   }
 
   private loadExistingRecord(): void {
@@ -364,15 +378,24 @@ export class XviFcBankAccountComponent {
           if (!record) return;
           this.existingRecord.set(record);
           this.bankDetails.set(record.bankDetails);
-          this.selectedProof.set(this.hasProof(record.proof) ? record.proof : null);
+          this.selectedProof.set(this.hasProof(record.proofFile) ? record.proofFile : null);
           this.form.patchValue({ ifscCode: record.ifscCode, accountNumber: '', confirmAccountNumber: '' }, { emitEvent: false });
+          this.syncFormControlsState();
         },
         error: (error) => {
           this.loadError.set('Unable to load bank account details. Please try again.');
           this.showApiError(error, this.loadError()!);
         },
       })
-      .add(() => this.isRecordLoading.set(false));
+      .add(() => {
+        this.isRecordLoading.set(false);
+        this.syncFormControlsState();
+      });
+  }
+
+  private syncFormControlsState(): void {
+    const method = this.isEditable() ? 'enable' : 'disable';
+    Object.values(this.form.controls).forEach((control) => control[method]({ emitEvent: false }));
   }
 
   private loadUlbDetails(): UlbDetails | null {
@@ -460,8 +483,34 @@ export class XviFcBankAccountComponent {
     this.accountInputWarnings.update((warnings) => ({ ...warnings, [field]: message }));
   }
 
-  private hasProof(proof: XviFcBankAccountProof | null | undefined): proof is XviFcBankAccountProof {
-    return !!proof?.fileName && !!proof.fileUrl && !!proof.mimeType;
+  private hasProof(proofFile: XviFcBankAccountProofFile | null | undefined): proofFile is XviFcBankAccountProofFile {
+    return !!proofFile?.originalName && !!proofFile.s3Key && !!proofFile.mimeType && !!proofFile.sha256;
+  }
+
+  private async calculateSha256(file: File): Promise<string> {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  private async getProofPages(file: File): Promise<number | null> {
+    if (file.type !== 'application/pdf') return null;
+    const buffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(buffer);
+    return pdfDoc.getPageCount();
+  }
+
+  private buildProofFolder(ulbId: string, designYearId: string): string {
+    return `xvi-fc/bank-account/${encodeURIComponent(ulbId)}/${encodeURIComponent(designYearId)}/proof`;
+  }
+
+  private generateUploadId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
   private handleSubmitError(error: unknown): void {
@@ -472,7 +521,12 @@ export class XviFcBankAccountComponent {
     this.applyApiError('accountNumber', errors['accountNumber']);
     this.applyApiError('confirmAccountNumber', errors['confirmAccountNumber']);
 
-    const proofMessage = errors['proof'] ?? errors['proof.fileName'] ?? errors['proof.fileUrl'] ?? errors['proof.fileSize'];
+    const proofMessage =
+      errors['proofFile'] ??
+      errors['proofFile.originalName'] ??
+      errors['proofFile.s3Key'] ??
+      errors['proofFile.sizeKb'] ??
+      errors['proofFile.sha256'];
     if (proofMessage) this.proofError.set(this.formatApiMessage(proofMessage));
 
     this.showApiError(error, 'Unable to submit bank account form. Please try again.');

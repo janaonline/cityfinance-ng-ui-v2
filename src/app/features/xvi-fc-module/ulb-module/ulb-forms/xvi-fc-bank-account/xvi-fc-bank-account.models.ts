@@ -7,11 +7,15 @@ export interface XviFcBankDetails {
   micr: string | null;
 }
 
-export interface XviFcBankAccountProof {
-  fileName: string;
-  fileUrl: string;
-  fileSize: number | null;
-  mimeType: string;
+export type XviFcBankAccountProofMimeType = 'application/pdf' | 'image/jpeg' | 'image/png';
+
+export interface XviFcBankAccountProofFile {
+  originalName: string;
+  mimeType: XviFcBankAccountProofMimeType;
+  pages: number | null;
+  sizeKb: number;
+  s3Key: string;
+  sha256: string;
 }
 
 export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -34,7 +38,7 @@ export interface SubmitXviFcBankAccountPayload {
   accountNumber: string;
   confirmAccountNumber: string;
   bankDetails: XviFcBankDetails;
-  proof: XviFcBankAccountProof;
+  proofFile: XviFcBankAccountProofFile;
 }
 
 export interface XviFcBankAccountResponse {
@@ -45,7 +49,7 @@ export interface XviFcBankAccountResponse {
   bankDetails: XviFcBankDetails;
   accountNumberMasked?: string;
   accountNumberLast4?: string;
-  proof: XviFcBankAccountProof;
+  proofFile: XviFcBankAccountProofFile;
   currentFormStatus: FormStatusType;
   currentFormStatusLabel: string;
   submittedBy?: string | null;
@@ -59,12 +63,12 @@ export interface XviFcIfscLookupResponse {
   bankDetails: XviFcBankDetails;
 }
 
-export interface BankAccountProofSignedUrlPayload {
-  ulbId?: string;
-  designYearId: string;
+export interface S3SignedUrlRequestItem {
   fileName: string;
-  fileSize: number;
+  folder: string;
   mimeType: string;
+  uploadId: string;
+  expiresIn: number;
 }
 
 export interface S3UrlResult {
@@ -73,6 +77,7 @@ export interface S3UrlResult {
   fileAlias?: string;
   path?: string;
   fileSize?: number;
+  uploadId?: string;
 }
 
 export interface ApiResponse<T> {
