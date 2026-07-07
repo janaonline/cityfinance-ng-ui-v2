@@ -103,7 +103,9 @@
                     mat-icon-button
                     class="preview-icon-btn"
                     type="button"
-                    matTooltip="View uploaded documents"
+                    [matTooltip]="
+                      condition.id === 'xvi-fc-bank-account' ? 'View Bank Account Details' : 'View uploaded documents'
+                    "
                     (click)="navigateTo(condition.route!)"
                   >
                     <mat-icon class="preview-icon">visibility</mat-icon>
