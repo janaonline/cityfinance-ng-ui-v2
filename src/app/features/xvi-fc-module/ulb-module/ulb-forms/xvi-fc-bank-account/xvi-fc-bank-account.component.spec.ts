@@ -69,7 +69,14 @@ describe('XviFcBankAccountComponent', () => {
     service.lookupIfsc.and.returnValue(of({ ifscCode: 'UTIB0005157', bankDetails: record().bankDetails }));
     service.getSignedUrls.and.returnValue(of([{ url: signedPutUrl, fileUrl: fullProofUrl, path: proofPath }]));
     service.uploadProofToS3.and.returnValue(of(void 0));
-    service.submitBankAccount.and.returnValue(of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })));
+    service.submitBankAccount.and.returnValue(
+      of(
+        record({
+          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
+          currentFormStatusLabel: 'Under Review by State',
+        }),
+      ),
+    );
 
     utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
     location = jasmine.createSpyObj<Location>('Location', ['back']);
@@ -137,7 +144,12 @@ describe('XviFcBankAccountComponent', () => {
 
   it('disables submit/edit controls for non-editable currentFormStatus', () => {
     service.getBankAccount.and.returnValue(
-      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
+      of(
+        record({
+          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
+          currentFormStatusLabel: 'Under Review by State',
+        }),
+      ),
     );
 
     createComponent();
@@ -148,7 +160,12 @@ describe('XviFcBankAccountComponent', () => {
 
   it('hides account-number inputs for a submitted non-editable record', () => {
     service.getBankAccount.and.returnValue(
-      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
+      of(
+        record({
+          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
+          currentFormStatusLabel: 'Under Review by State',
+        }),
+      ),
     );
 
     createComponent();
@@ -160,7 +177,12 @@ describe('XviFcBankAccountComponent', () => {
 
   it('keeps masked account number visible for a submitted non-editable record', () => {
     service.getBankAccount.and.returnValue(
-      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
+      of(
+        record({
+          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
+          currentFormStatusLabel: 'Under Review by State',
+        }),
+      ),
     );
 
     createComponent();
@@ -173,15 +195,61 @@ describe('XviFcBankAccountComponent', () => {
 
   it('hides submit and cancel buttons for a submitted non-editable record', () => {
     service.getBankAccount.and.returnValue(
-      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
+      of(
+        record({
+          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
+          currentFormStatusLabel: 'Under Review by State',
+        }),
+      ),
     );
 
     createComponent();
 
-    const text = fixture.nativeElement.textContent as string;
+    const cancelButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Cancel',
+    );
     expect(fixture.nativeElement.querySelector('button.btn-success')).toBeNull();
-    expect(text).not.toContain('Cancel');
+    expect(cancelButton).toBeUndefined();
   });
+
+  it('renders bottom Back button for a submitted non-editable record', () => {
+    service.getBankAccount.and.returnValue(
+      of(
+        record({
+          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
+          currentFormStatusLabel: 'Under Review by State',
+        }),
+      ),
+    );
+
+    createComponent();
+
+    const bottomBackButton = Array.from(fixture.nativeElement.querySelectorAll('button.btn-link')).find(
+      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Back',
+    );
+    expect(bottomBackButton).toBeTruthy();
+  });
+
+  it('navigates back when bottom Back button is clicked', () => {
+    service.getBankAccount.and.returnValue(
+      of(
+        record({
+          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
+          currentFormStatusLabel: 'Under Review by State',
+        }),
+      ),
+    );
+
+    createComponent();
+
+    const bottomBackButton = Array.from(fixture.nativeElement.querySelectorAll('button.btn-link')).find(
+      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Back',
+    ) as HTMLButtonElement;
+    bottomBackButton.click();
+
+    expect(location.back).toHaveBeenCalled();
+  });
+
   it('allows edit for editable statuses', () => {
     for (const status of [
       FORM_STATUS.NOT_STARTED,
@@ -245,7 +313,9 @@ describe('XviFcBankAccountComponent', () => {
   it('rejects invalid file type', async () => {
     createComponent();
 
-    await component.onProofSelected({ target: { files: [new File(['x'], 'proof.gif', { type: 'image/gif' })] } } as unknown as Event);
+    await component.onProofSelected({
+      target: { files: [new File(['x'], 'proof.gif', { type: 'image/gif' })] },
+    } as unknown as Event);
 
     expect(component.proofError()).toBe('Only PDF, JPG, and PNG files are allowed.');
     expect(service.getSignedUrls).not.toHaveBeenCalled();
@@ -253,7 +323,9 @@ describe('XviFcBankAccountComponent', () => {
 
   it('rejects file over 5 MB', async () => {
     createComponent();
-    const largeFile = new File([new Blob([new Uint8Array(5 * 1024 * 1024 + 1)])], 'proof.pdf', { type: 'application/pdf' });
+    const largeFile = new File([new Blob([new Uint8Array(5 * 1024 * 1024 + 1)])], 'proof.pdf', {
+      type: 'application/pdf',
+    });
 
     await component.onProofSelected({ target: { files: [largeFile] } } as unknown as Event);
 
@@ -268,13 +340,15 @@ describe('XviFcBankAccountComponent', () => {
 
     await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
 
-    expect(service.getSignedUrls).toHaveBeenCalledWith([{
-      fileName: 'cancelled-cheque.pdf',
-      folder: 'xvi-fc/bank-account/ulb-id/year-id/proof',
-      mimeType: 'application/pdf',
-      uploadId: jasmine.any(String),
-      expiresIn: 300,
-    }]);
+    expect(service.getSignedUrls).toHaveBeenCalledWith([
+      {
+        fileName: 'cancelled-cheque.pdf',
+        folder: 'xvi-fc/bank-account/ulb-id/year-id/proof',
+        mimeType: 'application/pdf',
+        uploadId: jasmine.any(String),
+        expiresIn: 300,
+      },
+    ]);
     expect(service.uploadProofToS3).toHaveBeenCalledWith(signedPutUrl, file);
     expect(component.selectedProof()).toEqual({
       originalName: 'cancelled-cheque.pdf',
@@ -297,19 +371,25 @@ describe('XviFcBankAccountComponent', () => {
 
     await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
 
-    expect(component.selectedProof()).toEqual(jasmine.objectContaining({
-      originalName: 'cancelled-cheque.png',
-      mimeType: 'image/png',
-      pages: null,
-      sizeKb: 1,
-      s3Key: imagePath,
-      sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
-    }));
+    expect(component.selectedProof()).toEqual(
+      jasmine.objectContaining({
+        originalName: 'cancelled-cheque.png',
+        mimeType: 'image/png',
+        pages: null,
+        sizeKb: 1,
+        s3Key: imagePath,
+        sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
   });
 
   it('blocks submit when proof is missing', () => {
     createComponent();
-    component.form.patchValue({ ifscCode: 'SBIN0123456', accountNumber: '123456789012', confirmAccountNumber: '123456789012' });
+    component.form.patchValue({
+      ifscCode: 'SBIN0123456',
+      accountNumber: '123456789012',
+      confirmAccountNumber: '123456789012',
+    });
     component.bankDetails.set(record().bankDetails);
 
     component.submit();
@@ -320,7 +400,11 @@ describe('XviFcBankAccountComponent', () => {
 
   it('blocks submit when account numbers mismatch', () => {
     createComponent();
-    component.form.patchValue({ ifscCode: 'SBIN0123456', accountNumber: '123456789012', confirmAccountNumber: '123456789013' });
+    component.form.patchValue({
+      ifscCode: 'SBIN0123456',
+      accountNumber: '123456789012',
+      confirmAccountNumber: '123456789013',
+    });
     component.bankDetails.set(record().bankDetails);
     component.selectedProof.set(proofFile);
 
@@ -383,4 +467,3 @@ describe('XviFcBankAccountComponent', () => {
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Validation failed.', 'snackbar-danger');
   });
 });
-
