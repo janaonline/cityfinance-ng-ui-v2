@@ -1,0 +1,77 @@
+:host {
+  display: block;
+}
+
+:host ::ng-deep .xvifc-theme {
+  .btn-success {
+    --bs-btn-bg: #14783d;
+    --bs-btn-border-color: #14783d;
+    --bs-btn-hover-bg: #0f6532;
+    --bs-btn-hover-border-color: #0f6532;
+    --bs-btn-active-bg: #0b5429;
+    --bs-btn-active-border-color: #0b5429;
+    --bs-btn-disabled-bg: #14783d;
+    --bs-btn-disabled-border-color: #14783d;
+    --bs-btn-color: #ffffff;
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-active-color: #ffffff;
+  }
+
+  .text-primary {
+    color: var(--color-primary) !important;
+  }
+}
+
+.xvifc-theme .text-primary {
+  color: var(--color-primary) !important;
+}
+
+.account-card {
+  max-width: 600px;
+}
+
+.account-card__title {
+  color: var(--color-primary, #075b61);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.bank-details {
+  background: #effafa;
+  border: 1px solid #a9cfd2;
+  color: #557075;
+
+  strong {
+    color: var(--color-primary, #075b61);
+  }
+}
+
+.bank-details__name {
+  color: #101820;
+  font-weight: 700;
+
+  i {
+    color: #16763a;
+    font-size: 0.8rem;
+  }
+}
+
+.file-chip--ready {
+  max-width: 480px;
+  min-width: 0;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.status-pill {
+  color: #0f5132;
+  background: #d1e7dd;
+  border: 1px solid #badbcc;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+}
+
+.masked-account {
+  background: #f8fafc;
+  border: 1px solid #dbe4ea;
+}
