@@ -4,13 +4,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { GlobalLoaderService } from '../../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { UserUtility } from '../../../../core/util/user/user';
 import { MaterialModule } from '../../../../material.module';
 import { IState } from '../../../../core/models/state/state';
-import { IUlbMaster, IUlbType } from '../../../../core/models/ulb-master';
+import { IUlbMaster } from '../../../../core/models/ulb-master';
 import { UlbDialogComponent } from './dialog/ulb-dialog.component';
 import { UlbDialogResponse } from './ulb-list.interface';
 import { UlbMasterService } from './ulb-master.service';
@@ -37,9 +36,6 @@ export class UlbListComponent implements OnInit {
   ulbs: IUlbMaster[] = [];
   dataSource = new MatTableDataSource<IUlbMaster>([]);
   states: IState[] = [];
-  ulbTypes: IUlbType[] = [];
-  stateNameById = new Map<string, string>();
-  ulbTypeNameById = new Map<string, string>();
 
   search = '';
   stateFilter = '';
@@ -64,23 +60,18 @@ export class UlbListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadLookups();
+    if (this.showStateFilter) this.loadStates();
     this.getUlbs();
   }
 
-  private loadLookups(): void {
-    forkJoin({
-      states: this.ulbMasterService.getStates(),
-      types: this.ulbMasterService.getTypes(),
-    }).subscribe({
-      next: ({ states, types }) => {
-        this.states = states.data ?? [];
-        this.ulbTypes = types.data ?? [];
-        this.stateNameById = new Map(this.states.map((s) => [s._id, s.name]));
-        this.ulbTypeNameById = new Map(this.ulbTypes.map((t) => [t._id, t.name]));
+  /** Populates the State filter dropdown. Row-level state/ULB type names now come pre-resolved from the list API. */
+  private loadStates(): void {
+    this.ulbMasterService.getStates().subscribe({
+      next: (res) => {
+        this.states = res.data ?? [];
       },
       error: () => {
-        this.utilityService.swalPopup('Failed!', 'Unable to load states/ULB types.', 'error');
+        this.utilityService.swalPopup('Failed!', 'Unable to load states.', 'error');
       },
     });
   }
@@ -117,14 +108,6 @@ export class UlbListComponent implements OnInit {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.getUlbs();
-  }
-
-  stateName(id: string): string {
-    return this.stateNameById.get(id) ?? '—';
-  }
-
-  ulbTypeName(id: string): string {
-    return this.ulbTypeNameById.get(id) ?? '—';
   }
 
   /** Editing still uses the modal dialog; creation now happens on the dedicated Register ULB page. */

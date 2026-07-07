@@ -26,7 +26,9 @@ export interface IUlbMaster {
   area?: number;
   wards?: number;
   ulbType: string;
+  ulbTypeName?: string;
   state: string;
+  stateName?: string;
   district?: string;
   natureOfUlb?: string | null;
   isUA?: 'YES' | 'No';

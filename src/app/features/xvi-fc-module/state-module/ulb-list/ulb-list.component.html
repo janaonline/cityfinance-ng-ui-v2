@@ -41,12 +41,12 @@
 
           <ng-container matColumnDef="state">
             <th mat-header-cell *matHeaderCellDef>State</th>
-            <td mat-cell *matCellDef="let element">{{ stateName(element.state) }}</td>
+            <td mat-cell *matCellDef="let element">{{ element.stateName || '—' }}</td>
           </ng-container>
 
           <ng-container matColumnDef="ulbType">
             <th mat-header-cell *matHeaderCellDef>ULB Type</th>
-            <td mat-cell *matCellDef="let element">{{ ulbTypeName(element.ulbType) }}</td>
+            <td mat-cell *matCellDef="let element">{{ element.ulbTypeName || '—' }}</td>
           </ng-container>
 
           <ng-container matColumnDef="approvalStatus">
