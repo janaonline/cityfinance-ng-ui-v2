@@ -28,7 +28,7 @@ interface Condition {
   id: string;
   title: string;
   subtitle: string;
-  status: 'complete' | 'pending' | 'locked';
+  status: 'complete' | 'pending' | 'locked' | 'Awaiting State Upload';
   actionLabel: string | null;
   route: string | null;
 }
@@ -70,13 +70,13 @@ const SCENARIOS: WhatIfScenario[] = [
 
 const CONDITION_GROUPS: ConditionGroup[] = [
   {
-    deadline: 'May 31, 2026',
+    deadline: 'FIRST INSTALLMENT',
     conditions: [
       {
         id: 'sfc-status',
         title: 'State Finance Commission Status',
         subtitle: 'SFC constituted and notified — verified by State',
-        status: 'complete',
+        status: 'Awaiting State Upload',
         actionLabel: null,
         route: null,
       },
@@ -84,7 +84,7 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         id: 'elected-body',
         title: 'Elected Body Status',
         subtitle: 'Elected council in place since March 2024',
-        status: 'complete',
+        status: 'Awaiting State Upload',
         actionLabel: null,
         route: null,
       },
@@ -112,19 +112,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         actionLabel: 'Fill Disclosure',
         route: 'fill-disclosure',
       },
-      {
-        id: 'xvi-fc-bank-account',
-        title: 'XVI-FC Bank Account (PFMS)',
-        subtitle: 'Confirm a dedicated bank account exists for XVI-FC grants',
-        status: 'pending',
-        actionLabel: 'Open',
-        route: 'xvi-fc-bank-account',
-      },
-    ],
-  },
-  {
-    deadline: 'Oct 31, 2026',
-    conditions: [
+      // {
+      //   id: 'xvi-fc-bank-account',
+      //   title: 'XVI-FC Bank Account (PFMS)',
+      //   subtitle: 'Confirm a dedicated bank account exists for XVI-FC grants',
+      //   status: 'pending',
+      //   actionLabel: 'Open',
+      //   route: 'xvi-fc-bank-account',
+      // },
       {
         id: 'slb',
         title: 'Service Level Benchmarks',
@@ -133,16 +128,29 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         actionLabel: null,
         route: null,
       },
-      {
-        id: 'utilization-certificate',
-        title: 'Utilization Certificate',
-        subtitle: 'Certificate of utilization for XV-FC grant funds — opens after fund release',
-        status: 'locked',
-        actionLabel: null,
-        route: null,
-      },
     ],
   },
+  // {
+  //   deadline: 'FIRST INSTALLMENT',
+  //   conditions: [
+  //     {
+  //       id: 'slb',
+  //       title: 'Service Level Benchmarks',
+  //       subtitle: 'SLB data for water, sanitation and solid waste — opens in July',
+  //       status: 'locked',
+  //       actionLabel: null,
+  //       route: null,
+  //     },
+  //     // {
+  //     //   id: 'utilization-certificate',
+  //     //   title: 'Utilization Certificate',
+  //     //   subtitle: 'Certificate of utilization for XV-FC grant funds — opens after fund release',
+  //     //   status: 'locked',
+  //     //   actionLabel: null,
+  //     //   route: null,
+  //     // },
+  //   ],
+  // },
 ];
 
 const ALL_CONDITIONS = CONDITION_GROUPS.flatMap((g) => g.conditions);
@@ -211,7 +219,7 @@ export class UlbFormsComponent implements OnInit {
 
   // Returns the effective display status for a condition, overriding the static
   // value for the two upload conditions based on live API data.
-  resolveStatus(condition: Condition): 'complete' | 'pending' | 'locked' {
+  resolveStatus(condition: Condition): 'complete' | 'pending' | 'locked' | 'Awaiting State Upload' {
     const status = this.sectionFormStatus();
     if (status) {
       if (condition.id === 'audited-statement') {

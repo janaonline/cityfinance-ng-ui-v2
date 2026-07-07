@@ -484,24 +484,17 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   }
 
   async confirmDocuments(): Promise<void> {
-    const rows = this.documents()
-      .filter((d) => d.status === 'passed')
-      .map((d) => ({
-        title: d.title,
-        fileName: d.fileName,
-        version: d.versionLabel,
-        uploaderLabel: this.uploaderLabel(d),
-        byTeammate: !!d.uploaderUserId && d.uploaderUserId !== this.getLoggedInUserId(),
-      }));
-
     const confirmData: UlbFormsDialogData = {
-      title: 'Review before submitting',
+      title: 'Submit to State DMA?',
       description:
-        'All documents have passed validation. Check that each document is correct before submitting to State DMA.',
-      table: rows,
+        "You're about to send this document set to the State DMA for review. Once submitted, the documents cannot be revised until the State DMA sends back for corrections.",
+      declaration: {
+        heading: 'Self-declaration by the Executive Officer / Municipal Commissioner of the ULB.',
+        body: 'I certify that the uploaded financial statements are true, accurate, and verified by me, and I authorize this information to be made available for public disclosure on the CityFinance website.',
+      },
       buttons: [
-        { label: 'Go back', result: 'back', variant: 'stroked' },
-        { label: 'Submit to State DMA', result: 'submit', variant: 'flat' },
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
+        { label: 'Submit to State DMA', result: 'submit', variant: 'flat', bgColor: '#6b9b76' },
       ],
     };
 
@@ -510,7 +503,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
           data: confirmData,
           disableClose: true,
-          width: '600px',
+          width: '500px',
           maxWidth: '95vw',
           maxHeight: '90vh',
           panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
@@ -526,7 +519,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
 
     try {
-      await firstValueFrom(this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section }));
+      await firstValueFrom(
+        this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section, selfDeclared: true }),
+      );
       this.router.navigate(['../ulb-forms'], { relativeTo: this.route });
     } catch (err) {
       console.error('[submit] failed to submit section', err);

@@ -48,7 +48,7 @@ export class UploadDocumentsService {
       confirmLabel: apiData.meta.confirmLabel,
       documentYearId: apiData.meta.documentYearId,
       documentYear: apiData.meta.documentYear,
-      documents: apiData.data.filter((field) => field.key !== 'receipts-payments').map((field): UploadDocumentDef => ({
+      documents: apiData.data.map((field): UploadDocumentDef => ({
         id: field.key,
         title: field.label,
         subtitle: field.placeholder ?? '',
