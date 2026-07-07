@@ -1,5 +1,4 @@
 <main class="roles-page container-fluid py-4 py-lg-5 xvifc-theme">
-
   @if (hasError()) {
     <app-page-error-state
       title="Failed to load contacts"
@@ -7,14 +6,13 @@
       (retry)="loadData()"
     />
   } @else {
-
     <!-- ═══ ULB Band ═══════════════════════════════════════════════════════════════ -->
     <div class="profile-hero mb-4" role="region" aria-label="ULB Profile">
       <span class="profile-deco profile-deco--1" aria-hidden="true"></span>
       <span class="profile-deco profile-deco--2" aria-hidden="true"></span>
 
       @if (isLoading()) {
-        <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
+        <div class="d-flex align-items-center gap-3 position-relative" style="z-index: 1">
           <span class="loading-block loading-block--logo"></span>
           <div class="flex-grow-1">
             <span class="loading-block loading-block--title d-block"></span>
@@ -22,7 +20,7 @@
           </div>
         </div>
       } @else if (ulbInfo()) {
-        <div class="row align-items-center gy-3 position-relative" style="z-index:1">
+        <div class="row align-items-center gy-3 position-relative" style="z-index: 1">
           <div class="col-12 col-lg">
             <p class="band-eyebrow mb-2">ULB PROFILE</p>
             <div class="d-flex align-items-center gap-3">
@@ -30,7 +28,9 @@
               <div class="min-w-0">
                 <h1 class="band-name mb-1">{{ ulbInfo()!.name }}</h1>
                 <p class="band-meta mb-0">
-                  {{ ulbInfo()!.code }}&nbsp;&middot;&nbsp;Urban Local Body&nbsp;&middot;&nbsp;{{ ulbInfo()!.stateName }}
+                  {{ ulbInfo()!.code }}&nbsp;&middot;&nbsp;Urban Local Body&nbsp;&middot;&nbsp;{{
+                    ulbInfo()!.stateName
+                  }}
                 </p>
               </div>
             </div>
@@ -54,17 +54,14 @@
 
     <!-- ═══ Registered Municipal Information ══════════════════════════════════════ -->
     <mat-card class="info-mat-card mb-4">
-
       <!-- Coloured header -->
       <div class="info-card-header d-flex align-items-center justify-content-between px-4 py-3">
         <div class="d-flex align-items-center gap-2">
           <mat-icon class="info-card-header__icon">location_city</mat-icon>
-          <span class="fw-bold text-uppercase info-card-header__title">
-            Registered Municipal Information
-          </span>
+          <span class="fw-bold text-uppercase info-card-header__title"> Information registered on City Finance </span>
         </div>
         <span class="badge rounded-pill info-card-header__badge d-inline-flex align-items-center gap-1">
-          <mat-icon style="font-size:0.7rem;width:0.7rem;height:0.7rem;line-height:1">lock</mat-icon>
+          <mat-icon style="font-size: 0.7rem; width: 0.7rem; height: 0.7rem; line-height: 1">lock</mat-icon>
           Read-only
         </span>
       </div>
@@ -72,10 +69,10 @@
 
       @if (isLoading()) {
         <div class="row g-3 p-4">
-          @for (i of [1,2,3,4,5,6,7]; track i) {
+          @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
             <div class="col-6 col-md-4">
-              <span class="loading-block--light d-block mb-1 rounded" style="width:70px;height:10px"></span>
-              <span class="loading-block--light d-block rounded" style="width:130px;height:14px"></span>
+              <span class="loading-block--light d-block mb-1 rounded" style="width: 70px; height: 10px"></span>
+              <span class="loading-block--light d-block rounded" style="width: 130px; height: 14px"></span>
             </div>
           }
         </div>
@@ -96,7 +93,7 @@
           <mat-icon class="flex-shrink-0 info-card-info-icon">info</mat-icon>
           <p class="small text-muted mb-0">
             To request corrections, email
-            <a href="mailto:16fcgrant@mohua.gov.in" class="info-link">16fcgrant&#64;mohua.gov.in</a>
+            <a href="mailto:16fcgrant@cityfinance.in" class="info-link">16fcgrant&#64;cityfinance.in</a>
           </p>
         </div>
       } @else {
@@ -108,7 +105,6 @@
 
     <!-- ═══ People & Roles ════════════════════════════════════════════════════════ -->
     <section aria-labelledby="contacts-heading">
-
       <div class="mb-3">
         <h2 id="contacts-heading" class="fs-5 fw-bold mb-1">People &amp; Roles</h2>
         @if (ulbInfo()?.name) {
@@ -117,20 +113,18 @@
       </div>
 
       <mat-card class="contacts-mat-card">
-
         @if (isLoading()) {
           @for (i of [1, 2]; track i) {
             <div class="d-flex align-items-center gap-3 p-4" [class.border-bottom]="i === 1">
-              <span class="loading-block--light rounded-circle flex-shrink-0" style="width:38px;height:38px"></span>
+              <span class="loading-block--light rounded-circle flex-shrink-0" style="width: 38px; height: 38px"></span>
               <div class="flex-grow-1">
-                <span class="loading-block--light d-block mb-2 rounded" style="width:160px;height:13px"></span>
-                <span class="loading-block--light d-block rounded" style="width:100px;height:11px"></span>
+                <span class="loading-block--light d-block mb-2 rounded" style="width: 160px; height: 13px"></span>
+                <span class="loading-block--light d-block rounded" style="width: 100px; height: 11px"></span>
               </div>
-              <span class="loading-block--light d-none d-md-block rounded" style="width:120px;height:13px"></span>
+              <span class="loading-block--light d-none d-md-block rounded" style="width: 120px; height: 13px"></span>
             </div>
           }
         } @else {
-
           <div class="table-responsive">
             <table
               mat-table
@@ -139,7 +133,6 @@
               class="w-100"
               aria-label="Commissioner and nodal officer contacts"
             >
-
               <!-- Name column (includes edit pencil + avatar) -->
               <ng-container matColumnDef="name">
                 <th mat-header-cell *matHeaderCellDef>NAME</th>
@@ -188,24 +181,44 @@
 
               <!-- Warning banner row (spans all columns, only for rows with invalid stored data) -->
               <ng-container matColumnDef="warningBanner">
-                <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length" class="warn-banner-cell"
-                    [attr.aria-label]="'Data quality warning for ' + row.label">
+                <td
+                  mat-cell
+                  *matCellDef="let row"
+                  [attr.colspan]="displayedColumns.length"
+                  class="warn-banner-cell"
+                  [attr.aria-label]="'Data quality warning for ' + row.label"
+                >
                   <div class="d-flex align-items-center gap-2 px-4 py-2 bg-warning-subtle border-bottom">
-                    <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0" style="font-size:0.75rem" aria-hidden="true"></i>
-                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">{{ row.label }}: click edit to fix</span>
+                    <i
+                      class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0"
+                      style="font-size: 0.75rem"
+                      aria-hidden="true"
+                    ></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0"
+                      >{{ row.label }}: click edit to fix</span
+                    >
                     <div class="d-flex gap-1 flex-wrap">
                       @if (row.nameInvalid) {
-                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                        >
                           {{ row.name ? 'Name invalid' : 'Name missing' }}
                         </span>
                       }
                       @if (row.emailInvalid) {
-                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                        >
                           Email invalid
                         </span>
                       }
                       @if (row.mobileInvalid) {
-                        <span class="badge rounded-pill text-bg-warning" style="font-size:10px;padding:3px 8px;font-weight:500">
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                        >
                           {{ row.mobile ? 'Mobile invalid' : 'Mobile missing' }}
                         </span>
                       }
@@ -223,20 +236,26 @@
                     [attr.aria-hidden]="editingContact() !== row.type"
                   >
                     <div class="edit-panel">
-
                       <p class="edit-panel__heading mb-3">
-                        <mat-icon class="align-middle me-1" style="font-size:1rem;width:1rem;height:1rem">edit</mat-icon>
+                        <mat-icon class="align-middle me-1" style="font-size: 1rem; width: 1rem; height: 1rem"
+                          >edit</mat-icon
+                        >
                         Editing {{ row.label }}
                       </p>
 
                       <form [formGroup]="editForm" (ngSubmit)="saveEdit()" novalidate>
                         <div class="row g-3">
-
                           <div class="col-12 col-md-4">
                             <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
                               <mat-label>Full Name</mat-label>
-                              <input matInput formControlName="name" placeholder="e.g. Ramesh Kumar" maxlength="100" autocomplete="name"
-                                [attr.aria-describedby]="'name-err-' + row.type" />
+                              <input
+                                matInput
+                                formControlName="name"
+                                placeholder="e.g. Ramesh Kumar"
+                                maxlength="100"
+                                autocomplete="name"
+                                [attr.aria-describedby]="'name-err-' + row.type"
+                              />
                             </mat-form-field>
                             <div [id]="'name-err-' + row.type" aria-live="polite" aria-atomic="true">
                               @if (editForm.get('name')?.touched) {
@@ -245,7 +264,10 @@
                                 } @else if (editForm.get('name')?.hasError('minlength')) {
                                   <p class="text-danger small mt-1 mb-0">Name must be at least 2 characters.</p>
                                 } @else if (editForm.get('name')?.hasError('pattern')) {
-                                  <p class="text-danger small mt-1 mb-0">Only letters, spaces, hyphens, dots, and apostrophes are allowed — no numbers or special characters.</p>
+                                  <p class="text-danger small mt-1 mb-0">
+                                    Only letters, spaces, hyphens, dots, and apostrophes are allowed — no numbers or
+                                    special characters.
+                                  </p>
                                 } @else if (editForm.get('name')?.hasError('unsafeInput')) {
                                   <p class="text-danger small mt-1 mb-0">Name contains disallowed characters.</p>
                                 }
@@ -256,18 +278,30 @@
                           <div class="col-12 col-md-4">
                             <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
                               <mat-label>Mobile</mat-label>
-                              <input matInput type="tel" formControlName="mobile" placeholder="10-digit number" inputmode="numeric" maxlength="10" autocomplete="tel"
+                              <input
+                                matInput
+                                type="tel"
+                                formControlName="mobile"
+                                placeholder="10-digit number"
+                                inputmode="numeric"
+                                maxlength="10"
+                                autocomplete="tel"
                                 [attr.aria-describedby]="'mobile-err-' + row.type"
-                                (input)="onMobileInput($event)" />
+                                (input)="onMobileInput($event)"
+                              />
                             </mat-form-field>
                             <div [id]="'mobile-err-' + row.type" aria-live="polite" aria-atomic="true">
                               @if (editForm.get('mobile')?.touched) {
                                 @if (editForm.get('mobile')?.hasError('required')) {
                                   <p class="text-danger small mt-1 mb-0">Mobile number is required.</p>
                                 } @else if (editForm.get('mobile')?.hasError('pattern')) {
-                                  <p class="text-danger small mt-1 mb-0">Enter a valid 10-digit number starting with 6–9.</p>
+                                  <p class="text-danger small mt-1 mb-0">
+                                    Enter a valid 10-digit number starting with 6–9.
+                                  </p>
                                 } @else if (editForm.get('mobile')?.hasError('unsafeInput')) {
-                                  <p class="text-danger small mt-1 mb-0">Mobile number contains disallowed characters.</p>
+                                  <p class="text-danger small mt-1 mb-0">
+                                    Mobile number contains disallowed characters.
+                                  </p>
                                 }
                               }
                             </div>
@@ -276,8 +310,14 @@
                           <div class="col-12 col-md-4">
                             <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
                               <mat-label>Email <span class="fw-normal text-muted">(optional)</span></mat-label>
-                              <input matInput type="email" formControlName="email" placeholder="official@ulb.gov.in" autocomplete="email"
-                                [attr.aria-describedby]="'email-err-' + row.type" />
+                              <input
+                                matInput
+                                type="email"
+                                formControlName="email"
+                                placeholder="official@ulb.gov.in"
+                                autocomplete="email"
+                                [attr.aria-describedby]="'email-err-' + row.type"
+                              />
                             </mat-form-field>
                             <div [id]="'email-err-' + row.type" aria-live="polite" aria-atomic="true">
                               @if (editForm.get('email')?.touched) {
@@ -291,7 +331,6 @@
                               }
                             </div>
                           </div>
-
                         </div>
 
                         <div aria-live="assertive" aria-atomic="true">
@@ -300,7 +339,12 @@
                               class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small"
                               role="alert"
                             >
-                              <mat-icon class="flex-shrink-0" style="font-size:1rem;width:1rem;height:1rem" aria-hidden="true">error</mat-icon>
+                              <mat-icon
+                                class="flex-shrink-0"
+                                style="font-size: 1rem; width: 1rem; height: 1rem"
+                                aria-hidden="true"
+                                >error</mat-icon
+                              >
                               {{ saveError() }}
                             </div>
                           }
@@ -317,7 +361,11 @@
                             [disabled]="editForm.invalid || isSaving()"
                           >
                             @if (isSaving()) {
-                              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                              <span
+                                class="spinner-border spinner-border-sm me-1"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
                               Saving…
                             } @else {
                               Save Changes
@@ -325,14 +373,17 @@
                           </button>
                         </div>
                       </form>
-
                     </div>
                   </div>
                 </td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: ['warningBanner']; when: rowHasWarning" class="warn-banner-row"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: ['warningBanner']; when: rowHasWarning"
+                class="warn-banner-row"
+              ></tr>
               <tr
                 mat-row
                 *matRowDef="let row; columns: displayedColumns"
@@ -340,13 +391,10 @@
                 [class.contact-row--editing]="editingContact() === row.type"
               ></tr>
               <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
-
             </table>
           </div>
-
         }
       </mat-card>
     </section>
-
   }
 </main>
