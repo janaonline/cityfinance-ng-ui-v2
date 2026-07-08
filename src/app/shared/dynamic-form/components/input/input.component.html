@@ -30,7 +30,7 @@
 <mat-form-field [appearance]="readonly ? 'fill' : 'outline'" class="demo-full-width" [formGroup]="group">
   @if (displayInlineLabel && !field.hideLabel) {
   <mat-label for="field.key">{{ field.label
-    }}@if (field.showAsterisk) {
+    }}@if (field.required) {
     <span class="text-danger"><sup>*</sup></span>
     }</mat-label>
   }
