@@ -1,9 +1,11 @@
-@for (section of sections; track section.title) {
+@for (section of sections; track section.title; let last = $last; let i = $index) {
 <mat-card class="form-section-grid__card mb-3">
   <mat-card-content>
     <h6 class="form-section-grid__title">
       @if (section.icon) {
-      <i [class]="'bi ' + section.icon" aria-hidden="true"></i>
+      <span class="form-section-grid__icon-circle" [style.background]="iconColor(i)">
+        <i [class]="'bi ' + section.icon" aria-hidden="true"></i>
+      </span>
       }
       {{ section.title }}
       @if (section.subtitle) {
@@ -30,6 +32,11 @@
       </div>
       }
     </div>
+
+    <!-- @if (!last) {
+    <mat-divider class="form-section-grid__divider"></mat-divider>
+    } -->
+
   </mat-card-content>
 </mat-card>
 }
