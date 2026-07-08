@@ -13,3 +13,20 @@ export interface S3FileURLResponse {
     },
   ];
 }
+
+export interface S3SignedUrlRequestItem {
+  fileName: string;
+  folder: string;
+  mimeType: string;
+  uploadId: string;
+  expiresIn: number;
+}
+
+export interface S3UrlResult {
+  url: string;
+  fileUrl: string;
+  fileAlias?: string;
+  path?: string;
+  fileSize?: number;
+  uploadId?: string;
+}

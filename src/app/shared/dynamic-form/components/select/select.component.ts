@@ -7,13 +7,20 @@ import { MaterialModule } from '../../../../material.module';
   imports: [MaterialModule],
   template: ` @if (displayLabel && !displayInlineLabel && !field.hideLabel) {
       <label class="fw-semibold"
-        >{{ field.position ? field.position + '. ' : '' }}{{ field.label }}
-        <!-- <span class="text-danger" *ngIf="field.required">*&nbsp;</span> -->
+        >{{ field.position ? field.position + '. ' : '' }}{{ field.label
+        }}@if (field.required) {
+          <span class="text-danger"><sup>*</sup></span>
+        }
       </label>
     }
     <mat-form-field appearance="outline" class="demo-full-width" [formGroup]="group">
       @if (displayInlineLabel && !field.hideLabel) {
-        <mat-label>{{ field.label }}</mat-label>
+        <mat-label
+          >{{ field.label
+          }}@if (field.required) {
+            <span class="text-danger"><sup>*</sup></span>
+          }</mat-label
+        >
       }
       <mat-select
         [formControlName]="field.key"

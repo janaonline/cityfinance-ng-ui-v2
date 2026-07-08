@@ -35,7 +35,7 @@ type DateConstraintKey = 'minDate' | 'maxDate';
       @if (displayInlineLabel && !field.hideLabel) {
         <mat-label [attr.for]="field.key"
           >{{ field.label }}
-          @if (field.showAsterisk) {
+          @if (field.required) {
             <span class="text-danger"><sup>*</sup></span>
           }
         </mat-label>

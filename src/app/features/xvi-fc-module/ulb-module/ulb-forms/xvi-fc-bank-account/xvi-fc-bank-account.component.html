@@ -145,16 +145,21 @@
 
         @if (selectedProof(); as proof) {
         <div class="file-chip--ready d-flex align-items-center gap-2 rounded-2 px-3 py-2 mb-2">
-          <i class="bi bi-file-earmark-check" aria-hidden="true"></i>
+          <mat-icon class="proof-file-icon flex-shrink-0" aria-hidden="true">picture_as_pdf</mat-icon>
           <span class="text-truncate fw-semibold text-success small">{{ proof.originalName }}</span>
           <span class="text-muted flex-shrink-0 small">· {{ formatFileSize(proof.sizeKb) }}</span>
           @if (proof.mimeType === 'application/pdf' && proof.pages !== null) {
           <span class="text-muted flex-shrink-0 small">· {{ proof.pages }} {{ proof.pages === 1 ? 'page' : 'pages'
             }}</span>
           }
+          <button type="button" mat-icon-button class="chip-icon-btn ms-auto"
+            [matTooltip]="'View ' + proof.originalName" (click)="viewProof(proof)" aria-label="View document">
+            <mat-icon class="chip-icon">visibility</mat-icon>
+          </button>
           @if (isEditable()) {
-          <button class="btn btn-link text-danger p-0 ms-auto small" type="button" (click)="removeProof()">
-            Remove
+          <button type="button" mat-icon-button class="chip-icon-btn chip-icon-btn--delete" matTooltip="Remove"
+            (click)="removeProof()" aria-label="Remove proof document">
+            <mat-icon class="chip-icon">close</mat-icon>
           </button>
           }
         </div>
