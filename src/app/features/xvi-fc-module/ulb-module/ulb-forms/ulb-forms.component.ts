@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { AnnualAccountStateService } from '../annual-account-state.service';
+import { FORM_STATUS, FormStatusType } from './xvi-fc-bank-account/xvi-fc-bank-account.models';
 
 interface UlbDetails {
   ulbName: string;
@@ -75,7 +76,7 @@ const CONDITION_GROUPS: ConditionGroup[] = [
       {
         id: 'sfc-status',
         title: 'State Finance Commission Status',
-        subtitle: 'SFC constituted and notified — verified by State',
+        subtitle: 'Status will be displayed once the State uploads this information',
         status: 'Awaiting State Upload',
         actionLabel: null,
         route: null,
@@ -83,35 +84,35 @@ const CONDITION_GROUPS: ConditionGroup[] = [
       {
         id: 'elected-body',
         title: 'Elected Body Status',
-        subtitle: 'Elected council in place since March 2024',
+        subtitle: 'Status will be displayed once the State uploads this information',
         status: 'Awaiting State Upload',
         actionLabel: null,
         route: null,
       },
       {
         id: 'audited-statement',
-        title: 'Upload Audited Finance Statement FY 2024-25',
-        subtitle: 'CA-certified statement required from your auditor',
+        title: 'Audited Financial Statement FY 2024–25',
+        subtitle: 'Upload Audited Annual Financial Statements signed/stamped by the auditor (CA, LFAD, or CAG)',
         status: 'pending',
         actionLabel: 'Upload',
         route: 'upload-audited',
       },
       {
         id: 'provisional-statement',
-        title: 'Upload Provisional Finance Statement FY 2025-26',
-        subtitle: 'Provisional statement as of March 31, 2026',
+        title: 'Provisional Financial Statement FY 2025–26',
+        subtitle: 'Upload provisional statements as of March 31, 2026',
         status: 'pending',
         actionLabel: 'Upload',
         route: 'upload-provisional',
       },
-      {
-        id: 'unspent-balance',
-        title: 'FC Unspent Balance Disclosure',
-        subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
-        status: 'pending',
-        actionLabel: 'Fill Disclosure',
-        route: 'fill-disclosure',
-      },
+      // {
+      //   id: 'unspent-balance',
+      //   title: 'FC Unspent Balance Disclosure',
+      //   subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
+      //   status: 'pending',
+      //   actionLabel: 'Fill Disclosure',
+      //   route: 'fill-disclosure',
+      // },
       {
         id: 'xvi-fc-bank-account',
         title: 'XVI-FC Bank Account (PFMS)',
@@ -178,12 +179,13 @@ export class UlbFormsComponent implements OnInit {
   readonly sectionFormStatus = this.state.formStatus;
 
   readonly grantBand = computed(() => {
-    const year = this.ulbDetails()?.selectedYear ?? 'FY 2026-27';
+    const details = this.ulbDetails();
+    const year = details?.selectedYear ?? 'FY 2026-27';
     return {
       eyebrow: 'ESTIMATED GRANT',
-      amount: '₹__ crore',
-      tag: `${year} · BASIC GRANT ONLY`,
-      note: 'Based on SFC data, population figures, and CF calculations',
+      amount: 'Allocation will be displayed once the State submits the ULB-wise allocation',
+      tag: `${year} · Based on SFC data, population figures, and CF calculations`,
+      note: details ? `For ${details.ulbName}, ${details.stateName}` : '',
     };
   });
 
@@ -231,6 +233,9 @@ export class UlbFormsComponent implements OnInit {
       if (condition.id === 'unspent-balance') {
         return status.unspentBalanceDisclosure.form_status === 'SUBMITTED' ? 'complete' : 'pending';
       }
+      if (condition.id === 'xvi-fc-bank-account') {
+        return this.isPfmsSubmittedStatus(status.xviFcBankAccount?.form_status) ? 'complete' : 'pending';
+      }
     }
     return condition.status;
   }
@@ -241,6 +246,9 @@ export class UlbFormsComponent implements OnInit {
     if (condition.id === 'audited-statement') return status.auditedData.form_status === 'UNDER_REVIEW_BY_STATE';
     if (condition.id === 'provisional-statement') return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE';
     if (condition.id === 'unspent-balance') return status.unspentBalanceDisclosure.form_status === 'SUBMITTED';
+    if (condition.id === 'xvi-fc-bank-account') {
+      return this.isPfmsSubmittedStatus(status.xviFcBankAccount?.form_status);
+    }
     return false;
   }
 
@@ -258,6 +266,10 @@ export class UlbFormsComponent implements OnInit {
 
   navigateTo(route: string): void {
     this.router.navigate([route], { relativeTo: this.activatedRoute.parent });
+  }
+
+  private isPfmsSubmittedStatus(status: FormStatusType | null | undefined): boolean {
+    return status != null && status !== FORM_STATUS.NO_STATUS && status !== FORM_STATUS.NOT_STARTED;
   }
 
   private resolveUlbId(): string | null {

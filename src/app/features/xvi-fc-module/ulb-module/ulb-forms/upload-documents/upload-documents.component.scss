@@ -34,6 +34,24 @@
   font-size: 0.82rem;
 }
 
+.support-banner {
+  background: #f3f5f8;
+  border: 1px solid #e2e6ec;
+  color: #374151;
+
+  .support-banner-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: #6b7686;
+  }
+
+  a {
+    font-weight: 600;
+  }
+}
+
 .body-xs {
   font-size: 0.75rem;
 }

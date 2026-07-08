@@ -29,7 +29,7 @@
 .grant-band__deco--2 { @include theme.grant-band-deco-small; }
 
 .grant-band__eyebrow { color: #a8d8d2; font-size: 0.65rem; letter-spacing: 0.1em; }
-.grant-band__amount  { color: #ffffff; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.1; }
+.grant-band__amount  { color: #ffffff; font-size: clamp(1rem, 2.2vw, 1.2rem); line-height: 1.35; }
 .grant-band__tag     { color: #d6e8e8; font-size: 0.72rem; letter-spacing: 0.04em; }
 .grant-band__note    { color: rgba(255, 255, 255, 0.65); font-size: 0.72rem; }
 

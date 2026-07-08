@@ -10,7 +10,17 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { firstValueFrom, catchError, debounceTime, distinctUntilChanged, map, of, startWith, switchMap, tap } from 'rxjs';
+import {
+  firstValueFrom,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  of,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { PDFDocument } from 'pdf-lib';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
@@ -41,7 +51,6 @@ interface UlbDetails {
   ulbId?: string;
   designYearId?: string;
 }
-
 
 interface ApiErrorBody {
   message?: string | string[];
@@ -92,7 +101,7 @@ export class XviFcBankAccountComponent {
 
   readonly pageTitle = 'XVI-FC Bank Account (PFMS)';
   readonly pageDescription =
-    'Confirm that your ULB has created a dedicated bank account for 16th Finance Commission grants, used for PFMS integration.';
+    'Confirm that your ULB has created a dedicated bank account to receive 16th Finance Commission grants linked to PFMS.';
 
   readonly fields = {
     ifscCode: { label: 'IFSC Code', placeholder: 'e.g. SBIN0001234' },
@@ -100,7 +109,6 @@ export class XviFcBankAccountComponent {
     confirmAccountNumber: { label: 'Re-enter Account Number', placeholder: 'Re-enter to confirm' },
     proof: {
       label: 'Proof of Account Existence',
-      hint: 'Cancelled cheque · PDF, JPG, or PNG',
       uploadLabel: 'Click to upload cancelled cheque',
       acceptedFormatsText: 'PDF, JPG, or PNG',
       maxSizeMb: MAX_FILE_SIZE_BYTES / (1024 * 1024),
@@ -160,7 +168,6 @@ export class XviFcBankAccountComponent {
     const status = this.existingRecord()?.currentFormStatus;
     return status == null || EDITABLE_FORM_STATUSES.has(status);
   }
-
 
   shouldShowAccountNumberInputs(): boolean {
     return this.isEditable();
@@ -254,19 +261,18 @@ export class XviFcBankAccountComponent {
 
     this.isProofUploading.set(true);
     try {
-      const [sha256, pages] = await Promise.all([
-        this.calculateSha256(file),
-        this.getProofPages(file),
-      ]);
+      const [sha256, pages] = await Promise.all([this.calculateSha256(file), this.getProofPages(file)]);
       const folder = this.buildProofFolder(details.ulbId, details.designYearId);
       const [signedUrl] = await firstValueFrom(
-        this.bankAccountService.getSignedUrls([{
-          fileName: file.name,
-          folder,
-          mimeType: file.type,
-          uploadId: this.generateUploadId(),
-          expiresIn: PROOF_SIGNED_URL_EXPIRES_IN_SECONDS,
-        }]),
+        this.bankAccountService.getSignedUrls([
+          {
+            fileName: file.name,
+            folder,
+            mimeType: file.type,
+            uploadId: this.generateUploadId(),
+            expiresIn: PROOF_SIGNED_URL_EXPIRES_IN_SECONDS,
+          },
+        ]),
       );
       if (!signedUrl?.url || !signedUrl.path) {
         throw new Error('Signed URL response is missing upload details.');
@@ -379,7 +385,10 @@ export class XviFcBankAccountComponent {
           this.existingRecord.set(record);
           this.bankDetails.set(record.bankDetails);
           this.selectedProof.set(this.hasProof(record.proofFile) ? record.proofFile : null);
-          this.form.patchValue({ ifscCode: record.ifscCode, accountNumber: '', confirmAccountNumber: '' }, { emitEvent: false });
+          this.form.patchValue(
+            { ifscCode: record.ifscCode, accountNumber: '', confirmAccountNumber: '' },
+            { emitEvent: false },
+          );
           this.syncFormControlsState();
         },
         error: (error) => {
@@ -532,7 +541,10 @@ export class XviFcBankAccountComponent {
     this.showApiError(error, 'Unable to submit bank account form. Please try again.');
   }
 
-  private applyApiError(field: 'ifscCode' | 'accountNumber' | 'confirmAccountNumber', message: string | string[] | undefined): void {
+  private applyApiError(
+    field: 'ifscCode' | 'accountNumber' | 'confirmAccountNumber',
+    message: string | string[] | undefined,
+  ): void {
     if (!message) return;
     const control = this.form.controls[field];
     control.setErrors({ ...(control.errors ?? {}), api: this.formatApiMessage(message) });
@@ -567,6 +579,3 @@ export class XviFcBankAccountComponent {
     return '';
   }
 }
-
-
-
