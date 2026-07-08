@@ -21,9 +21,12 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { PDFDocument } from 'pdf-lib';
 import { UtilityService } from '../../../../../core/services/utility.service';
+import { S3Service } from '../../../../../core/services/s3.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   FORM_STATUS,
   FormStatusType,
@@ -36,6 +39,12 @@ import { XviFcBankAccountService } from './xvi-fc-bank-account.service';
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const PROOF_SIGNED_URL_EXPIRES_IN_SECONDS = 300;
+const BLANK_PROOF_DOCUMENT_ERROR =
+  'The uploaded proof document appears to be blank. Please upload a valid cancelled cheque or bank account proof.';
+const BLANK_PROOF_IMAGE_ERROR =
+  'The uploaded proof image appears to be blank. Please upload a valid cancelled cheque or bank account proof.';
+const UNREADABLE_PROOF_DOCUMENT_ERROR =
+  'The uploaded proof document could not be validated. Please upload a valid cancelled cheque or bank account proof.';
 const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 const EDITABLE_FORM_STATUSES = new Set<FormStatusType>([
   FORM_STATUS.NOT_STARTED,
@@ -87,7 +96,7 @@ function accountNumberValidator(): ValidatorFn {
 
 @Component({
   selector: 'app-xvi-fc-bank-account',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './xvi-fc-bank-account.component.html',
   styleUrl: './xvi-fc-bank-account.component.scss',
 })
@@ -96,6 +105,7 @@ export class XviFcBankAccountComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly bankAccountService = inject(XviFcBankAccountService);
   private readonly utilityService = inject(UtilityService);
+  private readonly s3Service = inject(S3Service);
 
   @ViewChild('proofInput') private readonly proofInputRef!: ElementRef<HTMLInputElement>;
 
@@ -234,6 +244,7 @@ export class XviFcBankAccountComponent {
     this.proofError.set(null);
 
     if (!file) return;
+    this.selectedProof.set(null);
 
     if (!this.isEditable()) {
       this.proofError.set('This form is not editable in the current status.');
@@ -241,27 +252,32 @@ export class XviFcBankAccountComponent {
     }
 
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
-      this.selectedProof.set(null);
       this.proofError.set('Only PDF, JPG, and PNG files are allowed.');
       return;
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      this.selectedProof.set(null);
       this.proofError.set('File size must not exceed 5 MB.');
+      return;
+    }
+
+    this.isProofUploading.set(true);
+    const proofValidation = await this.validateProofNotBlank(file);
+    if (!proofValidation.valid) {
+      this.proofError.set(proofValidation.error ?? UNREADABLE_PROOF_DOCUMENT_ERROR);
+      this.isProofUploading.set(false);
       return;
     }
 
     const details = this.ulbDetails();
     if (!details?.ulbId || !details.designYearId) {
-      this.selectedProof.set(null);
       this.proofError.set('Selected year context is missing. Please reopen this form from the condition tile.');
+      this.isProofUploading.set(false);
       return;
     }
 
-    this.isProofUploading.set(true);
     try {
-      const [sha256, pages] = await Promise.all([this.calculateSha256(file), this.getProofPages(file)]);
+      const sha256 = await this.calculateSha256(file);
       const folder = this.buildProofFolder(details.ulbId, details.designYearId);
       const [signedUrl] = await firstValueFrom(
         this.bankAccountService.getSignedUrls([
@@ -269,6 +285,8 @@ export class XviFcBankAccountComponent {
             fileName: file.name,
             folder,
             mimeType: file.type,
+            fileSize: file.size,
+            pages: proofValidation.pages ?? 0,
             uploadId: this.generateUploadId(),
             expiresIn: PROOF_SIGNED_URL_EXPIRES_IN_SECONDS,
           },
@@ -283,7 +301,7 @@ export class XviFcBankAccountComponent {
       this.selectedProof.set({
         originalName: file.name,
         mimeType: file.type as XviFcBankAccountProofFile['mimeType'],
-        pages,
+        pages: proofValidation.pages,
         sizeKb: Number((file.size / 1024).toFixed(2)),
         s3Key: signedUrl.path,
         sha256,
@@ -366,6 +384,25 @@ export class XviFcBankAccountComponent {
   formatFileSize(sizeKb: number | null): string {
     if (sizeKb === null || sizeKb === undefined) return 'Size unavailable';
     return `${sizeKb.toFixed(2)} KB`;
+  }
+
+  proofStoragePath(proof: XviFcBankAccountProofFile): string {
+    return this.toStoragePath(proof.s3Key);
+  }
+
+  async viewProof(proof: XviFcBankAccountProofFile): Promise<void> {
+    const storagePath = this.proofStoragePath(proof);
+    if (!storagePath) return;
+
+    try {
+      const signedUrl = await firstValueFrom(this.s3Service.getSignedUrl(storagePath));
+      if (!signedUrl) {
+        throw new Error('Signed URL is missing.');
+      }
+      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      this.utilityService.triggerSnackbar('Unable to open proof document. Please try again.', 'snackbar-danger');
+    }
   }
 
   private loadExistingRecord(): void {
@@ -496,6 +533,18 @@ export class XviFcBankAccountComponent {
     return !!proofFile?.originalName && !!proofFile.s3Key && !!proofFile.mimeType && !!proofFile.sha256;
   }
 
+  private toStoragePath(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+
+    try {
+      const url = new URL(trimmed);
+      return url.pathname.replace(/^\/+/, '');
+    } catch {
+      return trimmed.split('?')[0];
+    }
+  }
+
   private async calculateSha256(file: File): Promise<string> {
     const buffer = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -504,11 +553,142 @@ export class XviFcBankAccountComponent {
       .join('');
   }
 
-  private async getProofPages(file: File): Promise<number | null> {
-    if (file.type !== 'application/pdf') return null;
-    const buffer = await file.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(buffer);
-    return pdfDoc.getPageCount();
+  private async validateProofNotBlank(file: File): Promise<{ valid: boolean; error?: string; pages: number | null }> {
+    if (file.type === 'application/pdf') {
+      return this.validatePdfProofNotBlank(file);
+    }
+    return this.validateImageProofNotBlank(file);
+  }
+
+  private async validatePdfProofNotBlank(file: File): Promise<{ valid: boolean; error?: string; pages: number | null }> {
+    try {
+      const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      const hasPdfHeader =
+        header[0] === 0x25 &&
+        header[1] === 0x50 &&
+        header[2] === 0x44 &&
+        header[3] === 0x46 &&
+        header[4] === 0x2d;
+      if (!hasPdfHeader) {
+        return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+      }
+
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      if (pdf.numPages < 1) {
+        return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+      }
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 0.15 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.ceil(viewport.width));
+        canvas.height = Math.max(1, Math.ceil(viewport.height));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+        if (!this.isCanvasBlank(ctx, canvas.width, canvas.height)) {
+          return { valid: true, pages: pdf.numPages };
+        }
+      }
+
+      return { valid: false, error: BLANK_PROOF_DOCUMENT_ERROR, pages: null };
+    } catch (error: unknown) {
+      const name = (error as { name?: string })?.name;
+      if (name === 'PasswordException' || name === 'InvalidPDFException') {
+        return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+      }
+      return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+    }
+  }
+
+  private async validateImageProofNotBlank(file: File): Promise<{ valid: boolean; error?: string; pages: number | null }> {
+    try {
+      const image = await this.loadImage(file);
+      const maxDimension = 600;
+      const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+      const width = Math.max(1, Math.round(image.naturalWidth * scale));
+      const height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(image, 0, 0, width, height);
+
+      if (this.isCanvasBlank(ctx, width, height)) {
+        return { valid: false, error: BLANK_PROOF_IMAGE_ERROR, pages: null };
+      }
+
+      return { valid: true, pages: null };
+    } catch {
+      return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+    }
+  }
+
+  private loadImage(file: File): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(image);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Unable to load image.'));
+      };
+      image.src = objectUrl;
+    });
+  }
+
+  private isCanvasBlank(ctx: CanvasRenderingContext2D, width: number, height: number): boolean {
+    const { data } = ctx.getImageData(0, 0, width, height);
+    const totalPixels = width * height;
+    let visiblePixels = 0;
+    let contentPixels = 0;
+    let minLuminance = 255;
+    let maxLuminance = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha < 10) continue;
+
+      const red = data[i];
+      const green = data[i + 1];
+      const blue = data[i + 2];
+      const luminance = 0.299 * red + 0.587 * green + 0.114 * blue;
+      const colorSpread = Math.max(red, green, blue) - Math.min(red, green, blue);
+
+      visiblePixels++;
+      minLuminance = Math.min(minLuminance, luminance);
+      maxLuminance = Math.max(maxLuminance, luminance);
+
+      if (luminance < 245 || colorSpread > 20) {
+        contentPixels++;
+      }
+    }
+
+    if (visiblePixels / totalPixels < 0.005) return true;
+
+    const contentRatio = contentPixels / totalPixels;
+    const contrast = maxLuminance - minLuminance;
+    return contentRatio < 0.005 && contrast < 18;
   }
 
   private buildProofFolder(ulbId: string, designYearId: string): string {

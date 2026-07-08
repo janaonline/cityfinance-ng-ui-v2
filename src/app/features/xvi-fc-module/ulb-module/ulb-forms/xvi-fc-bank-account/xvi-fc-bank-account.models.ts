@@ -67,6 +67,8 @@ export interface S3SignedUrlRequestItem {
   fileName: string;
   folder: string;
   mimeType: string;
+  fileSize?: number;
+  pages?: number;
   uploadId: string;
   expiresIn: number;
 }
