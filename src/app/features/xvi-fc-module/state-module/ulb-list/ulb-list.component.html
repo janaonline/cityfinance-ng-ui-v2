@@ -77,7 +77,9 @@
                 [class.text-bg-warning]="element.approval?.status === 'PENDING'"
                 [class.text-bg-success]="!element.approval || element.approval.status === 'APPROVED'"
                 [class.text-bg-danger]="element.approval?.status === 'REJECTED'"
-                [title]="element.approval?.status === 'REJECTED' ? element.approval.rejectReason : ''">
+                [class.cursor-pointer]="element.approval?.status === 'REJECTED'"
+                [title]="element.approval?.status === 'REJECTED' ? 'Click to view reject reason' : ''"
+                (click)="showRejectReason(element)">
                 {{ element.approval?.status ?? 'APPROVED' }}
               </span>
             </td>

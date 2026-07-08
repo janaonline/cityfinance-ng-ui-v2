@@ -128,6 +128,11 @@ export class UlbListComponent implements OnInit {
     this.getUlbs();
   }
 
+  showRejectReason(ulb: IUlbMaster): void {
+    if (ulb.approval?.status !== 'REJECTED') return;
+    this.utilityService.swalPopup('Rejected', ulb.approval.rejectReason || 'No reason was provided.', 'error');
+  }
+
   openReviewDialog(ulb: IUlbMaster): void {
     const dialogRef = this.dialog.open(UlbReviewDialogComponent, {
       data: { ulb },
