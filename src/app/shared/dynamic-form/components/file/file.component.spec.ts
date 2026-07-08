@@ -26,7 +26,7 @@ describe('FileComponent', () => {
   beforeEach(async () => {
     fileService = jasmine.createSpyObj<FileService>('FileService', [
       'checkSpcialCharInFileName',
-      'newGetURLForFileUpload',
+      'getSignedUrls',
       'newUploadFileToS3',
     ]);
     utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', [
@@ -93,22 +93,17 @@ describe('FileComponent', () => {
   }
 
   function mockSuccessfulUpload(storagePath = '/objects/minutes.pdf'): void {
-    fileService.newGetURLForFileUpload.and.returnValue(
-      of({
-        success: true,
-        message: 'ok',
-        data: [
-          {
-            file_name: 'minutes.pdf',
-            mime_type: 'application/pdf',
-            host: '',
-            url: 'https://upload.example.com',
-            path: storagePath,
-            file_url: storagePath,
-            file_alias: storagePath,
-          },
-        ],
-      }),
+    fileService.getSignedUrls.and.returnValue(
+      of([
+        {
+          url: 'https://upload.example.com',
+          fileAlias: storagePath,
+          fileUrl: storagePath,
+          path: storagePath,
+          fileSize: null,
+          pages: undefined,
+        },
+      ]),
     );
     fileService.newUploadFileToS3.and.returnValue(
       of(

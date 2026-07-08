@@ -192,7 +192,7 @@ describe('EulbPostUpdateComponent', () => {
     service.validatePostSubmissionUpdateRows.and.returnValue(of(createValidateResponse()));
     service.submitPostSubmissionUpdate.and.returnValue(of(createSubmitResponse()));
 
-    fileService = jasmine.createSpyObj<FileService>('FileService', ['newGetURLForFileUpload', 'newUploadFileToS3']);
+    fileService = jasmine.createSpyObj<FileService>('FileService', ['getSignedUrls', 'newUploadFileToS3']);
 
     moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
     moduleService.yearId.and.returnValue(yearId);

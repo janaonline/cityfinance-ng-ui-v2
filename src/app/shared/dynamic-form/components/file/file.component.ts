@@ -16,14 +16,13 @@ import { AbstractControl, FormControl, FormGroup } from '@angular/forms';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { filter, finalize, map, startWith, switchMap, tap } from 'rxjs';
 import Swal from 'sweetalert2';
-import { S3FileURLResponse } from '../../../../core/models/s3Responses/fileURLResponse';
 import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MaterialModule } from '../../../../material.module';
 import { FileIconComponent, SupportedFileExtension } from '../../../components/file-icon/file-icon.component';
 import { FieldAppearanceColor, FieldConfig, LegacyFileValue, UploadedFileValue } from '../../field.interface';
 import { DndDirective } from './dnd.directive';
-import { FileService } from './file.service';
+import { FileService, S3UrlResult } from './file.service';
 
 type FileParentFieldConfig = Pick<FieldConfig, 'readonly' | 'validations'>;
 type StandaloneFileControl = FormControl<UploadedFileValue | LegacyFileValue>;
@@ -605,7 +604,7 @@ export class FileComponent implements OnInit {
     this.startUpload(file);
 
     this.fileService
-      .newGetURLForFileUpload(file.name, file.type, this.uploadFolderName())
+      .getSignedUrls(file.name, file.type, this.uploadFolderName())
       .pipe(
         map((response) => this.resolveUploadTarget(response)),
         switchMap((uploadTarget) =>
@@ -700,11 +699,11 @@ export class FileComponent implements OnInit {
   /**
    * Extracts the upload URL and persisted storage path from the backend response and guards against
    * incomplete payloads before the actual upload request is made.
-   * @param response - Response returned by the pre-signed URL endpoint
+   * @param results - Unwrapped signed-URL results returned by the pre-signed URL endpoint
    * @returns Upload target information needed for the subsequent PUT request and form patching
    */
-  private resolveUploadTarget(response: S3FileURLResponse): UploadTarget {
-    const uploadTarget = response.data?.[0];
+  private resolveUploadTarget(results: S3UrlResult[]): UploadTarget {
+    const uploadTarget = results?.[0];
     const uploadUrl = this.utilityService.getNonEmptyString(uploadTarget?.url);
     const storagePath = this.utilityService.getNonEmptyString(uploadTarget?.path);
 
