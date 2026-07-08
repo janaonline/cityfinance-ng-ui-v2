@@ -2,7 +2,6 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Location } from '@angular/common';
 import { of, throwError } from 'rxjs';
-import { PDFDocument } from 'pdf-lib';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { XviFcBankAccountComponent } from './xvi-fc-bank-account.component';
 import { XviFcBankAccountService } from './xvi-fc-bank-account.service';
@@ -112,6 +111,10 @@ describe('XviFcBankAccountComponent', () => {
     component.bankDetails.set(record().bankDetails);
     component.selectedProof.set(proofFile);
     fixture.detectChanges();
+  }
+
+  function mockBlankValidation(valid: boolean, pages: number | null, error?: string): jasmine.Spy {
+    return spyOn(component as any, 'validateProofNotBlank').and.resolveTo({ valid, pages, error });
   }
 
   it('loads existing record on init', () => {
@@ -335,16 +338,19 @@ describe('XviFcBankAccountComponent', () => {
 
   it('uploads valid file through signed-url flow', async () => {
     createComponent();
-    spyOn(PDFDocument, 'load').and.resolveTo({ getPageCount: () => 6 } as never);
+    const validationSpy = mockBlankValidation(true, 6);
     const file = new File([new Uint8Array(2048)], 'cancelled-cheque.pdf', { type: 'application/pdf' });
 
     await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
 
+    expect(validationSpy).toHaveBeenCalledOnceWith(file);
     expect(service.getSignedUrls).toHaveBeenCalledWith([
       {
         fileName: 'cancelled-cheque.pdf',
         folder: 'xvi-fc/bank-account/ulb-id/year-id/proof',
         mimeType: 'application/pdf',
+        fileSize: 2048,
+        pages: 6,
         uploadId: jasmine.any(String),
         expiresIn: 300,
       },
@@ -363,14 +369,52 @@ describe('XviFcBankAccountComponent', () => {
     expect(component.selectedProof()?.s3Key).not.toBe(fullProofUrl);
   });
 
+  it('rejects blank PDF proof before requesting a signed URL', async () => {
+    createComponent();
+    const blankMessage =
+      'The uploaded proof document appears to be blank. Please upload a valid cancelled cheque or bank account proof.';
+    mockBlankValidation(false, null, blankMessage);
+    const file = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], 'blank.pdf', {
+      type: 'application/pdf',
+    });
+
+    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
+    fixture.detectChanges();
+
+    expect(component.proofError()).toBe(blankMessage);
+    expect(component.selectedProof()).toBeNull();
+    expect(service.getSignedUrls).not.toHaveBeenCalled();
+    expect(service.uploadProofToS3).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent as string).toContain(blankMessage);
+  });
+
+  it('rejects zero-page or unreadable PDF proof before requesting a signed URL', async () => {
+    createComponent();
+    const parseMessage =
+      'The uploaded proof document could not be validated. Please upload a valid cancelled cheque or bank account proof.';
+    mockBlankValidation(false, null, parseMessage);
+    const file = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], 'broken.pdf', {
+      type: 'application/pdf',
+    });
+
+    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
+
+    expect(component.proofError()).toBe(parseMessage);
+    expect(component.selectedProof()).toBeNull();
+    expect(service.getSignedUrls).not.toHaveBeenCalled();
+    expect(service.uploadProofToS3).not.toHaveBeenCalled();
+  });
+
   it('uploads image proof with null pages', async () => {
     const imagePath = 'xvi-fc/bank-account/ulb-id/year-id/proof/cancelled-cheque.png';
     service.getSignedUrls.and.returnValue(of([{ url: signedPutUrl, fileUrl: fullProofUrl, path: imagePath }]));
     createComponent();
+    const validationSpy = mockBlankValidation(true, null);
     const file = new File([new Uint8Array(1024)], 'cancelled-cheque.png', { type: 'image/png' });
 
     await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
 
+    expect(validationSpy).toHaveBeenCalledOnceWith(file);
     expect(component.selectedProof()).toEqual(
       jasmine.objectContaining({
         originalName: 'cancelled-cheque.png',
@@ -381,6 +425,84 @@ describe('XviFcBankAccountComponent', () => {
         sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+  });
+
+  it('normalizes full S3 proof URLs to storage paths for signed viewing', () => {
+    createComponent();
+
+    expect(component.proofStoragePath({ ...proofFile, s3Key: `${fullProofUrl}?X-Amz-Signature=secret` })).toBe(
+      proofPath,
+    );
+  });
+
+  it('opens proof document with a signed URL in a new tab', async () => {
+    createComponent();
+    const openSpy = spyOn(window, 'open');
+    const viewPromise = component.viewProof({ ...proofFile, s3Key: `${fullProofUrl}?X-Amz-Signature=secret` });
+
+    const req = httpMock.expectOne((request) => request.url.endsWith('get-signed-url'));
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ fileUrl: proofPath });
+    req.flush({ success: true, message: 'OK', data: { signedUrl: signedPutUrl } });
+    await viewPromise;
+
+    expect(openSpy).toHaveBeenCalledWith(signedPutUrl, '_blank', 'noopener,noreferrer');
+  });
+
+  it('rejects blank white image proof before requesting a signed URL', async () => {
+    createComponent();
+    const blankMessage =
+      'The uploaded proof image appears to be blank. Please upload a valid cancelled cheque or bank account proof.';
+    mockBlankValidation(false, null, blankMessage);
+    const file = new File([new Uint8Array(1024)], 'blank-white.png', { type: 'image/png' });
+
+    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
+
+    expect(component.proofError()).toBe(blankMessage);
+    expect(component.selectedProof()).toBeNull();
+    expect(service.getSignedUrls).not.toHaveBeenCalled();
+    expect(service.uploadProofToS3).not.toHaveBeenCalled();
+  });
+
+  it('rejects blank transparent PNG proof before requesting a signed URL', async () => {
+    createComponent();
+    const blankMessage =
+      'The uploaded proof image appears to be blank. Please upload a valid cancelled cheque or bank account proof.';
+    mockBlankValidation(false, null, blankMessage);
+    const file = new File([new Uint8Array(1024)], 'blank-transparent.png', { type: 'image/png' });
+
+    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
+
+    expect(component.proofError()).toBe(blankMessage);
+    expect(component.selectedProof()).toBeNull();
+    expect(service.getSignedUrls).not.toHaveBeenCalled();
+    expect(service.uploadProofToS3).not.toHaveBeenCalled();
+  });
+
+  it('keeps submit blocked after a blank proof selection', async () => {
+    createComponent();
+    component.form.patchValue({
+      ifscCode: 'SBIN0123456',
+      accountNumber: '123456789012',
+      confirmAccountNumber: '123456789012',
+    });
+    component.bankDetails.set(record().bankDetails);
+    mockBlankValidation(
+      false,
+      null,
+      'The uploaded proof document appears to be blank. Please upload a valid cancelled cheque or bank account proof.',
+    );
+    const file = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], 'blank.pdf', {
+      type: 'application/pdf',
+    });
+
+    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
+    component.submit();
+
+    expect(component.canSubmit()).toBeFalse();
+    expect(service.submitBankAccount).not.toHaveBeenCalled();
+    expect(service.getSignedUrls).not.toHaveBeenCalled();
+    expect(service.uploadProofToS3).not.toHaveBeenCalled();
   });
 
   it('blocks submit when proof is missing', () => {
