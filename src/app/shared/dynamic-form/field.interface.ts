@@ -125,6 +125,7 @@ export type UploadedFileValue = {
   fileUrl: string;
   fileSize: number | null;
   mimeType?: string;
+  pageCount?: number | null;
 } | null;
 
 export interface LegacyFileValue {
