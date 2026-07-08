@@ -50,6 +50,10 @@ export class UlbListComponent implements OnInit {
     private ulbMasterService: UlbMasterService,
     private dialog: MatDialog,
   ) {
+    if (this.showStateFilter) {
+      const districtIndex = this.displayedColumns.indexOf('district');
+      this.displayedColumns.splice(districtIndex + 1, 0, 'state');
+    }
     if (this.isAdmin) {
       this.displayedColumns = [...this.displayedColumns, 'actions'];
     }
