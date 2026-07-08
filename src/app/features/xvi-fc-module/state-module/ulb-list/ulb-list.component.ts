@@ -10,8 +10,7 @@ import { UserUtility } from '../../../../core/util/user/user';
 import { MaterialModule } from '../../../../material.module';
 import { IState } from '../../../../core/models/state/state';
 import { IUlbMaster } from '../../../../core/models/ulb-master';
-import { UlbDialogComponent } from './dialog/ulb-dialog.component';
-import { UlbDialogResponse } from './ulb-list.interface';
+import { UlbReviewDialogComponent, UlbReviewDialogResponse } from './dialog/ulb-review-dialog.component';
 import { UlbMasterService } from './ulb-master.service';
 
 const errMsg = 'An unexpected error occurred. Please try again later.';
@@ -129,54 +128,23 @@ export class UlbListComponent implements OnInit {
     this.getUlbs();
   }
 
-  /** Editing still uses the modal dialog; creation now happens on the dedicated Register ULB page. */
-  openEditDialog(ulb: IUlbMaster): void {
-    const dialogRef = this.dialog.open(UlbDialogComponent, {
-      data: { action: 'Edit', ulbId: ulb._id, ulb },
-      width: '700px',
+  openReviewDialog(ulb: IUlbMaster): void {
+    const dialogRef = this.dialog.open(UlbReviewDialogComponent, {
+      data: { ulb },
+      width: '500px',
     });
 
-    dialogRef.afterClosed().subscribe((result: UlbDialogResponse) => {
-      if (!result?.payload || !result.ulbId) return;
-      this.updateUlb(result.ulbId, result.payload);
-    });
-  }
-
-  updateUlb(id: string, payload: Record<string, unknown>): void {
-    this.globalLoader.showLoader();
-    this.ulbMasterService.update(id, payload).subscribe({
-      next: () => {
-        this.globalLoader.stopLoader();
-        this.utilityService.swalPopup('Success!', 'ULB has been updated successfully.');
-        this.getUlbs();
-      },
-      error: (error: { error?: { message?: string | string[] } }) => {
-        this.globalLoader.stopLoader();
-        this.utilityService.swalPopup('Failed!', this.extractErrorMessage(error), 'error');
-      },
+    dialogRef.afterClosed().subscribe((result: UlbReviewDialogResponse) => {
+      if (!result?.decision) return;
+      if (result.decision === 'APPROVED') {
+        this.approveUlb(ulb);
+      } else {
+        this.rejectUlb(ulb, result.reason ?? '');
+      }
     });
   }
 
-  removeUlb(ulb: IUlbMaster): void {
-    if (!window.confirm(`Are you sure you want to deactivate ${ulb.name} (${ulb.code})?`)) return;
-
-    this.globalLoader.showLoader();
-    this.ulbMasterService.remove(ulb._id).subscribe({
-      next: () => {
-        this.globalLoader.stopLoader();
-        this.utilityService.swalPopup('Deactivated!', `${ulb.name} has been deactivated successfully.`);
-        this.getUlbs();
-      },
-      error: (error: { error?: { message?: string | string[] } }) => {
-        this.globalLoader.stopLoader();
-        this.utilityService.swalPopup('Failed!', this.extractErrorMessage(error), 'error');
-      },
-    });
-  }
-
-  approveUlb(ulb: IUlbMaster): void {
-    if (!window.confirm(`Approve ${ulb.name} (${ulb.code})?`)) return;
-
+  private approveUlb(ulb: IUlbMaster): void {
     this.globalLoader.showLoader();
     this.ulbMasterService.approve(ulb._id).subscribe({
       next: () => {
@@ -191,12 +159,9 @@ export class UlbListComponent implements OnInit {
     });
   }
 
-  rejectUlb(ulb: IUlbMaster): void {
-    const reason = window.prompt(`Reason for rejecting ${ulb.name} (${ulb.code}):`);
-    if (!reason?.trim()) return;
-
+  private rejectUlb(ulb: IUlbMaster, reason: string): void {
     this.globalLoader.showLoader();
-    this.ulbMasterService.reject(ulb._id, reason.trim()).subscribe({
+    this.ulbMasterService.reject(ulb._id, reason).subscribe({
       next: () => {
         this.globalLoader.stopLoader();
         this.utilityService.swalPopup('Rejected', `${ulb.name} has been rejected.`);

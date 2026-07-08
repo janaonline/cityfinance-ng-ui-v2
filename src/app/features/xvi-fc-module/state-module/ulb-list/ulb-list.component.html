@@ -91,21 +91,12 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let element">
-              <div class="d-flex justify-content-between">
+              <div class="d-flex justify-content-center">
                 @if (element.approval?.status === 'PENDING') {
-                <button class="btn btn-link p-0 border-0 text-success" title="Approve" (click)="approveUlb(element)">
-                  <i class="bi bi-check-circle-fill"></i>
-                </button>
-                <button class="btn btn-link p-0 border-0 text-danger" title="Reject" (click)="rejectUlb(element)">
-                  <i class="bi bi-x-circle-fill"></i>
+                <button class="btn btn-cfPrimary btn-sm" title="Review" (click)="openReviewDialog(element)">
+                  Review
                 </button>
                 }
-                <button class="btn btn-link p-0 border-0" (click)="openEditDialog(element)">
-                  <i class="bi bi-pencil-square"></i>
-                </button>
-                <button class="btn btn-link p-0 border-0" (click)="removeUlb(element)">
-                  <i class="bi bi-trash-fill text-danger"></i>
-                </button>
               </div>
             </td>
           </ng-container>
