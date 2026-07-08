@@ -1,4 +1,4 @@
-<p class="fw-bold m-2 p-1 mb-0 pb-0 fs-4">Review ULB</p>
+<p class="fw-bold m-2 p-1 mb-0 pb-0 fs-4">{{ data.readOnly ? 'View' : 'Review' }} ULB</p>
 <mat-dialog-content>
   <div class="row g-2 px-2">
     <div class="col-6">
@@ -44,7 +44,9 @@
   }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  @if (!rejecting) {
+  @if (data.readOnly) {
+  <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Close</button>
+  } @else if (!rejecting) {
   <button class="btn btn-success mx-2" (click)="approve()">Approve</button>
   <button class="btn btn-danger mx-2" (click)="startReject()">Reject</button>
   <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Cancel</button>

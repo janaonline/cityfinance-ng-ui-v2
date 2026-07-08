@@ -45,14 +45,12 @@
       @if (dataSource.data.length <= 0) { <p class="text-center p-2 mt-2">No ULBs found for the selected filters.</p>
         } @else {
         <table mat-table [dataSource]="dataSource">
-          <ng-container matColumnDef="code">
-            <th mat-header-cell *matHeaderCellDef>Code</th>
-            <td mat-cell *matCellDef="let element">{{ element.code }}</td>
-          </ng-container>
-
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+            <td mat-cell *matCellDef="let element">
+              <div>{{ element.name }}</div>
+              <div class="small text-body-secondary">{{ element.code }}</div>
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="district">
@@ -93,12 +91,20 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let element">
-              <div class="d-flex justify-content-center">
-                @if (element.approval?.status === 'PENDING') {
+              <div class="d-flex justify-content-center gap-2">
+                @if (isAdmin && element.approval?.status === 'PENDING') {
                 <button class="btn btn-cfPrimary btn-sm" title="Review" (click)="openReviewDialog(element)">
                   Review
                 </button>
                 }
+                @if (isState && element.approval?.status === 'REJECTED') {
+                <button class="btn btn-outline-cfPrimary btn-sm" title="Edit" (click)="openEditDialog(element)">
+                  Edit
+                </button>
+                }
+                <button class="btn btn-outline-secondary btn-sm" title="View" (click)="openViewDialog(element)">
+                  View
+                </button>
               </div>
             </td>
           </ng-container>

@@ -6,6 +6,8 @@ import { IUlbMaster } from '../../../../../core/models/ulb-master';
 
 export interface UlbReviewDialogData {
   ulb: IUlbMaster;
+  /** When true, shows the ULB details with only a Close button — no Approve/Reject actions. */
+  readOnly?: boolean;
 }
 
 export interface UlbReviewDialogResponse {

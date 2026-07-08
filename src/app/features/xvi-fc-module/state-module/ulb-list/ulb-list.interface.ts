@@ -1,6 +1,8 @@
 import { IUlbMaster } from '../../../../core/models/ulb-master';
 
-export type UlbDialogAction = 'Create' | 'Edit';
+/** 'Resubmit' is the STATE user's fix-and-resend flow for a REJECTED ULB — uses the
+ *  Register page's field set (not the ADMIN-only Edit field set). */
+export type UlbDialogAction = 'Create' | 'Edit' | 'Resubmit';
 
 export interface UlbDialogData {
   action: UlbDialogAction;

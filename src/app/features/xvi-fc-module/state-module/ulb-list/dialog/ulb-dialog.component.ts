@@ -29,7 +29,12 @@ export class UlbDialogComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.ulbMasterService.getEditSections().subscribe({
+    // ADMIN 'Edit' uses the full ADMIN-only field set; STATE 'Resubmit' (fixing a REJECTED
+    // submission) is restricted to the same fields collected on the Register ULB page.
+    const sections$ =
+      this.data.action === 'Resubmit' ? this.ulbMasterService.getRegisterSections() : this.ulbMasterService.getEditSections();
+
+    sections$.subscribe({
       next: (res) => {
         const ulbRecord = (this.data.ulb ?? {}) as Record<string, unknown>;
         // Sections come back as generic field definitions (no values) — hydrate each with the

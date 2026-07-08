@@ -10,7 +10,9 @@ import { UserUtility } from '../../../../core/util/user/user';
 import { MaterialModule } from '../../../../material.module';
 import { IState } from '../../../../core/models/state/state';
 import { IUlbMaster } from '../../../../core/models/ulb-master';
+import { UlbDialogComponent } from './dialog/ulb-dialog.component';
 import { UlbReviewDialogComponent, UlbReviewDialogResponse } from './dialog/ulb-review-dialog.component';
+import { UlbDialogResponse } from './ulb-list.interface';
 import { UlbMasterService } from './ulb-master.service';
 
 const errMsg = 'An unexpected error occurred. Please try again later.';
@@ -30,7 +32,7 @@ export class UlbListComponent implements OnInit {
   /** ADMIN accounts have no home state to default to, so the simplified Register ULB page is STATE-only. */
   readonly canCreate = this.isState;
 
-  displayedColumns: string[] = ['code', 'name', 'district', 'ulbType', 'approvalStatus', 'isActive'];
+  displayedColumns: string[] = ['name', 'district', 'ulbType', 'approvalStatus', 'isActive', 'actions'];
 
   ulbs: IUlbMaster[] = [];
   dataSource = new MatTableDataSource<IUlbMaster>([]);
@@ -53,9 +55,6 @@ export class UlbListComponent implements OnInit {
     if (this.showStateFilter) {
       const districtIndex = this.displayedColumns.indexOf('district');
       this.displayedColumns.splice(districtIndex + 1, 0, 'state');
-    }
-    if (this.isAdmin) {
-      this.displayedColumns = [...this.displayedColumns, 'actions'];
     }
   }
 
@@ -146,6 +145,41 @@ export class UlbListComponent implements OnInit {
       } else {
         this.rejectUlb(ulb, result.reason ?? '');
       }
+    });
+  }
+
+  openViewDialog(ulb: IUlbMaster): void {
+    this.dialog.open(UlbReviewDialogComponent, {
+      data: { ulb, readOnly: true },
+      width: '500px',
+    });
+  }
+
+  /** STATE's fix-and-resubmit flow for a REJECTED ULB — the Register page's field set, not the ADMIN edit set. */
+  openEditDialog(ulb: IUlbMaster): void {
+    const dialogRef = this.dialog.open(UlbDialogComponent, {
+      data: { action: 'Resubmit', ulbId: ulb._id, ulb },
+      width: '700px',
+    });
+
+    dialogRef.afterClosed().subscribe((result: UlbDialogResponse) => {
+      if (!result?.payload || !result.ulbId) return;
+      this.updateUlb(result.ulbId, result.payload);
+    });
+  }
+
+  private updateUlb(id: string, payload: Record<string, unknown>): void {
+    this.globalLoader.showLoader();
+    this.ulbMasterService.update(id, payload).subscribe({
+      next: () => {
+        this.globalLoader.stopLoader();
+        this.utilityService.swalPopup('Submitted!', 'ULB has been resubmitted for approval.');
+        this.getUlbs();
+      },
+      error: (error: { error?: { message?: string | string[] } }) => {
+        this.globalLoader.stopLoader();
+        this.utilityService.swalPopup('Failed!', this.extractErrorMessage(error), 'error');
+      },
     });
   }
 
