@@ -10,7 +10,8 @@ import {
   IUlbMasterPage,
   IUlbType,
 } from '../../../../core/models/ulb-master';
-import { IStateListResponse } from '../../../../core/models/state/state-response';
+import { IState } from '../../../../core/models/state/state';
+import { StateService } from '../../../../core/services/state/state.service';
 import { FormSectionConfig } from '../../../../shared/dynamic-form/field.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -18,7 +19,10 @@ export class UlbMasterService {
   private readonly baseUrl = environment.api.url2 + 'master/ulb';
   private readonly httpUtil = new HttpUtility();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private stateService: StateService,
+  ) {}
 
   list(query: IUlbMasterListQuery): Observable<IApiEnvelope<IUlbMasterPage>> {
     const params = this.httpUtil.convertToHttpParams(query as unknown as { [key: string]: string });
@@ -63,7 +67,7 @@ export class UlbMasterService {
     return this.http.get<IApiEnvelope<FormSectionConfig[]>>(`${this.baseUrl}/edit-sections`);
   }
 
-  getStates(): Observable<IStateListResponse> {
-    return this.http.get<IStateListResponse>(environment.api.url + 'state');
+  getStates(): Observable<IApiEnvelope<IState[]>> {
+    return this.stateService.getStates();
   }
 }
