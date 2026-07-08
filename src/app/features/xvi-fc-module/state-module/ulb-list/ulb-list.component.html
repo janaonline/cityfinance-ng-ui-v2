@@ -48,8 +48,8 @@
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
             <td mat-cell *matCellDef="let element">
+              <div class="fw-bold">{{ element.code }}</div>
               <div>{{ element.name }}</div>
-              <div class="small text-body-secondary">{{ element.code }}</div>
             </td>
           </ng-container>
 

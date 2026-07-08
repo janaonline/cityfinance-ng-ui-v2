@@ -39,14 +39,21 @@ export class UlbDialogComponent implements OnInit {
         const ulbRecord = (this.data.ulb ?? {}) as Record<string, unknown>;
         // Sections come back as generic field definitions (no values) — hydrate each with the
         // ULB row being edited, and hide the built-in label since the grid renders its own.
-        this.sections = (res.data ?? []).map((section) => ({
-          ...section,
-          fields: section.fields.map((field) => ({
-            ...field,
-            hideLabel: true,
-            value: ulbRecord[field.key] ?? field.value,
-          })),
-        }));
+        this.sections = (res.data ?? [])
+          .map((section) => ({
+            ...section,
+            fields: section.fields
+              // Primary-contact fields provision the ULB's first login at registration time and
+              // are never persisted onto the ULB itself — resubmitting a correction has nothing
+              // to do with them, so drop the whole section rather than show inert inputs.
+              .filter((field) => this.data.action !== 'Resubmit' || !field.key.startsWith('primaryContact'))
+              .map((field) => ({
+                ...field,
+                hideLabel: true,
+                value: ulbRecord[field.key] ?? field.value,
+              })),
+          }))
+          .filter((section) => section.fields.length > 0);
         this.fields = this.sections.flatMap((section) => section.fields);
         this.form = this.formService.toFormGroup(this.fields);
       },
