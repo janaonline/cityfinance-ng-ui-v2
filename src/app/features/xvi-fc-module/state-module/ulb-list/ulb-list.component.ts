@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -49,6 +49,7 @@ export class UlbListComponent implements OnInit {
     private utilityService: UtilityService,
     private ulbMasterService: UlbMasterService,
     private dialog: MatDialog,
+    private cdr: ChangeDetectorRef,
   ) {
     if (this.showStateFilter) {
       const districtIndex = this.displayedColumns.indexOf('district');
@@ -74,6 +75,7 @@ export class UlbListComponent implements OnInit {
     this.ulbMasterService.getStates().subscribe({
       next: (res) => {
         this.states = res.data ?? [];
+        this.cdr.markForCheck();
       },
       error: () => {
         this.utilityService.swalPopup('Failed!', 'Unable to load states.', 'error');
@@ -99,10 +101,12 @@ export class UlbListComponent implements OnInit {
           this.dataSource.data = this.ulbs;
           this.totalItems = res.data.total;
           this.globalLoader.stopLoader();
+          this.cdr.markForCheck();
         },
         error: (error: Error) => {
           this.globalLoader.stopLoader();
           this.utilityService.swalPopup('Failed!', error.message || errMsg, 'error');
+          this.cdr.markForCheck();
         },
       });
   }
