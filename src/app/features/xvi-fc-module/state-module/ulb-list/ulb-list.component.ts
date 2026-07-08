@@ -32,7 +32,7 @@ export class UlbListComponent implements OnInit {
   /** ADMIN accounts have no home state to default to, so the simplified Register ULB page is STATE-only. */
   readonly canCreate = this.isState;
 
-  displayedColumns: string[] = ['name', 'district', 'ulbType', 'approvalStatus', 'isActive', 'actions'];
+  displayedColumns: string[] = ['serialNo', 'name', 'district', 'ulbType', 'approvalStatus', 'actions'];
 
   ulbs: IUlbMaster[] = [];
   dataSource = new MatTableDataSource<IUlbMaster>([]);
