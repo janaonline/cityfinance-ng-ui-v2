@@ -96,6 +96,9 @@
                   }}</mat-hint>
                 }
               }
+            @if (field.disabledReason) {
+              <mat-hint>{{ field.disabledReason }}</mat-hint>
+            }
             </mat-form-field>
           }
         }

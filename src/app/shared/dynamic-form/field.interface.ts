@@ -176,6 +176,10 @@ export interface FieldConfig {
   render?: boolean;
   /** When `false`, the field is excluded from the visible payload on submit. Defaults to `true`. */
   includeInPayload?: boolean;
+  /** When `true`, the FormControl is created disabled (backend-computed field). */
+  disabled?: boolean;
+  /** Explanatory text shown as a hint when the field is disabled by the backend. */
+  disabledReason?: string;
 }
 
 export interface JsonFieldConfig {

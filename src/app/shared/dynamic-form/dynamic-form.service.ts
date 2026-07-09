@@ -269,7 +269,7 @@ export class DynamicFormService {
     const resolvedReadonly = readonly || field.readonly;
     const val = {
       value: this.resolveInitialControlValue(field, false),
-      disabled: field.formFieldType === 'date' ? false : resolvedReadonly,
+      disabled: field.disabled === true ? true : (field.formFieldType === 'date' ? false : resolvedReadonly),
     };
     return new FormControl(val, this.bindValidations(validationsData, field));
     // return new FormControl(field.value || '');

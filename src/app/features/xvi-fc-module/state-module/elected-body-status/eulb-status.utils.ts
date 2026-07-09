@@ -55,23 +55,14 @@ export function buildEulbFormPayloadData(visiblePayload: Record<string, unknown>
 export function buildEulbFinalSubmitPayloadData(
   visiblePayload: Record<string, unknown>,
 ): EulbFinalSubmitPayloadData | null {
-  const ulbCount = normalizeUlbCount(visiblePayload['ulbCount']);
   const electedBodyExcelFile = visiblePayload['electedBodyExcelFile'];
   const checkboxConfirmation = visiblePayload['checkboxConfirmation'];
 
-  if (
-    ulbCount === undefined ||
-    !isValidEulbFileValue(electedBodyExcelFile) ||
-    typeof checkboxConfirmation !== 'boolean'
-  ) {
+  if (!isValidEulbFileValue(electedBodyExcelFile) || typeof checkboxConfirmation !== 'boolean') {
     return null;
   }
 
-  return {
-    ulbCount,
-    electedBodyExcelFile,
-    checkboxConfirmation,
-  };
+  return { electedBodyExcelFile, checkboxConfirmation };
 }
 
 function errorsMapToRowErrors(errorsMap: unknown): EulbRowUpdateApiError[] {
