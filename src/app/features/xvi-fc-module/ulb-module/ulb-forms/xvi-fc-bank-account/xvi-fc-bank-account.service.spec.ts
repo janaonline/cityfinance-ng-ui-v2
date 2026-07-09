@@ -116,6 +116,8 @@ describe('XviFcBankAccountService', () => {
       fileName: 'cancelled-cheque.pdf',
       folder: 'xvi-fc/bank-account/ulb-id/year-id/proof',
       mimeType: 'application/pdf',
+      fileSize: 2048,
+      pages: 2,
       uploadId: 'upload-id',
       expiresIn: 300,
     }];
