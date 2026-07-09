@@ -1,18 +1,12 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { finalize } from 'rxjs';
 import { MaterialModule } from '../../../material.module';
 import { UtilityService } from '../../../core/services/utility.service';
-import {
-  BenchmarkCompareMetrics,
-  BenchmarkCompareRow,
-  EvalBenchmark,
-  EvalRunInfo,
-  OcrService,
-} from '../ocr.service';
+import { EvalBenchmark, EvalRunInfo, OcrService } from '../ocr.service';
 
 @Component({
   standalone: true,
@@ -25,6 +19,7 @@ export class OcrEvalBenchmarksComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly ocrService = inject(OcrService);
   private readonly utilityService = inject(UtilityService);
+  private readonly router = inject(Router);
 
   @ViewChild('excelFileInput') excelFileInput?: ElementRef<HTMLInputElement>;
 
@@ -42,10 +37,8 @@ export class OcrEvalBenchmarksComponent implements OnInit {
   readonly runSubmitting = signal(false);
   readonly showRunForm = signal(false);
 
-  readonly compareResults = signal<BenchmarkCompareRow[]>([]);
-  readonly compareMetrics = signal<BenchmarkCompareMetrics | null>(null);
-  readonly comparing = signal(false);
-  readonly hasCompared = signal(false);
+  /** Up to 2 completed run IDs picked for "Compare Runs" navigation. */
+  readonly selectedRunIds = signal<string[]>([]);
 
   readonly createForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -61,17 +54,7 @@ export class OcrEvalBenchmarksComponent implements OnInit {
   readonly models = this.ocrService.models.filter((m) => !m.deprecated);
 
   readonly benchmarkColumns = ['name', 'jobCount', 'createdAt', 'action'];
-  readonly runColumns = ['evalRunId', 'models', 'status', 'metrics', 'createdAt', 'action'];
-  readonly compareColumns = [
-    'ulb',
-    'docType',
-    'financialYear',
-    'language',
-    'seal',
-    'signature',
-    'table',
-    'overall',
-  ];
+  readonly runColumns = ['select', 'evalRunId', 'models', 'status', 'metrics', 'createdAt', 'action'];
 
   ngOnInit(): void {
     this.loadBenchmarks();
@@ -167,10 +150,22 @@ export class OcrEvalBenchmarksComponent implements OnInit {
       .createEvalBenchmarkFromExcel(name, file)
       .pipe(finalize(() => this.creating.set(false)))
       .subscribe({
-        next: () => {
+        next: (res) => {
           this.excelName.set('');
           this.clearExcelFile();
           this.loadBenchmarks();
+          const skippedDetail = res.skipped
+            ? ' ' +
+              res.row_results
+                .filter((r) => !r.accepted)
+                .map((r) => `Row ${r.row_number}: ${r.error}`)
+                .join('; ')
+            : '';
+          this.utilityService.swalPopup(
+            'Benchmark created',
+            `${res.accepted} row(s) added.${res.skipped ? ` ${res.skipped} row(s) skipped.${skippedDetail}` : ''}`,
+            res.skipped ? 'warning' : 'success',
+          );
         },
         error: (err) =>
           this.utilityService.swalPopup(
@@ -184,9 +179,7 @@ export class OcrEvalBenchmarksComponent implements OnInit {
   selectBenchmark(b: EvalBenchmark): void {
     this.selectedBenchmark.set(b);
     this.showRunForm.set(false);
-    this.compareResults.set([]);
-    this.compareMetrics.set(null);
-    this.hasCompared.set(false);
+    this.selectedRunIds.set([]);
     if (b.job_ids?.length) {
       this.loadRuns(b.benchmark_id);
     }
@@ -196,46 +189,35 @@ export class OcrEvalBenchmarksComponent implements OnInit {
     this.selectedBenchmark.set(null);
     this.runsDataSource.data = [];
     this.showRunForm.set(false);
-    this.compareResults.set([]);
-    this.compareMetrics.set(null);
-    this.hasCompared.set(false);
+    this.selectedRunIds.set([]);
   }
 
-  runCompare(): void {
-    const b = this.selectedBenchmark();
-    if (!b) return;
-    this.comparing.set(true);
-    this.ocrService
-      .compareBenchmark(b.benchmark_id)
-      .pipe(finalize(() => this.comparing.set(false)))
-      .subscribe({
-        next: (res) => {
-          this.compareResults.set(res.results);
-          this.compareMetrics.set(res.metrics);
-          this.hasCompared.set(true);
-        },
-        error: (err) =>
-          this.utilityService.swalPopup(
-            'Compare failed',
-            err?.error?.detail || 'Please try again.',
-            'error',
-          ),
-      });
+  isRunSelectable(r: EvalRunInfo): boolean {
+    return r.status === 'completed';
   }
 
-  matchLabel(value: boolean | null | undefined): string {
-    if (value === null || value === undefined) return '—';
-    return value ? 'Match' : 'Mismatch';
+  isRunSelected(r: EvalRunInfo): boolean {
+    return this.selectedRunIds().includes(r.eval_run_id);
   }
 
-  matchClass(value: boolean | null | undefined): string {
-    if (value === null || value === undefined) return 'match-badge--na';
-    return value ? 'match-badge--yes' : 'match-badge--no';
+  toggleRunSelection(r: EvalRunInfo): void {
+    if (!this.isRunSelectable(r)) return;
+    const current = this.selectedRunIds();
+    if (current.includes(r.eval_run_id)) {
+      this.selectedRunIds.set(current.filter((id) => id !== r.eval_run_id));
+      return;
+    }
+    if (current.length >= 2) {
+      this.utilityService.swalPopup('Two runs max', 'Deselect a run before picking another to compare.', 'warning');
+      return;
+    }
+    this.selectedRunIds.set([...current, r.eval_run_id]);
   }
 
-  boolText(value: boolean | null | undefined): string {
-    if (value === null || value === undefined) return '—';
-    return value ? 'Yes' : 'No';
+  compareSelectedRuns(): void {
+    const [runIdA, runIdB] = this.selectedRunIds();
+    if (!runIdA || !runIdB) return;
+    this.router.navigate(['/ocr/eval-run-compare'], { queryParams: { runIdA, runIdB } });
   }
 
   loadRuns(benchmarkId: string): void {

@@ -53,5 +53,12 @@ export const OCR_ROUTES: Route[] = [
         (mod) => mod.OcrEvalRunDetailComponent,
       ),
   },
+  {
+    path: 'eval-run-compare',
+    loadComponent: () =>
+      import('./ocr-eval-run-compare/ocr-eval-run-compare.component').then(
+        (mod) => mod.OcrEvalRunCompareComponent,
+      ),
+  },
 
 ];

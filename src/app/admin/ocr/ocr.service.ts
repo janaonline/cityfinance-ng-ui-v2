@@ -55,77 +55,55 @@ export interface OcrTaskListResponse {
   total_count?: number;
 }
 
-export interface BenchmarkValueRow {
-  ulb_name: string;
-  doc_type: string | null;
-  financial_year: string | null;
-  language: string | null;
-  seal_present: boolean | null;
-  signature_present: boolean | null;
-  table_presence: boolean | null;
+/** Ground-truth / input field bundle used on benchmark rows (input_value or benchmark_value). */
+export interface BenchmarkFieldValue {
+  ulb_name?: string | null;
+  financial_year?: string | null;
+  doc_type?: string | null;
+  language?: string | null;
+  seal_present?: boolean | null;
+  signature_present?: boolean | null;
+  table_present?: boolean | null;
+}
+
+export interface BenchmarkRow {
+  row_number: number;
+  job_id: string;
+  input_value: BenchmarkFieldValue;
+  benchmark_value: BenchmarkFieldValue;
 }
 
 export interface EvalBenchmark {
   benchmark_id: string;
   name: string;
   job_ids: string[];
-  benchmark_values: BenchmarkValueRow[];
+  schema_version: number;
+  rows: BenchmarkRow[];
   created_at: string;
   updated_at: string;
 }
 
-export interface BenchmarkCompareRow {
-  ulb_name: string;
-  doc_type: string | null;
-  financial_year: string | null;
-  matched: boolean;
+export interface BenchmarkRowResult {
+  row_number: number;
   job_id: string | null;
-  filename: string | null;
-  benchmark_language: string | null;
-  benchmark_seal_present: boolean | null;
-  benchmark_signature_present: boolean | null;
-  benchmark_table_presence: boolean | null;
-  extracted_ulb_name: string | null;
-  extracted_doc_type: string | null;
-  extracted_financial_year: string | null;
-  extracted_language: string | null;
-  extracted_seal_present: boolean | null;
-  extracted_signature_present: boolean | null;
-  extracted_table_presence: boolean | null;
-  ulb_name_match: boolean | null;
-  doc_type_match: boolean | null;
-  financial_year_match: boolean | null;
-  language_match: boolean | null;
-  seal_present_match: boolean | null;
-  signature_present_match: boolean | null;
-  table_presence_match: boolean | null;
-  overall_match: boolean | null;
-  note: string | null;
+  accepted: boolean;
+  error: string | null;
 }
 
-export interface BenchmarkCompareMetrics {
-  total: number;
-  matched: number;
-  unmatched: number;
-  ulb_name_accuracy: number | null;
-  doc_type_accuracy: number | null;
-  financial_year_accuracy: number | null;
-  language_accuracy: number | null;
-  seal_present_accuracy: number | null;
-  signature_present_accuracy: number | null;
-  table_presence_accuracy: number | null;
-  overall_accuracy: number | null;
-}
-
-export interface BenchmarkCompareResponse {
+export interface CreateBenchmarkFromExcelResponse {
   benchmark_id: string;
-  results: BenchmarkCompareRow[];
-  metrics: BenchmarkCompareMetrics;
+  name: string;
+  total_rows: number;
+  accepted: number;
+  skipped: number;
+  row_results: BenchmarkRowResult[];
+  message: string;
 }
 
 export interface EvalRunInfo {
   eval_run_id: string;
   benchmark_id: string;
+  job_batch_id: string | null;
   status: string;
   extraction_model: string;
   validation_model: string;
@@ -135,38 +113,69 @@ export interface EvalRunInfo {
   completed_at: string | null;
 }
 
-export interface EvalRunJobResult {
-  job_id: string;
-  filename: string;
-  expected_ulb_name: string;
-  expected_financial_year: string;
-  expected_doc_type: string;
-  // Benchmark: original stored extraction + its match vs expected
-  benchmark_ulb_name: string;
-  benchmark_financial_year: string;
-  benchmark_doc_type: string;
-  benchmark_ulb_name_match: boolean | null;
-  benchmark_financial_year_match: boolean | null;
-  benchmark_doc_type_match: boolean | null;
-  benchmark_overall_match: boolean | null;
-  // New eval extraction + its match vs expected
-  extracted_ulb_name: string;
-  extracted_financial_year: string;
-  extracted_doc_type: string;
-  extracted_language: string;
+/** Freshly-extracted field values for one eval-run row. */
+export interface EvalExtractedValue {
+  ulb_name?: string | null;
+  document_type?: string | null;
+  financial_year?: string | null;
+  language_detected?: string | null;
+  seal_present?: boolean | null;
+  signature_present?: boolean | null;
+  table_present?: boolean | null;
+}
+
+export interface EvalFieldMatch {
+  ulb_name: boolean | null;
+  financial_year: boolean | null;
+  doc_type: boolean | null;
+  language: boolean | null;
   seal_present: boolean | null;
   signature_present: boolean | null;
-  ulb_name_match: boolean | null;
-  financial_year_match: boolean | null;
-  doc_type_match: boolean | null;
-  overall_match: boolean;
-  overall_assessment: string;
-  failed_checks: string[];
+  table_present: boolean | null;
+  overall: boolean;
+}
+
+export interface EvalRunRowResult {
+  row_number: number | null;
+  source_job_id: string;
+  job_id: string | null;
+  batch_id: string | null;
+  filename: string;
+  status: string;
+  input_value: BenchmarkFieldValue;
+  benchmark_value: BenchmarkFieldValue;
+  extracted: EvalExtractedValue;
+  match: EvalFieldMatch;
   error: string | null;
 }
 
 export interface EvalRunDetail extends EvalRunInfo {
-  results: EvalRunJobResult[];
+  results: EvalRunRowResult[];
+}
+
+export interface MetricDelta {
+  before: number | null;
+  after: number | null;
+  delta: number | null;
+}
+
+export interface EvalRowCompare {
+  source_job_id: string;
+  filename: string;
+  benchmark_value: BenchmarkFieldValue;
+  run_a: { job_id: string | null; extracted: EvalExtractedValue; match: EvalFieldMatch; error: string | null } | null;
+  run_b: { job_id: string | null; extracted: EvalExtractedValue; match: EvalFieldMatch; error: string | null } | null;
+  field_changes: Record<string, string>;
+  overall_change: string;
+}
+
+export interface EvalRunCompareResponse {
+  run_a: EvalRunInfo;
+  run_b: EvalRunInfo;
+  metrics_delta: Record<string, MetricDelta>;
+  rows: EvalRowCompare[];
+  rows_only_in_a: string[];
+  rows_only_in_b: string[];
 }
 
 @Injectable({
@@ -494,17 +503,16 @@ export class OcrService {
     const formData = new FormData();
     formData.append('name', name);
     formData.append('file', file);
-    return this.http.post<EvalBenchmark>(
+    return this.http.post<CreateBenchmarkFromExcelResponse>(
       environment.api.url3 + 'ocr-validation/evals/benchmark/from-excel',
       formData,
     );
   }
 
-  compareBenchmark(benchmarkId: string) {
-    return this.http.post<BenchmarkCompareResponse>(
-      environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/compare`,
-      {},
-    );
+  compareEvalRuns(runIdA: string, runIdB: string) {
+    return this.http.get<EvalRunCompareResponse>(environment.api.url3 + 'ocr-validation/evals/runs/compare', {
+      params: { run_id_a: runIdA, run_id_b: runIdB },
+    });
   }
 
   runBenchmarkEval(

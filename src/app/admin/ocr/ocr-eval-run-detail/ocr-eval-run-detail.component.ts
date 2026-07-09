@@ -1,43 +1,31 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { AfterViewInit, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
 import { saveAs } from 'file-saver';
 import { MaterialModule } from '../../../material.module';
 import { UtilityService } from '../../../core/services/utility.service';
-import { EvalRunDetail, EvalRunJobResult, OcrService } from '../ocr.service';
+import { EvalRunDetail, EvalRunRowResult, OcrService } from '../ocr.service';
 
-type Change = 'improved' | 'regressed' | 'same-pass' | 'same-fail' | 'na';
+interface FieldCell {
+  label: string;
+  benchmark: string;
+  extracted: string;
+  match: boolean | null;
+}
 
 interface ResultRow {
   jobId: string;
+  sourceJobId: string;
   filename: string;
-  expectedUlb: string;
-  expectedFy: string;
-  expectedDocType: string;
-  // Benchmark (original stored extraction)
-  bmkUlb: string;
-  bmkFy: string;
-  bmkDocType: string;
-  bmkUlbMatch: boolean | null;
-  bmkFyMatch: boolean | null;
-  bmkDocTypeMatch: boolean | null;
-  bmkOverallMatch: boolean | null;
-  // New extraction
-  newUlb: string;
-  newFy: string;
-  newDocType: string;
-  newUlbMatch: boolean | null;
-  newFyMatch: boolean | null;
-  newDocTypeMatch: boolean | null;
-  newOverallMatch: boolean;
-  // Change indicators
-  ulbChange: Change;
-  fyChange: Change;
-  docTypeChange: Change;
-  overallChange: Change;
+  status: string;
+  inputUlb: string;
+  inputFy: string;
+  inputDocType: string;
+  fields: FieldCell[];
+  overallMatch: boolean;
   error: string;
 }
 
@@ -60,7 +48,7 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
   readonly exporting = signal(false);
 
   readonly dataSource = new MatTableDataSource<ResultRow>([]);
-  readonly displayedColumns = ['jobFile', 'expected', 'benchmark', 'newRun', 'change', 'error'];
+  readonly displayedColumns = ['jobFile', 'input', 'benchmark', 'error'];
 
   ngOnInit(): void {
     const runId = this.route.snapshot.queryParamMap.get('runId');
@@ -147,79 +135,36 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
     return `${value.slice(0, 9)}...${value.slice(-9)}`;
   }
 
-  changeIcon(c: Change): string {
-    switch (c) {
-      case 'improved':
-        return 'trending_up';
-      case 'regressed':
-        return 'trending_down';
-      case 'same-pass':
-        return 'check_circle';
-      case 'same-fail':
-        return 'cancel';
-      default:
-        return 'remove';
-    }
+  private boolText(value: boolean | null | undefined): string {
+    if (value === null || value === undefined) return '—';
+    return value ? 'Yes' : 'No';
   }
 
-  changeClass(c: Change): string {
-    switch (c) {
-      case 'improved':
-        return 'change-improved';
-      case 'regressed':
-        return 'change-regressed';
-      case 'same-pass':
-        return 'change-pass';
-      case 'same-fail':
-        return 'change-fail';
-      default:
-        return 'change-na';
-    }
-  }
+  private mapRow(r: EvalRunRowResult): ResultRow {
+    const bmk = r.benchmark_value || {};
+    const ext = r.extracted || {};
+    const match = r.match || ({} as EvalRunRowResult['match']);
 
-  private computeChange(before: boolean | null, after: boolean | null | undefined): Change {
-    const a = after ?? null;
-    if (before === null && a === null) return 'na';
-    if (a === true && before !== true) return 'improved';
-    if (a === false && before === true) return 'regressed';
-    if (a === true && before === true) return 'same-pass';
-    return 'same-fail';
-  }
-
-  private mapRow(r: EvalRunJobResult): ResultRow {
-    const bmkUlb = r.benchmark_ulb_name_match ?? null;
-    const bmkFy = r.benchmark_financial_year_match ?? null;
-    const bmkDt = r.benchmark_doc_type_match ?? null;
-    const bmkOvr = r.benchmark_overall_match ?? null;
-    const newUlb = r.ulb_name_match ?? null;
-    const newFy = r.financial_year_match ?? null;
-    const newDt = r.doc_type_match ?? null;
-    const newOvr = r.overall_match ?? false;
+    const fields: FieldCell[] = [
+      { label: 'ULB', benchmark: bmk.ulb_name || '—', extracted: ext.ulb_name || '—', match: match.ulb_name ?? null },
+      { label: 'FY', benchmark: bmk.financial_year || '—', extracted: ext.financial_year || '—', match: match.financial_year ?? null },
+      { label: 'Doc Type', benchmark: bmk.doc_type || '—', extracted: ext.document_type || '—', match: match.doc_type ?? null },
+      { label: 'Language', benchmark: bmk.language || '—', extracted: ext.language_detected || '—', match: match.language ?? null },
+      { label: 'Seal', benchmark: this.boolText(bmk.seal_present), extracted: this.boolText(ext.seal_present), match: match.seal_present ?? null },
+      { label: 'Signature', benchmark: this.boolText(bmk.signature_present), extracted: this.boolText(ext.signature_present), match: match.signature_present ?? null },
+      { label: 'Table', benchmark: this.boolText(bmk.table_present), extracted: this.boolText(ext.table_present), match: match.table_present ?? null },
+    ];
 
     return {
       jobId: r.job_id || '—',
+      sourceJobId: r.source_job_id || '—',
       filename: r.filename || '—',
-      expectedUlb: r.expected_ulb_name || '—',
-      expectedFy: r.expected_financial_year || '—',
-      expectedDocType: r.expected_doc_type || '—',
-      bmkUlb: r.benchmark_ulb_name || '—',
-      bmkFy: r.benchmark_financial_year || '—',
-      bmkDocType: r.benchmark_doc_type || '—',
-      bmkUlbMatch: bmkUlb,
-      bmkFyMatch: bmkFy,
-      bmkDocTypeMatch: bmkDt,
-      bmkOverallMatch: bmkOvr,
-      newUlb: r.extracted_ulb_name || '—',
-      newFy: r.extracted_financial_year || '—',
-      newDocType: r.extracted_doc_type || '—',
-      newUlbMatch: newUlb,
-      newFyMatch: newFy,
-      newDocTypeMatch: newDt,
-      newOverallMatch: newOvr,
-      ulbChange: this.computeChange(bmkUlb, newUlb),
-      fyChange: this.computeChange(bmkFy, newFy),
-      docTypeChange: this.computeChange(bmkDt, newDt),
-      overallChange: this.computeChange(bmkOvr, newOvr),
+      status: r.status || '—',
+      inputUlb: r.input_value?.ulb_name || '—',
+      inputFy: r.input_value?.financial_year || '—',
+      inputDocType: r.input_value?.doc_type || '—',
+      fields,
+      overallMatch: match.overall ?? false,
       error: r.error || '—',
     };
   }
