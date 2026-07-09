@@ -4,14 +4,14 @@
     <div class="login-left h-100 position-relative overflow-hidden d-flex align-items-stretch">
       <!-- z-index: 1 keeps content above the decorative layer -->
       <div class="d-flex flex-column position-relative w-100 p-5" style="z-index: 1">
-        <div class="d-flex align-items-center gap-3 mb-5">
+        <!-- <div class="d-flex align-items-center gap-3 mb-5">
           <div class="brand-logo rounded-circle flex-shrink-0 d-inline-flex align-items-center justify-content-center">
             <i class="bi bi-bank2"></i>
           </div>
           <span class="fw-bold small text-uppercase" style="letter-spacing: 0.15em; color: rgba(255, 255, 255, 0.6)">
             CITY FINANCE
           </span>
-        </div>
+        </div> -->
 
         <h1 class="hero-title text-white m-0">{{ panelContent().titleLine1 }}<br />{{ panelContent().titleLine2 }}</h1>
 
@@ -180,16 +180,39 @@
                 @if (!hasControlError('identifier', 'required') && hasControlError('identifier', 'maxlength')) {
                   <p class="text-danger small fw-semibold mt-1 mb-0">Input is too long.</p>
                 }
-                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && hasControlError('identifier', 'minlength')) {
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  hasControlError('identifier', 'minlength')
+                ) {
                   <p class="text-danger small fw-semibold mt-1 mb-0">Invalid format for the selected role.</p>
                 }
-                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && !hasControlError('identifier', 'minlength') && hasControlError('identifier', 'unsafeInput')) {
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  !hasControlError('identifier', 'minlength') &&
+                  hasControlError('identifier', 'unsafeInput')
+                ) {
                   <p class="text-danger small fw-semibold mt-1 mb-0">Input contains invalid characters.</p>
                 }
-                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && !hasControlError('identifier', 'minlength') && !hasControlError('identifier', 'unsafeInput') && hasControlError('identifier', 'invalidIdentifier')) {
-                  <p class="text-danger small fw-semibold mt-1 mb-0">Enter a valid email address or numeric census code.</p>
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  !hasControlError('identifier', 'minlength') &&
+                  !hasControlError('identifier', 'unsafeInput') &&
+                  hasControlError('identifier', 'invalidIdentifier')
+                ) {
+                  <p class="text-danger small fw-semibold mt-1 mb-0">
+                    Enter a valid email address or numeric census code.
+                  </p>
                 }
-                @if (!hasControlError('identifier', 'required') && !hasControlError('identifier', 'maxlength') && !hasControlError('identifier', 'minlength') && !hasControlError('identifier', 'unsafeInput') && (hasControlError('identifier', 'emailNotAllowed') || hasControlError('identifier', 'email'))) {
+                @if (
+                  !hasControlError('identifier', 'required') &&
+                  !hasControlError('identifier', 'maxlength') &&
+                  !hasControlError('identifier', 'minlength') &&
+                  !hasControlError('identifier', 'unsafeInput') &&
+                  (hasControlError('identifier', 'emailNotAllowed') || hasControlError('identifier', 'email'))
+                ) {
                   <p class="text-danger small fw-semibold mt-1 mb-0">Invalid format for the selected role.</p>
                 }
 
@@ -221,7 +244,12 @@
                   @if (!hasControlError('password', 'required') && hasControlError('password', 'maxlength')) {
                     <p class="text-danger small fw-semibold mt-1 mb-0">Password is too long.</p>
                   }
-                  @if (!hasControlError('password', 'required') && !hasControlError('password', 'minlength') && !hasControlError('password', 'maxlength') && hasControlError('password', 'unsafeInput')) {
+                  @if (
+                    !hasControlError('password', 'required') &&
+                    !hasControlError('password', 'minlength') &&
+                    !hasControlError('password', 'maxlength') &&
+                    hasControlError('password', 'unsafeInput')
+                  ) {
                     <p class="text-danger small fw-semibold mt-1 mb-0">Password contains invalid characters.</p>
                   }
                 </div>
@@ -260,16 +288,22 @@
                   }
                 </button>
               </form>
+
+              @if (captchaEnabled) {
+                <p class="text-muted text-center mt-3 mb-0 small">
+                  Protected by reCAPTCHA —
+                  <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted"
+                    >Privacy</a
+                  >
+                  &amp;
+                  <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted"
+                    >Terms</a
+                  >
+                </p>
+              }
             </div>
           }
         </div>
-
-        <p class="text-muted text-center mt-3 mb-0 small">
-          Protected by reCAPTCHA —
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-muted">Privacy</a>
-          &amp;
-          <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="text-muted">Terms</a>
-        </p>
 
         <div class="help-card mt-3 p-3">
           <h3 class="fw-bold mb-1 small" style="color: #24464c">Need Help?</h3>
@@ -278,7 +312,7 @@
             <a [href]="'mailto:' + supportEmail()" class="fw-semibold" style="color: #1d6769">
               {{ supportEmail() }}
             </a>
-            — we respond within 24 hours.
+            - we respond within 24 hours.
           </p>
         </div>
       </div>

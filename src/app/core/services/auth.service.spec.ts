@@ -11,7 +11,7 @@ describe('AuthService', () => {
   const loginUrl = `${environment.api.url2}auth/login`;
   const logoutUrl = `${environment.api.url2}auth/logout`;
   const refreshUrl = `${environment.api.url2}auth/refresh`;
-  const user = { _id: 'u1', name: 'Test User', role: 'ULB' } as any;
+  const user = { _id: 'u1', name: 'Test User', role: 'ULB', subRole: undefined } as any;
 
   beforeEach(() => {
     localStorage.clear();
@@ -194,7 +194,8 @@ describe('AuthService', () => {
 
   it('updates and clears the current user snapshot', () => {
     service.setCurrentUser(user);
-    expect(JSON.parse(localStorage.getItem('userData') || '{}')).toEqual(user);
+    const { subRole: _dropped, ...serializableUser } = user;
+    expect(JSON.parse(localStorage.getItem('userData') || '{}')).toEqual(serializableUser);
     expect(service.getCurrentUserSnapshot()).toEqual(user);
 
     service.clearLocalStorageKey('userData');

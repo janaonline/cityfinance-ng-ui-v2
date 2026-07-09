@@ -1,5 +1,5 @@
 import { ACTIVE_STATE_CHILD_ROUTES } from './state-module.routes';
-import { RegisterUlbComponent } from './register-ulb/register-ulb.component';
+import { RegisterUlbComponent } from './ulb-list/register-ulb/register-ulb.component';
 
 describe('state-module.routes — register-ulb', () => {
   it('registers a "register-ulb" child route', () => {

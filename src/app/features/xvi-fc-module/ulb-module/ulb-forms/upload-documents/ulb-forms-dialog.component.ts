@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { NgClass, NgStyle } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -10,18 +10,14 @@ export interface UlbFormsDialogButton {
   label: string;
   result: string;
   variant: 'flat' | 'stroked' | 'text';
-  /** Background hex for flat buttons, e.g. '#e53935'. Defaults to app primary. */
-  bgColor?: string;
-  /** Text color for flat buttons. Defaults to '#fff'. */
-  textColor?: string;
+  /** Material theme palette for flat buttons. Defaults to 'primary' (the app's own theme color). */
+  color?: 'primary' | 'accent' | 'warn';
 }
 
-export interface UlbFormsDialogTableRow {
-  title: string;
-  fileName: string | null;
-  version: string | null;
-  uploaderLabel: string;
-  byTeammate: boolean;
+export interface UlbFormsDialogDeclaration {
+  /** Bolded lead-in, e.g. "Self-declaration by the Executive Officer / Municipal Commissioner of the ULB." */
+  heading: string;
+  body: string;
 }
 
 export interface UlbFormsDialogData {
@@ -29,8 +25,8 @@ export interface UlbFormsDialogData {
   /** Optional leading icon */
   icon?: { name: string; color: string };
   description: string;
-  /** Present only for the review-before-submit dialog */
-  table?: UlbFormsDialogTableRow[];
+  /** When present, all 'flat' buttons stay disabled until this checkbox is ticked */
+  declaration?: UlbFormsDialogDeclaration;
   buttons: UlbFormsDialogButton[];
   /** 'row-end' = right-aligned row (default) | 'column' = full-width stacked */
   buttonLayout?: 'row-end' | 'column';
@@ -38,15 +34,20 @@ export interface UlbFormsDialogData {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Pass as panelClass to every dialog.open() using this component. */
-export const ULB_FORMS_DIALOG_PANEL_CLASS = 'ulb-forms-dialog-panel';
+/**
+ * Pass as panelClass to every dialog.open() using this component.
+ * Includes 'xvifc-theme' so the CDK overlay (rendered outside the xvi-fc
+ * component tree) still inherits the app's own M3 palette instead of the
+ * global default theme.
+ */
+export const ULB_FORMS_DIALOG_PANEL_CLASS = ['ulb-forms-dialog-panel', 'xvifc-theme'];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-ulb-forms-dialog',
   standalone: true,
-  imports: [NgClass, NgStyle, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [MatDialogModule, MatButtonModule, MatCheckboxModule, MatIconModule],
   template: `
     <div class="ulb-dialog">
 
@@ -63,43 +64,28 @@ export const ULB_FORMS_DIALOG_PANEL_CLASS = 'ulb-forms-dialog-panel';
       <!-- Description -->
       <p class="ulb-dialog__desc">{{ data.description }}</p>
 
-      <!-- Optional review table -->
-      @if (data.table) {
-        <div class="ulb-dialog__table-wrap">
-          <table class="ulb-dialog__table">
-            <thead>
-              <tr>
-                <th>DOCUMENT</th>
-                <th>FILE</th>
-                <th class="col-ver">VER.</th>
-                <th class="col-by">UPLOADED BY</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of data.table; track row.title) {
-                <tr [ngClass]="{ 'row--teammate': row.byTeammate }">
-                  <td class="cell-doc">{{ row.title }}</td>
-                  <td class="cell-file">{{ row.fileName ?? '—' }}</td>
-                  <td class="cell-ver">{{ row.version ?? '—' }}</td>
-                  <td class="cell-by">{{ row.uploaderLabel }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+      <!-- Optional self-declaration checkbox -->
+      @if (data.declaration; as declaration) {
+        <div class="ulb-dialog__declaration">
+          <mat-checkbox [checked]="declared()" (change)="declared.set($event.checked)">
+            {{ declaration.heading }} {{ declaration.body }}
+          </mat-checkbox>
         </div>
       }
 
       <!-- Buttons -->
       <div
         class="ulb-dialog__actions"
-        [ngClass]="data.buttonLayout === 'column' ? 'ulb-dialog__actions--col' : 'ulb-dialog__actions--row'"
+        [class.ulb-dialog__actions--col]="data.buttonLayout === 'column'"
+        [class.ulb-dialog__actions--row]="data.buttonLayout !== 'column'"
       >
         @for (btn of data.buttons; track btn.result) {
           @if (btn.variant === 'flat') {
             <button
               mat-flat-button
               type="button"
-              [ngStyle]="{ background: btn.bgColor ?? '#1e3a8a', color: btn.textColor ?? '#fff' }"
+              [color]="btn.color ?? 'primary'"
+              [disabled]="!!data.declaration && !declared()"
               (click)="close(btn.result)"
             >{{ btn.label }}</button>
           } @else if (btn.variant === 'stroked') {
@@ -148,63 +134,20 @@ export const ULB_FORMS_DIALOG_PANEL_CLASS = 'ulb-forms-dialog-panel';
       margin: 0 0 20px;
     }
 
-    /* ── Table ────────────────────────────────────────── */
-    .ulb-dialog__table-wrap {
-      border: 1px solid #e5e7eb;
+    /* ── Declaration ──────────────────────────────────── */
+    .ulb-dialog__declaration {
+      padding: 12px;
+      margin: 0 0 16px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
       border-radius: 6px;
-      overflow-x: auto;   /* horizontal scroll on small screens */
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-      margin-bottom: 20px;
+      font-size: 0.76rem;
+      line-height: 1.5;
+      color: #374151;
+
+      ::ng-deep .mdc-form-field { align-items: flex-start; }
+      ::ng-deep .mdc-checkbox { margin-top: -10px; }
     }
-
-    .ulb-dialog__table {
-      width: 100%;
-      min-width: 420px;   /* prevent table from collapsing below readable width */
-      border-collapse: collapse;
-      font-size: 0.78rem;
-
-      thead tr {
-        background: #f9fafb;
-        border-bottom: 1px solid #e5e7eb;
-      }
-
-      th {
-        padding: 8px 12px;
-        font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        color: #6b7280;
-        text-align: left;
-        white-space: nowrap;
-      }
-
-      tbody tr {
-        border-bottom: 1px solid #f3f4f6;
-        background: #fff;
-
-        &:last-child { border-bottom: none; }
-
-        &.row--teammate {
-          background: #fffbeb;
-          border-left: 3px solid #f59e0b;
-          td:first-child { padding-left: 9px; }
-        }
-      }
-
-      td {
-        padding: 9px 12px;
-        vertical-align: top;
-        color: #111827;
-      }
-    }
-
-    .col-ver, .cell-ver { width: 52px; }
-    .col-by,  .cell-by  { width: 110px; white-space: nowrap; }
-    .cell-doc  { font-weight: 600; line-height: 1.4; }
-    .cell-file { color: #374151; word-break: break-all; }
-    .cell-ver  { color: #6b7280; }
-    .cell-by   { color: #374151; font-weight: 500; }
 
     /* ── Buttons ──────────────────────────────────────── */
     .ulb-dialog__actions {
@@ -232,6 +175,8 @@ export const ULB_FORMS_DIALOG_PANEL_CLASS = 'ulb-forms-dialog-panel';
 export class UlbFormsDialogComponent {
   readonly data = inject<UlbFormsDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<UlbFormsDialogComponent, string>);
+
+  readonly declared = signal(false);
 
   close(result: string): void {
     this.dialogRef.close(result);

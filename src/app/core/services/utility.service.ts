@@ -47,7 +47,7 @@ export class UtilityService {
       title: title,
       text: text,
       showConfirmButton: confirmButton,
-      ...(confirmButton ? {} : { timer: 2000 }),
+      ...(confirmButton ? {} : { timer: 5000 }),
     });
   }
 

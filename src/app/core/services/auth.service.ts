@@ -257,7 +257,19 @@ export class AuthService {
   }
 
   extractUser(authResponse: any): IUserLoggedInDetails | null {
-    return authResponse?.user ?? authResponse?.data?.user ?? null;
+    const user = authResponse?.user ?? authResponse?.data?.user ?? null;
+    if (!user) return null;
+    return { ...user, subRole: this.deriveSubRole(user.accessLevel, user.role) };
+  }
+
+  private deriveSubRole(
+    accessLevel?: string,
+    role?: string,
+  ): 'SUBMITTER' | 'EDITOR' | 'VIEWER' | undefined {
+    if (role !== 'STATE') return undefined;
+    if (accessLevel === 'ADMIN') return 'SUBMITTER';
+    if (accessLevel === 'EDITOR') return 'EDITOR';
+    return 'VIEWER';
   }
 
   isRefreshRequest(url: string) {

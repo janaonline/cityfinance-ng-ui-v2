@@ -8,7 +8,10 @@ let url3 = baseUrl + '/api/v3/';
 
 if (window.location.hostname.includes('staging')) {
   env = 'staging';
-} else if (window.location.origin === 'https://cityfinance.in' || window.location.origin === 'https://www.cityfinance.in') {
+} else if (
+  window.location.origin === 'https://cityfinance.in' ||
+  window.location.origin === 'https://www.cityfinance.in'
+) {
   env = 'prod';
   isProduction = true;
   GoogleTagID = 'G-5Z5B41B3G4';
@@ -30,5 +33,5 @@ export const environment = {
   googleAnalyticsId: GoogleTagID,
   storageType: 'S3Url', // 'S3Url' for S3 storage type, for azure change this to 'BlobUrl'
   recaptchaSiteKey: '6LcT9_gUAAAAANrZM5TNnE4OEEC46iFDfcAHZ8lD',
-  captchaEnabled: true,
+  captchaEnabled: false,
 };

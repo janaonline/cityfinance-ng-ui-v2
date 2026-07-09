@@ -105,7 +105,7 @@ interface BackendStatusDoc {
     uploadId: string;
     version: number;
     versionLabel: string;
-    file: { originalName: string; mimeType: string; pages: number; sizeKb: number };
+    file: { originalName: string; mimeType: string; pageCount: number; sizeKb: number };
     ocrInfo: BackendOcrInfo;
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
@@ -125,7 +125,7 @@ interface BackendStatusResponse {
   unauditedData: BackendStatusSection | null;
 }
 
-// Shape returned by POST /upload
+// Shape returned by POST /confirm-upload
 interface UploadResponse {
   annualAccountId: string;
   uploadId: string;
@@ -224,6 +224,32 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
   );
 
+  private static readonly SUPPORT_EMAIL = '16fcgrant@cityfinance.in';
+
+  readonly supportMailto = computed(() => {
+    const details = this.ulbDetails();
+    const cfg = this.config();
+
+    const ulbName = details?.ulbName ?? 'N/A';
+    const documentSet = cfg
+      ? `${cfg.type === 'audited' ? 'Audited' : 'Provisional'} Financial Statements (FY ${cfg.documentYear})`
+      : 'N/A';
+
+    const subject = `Document upload issue – ${ulbName}`;
+    const body = [
+      `ULB: ${ulbName}`,
+      `State: ${details?.stateName ?? 'N/A'}`,
+      `Grant year: ${details?.selectedYear ?? 'N/A'}`,
+      `Document set: ${documentSet}`,
+      '',
+      "Please describe the issue you're facing:",
+      '',
+    ].join('\r\n');
+
+    // encodeURIComponent (not URLSearchParams) — mailto: expects %20 for spaces, not '+'
+    return `mailto:${UploadDocumentsComponent.SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
+
   // Used by deactivate guard — warn user if OCR is still running
   readonly hasUnsavedUploads = this.hasProcessingDocs;
 
@@ -321,18 +347,36 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const year = cfg.documentYear;
       const section = cfg.type === 'audited' ? 'auditedData' : 'unauditedData';
 
-      const form = new FormData();
-      form.append('file', file, file.name);
-      form.append('ulbId', ulbId);
-      form.append('designYearId', designYearId);
-      form.append('section', section);
-      form.append('docId', docId);
-      form.append('yearId', yearId);
-      form.append('year', year);
+      // Step 1 — Get presigned PUT URL from generic S3 endpoint
+      const uploadId = crypto.randomUUID();
+      const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
+      const presignResult = await firstValueFrom(
+        this.http.post<unknown>(`${API}s3/signed-url`, [
+          { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
+        ]),
+      );
+      const [presignData] = unwrap<Array<{ url: string; path: string }>>(presignResult);
+      const presignedUrl = presignData.url;
+      const s3Key = presignData.path;
 
-      const result = await firstValueFrom(this.http.post<unknown>(`${API}xvi-fc/annual-account/upload`, form));
+      // Step 2 — Upload directly to S3 using fetch (bypasses Angular interceptors — auth headers must not reach S3)
+      const s3Response = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': 'application/pdf' },
+      });
+      if (!s3Response.ok) throw new Error(`S3 upload failed: ${s3Response.status}`);
 
-      const upload = unwrap<UploadResponse>(result);
+      // Step 3 — Confirm upload to NestJS (saves metadata + triggers OCR)
+      const confirmResult = await firstValueFrom(
+        this.http.post<unknown>(`${API}xvi-fc/annual-account/confirm-upload`, {
+          uploadId, s3Key, ulbId, designYearId, section, docId, yearId, year,
+          originalName: file.name,
+          fileSize: file.size,
+        }),
+      );
+
+      const upload = unwrap<UploadResponse>(confirmResult);
       this.annualAccountId.set(upload.annualAccountId);
 
       const localPreviewUrl = URL.createObjectURL(file);
@@ -425,7 +469,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         'This document has already passed validation. Removing it will clear the current verification result — the system will run the checks again on your replacement file.',
       buttons: [
         { label: 'Cancel', result: 'cancel', variant: 'stroked' },
-        { label: 'Remove and re-upload', result: 'remove', variant: 'flat', bgColor: '#e53935' },
+        { label: 'Remove and re-upload', result: 'remove', variant: 'flat', color: 'warn' },
       ],
     };
 
@@ -466,23 +510,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   }
 
   async confirmDocuments(): Promise<void> {
-    const rows = this.documents()
-      .filter((d) => d.status === 'passed')
-      .map((d) => ({
-        title: d.title,
-        fileName: d.fileName,
-        version: d.versionLabel,
-        uploaderLabel: this.uploaderLabel(d),
-        byTeammate: !!d.uploaderUserId && d.uploaderUserId !== this.getLoggedInUserId(),
-      }));
-
     const confirmData: UlbFormsDialogData = {
-      title: 'Review before submitting',
+      title: 'Submit to State DMA?',
       description:
-        'All documents have passed validation. Check that each document is correct before submitting to State DMA.',
-      table: rows,
+        "You're about to send this document set to the State DMA for review. Once submitted, the documents cannot be revised until the State DMA sends back for corrections.",
+      declaration: {
+        heading: 'Self-declaration by the Executive Officer / Municipal Commissioner of the ULB.',
+        body: 'I certify that the uploaded financial statements are true, accurate, and verified by me, and I authorize this information to be made available for public disclosure on the CityFinance website.',
+      },
       buttons: [
-        { label: 'Go back', result: 'back', variant: 'stroked' },
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
         { label: 'Submit to State DMA', result: 'submit', variant: 'flat' },
       ],
     };
@@ -492,7 +529,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
           data: confirmData,
           disableClose: true,
-          width: '600px',
+          width: '500px',
           maxWidth: '95vw',
           maxHeight: '90vh',
           panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
@@ -508,7 +545,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
 
     try {
-      await firstValueFrom(this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section }));
+      await firstValueFrom(
+        this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section, selfDeclared: true }),
+      );
       this.router.navigate(['../ulb-forms'], { relativeTo: this.route });
     } catch (err) {
       console.error('[submit] failed to submit section', err);
@@ -589,7 +628,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             fileSize: null,
             sizeKb: cu.file.sizeKb,
             localPreviewUrl: null,
-            pageCount: cu.file.pages,
+            pageCount: cu.file.pageCount,
             mimeType: cu.file.mimeType,
             versionLabel: cu.versionLabel,
             uploadedAt: new Date(cu.uploadedAt),
@@ -803,8 +842,6 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private roleLabel(role: string): string {
     const map: Record<string, string> = {
       ULB: 'ULB User',
-      'ULB-EDITOR': 'ULB Editor',
-      'ULB-VIEWER': 'ULB Viewer',
       STATE: 'State User',
     };
     return map[role] ?? role;

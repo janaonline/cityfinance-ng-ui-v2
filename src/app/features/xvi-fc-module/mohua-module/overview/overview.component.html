@@ -1,0 +1,225 @@
+<div class="ov-page container-xl py-4">
+
+  <!-- ══ PAGE HEADER ══════════════════════════════════════════════════════ -->
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-speedometer2 text-primary fs-5" aria-hidden="true"></i>
+      <h1 class="h5 fw-bold mb-0">Overview</h1>
+    </div>
+    @if (yearLabel()) {
+      <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary fw-semibold px-3 py-2 border border-primary border-opacity-25"
+            style="font-size:0.75rem">
+        <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>{{ yearLabel() }}
+      </span>
+    }
+  </div>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <p class="text-muted small mb-0">XVI Finance Commission &mdash; Ministry of Housing and Urban Affairs</p>
+    @if (subRoleLabel()) {
+      <span class="role-chip {{ subRoleBadgeClass() }}">{{ subRoleLabel() }}</span>
+    }
+  </div>
+
+  <!-- ══ GREETING BANNER ══════════════════════════════════════════════════ -->
+  <div class="ov-greeting card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <h2 class="h5 fw-bold mb-1 text-white">
+            Welcome back, {{ displayName() }}
+            <i class="bi bi-hand-wave ms-1" aria-hidden="true"></i>
+          </h2>
+          @if (user().designation) {
+            <p class="mb-0 text-white text-opacity-75 small">{{ user().designation }}</p>
+          }
+          <p class="mb-0 mt-2 text-white text-opacity-75 small">
+            Here&rsquo;s a snapshot of XVI FC grant activities requiring your attention today.
+          </p>
+        </div>
+        <div class="d-none d-md-flex align-items-center justify-content-center"
+             style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.12)">
+          <i class="bi bi-building-fill-gear fs-2 text-white text-opacity-60" aria-hidden="true"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ KPI STAT CARDS ══════════════════════════════════════════════════ -->
+  <div class="row g-3 mb-4">
+    @for (card of kpiCards(); track card.label) {
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+          <div class="card-body d-flex align-items-center gap-3 p-3">
+            <div class="ov-stat-icon {{ card.bgClass }} rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
+              <i class="bi {{ card.icon }} {{ card.colorClass }} fs-5" aria-hidden="true"></i>
+            </div>
+            <div class="overflow-hidden">
+              <p class="text-muted small mb-0 text-truncate">{{ card.label }}</p>
+              <p class="fw-bold fs-4 mb-0 lh-1 mt-1">{{ card.value }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ══ MAIN CONTENT GRID ═══════════════════════════════════════════════ -->
+  <div class="row g-4">
+
+    <!-- ── Quick Actions ─────────────────────────────────────────────── -->
+    <div class="col-lg-7">
+      <mat-card appearance="outlined" class="h-100">
+        <mat-card-header>
+          <mat-card-title class="d-flex align-items-center gap-2 ov-section-title">
+            <i class="bi bi-lightning-charge-fill text-primary" aria-hidden="true"></i>
+            Quick Actions
+          </mat-card-title>
+          <mat-card-subtitle class="mt-1">Role-based actions available to you</mat-card-subtitle>
+        </mat-card-header>
+        <mat-divider />
+        <mat-card-content class="pt-3 pb-2">
+          <div class="d-flex flex-column gap-3">
+            @for (action of visibleActions(); track action.label) {
+              <div class="ov-action-card card rounded-3 p-3"
+                   [class.ov-action-card--muted]="action.disabled">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="ov-action-icon bg-primary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="bi {{ action.icon }} text-primary fs-5" aria-hidden="true"></i>
+                  </div>
+                  <div class="flex-grow-1 overflow-hidden">
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                      <p class="fw-semibold mb-0 small">{{ action.label }}</p>
+                      @if (action.disabled) {
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill"
+                              style="font-size:0.65rem;padding:3px 8px">Coming Soon</span>
+                      }
+                    </div>
+                    <p class="text-muted mb-2" style="font-size:0.8rem">{{ action.description }}</p>
+                    @if (action.disabled) {
+                      <button class="btn btn-sm btn-outline-secondary" disabled
+                              [matTooltip]="action.disabledReason ?? ''"
+                              matTooltipPosition="above"
+                              aria-disabled="true">
+                        <i class="bi bi-lock me-1" aria-hidden="true"></i>Locked
+                      </button>
+                    } @else {
+                      <button [class]="getActionBtnClass(action.variant) + ' btn-sm'"
+                              (click)="navigateTo(action.route)"
+                              type="button">
+                        <i class="bi {{ action.icon }} me-1" aria-hidden="true"></i>
+                        Go to {{ action.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (visibleActions().length === 0) {
+              <div class="text-center py-4 text-muted">
+                <i class="bi bi-shield-check fs-2 d-block mb-2 opacity-50" aria-hidden="true"></i>
+                <p class="small mb-0">No actions are available for your current role.</p>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- ── Right Panel ──────────────────────────────────────────────── -->
+    <div class="col-lg-5 d-flex flex-column gap-4">
+
+      <!-- Notices -->
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title class="d-flex align-items-center gap-2 ov-section-title">
+            <i class="bi bi-bell-fill text-warning" aria-hidden="true"></i>
+            Notices &amp; Updates
+          </mat-card-title>
+        </mat-card-header>
+        <mat-divider />
+        <mat-card-content class="pt-3 pb-2">
+          <div class="d-flex flex-column gap-2">
+            @for (notice of notices(); track notice.text) {
+              <div class="alert {{ getNoticeAlertClass(notice.type) }} d-flex align-items-start gap-2 py-2 px-3 mb-0 rounded-3"
+                   role="alert">
+                <i class="bi {{ notice.icon }} flex-shrink-0 mt-1 small" aria-hidden="true"></i>
+                <span style="font-size:0.8rem">{{ notice.text }}</span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Submission Progress -->
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title class="d-flex align-items-center gap-2 ov-section-title">
+            <i class="bi bi-bar-chart-fill text-primary" aria-hidden="true"></i>
+            Submission Progress
+          </mat-card-title>
+          <mat-card-subtitle class="mt-1">Across all 36 states &amp; UTs</mat-card-subtitle>
+        </mat-card-header>
+        <mat-divider />
+        <mat-card-content class="pt-3 pb-2">
+
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Submitted</span>
+            <span class="small fw-semibold">28 / 36</span>
+          </div>
+          <div class="progress rounded-pill mb-3" style="height:8px" role="progressbar"
+               aria-label="States submitted" aria-valuenow="28" aria-valuemin="0" aria-valuemax="36">
+            <div class="progress-bar bg-primary" [style.width.%]="(28 / 36) * 100"></div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Approved</span>
+            <span class="small fw-semibold">8 / 28</span>
+          </div>
+          <div class="progress rounded-pill mb-3" style="height:8px" role="progressbar"
+               aria-label="Submissions approved" aria-valuenow="8" aria-valuemin="0" aria-valuemax="28">
+            <div class="progress-bar bg-success" [style.width.%]="(8 / 28) * 100"></div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Action Needed</span>
+            <span class="small fw-semibold">4 / 28</span>
+          </div>
+          <div class="progress rounded-pill mb-3" style="height:8px" role="progressbar"
+               aria-label="Submissions needing action" aria-valuenow="4" aria-valuemin="0" aria-valuemax="28">
+            <div class="progress-bar bg-danger" [style.width.%]="(4 / 28) * 100"></div>
+          </div>
+
+          <mat-divider class="mb-3" />
+
+          <p class="mb-2 text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em">
+            States needing attention
+          </p>
+          <div class="d-flex flex-wrap gap-2">
+            @for (state of ['Bihar', 'Uttar Pradesh', 'Rajasthan', 'Madhya Pradesh']; track state) {
+              <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1"
+                    style="font-size:0.72rem">
+                <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ state }}
+              </span>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+  </div>
+
+  <!-- ══ COMING SOON FOOTER ════════════════════════════════════════════════ -->
+  <div class="card border rounded-3 mt-4 bg-light">
+    <div class="card-body d-flex align-items-center gap-3 py-3 px-4">
+      <i class="bi bi-bar-chart-line text-secondary fs-4 flex-shrink-0 opacity-50" aria-hidden="true"></i>
+      <div>
+        <p class="fw-semibold mb-0 small text-secondary">Detailed analytics coming soon</p>
+        <p class="text-muted mb-0" style="font-size:0.78rem">
+          State-wise timelines, grant disbursement forecasts, and export reports will be available in a future release.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
