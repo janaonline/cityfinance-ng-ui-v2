@@ -105,7 +105,7 @@ interface BackendStatusDoc {
     uploadId: string;
     version: number;
     versionLabel: string;
-    file: { originalName: string; mimeType: string; pages: number; sizeKb: number };
+    file: { originalName: string; mimeType: string; pageCount: number; sizeKb: number };
     ocrInfo: BackendOcrInfo;
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
@@ -469,7 +469,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         'This document has already passed validation. Removing it will clear the current verification result — the system will run the checks again on your replacement file.',
       buttons: [
         { label: 'Cancel', result: 'cancel', variant: 'stroked' },
-        { label: 'Remove and re-upload', result: 'remove', variant: 'flat', bgColor: '#e53935' },
+        { label: 'Remove and re-upload', result: 'remove', variant: 'flat', color: 'warn' },
       ],
     };
 
@@ -520,7 +520,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       },
       buttons: [
         { label: 'Cancel', result: 'cancel', variant: 'stroked' },
-        { label: 'Submit to State DMA', result: 'submit', variant: 'flat', bgColor: '#6b9b76' },
+        { label: 'Submit to State DMA', result: 'submit', variant: 'flat' },
       ],
     };
 
@@ -628,7 +628,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             fileSize: null,
             sizeKb: cu.file.sizeKb,
             localPreviewUrl: null,
-            pageCount: cu.file.pages,
+            pageCount: cu.file.pageCount,
             mimeType: cu.file.mimeType,
             versionLabel: cu.versionLabel,
             uploadedAt: new Date(cu.uploadedAt),

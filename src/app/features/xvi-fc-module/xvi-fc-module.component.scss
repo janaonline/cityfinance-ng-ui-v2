@@ -1,5 +1,6 @@
 :host {
   display: block;
+  flex: 1 1 auto;
   min-height: 100%;
   overflow-x: clip;
 }
@@ -12,6 +13,7 @@
 .component-menu-col {
   flex: 0 0 auto;
   min-width: 0;
+  min-height: 100vh;
   background-color: var(--color-primary);
 }
 
