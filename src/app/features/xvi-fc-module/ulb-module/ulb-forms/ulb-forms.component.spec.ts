@@ -141,7 +141,10 @@ describe('UlbFormsComponent', () => {
     expect(router.navigate).toHaveBeenCalledOnceWith(['xvi-fc-bank-account'], { relativeTo: parentRoute });
   });
 
-  it('keeps Balance Disclosure submitted behaviour unchanged', () => {
+  // The 'unspent-balance' condition row is currently commented out of CONDITION_GROUPS in
+  // ulb-forms.component.ts (feature temporarily disabled), so this row does not render. Re-enable
+  // this test once that condition is uncommented again.
+  xit('keeps Balance Disclosure submitted behaviour unchanged', () => {
     createComponent(
       baseStatus({
         unspentBalanceDisclosure: { form_status: 'SUBMITTED', form_status_id: null },

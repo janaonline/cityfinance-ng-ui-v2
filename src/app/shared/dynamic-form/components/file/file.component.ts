@@ -14,7 +14,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl, FormGroup } from '@angular/forms';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { filter, finalize, map, startWith, switchMap, tap } from 'rxjs';
+import { PDFDocument } from 'pdf-lib';
+import { filter, finalize, from, map, startWith, switchMap, tap } from 'rxjs';
 import Swal from 'sweetalert2';
 import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -611,7 +612,11 @@ export class FileComponent implements OnInit {
           this.fileService.newUploadFileToS3(file, uploadTarget.uploadUrl).pipe(
             tap((event) => this.handleUploadEvent(event)),
             filter((event) => event.type === HttpEventType.Response),
-            map(() => this.createUploadedFileValue(file, uploadTarget.storagePath)),
+            switchMap(() =>
+              from(this.resolvePageCount(file)).pipe(
+                map((pageCount) => this.createUploadedFileValue(file, uploadTarget.storagePath, pageCount)),
+              ),
+            ),
           ),
         ),
         finalize(() => this.resetUploadState()),
@@ -719,15 +724,41 @@ export class FileComponent implements OnInit {
    * upload.
    * @param file - Original file selected by the user
    * @param storagePath - Persisted storage path returned by the backend
+   * @param pageCount - Page count resolved for PDF uploads, or `null` when not applicable/unreadable
    * @returns Uploaded file value in the standalone control shape
    */
-  private createUploadedFileValue(file: File, storagePath: string): Exclude<UploadedFileValue, null> {
+  private createUploadedFileValue(
+    file: File,
+    storagePath: string,
+    pageCount: number | null,
+  ): Exclude<UploadedFileValue, null> {
     return {
       fileName: file.name,
       fileUrl: storagePath,
       fileSize: file.size,
+      pageCount,
       ...(file.type ? { mimeType: file.type } : {}),
     };
+  }
+
+  /**
+   * Resolves the page count for PDF uploads so it can be persisted alongside the file metadata.
+   * Non-PDF files, or PDFs that fail to parse, resolve to `null`.
+   * @param file - File selected for upload
+   */
+  private async resolvePageCount(file: File): Promise<number | null> {
+    if (file.type !== 'application/pdf') {
+      return null;
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      return pdfDoc.getPageCount();
+    } catch (error) {
+      console.error('Failed to resolve PDF page count.', error);
+      return null;
+    }
   }
 
   /**

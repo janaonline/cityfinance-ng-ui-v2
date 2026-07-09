@@ -357,12 +357,59 @@ export class DynamicFormService {
   }
 
   serializeFieldValue(field: Pick<FieldConfig, 'formFieldType'>, value: unknown): unknown {
+    if (field.formFieldType === 'file') {
+      return this.serializeFileFieldValue(value);
+    }
+
     if (field.formFieldType !== 'date') {
       return value;
     }
 
     const serializedDate = toUtcIsoDateString(value);
     return serializedDate === undefined ? value : serializedDate;
+  }
+
+  /**
+   * Converts the dynamic-form file control value into the `CommonFile` shape expected by the
+   * backend (`originalName`, `path`, `mimeType`, `extension`, `sizeKb`), instead of the
+   * `{ fileName, fileUrl, fileSize, mimeType }` shape used internally by the file control.
+   */
+  private serializeFileFieldValue(value: unknown): unknown {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const rawValue = value as Record<string, unknown>;
+    const fileName =
+      this.getNonEmptyString(rawValue['fileName']) ?? this.getNonEmptyString(rawValue['name']);
+    const fileUrl =
+      this.getNonEmptyString(rawValue['fileUrl']) ?? this.getNonEmptyString(rawValue['url']);
+
+    if (!fileName || !fileUrl) {
+      return null;
+    }
+
+    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
+    const mimeType = this.getNonEmptyString(rawValue['mimeType']) ?? '';
+    const pageCount = this.normalizeFileSize(rawValue['pageCount'] ?? rawValue['pages'] ?? rawValue['noOfPage']);
+
+    return {
+      originalName: fileName,
+      path: fileUrl,
+      mimeType,
+      extension: this.getFileExtension(fileName),
+      sizeKb: fileSize === null ? 0 : this.bytesToKb(fileSize),
+      pageCount,
+    };
+  }
+
+  private getFileExtension(fileName: string): string {
+    const parts = fileName.split('.');
+    return parts.length > 1 ? (parts.pop() ?? '').toLowerCase() : '';
+  }
+
+  private bytesToKb(bytes: number): number {
+    return Math.round((bytes / 1024) * 100) / 100;
   }
 
   /**
@@ -406,11 +453,13 @@ export class DynamicFormService {
 
     const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
     const mimeType = this.getNonEmptyString(rawValue['mimeType']);
+    const pageCount = this.normalizeFileSize(rawValue['pageCount'] ?? rawValue['pages'] ?? rawValue['noOfPage']);
 
     return {
       fileName: fileName ?? this.getFileNameFromUrl(fileUrl),
       fileUrl: fileUrl ?? '',
       fileSize,
+      pageCount,
       ...(mimeType ? { mimeType } : {}),
     };
   }
