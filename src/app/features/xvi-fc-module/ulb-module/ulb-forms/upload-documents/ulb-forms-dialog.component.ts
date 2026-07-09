@@ -1,5 +1,4 @@
 import { Component, inject, signal } from '@angular/core';
-import { NgClass, NgStyle } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -11,10 +10,8 @@ export interface UlbFormsDialogButton {
   label: string;
   result: string;
   variant: 'flat' | 'stroked' | 'text';
-  /** Background hex for flat buttons, e.g. '#e53935'. Defaults to app primary. */
-  bgColor?: string;
-  /** Text color for flat buttons. Defaults to '#fff'. */
-  textColor?: string;
+  /** Material theme palette for flat buttons. Defaults to 'primary' (the app's own theme color). */
+  color?: 'primary' | 'accent' | 'warn';
 }
 
 export interface UlbFormsDialogDeclaration {
@@ -37,15 +34,20 @@ export interface UlbFormsDialogData {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Pass as panelClass to every dialog.open() using this component. */
-export const ULB_FORMS_DIALOG_PANEL_CLASS = 'ulb-forms-dialog-panel';
+/**
+ * Pass as panelClass to every dialog.open() using this component.
+ * Includes 'xvifc-theme' so the CDK overlay (rendered outside the xvi-fc
+ * component tree) still inherits the app's own M3 palette instead of the
+ * global default theme.
+ */
+export const ULB_FORMS_DIALOG_PANEL_CLASS = ['ulb-forms-dialog-panel', 'xvifc-theme'];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-ulb-forms-dialog',
   standalone: true,
-  imports: [NgClass, NgStyle, MatDialogModule, MatButtonModule, MatCheckboxModule, MatIconModule],
+  imports: [MatDialogModule, MatButtonModule, MatCheckboxModule, MatIconModule],
   template: `
     <div class="ulb-dialog">
 
@@ -66,7 +68,7 @@ export const ULB_FORMS_DIALOG_PANEL_CLASS = 'ulb-forms-dialog-panel';
       @if (data.declaration; as declaration) {
         <div class="ulb-dialog__declaration">
           <mat-checkbox [checked]="declared()" (change)="declared.set($event.checked)">
-            <strong>{{ declaration.heading }}</strong> {{ declaration.body }}
+            {{ declaration.heading }} {{ declaration.body }}
           </mat-checkbox>
         </div>
       }
@@ -74,15 +76,16 @@ export const ULB_FORMS_DIALOG_PANEL_CLASS = 'ulb-forms-dialog-panel';
       <!-- Buttons -->
       <div
         class="ulb-dialog__actions"
-        [ngClass]="data.buttonLayout === 'column' ? 'ulb-dialog__actions--col' : 'ulb-dialog__actions--row'"
+        [class.ulb-dialog__actions--col]="data.buttonLayout === 'column'"
+        [class.ulb-dialog__actions--row]="data.buttonLayout !== 'column'"
       >
         @for (btn of data.buttons; track btn.result) {
           @if (btn.variant === 'flat') {
             <button
               mat-flat-button
               type="button"
+              [color]="btn.color ?? 'primary'"
               [disabled]="!!data.declaration && !declared()"
-              [ngStyle]="{ background: btn.bgColor ?? '#1e3a8a', color: btn.textColor ?? '#fff' }"
               (click)="close(btn.result)"
             >{{ btn.label }}</button>
           } @else if (btn.variant === 'stroked') {
