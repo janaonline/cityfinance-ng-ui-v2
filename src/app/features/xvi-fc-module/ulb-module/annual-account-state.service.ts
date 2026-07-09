@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { FormStatusType } from './ulb-forms/xvi-fc-bank-account/xvi-fc-bank-account.models';
 
 export interface FormStatusData {
   annualAccountId: string | null;
@@ -10,6 +11,10 @@ export interface FormStatusData {
   unspentBalanceDisclosure: {
     form_status: 'NOT_STARTED' | 'SUBMITTED';
     form_status_id: null;
+  };
+  xviFcBankAccount?: {
+    form_status: FormStatusType;
+    form_status_id: number | null;
   };
 }
 
@@ -26,15 +31,13 @@ function unwrap<T>(response: unknown): T {
 export class AnnualAccountStateService {
   private readonly http = inject(HttpClient);
 
-  readonly formStatus  = signal<FormStatusData | null>(null);
-  readonly loadError   = signal<string | null>(null);
+  readonly formStatus = signal<FormStatusData | null>(null);
+  readonly loadError = signal<string | null>(null);
 
   async loadFormStatus(ulbId: string, designYearId: string): Promise<void> {
     this.loadError.set(null);
     try {
-      const result = await firstValueFrom(
-        this.http.get<unknown>(`${API}xvi-fc/form-status/${ulbId}/${designYearId}`),
-      );
+      const result = await firstValueFrom(this.http.get<unknown>(`${API}xvi-fc/form-status/${ulbId}/${designYearId}`));
       this.formStatus.set(unwrap<FormStatusData>(result));
     } catch (err) {
       if (err instanceof HttpErrorResponse && err.status === 404) {

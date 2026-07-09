@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Subscription, filter, fromEvent, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -93,6 +93,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   readonly editingAccountant = signal(false);
 
   private static readonly NAME_PATTERN = /^[a-zA-Z\s.\-']+$/;
+  private static readonly PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!])/;
 
   readonly commissionerForm = this.fb.nonNullable.group({
     commissionerName: ['', [
@@ -138,11 +139,52 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   // C2 — resend cooldown countdown (seconds)
   readonly resendCooldown = signal(0);
 
+  // ── New-user onboarding ──────────────────────────────────────
+  readonly isNewUser = signal(false);
+  readonly passwordStep = signal(false);
+  readonly showNewPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
+  private profileSaveToken = '';
+
+  private passwordsMatch(group: AbstractControl): ValidationErrors | null {
+    const pass = group.get('newPassword')?.value as string;
+    const confirm = group.get('confirmPassword')?.value as string;
+    return pass && confirm && pass !== confirm ? { passwordsMismatch: true } : null;
+  }
+
+  readonly passwordForm = this.fb.nonNullable.group(
+    {
+      newPassword: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(ProfileVerificationComponent.PASSWORD_PATTERN),
+      ]],
+      confirmPassword: ['', [Validators.required]],
+    },
+    { validators: this.passwordsMatch },
+  );
+
+  private readonly _passwordFormStatus = toSignal(this.passwordForm.statusChanges, {
+    initialValue: this.passwordForm.status as FormControlStatus,
+  });
+
+  readonly canSetNewPassword = computed(
+    () => this._passwordFormStatus() === 'VALID' && !this.isSaving(),
+  );
+
   readonly stateForm = this.fb.nonNullable.group({
-    name: ['', [
+    firstName: ['', [
       Validators.required,
       Validators.minLength(2),
-      Validators.maxLength(100),
+      Validators.maxLength(50),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    lastName: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(50),
       Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
       noHtmlOrScript,
       noMongoOperators,
@@ -156,6 +198,12 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       noMongoOperators,
     ]],
   });
+
+  get fullName(): string {
+    const f = this.stateForm.value.firstName ?? '';
+    const l = this.stateForm.value.lastName ?? '';
+    return (f + (f && l ? ' ' : '') + l) || '—';
+  }
 
   private readonly _stateFormStatus = toSignal(this.stateForm.statusChanges, {
     initialValue: this.stateForm.status as FormControlStatus,
@@ -199,8 +247,10 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.role = ROLE_MAP[rawRole] ?? 'state';
     this.routeRole = ROUTE_ROLE_MAP[rawRole] ?? 'STATE';
     this.userId = stored._id ?? stored.id ?? '';
+    this.isNewUser.set(stored['isNewUser'] === true);
 
-    if (this.isAlreadyVerified()) {
+    // New users must complete the onboarding flow regardless of isXVIFCProfileVerified
+    if (!this.isNewUser() && this.isAlreadyVerified()) {
       void this.navigateToHome();
       return;
     }
@@ -269,9 +319,18 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.isSaving.set(true);
     this.errorMsg.set('');
 
+    // Always send all commissioner fields even when empty — backend transforms "" → null
+    // so the DB field is explicitly cleared rather than left with its old value.
+    const commRaw = this.commissionerForm.getRawValue();
+    const commissionerPayload = {
+      commissionerName: commRaw.commissionerName,
+      commissionerEmail: commRaw.commissionerEmail,
+      commissionerConatactNumber: commRaw.commissionerConatactNumber,
+    };
+
     this.profileService
       .saveUlbContacts(this.userId, {
-        ...this.commissionerForm.getRawValue(),
+        ...commissionerPayload,
         ...this.accountantForm.getRawValue(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -295,14 +354,20 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   // ── State / MoHUA methods ────────────────────────────────────
   private loadStateProfile(stored?: Record<string, unknown>): void {
     const user = stored ?? this.profileService.readStoredUser();
+    const fullName = ((user['name'] as string) ?? '').trim();
+    const spaceIdx = fullName.indexOf(' ');
+    const firstName = spaceIdx >= 0 ? fullName.slice(0, spaceIdx).trim() : fullName;
+    const lastName = spaceIdx >= 0 ? fullName.slice(spaceIdx + 1).trim() : '';
     const profile: StateProfile = {
-      name: (user['name'] as string) ?? '',
+      name: fullName,
+      firstName,
+      lastName,
       email: (user['email'] as string) ?? '',
       mobile: ((user['mobile'] as string) ?? ''),
       designation: (user['designation'] as string) ?? '',
     };
     this.stateProfile.set(profile);
-    this.stateForm.patchValue(profile);
+    this.stateForm.patchValue({ firstName, lastName, email: profile.email, mobile: profile.mobile, designation: profile.designation });
     this.stateForm.markAllAsTouched();
     this.isLoading.set(false);
   }
@@ -352,23 +417,65 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     const otp = this.otpValue();
     if (!/^\d{6}$/.test(otp)) return; // H3
 
-    // H2 — guard empty email
     const email = this.stateProfile()?.email ?? '';
-    if (!email) {
-      this.errorMsg.set('No email address found. Please log in again.');
-      return;
-    }
-    // H4 — guard empty userId
-    if (!this.userId) {
-      this.errorMsg.set('Session expired. Please log in again.');
-      return;
-    }
+    if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
+    if (!this.userId) { this.errorMsg.set('Session expired. Please log in again.'); return; }
 
-    const { name, mobile, designation } = this.stateForm.getRawValue();
+    const { firstName, lastName, mobile, designation } = this.stateForm.getRawValue();
+    const name = [firstName, lastName].filter(Boolean).join(' ');
     this.isSaving.set(true);
     this.errorMsg.set('');
 
-    // C3 — flat pipe chain (no nested subscribes); C1 — issue save token after OTP
+    if (this.role === 'mohua') {
+      // MOHUA: OTP verify → issue save token → if isNewUser: set password; else: mark verified
+      this.profileService.verifyProfileOtp(email, otp).pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter(({ verified }) => {
+          if (!verified) {
+            this.isSaving.set(false);
+            this.errorMsg.set('Invalid or expired OTP. Please check your email and try again.');
+          }
+          return verified;
+        }),
+        switchMap(() => this.profileService.issueProfileSaveToken(this.userId)),
+        filter(({ token }) => {
+          if (!token) {
+            this.isSaving.set(false);
+            this.errorMsg.set('Could not secure save session. Please verify your email again.');
+          }
+          return token.length > 0;
+        }),
+      ).subscribe({
+        next: ({ token }) => {
+          if (this.isNewUser()) {
+            this.isSaving.set(false);
+            this.profileSaveToken = token;
+            this.passwordStep.set(true);
+          } else {
+            this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token, { isXviFcdeleted: false })
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe({
+                next: ({ ok }) => {
+                  if (!ok) {
+                    this.isSaving.set(false);
+                    this.errorMsg.set('Profile save failed. Please try again.');
+                    return;
+                  }
+                  this.markVerifiedInStorage();
+                  this.snackBar.open('Email verified successfully!', 'Close', {
+                    duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+                    panelClass: ['snack-success'],
+                  });
+                  void this.navigateToHome();
+                },
+              });
+          }
+        },
+      });
+      return;
+    }
+
+    // STATE: OTP verify → issue save token → if isNewUser: show password step; else: save profile
     this.profileService.verifyProfileOtp(email, otp).pipe(
       takeUntilDestroyed(this.destroyRef),
       filter(({ verified }) => {
@@ -386,26 +493,79 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
         }
         return token.length > 0;
       }),
-      switchMap(({ token }) =>
-        this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token),
-      ),
     ).subscribe({
-      next: ({ ok }) => {
-        if (!ok) {
+      next: ({ token }) => {
+        if (this.isNewUser()) {
           this.isSaving.set(false);
-          this.errorMsg.set('Profile save failed. Please try again.');
-          return;
+          this.profileSaveToken = token;
+          this.passwordStep.set(true);
+        } else {
+          this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: ({ ok }) => {
+                if (!ok) {
+                  this.isSaving.set(false);
+                  this.errorMsg.set('Profile save failed. Please try again.');
+                  return;
+                }
+                this.stateProfile.set({ name, firstName, lastName, mobile, designation, email });
+                this.markVerifiedInStorage({ name, mobile, designation });
+                this.snackBar.open('Profile verified successfully!', 'Close', {
+                  duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+                  panelClass: ['snack-success'],
+                });
+                void this.navigateToHome();
+              },
+            });
         }
-        // M1 — update sidebar signal with saved values
-        this.stateProfile.set({ name, mobile, designation, email });
-        this.markVerifiedInStorage({ name, mobile, designation });
-        this.snackBar.open('Profile verified successfully!', 'Close', {
-          duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
-          panelClass: ['snack-success'],
-        });
-        void this.navigateToHome();
       },
     });
+  }
+
+  onSetNewPassword(): void {
+    if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
+    const { newPassword } = this.passwordForm.getRawValue();
+    const { firstName, lastName, mobile, designation } = this.stateForm.getRawValue();
+    const name = [firstName, lastName].filter(Boolean).join(' ');
+    const email = this.stateProfile()?.email ?? '';
+    this.isSaving.set(true);
+    this.errorMsg.set('');
+
+    const token = this.profileSaveToken;
+
+    if (this.role === 'mohua') {
+      this.profileService.setNewPassword(newPassword, token)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ({ ok }) => {
+            if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
+            this.markVerifiedInStorage({ name, mobile, designation });
+            this.snackBar.open('Password set! Welcome to CityFinance.', 'Close', {
+              duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+              panelClass: ['snack-success'],
+            });
+            void this.navigateToHome();
+          },
+        });
+      return;
+    }
+
+    // STATE: set password + save profile fields in one call (single-use token)
+    this.profileService.setNewPassword(newPassword, token, { name, mobile, designation })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ ok }) => {
+          if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
+          this.stateProfile.set({ name, firstName, lastName, mobile, designation, email });
+          this.markVerifiedInStorage({ name, mobile, designation });
+          this.snackBar.open('Profile verified successfully!', 'Close', {
+            duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
+          void this.navigateToHome();
+        },
+      });
   }
 
   resendOtp(): void {
@@ -454,6 +614,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       if (raw) {
         const user = JSON.parse(raw) as Record<string, unknown>;
         user['isXVIFCProfileVerified'] = true;
+        user['isNewUser'] = false;
         if (profileUpdates) {
           if (profileUpdates.name !== undefined) user['name'] = profileUpdates.name;
           if (profileUpdates.mobile !== undefined) user['mobile'] = profileUpdates.mobile;
@@ -465,6 +626,9 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   }
 
   private navigateToHome(): Promise<boolean> {
+    if (this.role === 'mohua') {
+      return this.router.navigate(['/xvifc', this.year], { replaceUrl: true });
+    }
     return this.router.navigate(
       buildXvifcFeatureLink(this.routeRole, this.entityId, this.year, 'overview'),
       { replaceUrl: true },

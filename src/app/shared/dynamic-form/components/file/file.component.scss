@@ -150,11 +150,21 @@
   border-width: 2px;
   background-color: transparent;
 
-  &.file-color-primary { border-color: var(--bs-primary); }
-  &.file-color-success { border-color: var(--bs-success); }
-  &.file-color-warning { border-color: var(--bs-warning); }
-  &.file-color-danger { border-color: var(--bs-danger); }
-  &.file-color-secondary { border-color: var(--bs-secondary); }
+  &.file-color-primary {
+    border-color: var(--bs-primary);
+  }
+  &.file-color-success {
+    border-color: var(--bs-success);
+  }
+  &.file-color-warning {
+    border-color: var(--bs-warning);
+  }
+  &.file-color-danger {
+    border-color: var(--bs-danger);
+  }
+  &.file-color-secondary {
+    border-color: var(--bs-secondary);
+  }
 }
 
 @keyframes file-dropzone-shake {

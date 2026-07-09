@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div class="simulator-card rounded-3 p-3 mb-3 mat-elevation-z2">
+    <!-- <div class="simulator-card rounded-3 p-3 mb-3 mat-elevation-z2">
       <p class="section-title fw-bold mb-1">Try the "What if" simulator</p>
       <p class="simulator-subtitle body-sm mb-2">
         Select a scenario to understand how it affects your grant eligibility and what actions can improve your chances.
@@ -55,7 +55,7 @@
           <p class="simulator-desc rounded-2 p-2 body-xs mb-0">{{ result.description }}</p>
         </div>
       }
-    </div>
+    </div> -->
 
     <div class="mb-3">
       <div class="d-flex justify-content-between align-items-center mb-1">
@@ -69,7 +69,7 @@
 
       @for (group of conditionGroups; track group.deadline) {
         <div class="d-flex align-items-center gap-2 mb-2 mt-3">
-          <span class="conditions-meta-label text-uppercase fw-bold">CONDITIONS TO BE MET BY</span>
+          <span class="conditions-meta-label text-uppercase fw-bold">CONDITIONS TO BE MET FOR </span>
           <span class="conditions-deadline-badge">{{ group.deadline }}</span>
         </div>
 
@@ -78,12 +78,11 @@
             @let effectiveStatus = resolveStatus(condition);
             @let submitted = isSubmitted(condition);
             <div class="condition-row d-flex align-items-center gap-3 px-3 py-2" [class.border-bottom]="!last">
-
               @if (effectiveStatus === 'complete') {
                 <span class="condition-icon condition-icon--complete flex-shrink-0">
                   <mat-icon>check</mat-icon>
                 </span>
-              } @else if (effectiveStatus === 'pending') {
+              } @else if (effectiveStatus === 'pending' || effectiveStatus === 'Awaiting State Upload') {
                 <span class="condition-icon condition-icon--pending flex-shrink-0" aria-hidden="true"></span>
               } @else {
                 <span class="condition-icon condition-icon--locked flex-shrink-0" aria-hidden="true"></span>
@@ -104,7 +103,9 @@
                     mat-icon-button
                     class="preview-icon-btn"
                     type="button"
-                    matTooltip="View uploaded documents"
+                    [matTooltip]="
+                      condition.id === 'xvi-fc-bank-account' ? 'View Bank Account Details' : 'View uploaded documents'
+                    "
                     (click)="navigateTo(condition.route!)"
                   >
                     <mat-icon class="preview-icon">visibility</mat-icon>
@@ -124,22 +125,24 @@
                 >
                   {{ condition.actionLabel }}
                 </button>
+              } @else if (effectiveStatus === 'Awaiting State Upload') {
+                <span class="awaiting-state-badge flex-shrink-0">
+                  AWAITING STATE UPLOAD
+                </span>
               } @else {
                 <button mat-stroked-button class="not-yet-open-btn flex-shrink-0" type="button" disabled>
                   Not yet open
                 </button>
               }
-
             </div>
           }
         </div>
       }
 
-      <div class="conditions-footer-note d-flex align-items-start gap-2 rounded-3 px-3 py-2">
+      <!-- <div class="conditions-footer-note d-flex align-items-start gap-2 rounded-3 px-3 py-2">
         <mat-icon class="conditions-footer-note__icon flex-shrink-0">info</mat-icon>
         <p class="body-xs mb-0">{{ conditionsFooterNote }}</p>
-      </div>
+      </div> -->
     </div>
-
   }
 </div>

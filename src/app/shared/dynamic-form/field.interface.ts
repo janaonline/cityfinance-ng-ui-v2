@@ -125,6 +125,7 @@ export type UploadedFileValue = {
   fileUrl: string;
   fileSize: number | null;
   mimeType?: string;
+  pageCount?: number | null;
 } | null;
 
 export interface LegacyFileValue {
@@ -180,6 +181,22 @@ export interface FieldConfig {
   disabled?: boolean;
   /** Explanatory text shown as a hint when the field is disabled by the backend. */
   disabledReason?: string;
+  /** Bootstrap column class controlling this field's width within a `FormSectionGridComponent` row, e.g. 'col-12', 'col-md-6'. */
+  grid?: string;
+  /** Muted text rendered inline next to the field label, e.g. "(if available)". */
+  labelHint?: string;
+  /** Muted helper text rendered below the field control. */
+  hintText?: string;
+  displayInlineLabel?: boolean;
+}
+
+/** One card-sectioned group of fields, rendered by `FormSectionGridComponent`. */
+export interface FormSectionConfig {
+  title: string;
+  icon?: string;
+  /** Muted text rendered inline next to the section title, e.g. "— will be the first login for this ULB". */
+  subtitle?: string;
+  fields: FieldConfig[];
 }
 
 export interface JsonFieldConfig {

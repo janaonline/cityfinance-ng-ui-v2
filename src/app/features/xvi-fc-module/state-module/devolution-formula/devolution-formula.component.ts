@@ -707,12 +707,27 @@ export class DevolutionFormulaComponent implements OnInit {
     return true;
   }
 
+  /**
+   * Returns the visible-field payload with `excelFile` restored to its raw control value.
+   * `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the backend
+   * `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers, but this
+   * form's own contract (`DevolutionFileRef`) expects `{ fileName, fileUrl, ... }`. Without this
+   * override, `isValidDevolutionFileRef` always fails and save-draft/final-submit silently no-op.
+   */
+  private getVisiblePayloadWithRawFile(): Record<string, unknown> {
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    if ('excelFile' in payload) {
+      payload['excelFile'] = this.form.get('excelFile')?.value ?? null;
+    }
+    return payload;
+  }
+
   /** Clears previous API errors, posts the visible payload as a draft, then reloads on success. */
   private executeSaveDraft(): void {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
 
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const visiblePayload = this.getVisiblePayloadWithRawFile();
     const payload: SaveDraftDevolutionPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
@@ -740,7 +755,7 @@ export class DevolutionFormulaComponent implements OnInit {
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
 
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const visiblePayload = this.getVisiblePayloadWithRawFile();
     const finalSubmitData = buildDevolutionFinalSubmitPayloadData(visiblePayload);
 
     if (!finalSubmitData) {

@@ -3,6 +3,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { AuthService } from '../../../../core/services/auth.service';
 import { ReviewStateSubmissionsComponent } from './review-state-submissions.component';
 
 describe('ReviewStateSubmissionsComponent', () => {
@@ -10,7 +11,7 @@ describe('ReviewStateSubmissionsComponent', () => {
   let fixture: ComponentFixture<ReviewStateSubmissionsComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, ReviewStateSubmissionsComponent]
+    await TestBed.configureTestingModule({ providers: [AuthService, { provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, ReviewStateSubmissionsComponent]
     })
     .compileComponents();
 

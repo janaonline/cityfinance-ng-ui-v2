@@ -26,7 +26,7 @@ describe('FileComponent', () => {
   beforeEach(async () => {
     fileService = jasmine.createSpyObj<FileService>('FileService', [
       'checkSpcialCharInFileName',
-      'newGetURLForFileUpload',
+      'getSignedUrls',
       'newUploadFileToS3',
     ]);
     utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', [
@@ -92,23 +92,34 @@ describe('FileComponent', () => {
     fixture.detectChanges();
   }
 
+  /**
+   * Polls with real timers until `predicate` is true, running change detection on each attempt.
+   * Needed because `resolvePageCount()` reads the file via the browser's native `Blob.arrayBuffer()`
+   * and pdf-lib, neither of which are tracked by `fixture.whenStable()` or `fakeAsync`'s virtual clock.
+   */
+  async function waitUntil(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
+    const start = Date.now();
+    while (!predicate()) {
+      if (Date.now() - start > timeoutMs) {
+        throw new Error('Timed out waiting for condition.');
+      }
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      fixture.detectChanges();
+    }
+  }
+
   function mockSuccessfulUpload(storagePath = '/objects/minutes.pdf'): void {
-    fileService.newGetURLForFileUpload.and.returnValue(
-      of({
-        success: true,
-        message: 'ok',
-        data: [
-          {
-            file_name: 'minutes.pdf',
-            mime_type: 'application/pdf',
-            host: '',
-            url: 'https://upload.example.com',
-            path: storagePath,
-            file_url: storagePath,
-            file_alias: storagePath,
-          },
-        ],
-      }),
+    fileService.getSignedUrls.and.returnValue(
+      of([
+        {
+          url: 'https://upload.example.com',
+          fileAlias: storagePath,
+          fileUrl: storagePath,
+          path: storagePath,
+          fileSize: undefined,
+          pages: undefined,
+        },
+      ]),
     );
     fileService.newUploadFileToS3.and.returnValue(
       of(
@@ -133,7 +144,7 @@ describe('FileComponent', () => {
     ).toBe('File is required.');
   });
 
-  it('marks the standalone file control valid after a successful upload', () => {
+  it('marks the standalone file control valid after a successful upload', async () => {
     const field = createField({ validations: [requiredValidation] });
     const group = createGroup(null, [Validators.required]);
     const fileControl = group.get('attachment') as FormControl;
@@ -143,20 +154,21 @@ describe('FileComponent', () => {
     setup(field, group);
 
     component.prepareFilesList(createFileList(file));
-    fixture.detectChanges();
+    await waitUntil(() => fileControl.value !== null);
 
     expect(fileControl.valid).toBeTrue();
     expect(fileControl.value).toEqual({
       fileName: 'minutes.pdf',
       fileUrl: '/objects/minutes.pdf',
       fileSize: file.size,
+      pageCount: null,
       mimeType: 'application/pdf',
     });
     expect(component.showError()).toBeFalse();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('File attached successfully!');
   });
 
-  it('returns the standalone file control to the invalid required state after upload then delete', () => {
+  it('returns the standalone file control to the invalid required state after upload then delete', async () => {
     const field = createField({ validations: [requiredValidation] });
     const group = createGroup(null, [Validators.required]);
     const fileControl = group.get('attachment') as FormControl;
@@ -166,7 +178,7 @@ describe('FileComponent', () => {
     setup(field, group);
 
     component.prepareFilesList(createFileList(file));
-    fixture.detectChanges();
+    await waitUntil(() => fileControl.value !== null);
     component.deleteFile();
     fixture.detectChanges();
 
@@ -388,18 +400,19 @@ describe('FileComponent', () => {
       expect(component.fileVariantClass()).toBe('');
     });
 
-    it('upload behavior is unaffected by appearance configuration', () => {
+    it('upload behavior is unaffected by appearance configuration', async () => {
       const field = createField({
         validations: [requiredValidation],
         appearance: { color: 'primary', variant: 'soft' },
       });
       const group = createGroup(null, [Validators.required]);
       const file = new File(['data'], 'doc.pdf', { type: 'application/pdf' });
+      const fileControl = group.get('attachment') as FormControl;
 
       mockSuccessfulUpload('/objects/doc.pdf');
       setup(field, group);
       component.prepareFilesList(createFileList(file));
-      fixture.detectChanges();
+      await waitUntil(() => fileControl.value !== null);
 
       expect(group.get('attachment')?.valid).toBeTrue();
       expect(component.showError()).toBeFalse();
