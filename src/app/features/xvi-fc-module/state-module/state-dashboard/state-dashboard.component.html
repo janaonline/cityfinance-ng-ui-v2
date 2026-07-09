@@ -1,0 +1,175 @@
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="top-accent"></div>
+  <main class="content-wrap p-3 p-md-4">
+    <div class="content-stack d-flex flex-column gap-4">
+      <header class="dashboard-header">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <span class="text-secondary text-uppercase fw-semibold custom-font-size-7">
+            {{ dashboardData.roleLabel }} &nbsp;&middot;&nbsp; {{ dashboardData.overviewLabel }}
+          </span>
+
+          <mat-chip-set aria-label="Selected financial year">
+            <mat-chip>{{ dashboardData.financialYear }}</mat-chip>
+          </mat-chip-set>
+        </div>
+
+        <h1 class="page-title mb-2">{{ dashboardData.stateName }}</h1>
+        <p class="page-subtitle text-secondary mb-0">
+          State DMA · Grant-processing overview
+        </p>
+      </header>
+
+      <section class="metric-grid" aria-label="State grant metrics">
+        @for (metric of dashboardData.metrics; track metric.key) {
+        <mat-card appearance="outlined" class="metric-card">
+          <mat-card-content>
+            <div class="metric-card__top">
+              <p class="metric-card__label mb-2">{{ metric.label }}</p>
+              <span class="dashboard-icon-badge metric-card__icon" aria-hidden="true">
+                <mat-icon>{{ metricIcon(metric.key) }}</mat-icon>
+              </span>
+            </div>
+            <p class="metric-card__value mb-2">{{ metric.value }}</p>
+            <p class="metric-card__description mb-0">{{ metric.description }}</p>
+          </mat-card-content>
+        </mat-card>
+        }
+      </section>
+
+      <section aria-labelledby="state-data-heading">
+        <mat-card appearance="outlined" class="dashboard-card">
+          <mat-card-header>
+            <mat-card-title id="state-data-heading">Submit your State Data</mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="dashboard-list state-task-list">
+              @for (task of dashboardData.stateDataTasks; track task.key; let isLast = $last) {
+              <div class="state-task-row">
+                <div class="state-task-row__main">
+                  <mat-icon class="task-icon" [class.task-icon--done]="task.status === 'DONE'" aria-hidden="true">
+                    {{ task.status === 'DONE' ? 'check_circle' : 'radio_button_unchecked' }}
+                  </mat-icon>
+
+                  <div class="state-task-row__copy">
+                    <div class="list-title">{{ task.title }}</div>
+                    <div class="list-subtitle">{{ task.subtitle }}</div>
+                  </div>
+                </div>
+
+                <div class="state-task-row__action">
+                  @if (task.status === 'DONE') {
+                  <span class="status-pill status-pill--done">Done</span>
+                  } @else {
+                  <button matButton="text" type="button" class="action-button" (click)="onSubmitOtherStateConditions()"
+                    aria-label="Continue to submit other state conditions" data-cy="state-dashboard-continue">
+                    {{ task.actionLabel }} <span aria-hidden="true">→</span>
+                  </button>
+                  }
+                </div>
+              </div>
+
+              @if (!isLast) {
+              <mat-divider></mat-divider>
+              }
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </section>
+
+      <section aria-labelledby="ulb-submissions-heading">
+        <mat-card appearance="outlined" class="dashboard-card">
+          <mat-card-header>
+            <mat-card-title id="ulb-submissions-heading">Review ULB Submissions</mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="status-grid" aria-label="ULB submission status summary">
+              @for (summary of dashboardData.ulbSubmissionSummary; track summary.key) {
+              <div class="status-tile" [class]="'status-tile status-tile--' + summary.tone">
+                <div class="status-tile__top">
+                  <p class="status-tile__label mb-2">{{ summary.label }}</p>
+                  <span class="dashboard-icon-badge status-tile__icon" aria-hidden="true">
+                    <mat-icon>{{ summaryIcon(summary.tone) }}</mat-icon>
+                  </span>
+                </div>
+                <p class="status-tile__count mb-1">{{ summary.count }}</p>
+                <p class="status-tile__description mb-0">{{ summary.description }}</p>
+              </div>
+              }
+            </div>
+
+            <div class="submission-action">
+              <button matButton="text" type="button" class="action-button action-button--wide"
+                (click)="onViewUlbSubmissions()" aria-label="View ULB submissions"
+                data-cy="state-dashboard-view-ulb-submissions">
+                VIEW ULB SUBMISSIONS <span aria-hidden="true">→</span>
+              </button>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="completion-list" aria-label="Form completion status">
+              @for (row of dashboardData.formCompletionRows; track row.label) {
+              <div class="completion-row">
+                <div class="completion-row__top">
+                  <span>{{ row.label }}</span>
+                  <strong>{{ row.completed }}/{{ row.total }}</strong>
+                </div>
+                <div class="completion-progress" role="progressbar" [attr.aria-label]="row.label + ' completion'"
+                  [attr.aria-valuenow]="row.completed" aria-valuemin="0" [attr.aria-valuemax]="row.total">
+                  <span class="completion-progress__bar" [style.width.%]="completionPercent(row)"></span>
+                </div>
+              </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </section>
+
+      <section aria-labelledby="claim-letters-heading">
+        <mat-card appearance="outlined" class="dashboard-card">
+          <mat-card-header>
+            <mat-card-title id="claim-letters-heading">Claim Letters</mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="dashboard-list claim-letter-list">
+              @for (letter of dashboardData.claimLetters; track letter.key; let isLast = $last) {
+              <div class="claim-letter-row">
+                <div class="claim-letter-row__main">
+                  <mat-icon class="claim-icon" [class.claim-icon--locked]="letter.status === 'LOCKED'"
+                    aria-hidden="true">
+                    {{ letter.status === 'LOCKED' ? 'lock' : 'description' }}
+                  </mat-icon>
+
+                  <div class="claim-letter-row__copy">
+                    <div class="list-title">{{ letter.title }}</div>
+                    <div class="list-subtitle">{{ letter.subtitle }}</div>
+                  </div>
+                </div>
+
+                <div class="claim-letter-row__action">
+                  @if (letter.status === 'LOCKED') {
+                  <span class="status-pill status-pill--locked">Locked</span>
+                  } @else {
+                  <button matButton="text" type="button" class="action-button" (click)="onStartClaimLetter()"
+                    aria-label="Start generating the first claim letter">
+                    {{ letter.actionLabel }} <span aria-hidden="true">→</span>
+                  </button>
+                  }
+                </div>
+              </div>
+
+              @if (!isLast) {
+              <mat-divider></mat-divider>
+              }
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </section>
+    </div>
+  </main>
+</div>
