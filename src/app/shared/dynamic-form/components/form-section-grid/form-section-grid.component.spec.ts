@@ -14,13 +14,12 @@ describe('FormSectionGridComponent', () => {
       title: 'ULB Identity',
       icon: 'bi-bank',
       fields: [
-        { key: 'name', label: 'ULB Name', formFieldType: 'input', required: true, grid: 'col-12', hideLabel: true },
+        { key: 'name', label: 'ULB Name', formFieldType: 'input', required: true, grid: 'col-12' },
         {
           key: 'censusCode',
           label: '2011 Census Code',
           formFieldType: 'input',
           grid: 'col-md-6',
-          hideLabel: true,
           labelHint: '(if available)',
           hintText: 'Not available? Enter 999999 as a 6-digit placeholder.',
         },

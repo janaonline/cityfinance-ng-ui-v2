@@ -600,7 +600,7 @@ export class ElectedBodyStatusComponent implements OnInit {
   /** Clears previous API errors, posts the visible payload as a final submission, then reloads on success. */
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const visiblePayload = this.getVisiblePayloadWithRawFile();
     const finalSubmitData = buildEulbFinalSubmitPayloadData(visiblePayload);
 
     if (!finalSubmitData) {
@@ -746,7 +746,22 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /** Builds the draft payload data from currently visible dynamic-form controls. */
   private getVisibleEulbPayloadData(): EulbFormPayloadData {
-    return buildEulbFormPayloadData(this.visibilityService.getVisiblePayload(this.form, this.fields()));
+    return buildEulbFormPayloadData(this.getVisiblePayloadWithRawFile());
+  }
+
+  /**
+   * Returns the visible-field payload with `electedBodyExcelFile` restored to its raw control
+   * value. `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the
+   * backend `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers,
+   * but EULB's own contract (`EulbFileValue`) expects `{ fileName, fileUrl, ... }`. Without this
+   * override, `isValidEulbFileValue` always fails and save-draft/final-submit silently no-op.
+   */
+  private getVisiblePayloadWithRawFile(): Record<string, unknown> {
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    if ('electedBodyExcelFile' in payload) {
+      payload['electedBodyExcelFile'] = this.form.get('electedBodyExcelFile')?.value ?? null;
+    }
+    return payload;
   }
 
   /**

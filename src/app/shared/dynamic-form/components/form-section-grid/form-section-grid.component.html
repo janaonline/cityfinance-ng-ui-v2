@@ -16,7 +16,8 @@
     <div class="row g-3">
       @for (field of section.fields; track field.key) {
       <div [class]="field.grid || 'col-12'">
-        <!-- <label class="form-section-grid__label">
+        @if (showOwnLabel(field)) {
+        <label class="form-section-grid__label">
           {{ field.label }}
           @if (field.required) {
           <span class="text-danger">*</span>
@@ -24,8 +25,9 @@
           @if (field.labelHint) {
           <span class="text-muted fw-normal"> {{ field.labelHint }}</span>
           }
-        </label> -->
-        <app-dynamic-form [field]="field" [group]="group"></app-dynamic-form>
+        </label>
+        }
+        <app-dynamic-form [field]="fieldForRenderer(field)" [group]="group"></app-dynamic-form>
         @if (field.hintText) {
         <small class="text-body-secondary d-block mt-1">{{ field.hintText }}</small>
         }

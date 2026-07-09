@@ -54,7 +54,7 @@ describe('DynamicFormService', () => {
       value: populatedValue,
     } as FieldConfig);
 
-    expect(control.value).toEqual(populatedValue);
+    expect(control.value).toEqual({ ...populatedValue, pageCount: null });
     expect(control.valid).toBeTrue();
   });
 
@@ -268,11 +268,13 @@ describe('DynamicFormService', () => {
       fileName: 'report.pdf',
       fileUrl: '/docs/report.pdf',
       fileSize: 2048,
+      pageCount: null,
     });
     expect(withUrlOnly.value).toEqual({
       fileName: 'derived.pdf',
       fileUrl: '/docs/derived.pdf?download=true',
       fileSize: null,
+      pageCount: null,
     });
   });
 

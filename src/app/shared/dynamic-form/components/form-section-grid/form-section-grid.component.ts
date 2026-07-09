@@ -3,7 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { MatDividerModule } from '@angular/material/divider';
 import { MaterialModule } from '../../../../material.module';
 import { DynamicFormComponent } from '../../dynamic-form.component';
-import { FormSectionConfig } from '../../field.interface';
+import { FieldConfig, FormSectionConfig } from '../../field.interface';
 
 /**
  * Renders a JSON-driven list of form sections inside a single mat-card, separated by dividers, laying
@@ -34,5 +34,25 @@ export class FormSectionGridComponent {
 
   iconColor(index: number): string {
     return this.iconColors[index % this.iconColors.length];
+  }
+
+  /**
+   * `true` when this component should render the field's label (with required asterisk and
+   * labelHint) itself. Fields using `displayInlineLabel` or `hideLabel` already render (or
+   * intentionally suppress) their own label inside `app-dynamic-form`, so this grid must not
+   * render a second one for them.
+   */
+  showOwnLabel(field: FieldConfig): boolean {
+    return !field.displayInlineLabel && !field.hideLabel;
+  }
+
+  /**
+   * Field config passed to `app-dynamic-form`. When this grid renders the label itself
+   * (see `showOwnLabel`), the child field component's own label is suppressed via `hideLabel`
+   * to avoid rendering the label twice — the same pattern `DynamicFormComponent` uses for its
+   * inline layout.
+   */
+  fieldForRenderer(field: FieldConfig): FieldConfig {
+    return this.showOwnLabel(field) ? { ...field, hideLabel: true } : field;
   }
 }
