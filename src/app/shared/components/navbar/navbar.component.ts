@@ -36,6 +36,7 @@ export class NavbarComponent implements OnInit {
       { name: 'Validation', link: '/ocr/validation' },
       { name: 'Validation List', link: '/ocr/validation-list' },
       { name: 'Eval Benchmarks', link: '/ocr/eval-benchmarks' },
+      { name: 'Compare Runs', link: '/ocr/eval-run-compare' },
     ],
   };
 
