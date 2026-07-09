@@ -1,0 +1,166 @@
+<div class="wrapper app-wrapper">
+  <section class="compare-page">
+
+    <div class="hero-card">
+      <h3>Compare Eval Runs</h3>
+      <p class="subcopy">Pick two completed eval runs to see per-field accuracy deltas and per-job changes.</p>
+
+      <div class="run-id-form">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Run A ID</mat-label>
+          <input matInput [ngModel]="runIdAInput()" (ngModelChange)="runIdAInput.set($event)" placeholder="eval_run_id" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Run B ID</mat-label>
+          <input matInput [ngModel]="runIdBInput()" (ngModelChange)="runIdBInput.set($event)" placeholder="eval_run_id" />
+        </mat-form-field>
+        <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="compare()">
+          @if (loading()) { Comparing... } @else { Compare }
+        </button>
+      </div>
+    </div>
+
+    @if (comparison(); as c) {
+
+      <!-- Run summary badges -->
+      <div class="run-summary-grid">
+        <div class="run-summary-card run-summary-card--a">
+          <div class="col-header-badge col-header-badge--bmk">Run A</div>
+          <div class="mono dim" style="font-size:0.7rem;">{{ c.run_a.eval_run_id }}</div>
+          <span class="status-badge" [ngClass]="getStatusClass(c.run_a.status)">{{ c.run_a.status | titlecase }}</span>
+          <div class="run-summary-meta">
+            <span>Extract: {{ c.run_a.extraction_model }}</span>
+            <span>Validate: {{ c.run_a.validation_model }}</span>
+            <span>{{ formatDate(c.run_a.created_at) }}</span>
+          </div>
+        </div>
+        <div class="run-summary-card run-summary-card--b">
+          <div class="col-header-badge col-header-badge--new">Run B</div>
+          <div class="mono dim" style="font-size:0.7rem;">{{ c.run_b.eval_run_id }}</div>
+          <span class="status-badge" [ngClass]="getStatusClass(c.run_b.status)">{{ c.run_b.status | titlecase }}</span>
+          <div class="run-summary-meta">
+            <span>Extract: {{ c.run_b.extraction_model }}</span>
+            <span>Validate: {{ c.run_b.validation_model }}</span>
+            <span>{{ formatDate(c.run_b.created_at) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics delta -->
+      <section class="panel">
+        <div class="section-header">
+          <h4>Metrics Delta</h4>
+        </div>
+        <div class="metrics-grid">
+          @for (m of metricEntries(); track m.key) {
+            <div class="stat-card">
+              <div class="stat-label">{{ m.label }}</div>
+              <div class="stat-value-row">
+                <span class="stat-value-sm">{{ m.delta.before ?? '—' }}</span>
+                <mat-icon class="delta-arrow">arrow_forward</mat-icon>
+                <span class="stat-value-sm">{{ m.delta.after ?? '—' }}</span>
+              </div>
+              <div class="delta-badge" [ngClass]="deltaClass(m.delta)">{{ deltaText(m.delta) }}</div>
+            </div>
+          }
+        </div>
+      </section>
+
+      @if (c.rows_only_in_a.length || c.rows_only_in_b.length) {
+        <section class="panel panel--warn">
+          @if (c.rows_only_in_a.length) {
+            <p><strong>{{ c.rows_only_in_a.length }}</strong> source job(s) only present in Run A: <span class="mono">{{ c.rows_only_in_a.join(', ') }}</span></p>
+          }
+          @if (c.rows_only_in_b.length) {
+            <p><strong>{{ c.rows_only_in_b.length }}</strong> source job(s) only present in Run B: <span class="mono">{{ c.rows_only_in_b.join(', ') }}</span></p>
+          }
+        </section>
+      }
+
+      <!-- Per-row comparison -->
+      <section class="panel">
+        <div class="section-header">
+          <div>
+            <h4>Per-Job Comparison</h4>
+            <p>{{ dataSource.data.length }} shared job{{ dataSource.data.length === 1 ? '' : 's' }}</p>
+          </div>
+        </div>
+
+        <div class="table-shell">
+          <table mat-table [dataSource]="dataSource" class="results-table">
+
+            <ng-container matColumnDef="jobFile">
+              <th mat-header-cell *matHeaderCellDef>Source Job / File</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="mono dim" style="font-size:0.7rem;" [title]="row.sourceJobId">{{ truncate(row.sourceJobId, 22) }}</span>
+                <div class="cell-value" style="margin-top:0.3rem;" [title]="row.filename">{{ truncate(row.filename, 26) }}</div>
+                @if (row.runAError) { <div class="error-text">A: {{ truncate(row.runAError, 30) }}</div> }
+                @if (row.runBError) { <div class="error-text">B: {{ truncate(row.runBError, 30) }}</div> }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="benchmark">
+              <th mat-header-cell *matHeaderCellDef>Benchmark (Ground Truth)</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="field-grid">
+                  <div><span class="cell-label">ULB</span><span class="cell-value">{{ truncate(row.bmkUlb, 20) }}</span></div>
+                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.bmkFy }}</span></div>
+                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.bmkDocType }}</span></div>
+                  <div><span class="cell-label">Lang</span><span class="cell-value">{{ row.bmkLanguage }}</span></div>
+                  <div><span class="cell-label">Seal</span><span class="cell-value">{{ row.bmkSeal }}</span></div>
+                  <div><span class="cell-label">Sign</span><span class="cell-value">{{ row.bmkSignature }}</span></div>
+                  <div><span class="cell-label">Table</span><span class="cell-value">{{ row.bmkTable }}</span></div>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fields">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="col-header-badge col-header-badge--bmk">Run A</div>
+                <div class="col-header-badge col-header-badge--new">Run B</div>
+              </th>
+              <td mat-cell *matCellDef="let row">
+                <div class="extraction-cell">
+                  @for (f of row.fields; track f.label) {
+                    <div class="extr-row">
+                      <span class="cell-label">{{ f.label }}</span>
+                      <span class="cell-value" [title]="f.runAValue + ' → ' + f.runBValue">{{ truncate(f.runAValue, 12) }} → {{ truncate(f.runBValue, 12) }}</span>
+                    </div>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="change">
+              <th mat-header-cell *matHeaderCellDef>Change (A → B)</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="change-grid">
+                  @for (f of row.fields; track f.label) {
+                    <div class="change-row">
+                      <span class="cell-label">{{ f.label }}</span>
+                      <mat-icon class="change-icon" [ngClass]="changeClass(f.change)">{{ changeIcon(f.change) }}</mat-icon>
+                    </div>
+                  }
+                  <div class="change-row change-row--overall">
+                    <span class="cell-label">Overall</span>
+                    <mat-icon class="change-icon" [ngClass]="changeClass(row.overallChange)">{{ changeIcon(row.overallChange) }}</mat-icon>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
+                @if (loading()) { Comparing runs... } @else { No shared jobs between these two runs. }
+              </td>
+            </tr>
+          </table>
+        </div>
+      </section>
+
+    }
+
+  </section>
+</div>
