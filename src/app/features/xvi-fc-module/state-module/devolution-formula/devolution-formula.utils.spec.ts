@@ -294,15 +294,6 @@ describe('buildDevolutionDraftPayloadData', () => {
     expect(result.checkboxConfirmation).toBeUndefined();
   });
 
-  it('includes ulbCount when value is a finite number', () => {
-    const result = buildDevolutionDraftPayloadData({ ulbCount: 100, excelFile: null, checkboxConfirmation: true });
-    expect(result.ulbCount).toBe(100);
-  });
-
-  it('omits ulbCount when value is null or non-numeric', () => {
-    const result = buildDevolutionDraftPayloadData({ ulbCount: null, excelFile: null, checkboxConfirmation: true });
-    expect(result.ulbCount).toBeUndefined();
-  });
 });
 
 // ─── getRegisterUlbErrorMessage ───────────────────────────────────────────────
@@ -340,43 +331,34 @@ describe('getRegisterUlbErrorMessage', () => {
 // ─── buildDevolutionFinalSubmitPayloadData ────────────────────────────────────
 
 describe('buildDevolutionFinalSubmitPayloadData', () => {
-  it('returns payload when ulbCount, excelFile, and checkboxConfirmation are all valid', () => {
+  it('returns payload when excelFile and checkboxConfirmation are present (ulbCount excluded by backend)', () => {
     const result = buildDevolutionFinalSubmitPayloadData({
-      ulbCount: 100,
       excelFile: mockFileValue,
       checkboxConfirmation: true,
     });
-    expect(result).toEqual({ ulbCount: 100, excelFile: mockFileValue, checkboxConfirmation: true });
+    expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
   });
 
   it('returns null when excelFile is missing', () => {
-    const result = buildDevolutionFinalSubmitPayloadData({ ulbCount: 100, checkboxConfirmation: true });
+    const result = buildDevolutionFinalSubmitPayloadData({ checkboxConfirmation: true });
     expect(result).toBeNull();
   });
 
   it('returns null when checkboxConfirmation is not a boolean', () => {
     const result = buildDevolutionFinalSubmitPayloadData({
-      ulbCount: 100,
       excelFile: mockFileValue,
       checkboxConfirmation: 'yes',
     });
     expect(result).toBeNull();
   });
 
-  it('returns null when ulbCount is missing', () => {
+  it('ignores ulbCount even when present in the payload (backend-owned field)', () => {
     const result = buildDevolutionFinalSubmitPayloadData({
+      ulbCount: 100,
       excelFile: mockFileValue,
       checkboxConfirmation: true,
     });
-    expect(result).toBeNull();
-  });
-
-  it('returns null when ulbCount is non-numeric', () => {
-    const result = buildDevolutionFinalSubmitPayloadData({
-      ulbCount: 'abc',
-      excelFile: mockFileValue,
-      checkboxConfirmation: true,
-    });
-    expect(result).toBeNull();
+    expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
+    expect((result as unknown as Record<string, unknown>)?.['ulbCount']).toBeUndefined();
   });
 });

@@ -92,7 +92,6 @@ export interface EulbMutationApiResponse {
 export interface EulbValidateExcelPayload {
   stateId: string;
   yearId: string;
-  ulbCount: number;
   electedBodyExcelFile: EulbFileValue;
 }
 
@@ -201,7 +200,7 @@ export interface EulbFormPayloadData {
 }
 
 export interface EulbFinalSubmitPayloadData {
-  ulbCount: number;
+  ulbCount?: number;
   electedBodyExcelFile: EulbFileValue;
   checkboxConfirmation: boolean;
 }
