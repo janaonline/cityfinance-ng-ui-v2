@@ -1,19 +1,22 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  OnInit,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, startWith, switchMap, takeWhile, tap, timer } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  map,
+  of,
+  startWith,
+  switchMap,
+  takeWhile,
+  tap,
+  timer,
+} from 'rxjs';
 import { MaterialModule } from '../../../material.module';
 import { IULB } from '../../../core/models/ulb';
 import { CommonService } from '../../../core/services/common.service';
@@ -47,7 +50,6 @@ interface GeminiPricing {
   outputPerM: number;
   thinkingPerM: number;
 }
-
 
 @Component({
   standalone: true,
@@ -88,10 +90,7 @@ export class OcrValidationComponent implements OnInit {
   ];
 
   readonly form = this.fb.group({
-    extractionModel: this.fb.nonNullable.control(
-      'gemini-3.1-flash-lite',
-      Validators.required,
-    ),
+    extractionModel: this.fb.nonNullable.control('gemini-3.1-flash-lite', Validators.required),
     validationModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
     docType: this.fb.control<string | null>(null),
     financialYear: this.fb.control<string | null>(null),
@@ -115,7 +114,7 @@ export class OcrValidationComponent implements OnInit {
   );
 
   constructor() {
-    this.globalLoader.hideLayout();
+    // this.globalLoader.hideLayout();
   }
 
   ngOnInit(): void {
@@ -167,11 +166,7 @@ export class OcrValidationComponent implements OnInit {
 
   submit(): void {
     if (this.selectedFiles.length === 0) {
-      this.utilityService.swalPopup(
-        'Files required',
-        'Please choose at least one PDF file.',
-        'error',
-      );
+      this.utilityService.swalPopup('Files required', 'Please choose at least one PDF file.', 'error');
       return;
     }
 
@@ -180,8 +175,16 @@ export class OcrValidationComponent implements OnInit {
       return;
     }
 
-    const { extractionModel, validationModel, docType, financialYear, ulb, enableOrientationCheck, enableFinancialValidation, enableQualityCheck } =
-      this.form.getRawValue();
+    const {
+      extractionModel,
+      validationModel,
+      docType,
+      financialYear,
+      ulb,
+      enableOrientationCheck,
+      enableFinancialValidation,
+      enableQualityCheck,
+    } = this.form.getRawValue();
     const ulbName = this.selectedUlb()?.name ?? (typeof ulb === 'string' ? ulb : null);
     this.isSubmitting.set(true);
     if (this.selectedFiles.length === 1) {
@@ -216,12 +219,7 @@ export class OcrValidationComponent implements OnInit {
             this.clearFiles();
           },
           error: (err) => {
-            this.utilityService.swalPopup(
-              'Submission failed',
-              this.parseApiError(err),
-              'error',
-              true,
-            );
+            this.utilityService.swalPopup('Submission failed', this.parseApiError(err), 'error', true);
           },
         });
     } else {
@@ -257,12 +255,7 @@ export class OcrValidationComponent implements OnInit {
             this.clearFiles();
           },
           error: (err) => {
-            this.utilityService.swalPopup(
-              'Submission failed',
-              this.parseApiError(err),
-              'error',
-              true,
-            );
+            this.utilityService.swalPopup('Submission failed', this.parseApiError(err), 'error', true);
           },
         });
     }
@@ -281,9 +274,7 @@ export class OcrValidationComponent implements OnInit {
   }
 
   getStatusLabel(status: OcrValidationStatus): string {
-    return { queued: 'Queued', processing: 'Processing', completed: 'Completed', failed: 'Failed' }[
-      status
-    ];
+    return { queued: 'Queued', processing: 'Processing', completed: 'Completed', failed: 'Failed' }[status];
   }
 
   getAssessmentClass(assessment: string | null): string {
@@ -332,9 +323,7 @@ export class OcrValidationComponent implements OnInit {
     return 'text-danger';
   }
 
-  getFinancialFigureEntries(
-    figures: Record<string, number | null>,
-  ): Array<{ key: string; value: number | null }> {
+  getFinancialFigureEntries(figures: Record<string, number | null>): Array<{ key: string; value: number | null }> {
     return Object.entries(figures).map(([key, value]) => ({ key, value }));
   }
 
@@ -352,7 +341,7 @@ export class OcrValidationComponent implements OnInit {
       .map(([key, v]) => {
         const s = v as Record<string, unknown>;
         const model = key.startsWith('extraction') ? extractionModel : validationModel;
-        const pricing = this.models.find(m => m.value === model)?.pricing ?? null;
+        const pricing = this.models.find((m) => m.value === model)?.pricing ?? null;
         const prompt = (s['prompt_token_count'] as number) ?? 0;
         const output = (s['candidates_token_count'] as number) ?? 0;
         const thoughts = (s['thoughts_token_count'] as number) ?? 0;
@@ -445,23 +434,34 @@ export class OcrValidationComponent implements OnInit {
   private buildReportHtml(job: OcrValidationJobTracker): string {
     const r = job.result!;
     const esc = (s: unknown): string =>
-      String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     const fmt = (n: number | null | undefined, decimals = 2): string =>
       n == null ? '—' : n.toLocaleString('en-IN', { maximumFractionDigits: decimals });
-    const fmtKey = (k: string): string =>
-      k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const fmtKey = (k: string): string => k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
     const assessmentColor: Record<string, string> = {
-      PASS: '#166534', WARNING: '#92400e', FAIL: '#9f1239',
-      ERROR: '#9f1239', FAILED_EXTRACTION: '#9a3412',
+      PASS: '#166534',
+      WARNING: '#92400e',
+      FAIL: '#9f1239',
+      ERROR: '#9f1239',
+      FAILED_EXTRACTION: '#9a3412',
     };
     const assessmentBg: Record<string, string> = {
-      PASS: '#dcfce7', WARNING: '#fef9c3', FAIL: '#fee2e2',
-      ERROR: '#fee2e2', FAILED_EXTRACTION: '#ffedd5',
+      PASS: '#dcfce7',
+      WARNING: '#fef9c3',
+      FAIL: '#fee2e2',
+      ERROR: '#fee2e2',
+      FAILED_EXTRACTION: '#ffedd5',
     };
     const assessmentBorder: Record<string, string> = {
-      PASS: '#22c55e', WARNING: '#f59e0b', FAIL: '#f43f5e',
-      ERROR: '#f43f5e', FAILED_EXTRACTION: '#f97316',
+      PASS: '#22c55e',
+      WARNING: '#f59e0b',
+      FAIL: '#f43f5e',
+      ERROR: '#f43f5e',
+      FAILED_EXTRACTION: '#f97316',
     };
     const checkBadge: Record<string, string> = {
       PASS: 'background:#dcfce7;color:#166534',
@@ -476,7 +476,10 @@ export class OcrValidationComponent implements OnInit {
         if (typeof v[0] === 'object' && v[0] !== null) {
           const headers = Object.keys(v[0] as object);
           const th = headers
-            .map((h) => `<th style="padding:.35rem .6rem;text-align:left;background:#f1f5f9;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">${esc(fmtKey(h))}</th>`)
+            .map(
+              (h) =>
+                `<th style="padding:.35rem .6rem;text-align:left;background:#f1f5f9;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">${esc(fmtKey(h))}</th>`,
+            )
             .join('');
           const rows = (v as Record<string, unknown>[])
             .map(
@@ -508,88 +511,113 @@ export class OcrValidationComponent implements OnInit {
 
     const metaRows = r.extraction
       ? [
-        ['ULB Name', r.extraction.ulb_name],
-        ['Original ULB Name', r.extraction.original_ulb_name],
-        ['Document Type', r.extraction.document_type],
-        ['Financial Year', r.extraction.financial_year],
-        ['As On Date', r.extraction.as_on_date],
-        ['Language', r.extraction.language_detected],
-        ['Seal Present', r.extraction.seal_present == null ? null : r.extraction.seal_present ? 'Yes' : 'No'],
-        ['Auditor Name', r.extraction.auditor_name],
-        ['Auditor Firm', r.extraction.auditor_firm],
-        ['Audited Date', r.extraction.audited_date],
-      ]
-        .filter(([, v]) => v != null)
-        .map(([l, v]) => `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600">${esc(v)}</td></tr>`)
-        .join('')
+          ['ULB Name', r.extraction.ulb_name],
+          ['Original ULB Name', r.extraction.original_ulb_name],
+          ['Document Type', r.extraction.document_type],
+          ['Financial Year', r.extraction.financial_year],
+          ['As On Date', r.extraction.as_on_date],
+          ['Language', r.extraction.language_detected],
+          ['Seal Present', r.extraction.seal_present == null ? null : r.extraction.seal_present ? 'Yes' : 'No'],
+          ['Auditor Name', r.extraction.auditor_name],
+          ['Auditor Firm', r.extraction.auditor_firm],
+          ['Audited Date', r.extraction.audited_date],
+        ]
+          .filter(([, v]) => v != null)
+          .map(
+            ([l, v]) =>
+              `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600">${esc(v)}</td></tr>`,
+          )
+          .join('')
       : '';
 
     const procRows = [
       ['Total Time', r.processing_time_seconds != null ? `${fmt(r.processing_time_seconds, 1)} s` : null],
-      ...(r.step_timings ? Object.entries(r.step_timings).map(([k, v]) => [fmtKey(k), v != null ? `${fmt(v as number, 1)} s` : '—']) : []),
+      ...(r.step_timings
+        ? Object.entries(r.step_timings).map(([k, v]) => [fmtKey(k), v != null ? `${fmt(v as number, 1)} s` : '—'])
+        : []),
       ['Extraction Model', r.extraction_model],
       ['Validation Model', r.validation_model],
     ]
       .filter(([, v]) => v != null)
-      .map(([l, v]) => `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600;font-family:monospace">${esc(v)}</td></tr>`)
+      .map(
+        ([l, v]) =>
+          `<tr><td style="color:#64748b;width:45%">${esc(l)}</td><td style="font-weight:600;font-family:monospace">${esc(v)}</td></tr>`,
+      )
       .join('');
 
     const basicValidation = r.basic_validation
       ? (() => {
-        const isPass = r.basic_validation.validation_status === 'PASS';
-        const bc = isPass ? '#22c55e' : '#f43f5e';
-        const bbg = isPass ? '#f0fdf4' : '#fff1f2';
-        const btxt = isPass ? '#166534' : '#991b1b';
-        const failedItems = r.error_messages?.length
-          ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.error_messages.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
-          : '';
-        const detail = r.basic_validation.validation_details
-          ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`
-          : '';
+          const isPass = r.basic_validation.validation_status === 'PASS';
+          const bc = isPass ? '#22c55e' : '#f43f5e';
+          const bbg = isPass ? '#f0fdf4' : '#fff1f2';
+          const btxt = isPass ? '#166534' : '#991b1b';
+          const failedItems = r.error_messages?.length
+            ? `<ul style="margin:.5rem 0 0;padding-left:1.25rem;color:#991b1b">${r.error_messages.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`
+            : '';
+          const detail = r.basic_validation.validation_details
+            ? `<p style="margin:.25rem 0 0;color:#374151">${esc(r.basic_validation.validation_details)}</p>`
+            : '';
 
-        const bv = r.basic_validation;
-        const qualityRows = [
-          bv.pdf_readability_status ? `<tr><td style="color:#64748b">Readability</td><td style="font-weight:600">${esc(bv.pdf_readability_status)}</td></tr>` : '',
-          bv.pdf_quality_status ? `<tr><td style="color:#64748b">Quality</td><td style="font-weight:600">${esc(bv.pdf_quality_status)}</td></tr>` : '',
-        ].filter(Boolean).join('');
-        const qualityIssues = bv.quality_issues?.length
-          ? `<ul style="margin:.25rem 0 0;padding-left:1.25rem;color:#92400e;font-size:.82rem">${bv.quality_issues.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
-          : '';
-        const tableRows = [
-          bv.table_detection_status ? `<tr><td style="color:#64748b">Status</td><td style="font-weight:600">${esc(bv.table_detection_status)}</td></tr>` : '',
-          bv.table_present != null ? `<tr><td style="color:#64748b">Present</td><td style="font-weight:600">${bv.table_present ? 'Yes' : 'No'}</td></tr>` : '',
-          bv.table_required != null ? `<tr><td style="color:#64748b">Required</td><td style="font-weight:600">${bv.table_required ? 'Yes' : 'No'}</td></tr>` : '',
-        ].filter(Boolean).join('');
-        const tableIssues = bv.table_issues?.length
-          ? `<ul style="margin:.25rem 0 0;padding-left:1.25rem;color:#92400e;font-size:.82rem">${bv.table_issues.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
-          : '';
-        const multiDocSection = bv.multiple_documents_detected != null
-          ? `<div style="padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+          const bv = r.basic_validation;
+          const qualityRows = [
+            bv.pdf_readability_status
+              ? `<tr><td style="color:#64748b">Readability</td><td style="font-weight:600">${esc(bv.pdf_readability_status)}</td></tr>`
+              : '',
+            bv.pdf_quality_status
+              ? `<tr><td style="color:#64748b">Quality</td><td style="font-weight:600">${esc(bv.pdf_quality_status)}</td></tr>`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('');
+          const qualityIssues = bv.quality_issues?.length
+            ? `<ul style="margin:.25rem 0 0;padding-left:1.25rem;color:#92400e;font-size:.82rem">${bv.quality_issues.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
+            : '';
+          const tableRows = [
+            bv.table_detection_status
+              ? `<tr><td style="color:#64748b">Status</td><td style="font-weight:600">${esc(bv.table_detection_status)}</td></tr>`
+              : '',
+            bv.table_present != null
+              ? `<tr><td style="color:#64748b">Present</td><td style="font-weight:600">${bv.table_present ? 'Yes' : 'No'}</td></tr>`
+              : '',
+            bv.table_required != null
+              ? `<tr><td style="color:#64748b">Required</td><td style="font-weight:600">${bv.table_required ? 'Yes' : 'No'}</td></tr>`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('');
+          const tableIssues = bv.table_issues?.length
+            ? `<ul style="margin:.25rem 0 0;padding-left:1.25rem;color:#92400e;font-size:.82rem">${bv.table_issues.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
+            : '';
+          const multiDocSection =
+            bv.multiple_documents_detected != null
+              ? `<div style="padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
               <div style="font-size:.78rem;text-transform:uppercase;color:#475569;font-weight:700;margin-bottom:.4rem">Document Detection</div>
               <div>Multiple docs: <strong>${bv.multiple_documents_detected ? 'Yes' : 'No'}</strong></div>
               ${bv.detected_document_types?.length ? `<div style="margin-top:.25rem;font-size:.82rem;color:#64748b">Types: ${bv.detected_document_types.map(esc).join(', ')}</div>` : ''}
             </div>`
-          : '';
+              : '';
 
-        const detailCards = [
-          (qualityRows || qualityIssues)
-            ? `<div style="flex:1;min-width:160px;padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+          const detailCards = [
+            qualityRows || qualityIssues
+              ? `<div style="flex:1;min-width:160px;padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
                 <div style="font-size:.78rem;text-transform:uppercase;color:#475569;font-weight:700;margin-bottom:.4rem">PDF Quality</div>
                 <table style="font-size:.85rem;width:100%"><tbody>${qualityRows}</tbody></table>
                 ${qualityIssues}
               </div>`
-            : '',
-          (tableRows || tableIssues)
-            ? `<div style="flex:1;min-width:160px;padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+              : '',
+            tableRows || tableIssues
+              ? `<div style="flex:1;min-width:160px;padding:.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
                 <div style="font-size:.78rem;text-transform:uppercase;color:#475569;font-weight:700;margin-bottom:.4rem">Table Detection</div>
                 <table style="font-size:.85rem;width:100%"><tbody>${tableRows}</tbody></table>
                 ${tableIssues}
               </div>`
-            : '',
-          multiDocSection,
-        ].filter(Boolean).join('');
+              : '',
+            multiDocSection,
+          ]
+            .filter(Boolean)
+            .join('');
 
-        return `<section>
+          return `<section>
             <h5 style="color:#1e3a5f;margin:0 0 .5rem">Basic Validation</h5>
             <div style="padding:.85rem 1rem;border-radius:10px;border-left:4px solid ${bc};background:${bbg}">
               <span style="font-weight:800;font-size:.82rem;letter-spacing:.04em;color:${btxt}">${esc(r.basic_validation.validation_status)}</span>
@@ -597,36 +625,36 @@ export class OcrValidationComponent implements OnInit {
             </div>
             ${detailCards ? `<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.75rem">${detailCards}</div>` : ''}
           </section>`;
-      })()
+        })()
       : '';
 
     const financialSection = r.financial_figures
       ? (() => {
-        const ff = r.financial_figures!;
-        const summaryEntries = (
-          Object.entries(ff.summary ?? {}) as [string, number | null][]
-        ).filter(([, v]) => v != null) as [string, number][];
-        const summaryTable =
-          summaryEntries.length > 0
-            ? `<table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
+          const ff = r.financial_figures!;
+          const summaryEntries = (Object.entries(ff.summary ?? {}) as [string, number | null][]).filter(
+            ([, v]) => v != null,
+          ) as [string, number][];
+          const summaryTable =
+            summaryEntries.length > 0
+              ? `<table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
                 <thead><tr style="background:#f1f5f9">
                   <th style="padding:.5rem .75rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Summary</th>
                   <th style="padding:.5rem .75rem;text-align:right;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Amount</th>
                 </tr></thead>
                 <tbody>${summaryEntries
-              .map(
-                ([k, v], i) =>
-                  `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
+                  .map(
+                    ([k, v], i) =>
+                      `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
                         <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;color:#1e3a5f">${esc(fmtKey(k))}</td>
                         <td style="padding:.45rem .75rem;border-top:1px solid #e2e8f0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(v)}</td>
                       </tr>`,
-              )
-              .join('')}</tbody>
+                  )
+                  .join('')}</tbody>
               </table>`
-            : '';
-        const itemsTable =
-          ff.extracted_items?.length > 0
-            ? `<div style="font-weight:700;color:#1e3a5f;margin-bottom:.4rem;font-size:.9rem">Extracted Line Items</div>
+              : '';
+          const itemsTable =
+            ff.extracted_items?.length > 0
+              ? `<div style="font-weight:700;color:#1e3a5f;margin-bottom:.4rem;font-size:.9rem">Extracted Line Items</div>
                <table style="width:100%;border-collapse:collapse;font-size:.85rem">
                 <thead><tr style="background:#f1f5f9">
                   <th style="padding:.4rem .6rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Line Item</th>
@@ -634,24 +662,24 @@ export class OcrValidationComponent implements OnInit {
                   <th style="padding:.4rem .6rem;text-align:right;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Amount</th>
                 </tr></thead>
                 <tbody>${ff.extracted_items
-              .map(
-                (item, i) =>
-                  `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
+                  .map(
+                    (item, i) =>
+                      `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">
                         <td style="padding:.35rem .6rem;border-top:1px solid #e2e8f0;color:#1e3a5f">${esc(item.line_item)}</td>
                         <td style="padding:.35rem .6rem;border-top:1px solid #e2e8f0;color:#64748b">${esc(item.category ?? '')}</td>
                         <td style="padding:.35rem .6rem;border-top:1px solid #e2e8f0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${item.amount != null ? fmt(item.amount) : '<span style="color:#94a3b8">—</span>'}</td>
                       </tr>`,
-              )
-              .join('')}</tbody>
+                  )
+                  .join('')}</tbody>
               </table>`
-            : '';
-        return summaryTable || itemsTable
-          ? `<section>
+              : '';
+          return summaryTable || itemsTable
+            ? `<section>
                 <h5 style="color:#1e3a5f;margin:0 0 .75rem">Financial Figures</h5>
                 ${summaryTable}${itemsTable}
               </section>`
-          : '';
-      })()
+            : '';
+        })()
       : '';
 
     const validationsSection = r.validations?.length
@@ -664,17 +692,17 @@ export class OcrValidationComponent implements OnInit {
             <th style="padding:.5rem .85rem;text-align:left;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em">Message</th>
           </tr></thead>
           <tbody>${r.validations
-        .map((v) => {
-          const bs = checkBadge[v.status?.toUpperCase()] ?? 'background:#f1f5f9;color:#475569';
-          return `<tr>
+            .map((v) => {
+              const bs = checkBadge[v.status?.toUpperCase()] ?? 'background:#f1f5f9;color:#475569';
+              return `<tr>
                 <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0;color:#1e3a5f;font-weight:500;min-width:180px">${esc(v.check)}</td>
                 <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0">
                   <span style="display:inline-block;padding:.2rem .55rem;border-radius:6px;font-size:.78rem;font-weight:700;${bs}">${esc(v.status)}</span>
                 </td>
                 <td style="padding:.5rem .85rem;border-top:1px solid #e2e8f0;color:#374151;line-height:1.5">${esc(v.message)}</td>
               </tr>`;
-        })
-        .join('')}</tbody>
+            })
+            .join('')}</tbody>
         </table>
       </section>`
       : '';
@@ -711,25 +739,27 @@ export class OcrValidationComponent implements OnInit {
     <p style="margin:.25rem 0 0;opacity:.65;font-size:.8rem;font-family:monospace">Job ID: ${esc(job.jobId)} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString('en-IN')}</p>
   </header>
 
-  ${r.overall_assessment
-        ? `<section style="background:${bannerBg};border-left:5px solid ${bannerBorder};color:${bannerColor}">
+  ${
+    r.overall_assessment
+      ? `<section style="background:${bannerBg};border-left:5px solid ${bannerBorder};color:${bannerColor}">
       <div style="display:flex;align-items:flex-start;gap:.75rem">
         <span style="display:inline-block;padding:.25rem .65rem;border-radius:6px;font-size:.82rem;font-weight:800;letter-spacing:.04em;background:${bannerColor};color:#fff;flex-shrink:0">${esc(r.overall_assessment)}</span>
         ${r.summary ? `<p style="margin:0;font-size:.92rem;line-height:1.5">${esc(r.summary)}</p>` : ''}
       </div>
     </section>`
-        : ''
-      }
+      : ''
+  }
 
   <!-- Metadata + Processing side by side -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
-    ${metaRows
+    ${
+      metaRows
         ? `<section>
         <h5 style="color:#1e3a5f;margin:0 0 .75rem">Document Metadata</h5>
         <table style="width:100%;font-size:.88rem"><tbody>${metaRows}</tbody></table>
       </section>`
         : ''
-      }
+    }
     <section>
       <h5 style="color:#1e3a5f;margin:0 0 .75rem">Processing Info</h5>
       <table style="width:100%;font-size:.88rem"><tbody>${procRows}</tbody></table>
@@ -759,7 +789,7 @@ export class OcrValidationComponent implements OnInit {
     this.form.controls.ulb.valueChanges
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        map((value) => (typeof value === 'string' ? value : value?.name ?? '').trim()),
+        map((value) => (typeof value === 'string' ? value : (value?.name ?? '')).trim()),
         tap((searchText) => {
           if (!searchText) {
             this.filteredUlbs.set([]);
@@ -801,13 +831,8 @@ export class OcrValidationComponent implements OnInit {
     this.jobs.update((jobs) => [job, ...jobs]);
   }
 
-  private patchJob(
-    jobId: string,
-    patcher: (job: OcrValidationJobTracker) => Partial<OcrValidationJobTracker>,
-  ): void {
-    this.jobs.update((jobs) =>
-      jobs.map((j) => (j.jobId === jobId ? { ...j, ...patcher(j) } : j)),
-    );
+  private patchJob(jobId: string, patcher: (job: OcrValidationJobTracker) => Partial<OcrValidationJobTracker>): void {
+    this.jobs.update((jobs) => jobs.map((j) => (j.jobId === jobId ? { ...j, ...patcher(j) } : j)));
   }
 
   private updateJob(jobId: string, patch: Partial<OcrValidationJobTracker>): void {
