@@ -24,6 +24,11 @@ export const ADMIN_ROUTES: Routes = [
           ),
       },
       {
+        path: 'ulb-list',
+        loadComponent: () =>
+          import('../state-module/ulb-list/ulb-list.component').then((m) => m.UlbListComponent),
+      },
+      {
         path: '**',
         redirectTo: 'overview',
       },

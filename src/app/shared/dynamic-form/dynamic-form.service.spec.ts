@@ -54,8 +54,33 @@ describe('DynamicFormService', () => {
       value: populatedValue,
     } as FieldConfig);
 
-    expect(control.value).toEqual(populatedValue);
+    expect(control.value).toEqual({ ...populatedValue, pageCount: null });
     expect(control.valid).toBeTrue();
+  });
+
+  it('creates a disabled FormControl when field.disabled is true', () => {
+    const control = service.createContorl({
+      key: 'ulbCount',
+      label: 'ULB count',
+      formFieldType: 'number',
+      value: 431,
+      disabled: true,
+    } as FieldConfig);
+
+    expect(control.disabled).toBeTrue();
+    expect(control.value).toBe(431);
+  });
+
+  it('does not disable a date field when only field.readonly is true', () => {
+    const control = service.createContorl({
+      key: 'startDate',
+      label: 'Start date',
+      formFieldType: 'date',
+      value: null,
+      readonly: true,
+    } as FieldConfig);
+
+    expect(control.disabled).toBeFalse();
   });
 
   it('serializes date field payload values to UTC ISO strings', () => {
@@ -268,11 +293,13 @@ describe('DynamicFormService', () => {
       fileName: 'report.pdf',
       fileUrl: '/docs/report.pdf',
       fileSize: 2048,
+      pageCount: null,
     });
     expect(withUrlOnly.value).toEqual({
       fileName: 'derived.pdf',
       fileUrl: '/docs/derived.pdf?download=true',
       fileSize: null,
+      pageCount: null,
     });
   });
 

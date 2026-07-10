@@ -14,24 +14,16 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl, FormGroup } from '@angular/forms';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { filter, finalize, map, startWith, switchMap, tap } from 'rxjs';
+import { PDFDocument } from 'pdf-lib';
+import { filter, finalize, from, map, startWith, switchMap, tap } from 'rxjs';
 import Swal from 'sweetalert2';
-import { S3FileURLResponse } from '../../../../core/models/s3Responses/fileURLResponse';
 import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MaterialModule } from '../../../../material.module';
-import {
-  FileIconComponent,
-  SupportedFileExtension,
-} from '../../../components/file-icon/file-icon.component';
-import {
-  FieldAppearanceColor,
-  FieldConfig,
-  LegacyFileValue,
-  UploadedFileValue,
-} from '../../field.interface';
+import { FileIconComponent, SupportedFileExtension } from '../../../components/file-icon/file-icon.component';
+import { FieldAppearanceColor, FieldConfig, LegacyFileValue, UploadedFileValue } from '../../field.interface';
 import { DndDirective } from './dnd.directive';
-import { FileService } from './file.service';
+import { FileService, S3UrlResult } from './file.service';
 
 type FileParentFieldConfig = Pick<FieldConfig, 'readonly' | 'validations'>;
 type StandaloneFileControl = FormControl<UploadedFileValue | LegacyFileValue>;
@@ -79,13 +71,7 @@ const REQUIRED_VALIDATION_NAME = 'required';
 @Component({
   selector: 'app-file',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    MaterialModule,
-    DndDirective,
-    MatProgressBarModule,
-    ToStorageUrlPipe,
-    FileIconComponent,
-  ],
+  imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe, FileIconComponent],
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss',
 })
@@ -174,9 +160,7 @@ export class FileComponent implements OnInit {
     () => this.legacyFileGroup()?.get('name') ?? this.standaloneFileControl(),
   );
 
-  readonly validations = computed(
-    () => this.parentField()?.validations ?? this.field().validations ?? [],
-  );
+  readonly validations = computed(() => this.parentField()?.validations ?? this.field().validations ?? []);
 
   readonly isReadonly = computed(
     () => (this.parentField()?.readonly ?? this.field().readonly ?? false) || this.validationSnapshot().disabled,
@@ -294,9 +278,7 @@ export class FileComponent implements OnInit {
   });
 
   /** Upload button label based on the current field flow. */
-  readonly uploadPromptLabel = computed(() =>
-    this.showStandaloneLabel() ? 'Upload file' : 'Upload consolidated PDF',
-  );
+  readonly uploadPromptLabel = computed(() => (this.showStandaloneLabel() ? 'Upload file' : 'Upload consolidated PDF'));
 
   /** Normalized uploaded file data for the template across standalone and legacy formats. */
   readonly uploadedFile = computed<UploadedFileViewModel | null>(() => {
@@ -309,10 +291,7 @@ export class FileComponent implements OnInit {
       return {
         name: standaloneValue.fileName,
         url: standaloneValue.fileUrl,
-        sizeLabel:
-          standaloneValue.fileSize === null
-            ? null
-            : this.utilityService.formatBytes(standaloneValue.fileSize),
+        sizeLabel: standaloneValue.fileSize === null ? null : this.utilityService.formatBytes(standaloneValue.fileSize),
         mimeType: standaloneValue.mimeType ?? null,
       };
     }
@@ -356,17 +335,13 @@ export class FileComponent implements OnInit {
   readonly canSelectFile = computed(() => !this.isReadonly() && !this.isUploading());
 
   /** Blocks file removal while readonly or uploading. */
-  readonly canRemoveFile = computed(
-    () => !this.isReadonly() && !this.isUploading() && this.hasUploadedFile(),
-  );
+  readonly canRemoveFile = computed(() => !this.isReadonly() && !this.isUploading() && this.hasUploadedFile());
 
   /** True while file is being uploaded and progress should be displayed. */
   readonly showUploadProgress = computed(() => this.isUploading() && !!this.selectedFile());
 
   /** isButtonView(): Shows uploaded state in `button` mode when upload is complete. */
-  readonly showButtonUploadedState = computed(
-    () => this.hasUploadedFile() && !this.showUploadProgress(),
-  );
+  readonly showButtonUploadedState = computed(() => this.hasUploadedFile() && !this.showUploadProgress());
 
   /** Unified file state for rendering uploaded or in-progress files in the template. */
   readonly displayFile = computed<DisplayFileState | null>(() => {
@@ -398,9 +373,7 @@ export class FileComponent implements OnInit {
   });
 
   /** Controls the success banner shown after upload. */
-  readonly shouldShowUploadedFileMessage = computed(
-    () => !!this.uploadedFile() && this.showUploadedFileMessage(),
-  );
+  readonly shouldShowUploadedFileMessage = computed(() => !!this.uploadedFile() && this.showUploadedFileMessage());
 
   /** Shows validation errors only when the control is invalid and touched or dirty. */
   readonly showError = computed(() => {
@@ -412,15 +385,10 @@ export class FileComponent implements OnInit {
   readonly errorMessage = computed(() => {
     const errors = this.validationSnapshot().errors;
     if (errors) {
-      const matched = this.validations().find((v) =>
-        Object.prototype.hasOwnProperty.call(errors, v.name),
-      );
+      const matched = this.validations().find((v) => Object.prototype.hasOwnProperty.call(errors, v.name));
       if (matched) return matched.message;
     }
-    return (
-      this.validations().find((v) => v.name === REQUIRED_VALIDATION_NAME)?.message ??
-      'This field is required.'
-    );
+    return this.validations().find((v) => v.name === REQUIRED_VALIDATION_NAME)?.message ?? 'This field is required.';
   });
 
   /** Screen-reader status text for upload progress, success confirmation, and validation feedback. */
@@ -571,24 +539,13 @@ export class FileComponent implements OnInit {
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const allowedFileTypes = this.field().allowedFileTypes?.map((type) => type.toLowerCase()) ?? [];
 
-    if (
-      allowedFileTypes.length > 0 &&
-      (!fileExtension || !allowedFileTypes.includes(fileExtension))
-    ) {
-      Swal.fire(
-        'Error',
-        `Allowed file extensions: ${this.field().allowedFileTypes?.join(', ')}`,
-        'error',
-      );
+    if (allowedFileTypes.length > 0 && (!fileExtension || !allowedFileTypes.includes(fileExtension))) {
+      Swal.fire('Error', `Allowed file extensions: ${this.field().allowedFileTypes?.join(', ')}`, 'error');
       return false;
     }
 
     if (file.size / 1024 / 1024 > this.maxFileSize()) {
-      Swal.fire(
-        'File Limit Error',
-        `Maximum ${this.maxFileSize()} mb file can be allowed.`,
-        'error',
-      );
+      Swal.fire('File Limit Error', `Maximum ${this.maxFileSize()} mb file can be allowed.`, 'error');
       return false;
     }
 
@@ -648,14 +605,18 @@ export class FileComponent implements OnInit {
     this.startUpload(file);
 
     this.fileService
-      .newGetURLForFileUpload(file.name, file.type, this.uploadFolderName())
+      .getSignedUrls(file.name, file.type, this.uploadFolderName())
       .pipe(
         map((response) => this.resolveUploadTarget(response)),
         switchMap((uploadTarget) =>
           this.fileService.newUploadFileToS3(file, uploadTarget.uploadUrl).pipe(
             tap((event) => this.handleUploadEvent(event)),
             filter((event) => event.type === HttpEventType.Response),
-            map(() => this.createUploadedFileValue(file, uploadTarget.storagePath)),
+            switchMap(() =>
+              from(this.resolvePageCount(file)).pipe(
+                map((pageCount) => this.createUploadedFileValue(file, uploadTarget.storagePath, pageCount)),
+              ),
+            ),
           ),
         ),
         finalize(() => this.resetUploadState()),
@@ -743,11 +704,11 @@ export class FileComponent implements OnInit {
   /**
    * Extracts the upload URL and persisted storage path from the backend response and guards against
    * incomplete payloads before the actual upload request is made.
-   * @param response - Response returned by the pre-signed URL endpoint
+   * @param results - Unwrapped signed-URL results returned by the pre-signed URL endpoint
    * @returns Upload target information needed for the subsequent PUT request and form patching
    */
-  private resolveUploadTarget(response: S3FileURLResponse): UploadTarget {
-    const uploadTarget = response.data?.[0];
+  private resolveUploadTarget(results: S3UrlResult[]): UploadTarget {
+    const uploadTarget = results?.[0];
     const uploadUrl = this.utilityService.getNonEmptyString(uploadTarget?.url);
     const storagePath = this.utilityService.getNonEmptyString(uploadTarget?.path);
 
@@ -763,18 +724,41 @@ export class FileComponent implements OnInit {
    * upload.
    * @param file - Original file selected by the user
    * @param storagePath - Persisted storage path returned by the backend
+   * @param pageCount - Page count resolved for PDF uploads, or `null` when not applicable/unreadable
    * @returns Uploaded file value in the standalone control shape
    */
   private createUploadedFileValue(
     file: File,
     storagePath: string,
+    pageCount: number | null,
   ): Exclude<UploadedFileValue, null> {
     return {
       fileName: file.name,
       fileUrl: storagePath,
       fileSize: file.size,
+      pageCount,
       ...(file.type ? { mimeType: file.type } : {}),
     };
+  }
+
+  /**
+   * Resolves the page count for PDF uploads so it can be persisted alongside the file metadata.
+   * Non-PDF files, or PDFs that fail to parse, resolve to `null`.
+   * @param file - File selected for upload
+   */
+  private async resolvePageCount(file: File): Promise<number | null> {
+    if (file.type !== 'application/pdf') {
+      return null;
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      return pdfDoc.getPageCount();
+    } catch (error) {
+      console.error('Failed to resolve PDF page count.', error);
+      return null;
+    }
   }
 
   /**
@@ -788,8 +772,7 @@ export class FileComponent implements OnInit {
       legacyFileGroup.patchValue({
         name: fileValue.fileName,
         url: fileValue.fileUrl,
-        size:
-          fileValue.fileSize === null ? null : this.utilityService.formatBytes(fileValue.fileSize),
+        size: fileValue.fileSize === null ? null : this.utilityService.formatBytes(fileValue.fileSize),
       });
       legacyFileGroup.get('name')?.markAsTouched();
       legacyFileGroup.markAsDirty();
@@ -850,9 +833,7 @@ export class FileComponent implements OnInit {
    */
   private getMimeTypeForExtension(extension: string): string | undefined {
     const normalizedExtension = extension.toLowerCase();
-    return this.isSupportedFileExtension(normalizedExtension)
-      ? this.fileMimeTypes[normalizedExtension]
-      : undefined;
+    return this.isSupportedFileExtension(normalizedExtension) ? this.fileMimeTypes[normalizedExtension] : undefined;
   }
 
   /**
@@ -860,9 +841,7 @@ export class FileComponent implements OnInit {
    * @param extension - Candidate extension value
    * @returns `true` when the extension is supported by the component
    */
-  private isSupportedFileExtension(
-    extension: string | undefined,
-  ): extension is SupportedFileExtension {
+  private isSupportedFileExtension(extension: string | undefined): extension is SupportedFileExtension {
     return !!extension && extension in this.fileMimeTypes;
   }
 

@@ -1,0 +1,44 @@
+@for (section of sections; track section.title; let last = $last; let i = $index) {
+<mat-card class="form-section-grid__card mb-3">
+  <mat-card-content>
+    <h6 class="form-section-grid__title">
+      @if (section.icon) {
+      <span class="form-section-grid__icon-circle" [style.background]="iconColor(i)">
+        <i [class]="'bi ' + section.icon" aria-hidden="true"></i>
+      </span>
+      }
+      {{ section.title }}
+      @if (section.subtitle) {
+      <span class="text-body-secondary fw-normal small"> {{ section.subtitle }}</span>
+      }
+    </h6>
+
+    <div class="row g-3">
+      @for (field of section.fields; track field.key) {
+      <div [class]="field.grid || 'col-12'">
+        @if (showOwnLabel(field)) {
+        <label class="form-section-grid__label">
+          {{ field.label }}
+          @if (field.required) {
+          <span class="text-danger">*</span>
+          }
+          @if (field.labelHint) {
+          <span class="text-muted fw-normal"> {{ field.labelHint }}</span>
+          }
+        </label>
+        }
+        <app-dynamic-form [field]="fieldForRenderer(field)" [group]="group"></app-dynamic-form>
+        @if (field.hintText) {
+        <small class="text-body-secondary d-block mt-1">{{ field.hintText }}</small>
+        }
+      </div>
+      }
+    </div>
+
+    <!-- @if (!last) {
+    <mat-divider class="form-section-grid__divider"></mat-divider>
+    } -->
+
+  </mat-card-content>
+</mat-card>
+}

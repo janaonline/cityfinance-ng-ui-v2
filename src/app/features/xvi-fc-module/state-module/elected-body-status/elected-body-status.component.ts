@@ -60,6 +60,7 @@ const EULB_SUPPORTING_ACTION = {
   VIEW_UPLOADED_DATA: 'view-uploaded-data',
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
+  REGISTER_ULB: 'register-ulb',
 } as const;
 
 export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
@@ -233,7 +234,9 @@ export class ElectedBodyStatusComponent implements OnInit {
       }
 
       const hasInitialValue = field.value !== null && field.value !== undefined && field.value !== '';
-      field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      if (!field.disabled) {
+        field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      }
 
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
       this.form.addControl(field.key, formControl);
@@ -284,9 +287,7 @@ export class ElectedBodyStatusComponent implements OnInit {
         .subscribe(() => {
           if (this.isRestoringExcelFile) return;
           this.clearApiErrorsForField('electedBodyExcelFile');
-          if (this.hasValidUlbCount()) {
-            this.triggerExcelValidation();
-          }
+          this.triggerExcelValidation();
         });
     }
 
@@ -299,14 +300,8 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
   }
 
-  /** Returns `true` when the `ulbCount` control holds a positive number. */
-  private hasValidUlbCount(): boolean {
-    const count = this.form.get('ulbCount')?.value;
-    return typeof count === 'number' && count > 0;
-  }
-
   /**
-   * Calls the validate-excel API with the current file and ULB count.
+   * Calls the validate-excel API with the current file.
    * On success (VALID or INVALID HTTP 200), reloads the form so backend-driven
    * supporting content reflects the latest validation state.
    * On HTTP error with no persisted data, applies field-level API errors directly without reloading.
@@ -317,15 +312,14 @@ export class ElectedBodyStatusComponent implements OnInit {
     if (this.isValidating()) return;
 
     const fileValue = this.form.get('electedBodyExcelFile')?.value;
-    const ulbCount = this.form.get('ulbCount')?.value;
 
-    if (!isValidEulbFileValue(fileValue) || typeof ulbCount !== 'number' || !ulbCount) return;
+    if (!isValidEulbFileValue(fileValue)) return;
 
     this.isValidating.set(true);
     this.utilityService.triggerSnackbar('Excel uploaded. Verifying data…');
 
     this.eulbService
-      .validateExcel({ stateId: this.stateId, yearId: this.yearId, ulbCount, electedBodyExcelFile: fileValue })
+      .validateExcel({ stateId: this.stateId, yearId: this.yearId, electedBodyExcelFile: fileValue })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isValidating.set(false)),
@@ -361,7 +355,7 @@ export class ElectedBodyStatusComponent implements OnInit {
       });
   }
 
-  /** Re-validates the already-uploaded Excel when ulbCount changes without a new file upload. */
+  /** Re-validates the already-uploaded Excel against the backend-maintained ULB list. */
   private revalidateUploadedExcel(): void {
     if (this.isValidating()) return;
 
@@ -369,14 +363,11 @@ export class ElectedBodyStatusComponent implements OnInit {
     const yearId = this.yearId;
     if (!stateId || !yearId) return;
 
-    const ulbCount = this.form.get('ulbCount')?.value;
-    if (typeof ulbCount !== 'number' || !ulbCount) return;
-
     this.clearAllApiErrors();
     this.isValidating.set(true);
 
     this.eulbService
-      .revalidateUploadedExcel(stateId, yearId, ulbCount)
+      .revalidateUploadedExcel(stateId, yearId)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isValidating.set(false)),
@@ -471,6 +462,9 @@ export class ElectedBodyStatusComponent implements OnInit {
         return;
       case EULB_SUPPORTING_ACTION.REVALIDATE_EXCEL:
         this.revalidateUploadedExcel();
+        return;
+      case EULB_SUPPORTING_ACTION.REGISTER_ULB:
+        this.router.navigate(['/xvifc', this.yearId, 'register-ulb']);
         return;
       default:
         return;
@@ -600,7 +594,7 @@ export class ElectedBodyStatusComponent implements OnInit {
   /** Clears previous API errors, posts the visible payload as a final submission, then reloads on success. */
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const visiblePayload = this.getVisiblePayloadWithRawFile();
     const finalSubmitData = buildEulbFinalSubmitPayloadData(visiblePayload);
 
     if (!finalSubmitData) {
@@ -746,7 +740,22 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /** Builds the draft payload data from currently visible dynamic-form controls. */
   private getVisibleEulbPayloadData(): EulbFormPayloadData {
-    return buildEulbFormPayloadData(this.visibilityService.getVisiblePayload(this.form, this.fields()));
+    return buildEulbFormPayloadData(this.getVisiblePayloadWithRawFile());
+  }
+
+  /**
+   * Returns the visible-field payload with `electedBodyExcelFile` restored to its raw control
+   * value. `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the
+   * backend `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers,
+   * but EULB's own contract (`EulbFileValue`) expects `{ fileName, fileUrl, ... }`. Without this
+   * override, `isValidEulbFileValue` always fails and save-draft/final-submit silently no-op.
+   */
+  private getVisiblePayloadWithRawFile(): Record<string, unknown> {
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    if ('electedBodyExcelFile' in payload) {
+      payload['electedBodyExcelFile'] = this.form.get('electedBodyExcelFile')?.value ?? null;
+    }
+    return payload;
   }
 
   /**

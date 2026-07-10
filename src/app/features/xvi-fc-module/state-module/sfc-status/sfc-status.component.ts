@@ -258,6 +258,22 @@ export class SfcStatusComponent implements OnInit {
     return true;
   }
 
+  /**
+   * Returns the visible-field payload with `sfcReport`/`atrReport` restored to their raw control
+   * values. `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the
+   * backend `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers,
+   * but this form's backend contract expects `{ fileName, fileUrl, fileSize, mimeType }`.
+   */
+  private getVisiblePayloadWithRawFiles(): Record<string, unknown> {
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    for (const key of ['sfcReport', 'atrReport']) {
+      if (key in payload) {
+        payload[key] = this.form.get(key)?.value ?? null;
+      }
+    }
+    return payload;
+  }
+
   private executeSaveDraft(): void {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
@@ -265,7 +281,7 @@ export class SfcStatusComponent implements OnInit {
     const payload: SfcStatusDraftPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
-      data: this.visibilityService.getVisiblePayload(this.form, this.fields()),
+      data: this.getVisiblePayloadWithRawFiles(),
     };
 
     this.sfcStatusService
@@ -291,7 +307,7 @@ export class SfcStatusComponent implements OnInit {
     const payload: SfcStatusFinalSubmitPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
-      data: this.visibilityService.getVisiblePayload(this.form, this.fields()),
+      data: this.getVisiblePayloadWithRawFiles(),
     };
 
     this.sfcStatusService

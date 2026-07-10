@@ -31,14 +31,16 @@ export class UploadDocumentsService {
 
   getUploadConfig(type: 'audited' | 'provisional', designYearId: string): Observable<UploadPageConfig> {
     return this.http
-      .get<{ success: boolean; data: UploadConfigApiData } | UploadConfigApiData>(
-        `${this.baseUrl}xvi-fc/annual-account/upload-config/${type}?yearId=${designYearId}`,
-      )
-      .pipe(map((res) => {
-        // Dev server returns raw payload; local NestJS wraps it as { success, data, timestamp }
-        const apiData = 'success' in res ? res.data : res;
-        return this.mapToConfig(type, apiData);
-      }));
+      .get<
+        { success: boolean; data: UploadConfigApiData } | UploadConfigApiData
+      >(`${this.baseUrl}xvi-fc/annual-account/upload-config/${type}?yearId=${designYearId}`)
+      .pipe(
+        map((res) => {
+          // Dev server returns raw payload; local NestJS wraps it as { success, data, timestamp }
+          const apiData = 'success' in res ? res.data : res;
+          return this.mapToConfig(type, apiData);
+        }),
+      );
   }
 
   private mapToConfig(type: 'audited' | 'provisional', apiData: UploadConfigApiData): UploadPageConfig {
@@ -48,14 +50,16 @@ export class UploadDocumentsService {
       confirmLabel: apiData.meta.confirmLabel,
       documentYearId: apiData.meta.documentYearId,
       documentYear: apiData.meta.documentYear,
-      documents: apiData.data.filter((field) => field.key !== 'receipts-payments').map((field): UploadDocumentDef => ({
-        id: field.key,
-        title: field.label,
-        subtitle: field.placeholder ?? '',
-        allowedFileTypes: field.allowedFileTypes ?? ['pdf'],
-        maxFileSize: field.maxFileSize ?? 50,
-        minPages: field.validations?.find((v) => v.name === 'minPages')?.validator as number | undefined,
-      })),
+      documents: apiData.data.map(
+        (field): UploadDocumentDef => ({
+          id: field.key,
+          title: field.label,
+          subtitle: field.placeholder ?? '',
+          allowedFileTypes: field.allowedFileTypes ?? ['pdf'],
+          maxFileSize: field.maxFileSize ?? 50,
+          minPages: field.validations?.find((v) => v.name === 'minPages')?.validator as number | undefined,
+        }),
+      ),
     };
   }
 }

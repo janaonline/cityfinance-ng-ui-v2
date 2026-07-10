@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -66,6 +67,7 @@ const DF_SUPPORTING_ACTION = {
   VIEW_UPLOADED_DATA: 'view-uploaded-data',
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
+  REGISTER_ULB: 'register-ulb',
 } as const;
 
 @Component({
@@ -93,6 +95,7 @@ export class DevolutionFormulaComponent implements OnInit {
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
   private readonly dfService = inject(DevolutionFormulaService);
   private readonly moduleService = inject(XvifcModuleService);
+  private readonly router = inject(Router);
 
   readonly stateName = signal('');
   readonly actors = signal<FormActor[]>([]);
@@ -259,7 +262,9 @@ export class DevolutionFormulaComponent implements OnInit {
       }
 
       const hasInitialValue = field.value !== null && field.value !== undefined && field.value !== '';
-      field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      if (!field.disabled) {
+        field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      }
 
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
       this.form.addControl(field.key, formControl);
@@ -505,6 +510,9 @@ export class DevolutionFormulaComponent implements OnInit {
       case DF_SUPPORTING_ACTION.REVALIDATE_EXCEL:
         this.revalidateExcel();
         return;
+      case DF_SUPPORTING_ACTION.REGISTER_ULB:
+        this.router.navigate(['/xvifc', this.yearId, 'register-ulb']);
+        return;
       default:
         return;
     }
@@ -699,12 +707,27 @@ export class DevolutionFormulaComponent implements OnInit {
     return true;
   }
 
+  /**
+   * Returns the visible-field payload with `excelFile` restored to its raw control value.
+   * `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the backend
+   * `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers, but this
+   * form's own contract (`DevolutionFileRef`) expects `{ fileName, fileUrl, ... }`. Without this
+   * override, `isValidDevolutionFileRef` always fails and save-draft/final-submit silently no-op.
+   */
+  private getVisiblePayloadWithRawFile(): Record<string, unknown> {
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    if ('excelFile' in payload) {
+      payload['excelFile'] = this.form.get('excelFile')?.value ?? null;
+    }
+    return payload;
+  }
+
   /** Clears previous API errors, posts the visible payload as a draft, then reloads on success. */
   private executeSaveDraft(): void {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
 
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const visiblePayload = this.getVisiblePayloadWithRawFile();
     const payload: SaveDraftDevolutionPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
@@ -732,7 +755,7 @@ export class DevolutionFormulaComponent implements OnInit {
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
 
-    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+    const visiblePayload = this.getVisiblePayloadWithRawFile();
     const finalSubmitData = buildDevolutionFinalSubmitPayloadData(visiblePayload);
 
     if (!finalSubmitData) {
