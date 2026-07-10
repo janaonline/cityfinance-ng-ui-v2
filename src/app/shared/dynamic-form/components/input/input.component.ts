@@ -32,6 +32,7 @@ export class InputComponent implements OnInit, OnChanges {
   validations: any[] = [];
   warnings: any[] = [];
   decimal: number = 0;
+  maxLength: number | null = null;
 
   constructor() {}
 
@@ -52,6 +53,7 @@ export class InputComponent implements OnInit, OnChanges {
       this.parentField?.decimal || this.parentField?.decimal === 0 ? this.parentField?.decimal : this.field?.decimal;
     this.warnings = this.parentField?.warning;
     this.displayInlineLabel = this.field?.displayInlineLabel || false;
+    this.maxLength = this.validations?.find((v) => v.name === 'maxlength')?.validator ?? null;
   }
 
   hasError(key: string, name: string): boolean {
