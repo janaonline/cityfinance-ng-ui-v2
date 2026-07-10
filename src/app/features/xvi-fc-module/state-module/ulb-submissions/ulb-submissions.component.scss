@@ -1,0 +1,217 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.shared-page-header;
+
+  .page-title {
+    font-size: 1.4rem;
+  }
+}
+
+.fy-badge,
+.form-wise-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.4em 0.85em;
+  letter-spacing: 0.02em;
+}
+
+.fy-badge {
+  background-color: var(--color-primary, #114551);
+  color: #fff;
+}
+
+.form-wise-badge {
+  background-color: #e7f1ff;
+  color: #0d6efd;
+}
+
+.filters-toggle {
+  --mat-button-outlined-container-shape: 8px;
+  --mat-button-filled-container-shape: 8px;
+  --mat-button-outlined-container-height: 32px;
+  --mat-button-filled-container-height: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.filters-toggle__chevron {
+  transition: transform 200ms ease;
+}
+
+.filters-toggle__chevron--open {
+  transform: rotate(180deg);
+}
+
+@keyframes filters-toggle-attention {
+  0%,
+  90%,
+  100% {
+    transform: translateX(0);
+  }
+  92% {
+    transform: translateX(-3px);
+  }
+  94% {
+    transform: translateX(3px);
+  }
+  96% {
+    transform: translateX(-2px);
+  }
+  98% {
+    transform: translateX(2px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .filters-toggle--attention {
+    animation: filters-toggle-attention 3s ease-in-out infinite;
+  }
+}
+
+.filters-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms ease;
+}
+
+.filters-panel--open {
+  grid-template-rows: 1fr;
+}
+
+.filters-panel__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #647085;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filter-field,
+.search-field {
+  --mat-form-field-outlined-outline-color: #dbe0e6;
+  --mat-form-field-outlined-hover-outline-color: #b9c1cb;
+  --mat-form-field-outlined-focus-outline-color: var(--color-primary, #114551);
+  --mat-form-field-outlined-container-shape: 8px;
+  --mat-form-field-container-height: 36px;
+  --mat-form-field-container-vertical-padding: 6px;
+  --mat-form-field-container-text-size: 0.8rem;
+  --mat-select-trigger-text-size: 0.8rem;
+}
+
+.filter-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.filter-group {
+  min-width: 160px;
+}
+
+.search-field {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+form button[matButton] {
+  height: 36px;
+  border-radius: 8px;
+  flex: none;
+}
+
+.bulk-actions button[matButton] {
+  --mat-button-outlined-label-text-size: 0.75rem;
+  --mat-button-outlined-horizontal-padding: 12px;
+  --mat-button-outlined-container-height: 30px;
+  height: 30px;
+}
+
+.table-top-accent {
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(90deg, var(--color-primary, #114551), #3fae8f);
+}
+
+.mat-mdc-table {
+  width: 100%;
+  background: transparent;
+  border-collapse: collapse;
+}
+
+.mat-mdc-header-row {
+  background: #ffffff;
+  border-bottom: 1px solid #e9eef2;
+}
+
+.mat-mdc-header-cell {
+  padding: 12px 16px;
+  color: #647085;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: none;
+  white-space: nowrap;
+}
+
+.mat-mdc-cell {
+  padding: 10px 16px;
+  color: #243047;
+  font-size: 0.8rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #edf2f3;
+}
+
+.mat-mdc-row {
+  background: #ffffff;
+  transition: background-color 120ms ease;
+
+  &:hover {
+    background: #f8f9fa;
+  }
+
+  &:last-of-type .mat-mdc-cell {
+    border-bottom: none;
+  }
+}
+
+.mat-column-select {
+  width: 36px;
+  padding-right: 0 !important;
+  padding-left: 12px !important;
+}
+
+mat-checkbox {
+  --mat-checkbox-state-layer-size: 20px;
+  --mat-checkbox-touch-target-display: none;
+}
+
+.status-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.4em 0.8em;
+  letter-spacing: 0.02em;
+}
+
+.row-action-btn {
+  --mat-button-outlined-container-shape: 999px;
+  --mat-button-filled-container-shape: 999px;
+  --mat-button-outlined-container-height: 30px;
+  --mat-button-filled-container-height: 30px;
+  --mat-button-outlined-label-text-size: 0.75rem;
+  --mat-button-filled-label-text-size: 0.75rem;
+  --mat-button-outlined-horizontal-padding: 14px;
+  --mat-button-filled-horizontal-padding: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  white-space: nowrap;
+}
