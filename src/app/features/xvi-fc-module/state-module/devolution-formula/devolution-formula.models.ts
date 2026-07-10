@@ -139,7 +139,6 @@ export interface SaveDraftDevolutionPayload {
   yearId: string;
   installment: DfInstallment;
   data?: {
-    ulbCount?: number;
     excelFile?: DevolutionFileRef;
     checkboxConfirmation?: boolean;
   };
@@ -150,7 +149,6 @@ export interface FinalSubmitDevolutionPayload {
   yearId: string;
   installment: DfInstallment;
   data: {
-    ulbCount: number;
     excelFile: DevolutionFileRef;
     checkboxConfirmation: boolean;
   };
