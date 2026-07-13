@@ -145,17 +145,13 @@ export class EulbStatusService {
   }
 
   /**
-   * Re-validates the already-uploaded Excel against the expected ULB list.
-   * Use when `ulbCount` changes after an initial upload but no new file is uploaded.
+   * Re-validates the already-uploaded Excel against the backend-maintained ULB list.
    * @param stateId - The state identifier.
    * @param yearId - The finance commission year identifier.
-   * @param ulbCount - The expected ULB count to validate against.
    */
-  revalidateUploadedExcel(stateId: string, yearId: string, ulbCount: number): Observable<EulbRevalidateExcelResponse> {
+  revalidateUploadedExcel(stateId: string, yearId: string): Observable<EulbRevalidateExcelResponse> {
     return this.http
-      .post<EulbRevalidateExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/revalidate-excel`, {
-        ulbCount,
-      })
+      .post<EulbRevalidateExcelResponse>(`${this.baseUrl}${stateId}/${yearId}/revalidate-excel`, {})
       .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 

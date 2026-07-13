@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -66,6 +67,7 @@ const DF_SUPPORTING_ACTION = {
   VIEW_UPLOADED_DATA: 'view-uploaded-data',
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
+  REGISTER_ULB: 'register-ulb',
 } as const;
 
 @Component({
@@ -93,6 +95,7 @@ export class DevolutionFormulaComponent implements OnInit {
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
   private readonly dfService = inject(DevolutionFormulaService);
   private readonly moduleService = inject(XvifcModuleService);
+  private readonly router = inject(Router);
 
   readonly stateName = signal('');
   readonly actors = signal<FormActor[]>([]);
@@ -259,7 +262,9 @@ export class DevolutionFormulaComponent implements OnInit {
       }
 
       const hasInitialValue = field.value !== null && field.value !== undefined && field.value !== '';
-      field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      if (!field.disabled) {
+        field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      }
 
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
       this.form.addControl(field.key, formControl);
@@ -504,6 +509,9 @@ export class DevolutionFormulaComponent implements OnInit {
         return;
       case DF_SUPPORTING_ACTION.REVALIDATE_EXCEL:
         this.revalidateExcel();
+        return;
+      case DF_SUPPORTING_ACTION.REGISTER_ULB:
+        this.router.navigate(['/xvifc', this.yearId, 'register-ulb']);
         return;
       default:
         return;

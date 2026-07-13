@@ -84,7 +84,7 @@ describe('EulbStatusService', () => {
         name: 'revalidate Excel',
         method: 'POST',
         urlPart: 'revalidate-excel',
-        call: () => service.revalidateUploadedExcel(stateId, yearId, 10),
+        call: () => service.revalidateUploadedExcel(stateId, yearId),
       },
       {
         name: 'update row',
@@ -333,7 +333,6 @@ describe('EulbStatusService', () => {
       stateId,
       yearId,
       data: {
-        ulbCount: 10,
         electedBodyExcelFile: fileValue,
         checkboxConfirmation: true,
       },
@@ -344,7 +343,6 @@ describe('EulbStatusService', () => {
     return {
       stateId,
       yearId,
-      ulbCount: 10,
       electedBodyExcelFile: fileValue,
     };
   }

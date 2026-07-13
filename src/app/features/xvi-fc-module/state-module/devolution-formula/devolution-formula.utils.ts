@@ -108,19 +108,13 @@ export function getHttpStatus(err: unknown): number | undefined {
   return isRecord(err) && typeof err['status'] === 'number' ? err['status'] : undefined;
 }
 
-function toFiniteNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
 export function buildDevolutionDraftPayloadData(visiblePayload: Record<string, unknown>): {
-  ulbCount?: number;
   excelFile?: DevolutionFileRef;
   checkboxConfirmation?: boolean;
 } {
   const excelFile = visiblePayload['excelFile'];
   const checkboxConfirmation = visiblePayload['checkboxConfirmation'];
   return {
-    ulbCount: toFiniteNumber(visiblePayload['ulbCount']),
     excelFile: isValidDevolutionFileRef(excelFile) ? excelFile : undefined,
     checkboxConfirmation: typeof checkboxConfirmation === 'boolean' ? checkboxConfirmation : undefined,
   };
@@ -128,14 +122,13 @@ export function buildDevolutionDraftPayloadData(visiblePayload: Record<string, u
 
 export function buildDevolutionFinalSubmitPayloadData(
   visiblePayload: Record<string, unknown>,
-): { ulbCount: number; excelFile: DevolutionFileRef; checkboxConfirmation: boolean } | null {
-  const ulbCount = toFiniteNumber(visiblePayload['ulbCount']);
+): { excelFile: DevolutionFileRef; checkboxConfirmation: boolean } | null {
   const excelFile = visiblePayload['excelFile'];
   const checkboxConfirmation = visiblePayload['checkboxConfirmation'];
-  if (ulbCount === undefined || !isValidDevolutionFileRef(excelFile) || typeof checkboxConfirmation !== 'boolean') {
+  if (!isValidDevolutionFileRef(excelFile) || typeof checkboxConfirmation !== 'boolean') {
     return null;
   }
-  return { ulbCount, excelFile, checkboxConfirmation };
+  return { excelFile, checkboxConfirmation };
 }
 
 /** Returns the backend message for a `newUlbsAdded` error on `excelFile`, or null when absent. */

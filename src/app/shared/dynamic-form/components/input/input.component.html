@@ -41,7 +41,7 @@
   } @else {
   <input [placeholder]="field.placeholder || ''" onwheel="this.blur()" matInput [formControlName]="field.key"
     [id]="field.key" [type]="field.formFieldType" [readonly]="readonly" appTrimOnBlur
-    [attr.data-cy]="field.key ? field.key + '-test' : null" />
+    [attr.maxlength]="maxLength" [attr.data-cy]="field.key ? field.key + '-test' : null" />
   }
 
   <!-- <mat-icon matSuffix>warning</mat-icon> -->
@@ -58,6 +58,9 @@
     warning.message
     }}</mat-hint>
   }
+  }
+  @if (field.disabledReason) {
+  <mat-hint>{{ field.disabledReason }}</mat-hint>
   }
 </mat-form-field>
 }
