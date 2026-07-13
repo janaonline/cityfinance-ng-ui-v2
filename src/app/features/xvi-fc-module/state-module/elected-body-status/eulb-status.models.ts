@@ -1,3 +1,4 @@
+import { UploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
 import { FormActor } from '../../shared/form-progress/form-progress.component';
 
@@ -21,13 +22,8 @@ export interface ApiErrorResponse {
   data?: unknown;
 }
 
-export interface EulbFileValue {
-  fileName: string;
-  fileUrl: string;
-  fileSize?: number | null;
-  mimeType?: string;
-  s3Key?: string;
-}
+/** Canonical dynamic-form uploaded-file shape sent to and returned by the eULB APIs. */
+export type EulbFileValue = UploadedFileMetadata;
 
 export type EulbValidationStatus = 'NOT_VALIDATED' | 'VALID' | 'INVALID';
 export type EulbRowValidationStatus = 'VALID' | 'INVALID';
@@ -357,13 +353,7 @@ export interface EulbPostSubmissionUpdateValidateResponse {
   timestamp?: string;
 }
 
-export interface EulbPostSubmissionUpdateDocument {
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  mimeType?: string;
-  s3Key?: string;
-}
+export type EulbPostSubmissionUpdateDocument = UploadedFileMetadata;
 
 export interface EulbPostSubmissionUpdateSubmitPayload {
   rows: EulbPostSubmissionUpdateValidateRowPayload[];

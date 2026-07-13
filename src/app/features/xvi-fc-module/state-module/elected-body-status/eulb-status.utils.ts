@@ -1,3 +1,4 @@
+import { isUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -22,11 +23,11 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 export function isValidEulbFileValue(value: unknown): value is EulbFileValue {
-  return isRecord(value) && isNonEmptyString(value['fileName']) && isNonEmptyString(value['fileUrl']);
+  return isUploadedFileMetadata(value);
 }
 
 export function hasEulbFileValue(value: unknown): boolean {
-  return isRecord(value) && (isNonEmptyString(value['fileName']) || isNonEmptyString(value['fileUrl']));
+  return isRecord(value) && (isNonEmptyString(value['originalName']) || isNonEmptyString(value['path']));
 }
 
 function normalizeUlbCount(value: unknown): number | undefined {
