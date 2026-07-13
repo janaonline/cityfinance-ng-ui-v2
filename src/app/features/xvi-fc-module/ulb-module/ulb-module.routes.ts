@@ -50,11 +50,13 @@ export const ULB_ROUTES: Routes = [
           ),
       },
       {
+        path: 'slb',
+        loadComponent: () => import('./ulb-forms/slb/slb.component').then((m) => m.SlbComponent),
+      },
+      {
         path: 'roles-teams-unified-view',
         loadComponent: () =>
-          import('./roles-teams-overview/roles-teams-overview.component').then(
-            (m) => m.RolesTeamsOverviewComponent,
-          ),
+          import('./roles-teams-overview/roles-teams-overview.component').then((m) => m.RolesTeamsOverviewComponent),
       },
       {
         path: '**',
