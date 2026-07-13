@@ -54,9 +54,7 @@ export class GetOcrDetailsComponent implements OnInit {
   readonly showRawResponse = signal(false);
   readonly successfulResponse = computed<OcrResponse | null>(() => {
     const response = this.responseData();
-    return isSuccessfulOcrResponse(response) && !isErroredOcrJobResponse(response)
-      ? response
-      : null;
+    return isSuccessfulOcrResponse(response) && !isErroredOcrJobResponse(response) ? response : null;
   });
   readonly failedResponse = computed<FailedOcrResponse | null>(() => {
     const response = this.responseData();
@@ -68,7 +66,7 @@ export class GetOcrDetailsComponent implements OnInit {
   });
 
   constructor() {
-    this.globalLoader.hideLayout();
+    // this.globalLoader.hideLayout();
   }
 
   ngOnInit(): void {
@@ -95,11 +93,7 @@ export class GetOcrDetailsComponent implements OnInit {
     const { jobId, filename, ocrMethod } = this.detailsForm.getRawValue();
 
     if (!jobId.trim() && !filename.trim()) {
-      this.utilityService.swalPopup(
-        'Search value required',
-        'Please enter either Job ID or File Name.',
-        'error',
-      );
+      this.utilityService.swalPopup('Search value required', 'Please enter either Job ID or File Name.', 'error');
       return;
     }
 

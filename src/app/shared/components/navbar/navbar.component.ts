@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
-import { Router, RouterModule } from '@angular/router';
-import { combineLatest } from 'rxjs';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { combineLatest, filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { environment } from '../../../../environments/environment';
@@ -25,6 +25,20 @@ import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 export class NavbarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly accessChecker = new AccessChecker();
+
+  readonly ocrMenu = {
+    name: 'OCR',
+    href: '',
+    child: [
+      // { name: 'Jobs List', link: '/ocr/list' },
+      // { name: 'Upload', link: '/ocr/upload' },
+      { name: 'Job Details', link: '/ocr/details' },
+      { name: 'Validation', link: '/ocr/validation' },
+      { name: 'Validation List', link: '/ocr/validation-list' },
+      { name: 'Eval Benchmarks', link: '/ocr/eval-benchmarks' },
+      { name: 'Compare Runs', link: '/ocr/eval-run-compare' },
+    ],
+  };
 
   readonly defaultMenus: any[] = [
     {
@@ -65,6 +79,7 @@ export class NavbarComponent implements OnInit {
   ngOnInit(): void {
     this.isProd = environment?.isProduction;
     this.bindAuthState();
+    this.bindRouteChanges();
   }
 
   initializeAccessChecking() {
@@ -144,6 +159,19 @@ export class NavbarComponent implements OnInit {
       });
   }
 
+  private bindRouteChanges() {
+    this._router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.setLoggedInUserMenu());
+  }
+
+  private isOcrRoute(): boolean {
+    return this._router.url.startsWith('/ocr');
+  }
+
   private applySessionState(sessionState: AuthSessionState, user: IUserLoggedInDetails | null) {
     this.isAuthResolved = sessionState.isReady;
     this.isLoggedIn = sessionState.isAuthenticated;
@@ -155,13 +183,16 @@ export class NavbarComponent implements OnInit {
   }
 
   private setLoggedInUserMenu() {
+    const showOcrMenu = this.isOcrRoute() ? [this.ocrMenu] : [];
+
     if (!this.user || !this.isLoggedIn) {
-      this.menus = [...this.defaultMenus];
+      this.menus = [...this.defaultMenus, ...showOcrMenu];
       return;
     }
 
     // const role = this.user.role;
     this.menus = [
+      ...showOcrMenu,
       // ...(role === USER_TYPE.ULB ? [{ name: 'XVI FC Data Collection', link: '/xvifc-form' }] : []),
       // ...(role === USER_TYPE.ULB
       //   ? [
