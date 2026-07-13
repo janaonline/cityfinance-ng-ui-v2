@@ -22,7 +22,7 @@ import { debounceTime, distinctUntilChanged, merge } from 'rxjs';
 import { UtilityService } from '../../../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../../../shared/dynamic-form/dynamic-form.component';
-import { UploadedFileValue } from '../../../../../../shared/dynamic-form/field.interface';
+import { isUploadedFileMetadata } from '../../../../../../shared/dynamic-form/components/file/file-metadata.types';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../../dynamic-form-visibility.service';
 import { XvifcModuleService } from '../../../../xvi-fc-module.service';
@@ -295,31 +295,7 @@ export class EulbPostUpdateComponent implements OnInit {
 
   private applyProofOfElectionValue(raw: unknown, version: number): void {
     if (this.isStaleProofOfElectionValue(version)) return;
-    this.updateDocument.set(this.buildDocumentMetadataFromUploadResult(raw));
-  }
-
-  private buildDocumentMetadataFromUploadResult(raw: unknown): EulbPostSubmissionUpdateDocument | null {
-    if (!this.isUploadedFileWithLocation(raw)) return null;
-
-    return {
-      fileName: raw.fileName,
-      fileUrl: raw.fileUrl,
-      fileSize: typeof raw.fileSize === 'number' ? raw.fileSize : 0,
-      mimeType: raw.mimeType,
-    };
-  }
-
-  private isUploadedFileWithLocation(value: unknown): value is UploadedFileValue & {
-    readonly fileName: string;
-    readonly fileUrl: string;
-  } {
-    return (
-      isRecord(value) &&
-      typeof value['fileName'] === 'string' &&
-      value['fileName'] !== '' &&
-      typeof value['fileUrl'] === 'string' &&
-      value['fileUrl'] !== ''
-    );
+    this.updateDocument.set(isUploadedFileMetadata(raw) ? raw : null);
   }
 
   private isStaleProofOfElectionValue(version: number): boolean {

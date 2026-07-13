@@ -607,12 +607,19 @@ describe('SfcStatusComponent', () => {
     fixture.detectChanges();
 
     const sfcReportFile = {
-      fileName: 'report.pdf',
-      fileUrl: '/report.pdf',
-      fileSize: 1024,
+      originalName: 'report.pdf',
+      path: '/report.pdf',
       mimeType: 'application/pdf',
+      sizeKb: 1,
+      pageCount: 10,
     };
-    const atrReportFile = { fileName: 'atr.pdf', fileUrl: '/atr.pdf', fileSize: 512, mimeType: 'application/pdf' };
+    const atrReportFile = {
+      originalName: 'atr.pdf',
+      path: '/atr.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 0.5,
+      pageCount: 5,
+    };
     getControl('sfcReport')?.setValue(sfcReportFile);
     getControl('atrReport')?.setValue(atrReportFile);
     getControl('isNewSfcConstituted')?.setValue('no');
