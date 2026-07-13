@@ -25,10 +25,6 @@
   box-shadow: none;
 }
 
-.metric-card {
-  border-left: 4px solid #0f6c7a;
-}
-
 .metric-card mat-card-content {
   padding: 1.35rem 1.25rem;
 }
@@ -40,6 +36,20 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.dashboard-container {
+  border-radius: var(--radius-split-squared);
+  background: var(--color-primary-accent);
+  margin-inline: 0.5rem;
+}
+
+.top-accent {
+  border-radius: 8px;
+}
+
+.dashboard-container .content-wrap {
+  padding-inline: 2rem !important;
 }
 
 .dashboard-icon-badge {
@@ -212,7 +222,7 @@
   min-height: 8rem;
   padding: 1rem;
   border: 1px solid rgba(17, 69, 81, 0.12);
-  border-left: 4px solid rgba(17, 69, 81, 0.22);
+  // border-left: 4px solid rgba(17, 69, 81, 0.22);
   border-radius: 0.5rem;
   background: #fafcfc;
 }
@@ -230,7 +240,7 @@
 }
 
 .status-tile--progress {
-  border-left-color: #805d00;
+  // border-left-color: #805d00;
   background: #fff9eb;
 }
 
@@ -240,7 +250,7 @@
 }
 
 .status-tile--review {
-  border-left-color: #b36b00;
+  // border-left-color: #b36b00;
   background: #fff7ed;
 }
 
@@ -250,7 +260,7 @@
 }
 
 .status-tile--eligible {
-  border-left-color: #1e7a41;
+  // border-left-color: #1e7a41;
   background: #eef8f1;
 }
 
@@ -260,7 +270,7 @@
 }
 
 .status-tile--exemption {
-  border-left-color: #b3261e;
+  // border-left-color: #b3261e;
   background: #fff4f2;
 }
 
