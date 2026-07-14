@@ -120,13 +120,7 @@ export type FieldSupportingContent =
       badges?: FieldSupportingBadge[];
     };
 
-export type UploadedFileValue = {
-  fileName: string;
-  fileUrl: string;
-  fileSize: number | null;
-  mimeType?: string;
-  pageCount?: number | null;
-} | null;
+export type { UploadedFileMetadata } from './components/file/file-metadata.types';
 
 export interface LegacyFileValue {
   name: string;

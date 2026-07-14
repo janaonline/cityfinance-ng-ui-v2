@@ -12,6 +12,11 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./overview/overview.component').then((m) => m.OverviewComponent),
   },
   {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./state-dashboard/state-dashboard.component').then((m) => m.StateDashboardComponent),
+  },
+  {
     path: 'ulb-submissions',
     loadComponent: () => import('./ulb-submissions/ulb-submissions.component').then((m) => m.UlbSubmissionsComponent),
   },

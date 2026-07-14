@@ -26,7 +26,13 @@ import { DevolutionFormulaComponent } from './devolution-formula.component';
 import { DevolutionFormulaRowsDialogComponent } from './dialogs/rows-dialog/devolution-formula-rows-dialog.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 
-const mockFileValue = { fileName: 'test.xlsx', fileUrl: 'https://example.com/test.xlsx' };
+const mockFileValue = {
+  originalName: 'test.xlsx',
+  path: 'https://example.com/test.xlsx',
+  mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  sizeKb: 2,
+  pageCount: null,
+};
 
 const mockValidationSummary: DevolutionValidationSummary = {
   validationStatus: 'VALID',
@@ -1539,9 +1545,7 @@ describe('DevolutionFormulaComponent', () => {
     it('validateExcel is triggered when file is uploaded even though ulbCount is backend-disabled', () => {
       dfService.validateExcel.calls.reset();
       (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
-      expect(dfService.validateExcel).toHaveBeenCalledOnceWith(
-        jasmine.objectContaining({ excelFile: mockFileValue }),
-      );
+      expect(dfService.validateExcel).toHaveBeenCalledOnceWith(jasmine.objectContaining({ excelFile: mockFileValue }));
       expect(dfService.validateExcel.calls.mostRecent().args[0]).not.toContain('ulbCount' as never);
     });
 

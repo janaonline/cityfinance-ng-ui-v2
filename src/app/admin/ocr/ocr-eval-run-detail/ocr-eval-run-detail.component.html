@@ -38,6 +38,7 @@
         </div>
         <div class="hero-meta">
           <span><span class="meta-lbl">Benchmark</span> {{ r.benchmark_id }}</span>
+          <span><span class="meta-lbl">Batch</span> {{ r.job_batch_id || '—' }}</span>
           <span><span class="meta-lbl">Extract</span> {{ r.extraction_model }}</span>
           <span><span class="meta-lbl">Validate</span> {{ r.validation_model }}</span>
           <span><span class="meta-lbl">Started</span> {{ formatDate(r.created_at) }}</span>
@@ -54,7 +55,7 @@
       @if (r.status === 'completed' && r.metrics) {
         <div class="metrics-grid">
           <div class="stat-card">
-            <div class="stat-label">Total Jobs</div>
+            <div class="stat-label">Total Rows</div>
             <div class="stat-value">{{ r.metrics['total'] ?? '—' }}</div>
           </div>
           <div class="stat-card stat-card--green">
@@ -76,6 +77,22 @@
           <div class="stat-card stat-card--blue">
             <div class="stat-label">Doc Type Accuracy</div>
             <div class="stat-value">{{ acc(r.metrics['doc_type_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Language Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['language_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Seal Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['seal_present_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Signature Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['signature_present_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Table Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['table_present_accuracy']) }}</div>
           </div>
           <div class="stat-card stat-card--indigo">
             <div class="stat-label">Overall Accuracy</div>
@@ -106,103 +123,42 @@
                 <div class="id-line" style="margin-top:0.3rem;">
                   <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 26) }}</span>
                 </div>
-              </td>
-            </ng-container>
-
-            <!-- Expected (ground truth) -->
-            <ng-container matColumnDef="expected">
-              <th mat-header-cell *matHeaderCellDef>Expected</th>
-              <td mat-cell *matCellDef="let row">
-                <div class="field-grid">
-                  <div><span class="cell-label">ULB</span><span class="cell-value" [title]="row.expectedUlb">{{ truncate(row.expectedUlb, 22) }}</span></div>
-                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.expectedFy }}</span></div>
-                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.expectedDocType }}</span></div>
+                <div class="id-line" style="margin-top:0.3rem;">
+                  <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
                 </div>
               </td>
             </ng-container>
 
-            <!-- Benchmark (original stored extraction) -->
+            <!-- Input (values used when the source job was created) -->
+            <ng-container matColumnDef="input">
+              <th mat-header-cell *matHeaderCellDef>Input</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="field-grid">
+                  <div><span class="cell-label">ULB</span><span class="cell-value" [title]="row.inputUlb">{{ truncate(row.inputUlb, 22) }}</span></div>
+                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.inputFy }}</span></div>
+                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.inputDocType }}</span></div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Benchmark ground truth vs freshly-extracted values -->
             <ng-container matColumnDef="benchmark">
               <th mat-header-cell *matHeaderCellDef>
                 <div class="col-header-badge col-header-badge--bmk">Benchmark</div>
-                <div class="col-header-sub">Original extraction</div>
+                <div class="col-header-sub">Ground truth → Extracted</div>
               </th>
               <td mat-cell *matCellDef="let row">
                 <div class="extraction-cell">
-                  <div class="extr-row">
-                    <span class="cell-label">ULB</span>
-                    <span class="cell-value" [title]="row.bmkUlb">{{ truncate(row.bmkUlb, 20) }}</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkUlbMatch)">{{ matchIcon(row.bmkUlbMatch) }}</mat-icon>
-                  </div>
-                  <div class="extr-row">
-                    <span class="cell-label">FY</span>
-                    <span class="cell-value">{{ row.bmkFy }}</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkFyMatch)">{{ matchIcon(row.bmkFyMatch) }}</mat-icon>
-                  </div>
-                  <div class="extr-row">
-                    <span class="cell-label">Type</span>
-                    <span class="cell-value">{{ row.bmkDocType }}</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkDocTypeMatch)">{{ matchIcon(row.bmkDocTypeMatch) }}</mat-icon>
-                  </div>
+                  @for (f of row.fields; track f.label) {
+                    <div class="extr-row">
+                      <span class="cell-label">{{ f.label }}</span>
+                      <span class="cell-value" [title]="f.benchmark + ' → ' + f.extracted">{{ truncate(f.benchmark, 14) }} → {{ truncate(f.extracted, 14) }}</span>
+                      <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(f.match)">{{ matchIcon(f.match) }}</mat-icon>
+                    </div>
+                  }
                   <div class="extr-row extr-row--overall">
                     <span class="cell-label">Overall</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.bmkOverallMatch)">{{ matchIcon(row.bmkOverallMatch) }}</mat-icon>
-                  </div>
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- New extraction -->
-            <ng-container matColumnDef="newRun">
-              <th mat-header-cell *matHeaderCellDef>
-                <div class="col-header-badge col-header-badge--new">New Run</div>
-                <div class="col-header-sub">This eval's extraction</div>
-              </th>
-              <td mat-cell *matCellDef="let row">
-                <div class="extraction-cell">
-                  <div class="extr-row">
-                    <span class="cell-label">ULB</span>
-                    <span class="cell-value" [title]="row.newUlb">{{ truncate(row.newUlb, 20) }}</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newUlbMatch)">{{ matchIcon(row.newUlbMatch) }}</mat-icon>
-                  </div>
-                  <div class="extr-row">
-                    <span class="cell-label">FY</span>
-                    <span class="cell-value">{{ row.newFy }}</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newFyMatch)">{{ matchIcon(row.newFyMatch) }}</mat-icon>
-                  </div>
-                  <div class="extr-row">
-                    <span class="cell-label">Type</span>
-                    <span class="cell-value">{{ row.newDocType }}</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newDocTypeMatch)">{{ matchIcon(row.newDocTypeMatch) }}</mat-icon>
-                  </div>
-                  <div class="extr-row extr-row--overall">
-                    <span class="cell-label">Overall</span>
-                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.newOverallMatch)">{{ matchIcon(row.newOverallMatch) }}</mat-icon>
-                  </div>
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- Change (benchmark → new) -->
-            <ng-container matColumnDef="change">
-              <th mat-header-cell *matHeaderCellDef>Change</th>
-              <td mat-cell *matCellDef="let row">
-                <div class="change-grid">
-                  <div class="change-row">
-                    <span class="cell-label">ULB</span>
-                    <mat-icon class="change-icon" [ngClass]="changeClass(row.ulbChange)">{{ changeIcon(row.ulbChange) }}</mat-icon>
-                  </div>
-                  <div class="change-row">
-                    <span class="cell-label">FY</span>
-                    <mat-icon class="change-icon" [ngClass]="changeClass(row.fyChange)">{{ changeIcon(row.fyChange) }}</mat-icon>
-                  </div>
-                  <div class="change-row">
-                    <span class="cell-label">Type</span>
-                    <mat-icon class="change-icon" [ngClass]="changeClass(row.docTypeChange)">{{ changeIcon(row.docTypeChange) }}</mat-icon>
-                  </div>
-                  <div class="change-row change-row--overall">
-                    <span class="cell-label">Overall</span>
-                    <mat-icon class="change-icon" [ngClass]="changeClass(row.overallChange)">{{ changeIcon(row.overallChange) }}</mat-icon>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.overallMatch)">{{ matchIcon(row.overallMatch) }}</mat-icon>
                   </div>
                 </div>
               </td>

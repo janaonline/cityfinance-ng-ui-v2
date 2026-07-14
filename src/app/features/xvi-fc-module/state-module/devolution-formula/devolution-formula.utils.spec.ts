@@ -14,7 +14,13 @@ import {
   isValidDevolutionFileRef,
 } from './devolution-formula.utils';
 
-const mockFileValue = { fileName: 'test.xlsx', fileUrl: 'https://example.com/test.xlsx' };
+const mockFileValue = {
+  originalName: 'test.xlsx',
+  path: 'https://example.com/test.xlsx',
+  mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  sizeKb: 2,
+  pageCount: null,
+};
 
 const mockValidationSummary: DevolutionValidationSummary = {
   validationStatus: 'VALID',
@@ -44,12 +50,14 @@ describe('isRecord', () => {
 // ─── isValidDevolutionFileRef ─────────────────────────────────────────────────
 
 describe('isValidDevolutionFileRef', () => {
-  it('returns true when fileName and fileUrl are non-empty strings', () =>
+  it('returns true for a canonical uploaded-file value', () =>
     expect(isValidDevolutionFileRef(mockFileValue)).toBeTrue());
-  it('returns false when fileName is empty', () =>
-    expect(isValidDevolutionFileRef({ fileName: '', fileUrl: 'u' })).toBeFalse());
-  it('returns false when fileUrl is empty', () =>
-    expect(isValidDevolutionFileRef({ fileName: 'f', fileUrl: '' })).toBeFalse());
+  it('returns false when originalName is empty', () =>
+    expect(isValidDevolutionFileRef({ ...mockFileValue, originalName: '' })).toBeFalse());
+  it('returns false when path is empty', () =>
+    expect(isValidDevolutionFileRef({ ...mockFileValue, path: '' })).toBeFalse());
+  it('returns false for the pre-canonical fileName/fileUrl shape', () =>
+    expect(isValidDevolutionFileRef({ fileName: 'test.xlsx', fileUrl: 'https://example.com/test.xlsx' })).toBeFalse());
   it('returns false for null', () => expect(isValidDevolutionFileRef(null)).toBeFalse());
   it('returns false for a string', () => expect(isValidDevolutionFileRef('file.xlsx')).toBeFalse());
 });
@@ -293,7 +301,6 @@ describe('buildDevolutionDraftPayloadData', () => {
     const result = buildDevolutionDraftPayloadData({ excelFile: null, checkboxConfirmation: 'yes' });
     expect(result.checkboxConfirmation).toBeUndefined();
   });
-
 });
 
 // ─── getRegisterUlbErrorMessage ───────────────────────────────────────────────
