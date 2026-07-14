@@ -1,0 +1,90 @@
+<div class="unspent-ulb-table-wrap mt-2">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle unspent-ulb-table">
+      <colgroup>
+        <col class="col-slno" />
+        <col class="col-ulb" />
+        <col class="col-code" />
+        <col class="col-alloc" />
+        <col class="col-unspent" />
+        <col class="col-pct" />
+        <col class="col-eligible" />
+        <col class="col-action" />
+      </colgroup>
+      <thead class="table-light">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">ULB</th>
+          <th scope="col">Census/SB ID</th>
+          <th scope="col">16th FC Allocation</th>
+          <th scope="col">{{ applicableFcLabel() }} FC Unspent</th>
+          <th scope="col">% of Alloc.</th>
+          <th scope="col">Eligible?</th>
+          <th scope="col" class="text-end">Remove</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows().controls; track row; let i = $index) {
+          <tr [formGroup]="row">
+            <td>{{ i + 1 }}</td>
+            <td>
+              <select class="form-select form-select-sm" formControlName="ulbId" aria-label="Select ULB">
+                <option [ngValue]="null" disabled>Select ULB</option>
+                @for (opt of ulbOptions(); track opt.ulbId) {
+                  <option [ngValue]="opt.ulbId" [disabled]="takenUlbIdsByRowIndex()[i]?.has(opt.ulbId)">
+                    {{ opt.ulbName }}
+                  </option>
+                }
+              </select>
+            </td>
+            <td class="text-truncate">
+              {{ rowViewModels()[i].option?.censusCode ?? rowViewModels()[i].option?.sbCode ?? '—' }}
+            </td>
+            <td>{{ rowViewModels()[i].allocationAmount ?? '—' }}</td>
+            <td>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                class="form-control form-control-sm"
+                formControlName="unspentAmount"
+                aria-label="Unspent amount"
+              />
+            </td>
+            <td>
+              @if (rowViewModels()[i].allocationPerc !== null) {
+                {{ rowViewModels()[i].allocationPerc | number: '1.0-2' }}%
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </td>
+            <td>
+              @if (rowViewModels()[i].eligible === null) {
+                <span class="text-muted">—</span>
+              } @else if (rowViewModels()[i].eligible) {
+                <span class="badge text-bg-success">Eligible</span>
+              } @else {
+                <span class="badge text-bg-danger">Not Eligible</span>
+              }
+            </td>
+            <td class="text-end">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                [disabled]="!canEdit()"
+                (click)="removeRow(i)"
+                aria-label="Remove row"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="!canEdit()" (click)="addRow()">
+    <i class="bi bi-plus-lg me-1"></i>Add ULB
+  </button>
+</div>

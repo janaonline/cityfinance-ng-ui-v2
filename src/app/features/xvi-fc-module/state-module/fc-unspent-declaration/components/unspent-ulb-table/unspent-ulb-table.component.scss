@@ -1,0 +1,51 @@
+.unspent-ulb-table {
+  table-layout: fixed;
+
+  td,
+  th {
+    vertical-align: middle;
+  }
+
+  td {
+    height: 48px;
+    overflow: hidden;
+  }
+
+  .col-slno {
+    width: 40px;
+  }
+
+  .col-ulb {
+    width: 220px;
+  }
+
+  .col-code {
+    width: 110px;
+  }
+
+  .col-alloc,
+  .col-unspent {
+    width: 130px;
+  }
+
+  .col-pct {
+    width: 90px;
+  }
+
+  .col-eligible {
+    width: 110px;
+  }
+
+  .col-action {
+    width: 70px;
+  }
+}
+
+// Stable minimum select width and no unit/spinner wrap on the amount input.
+.unspent-ulb-table select.form-select-sm {
+  min-width: 180px;
+}
+
+.unspent-ulb-table input[type='number'].form-control-sm {
+  text-align: right;
+}

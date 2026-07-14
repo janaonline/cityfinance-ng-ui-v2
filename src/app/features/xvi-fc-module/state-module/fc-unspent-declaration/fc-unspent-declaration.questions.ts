@@ -27,6 +27,7 @@ export const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
     //   variant: 'inline',
     //   labelWidth: 'lg',
     // },
+    radioLayout: 'vertical',
     supportingContent: [
       {
         type: 'actions',
