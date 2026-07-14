@@ -56,6 +56,7 @@ const EDITABLE_FORM_STATUSES = new Set<FormStatusType>([
 interface UlbDetails {
   ulbName: string;
   stateName: string;
+  stateId?: string;
   selectedYear: string;
   ulbId?: string;
   designYearId?: string;
@@ -169,7 +170,8 @@ export class XviFcBankAccountComponent {
       !!this.bankDetails() &&
       !!this.selectedProof() &&
       !this.proofError() &&
-      !!this.ulbDetails()?.designYearId
+      !!this.ulbDetails()?.designYearId &&
+      !!this.ulbDetails()?.stateId
     );
   }
 
@@ -352,6 +354,7 @@ export class XviFcBankAccountComponent {
     this.bankAccountService
       .submitBankAccount({
         ulbId: details.ulbId,
+        stateId: details.stateId!,
         designYearId: details.designYearId,
         ifscCode: this.form.controls.ifscCode.value ?? '',
         accountNumber: this.form.controls.accountNumber.value ?? '',
@@ -455,11 +458,13 @@ export class XviFcBankAccountComponent {
       if (!parsed.ulbName || !parsed.stateName || !parsed.selectedYear) return null;
 
       const userDataRaw = localStorage.getItem('userData');
-      const userUlbId = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string })?.ulb : undefined;
+      const userData = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string; state?: string }) : null;
+      const userUlbId = userData?.ulb;
 
       return {
         ulbName: parsed.ulbName,
         stateName: parsed.stateName,
+        stateId: parsed.stateId ?? userData?.state ?? undefined,
         selectedYear: parsed.selectedYear,
         designYearId: parsed.designYearId ?? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) ?? undefined,
         ulbId: parsed.ulbId ?? parsed._id ?? parsed.ulb?._id ?? parsed.ulb?.id ?? userUlbId ?? undefined,
