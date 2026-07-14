@@ -32,7 +32,7 @@ export class UlbOverviewService {
         const selectedYear = raw.replace(/^FY-/, 'FY ');
         localStorage.setItem(
           'xvifc_ulb_details',
-          JSON.stringify({ ulbName: d.ulbName, stateName: d.stateName, selectedYear }),
+          JSON.stringify({ ulbName: d.ulbName, stateName: d.stateName, stateId: d.stateId, selectedYear }),
         );
       }),
       map((res) => {
