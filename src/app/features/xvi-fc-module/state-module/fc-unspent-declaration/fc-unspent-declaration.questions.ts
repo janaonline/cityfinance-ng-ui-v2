@@ -42,7 +42,7 @@ export const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
   },
   {
     formFieldType: 'file',
-    label: 'State-Level Declaration -14th Finance Commission',
+    label: 'State-Level Declaration - 14th Finance Commission',
     key: 'fcDeclaration',
     value: null,
     validations: [
