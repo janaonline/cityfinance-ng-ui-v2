@@ -25,7 +25,8 @@ export class HeaderComponent {
     localStorage.setItem('myLSkey', JSON.stringify({ currentTextSize: size }));
   }
 
-  public scrollToMainContent(): void {
+  public scrollToMainContent(event: Event): void {
+    event.preventDefault();
     const element = document.getElementById('main-content');
     if (element) {
       const yOffset = -120;
