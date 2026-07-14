@@ -1,3 +1,4 @@
+import { isUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -19,11 +20,11 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 export function isValidDevolutionFileRef(value: unknown): value is DevolutionFileRef {
-  return isRecord(value) && isNonEmptyString(value['fileName']) && isNonEmptyString(value['fileUrl']);
+  return isUploadedFileMetadata(value);
 }
 
 export function hasDevolutionFileRef(value: unknown): boolean {
-  return isRecord(value) && (isNonEmptyString(value['fileName']) || isNonEmptyString(value['fileUrl']));
+  return isRecord(value) && (isNonEmptyString(value['originalName']) || isNonEmptyString(value['path']));
 }
 
 function isApiErrorMap(value: unknown): value is ApiErrorMap {

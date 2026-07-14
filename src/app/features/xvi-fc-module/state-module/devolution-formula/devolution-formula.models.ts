@@ -1,3 +1,4 @@
+import { UploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
 import { FormActor } from '../../shared/form-progress/form-progress.component';
 
@@ -95,13 +96,8 @@ export interface Validator {
   message: string;
 }
 
-export interface DevolutionFileValue {
-  fileName: string;
-  fileUrl: string;
-  fileSize?: number | null;
-  mimeType?: string;
-  s3Key?: string;
-}
+/** Canonical dynamic-form uploaded-file shape sent to and returned by the devolution APIs. */
+export type DevolutionFileValue = UploadedFileMetadata;
 
 /** Same shape as DevolutionFileValue; used when sending a file reference in a payload. */
 export type DevolutionFileRef = DevolutionFileValue;
