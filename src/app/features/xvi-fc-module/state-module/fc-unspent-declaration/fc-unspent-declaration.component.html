@@ -1,1 +1,112 @@
-<p>fc-unspent-declaration works!</p>
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="form-container">
+    <div class="top-accent"></div>
+
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack d-flex flex-column gap-4">
+        <div>
+          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+            16th Finance Commission
+            @if (stateName()) {
+              &nbsp;&middot;&nbsp; {{ stateName() }}
+            }
+          </div>
+
+          <h1 class="page-title mb-2">Unspent {{ applicableFc() }} FC Balance Declaration</h1>
+
+          <p class="page-subtitle text-secondary mb-0">
+            The 16th FC installment being claimed must not exceed 10% of the ULB's disclosed
+            {{ applicableFc() }} Finance Commission unspent balance. If no ULB in your state holds any
+            {{ applicableFc() }} FC unspent balance, you may certify that here by uploading a signed declaration instead
+            of collecting ULB-wise data.
+          </p>
+        </div>
+
+        <hr class="my-0 text-body-tertiary" />
+
+        @if (isLoading()) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        } @else {
+          @if (actors().length) {
+            <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
+            <hr class="my-0 text-body-tertiary" />
+          }
+
+          <form class="content-body" [formGroup]="form">
+            @for (item of visibleFields(); track item.key; let isLast = $last) {
+              <div
+                class="my-2"
+                [class.border-bottom]="!isLast"
+                [class.border-secondary]="!isLast"
+                [class.border-opacity-25]="!isLast"
+              >
+                <app-dynamic-form
+                  class="p-2 d-block"
+                  [field]="item"
+                  [group]="form"
+                  [mode]="canEdit() ? 'edit' : 'view'"
+                  (supportingAction)="onSupportingAction($event)"
+                ></app-dynamic-form>
+              </div>
+            }
+          </form>
+        }
+      </div>
+    </div>
+
+    <!-- Show acknowledgement section only if edit + finalSubmit is true -->
+    @if (canEdit() || canFinalSubmit()) {
+      <div class="acknowledgement border-top p-3">
+        <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+          <button
+            type="button"
+            matButton="outlined"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+            (click)="onCancel()"
+            data-cy="fc-unspent-declaration-cancel-test"
+          >
+            <i class="bi bi-x-circle-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Cancel</span>
+          </button>
+
+          <button
+            type="submit"
+            matButton="filled"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+            (click)="onSubmit('saveAsDraft')"
+            data-cy="fc-unspent-declaration-submit-test"
+          >
+            @if (isSavingDraft()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span class="d-none d-md-inline">Saving...</span>
+            } @else {
+              <i class="bi bi-bookmark-check-fill d-md-none"></i>
+              <span class="d-none d-md-inline">Save</span>
+            }
+          </button>
+
+          <!-- Show submit button only if finalSubmit = true -->
+          @if (canFinalSubmit()) {
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
+              (click)="onSubmit('finalSubmit')"
+              data-cy="fc-unspent-declaration-final-submit-test"
+            >
+              @if (isFinalSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Submitting...</span>
+              } @else {
+                <i class="bi bi-send-check-fill d-md-none"></i>
+                <span class="d-none d-md-inline">Final Submit</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
