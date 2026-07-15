@@ -61,6 +61,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
 
+  readonly threshold = signal(10);
   readonly stateName = signal('');
   readonly applicableFc = signal<FcUnspentApplicableFc>('14TH_FC');
   readonly applicableFcLabel = computed(() => (this.applicableFc() === '15TH_FC' ? '15th' : '14th'));
@@ -101,6 +102,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
     this.stateName.set(data.stateName);
     this.applicableFc.set(data.applicableFc);
     this.actors.set(data.actors);
+    this.threshold.set(data.threshold);
     this.currentFormStatus.set(data.currentFormStatus);
     this.canEdit.set(data.permissions.canEdit);
     this.canFinalSubmit.set(data.permissions.canFinalSubmit);
@@ -181,11 +183,23 @@ export class FcUnspentDeclarationComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
+        console.log(`[FC Unspent Declaration] ${action} payload`, this.buildPayload());
         this.utilityService.triggerSnackbar(
           'Form validated. This page is not yet connected to a backend service.',
           'snackbar-warn',
         );
       });
+  }
+
+  /** Assembles the payload that would be sent to the backend once this page is wired up. */
+  private buildPayload(): Record<string, unknown> {
+    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
+
+    if (this.isYesBranch()) {
+      payload['unspentUlbData'] = this.unspentUlbData.getRawValue();
+    }
+
+    return payload;
   }
 
   onCancel(): void {

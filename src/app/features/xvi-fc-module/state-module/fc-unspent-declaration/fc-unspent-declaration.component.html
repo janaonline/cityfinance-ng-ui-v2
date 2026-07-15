@@ -15,7 +15,7 @@
           <h1 class="page-title mb-2">Unspent {{ applicableFcLabel() }} FC Balance Declaration</h1>
 
           <p class="page-subtitle text-secondary mb-0">
-            The 16th FC installment being claimed must not exceed 10% of the ULB's disclosed
+            The 16th FC installment being claimed must not exceed {{ threshold() }}% of the ULB's disclosed
             {{ applicableFcLabel() }} Finance Commission unspent balance. If no ULB in your state holds any
             {{ applicableFcLabel() }} FC unspent balance, you may certify that here by uploading a signed declaration
             instead of collecting ULB-wise data.

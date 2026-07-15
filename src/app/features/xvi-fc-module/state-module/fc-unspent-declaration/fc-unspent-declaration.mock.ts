@@ -13,6 +13,7 @@ export const FC_UNSPENT_DECLARATION_MOCK_RESPONSE: FcUnspentDeclarationPreviewRe
     stateName: 'Sample State',
     applicableFc: '14TH_FC',
     currentFormStatus: FORM_STATUS.IN_PROGRESS,
+    threshold: 10,
     permissions: {
       canView: true,
       canEdit: true,

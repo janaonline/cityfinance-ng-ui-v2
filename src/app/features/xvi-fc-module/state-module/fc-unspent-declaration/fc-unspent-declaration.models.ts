@@ -45,6 +45,7 @@ export interface FcUnspentDeclarationData {
   questions: ConditionalFieldConfig[];
   ulbOptions: FcUnspentUlbOption[];
   unspentUlbData: FcUnspentUlbData[];
+  threshold: number;
 }
 
 /** UI dev fixture envelope shape only — not a confirmed backend contract. */
