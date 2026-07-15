@@ -20,6 +20,7 @@ import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { normalizeUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   ConditionalFieldConfig,
   DependencyIndex,
@@ -226,7 +227,7 @@ export class DevolutionFormulaComponent implements OnInit {
           this.grantAllocationSummary.set(data.grantAllocationSummary ?? null);
 
           const fileField = data.questions.find((q) => q.key === 'excelFile');
-          this.lastPersistedExcelFile = isValidDevolutionFileRef(fileField?.value) ? fileField.value : null;
+          this.lastPersistedExcelFile = normalizeUploadedFileMetadata(fileField?.value);
 
           this.fields.set(data.questions);
           this.rowEditFields.set(data.rowEditFields ?? []);
@@ -707,27 +708,12 @@ export class DevolutionFormulaComponent implements OnInit {
     return true;
   }
 
-  /**
-   * Returns the visible-field payload with `excelFile` restored to its raw control value.
-   * `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the backend
-   * `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers, but this
-   * form's own contract (`DevolutionFileRef`) expects `{ fileName, fileUrl, ... }`. Without this
-   * override, `isValidDevolutionFileRef` always fails and save-draft/final-submit silently no-op.
-   */
-  private getVisiblePayloadWithRawFile(): Record<string, unknown> {
-    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
-    if ('excelFile' in payload) {
-      payload['excelFile'] = this.form.get('excelFile')?.value ?? null;
-    }
-    return payload;
-  }
-
   /** Clears previous API errors, posts the visible payload as a draft, then reloads on success. */
   private executeSaveDraft(): void {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
 
-    const visiblePayload = this.getVisiblePayloadWithRawFile();
+    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
     const payload: SaveDraftDevolutionPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
@@ -755,7 +741,7 @@ export class DevolutionFormulaComponent implements OnInit {
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
 
-    const visiblePayload = this.getVisiblePayloadWithRawFile();
+    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
     const finalSubmitData = buildDevolutionFinalSubmitPayloadData(visiblePayload);
 
     if (!finalSubmitData) {

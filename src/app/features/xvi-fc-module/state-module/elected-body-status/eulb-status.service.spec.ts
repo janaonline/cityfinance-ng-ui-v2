@@ -16,8 +16,11 @@ describe('EulbStatusService', () => {
   const yearId = 'year-1';
   const rowId = 'row-1';
   const fileValue = {
-    fileName: 'eulb.xlsx',
-    fileUrl: 'https://example.test/eulb.xlsx',
+    originalName: 'eulb.xlsx',
+    path: 'https://example.test/eulb.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    sizeKb: 2,
+    pageCount: null,
   };
 
   let service: EulbStatusService;
@@ -292,11 +295,11 @@ describe('EulbStatusService', () => {
         batchId: 'batch-1',
         updatedRowCount: 1,
         document: {
-          fileName: 'combined.pdf',
-          fileUrl: 'state/eulb-post-submission-update/combined.pdf',
-          fileSize: 1024,
+          originalName: 'combined.pdf',
+          path: 'state/eulb-post-submission-update/combined.pdf',
           mimeType: 'application/pdf',
-          s3Key: 'state/eulb-post-submission-update/combined.pdf',
+          sizeKb: 1,
+          pageCount: 2,
         },
         validationSummary: {
           dbUlbCount: 1,
@@ -371,11 +374,11 @@ describe('EulbStatusService', () => {
     return {
       rows: createPostUpdateValidatePayload().rows,
       document: {
-        fileName: 'combined.pdf',
-        fileUrl: 'state/eulb-post-submission-update/combined.pdf',
-        fileSize: 1024,
+        originalName: 'combined.pdf',
+        path: 'state/eulb-post-submission-update/combined.pdf',
         mimeType: 'application/pdf',
-        s3Key: 'state/eulb-post-submission-update/combined.pdf',
+        sizeKb: 1,
+        pageCount: 2,
       },
     };
   }

@@ -1,148 +1,210 @@
 @if (showStandaloneLabel()) {
-<label [for]="fileInputId" class="fw-semibold m-0">{{ fieldLabel() }}</label>
+  <label [for]="fileInputId" class="fw-semibold m-0">{{ fieldLabel() }}</label>
 }
 
 @if (!isReadonly()) {
-<input #fileInputRef class="d-none" type="file" [id]="fileInputId" [accept]="allowedFileTypeStr()" tabindex="-1"
-  aria-hidden="true" (change)="fileBrowseHandler($event)"
-  [attr.data-cy]="field().key ? field().key + '-file-input-test' : null" />
+  <input
+    #fileInputRef
+    class="d-none"
+    type="file"
+    [id]="fileInputId"
+    [accept]="allowedFileTypeStr()"
+    tabindex="-1"
+    aria-hidden="true"
+    (change)="fileBrowseHandler($event)"
+    [attr.data-cy]="field().key ? field().key + '-file-input-test' : null"
+  />
 }
 
 <div class="visually-hidden" aria-live="polite">{{ liveRegionMessage() }}</div>
 
 @if (isButtonView()) {
-<div class="d-flex flex-column gap-2">
-  <div class="d-flex align-items-center flex-wrap gap-2">
-    @if (!isReadonly()) {
-    <button type="button" [class]="'btn ' + fileColorClass() + ' d-inline-flex align-items-center gap-2'"
-      [disabled]="isUploading()" [attr.aria-busy]="isUploading()"
-      [attr.aria-describedby]="showError() ? fileInputId + '-error' : null" (click)="openFileBrowser()"
-      [attr.data-cy]="field().key ? field().key + '-test' : null">
-      @if (showButtonUploadedState()) {
-      <i class="bi bi-check2"></i>
-      <span>Uploaded</span>
-      } @else {
-      <i [class]="field().appearance?.icon ? fileIconClass() : 'bi bi-upload'"></i>
-      <span>{{ uploadPromptLabel() }}</span>
+  <div class="d-flex flex-column gap-2">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+      @if (!isReadonly()) {
+        <button
+          type="button"
+          [class]="'btn ' + fileColorClass() + ' d-inline-flex align-items-center gap-2'"
+          [disabled]="isUploading()"
+          [attr.aria-busy]="isUploading()"
+          [attr.aria-describedby]="showError() ? fileInputId + '-error' : null"
+          (click)="openFileBrowser()"
+          [attr.data-cy]="field().key ? field().key + '-test' : null"
+        >
+          @if (showButtonUploadedState()) {
+            <i class="bi bi-check2"></i>
+            <span>Uploaded</span>
+          } @else {
+            <i [class]="field().appearance?.icon ? fileIconClass() : 'bi bi-upload'"></i>
+            <span>{{ uploadPromptLabel() }}</span>
+          }
+        </button>
+      } @else if (showButtonUploadedState()) {
+        <span
+          [class]="'btn ' + fileColorClass() + ' disabled d-inline-flex align-items-center gap-2'"
+          aria-disabled="true"
+        >
+          <i class="bi bi-check2"></i>
+          <span>Uploaded</span>
+        </span>
       }
-    </button>
-    } @else if (showButtonUploadedState()) {
-    <span [class]="'btn ' + fileColorClass() + ' disabled d-inline-flex align-items-center gap-2'" aria-disabled="true">
-      <i class="bi bi-check2"></i>
-      <span>Uploaded</span>
-    </span>
-    }
 
-    @if (uploadedFile(); as uploadedFile) {
-    @if (previewUrl(); as previewUrl) {
-    <a class="file-action-link d-inline-flex align-items-center justify-content-center"
-      [href]="previewUrl | toStorageUrl" target="_blank" rel="noopener noreferrer"
-      [attr.aria-label]="'View file ' + uploadedFile.name"
-      [attr.data-cy]="field().key ? field().key + '-view-test' : null">
-      <i class="bi bi-eye fs-5 mx-1 text-dark" title="View file"></i>
-    </a>
-    } @else if (localPreviewUrl()) {
-    <a class="file-action-link d-inline-flex align-items-center justify-content-center" [href]="localPreviewUrl()!"
-      target="_blank" rel="noopener noreferrer" [attr.aria-label]="'View selected file ' + uploadedFile.name"
-      [attr.data-cy]="field().key ? field().key + '-view-test' : null">
-      <i class="bi bi-eye fs-5 mx-1 text-dark" title="View selected file"></i>
-    </a>
-    }
+      @if (uploadedFile(); as uploadedFile) {
+        @if (previewUrl(); as previewUrl) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [appSignedUrl]="previewUrl"
+            target="_blank"
+            [attr.aria-label]="'View file ' + uploadedFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
+          >
+            <i class="bi bi-eye fs-5 mx-1 text-dark" title="View file"></i>
+          </a>
+        } @else if (localPreviewUrl()) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [href]="localPreviewUrl()!"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'View selected file ' + uploadedFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
+          >
+            <i class="bi bi-eye fs-5 mx-1 text-dark" title="View selected file"></i>
+          </a>
+        }
 
-    @if (canRemoveFile()) {
-    <button type="button" class="file-icon-button m-0 p-0 border-0 bg-transparent"
-      [attr.aria-label]="'Remove file ' + uploadedFile.name" (click)="deleteFile()"
-      [attr.data-cy]="field().key ? field().key + '-remove-test' : null">
-      <i class="bi bi-x-circle fs-5 mx-1 text-danger" title="Remove file"></i>
-    </button>
-    }
+        @if (canRemoveFile()) {
+          <button
+            type="button"
+            class="file-icon-button m-0 p-0 border-0 bg-transparent"
+            [attr.aria-label]="'Remove file ' + uploadedFile.name"
+            (click)="deleteFile()"
+            [attr.data-cy]="field().key ? field().key + '-remove-test' : null"
+          >
+            <i class="bi bi-x-circle fs-5 mx-1 text-danger" title="Remove file"></i>
+          </button>
+        }
+      }
+    </div>
+
+    @if (showUploadProgress()) {
+      <mat-progress-bar
+        class="button-view-progress"
+        mode="determinate"
+        [value]="uploadProgress()"
+        aria-label="Upload progress"
+      ></mat-progress-bar>
     }
   </div>
-
-  @if (showUploadProgress()) {
-  <mat-progress-bar class="button-view-progress" mode="determinate" [value]="uploadProgress()"
-    aria-label="Upload progress"></mat-progress-bar>
-  }
-</div>
 } @else {
-@if (!isReadonly()) {
-<div [class]="'file-dropzone mb-1 ' + fileDropzoneClass()" appDnd role="button"
-  [attr.tabindex]="canSelectFile() ? 0 : -1" [attr.aria-busy]="isUploading()" [attr.aria-disabled]="!canSelectFile()"
-  [attr.aria-describedby]="showError() ? fileInputId + '-error' : null" [attr.aria-label]="uploadPromptLabel()"
-  (click)="openFileBrowser()" (keydown)="onDropzoneKeydown($event)" (fileDropped)="onFileDropped($event)"
-  [attr.data-cy]="field().key ? field().key + '-test' : null">
-  <i [class]="fileIconClass() + ' fs-4 ' + fileIconColorClass()"></i>
-  <p class="fw-semibold m-0">{{ uploadPromptLabel() }}</p>
-  <small class="text-secondary">Drag and drop the file here.</small>
-  @if (fileRequirementText()) {
-  <small class="text-secondary">{{ fileRequirementText() }}</small>
+  @if (!isReadonly()) {
+    <div
+      [class]="'file-dropzone mb-1 ' + fileDropzoneClass()"
+      appDnd
+      role="button"
+      [attr.tabindex]="canSelectFile() ? 0 : -1"
+      [attr.aria-busy]="isUploading()"
+      [attr.aria-disabled]="!canSelectFile()"
+      [attr.aria-describedby]="showError() ? fileInputId + '-error' : null"
+      [attr.aria-label]="uploadPromptLabel()"
+      (click)="openFileBrowser()"
+      (keydown)="onDropzoneKeydown($event)"
+      (fileDropped)="onFileDropped($event)"
+      [attr.data-cy]="field().key ? field().key + '-test' : null"
+    >
+      <i [class]="fileIconClass() + ' fs-4 ' + fileIconColorClass()"></i>
+      <p class="fw-semibold m-0">{{ uploadPromptLabel() }}</p>
+      <small class="text-secondary">Drag and drop the file here.</small>
+      @if (fileRequirementText()) {
+        <small class="text-secondary">{{ fileRequirementText() }}</small>
+      }
+    </div>
   }
-</div>
-}
 
-@if (displayFile(); as displayFile) {
-<div class="mt-3">
-  <p class="fw-semibold m-0">{{ displayFile.title }}</p>
-  <div class="single-file d-flex align-items-center justify-content-between p-2 mb-3 dotted-border-secondary"
-    [attr.aria-busy]="displayFile.isUploading" [attr.role]="displayFile.isUploading ? 'status' : null">
-    <div class="file-icon d-flex align-items-center justify-content-center flex-shrink-0">
-      <app-file-icon [fileName]="displayFile.name"></app-file-icon>
+  @if (displayFile(); as displayFile) {
+    <div class="mt-3">
+      <p class="fw-semibold m-0">{{ displayFile.title }}</p>
+      <div
+        class="single-file d-flex align-items-center justify-content-between p-2 mb-3 dotted-border-secondary"
+        [attr.aria-busy]="displayFile.isUploading"
+        [attr.role]="displayFile.isUploading ? 'status' : null"
+      >
+        <div class="file-icon d-flex align-items-center justify-content-center flex-shrink-0">
+          <app-file-icon [fileName]="displayFile.name"></app-file-icon>
+        </div>
+
+        <div class="info w-100">
+          <p class="file-name">{{ displayFile.name }}</p>
+
+          @if (displayFile.isUploading) {
+            <mat-progress-bar
+              class="upload-progress"
+              mode="determinate"
+              [value]="displayFile.progress ?? 0"
+              aria-label="Upload progress"
+            ></mat-progress-bar>
+          }
+
+          @if (displayFile.sizeLabel) {
+            <p class="size">{{ displayFile.sizeLabel }}</p>
+          }
+        </div>
+
+        @if (displayFile.previewUrl) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [appSignedUrl]="displayFile.previewUrl"
+            target="_blank"
+            [attr.aria-label]="'View file ' + displayFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
+          >
+            <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
+          </a>
+        } @else if (localPreviewUrl()) {
+          <a
+            class="file-action-link d-inline-flex align-items-center justify-content-center"
+            [href]="localPreviewUrl()!"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="'View selected file ' + displayFile.name"
+            [attr.data-cy]="field().key ? field().key + '-view-test' : null"
+          >
+            <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View selected file"></i>
+          </a>
+        }
+
+        @if (canRemoveFile()) {
+          <button
+            type="button"
+            class="file-icon-button align-self-center"
+            [attr.aria-label]="'Remove file ' + displayFile.name"
+            (click)="deleteFile()"
+            [attr.data-cy]="field().key ? field().key + '-remove-test' : null"
+          >
+            <mat-icon class="text-danger fs-3 me-1" title="Remove file">delete_forever</mat-icon>
+          </button>
+        }
+      </div>
     </div>
-
-    <div class="info w-100">
-      <p class="file-name">{{ displayFile.name }}</p>
-
-      @if (displayFile.isUploading) {
-      <mat-progress-bar class="upload-progress" mode="determinate" [value]="displayFile.progress ?? 0"
-        aria-label="Upload progress"></mat-progress-bar>
-      }
-
-      @if (displayFile.sizeLabel) {
-      <p class="size">{{ displayFile.sizeLabel }}</p>
-      }
-    </div>
-
-    @if (displayFile.previewUrl) {
-    <a class="file-action-link d-inline-flex align-items-center justify-content-center"
-      [href]="displayFile.previewUrl | toStorageUrl" target="_blank" rel="noopener noreferrer"
-      [attr.aria-label]="'View file ' + displayFile.name"
-      [attr.data-cy]="field().key ? field().key + '-view-test' : null">
-      <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View file"></i>
-    </a>
-    } @else if (localPreviewUrl()) {
-    <a class="file-action-link d-inline-flex align-items-center justify-content-center" [href]="localPreviewUrl()!"
-      target="_blank" rel="noopener noreferrer" [attr.aria-label]="'View selected file ' + displayFile.name"
-      [attr.data-cy]="field().key ? field().key + '-view-test' : null">
-      <i class="bi bi-eye-fill fs-5 me-1 text-dark" title="View selected file"></i>
-    </a>
-    } @else if (isPendingDownload()) {
-    <span class="text-body-secondary small text-nowrap px-2">Save to view file</span>
-    }
-
-    @if (canRemoveFile()) {
-    <button type="button" class="file-icon-button align-self-center"
-      [attr.aria-label]="'Remove file ' + displayFile.name" (click)="deleteFile()"
-      [attr.data-cy]="field().key ? field().key + '-remove-test' : null">
-      <mat-icon class="text-danger fs-3 me-1" title="Remove file">delete_forever</mat-icon>
-    </button>
-    }
-  </div>
-</div>
-}
+  }
 }
 
 @if (shouldShowUploadedFileMessage()) {
-<div class="verified-info" role="status" aria-live="polite">
-  <div class="d-flex align-items-center justify-content-start">
-    <span><mat-icon class="material-icons-round me-2 text-success">verified</mat-icon></span>
-    <p>File uploaded successfully.</p>
+  <div class="verified-info" role="status" aria-live="polite">
+    <div class="d-flex align-items-center justify-content-start">
+      <span><mat-icon class="material-icons-round me-2 text-success">verified</mat-icon></span>
+      <p>File uploaded successfully.</p>
+    </div>
   </div>
-</div>
 }
 
 @if (showError()) {
-<div [id]="fileInputId + '-error'" class="text-danger small mt-2" role="alert"
-  [attr.data-cy]="field().key ? field().key + '-error-test' : null">
-  {{ errorMessage() }}
-</div>
+  <div
+    [id]="fileInputId + '-error'"
+    class="text-danger small mt-2"
+    role="alert"
+    [attr.data-cy]="field().key ? field().key + '-error-test' : null"
+  >
+    {{ errorMessage() }}
+  </div>
 }

@@ -1,9 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
-import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
+import { SignedUrlDirective } from '../../../../core/directives/storage-url.directive';
 import { MaterialModule } from '../../../../material.module';
 import { FieldConfig } from '../../field.interface';
+import { normalizeUploadedFileMetadata } from '../file/file-metadata.types';
 
 /** Em dash used as the empty-value placeholder across all field types. */
 const EMPTY = '—';
@@ -35,7 +36,7 @@ type TableRowConfig = {
  */
 @Component({
   selector: 'app-dynamic-field-view',
-  imports: [NgTemplateOutlet, MaterialModule, ToStorageUrlPipe],
+  imports: [NgTemplateOutlet, MaterialModule, SignedUrlDirective],
   template: `
     @if (normalizedType !== 'button') {
       @if (isCertificationField) {
@@ -109,13 +110,7 @@ type TableRowConfig = {
                 <small class="text-secondary">{{ fileView.sizeLabel }}</small>
               }
               @if (fileView.viewUrl) {
-                <a
-                  matButton="filled"
-                  [href]="fileView.viewUrl | toStorageUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="mt-1"
-                >
+                <a matButton="filled" [appSignedUrl]="fileView.viewUrl" target="_blank" class="mt-1">
                   <mat-icon>visibility</mat-icon>
                   View Document
                 </a>
@@ -295,22 +290,19 @@ export class DynamicFieldViewComponent implements OnChanges {
     }
   }
 
-  /** Builds the file view model from either the standalone (`fileName/fileUrl`) or legacy (`name/url`) control shape. */
+  /** Builds the file view model from the canonical standalone control shape (pre-canonical persisted values are normalized). */
   private buildFileView(): FileViewModel | null {
     const control = this.group?.get(this.field?.key);
     if (!control) return null;
     const raw = control instanceof FormGroup ? control.getRawValue() : control.value;
-    if (!raw || typeof raw !== 'object') return null;
 
-    const v = raw as Record<string, unknown>;
-    const name = this.asNonEmptyString(v['fileName']) ?? this.asNonEmptyString(v['name']);
-    const url = this.asNonEmptyString(v['fileUrl']) ?? this.asNonEmptyString(v['url']);
-    if (!name && !url) return null;
+    const value = normalizeUploadedFileMetadata(raw);
+    if (!value) return null;
 
     return {
-      name: name ?? this.fileNameFromUrl(url),
-      sizeLabel: this.resolveFileSizeLabel(v['fileSize'] ?? v['size']),
-      viewUrl: url,
+      name: value.originalName,
+      sizeLabel: value.sizeKb > 0 ? this.formatBytes(value.sizeKb * 1024) : null,
+      viewUrl: value.path || null,
     };
   }
 
@@ -329,30 +321,6 @@ export class DynamicFieldViewComponent implements OnChanges {
       }));
       return { rowKey: row.key, rowLabel: row.label, cells };
     });
-  }
-
-  private asNonEmptyString(value: unknown): string | null {
-    if (typeof value !== 'string') return null;
-    const s = value.trim();
-    return s.length > 0 ? s : null;
-  }
-
-  private fileNameFromUrl(url: string | null): string {
-    if (!url) return 'Unknown file';
-    return url.split('/').pop()?.split('?')[0] || url;
-  }
-
-  private resolveFileSizeLabel(value: unknown): string | null {
-    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
-      return this.formatBytes(value);
-    }
-    if (typeof value === 'string') {
-      const n = Number(value.trim());
-      if (Number.isFinite(n) && n >= 0) return this.formatBytes(n);
-      const s = value.trim();
-      return s.length > 0 ? s : null;
-    }
-    return null;
   }
 
   private formatBytes(bytes: number): string {
