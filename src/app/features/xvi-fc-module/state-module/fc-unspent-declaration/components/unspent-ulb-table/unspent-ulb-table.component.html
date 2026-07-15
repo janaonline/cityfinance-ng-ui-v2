@@ -1,6 +1,6 @@
 <div class="unspent-ulb-table-wrap mt-2">
   <div class="table-responsive">
-    <table class="table table-sm align-middle unspent-ulb-table">
+    <table class="table table-sm table-hover align-middle mb-0 unspent-ulb-table border">
       <colgroup>
         <col class="col-slno" />
         <col class="col-ulb" />
@@ -11,36 +11,36 @@
         <col class="col-eligible" />
         <col class="col-action" />
       </colgroup>
-      <thead class="table-light">
+      <thead class="table-light border-bottom">
         <tr>
-          <th scope="col">#</th>
-          <th scope="col">ULB</th>
-          <th scope="col">Census/SB ID</th>
-          <th scope="col">16th FC Allocation</th>
-          <th scope="col">{{ applicableFcLabel() }} FC Unspent</th>
-          <th scope="col">% of Alloc.</th>
-          <th scope="col">Eligible?</th>
-          <th scope="col" class="text-end">Remove</th>
+          <th scope="col" class="ps-3 text-center small fw-semibold">#</th>
+          <th scope="col" class="text-center small fw-semibold">ULB</th>
+          <th scope="col" class="text-center small fw-semibold">Census Code</th>
+          <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in Cr.)</th>
+          <th scope="col" class="text-center small fw-semibold">{{ applicableFcLabel() }} FC Unspent (in Cr.)</th>
+          <th scope="col" class="text-center small fw-semibold">% of Alloc.</th>
+          <th scope="col" class="text-center small fw-semibold">Eligible?</th>
+          <th scope="col" class="text-center text-nowrap small fw-semibold text-end pe-3">Remove</th>
         </tr>
       </thead>
       <tbody>
         @for (row of rows().controls; track row; let i = $index) {
           <tr [formGroup]="row">
-            <td>{{ i + 1 }}</td>
+            <td class="ps-3 small text-secondary">{{ i + 1 }}</td>
             <td>
               <select class="form-select form-select-sm" formControlName="ulbId" aria-label="Select ULB">
                 <option [ngValue]="null" disabled>Select ULB</option>
                 @for (opt of ulbOptions(); track opt.ulbId) {
-                  <option [ngValue]="opt.ulbId" [disabled]="takenUlbIdsByRowIndex()[i]?.has(opt.ulbId)">
+                  <option [ngValue]="opt.ulbId" [disabled]="takenUlbIdsByRowIndex()[i].has(opt.ulbId)">
                     {{ opt.ulbName }}
                   </option>
                 }
               </select>
             </td>
-            <td class="text-truncate">
+            <td class="small text-center text-secondary text-nowrap text-truncate">
               {{ rowViewModels()[i].option?.censusCode ?? rowViewModels()[i].option?.sbCode ?? '—' }}
             </td>
-            <td>{{ rowViewModels()[i].allocationAmount ?? '—' }}</td>
+            <td class="small text-end pe-3 text-secondary">{{ rowViewModels()[i].allocationAmount ?? '—' }}</td>
             <td>
               <input
                 type="number"
@@ -51,26 +51,27 @@
                 aria-label="Unspent amount"
               />
             </td>
-            <td>
+            <td class="small text-end pe-3">
               @if (rowViewModels()[i].allocationPerc !== null) {
                 {{ rowViewModels()[i].allocationPerc | number: '1.0-2' }}%
               } @else {
                 <span class="text-muted">—</span>
               }
             </td>
-            <td>
+            <td class="text-center">
               @if (rowViewModels()[i].eligible === null) {
                 <span class="text-muted">—</span>
               } @else if (rowViewModels()[i].eligible) {
-                <span class="badge text-bg-success">Eligible</span>
+                <span class="badge rounded px-1 text-bg-success small">Eligible</span>
               } @else {
-                <span class="badge text-bg-danger">Not Eligible</span>
+                <span class="badge rounded px-1 text-bg-danger small">Not Eligible</span>
               }
             </td>
-            <td class="text-end">
+            <td class="text-end pe-3">
               <button
                 type="button"
-                class="btn btn-sm btn-outline-danger"
+                matButton="outlined"
+                class="unspent-row-btn"
                 [disabled]="!canEdit()"
                 (click)="removeRow(i)"
                 aria-label="Remove row"
@@ -84,7 +85,14 @@
     </table>
   </div>
 
-  <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="!canEdit()" (click)="addRow()">
+  <button
+    type="button"
+    matButton="outlined"
+    class="mt-2"
+    [disabled]="!canEdit()"
+    (click)="addRow()"
+    aria-label="Add ULB"
+  >
     <i class="bi bi-plus-lg me-1"></i>Add ULB
   </button>
 </div>

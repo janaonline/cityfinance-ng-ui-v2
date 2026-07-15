@@ -11,6 +11,14 @@
     overflow: hidden;
   }
 
+  tbody tr {
+    min-height: 48px;
+  }
+
+  .text-truncate {
+    min-width: 0;
+  }
+
   .col-slno {
     width: 40px;
   }
@@ -37,7 +45,10 @@
   }
 
   .col-action {
-    width: 70px;
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+    white-space: nowrap;
   }
 }
 
@@ -48,4 +59,15 @@
 
 .unspent-ulb-table input[type='number'].form-control-sm {
   text-align: right;
+}
+
+// !important on min-width overrides Material's global .mat-mdc-button-base { min-width: 64px }
+// which would otherwise win over this component-scoped class.
+.unspent-row-btn {
+  width: 32px;
+  min-width: 32px !important;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  line-height: 1;
 }

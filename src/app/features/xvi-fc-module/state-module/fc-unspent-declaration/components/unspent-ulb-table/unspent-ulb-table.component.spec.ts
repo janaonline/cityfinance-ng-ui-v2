@@ -74,20 +74,24 @@ describe('UnspentUlbTableComponent', () => {
   });
 
   it('displays Census Code when present', () => {
-    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1 })]);
+    setupWithRows([
+      createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1 }),
+    ]);
     const codeCell = fixture.debugElement.queryAll(By.css('tbody tr td'))[2];
     expect(codeCell.nativeElement.textContent).toContain('800123');
   });
 
   it('displays SB Code as fallback when Census Code is absent', () => {
-    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[1].ulbId, unspentAmount: 1 })]);
+    setupWithRows([
+      createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[1].ulbId, unspentAmount: 1 }),
+    ]);
     const codeCell = fixture.debugElement.queryAll(By.css('tbody tr td'))[2];
     expect(codeCell.nativeElement.textContent).toContain('SB-0142');
   });
 
   it('adds a row', () => {
     setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true)]);
-    const addButton = fixture.debugElement.query(By.css('button.btn-outline-primary'));
+    const addButton = fixture.debugElement.query(By.css('button[aria-label="Add ULB"]'));
     addButton.nativeElement.click();
     expect(rows.length).toBe(2);
   });
@@ -131,7 +135,9 @@ describe('UnspentUlbTableComponent', () => {
   });
 
   it('calculates and displays an eligible percentage', () => {
-    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1.5 })]);
+    setupWithRows([
+      createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1.5 }),
+    ]);
 
     expect(component.rowViewModels()[0].allocationPerc).toBeCloseTo(7.5, 5);
     expect(component.rowViewModels()[0].eligible).toBe(true);
@@ -141,7 +147,9 @@ describe('UnspentUlbTableComponent', () => {
   });
 
   it('calculates and displays an ineligible percentage', () => {
-    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[1].ulbId, unspentAmount: 1.2 })]);
+    setupWithRows([
+      createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[1].ulbId, unspentAmount: 1.2 }),
+    ]);
 
     expect(component.rowViewModels()[0].allocationPerc).toBeCloseTo(15, 5);
     expect(component.rowViewModels()[0].eligible).toBe(false);
@@ -162,10 +170,13 @@ describe('UnspentUlbTableComponent', () => {
   });
 
   it('disables add/remove actions when canEdit is false', () => {
-    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1 })], false);
+    setupWithRows(
+      [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1 })],
+      false,
+    );
 
-    const addButton = fixture.debugElement.query(By.css('button.btn-outline-primary'));
-    const removeButton = fixture.debugElement.query(By.css('button.btn-outline-danger'));
+    const addButton = fixture.debugElement.query(By.css('button[aria-label="Add ULB"]'));
+    const removeButton = fixture.debugElement.query(By.css('button.unspent-row-btn'));
 
     expect(addButton.nativeElement.disabled).toBe(true);
     expect(removeButton.nativeElement.disabled).toBe(true);

@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { map, startWith, switchMap } from 'rxjs';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
@@ -80,7 +81,7 @@ export function createFcUnspentUlbRowGroup(
 
 @Component({
   selector: 'app-unspent-ulb-table',
-  imports: [ReactiveFormsModule, DecimalPipe],
+  imports: [ReactiveFormsModule, DecimalPipe, MatButtonModule],
   templateUrl: './unspent-ulb-table.component.html',
   styleUrl: './unspent-ulb-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
