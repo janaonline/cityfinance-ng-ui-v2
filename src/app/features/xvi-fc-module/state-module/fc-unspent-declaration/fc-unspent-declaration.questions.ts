@@ -5,7 +5,7 @@ export const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
     formFieldType: 'radio',
     label: 'Do any ULBs in the state have unspent 14th FC balance to report?',
     key: 'isFcUnspent',
-    value: null,
+    value: 'no',
     options: [
       {
         label: 'No (no ULB in the state has unspent 14th FC balance to report)',
@@ -30,15 +30,21 @@ export const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
     radioLayout: 'vertical',
     supportingContent: [
       {
-        type: 'actions',
+        type: 'info',
         position: 'after',
-        layout: 'inline',
-        separator: 'dot',
         description:
           'Select No if your state has confirmed that none of its ULBs hold any unspent 14th Finance Commission balance. Select Yes if one or more ULBs need to report a balance.',
-        actions: [],
-        badges: [],
       },
+      // {
+      //   type: 'actions',
+      //   position: 'after',
+      //   layout: 'inline',
+      //   separator: 'dot',
+      //   description:
+      //     'Select No if your state has confirmed that none of its ULBs hold any unspent 14th Finance Commission balance. Select Yes if one or more ULBs need to report a balance.',
+      //   actions: [],
+      //   badges: [],
+      // },
     ],
   },
   {
