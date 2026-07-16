@@ -11,6 +11,7 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { UnspentUlbTableComponent } from './components/unspent-ulb-table/unspent-ulb-table.component';
 import { FcUnspentDeclarationComponent } from './fc-unspent-declaration.component';
 import { FcUnspentDeclarationService } from './fc-unspent-declaration.service';
+import { FcUnspentUlbOptionsCacheService } from './fc-unspent-ulb-options-cache.service';
 import { FC_UNSPENT_DECLARATION_MOCK_RESPONSE } from './fc-unspent-declaration.mock';
 import {
   FC_UNSPENT_SCENARIO_DEVOLUTION_RETURNED,
@@ -261,6 +262,43 @@ describe('FcUnspentDeclarationComponent', () => {
     expect(table.savedRows()).toEqual(previewData().unspentUlbData);
     expect(table.stateId()).toBe('state-test-id');
     expect(table.yearId()).toBe('year-test-id');
+  });
+
+  // ─── Feature-scoped ULB-options cache (component-provided, shared across picker reopenings) ──
+
+  it('provides one FcUnspentUlbOptionsCacheService instance scoped to this page component', () => {
+    const cache = fixture.debugElement.injector.get(FcUnspentUlbOptionsCacheService);
+    expect(cache).toBeInstanceOf(FcUnspentUlbOptionsCacheService);
+  });
+
+  it('clears the ULB-options cache whenever the form (re)loads, centralizing invalidation in loadForm', () => {
+    const cache = fixture.debugElement.injector.get(FcUnspentUlbOptionsCacheService);
+    const clearSpy = spyOn(cache, 'clear');
+
+    component.loadForm();
+
+    expect(clearSpy).toHaveBeenCalled();
+  });
+
+  it('clears the ULB-options cache after a successful save/final-submit reload', () => {
+    const cache = fixture.debugElement.injector.get(FcUnspentUlbOptionsCacheService);
+    spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
+    spyOn(fcUnspentService, 'saveDraft').and.returnValue(of(undefined));
+    const clearSpy = spyOn(cache, 'clear');
+
+    component.onSubmit('saveAsDraft');
+
+    expect(clearSpy).toHaveBeenCalled();
+  });
+
+  it('clears the ULB-options cache when the page component is destroyed', () => {
+    const cache = fixture.debugElement.injector.get(FcUnspentUlbOptionsCacheService);
+    cache.getOrFetch('probe-key', () => of({ options: [], page: 1, limit: 20, total: 0 })).subscribe();
+    expect(cache.get('probe-key')).toBeDefined();
+
+    fixture.destroy();
+
+    expect(cache.get('probe-key')).toBeUndefined();
   });
 
   // ─── Boolean conversion at the API boundary ─────────────────────────────────

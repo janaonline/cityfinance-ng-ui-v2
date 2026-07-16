@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Injector } from '@angular/core';
 import { FormArray } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
@@ -33,6 +34,13 @@ const ULB_OPTIONS: FcUnspentUlbOption[] = [
     sbCode: null,
     ulbName: 'Sample Nagar Panchayat',
     allocationAmount: 12.5,
+  },
+  {
+    ulbId: '66a000000000000000000004',
+    censusCode: '800789',
+    sbCode: null,
+    ulbName: 'Sample Town Panchayat',
+    allocationAmount: 5,
   },
 ];
 
@@ -77,13 +85,12 @@ describe('UnspentUlbTableComponent', () => {
   let rows: FormArray<FcUnspentUlbRowGroup>;
 
   function dialogRefReturning(
-    option: FcUnspentUlbOption | undefined,
-  ): jasmine.SpyObj<MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption | undefined>> {
-    const ref = jasmine.createSpyObj<MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption | undefined>>(
-      'MatDialogRef',
-      ['afterClosed'],
-    );
-    ref.afterClosed.and.returnValue(of(option));
+    options: FcUnspentUlbOption[] | undefined,
+  ): jasmine.SpyObj<MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption[]>> {
+    const ref = jasmine.createSpyObj<MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption[]>>('MatDialogRef', [
+      'afterClosed',
+    ]);
+    ref.afterClosed.and.returnValue(of(options));
     return ref;
   }
 
@@ -182,7 +189,7 @@ describe('UnspentUlbTableComponent', () => {
 
   it('opens the picker with no exclusions when adding the first row, and creates a row from the selection', () => {
     setupWithRows([]);
-    dialog.open.and.returnValue(dialogRefReturning(ULB_OPTIONS[0]));
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0]]));
 
     const addButton = fixture.debugElement.query(By.css('button[aria-label="Add ULB"]'));
     addButton.nativeElement.click();
@@ -199,6 +206,19 @@ describe('UnspentUlbTableComponent', () => {
     expect(rows.at(0).controls.unspentAmount.value).toBeNull();
   });
 
+  it('passes its own injector into the dialog config, so the picker can resolve the shared ULB-options cache', () => {
+    setupWithRows([]);
+    dialog.open.and.returnValue(dialogRefReturning(undefined));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    const [, config] = dialog.open.calls.mostRecent().args as [unknown, { injector?: Injector }];
+    // Ivy's runtime `NodeInjector` satisfies the `Injector` type structurally but isn't literally
+    // `instanceof Injector`, so assert on the actual DI contract (a working `.get()`) instead.
+    expect(config.injector).toBeDefined();
+    expect(typeof config.injector?.get).toBe('function');
+  });
+
   it('does not add a row when the picker is cancelled', () => {
     setupWithRows([]);
     dialog.open.and.returnValue(dialogRefReturning(undefined));
@@ -208,6 +228,28 @@ describe('UnspentUlbTableComponent', () => {
     expect(rows.length).toBe(0);
   });
 
+  it('adds multiple rows in the confirmed selection order for one Add ULB session', () => {
+    setupWithRows([]);
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[2], ULB_OPTIONS[0], ULB_OPTIONS[3]]));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    expect(rows.length).toBe(3);
+    expect(rows.at(0).controls.ulbId.value).toBe(ULB_OPTIONS[2].ulbId);
+    expect(rows.at(1).controls.ulbId.value).toBe(ULB_OPTIONS[0].ulbId);
+    expect(rows.at(2).controls.ulbId.value).toBe(ULB_OPTIONS[3].ulbId);
+  });
+
+  it('does not issue a separate ULB-options request per selected item — the picker already fetched once', () => {
+    setupWithRows([]);
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0], ULB_OPTIONS[1], ULB_OPTIONS[2]]));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    // Confirming a multi-selection only ever opens (and thus only ever fetches through) one dialog.
+    expect(dialog.open).toHaveBeenCalledTimes(1);
+  });
+
   it('excludes ULBs already present in other rows when adding a new one', () => {
     setupWithRows(
       [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1.5 })],
@@ -215,12 +257,49 @@ describe('UnspentUlbTableComponent', () => {
         savedRows: SAVED_ROWS,
       },
     );
-    dialog.open.and.returnValue(dialogRefReturning(ULB_OPTIONS[1]));
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[1]]));
 
     fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
 
     const [, config] = dialog.open.calls.mostRecent().args as [unknown, { data: { excludeUlbIds: string[] } }];
     expect(config.data.excludeUlbIds).toEqual([ULB_OPTIONS[0].ulbId]);
+  });
+
+  it('ignores duplicate ulbIds already present in the FormArray, keeping the rest of a confirmed batch', () => {
+    setupWithRows(
+      [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1.5 })],
+      { savedRows: SAVED_ROWS },
+    );
+    // Simulates a race: by the time the picker confirms, ULB_OPTIONS[0] is already in the FormArray.
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0], ULB_OPTIONS[2]]));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    expect(rows.length).toBe(2);
+    expect(rows.at(1).controls.ulbId.value).toBe(ULB_OPTIONS[2].ulbId);
+  });
+
+  it('dedupes a duplicate ulbId appearing twice within the same confirmed batch', () => {
+    setupWithRows([]);
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0], { ...ULB_OPTIONS[0] }, ULB_OPTIONS[1]]));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    expect(rows.length).toBe(2);
+    expect(rows.at(0).controls.ulbId.value).toBe(ULB_OPTIONS[0].ulbId);
+    expect(rows.at(1).controls.ulbId.value).toBe(ULB_OPTIONS[1].ulbId);
+  });
+
+  it('does not mutate the form when every returned selection has become a duplicate', () => {
+    setupWithRows(
+      [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1.5 })],
+      { savedRows: SAVED_ROWS },
+    );
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0]]));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    expect(rows.length).toBe(1);
   });
 
   it('does not open the picker for Add ULB when canEdit is false', () => {
@@ -255,7 +334,7 @@ describe('UnspentUlbTableComponent', () => {
       ],
       { savedRows: SAVED_ROWS },
     );
-    dialog.open.and.returnValue(dialogRefReturning(ULB_OPTIONS[2]));
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[2]]));
 
     component.openPickerForRow(0);
 
@@ -267,9 +346,23 @@ describe('UnspentUlbTableComponent', () => {
     expect(rows.at(0).controls.ulbId.touched).toBe(true);
   });
 
+  it('replaces the row with the first selection and appends every additional selection as a new row', () => {
+    setupWithRows(
+      [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1.5 })],
+      { savedRows: SAVED_ROWS },
+    );
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[2], ULB_OPTIONS[3]]));
+
+    component.openPickerForRow(0);
+
+    expect(rows.length).toBe(2);
+    expect(rows.at(0).controls.ulbId.value).toBe(ULB_OPTIONS[2].ulbId);
+    expect(rows.at(1).controls.ulbId.value).toBe(ULB_OPTIONS[3].ulbId);
+  });
+
   it('renders name/allocation from the freshly picked option for a row with no saved snapshot', () => {
     setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: null, unspentAmount: null })]);
-    dialog.open.and.returnValue(dialogRefReturning(ULB_OPTIONS[2]));
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[2]]));
 
     component.openPickerForRow(0);
     fixture.detectChanges();
@@ -289,7 +382,7 @@ describe('UnspentUlbTableComponent', () => {
       { savedRows: SAVED_ROWS },
     );
     // Simulate a race: the picker (opened for row 1) somehow resolves with row 0's own ulbId.
-    dialog.open.and.returnValue(dialogRefReturning(ULB_OPTIONS[0]));
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0]]));
 
     component.openPickerForRow(1);
 
