@@ -28,10 +28,43 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
+        } @else if (loadError()) {
+          <div class="d-flex flex-column align-items-start gap-2 py-3">
+            <p class="text-secondary mb-0">We couldn't load the FC Unspent declaration.</p>
+            <button type="button" matButton="outlined" (click)="loadForm()" data-cy="fc-unspent-declaration-retry">
+              <i class="bi bi-arrow-clockwise me-1"></i>Retry
+            </button>
+          </div>
         } @else {
           @if (actors().length) {
             <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
             <hr class="my-0 text-body-tertiary" />
+          }
+
+          @if (dependency().blockingMessage) {
+            <div
+              class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-0"
+              role="alert"
+              data-cy="fc-unspent-declaration-dependency-alert"
+            >
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0" aria-hidden="true"></i>
+              <span class="small">{{ dependency().blockingMessage }}</span>
+            </div>
+          }
+
+          @if (formLevelErrors().length) {
+            <div
+              class="alert alert-danger d-flex align-items-start gap-2 py-2 mb-0"
+              role="alert"
+              data-cy="fc-unspent-declaration-form-errors-alert"
+            >
+              <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
+              <ul class="small mb-0 ps-3">
+                @for (message of formLevelErrors(); track message) {
+                  <li>{{ message }}</li>
+                }
+              </ul>
+            </div>
           }
 
           <form class="content-body" [formGroup]="form">
@@ -54,9 +87,12 @@
                   <app-unspent-ulb-table
                     class="p-2 d-block"
                     [rows]="unspentUlbData"
-                    [ulbOptions]="ulbOptions()"
+                    [savedRows]="savedUnspentUlbData()"
                     [canEdit]="canEdit()"
                     [applicableFcLabel]="applicableFcLabel()"
+                    [threshold]="threshold()"
+                    [stateId]="stateId"
+                    [yearId]="yearId"
                   ></app-unspent-ulb-table>
                 }
               </div>
@@ -66,8 +102,8 @@
       </div>
     </div>
 
-    <!-- Show acknowledgement section only if edit + finalSubmit is true -->
-    @if (canEdit() || canFinalSubmit()) {
+    <!-- Show acknowledgement section only if any action is permitted -->
+    @if (canEdit() || canSaveDraft() || canFinalSubmit()) {
       <div class="acknowledgement border-top p-3">
         <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
           <button
@@ -84,7 +120,7 @@
           <button
             type="submit"
             matButton="filled"
-            [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+            [disabled]="!canSaveDraft() || isSubmitting() || isLoading() || !visibleFields().length"
             (click)="onSubmit('saveAsDraft')"
             data-cy="fc-unspent-declaration-submit-test"
           >

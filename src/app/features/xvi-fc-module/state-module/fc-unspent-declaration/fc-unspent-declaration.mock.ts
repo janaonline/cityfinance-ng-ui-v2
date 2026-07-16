@@ -17,7 +17,14 @@ export const FC_UNSPENT_DECLARATION_MOCK_RESPONSE: FcUnspentDeclarationPreviewRe
     permissions: {
       canView: true,
       canEdit: true,
+      canSaveDraft: true,
       canFinalSubmit: true,
+    },
+    dependency: {
+      devolutionStatus: FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
+      devolutionDatasetExists: true,
+      editableDueToDevolutionReturn: false,
+      blockingMessage: null,
     },
     actors: [
       {

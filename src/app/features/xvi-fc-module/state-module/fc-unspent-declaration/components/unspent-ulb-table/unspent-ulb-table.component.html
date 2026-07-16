@@ -24,25 +24,59 @@
         </tr>
       </thead>
       <tbody>
+        @if (rows().controls.length === 0) {
+          <tr>
+            <td colspan="8" class="text-center text-secondary small py-3">No ULBs added yet.</td>
+          </tr>
+        }
         @for (row of rows().controls; track row; let i = $index) {
           <tr [formGroup]="row">
             <td class="ps-3 small text-secondary">{{ i + 1 }}</td>
             <td>
-              <select class="form-select form-select-sm" formControlName="ulbId" aria-label="Select ULB">
-                <option [ngValue]="null" disabled>Select ULB</option>
-                @for (opt of ulbOptions(); track opt.ulbId) {
-                  <option [ngValue]="opt.ulbId" [disabled]="takenUlbIdsByRowIndex()[i].has(opt.ulbId)">
-                    {{ opt.ulbName }}
-                  </option>
-                }
-              </select>
+              @if (row.controls.ulbId.value) {
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
+                    {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
+                  </span>
+                  <button
+                    type="button"
+                    matButton="outlined"
+                    class="unspent-row-btn flex-shrink-0"
+                    [disabled]="!canEdit()"
+                    (click)="openPickerForRow(i)"
+                    aria-label="Change selected ULB"
+                  >
+                    <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                  </button>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  matButton="outlined"
+                  class="unspent-row-btn unspent-select-ulb-btn"
+                  [disabled]="!canEdit()"
+                  (click)="openPickerForRow(i)"
+                  aria-label="Select ULB"
+                >
+                  <i class="bi bi-search me-1" aria-hidden="true"></i>Select ULB
+                </button>
+              }
+              @if (row.controls.ulbId.errors?.['apiErrors']; as apiErrors) {
+                <div class="small text-danger mt-1" data-cy="fc-unspent-row-ulbid-api-error">
+                  @for (message of apiErrors; track message) {
+                    <div>{{ message }}</div>
+                  }
+                </div>
+              }
             </td>
             <td class="small text-center text-secondary text-nowrap text-truncate">
-              {{ rowViewModels()[i].option?.censusCode ?? rowViewModels()[i].option?.sbCode ?? '—' }}
+              {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
             </td>
             <td class="small text-end pe-3 text-secondary">{{ rowViewModels()[i].allocationAmount ?? '—' }}</td>
             <td>
+              <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>
               <input
+                [id]="'fc-unspent-amount-' + i"
                 type="number"
                 min="0"
                 step="any"
@@ -50,6 +84,13 @@
                 formControlName="unspentAmount"
                 aria-label="Unspent amount"
               />
+              @if (row.controls.unspentAmount.errors?.['apiErrors']; as apiErrors) {
+                <div class="small text-danger mt-1" data-cy="fc-unspent-row-unspentamount-api-error">
+                  @for (message of apiErrors; track message) {
+                    <div>{{ message }}</div>
+                  }
+                </div>
+              }
             </td>
             <td class="small text-end pe-3">
               @if (rowViewModels()[i].allocationPerc !== null) {

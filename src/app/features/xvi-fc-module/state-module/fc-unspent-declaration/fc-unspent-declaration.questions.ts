@@ -23,10 +23,6 @@ export const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
         message: 'This field is required.',
       },
     ],
-    // layout: {
-    //   variant: 'inline',
-    //   labelWidth: 'lg',
-    // },
     radioLayout: 'vertical',
     supportingContent: [
       {
@@ -35,16 +31,6 @@ export const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
         description:
           'Select No if your state has confirmed that none of its ULBs hold any unspent 14th Finance Commission balance. Select Yes if one or more ULBs need to report a balance.',
       },
-      // {
-      //   type: 'actions',
-      //   position: 'after',
-      //   layout: 'inline',
-      //   separator: 'dot',
-      //   description:
-      //     'Select No if your state has confirmed that none of its ULBs hold any unspent 14th Finance Commission balance. Select Yes if one or more ULBs need to report a balance.',
-      //   actions: [],
-      //   badges: [],
-      // },
     ],
   },
   {
