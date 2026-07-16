@@ -25,7 +25,6 @@ const proofFile: XviFcBankAccountProofFile = {
 const responseRecord: XviFcBankAccountResponse = {
   _id: 'record-id',
   ulb: 'ulb-id',
-  state: 'state-id',
   designYear: 'year-id',
   ifscCode: 'SBIN0123456',
   bankDetails: {
@@ -92,7 +91,6 @@ describe('XviFcBankAccountService', () => {
   it('submitBankAccount calls POST /xvi-fc/bank-account with proofFile only', () => {
     const payload: SubmitXviFcBankAccountPayload = {
       ulbId: 'ulb-id',
-      stateId: 'state-id',
       designYearId: 'year-id',
       ifscCode: 'SBIN0123456',
       accountNumber: '123456789012',

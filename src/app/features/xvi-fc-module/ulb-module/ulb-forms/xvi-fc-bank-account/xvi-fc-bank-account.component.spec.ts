@@ -23,7 +23,6 @@ const proofFile: XviFcBankAccountProofFile = {
 const record = (overrides: Partial<XviFcBankAccountResponse> = {}): XviFcBankAccountResponse => ({
   _id: 'record-id',
   ulb: 'ulb-id',
-  state: 'state-id',
   designYear: 'year-id',
   ifscCode: 'SBIN0123456',
   bankDetails: {
@@ -53,13 +52,7 @@ describe('XviFcBankAccountComponent', () => {
   beforeEach(async () => {
     localStorage.setItem(
       'xvifc_ulb_details',
-      JSON.stringify({
-        ulbName: 'Test ULB',
-        stateName: 'Test State',
-        stateId: 'state-id',
-        selectedYear: 'FY-2026-27',
-        ulbId: 'ulb-id',
-      }),
+      JSON.stringify({ ulbName: 'Test ULB', stateName: 'Test State', selectedYear: 'FY-2026-27', ulbId: 'ulb-id' }),
     );
     localStorage.setItem('xvifc_selectedYearId', 'year-id');
     localStorage.setItem('userData', JSON.stringify({ ulb: 'ulb-id' }));
