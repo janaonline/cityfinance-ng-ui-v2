@@ -1,52 +1,103 @@
-export type StateDashboardTaskStatus = 'DONE' | 'PENDING';
-export type StateDashboardClaimStatus = 'AVAILABLE' | 'LOCKED';
-export type StateDashboardSummaryTone = 'neutral' | 'progress' | 'review' | 'eligible' | 'exemption';
-
-export interface StateDashboardMetric {
-  readonly key: string;
-  readonly label: string;
-  readonly value: string;
-  readonly description: string;
+export interface StateDashboardApiResponse {
+  success: boolean;
+  message: string;
+  data: StateDashboardData;
+  timestamp: string;
+  requestId: string;
 }
+
+export interface StateDashboardContext {
+  stateId: string;
+  stateName: string;
+  yearId: string;
+  financialYear: string;
+  userRole: string;
+  grantType: string | null;
+}
+
+export interface StateDashboardCompliance {
+  rate: number;
+  compliantUlbs: number;
+  totalUlbs: number;
+}
+
+export interface StateDashboardMetrics {
+  totalUlbs: number;
+  allocatedAmount: number;
+  claimedAmount: number;
+  amountUnit: 'CRORE';
+  currency: 'INR';
+  compliance: StateDashboardCompliance;
+}
+
+export type StateDashboardTaskStatus = 'DONE' | 'PENDING';
 
 export interface StateDashboardTask {
-  readonly key: string;
-  readonly title: string;
-  readonly subtitle: string;
-  readonly status: StateDashboardTaskStatus;
-  readonly actionLabel?: string;
+  key: 'ulb-registration' | 'devolution-formula' | 'state-conditions';
+  title: string;
+  subtitle: string;
+  status: StateDashboardTaskStatus;
+  actionLabel: string | null;
+  route: string | null;
 }
 
-export interface StateDashboardSubmissionSummary {
-  readonly key: string;
-  readonly label: string;
-  readonly count: number;
-  readonly description: string;
-  readonly tone: StateDashboardSummaryTone;
+export type StateDashboardUlbSubmissionStatus =
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'UNDER_REVIEW'
+  | 'ELIGIBLE'
+  | 'EXEMPTION_REQUESTED';
+
+export interface StateDashboardUlbSubmissionSummaryItem {
+  key: StateDashboardUlbSubmissionStatus;
+  label: string;
+  count: number;
+  description: string;
 }
 
-export interface StateDashboardFormCompletionRow {
-  readonly label: string;
-  readonly completed: number;
-  readonly total: number;
+export type StateDashboardFormKey =
+  | 'annual-accounts'
+  | 'provisional-accounts'
+  | 'pfms-bank-account'
+  | 'fc-unspent-balance'
+  | 'service-level-benchmarks';
+
+export interface StateDashboardFormCompletionItem {
+  key: StateDashboardFormKey;
+  label: string;
+  completed: number;
+  total: number;
 }
 
-export interface StateDashboardClaimLetter {
-  readonly key: string;
-  readonly title: string;
-  readonly subtitle: string;
-  readonly status: StateDashboardClaimStatus;
-  readonly actionLabel?: string;
+export type StateDashboardClaimLetterStatus = 'AVAILABLE' | 'LOCKED';
+
+export interface StateDashboardClaimLetterItem {
+  key: 'installment-1-batch-1' | 'installment-2';
+  title: string;
+  subtitle: string;
+  installment: number;
+  status: StateDashboardClaimLetterStatus;
+  actionLabel: string | null;
+  lockReason: string | null;
+  route: string | null;
 }
 
 export interface StateDashboardData {
-  readonly stateName: string;
-  readonly financialYear: string;
-  readonly roleLabel: string;
-  readonly overviewLabel: string;
-  readonly metrics: readonly StateDashboardMetric[];
-  readonly stateDataTasks: readonly StateDashboardTask[];
-  readonly ulbSubmissionSummary: readonly StateDashboardSubmissionSummary[];
-  readonly formCompletionRows: readonly StateDashboardFormCompletionRow[];
-  readonly claimLetters: readonly StateDashboardClaimLetter[];
+  context: StateDashboardContext;
+  metrics: StateDashboardMetrics;
+  stateDataTasks: StateDashboardTask[];
+  ulbSubmissionSummary: StateDashboardUlbSubmissionSummaryItem[];
+  formCompletion: StateDashboardFormCompletionItem[];
+  claimLetters: StateDashboardClaimLetterItem[];
 }
+
+export type StateDashboardMetricKey = 'total-ulbs' | 'allocated' | 'claimed' | 'compliance-rate';
+
+export interface StateDashboardMetricView {
+  key: StateDashboardMetricKey;
+  label: string;
+  value: string;
+  description: string;
+}
+
+export type StateDashboardSummaryTone = 'neutral' | 'progress' | 'review' | 'eligible' | 'exemption';

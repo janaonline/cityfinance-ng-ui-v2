@@ -10,6 +10,44 @@
   min-width: 0;
 }
 
+.dashboard-state-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 16rem;
+  padding: 2rem;
+  border-color: rgba(17, 69, 81, 0.14);
+  border-radius: 0.5rem;
+  color: #142f37;
+  text-align: center;
+  box-shadow: none;
+}
+
+.dashboard-state-card p {
+  max-width: 34rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dashboard-loading-state,
+.dashboard-error-state,
+.dashboard-empty-state {
+  flex-direction: column;
+}
+
+.dashboard-loading-state mat-progress-spinner {
+  --mdc-circular-progress-active-indicator-color: #0f6c7a;
+}
+
+.dashboard-error-state mat-icon {
+  color: #b3261e;
+}
+
+.dashboard-empty-state mat-icon {
+  color: rgba(17, 69, 81, 0.62);
+}
+
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -57,8 +95,8 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 1.25rem;
   background: #e7eff1;
   color: #0d6877;
@@ -181,6 +219,17 @@
   color: rgba(17, 69, 81, 0.42);
 }
 
+.claim-letter-row--locked {
+  background: rgba(238, 241, 242, 0.32);
+}
+
+.claim-lock-reason {
+  margin-top: 0.3rem;
+  color: rgba(17, 69, 81, 0.72);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -203,6 +252,11 @@
 .status-pill--locked {
   background: #eef1f2;
   color: rgba(17, 69, 81, 0.62);
+}
+
+.status-pill--pending {
+  background: #fff4d8;
+  color: #805d00;
 }
 
 .action-button {
