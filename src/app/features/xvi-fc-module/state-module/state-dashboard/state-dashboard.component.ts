@@ -1,27 +1,38 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ActivatedRoute, ActivatedRouteSnapshot, ParamMap, Router } from '@angular/router';
+import { catchError, combineLatest, distinctUntilChanged, map, of, Subject, switchMap } from 'rxjs';
 
+import { AuthService } from '../../../../core/services/auth.service';
 import {
-  StateDashboardClaimLetter,
+  StateDashboardApiResponse,
+  StateDashboardClaimLetterItem,
   StateDashboardData,
-  StateDashboardFormCompletionRow,
-  StateDashboardMetric,
-  StateDashboardSubmissionSummary,
+  StateDashboardMetricKey,
+  StateDashboardMetricView,
+  StateDashboardSummaryTone,
   StateDashboardTask,
+  StateDashboardTaskStatus,
+  StateDashboardUlbSubmissionStatus,
 } from './state-dashboard.models';
+import { StateDashboardService } from './state-dashboard.service';
 
-interface StoredUserContext {
-  readonly stateName?: string;
-  readonly name?: string;
-  readonly state?: string;
-  readonly stateCode?: string;
+interface DashboardRequestContext {
+  stateId: string;
+  yearId: string;
+}
+
+interface DashboardLoadResult {
+  response: StateDashboardApiResponse | null;
+  error: unknown | null;
 }
 
 @Component({
@@ -33,7 +44,7 @@ interface StoredUserContext {
     MatChipsModule,
     MatDividerModule,
     MatIconModule,
-    MatListModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './state-dashboard.component.html',
   styleUrl: './state-dashboard.component.scss',
@@ -41,169 +52,114 @@ interface StoredUserContext {
 export class StateDashboardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly stateDashboardService = inject(StateDashboardService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly dashboardRequests$ = new Subject<DashboardRequestContext>();
+  private lastDashboardRequestKey: string | null = null;
 
+  stateId: string | null = null;
   yearId: string | null = null;
-
-  dashboardData: StateDashboardData = {
-    stateName: '',
-    financialYear: '',
-    roleLabel: 'State DMA',
-    overviewLabel: 'Grant-processing overview',
-    metrics: [
-      {
-        key: 'total-ulbs',
-        label: 'Total ULBs',
-        value: '123',
-        description: 'Andhra Pradesh · FY 2026-27',
-      },
-      {
-        key: 'allocated',
-        label: 'Allocated',
-        value: '₹1,562 crore',
-        description: 'Basic Grants · FY 2026-27',
-      },
-      {
-        key: 'claimed',
-        label: 'Claimed',
-        value: '₹0 crore',
-        description: 'No claim letter generated yet',
-      },
-      {
-        key: 'compliance-rate',
-        label: 'Compliance Rate',
-        value: '18%',
-        description: '22 of 123 cities · all conditions met',
-      },
-    ],
-    stateDataTasks: [
-      {
-        key: 'register-ulbs',
-        title: 'Register new ULBs',
-        subtitle: 'Keep the state master list of 123 ULBs up to date',
-        status: 'DONE',
-      },
-      {
-        key: 'devolution-formula',
-        title: 'Fill in the devolution formula',
-        subtitle: 'Allocation & instalment split for each ULB',
-        status: 'DONE',
-      },
-      {
-        key: 'state-conditions',
-        title: 'Submit other state conditions',
-        subtitle: 'SFC status, elected body confirmation & FC unspent disclosure',
-        status: 'PENDING',
-        actionLabel: 'Continue',
-      },
-    ],
-    ulbSubmissionSummary: [
-      {
-        key: 'not-started',
-        label: 'Not Started',
-        count: 0,
-        description: 'No forms submitted yet',
-        tone: 'neutral',
-      },
-      {
-        key: 'in-progress',
-        label: 'In Progress',
-        count: 123,
-        description: 'Some forms submitted',
-        tone: 'progress',
-      },
-      {
-        key: 'under-review',
-        label: 'Under Review',
-        count: 0,
-        description: 'Awaiting State DMA review',
-        tone: 'review',
-      },
-      {
-        key: 'eligible',
-        label: 'Eligible',
-        count: 0,
-        description: 'All 5 forms cleared',
-        tone: 'eligible',
-      },
-      {
-        key: 'exemption-requested',
-        label: 'Exemption Requested',
-        count: 0,
-        description: 'Pending MoHUA review',
-        tone: 'exemption',
-      },
-    ],
-    formCompletionRows: [
-      { label: 'Annual Accounts', completed: 67, total: 123 },
-      { label: 'Provisional Accounts', completed: 57, total: 123 },
-      { label: 'PFMS Bank Account', completed: 59, total: 123 },
-      { label: 'FC Unspent Balance', completed: 0, total: 123 },
-      { label: 'Service Level Benchmarks', completed: 69, total: 123 },
-    ],
-    claimLetters: [
-      {
-        key: 'first-claim-letter',
-        title: 'Generate the first Claim Letter',
-        subtitle: 'Instalment 1 · Batch 1 - 19 approved ULBs ready to include',
-        status: 'AVAILABLE',
-        actionLabel: 'Start',
-      },
-      {
-        key: 'second-instalment',
-        title: 'Instalment 2 Claim Letter',
-        subtitle: 'Opens after the first Instalment 1 Claim Letter is generated',
-        status: 'LOCKED',
-      },
-    ],
-  };
-
-  readonly completedStateTaskCount = this.dashboardData.stateDataTasks.filter((task) => task.status === 'DONE').length;
-
-  readonly stateTaskCount = this.dashboardData.stateDataTasks.length;
-
-  readonly compliancePercent = this.percentFromText(
-    this.dashboardData.metrics.find((metric) => metric.key === 'compliance-rate')?.value,
-  );
+  dashboardData: StateDashboardData | null = null;
+  metricCards: readonly StateDashboardMetricView[] = [];
+  isLoading = false;
+  errorMessage: string | null = null;
+  isEmpty = false;
 
   ngOnInit(): void {
-    this.yearId = this.findRouteParam(this.route.snapshot, 'yearId');
-    this.applyStoredDashboardContext();
+    this.observeDashboardRequests();
+    this.observeYearId();
   }
 
-  metricIcon(metricKey: string): string {
-    const icons: Record<string, string> = {
+  retryDashboard(): void {
+    this.errorMessage = null;
+    const currentYearId = this.findRouteParam(this.route.snapshot, 'yearId');
+    if (currentYearId) this.yearId = currentYearId;
+    this.loadDashboard(true);
+  }
+
+  formatAmount(value: number, currency: 'INR', amountUnit: 'CRORE'): string {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    const formattedValue = new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 2,
+    }).format(safeValue);
+    const currencySymbol = currency === 'INR' ? '₹' : currency;
+
+    return `${currencySymbol}${formattedValue} ${amountUnit.toLowerCase()}`;
+  }
+
+  getCompletionPercentage(completed: number, total: number): number {
+    if (total <= 0) return 0;
+    return Math.min(100, Math.max(0, Math.round((completed / total) * 100)));
+  }
+
+  metricIcon(metricKey: StateDashboardMetricKey): string {
+    const icons: Record<StateDashboardMetricKey, string> = {
       'total-ulbs': 'location_city',
       allocated: 'account_balance_wallet',
       claimed: 'receipt_long',
       'compliance-rate': 'verified_user',
     };
 
-    return icons[metricKey] ?? 'analytics';
+    return icons[metricKey];
   }
 
-  taskIcon(status: StateDashboardTask['status']): string {
-    return status === 'DONE' ? 'check' : 'radio_button_unchecked';
+  taskIcon(status: StateDashboardTaskStatus): string {
+    return status === 'DONE' ? 'check_circle' : 'radio_button_unchecked';
   }
 
-  claimIcon(status: StateDashboardClaimLetter['status']): string {
-    return status === 'LOCKED' ? 'lock' : 'description';
+  claimIcon(letter: StateDashboardClaimLetterItem): string {
+    return letter.status === 'LOCKED' ? 'lock' : 'description';
   }
 
-  summaryIcon(tone: StateDashboardSubmissionSummary['tone']): string {
-    const icons: Record<StateDashboardSubmissionSummary['tone'], string> = {
-      neutral: 'radio_button_unchecked',
-      progress: 'pending_actions',
-      review: 'rate_review',
-      eligible: 'task_alt',
-      exemption: 'gpp_maybe',
+  summaryTone(status: StateDashboardUlbSubmissionStatus): StateDashboardSummaryTone {
+    const tones: Record<StateDashboardUlbSubmissionStatus, StateDashboardSummaryTone> = {
+      NOT_STARTED: 'neutral',
+      IN_PROGRESS: 'progress',
+      UNDER_REVIEW: 'review',
+      ELIGIBLE: 'eligible',
+      EXEMPTION_REQUESTED: 'exemption',
     };
 
-    return icons[tone];
+    return tones[status];
   }
 
-  completionPercent(row: StateDashboardFormCompletionRow): number {
-    if (!row.total) return 0;
-    return Math.min(100, Math.max(0, Math.round((row.completed / row.total) * 100)));
+  summaryIcon(status: StateDashboardUlbSubmissionStatus): string {
+    const icons: Record<StateDashboardUlbSubmissionStatus, string> = {
+      NOT_STARTED: 'radio_button_unchecked',
+      IN_PROGRESS: 'pending_actions',
+      UNDER_REVIEW: 'rate_review',
+      ELIGIBLE: 'task_alt',
+      EXEMPTION_REQUESTED: 'gpp_maybe',
+    };
+
+    return icons[status];
+  }
+
+  roleLabel(userRole: string): string {
+    const normalizedRole = userRole.trim().toUpperCase();
+    if (['STATE', 'XVIFC_STATE', 'STATE_EDITOR', 'STATE_VIEWER'].includes(normalizedRole)) return 'State DMA';
+    if (normalizedRole === 'MOHUA') return 'MoHUA';
+    if (normalizedRole === 'ADMIN') return 'Administrator';
+
+    return normalizedRole
+      .toLowerCase()
+      .split('_')
+      .filter(Boolean)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+      .join(' ');
+  }
+
+  onStateTaskAction(task: StateDashboardTask): void {
+    if (!task.actionLabel) return;
+    if (this.navigateToApiRoute(task.route)) return;
+
+    if (task.key === 'devolution-formula') {
+      void this.router.navigate(['../devolution-formula'], { relativeTo: this.route });
+      return;
+    }
+
+    if (task.key === 'state-conditions') this.onSubmitOtherStateConditions();
   }
 
   onSubmitOtherStateConditions(): void {
@@ -214,19 +170,189 @@ export class StateDashboardComponent implements OnInit {
     void this.router.navigate(['../ulb-submissions'], { relativeTo: this.route });
   }
 
-  onStartClaimLetter(): void {
-    // TODO: Navigate to the claim-letter workflow once the route/API is available.
+  onStartClaimLetter(letter: StateDashboardClaimLetterItem): void {
+    if (letter.status !== 'AVAILABLE' || !letter.actionLabel) return;
+    this.navigateToApiRoute(letter.route);
   }
 
-  onBackIfNeeded(): void {
-    void this.router.navigate(['../overview'], { relativeTo: this.route });
+  private observeYearId(): void {
+    const routeParamMaps = this.route.pathFromRoot.map((route) => route.paramMap);
+
+    combineLatest(routeParamMaps)
+      .pipe(
+        map((paramMaps) => this.findParamInMaps(paramMaps, 'yearId')),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((yearId) => {
+        this.yearId = yearId;
+        this.loadDashboard();
+      });
+  }
+
+  private observeDashboardRequests(): void {
+    this.dashboardRequests$
+      .pipe(
+        switchMap(({ stateId, yearId }) =>
+          this.stateDashboardService.getDashboard(stateId, yearId).pipe(
+            map(
+              (response): DashboardLoadResult => ({
+                response,
+                error: null,
+              }),
+            ),
+            catchError((error: unknown) =>
+              of<DashboardLoadResult>({
+                response: null,
+                error,
+              }),
+            ),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((result) => this.handleDashboardResult(result));
+  }
+
+  private loadDashboard(force = false): void {
+    this.stateId = this.resolveStateId();
+
+    if (!this.stateId) {
+      this.lastDashboardRequestKey = null;
+      this.setContextError('State context is unavailable for the current user.');
+      return;
+    }
+
+    if (!this.yearId) {
+      this.lastDashboardRequestKey = null;
+      this.setContextError('State or financial-year context is unavailable.');
+      return;
+    }
+
+    const requestKey = `${this.stateId}-${this.yearId}`;
+    // Route param streams can emit the same resolved context more than once during navigation.
+    if (!force && this.lastDashboardRequestKey === requestKey) return;
+    this.lastDashboardRequestKey = requestKey;
+
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.isEmpty = false;
+    this.dashboardData = null;
+    this.metricCards = [];
+    this.dashboardRequests$.next({ stateId: this.stateId, yearId: this.yearId });
+  }
+
+  private handleDashboardResult({ response, error }: DashboardLoadResult): void {
+    this.isLoading = false;
+
+    if (error) {
+      this.dashboardData = null;
+      this.metricCards = [];
+      this.isEmpty = false;
+      this.errorMessage = this.getErrorMessage(error);
+      return;
+    }
+
+    if (!response?.success) {
+      this.dashboardData = null;
+      this.metricCards = [];
+      this.isEmpty = false;
+      this.errorMessage = 'The State dashboard could not be loaded. Please try again.';
+      return;
+    }
+
+    if (!response.data) {
+      this.dashboardData = null;
+      this.metricCards = [];
+      this.isEmpty = true;
+      this.errorMessage = null;
+      return;
+    }
+
+    this.dashboardData = response.data;
+    this.metricCards = this.createMetricCards(response.data);
+    this.isEmpty = false;
+    this.errorMessage = null;
+  }
+
+  private resolveStateId(): string | null {
+    const stateId = this.authService.getCurrentUserSnapshot()?.state;
+    const cleanStateId = typeof stateId === 'string' ? stateId.trim() : '';
+    return cleanStateId || null;
+  }
+
+  private createMetricCards(data: StateDashboardData): readonly StateDashboardMetricView[] {
+    const { context, metrics } = data;
+
+    return [
+      {
+        key: 'total-ulbs',
+        label: 'Total ULBs',
+        value: String(metrics.totalUlbs),
+        description: `${context.stateName} · ${context.financialYear}`,
+      },
+      {
+        key: 'allocated',
+        label: 'Allocated',
+        value: this.formatAmount(metrics.allocatedAmount, metrics.currency, metrics.amountUnit),
+        description: context.grantType ? `${context.grantType} · ${context.financialYear}` : context.financialYear,
+      },
+      {
+        key: 'claimed',
+        label: 'Claimed',
+        value: this.formatAmount(metrics.claimedAmount, metrics.currency, metrics.amountUnit),
+        description: 'Claim letters issued to date',
+      },
+      {
+        key: 'compliance-rate',
+        label: 'Compliance Rate',
+        value: `${metrics.compliance.rate}%`,
+        description: `${metrics.compliance.compliantUlbs} of ${metrics.compliance.totalUlbs} cities · all conditions met`,
+      },
+    ];
+  }
+
+  private getErrorMessage(error: unknown): string {
+    const status = this.resolveHttpStatus(error);
+
+    if (status === 401) return 'Your session has expired. Please sign in again.';
+    if (status === 403) return 'You are not authorised to view this State dashboard.';
+    if (status === 404) return 'Dashboard data is unavailable for the selected State and financial year.';
+    if (status === 500) return 'The State dashboard could not be loaded. Please try again.';
+
+    return 'Unable to connect to the server. Please try again.';
+  }
+
+  private resolveHttpStatus(error: unknown): number | null {
+    if (error instanceof HttpErrorResponse) return error.status;
+    if (typeof error !== 'object' || error === null || !('status' in error)) return null;
+
+    const status = (error as { status?: unknown }).status;
+    return typeof status === 'number' ? status : null;
+  }
+
+  private setContextError(message: string): void {
+    this.isLoading = false;
+    this.dashboardData = null;
+    this.metricCards = [];
+    this.isEmpty = false;
+    this.errorMessage = message;
+  }
+
+  private findParamInMaps(paramMaps: readonly ParamMap[], key: string): string | null {
+    for (let index = paramMaps.length - 1; index >= 0; index -= 1) {
+      const value = paramMaps[index].get(key)?.trim();
+      if (value) return value;
+    }
+
+    return null;
   }
 
   private findRouteParam(snapshot: ActivatedRouteSnapshot, key: string): string | null {
     let current: ActivatedRouteSnapshot | null = snapshot;
 
     while (current) {
-      const value = current.paramMap.get(key);
+      const value = current.paramMap.get(key)?.trim();
       if (value) return value;
       current = current.parent;
     }
@@ -234,93 +360,16 @@ export class StateDashboardComponent implements OnInit {
     return null;
   }
 
-  private applyStoredDashboardContext(): void {
-    const stateName = this.resolveStoredStateName() ?? this.dashboardData.stateName;
-    const financialYear = this.resolveStoredFinancialYear() ?? this.dashboardData.financialYear;
+  private navigateToApiRoute(route: string | null): boolean {
+    const cleanRoute = route?.trim();
+    if (!cleanRoute || cleanRoute.startsWith('//') || /^[a-z][a-z\d+.-]*:/i.test(cleanRoute)) return false;
 
-    this.dashboardData = {
-      ...this.dashboardData,
-      stateName,
-      financialYear,
-      metrics: this.dashboardData.metrics.map((metric) => this.metricWithContext(metric, stateName, financialYear)),
-    };
-  }
-
-  private resolveStoredStateName(): string | null {
-    const user = this.readStoredUserContext();
-    return this.firstNonEmptyString(user?.stateName, user?.name);
-  }
-
-  private resolveStoredFinancialYear(): string | null {
-    if (typeof localStorage === 'undefined') return null;
-
-    const storedYear =
-      this.firstNonEmptyString(
-        localStorage.getItem('xvifc_selectedYearString'),
-        localStorage.getItem('selectedYear'),
-        localStorage.getItem('financialYear'),
-      ) ?? null;
-
-    return this.formatFinancialYear(storedYear);
-  }
-
-  private readStoredUserContext(): StoredUserContext | null {
-    if (typeof localStorage === 'undefined') return null;
-
-    try {
-      const raw = localStorage.getItem('userData');
-      return raw ? (JSON.parse(raw) as StoredUserContext) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  private metricWithContext(
-    metric: StateDashboardMetric,
-    stateName: string,
-    financialYear: string,
-  ): StateDashboardMetric {
-    if (metric.key === 'total-ulbs') {
-      return { ...metric, description: `${stateName} · ${financialYear}` };
+    if (cleanRoute.startsWith('/')) {
+      void this.router.navigateByUrl(cleanRoute);
+    } else {
+      void this.router.navigate([cleanRoute], { relativeTo: this.route });
     }
 
-    if (metric.key === 'allocated') {
-      return { ...metric, description: `Basic Grants · ${financialYear}` };
-    }
-
-    return metric;
-  }
-
-  private formatFinancialYear(value: string | null): string | null {
-    const cleanValue = value?.trim();
-    if (!cleanValue) return null;
-
-    if (/^FY[-\s]?\d{4}-\d{2}$/i.test(cleanValue)) {
-      return `FY ${cleanValue.replace(/^FY[-\s]?/i, '')}`;
-    }
-
-    if (/^\d{4}-\d{2}$/.test(cleanValue)) {
-      return `FY ${cleanValue}`;
-    }
-
-    return cleanValue.replace(/^FY-/i, 'FY ');
-  }
-
-  private firstNonEmptyString(...values: Array<string | null | undefined>): string | null {
-    for (const value of values) {
-      const cleanValue = value?.trim();
-      if (cleanValue) return cleanValue;
-    }
-
-    return null;
-  }
-
-  private percentFromText(value: string | undefined): number {
-    if (!value) return 0;
-
-    const parsedValue = Number.parseInt(value.replace(/[^0-9]/g, ''), 10);
-    if (Number.isNaN(parsedValue)) return 0;
-
-    return Math.min(100, Math.max(0, parsedValue));
+    return true;
   }
 }
