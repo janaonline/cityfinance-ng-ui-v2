@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, computed, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -109,6 +109,10 @@ export class UnspentUlbTableComponent {
   private readonly dynamicService = inject(DynamicFormService);
   private readonly dialog = inject(MatDialog);
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Passed through to `MatDialog.open` so the picker resolves the same feature-scoped
+   *  `FcUnspentUlbOptionsCacheService` instance provided on `FcUnspentDeclarationComponent` — by
+   *  default a dialog is created against the root injector, not this component's own. */
+  private readonly injector = inject(Injector);
 
   readonly rows = input.required<FormArray<FcUnspentUlbRowGroup>>();
   /** Backend-supplied snapshot of already-saved rows (ulbName/censusCode/sbCode/allocationAmount).
@@ -183,7 +187,11 @@ export class UnspentUlbTableComponent {
     });
   });
 
-  /** Opens the picker to change the ULB already selected for an existing row. */
+  /**
+   * Opens the picker to change the ULB already selected for an existing row. If the State selects
+   * more than one ULB in that session, the first replaces this row's own selection and every
+   * additional one is appended as a brand-new row — no selected ULB is ever silently dropped.
+   */
   openPickerForRow(index: number): void {
     if (!this.canEdit()) return;
     const row = this.rows().at(index);
@@ -192,24 +200,36 @@ export class UnspentUlbTableComponent {
     const currentUlbId = row.controls.ulbId.value;
     const excludeUlbIds = this.currentUlbIds().filter((ulbId) => ulbId !== currentUlbId);
 
-    this.openPicker(excludeUlbIds, (option) => {
-      row.controls.ulbId.setValue(option.ulbId);
+    this.openPicker(excludeUlbIds, (options) => {
+      const [first, ...rest] = options;
+      row.controls.ulbId.setValue(first.ulbId);
       row.controls.ulbId.markAsDirty();
       row.controls.ulbId.markAsTouched();
+
+      for (const option of rest) {
+        this.rows().push(
+          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), {
+            ulbId: option.ulbId,
+            unspentAmount: null,
+          }),
+        );
+      }
     });
   }
 
-  /** Opens the picker to add a brand-new row. */
+  /** Opens the picker to add one or more brand-new rows, in the order they were selected. */
   addRow(): void {
     if (!this.canEdit()) return;
 
-    this.openPicker(this.currentUlbIds(), (option) => {
-      this.rows().push(
-        createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), {
-          ulbId: option.ulbId,
-          unspentAmount: null,
-        }),
-      );
+    this.openPicker(this.currentUlbIds(), (options) => {
+      for (const option of options) {
+        this.rows().push(
+          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), {
+            ulbId: option.ulbId,
+            unspentAmount: null,
+          }),
+        );
+      }
     });
   }
 
@@ -217,7 +237,7 @@ export class UnspentUlbTableComponent {
     this.rows().removeAt(index);
   }
 
-  private openPicker(excludeUlbIds: string[], applySelection: (option: FcUnspentUlbOption) => void): void {
+  private openPicker(excludeUlbIds: string[], applySelections: (options: FcUnspentUlbOption[]) => void): void {
     const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'ulb-picker-dialog-panel'];
     const data: UlbPickerDialogData = { stateId: this.stateId(), yearId: this.yearId(), excludeUlbIds };
 
@@ -227,17 +247,32 @@ export class UnspentUlbTableComponent {
       maxWidth: '65vw',
       height: '80vh',
       maxHeight: '80vh',
+      injector: this.injector,
       data,
     });
 
-    dialogRef.afterClosed().subscribe((option: FcUnspentUlbOption | undefined) => {
-      if (!option) return;
-      // Defensive recheck — never apply a selection that duplicates a row that changed elsewhere
-      // while the picker was open. Backend duplicate validation remains authoritative regardless.
-      if (this.currentUlbIds().includes(option.ulbId)) return;
+    dialogRef.afterClosed().subscribe((options: FcUnspentUlbOption[] | undefined) => {
+      if (!options || options.length === 0) return;
 
-      this.pickedUlbByUlbId.update((map) => new Map(map).set(option.ulbId, option));
-      applySelection(option);
+      // Defensive recheck — never apply a selection that duplicates a row that changed elsewhere
+      // while the picker was open, and never apply the same ulbId twice from one confirmed batch.
+      // Backend duplicate validation remains authoritative regardless.
+      const currentIds = new Set(this.currentUlbIds());
+      const seen = new Set<string>();
+      const uniqueNewOptions = options.filter((option) => {
+        if (currentIds.has(option.ulbId) || seen.has(option.ulbId)) return false;
+        seen.add(option.ulbId);
+        return true;
+      });
+      if (uniqueNewOptions.length === 0) return;
+
+      this.pickedUlbByUlbId.update((map) => {
+        const next = new Map(map);
+        for (const option of uniqueNewOptions) next.set(option.ulbId, option);
+        return next;
+      });
+
+      applySelections(uniqueNewOptions);
     });
   }
 }

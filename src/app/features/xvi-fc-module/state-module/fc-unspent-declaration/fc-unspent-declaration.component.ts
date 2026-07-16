@@ -33,6 +33,7 @@ import {
   UnspentUlbTableComponent,
 } from './components/unspent-ulb-table/unspent-ulb-table.component';
 import { FcUnspentDeclarationService } from './fc-unspent-declaration.service';
+import { FcUnspentUlbOptionsCacheService } from './fc-unspent-ulb-options-cache.service';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -87,6 +88,11 @@ function sanitizeDeclarationTemplateFileName(fileName: string): string {
   ],
   templateUrl: './fc-unspent-declaration.component.html',
   styleUrl: './fc-unspent-declaration.component.scss',
+  // Component-scoped (not `providedIn: 'root'`) so the ULB-options query cache lives and dies with
+  // this page — a fresh instance per visit, discarded (via its own `ngOnDestroy`) when the page is,
+  // never leaking across navigations. `UnspentUlbTableComponent` passes this same injector through
+  // to `MatDialog.open`, so every picker opened from this page shares the one instance.
+  providers: [FcUnspentUlbOptionsCacheService],
 })
 export class FcUnspentDeclarationComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -99,6 +105,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
   private readonly moduleService = inject(XvifcModuleService);
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly ulbOptionsCache = inject(FcUnspentUlbOptionsCacheService);
 
   readonly threshold = signal(10);
   readonly stateName = signal('');
@@ -167,6 +174,12 @@ export class FcUnspentDeclarationComponent implements OnInit {
   }
 
   loadForm(): void {
+    // Centralizes ULB-options cache invalidation here rather than scattering it across every
+    // save/final-submit success handler — this method is the one place both the initial load, the
+    // load-error retry, and `reloadForm()` (after save/final submit) all pass through. Cached query
+    // results may no longer reflect the backend's current ULB/allocation data once the form reloads.
+    this.ulbOptionsCache.clear();
+
     const stateId = this.stateId;
     const yearId = this.yearId;
 
@@ -283,7 +296,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
 
     this.fcUnspentService
       .getDeclarationTemplate(stateId, yearId)
-      .pipe(finalize(() => this.isDownloadingTemplate.set(false)), takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        finalize(() => this.isDownloadingTemplate.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
         next: (template) => this.triggerDeclarationTemplateDownload(template),
         error: (err: unknown) => {
@@ -378,7 +394,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
         this.reloadForm();
       },
       error: (err: unknown) => {
-        console.error(`Failed to ${action === 'finalSubmit' ? 'submit' : 'save draft for'} FC Unspent declaration`, err);
+        console.error(
+          `Failed to ${action === 'finalSubmit' ? 'submit' : 'save draft for'} FC Unspent declaration`,
+          err,
+        );
         submittingFlag.set(false);
         this.handleSubmitError(
           err,
@@ -516,7 +535,11 @@ export class FcUnspentDeclarationComponent implements OnInit {
     }
   }
 
-  private applyRowApiError(rowIndex: number, controlKey: 'ulbId' | 'unspentAmount', fieldErrors: ApiFieldError[]): void {
+  private applyRowApiError(
+    rowIndex: number,
+    controlKey: 'ulbId' | 'unspentAmount',
+    fieldErrors: ApiFieldError[],
+  ): void {
     const row = this.unspentUlbData.controls[rowIndex];
     if (!row) return;
 

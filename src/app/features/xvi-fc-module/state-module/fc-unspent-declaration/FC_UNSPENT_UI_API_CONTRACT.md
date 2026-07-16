@@ -76,13 +76,20 @@ already be folded into `permissions` by the time the response reaches the UI.
 `GET xvi-fc/state/fc-unspent-declaration/${stateId}/${yearId}/ulb-options`.
 
 **Only ever called by `UlbPickerDialogComponent`** (`components/ulb-picker-dialog/`), a self-contained,
-backend-searched/paginated `MatDialog` opened from "Add ULB" or a row's "Change selected ULB" button —
-never on page load, never for a No-branch session, never for a read-only view. An already-saved row
-renders its `ulbName`/`censusCode`/`sbCode`/`allocationAmount` from its own snapshot in `unspentUlbData`
-(§1), not from a picker request — so viewing a submitted Yes-branch declaration never opens the picker
-either. The picker never fetches more than the current page, and discards its fetched page entirely
-once closed; `UnspentUlbTableComponent` only ever caches the option the user actually selected (keyed
-by `ulbId`), never a full page. This matters for states with hundreds of ULBs (e.g. UP).
+backend-searched/paginated, **multi-select** `MatDialog` opened from "Add ULB" or a row's "Change
+selected ULB" button — never on page load, never for a No-branch session, never for a read-only view.
+An already-saved row renders its `ulbName`/`censusCode`/`sbCode`/`allocationAmount` from its own
+snapshot in `unspentUlbData` (§1), not from a picker request — so viewing a submitted Yes-branch
+declaration never opens the picker either. The picker never fetches more than the current page. This
+matters for states with hundreds of ULBs (e.g. UP).
+
+The dialog lets the State check any number of rows across searches/pages before confirming via
+"Add selected ULBs"; it resolves with `FcUnspentUlbOption[]` (empty/`undefined` on cancel via the
+top-right close icon). `UnspentUlbTableComponent` rechecks every returned `ulbId` against the
+FormArray's *current* state before applying — for "Add ULB" every valid selection becomes a new row in
+confirmed order; for a row's "Change selected ULB" the first valid selection replaces that row and any
+further ones are appended as new rows. `pickedUlbByUlbId` only ever caches the options a user actually
+selected (keyed by `ulbId`), never a full fetched page.
 
 Query contract (`FcUnspentUlbOptionsQuery`, fully threaded through the service method and the picker):
 
@@ -94,6 +101,32 @@ The picker searches by ULB name, Census Code, and SB Code (all handled backend-s
 `search` parameter), debounces search input by 400ms, uses a page size of 20 (matching this
 codebase's existing paginated-dialog convention — see `EulbRowsDialogComponent`), and guards against
 stale responses via a monotonically increasing request id.
+
+### Frontend query cache (never a full-dataset cache)
+
+`FcUnspentUlbOptionsCacheService` (`fc-unspent-ulb-options-cache.service.ts`) is an in-memory cache of
+already-fetched `getUlbOptions` query results — never the complete ULB list. It is provided as a
+**component-level provider on `FcUnspentDeclarationComponent`** (not `providedIn: 'root'`), so a fresh
+instance exists per page visit and is discarded, via its own `ngOnDestroy`, when the page is.
+`UnspentUlbTableComponent` passes that same injector into `MatDialog.open`'s config (`injector:
+this.injector`) so every picker opened from one page session shares the one cache instance, even
+though the dialog component itself is destroyed and recreated on every close/reopen; the picker
+degrades to an always-network call if it is ever opened without that injector.
+
+The cache key is `stateId|yearId|normalizedSearch|page|limit`, where `normalizedSearch` is
+`search.trim().toLowerCase()` — the same normalized value is what's actually sent as the `search`
+query parameter, so the key always accurately reflects the real request. Only a successful response is
+cached; a failed request is never cached and a retry always calls the API again. Identical concurrent
+requests for the same key are de-duplicated (`shareReplay`) rather than each firing their own HTTP
+call. Cached option arrays are shallow-frozen before storage so dialog-local selection state can never
+mutate them. The cache is bounded to `MAX_ULB_OPTIONS_CACHE_ENTRIES` (50) query results via a simple
+LRU-by-re-insertion eviction policy.
+
+`FcUnspentDeclarationComponent.loadForm()` clears the cache unconditionally at its start — this is the
+one place the initial load, the load-error retry button, and `reloadForm()` (called after every
+successful save/final-submit) all pass through, so invalidation is centralized there rather than
+scattered across success handlers. Adding rows to the FormArray via the picker never invalidates the
+cache — cached query *results* stay valid; only the locally-disabled "already added" ulbIds change.
 
 Response — array of:
 

@@ -1,5 +1,5 @@
 <h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-2 d-flex align-items-center justify-content-between">
-  <span>Select ULB</span>
+  <span>Select ULBs</span>
   <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="cancel()">
     <i class="bi bi-x-circle-fill fs-5"></i>
   </button>
@@ -38,33 +38,40 @@
           <tr>
             <th scope="col" class="ps-3 small fw-semibold">ULB Name</th>
             <th scope="col" class="small fw-semibold">Census Code</th>
-            <!-- <th scope="col" class="small fw-semibold">SB Code</th> -->
             <th scope="col" class="small fw-semibold text-end">Allocation (in Cr.)</th>
             <th scope="col" class="small fw-semibold text-end pe-3">Select</th>
           </tr>
         </thead>
         <tbody>
           @for (option of options(); track option.ulbId) {
-            <tr [class.text-muted]="isExcluded(option.ulbId)" data-cy="ulb-picker-row">
+            <tr
+              [class.text-muted]="isExcluded(option.ulbId)"
+              [class.ulb-picker-row-selectable]="!isExcluded(option.ulbId)"
+              (click)="onRowClick(option, $event)"
+              data-cy="ulb-picker-row"
+            >
               <td class="ps-3 small">{{ option.ulbName }}</td>
               <td class="small">{{ option.censusCode ?? option.sbCode ?? '—' }}</td>
               <td class="small text-end">{{ option.allocationAmount }}</td>
               <td class="text-end pe-3">
-                <button
-                  type="button"
-                  matButton="outlined"
-                  [disabled]="isExcluded(option.ulbId)"
-                  (click)="select(option)"
-                  [attr.aria-label]="
-                    isExcluded(option.ulbId) ? option.ulbName + ' already added' : 'Select ' + option.ulbName
-                  "
-                >
+                <div class="d-inline-flex align-items-center justify-content-end gap-2">
                   @if (isExcluded(option.ulbId)) {
-                    Added
-                  } @else {
-                    Select
+                    <span class="small text-secondary" title="Already added to the form">Added</span>
                   }
-                </button>
+                  <input
+                    type="checkbox"
+                    class="form-check-input mt-0"
+                    [checked]="isSelected(option.ulbId)"
+                    [disabled]="isExcluded(option.ulbId)"
+                    (change)="toggle(option)"
+                    [attr.aria-label]="
+                      isExcluded(option.ulbId)
+                        ? option.ulbName + ' is already added and cannot be selected'
+                        : 'Select ' + option.ulbName
+                    "
+                    data-cy="ulb-picker-checkbox"
+                  />
+                </div>
               </td>
             </tr>
           }
@@ -74,8 +81,10 @@
   </div>
 </mat-dialog-content>
 
-<mat-dialog-actions class="border-top px-3 py-2 d-flex justify-content-between align-items-center gap-3">
-  <button type="button" matButton="outlined" (click)="cancel()">Cancel</button>
+<mat-dialog-actions class="border-top px-3 py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+  <span class="small text-secondary" aria-live="polite" data-cy="ulb-picker-selected-count">
+    {{ selectedCount() }} {{ selectedCount() === 1 ? 'ULB' : 'ULBs' }} selected
+  </span>
 
   @if (total() > 0) {
     <div class="d-flex align-items-center gap-2 small">
@@ -100,4 +109,17 @@
       </button>
     </div>
   }
+
+  <button
+    type="button"
+    matButton="filled"
+    [disabled]="selectedCount() === 0 || isConfirming()"
+    (click)="confirm()"
+    data-cy="ulb-picker-confirm"
+  >
+    Add selected ULBs
+    @if (selectedCount() > 0) {
+      ({{ selectedCount() }})
+    }
+  </button>
 </mat-dialog-actions>
