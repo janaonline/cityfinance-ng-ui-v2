@@ -19,6 +19,20 @@ export interface SlbPermissions {
 
 export interface SlbFormMeta {
   version: number;
+  layout?: SlbTableLayout;
+}
+
+export interface SlbTableLayout {
+  display: 'table';
+  description: string;
+  columns: Array<{
+    key: 'indicatorNumber' | 'indicator' | 'actual' | 'target';
+    label: string;
+    fiscalYear?: string;
+  }>;
+  groupBy: 'indicatorNumber';
+  declarationStartKey: string;
+  declarationTitle: string;
 }
 
 export interface SlbFormData {

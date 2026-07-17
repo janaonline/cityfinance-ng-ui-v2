@@ -20,13 +20,43 @@ import {
 } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { SlbService } from './slb.service';
-import { ApiErrorMap, ApiErrorResponse, SlbDraftPayload, SlbFinalSubmitPayload, SlbPermissions, SubmitType } from './slb.models';
-import { FormActor, FormProgressComponent, FormStatusValue } from '../../../shared/form-progress/form-progress.component';
+import {
+  ApiErrorMap,
+  ApiErrorResponse,
+  SlbDraftPayload,
+  SlbFinalSubmitPayload,
+  SlbPermissions,
+  SubmitType,
+} from './slb.models';
+import {
+  FormActor,
+  FormProgressComponent,
+  FormStatusValue,
+} from '../../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
+
+interface SlbIndicatorAnswer {
+  role: 'actual' | 'target';
+  field: ConditionalFieldConfig;
+}
+
+interface SlbIndicatorRow {
+  number: number;
+  label: string;
+  unit: string;
+  answers: SlbIndicatorAnswer[];
+}
 
 @Component({
   selector: 'app-slb',
-  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule, FormProgressComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DynamicFormComponent,
+    PreLoaderComponent,
+    MatButtonModule,
+    FormProgressComponent,
+  ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
 })
@@ -46,6 +76,10 @@ export class SlbComponent implements OnInit {
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
+  readonly indicatorRows = computed<SlbIndicatorRow[]>(() => this.buildIndicatorRows(this.visibleFields()));
+  readonly declarationFields = computed(() =>
+    this.visibleFields().filter((field) => !/^ind\d+_(actual|target)$/.test(field.key ?? '')),
+  );
 
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
@@ -85,6 +119,49 @@ export class SlbComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  private buildIndicatorRows(fields: ConditionalFieldConfig[]): SlbIndicatorRow[] {
+    const byNumber = new Map<number, Partial<SlbIndicatorRow>>();
+
+    for (const field of fields) {
+      const match = /^ind(\d+)_(actual|target)$/.exec(field.key ?? '');
+      if (!match) continue;
+
+      const number = Number(match[1]);
+      const role = match[2] as 'actual' | 'target';
+      const meta = field.meta ?? {};
+      const label = field.label.replace(/^\d+\.\s*/, '').replace(/\s+—\s+(Actual|Target)\s+\(FY\s+\d{4}-\d{2}\)$/, '');
+
+      const existing = byNumber.get(number) ?? {
+        number,
+        label,
+        unit: typeof meta['unit'] === 'string' ? meta['unit'] : (field.suffixText ?? ''),
+        answers: [] as SlbIndicatorAnswer[],
+      };
+
+      existing.answers = [...(existing.answers ?? []), { role, field: { ...field, hideLabel: true } }].sort(
+        (left, right) => (left.role === right.role ? 0 : left.role === 'actual' ? -1 : 1),
+      );
+
+      byNumber.set(number, existing);
+    }
+
+    return [...byNumber.values()]
+      .filter(
+        (row): row is SlbIndicatorRow =>
+          !!row.answers?.length &&
+          row.answers.some((answer) => answer.role === 'actual') &&
+          row.answers.some((answer) => answer.role === 'target') &&
+          !!row.label,
+      )
+      .map((row) => ({
+        number: row.number!,
+        label: row.label!,
+        unit: row.unit ?? '',
+        answers: row.answers!,
+      }))
+      .sort((left, right) => left.number - right.number);
   }
 
   private loadForm(): void {

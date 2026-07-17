@@ -15,8 +15,8 @@
           <h1 class="page-title mb-2">Service Level Benchmarks</h1>
 
           <p class="page-subtitle text-secondary mb-0">
-            Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid
-            waste, and storm water indicators.
+            Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid waste,
+            and storm water indicators.
           </p>
         </div>
 
@@ -33,20 +33,52 @@
           }
 
           <form class="content-body" [formGroup]="form">
-            @for (item of visibleFields(); track item.key; let isLast = $last) {
-              <div
-                class="my-2"
-                [class.border-bottom]="!isLast"
-                [class.border-secondary]="!isLast"
-                [class.border-opacity-25]="!isLast"
-              >
-                <app-dynamic-form
-                  class="p-2 d-block"
-                  [field]="item"
-                  [group]="form"
-                  [mode]="canEdit() ? 'edit' : 'view'"
-                ></app-dynamic-form>
-              </div>
+            <div class="slb-table-wrap">
+              <table class="slb-table">
+                <thead>
+                  <tr>
+                    <th class="number-column">#</th>
+                    <th>Sections/Indicators</th>
+                    <th class="value-column">Actual Indicator <span>2026-27</span></th>
+                    <th class="value-column">Target Indicator <span>2026-27</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of indicatorRows(); track row.number) {
+                    <tr>
+                      <td class="indicator-number">{{ row.number }}</td>
+                      <th scope="row" class="indicator-label">{{ row.label }}</th>
+                      @for (answer of row.answers; track answer.field.key) {
+                        <td class="indicator-value">
+                          <div class="compact-field">
+                            <app-dynamic-form
+                              [field]="answer.field"
+                              [group]="form"
+                              [mode]="canEdit() ? 'edit' : 'view'"
+                            ></app-dynamic-form>
+                            <span class="unit">{{ row.unit }}</span>
+                          </div>
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (declarationFields().length) {
+              <section class="self-declaration" aria-labelledby="self-declaration-title">
+                <h2 id="self-declaration-title">Self Declaration</h2>
+                <div class="declaration-card">
+                  @for (item of declarationFields(); track item.key) {
+                    <app-dynamic-form
+                      [field]="item"
+                      [group]="form"
+                      [mode]="canEdit() ? 'edit' : 'view'"
+                    ></app-dynamic-form>
+                  }
+                </div>
+              </section>
             }
           </form>
         }

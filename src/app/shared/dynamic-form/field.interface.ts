@@ -182,6 +182,10 @@ export interface FieldConfig {
   /** Muted helper text rendered below the field control. */
   hintText?: string;
   displayInlineLabel?: boolean;
+  /** Unit displayed beside compact inputs, for example %, lpcd, or Hours/day. */
+  suffixText?: string;
+  /** Module-specific rendering information supplied by FormJson. */
+  meta?: Record<string, unknown>;
 }
 
 /** One card-sectioned group of fields, rendered by `FormSectionGridComponent`. */
