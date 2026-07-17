@@ -1,0 +1,46 @@
+<h2 mat-dialog-title>Reject {{ rows.length }} selected row(s)</h2>
+<mat-dialog-content>
+  <p class="text-secondary small mb-2">A remark is required for every row you reject.</p>
+
+  @if (formError()) {
+    <div class="alert alert-danger py-2 px-3 small mb-2" role="alert">{{ formError() }}</div>
+  }
+
+  <form [formGroup]="form">
+    <div formArrayName="rows" class="d-flex flex-column gap-3">
+      @for (row of rows; track row._id; let i = $index) {
+        <div [formGroupName]="i" class="border rounded p-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="fw-semibold">{{ row.ulbName }}</span>
+            <span class="text-secondary">{{ row.censusCode ?? row.sbCode ?? '—' }}</span>
+          </div>
+          <textarea
+            class="form-control form-control-sm"
+            [class.is-invalid]="isRemarkMissing(i) || rowGroupAt(i).controls.rejectionRemark.errors?.['apiError']"
+            rows="2"
+            formControlName="rejectionRemark"
+            [attr.aria-label]="'Rejection remark for ' + row.ulbName"
+            (input)="onRemarkInput(i)"
+          ></textarea>
+          @if (isRemarkMissing(i)) {
+            <div class="invalid-feedback d-block">A rejection remark is required.</div>
+          } @else if (rowGroupAt(i).controls.rejectionRemark.errors?.['apiError']) {
+            <div class="invalid-feedback d-block">{{ rowGroupAt(i).controls.rejectionRemark.errors?.['apiError'] }}</div>
+          }
+          @if (rowGroupAt(i).controls.rowId.errors?.['apiError']) {
+            <div class="text-danger small mt-1">{{ rowGroupAt(i).controls.rowId.errors?.['apiError'] }}</div>
+          }
+        </div>
+      }
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+  <button matButton="filled" type="button" [disabled]="isSubmitting()" (click)="submit()">
+    @if (isSubmitting()) {
+      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+    }
+    Reject rows
+  </button>
+</mat-dialog-actions>
