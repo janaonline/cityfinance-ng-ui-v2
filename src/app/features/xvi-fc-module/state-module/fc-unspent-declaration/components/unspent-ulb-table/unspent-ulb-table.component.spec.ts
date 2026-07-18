@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Injector } from '@angular/core';
+import { ChangeDetectorRef, Injector } from '@angular/core';
 import { FormArray } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
@@ -302,6 +303,19 @@ describe('UnspentUlbTableComponent', () => {
     expect(rows.length).toBe(1);
   });
 
+  it('marks the OnPush view for check after applying a picker selection to a genuinely empty table', () => {
+    setupWithRows([]);
+    // Grabs the exact ChangeDetectorRef instance the component holds — `debugElement.injector.get(...)`
+    // is not guaranteed to resolve to the same instance for an OnPush component's own view.
+    const cdr = (component as unknown as { cdr: ChangeDetectorRef }).cdr;
+    spyOn(cdr, 'markForCheck');
+    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0]]));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    expect(cdr.markForCheck).toHaveBeenCalled();
+  });
+
   it('does not open the picker for Add ULB when canEdit is false', () => {
     setupWithRows([], { canEdit: false });
 
@@ -474,19 +488,56 @@ describe('UnspentUlbTableComponent', () => {
     expect(cells[6].nativeElement.textContent).toContain('—');
   });
 
-  // ─── Server-injected row apiErrors ─────────────────────────────────────────
+  // ─── Row-cell validation error icon ─────────────────────────────────────────
 
-  it('renders apiErrors set on a row control', () => {
+  it('shows a hover error icon with the apiErrors text once the control is touched', () => {
     setupWithRows(
       [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1.5 })],
       { savedRows: SAVED_ROWS },
     );
 
-    rows.at(0).controls.unspentAmount.setErrors({ apiErrors: ['Unspent amount must be greater than zero.'] });
+    const control = rows.at(0).controls.unspentAmount;
+    control.setErrors({ apiErrors: ['Unspent amount must be greater than zero.'] });
+    control.markAsTouched();
     fixture.detectChanges();
 
-    const errorEl = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-unspentamount-api-error"]'));
-    expect(errorEl.nativeElement.textContent).toContain('Unspent amount must be greater than zero.');
+    const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-unspentamount-error-icon"]'));
+    expect(icon).toBeTruthy();
+    expect(icon.injector.get(MatTooltip).message).toBe('Unspent amount must be greater than zero.');
+  });
+
+  it('shows the min-validator message once a 0 amount is entered and the control is touched', () => {
+    setupWithRows(
+      [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: null })],
+      { savedRows: SAVED_ROWS },
+    );
+
+    const control = rows.at(0).controls.unspentAmount;
+    control.setValue(0);
+    control.markAsTouched();
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-unspentamount-error-icon"]'));
+    expect(icon).toBeTruthy();
+    expect(icon.injector.get(MatTooltip).message).toBe('Amount must be greater than 0.');
+  });
+
+  it('hides the error icon for an invalid control that has not been touched yet', () => {
+    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: null, unspentAmount: null })]);
+
+    expect(rows.at(0).controls.unspentAmount.invalid).toBe(true);
+    expect(fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-unspentamount-error-icon"]'))).toBeFalsy();
+    expect(fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-ulbid-error-icon"]'))).toBeFalsy();
+  });
+
+  it('exposes refreshValidationDisplay() so an ancestor can force a re-render after touching a row control', () => {
+    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: null, unspentAmount: null })]);
+    const cdr = (component as unknown as { cdr: ChangeDetectorRef }).cdr;
+    spyOn(cdr, 'markForCheck');
+
+    component.refreshValidationDisplay();
+
+    expect(cdr.markForCheck).toHaveBeenCalled();
   });
 
   it('clears a row control apiErrors as soon as its value changes', () => {

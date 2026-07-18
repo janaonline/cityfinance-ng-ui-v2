@@ -1,9 +1,19 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Injector, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Injector,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
 import { MATERIAL_THEME_CLASS } from '../../../../../../core/theming/material-theme.providers';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
@@ -31,6 +41,38 @@ interface FcUnspentUlbRowViewModel {
   eligible: boolean | null;
 }
 
+const ULB_ID_REQUIRED_MESSAGE = 'Please select a ULB.';
+const UNSPENT_AMOUNT_REQUIRED_MESSAGE = 'Unspent amount is required.';
+const UNSPENT_AMOUNT_MIN_MESSAGE = 'Amount must be greater than 0.';
+
+/** Maps a control's Angular validator error keys to the same messages used when the validator was
+ *  bound via `createFcUnspentUlbRowGroup`, so the hover-icon text always matches. */
+const ULB_ID_ERROR_MESSAGES: Readonly<Record<string, string>> = { required: ULB_ID_REQUIRED_MESSAGE };
+const UNSPENT_AMOUNT_ERROR_MESSAGES: Readonly<Record<string, string>> = {
+  required: UNSPENT_AMOUNT_REQUIRED_MESSAGE,
+  min: UNSPENT_AMOUNT_MIN_MESSAGE,
+};
+
+/** Resolves the single message to show for a control's current errors — a backend `apiErrors`
+ *  entry always wins (it's the most specific/authoritative), otherwise the first matching
+ *  client-validator message. */
+function firstControlErrorText(
+  control: AbstractControl,
+  messagesByErrorKey: Readonly<Record<string, string>>,
+): string | null {
+  const errors = control.errors;
+  if (!errors) return null;
+
+  const apiErrors = errors['apiErrors'];
+  if (Array.isArray(apiErrors) && apiErrors.length > 0) return (apiErrors as string[]).join(' ');
+
+  for (const [key, message] of Object.entries(messagesByErrorKey)) {
+    if (errors[key]) return message;
+  }
+
+  return null;
+}
+
 /**
  * Builds one editable ULB row via the shared `DynamicFormService.createContorl`, so validator and
  * readonly setup stays consistent with the rest of the page. Exported so both the parent (initial
@@ -52,7 +94,7 @@ export function createFcUnspentUlbRowGroup(
       {
         name: 'required',
         validator: null,
-        message: 'Please select a ULB.',
+        message: ULB_ID_REQUIRED_MESSAGE,
       },
     ],
   };
@@ -66,12 +108,12 @@ export function createFcUnspentUlbRowGroup(
       {
         name: 'required',
         validator: null,
-        message: 'Unspent amount is required.',
+        message: UNSPENT_AMOUNT_REQUIRED_MESSAGE,
       },
       {
         name: 'min',
         validator: Number.MIN_VALUE,
-        message: 'Unspent amount must be greater than zero.',
+        message: UNSPENT_AMOUNT_MIN_MESSAGE,
       },
     ],
   };
@@ -100,7 +142,7 @@ export function createFcUnspentUlbRowGroup(
 
 @Component({
   selector: 'app-unspent-ulb-table',
-  imports: [ReactiveFormsModule, DecimalPipe, MatButtonModule],
+  imports: [ReactiveFormsModule, DecimalPipe, MatButtonModule, MatTooltipModule],
   templateUrl: './unspent-ulb-table.component.html',
   styleUrl: './unspent-ulb-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -108,6 +150,7 @@ export function createFcUnspentUlbRowGroup(
 export class UnspentUlbTableComponent {
   private readonly dynamicService = inject(DynamicFormService);
   private readonly dialog = inject(MatDialog);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
   /** Passed through to `MatDialog.open` so the picker resolves the same feature-scoped
    *  `FcUnspentUlbOptionsCacheService` instance provided on `FcUnspentDeclarationComponent` — by
@@ -237,6 +280,28 @@ export class UnspentUlbTableComponent {
     this.rows().removeAt(index);
   }
 
+  /**
+   * Error text for the hover icon next to a row's ULB/amount cell — shown only once the control
+   * has been marked touched, matching `FcUnspentDeclarationComponent.isUnspentUlbDataValidForSubmitType`,
+   * which only touches a control when its current error actually blocks the attempted save/submit
+   * (e.g. a bare `required` on an untouched draft row is never touched, so never shown here either).
+   */
+  rowFieldErrorText(row: FcUnspentUlbRowGroup, field: 'ulbId' | 'unspentAmount'): string | null {
+    const control = row.controls[field];
+    if (!control.touched) return null;
+    return firstControlErrorText(control, field === 'ulbId' ? ULB_ID_ERROR_MESSAGES : UNSPENT_AMOUNT_ERROR_MESSAGES);
+  }
+
+  /**
+   * Lets an ancestor request a re-render after mutating a row control's touched/errors state from
+   * outside this OnPush view's own template — e.g. `FcUnspentDeclarationComponent`'s submit-time
+   * validation pass or an applied API error. `markAsTouched()`/`setErrors()` don't themselves emit
+   * `valueChanges`/`statusChanges`, so nothing here would otherwise pick the mutation up.
+   */
+  refreshValidationDisplay(): void {
+    this.cdr.markForCheck();
+  }
+
   private openPicker(excludeUlbIds: string[], applySelections: (options: FcUnspentUlbOption[]) => void): void {
     const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'ulb-picker-dialog-panel'];
     const data: UlbPickerDialogData = { stateId: this.stateId(), yearId: this.yearId(), excludeUlbIds };
@@ -273,6 +338,12 @@ export class UnspentUlbTableComponent {
       });
 
       applySelections(uniqueNewOptions);
+
+      // The dialog closes asynchronously, off a native event inside its own template rather than
+      // this component's — Angular's OnPush auto dirty-marking only picks up signal changes that
+      // were already read by a previous render pass, which never happened for the empty-table case
+      // (the `@for` body, and thus `rowViewModels()`, never ran with 0 rows). Force the recheck.
+      this.cdr.markForCheck();
     });
   }
 }

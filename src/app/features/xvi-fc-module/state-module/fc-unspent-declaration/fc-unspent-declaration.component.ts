@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, SecurityContext, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, SecurityContext, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -123,6 +123,11 @@ export class FcUnspentDeclarationComponent implements OnInit {
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
   readonly unspentUlbData = new FormArray<FcUnspentUlbRowGroup>([]);
+  /** `UnspentUlbTableComponent` is `OnPush` and only rendered while the Yes branch is shown, so its
+   *  view can go stale after this component touches/sets errors on a row control from outside the
+   *  child's own template (a submit-validation pass, or an applied API error) — neither
+   *  `markAsTouched()` nor `setErrors()` emits `valueChanges`/`statusChanges` on their own. */
+  private readonly unspentUlbTable = viewChild(UnspentUlbTableComponent);
   private readonly isYesBranchSignal = signal(false);
   readonly isYesBranch = computed(() => this.isYesBranchSignal());
 
@@ -351,6 +356,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
     const tableValid = this.isUnspentUlbDataValidForSubmitType(action);
     const branchValid = action !== 'finalSubmit' || this.resolveIsFcUnspentBoolean() !== null;
 
+    // `isUnspentUlbDataValidForSubmitType` may have just marked row controls touched — the table's
+    // hover-error icons only read `touched`, and won't otherwise notice from outside their own view.
+    this.unspentUlbTable()?.refreshValidationDisplay();
+
     if (!flatFieldsValid || !tableValid || !branchValid) {
       this.form.markAllAsTouched();
       this.utilityService.triggerSnackbar(
@@ -462,6 +471,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
     if (response?.errors) {
       this.applyApiErrors(response.errors);
     }
+
+    // A row's `apiErrors` are set (and touched) asynchronously here, off the HTTP error callback —
+    // not a native event inside the table's own template — so its OnPush view needs an explicit nudge.
+    this.unspentUlbTable()?.refreshValidationDisplay();
   }
 
   /**
