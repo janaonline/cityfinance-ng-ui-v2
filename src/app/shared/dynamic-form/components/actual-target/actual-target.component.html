@@ -1,0 +1,64 @@
+@if (field && field.key && pairGroup) {
+  <div class="mb-2">
+    @if (!field.hideLabel) {
+      <label class="fw-semibold d-block mb-1"
+        >{{ field.position ? field.position + '. ' : '' }}{{ field.label
+        }}@if (field.required) {
+          <span class="text-danger"><sup>*</sup></span>
+        }</label
+      >
+    }
+
+    <div class="d-flex flex-wrap gap-3" [formGroup]="pairGroup">
+      <mat-form-field [appearance]="readonly ? 'fill' : 'outline'" class="flex-fill" style="min-width: 160px">
+        <mat-label>Actual</mat-label>
+        <input
+          matInput
+          type="number"
+          onwheel="this.blur()"
+          formControlName="actual"
+          [id]="field.key + '_actual'"
+          [appDecimalLimit]="decimal"
+          [readonly]="readonly"
+          appNoUpDown
+          [attr.data-cy]="field.key + '_actual-test'"
+        />
+        @if (field.inputCardConfig?.suffixText) {
+          <span matTextSuffix>&nbsp;{{ field.inputCardConfig?.suffixText }}</span>
+        }
+        @for (validation of validations; track validation) {
+          <ng-container ngProjectAs="mat-error">
+            @if (hasError('actual', validation.name)) {
+              <mat-error>{{ validation.message }}</mat-error>
+            }
+          </ng-container>
+        }
+      </mat-form-field>
+
+      <mat-form-field [appearance]="readonly ? 'fill' : 'outline'" class="flex-fill" style="min-width: 160px">
+        <mat-label>Target</mat-label>
+        <input
+          matInput
+          type="number"
+          onwheel="this.blur()"
+          formControlName="target"
+          [id]="field.key + '_target'"
+          [appDecimalLimit]="decimal"
+          [readonly]="readonly"
+          appNoUpDown
+          [attr.data-cy]="field.key + '_target-test'"
+        />
+        @if (field.inputCardConfig?.suffixText) {
+          <span matTextSuffix>&nbsp;{{ field.inputCardConfig?.suffixText }}</span>
+        }
+        @for (validation of validations; track validation) {
+          <ng-container ngProjectAs="mat-error">
+            @if (hasError('target', validation.name)) {
+              <mat-error>{{ validation.message }}</mat-error>
+            }
+          </ng-container>
+        }
+      </mat-form-field>
+    </div>
+  </div>
+}

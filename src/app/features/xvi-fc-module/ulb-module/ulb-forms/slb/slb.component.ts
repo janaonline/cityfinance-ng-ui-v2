@@ -47,6 +47,11 @@ export class SlbComponent implements OnInit {
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
+  /** The 28 SLB indicator questions, rendered as table rows. */
+  readonly indicatorFields = computed(() => this.visibleFields().filter((f) => f.formFieldType === 'actualTarget'));
+  /** Self-declaration fields (name, designation, supporting document, confirmation) — rendered via the generic form renderer. */
+  readonly declarationFields = computed(() => this.visibleFields().filter((f) => f.formFieldType !== 'actualTarget'));
+
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
@@ -159,6 +164,12 @@ export class SlbComponent implements OnInit {
     }
 
     this.isLoading.set(false);
+  }
+
+  /** Checks a named validation error on an indicator's `actual`/`target` sub-control, only after it's been touched. */
+  hasIndicatorError(key: string, sub: 'actual' | 'target', name: string): boolean {
+    const control = this.form.get(`${key}.${sub}`);
+    return !!control?.hasError(name) && (control.touched || control.dirty);
   }
 
   onSubmit(action: SubmitType): void {

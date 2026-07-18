@@ -18,6 +18,59 @@ describe('DynamicFormService', () => {
     expect(service).toBeTruthy();
   });
 
+  describe('createContorl — actualTarget', () => {
+    const field = {
+      key: 'ind1',
+      label: 'Per capita supply of water',
+      formFieldType: 'actualTarget',
+      validations: [
+        { name: 'required', validator: null, message: 'Required.' },
+        { name: 'min', validator: 0, message: 'Cannot be negative.' },
+        { name: 'max', validator: 1000, message: 'Cannot exceed 1000.' },
+      ],
+    } as unknown as FieldConfig;
+
+    it('builds a nested FormGroup with actual/target sub-controls', () => {
+      const control = service.createContorl(field);
+
+      expect(control instanceof FormGroup).toBeTrue();
+      expect((control as FormGroup).get('actual')).toBeTruthy();
+      expect((control as FormGroup).get('target')).toBeTruthy();
+    });
+
+    it('seeds initial values from field.value and serializes back to { actual, target }', () => {
+      const control = service.createContorl({ ...field, value: { actual: 120, target: 150 } } as FieldConfig);
+
+      expect(control.value).toEqual({ actual: 120, target: 150 });
+    });
+
+    it('applies the shared validations array to both sub-controls independently', () => {
+      const control = service.createContorl(field) as FormGroup;
+
+      control.get('actual')?.setValue(-5);
+      control.get('target')?.setValue(5000);
+
+      expect(control.get('actual')?.hasError('min')).toBeTrue();
+      expect(control.get('actual')?.hasError('max')).toBeFalse();
+      expect(control.get('target')?.hasError('max')).toBeTrue();
+      expect(control.get('target')?.hasError('min')).toBeFalse();
+    });
+
+    it('marks both sub-controls required when empty', () => {
+      const control = service.createContorl(field) as FormGroup;
+
+      expect(control.get('actual')?.hasError('required')).toBeTrue();
+      expect(control.get('target')?.hasError('required')).toBeTrue();
+    });
+
+    it('disables both sub-controls when readonly', () => {
+      const control = service.createContorl(field, false, true) as FormGroup;
+
+      expect(control.get('actual')?.disabled).toBeTrue();
+      expect(control.get('target')?.disabled).toBeTrue();
+    });
+  });
+
   it('normalizes an empty standalone file value to null so required validation starts invalid', () => {
     const control = service.createContorl({
       key: 'attachment',

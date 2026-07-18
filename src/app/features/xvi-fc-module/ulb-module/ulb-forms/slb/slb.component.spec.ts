@@ -48,10 +48,12 @@ function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormDat
     meta: { version: 1 },
     questions: [
       {
-        key: 'ind1_actual',
-        label: 'Per capita supply of water — Actual',
-        formFieldType: 'number',
+        key: 'ind1',
+        label: 'Per capita supply of water',
+        position: 1,
+        formFieldType: 'actualTarget',
         value: null,
+        inputCardConfig: { suffixText: 'lpcd' },
         validations: [{ name: 'required', validator: true, message: 'This field is required.' }],
       },
       {
@@ -127,8 +129,24 @@ describe('SlbComponent', () => {
     expect(component).toBeTruthy();
     expect(getSlbFormSpy).toHaveBeenCalledWith('ulb-test-id', 'year-test-id');
     expect(component.ulbName()).toBe('Test ULB');
-    expect(getControl('ind1_actual')).toBeTruthy();
+    expect(getControl('ind1.actual')).toBeTruthy();
+    expect(getControl('ind1.target')).toBeTruthy();
     expect(getControl('checkboxConfirmation')).toBeTruthy();
+    expect(component.indicatorFields().map((f) => f.key)).toEqual(['ind1']);
+    expect(component.declarationFields().map((f) => f.key)).toEqual(['checkboxConfirmation']);
+  }));
+
+  it('renders the indicator table with actual/target inputs and the unit suffix', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    const rows = (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr');
+    expect(rows.length).toBe(1);
+    expect(rows[0].textContent).toContain('Per capita supply of water');
+    expect(rows[0].textContent).toContain('lpcd');
+    expect(rows[0].querySelector('[data-cy="ind1_actual-test"]')).toBeTruthy();
+    expect(rows[0].querySelector('[data-cy="ind1_target-test"]')).toBeTruthy();
   }));
 
   it('disables the form when the form is not editable', fakeAsync(() => {
@@ -163,7 +181,8 @@ describe('SlbComponent', () => {
     fixture.detectChanges();
     tick(1);
 
-    getControl('ind1_actual')?.setValue(150);
+    getControl('ind1.actual')?.setValue(150);
+    getControl('ind1.target')?.setValue(180);
     getControl('checkboxConfirmation')?.setValue(true);
     component.onSubmit('saveAsDraft');
     tick(1);

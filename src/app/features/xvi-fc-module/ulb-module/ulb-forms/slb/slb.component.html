@@ -15,8 +15,8 @@
           <h1 class="page-title mb-2">Service Level Benchmarks</h1>
 
           <p class="page-subtitle text-secondary mb-0">
-            Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid
-            waste, and storm water indicators.
+            Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid waste,
+            and storm water indicators.
           </p>
         </div>
 
@@ -33,19 +33,87 @@
           }
 
           <form class="content-body" [formGroup]="form">
-            @for (item of visibleFields(); track item.key; let isLast = $last) {
-              <div
-                class="my-2"
-                [class.border-bottom]="!isLast"
-                [class.border-secondary]="!isLast"
-                [class.border-opacity-25]="!isLast"
-              >
-                <app-dynamic-form
-                  class="p-2 d-block"
-                  [field]="item"
-                  [group]="form"
-                  [mode]="canEdit() ? 'edit' : 'view'"
-                ></app-dynamic-form>
+            @if (indicatorFields().length) {
+              <div class="table-responsive slb-indicator-table-wrap">
+                <table class="table align-middle mb-0 slb-indicator-table">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="slb-col-num">#</th>
+                      <th scope="col">Sections/Indicators</th>
+                      <th scope="col" class="text-nowrap">Actual Indicator</th>
+                      <th scope="col" class="text-nowrap">Target Indicator</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of indicatorFields(); track item.key; let i = $index) {
+                      <tr [formGroupName]="item.key">
+                        <td class="slb-col-num text-secondary">{{ item.position ?? i + 1 }}</td>
+                        <td class="fw-semibold">{{ item.label }}</td>
+                        <td>
+                          <div class="input-group input-group-sm slb-indicator-input">
+                            <input
+                              type="number"
+                              class="form-control"
+                              onwheel="this.blur()"
+                              formControlName="actual"
+                              [placeholder]="item.placeholder || ''"
+                              [attr.data-cy]="item.key + '_actual-test'"
+                            />
+                            @if (item.inputCardConfig?.suffixText) {
+                              <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
+                            }
+                          </div>
+                          @for (validation of item.validations; track validation.name) {
+                            @if (hasIndicatorError(item.key, 'actual', validation.name)) {
+                              <div class="text-danger small mt-1">{{ validation.message }}</div>
+                            }
+                          }
+                        </td>
+                        <td>
+                          <div class="input-group input-group-sm slb-indicator-input">
+                            <input
+                              type="number"
+                              class="form-control"
+                              onwheel="this.blur()"
+                              formControlName="target"
+                              [placeholder]="item.placeholder || ''"
+                              [attr.data-cy]="item.key + '_target-test'"
+                            />
+                            @if (item.inputCardConfig?.suffixText) {
+                              <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
+                            }
+                          </div>
+                          @for (validation of item.validations; track validation.name) {
+                            @if (hasIndicatorError(item.key, 'target', validation.name)) {
+                              <div class="text-danger small mt-1">{{ validation.message }}</div>
+                            }
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (declarationFields().length) {
+              <div class="slb-declaration mt-4">
+                <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">Self Declaration</div>
+                @for (item of declarationFields(); track item.key; let isLast = $last) {
+                  <div
+                    class="my-2"
+                    [class.border-bottom]="!isLast"
+                    [class.border-secondary]="!isLast"
+                    [class.border-opacity-25]="!isLast"
+                  >
+                    <app-dynamic-form
+                      class="p-2 d-block"
+                      [field]="item"
+                      [group]="form"
+                      [mode]="canEdit() ? 'edit' : 'view'"
+                    ></app-dynamic-form>
+                  </div>
+                }
               </div>
             }
           </form>
