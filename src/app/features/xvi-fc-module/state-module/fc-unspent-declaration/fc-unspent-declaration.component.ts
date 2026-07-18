@@ -654,8 +654,8 @@ export class FcUnspentDeclarationComponent implements OnInit {
   /**
    * For `finalSubmit`: every error on visible controls must be absent.
    * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed in a
-   * draft), but every other error blocks — including `requiredTrue`, which Angular reports
-   * under the same `required` error key. The field's `validations` config distinguishes them.
+   * draft) — this currently includes `requiredTrue` too (see TODO below), which Angular
+   * reports under the same `required` error key.
    */
   private isValidForSubmitType(action: SubmitType): boolean {
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
@@ -663,10 +663,12 @@ export class FcUnspentDeclarationComponent implements OnInit {
       const control = this.form.get(field.key);
       if (!control?.errors) continue;
 
-      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
+      // TODO: requiredTrue (declaration/confirmation checkboxes) is temporarily not mandatory for
+      // saveAsDraft either — uncomment both lines below to restore the original "still blocks drafts" behavior.
+      // const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
 
       for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
+        if (action === 'saveAsDraft' && errorKey === 'required' /* && !hasRequiredTrueValidator */) continue;
         return false;
       }
     }
