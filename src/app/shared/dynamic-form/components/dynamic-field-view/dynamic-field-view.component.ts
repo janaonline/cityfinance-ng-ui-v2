@@ -56,13 +56,13 @@ type TableRowConfig = {
           </span>
         </div>
       } @else if (!field.hideLabel) {
-        <div class="row g-2 align-items-baseline">
-          <div class="col-12 col-md-4">
+        <div class="row g-3 my-2 align-items-start">
+          <div class="col-12 col-md-5">
             <p class="fw-semibold mb-0 custom-font-size-6">
               {{ field.position ? field.position + '. ' : '' }}{{ field.label }}
             </p>
           </div>
-          <div class="col-12 col-md-8 text-dark">
+          <div class="col-12 col-md-7">
             <ng-container [ngTemplateOutlet]="answerTpl"></ng-container>
           </div>
         </div>

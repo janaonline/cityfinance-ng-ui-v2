@@ -177,12 +177,11 @@ describe('ElectedBodyStatusComponent', () => {
     );
   });
 
-  it('blocks save-as-draft when required confirmation is not checked', () => {
+  it('allows save-as-draft when required confirmation is not checked (requiredTrue is temporarily not mandatory for drafts)', () => {
     component.onSubmit('saveAsDraft');
 
-    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
-    expect(eulbService.saveDraft).not.toHaveBeenCalled();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
+    expect(confirmDialogService.confirm).toHaveBeenCalledOnceWith(SAVE_AS_DRAFT_DIALOG_DEFAULTS, undefined);
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith(
       'Please correct the errors in the form before saving as draft.',
       'snackbar-danger',
     );
