@@ -1,0 +1,213 @@
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="form-container">
+    <div class="top-accent"></div>
+
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack d-flex flex-column gap-4">
+        <div>
+          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+            16th Finance Commission
+            @if (ulbName()) {
+              &nbsp;&middot;&nbsp; {{ ulbName() }}
+            }
+          </div>
+
+          <h1 class="page-title mb-2">Service Level Benchmarks</h1>
+
+          <p class="page-subtitle text-secondary mb-0">
+            Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid waste,
+            and storm water indicators.
+          </p>
+        </div>
+
+        <hr class="my-0 text-body-tertiary" />
+
+        @if (isLoading()) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        } @else {
+          @if (actors().length) {
+            <app-form-progress formType="ulb" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
+            <hr class="my-0 text-body-tertiary" />
+          }
+
+          @if (!isProduction && canEdit()) {
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="fillTestData()"
+                data-cy="slb-fill-test-data-test"
+              >
+                <i class="bi bi-magic"></i>
+                Fill test data
+              </button>
+            </div>
+          }
+
+          <form class="content-body" [formGroup]="form">
+            @if (indicatorFields().length) {
+              <div class="table-responsive slb-indicator-table-wrap">
+                <table class="table align-middle mb-0 slb-indicator-table">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="slb-col-num">#</th>
+                      <th scope="col">Sections/Indicators</th>
+                      <th scope="col" class="text-nowrap">
+                        <div>Actual Indicator</div>
+                        @if (yearLabel()) {
+                          <div>{{ yearLabel() }}</div>
+                        }
+                      </th>
+                      <th scope="col" class="text-nowrap">
+                        <div>Target Indicator</div>
+                        @if (yearLabel()) {
+                          <div>{{ yearLabel() }}</div>
+                        }
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of indicatorFields(); track item.key; let i = $index) {
+                      <tr [formGroupName]="item.key">
+                        <td class="slb-col-num text-secondary">{{ item.position ?? i + 1 }}</td>
+                        <td class="fw-semibold">{{ item.label }}</td>
+                        <td>
+                          <div class="input-group input-group-sm slb-indicator-input">
+                            <input
+                              type="number"
+                              class="form-control"
+                              onwheel="this.blur()"
+                              formControlName="actual"
+                              [placeholder]="item.placeholder || ''"
+                              [attr.data-cy]="item.key + '_actual-test'"
+                            />
+                            @if (item.inputCardConfig?.suffixText) {
+                              <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
+                            }
+                          </div>
+                          @for (validation of item.validations; track validation.name) {
+                            @if (hasIndicatorError(item.key, 'actual', validation.name)) {
+                              <div class="text-danger small mt-1">{{ validation.message }}</div>
+                            }
+                          }
+                        </td>
+                        <td>
+                          <div class="input-group input-group-sm slb-indicator-input">
+                            <input
+                              type="number"
+                              class="form-control"
+                              onwheel="this.blur()"
+                              formControlName="target"
+                              [placeholder]="item.placeholder || ''"
+                              [attr.data-cy]="item.key + '_target-test'"
+                            />
+                            @if (item.inputCardConfig?.suffixText) {
+                              <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
+                            }
+                          </div>
+                          @for (validation of item.validations; track validation.name) {
+                            @if (hasIndicatorError(item.key, 'target', validation.name)) {
+                              <div class="text-danger small mt-1">{{ validation.message }}</div>
+                            }
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (declarationFields().length) {
+              <div class="slb-declaration mt-4">
+                <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">Self Declaration</div>
+                <div class="slb-declaration-card rounded-3 p-3">
+                  @if (declarationTextFields().length) {
+                    <div class="row g-3">
+                      @for (item of declarationTextFields(); track item.key) {
+                        <div class="col-12 col-md-6">
+                          <app-dynamic-form
+                            class="d-block"
+                            [field]="item"
+                            [group]="form"
+                            [mode]="canEdit() ? 'edit' : 'view'"
+                          ></app-dynamic-form>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @for (item of declarationOtherFields(); track item.key) {
+                    <div class="mt-2">
+                      <app-dynamic-form
+                        class="d-block"
+                        [field]="item"
+                        [group]="form"
+                        [mode]="canEdit() ? 'edit' : 'view'"
+                      ></app-dynamic-form>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </form>
+        }
+      </div>
+    </div>
+
+    <!-- Show acknowledgement section only if edit + finalSubmit is true -->
+    @if (canEdit() || canFinalSubmit()) {
+      <div class="acknowledgement border-top p-3">
+        <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+          <button
+            type="button"
+            matButton="outlined"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+            (click)="onCancel()"
+            data-cy="slb-cancel-test"
+          >
+            <i class="bi bi-x-circle-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Cancel</span>
+          </button>
+
+          <button
+            type="submit"
+            matButton="filled"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+            (click)="onSubmit('saveAsDraft')"
+            data-cy="slb-submit-test"
+          >
+            @if (isSavingDraft()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span class="d-none d-md-inline">Saving...</span>
+            } @else {
+              <i class="bi bi-bookmark-check-fill d-md-none"></i>
+              <span class="d-none d-md-inline">Save as Draft</span>
+            }
+          </button>
+
+          <!-- Show submit button only if finalSubmit = true -->
+          @if (canFinalSubmit()) {
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
+              (click)="onSubmit('finalSubmit')"
+              data-cy="slb-final-submit-test"
+            >
+              @if (isFinalSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Submitting...</span>
+              } @else {
+                <i class="bi bi-send-check-fill d-md-none"></i>
+                <span class="d-none d-md-inline">Submit to State DMA</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

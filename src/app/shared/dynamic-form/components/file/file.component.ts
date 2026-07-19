@@ -832,6 +832,49 @@ export class FileComponent implements OnInit {
   }
 
   /**
+   * Normalizes a standalone form value into the canonical uploaded-file shape expected by the
+   * component. This accepts both current keys and older aliases to remain compatible with patch/edit
+   * mode and previously persisted payloads.
+   * @param value - Raw standalone form-control value
+   * @returns Normalized uploaded file value or `null` when the value is effectively empty
+   */
+  private normalizeStandaloneValue(value: unknown): NormalizedStandaloneFileValue | null {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const rawValue = value as Record<string, unknown>;
+    // Accepts the standalone `{fileName, fileUrl, fileSize}` contract as well as the `CommonFile`
+    // contract (`{originalName, path, sizeKb}`) used by some backend-persisted file fields (e.g.
+    // xvi-fc's supportingDocumentFile), so previously-uploaded files still populate on view/edit
+    // regardless of which shape they were stored in.
+    const fileName =
+      this.utilityService.getNonEmptyString(rawValue['fileName']) ??
+      this.utilityService.getNonEmptyString(rawValue['name']) ??
+      this.utilityService.getNonEmptyString(rawValue['originalName']);
+    const fileUrl =
+      this.utilityService.getNonEmptyString(rawValue['fileUrl']) ??
+      this.utilityService.getNonEmptyString(rawValue['url']) ??
+      this.utilityService.getNonEmptyString(rawValue['path']);
+
+    if (!fileName && !fileUrl) {
+      return null;
+    }
+
+    const fileSize =
+      this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']) ??
+      this.normalizeFileSizeFromKb(rawValue['sizeKb']);
+    const mimeType = this.utilityService.getNonEmptyString(rawValue['mimeType']);
+
+    return {
+      fileName: fileName ?? this.utilityService.getFileNameFromUrl(fileUrl),
+      fileUrl: fileUrl ?? '',
+      fileSize,
+      ...(mimeType ? { mimeType } : {}),
+    };
+  }
+
+  /**
    * Normalizes the legacy nested file-group value into the same view model consumed by the template.
    * @param value - Raw legacy file-group value
    * @returns Uploaded file view model or `null` when the legacy value is effectively empty
@@ -883,6 +926,16 @@ export class FileComponent implements OnInit {
 
     const numericValue = Number(normalizedValue);
     return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
+  }
+
+  /**
+   * Converts a `CommonFile`-shaped `sizeKb` value (kilobytes) into bytes for display.
+   * @param value - Candidate size-in-kilobytes value
+   * @returns File size in bytes or `null` when the value cannot be interpreted safely
+   */
+  private normalizeFileSizeFromKb(value: unknown): number | null {
+    const sizeKb = this.normalizeFileSize(value);
+    return sizeKb === null ? null : sizeKb * 1024;
   }
 
   /**

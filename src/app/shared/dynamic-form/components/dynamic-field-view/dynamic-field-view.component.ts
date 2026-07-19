@@ -120,6 +120,12 @@ type TableRowConfig = {
             <span class="text-secondary">&#x2014;</span>
           }
         }
+        @case ('actualTarget') {
+          <span class="d-inline-flex flex-wrap gap-3">
+            <span><span class="text-secondary">Actual:</span> {{ actualTargetView.actual }}</span>
+            <span><span class="text-secondary">Target:</span> {{ actualTargetView.target }}</span>
+          </span>
+        }
         @case ('table') {
           @if (tableRows.length) {
             <div class="table-responsive mt-2">
@@ -167,6 +173,7 @@ export class DynamicFieldViewComponent implements OnChanges {
   isChecked = false;
   fileView: FileViewModel | null = null;
   tableRows: TableRowView[] = [];
+  actualTargetView: { actual: string; target: string } = { actual: EMPTY, target: EMPTY };
 
   /**
    * True for checkbox fields and any field whose validations include `requiredTrue`.
@@ -200,6 +207,7 @@ export class DynamicFieldViewComponent implements OnChanges {
     this.isChecked = false;
     this.fileView = null;
     this.tableRows = [];
+    this.actualTargetView = { actual: EMPTY, target: EMPTY };
 
     switch (this.normalizedType) {
       case 'input':
@@ -225,6 +233,9 @@ export class DynamicFieldViewComponent implements OnChanges {
         break;
       case 'table':
         this.tableRows = this.buildTableRows();
+        break;
+      case 'actualTarget':
+        this.actualTargetView = this.buildActualTargetView(raw);
         break;
     }
   }
@@ -321,6 +332,40 @@ export class DynamicFieldViewComponent implements OnChanges {
       }));
       return { rowKey: row.key, rowLabel: row.label, cells };
     });
+  }
+
+  /** Formats a `{ actual, target }` pair value with the field's unit suffix, if any. */
+  private buildActualTargetView(raw: unknown): { actual: string; target: string } {
+    const pair = (raw ?? {}) as { actual?: unknown; target?: unknown };
+    const suffixText = this.field?.inputCardConfig?.suffixText;
+    const suffix = suffixText ? ` ${suffixText}` : '';
+    const format = (value: unknown): string =>
+      value === null || value === undefined || value === '' ? EMPTY : `${value}${suffix}`;
+    return { actual: format(pair.actual), target: format(pair.target) };
+  }
+
+  private asNonEmptyString(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const s = value.trim();
+    return s.length > 0 ? s : null;
+  }
+
+  private fileNameFromUrl(url: string | null): string {
+    if (!url) return 'Unknown file';
+    return url.split('/').pop()?.split('?')[0] || url;
+  }
+
+  private resolveFileSizeLabel(value: unknown): string | null {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return this.formatBytes(value);
+    }
+    if (typeof value === 'string') {
+      const n = Number(value.trim());
+      if (Number.isFinite(n) && n >= 0) return this.formatBytes(n);
+      const s = value.trim();
+      return s.length > 0 ? s : null;
+    }
+    return null;
   }
 
   private formatBytes(bytes: number): string {
