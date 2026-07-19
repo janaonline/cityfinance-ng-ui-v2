@@ -19,6 +19,7 @@ import {
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
 } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
+import { environment } from '../../../../../../environments/environment';
 import { SlbService } from './slb.service';
 import { ApiErrorMap, ApiErrorResponse, SlbDraftPayload, SlbFinalSubmitPayload, SlbPermissions, SubmitType } from './slb.models';
 import { FormActor, FormProgressComponent, FormStatusValue } from '../../../shared/form-progress/form-progress.component';
@@ -72,6 +73,9 @@ export class SlbComponent implements OnInit {
 
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
+
+  /** Dev/staging-only helper: shows the "Fill test data" button so QA can exercise the form without manual data entry. */
+  readonly isProduction = environment.isProduction;
 
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
   /** Tracks error codes injected per field by the most recent failed API response. */
@@ -423,6 +427,48 @@ export class SlbComponent implements OnInit {
     this.form = this.fb.group({});
     this.fields.set([]);
     this.loadForm();
+  }
+
+  /**
+   * Dev/staging-only helper: fills every visible field with a plausible value so the form can be
+   * saved/submitted without manual data entry. The supporting-document value is a fake reference
+   * (no real upload happens) purely so the "required" validation passes during testing.
+   */
+  fillTestData(): void {
+    for (const field of this.visibleFields()) {
+      if (!field.key) continue;
+      const control = this.form.get(field.key);
+      if (!control) continue;
+
+      switch (field.formFieldType) {
+        case 'actualTarget': {
+          const min = Number(field.validations?.find((v) => v.name === 'min')?.validator ?? 0);
+          const max = Number(field.validations?.find((v) => v.name === 'max')?.validator ?? 100);
+          const value = Math.round((min + max) / 2);
+          control.setValue({ actual: value, target: value });
+          break;
+        }
+        case 'text':
+          control.setValue(field.key === 'declarantDesignation' ? 'Municipal Engineer' : 'Test Declarant');
+          break;
+        case 'file':
+          control.setValue({
+            fileName: 'test-supporting-document.pdf',
+            fileUrl: 'slb/supporting-document/test-supporting-document.pdf',
+            fileSize: 10240,
+            pageCount: 1,
+          });
+          break;
+        case 'checkbox':
+          control.setValue(true);
+          break;
+      }
+
+      control.markAsDirty();
+      control.markAsTouched();
+    }
+
+    this.utilityService.triggerSnackbar('Test data filled. Supporting document is a fake reference for testing only.');
   }
 
   onCancel(): void {

@@ -32,6 +32,20 @@
             <hr class="my-0 text-body-tertiary" />
           }
 
+          @if (!isProduction && canEdit()) {
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="fillTestData()"
+                data-cy="slb-fill-test-data-test"
+              >
+                <i class="bi bi-magic"></i>
+                Fill test data
+              </button>
+            </div>
+          }
+
           <form class="content-body" [formGroup]="form">
             @if (indicatorFields().length) {
               <div class="table-responsive slb-indicator-table-wrap">
