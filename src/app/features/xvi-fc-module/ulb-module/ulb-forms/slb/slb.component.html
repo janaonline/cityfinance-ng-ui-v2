@@ -54,8 +54,18 @@
                     <tr>
                       <th scope="col" class="slb-col-num">#</th>
                       <th scope="col">Sections/Indicators</th>
-                      <th scope="col" class="text-nowrap">Actual Indicator</th>
-                      <th scope="col" class="text-nowrap">Target Indicator</th>
+                      <th scope="col" class="text-nowrap">
+                        <div>Actual Indicator</div>
+                        @if (yearLabel()) {
+                          <div>{{ yearLabel() }}</div>
+                        }
+                      </th>
+                      <th scope="col" class="text-nowrap">
+                        <div>Target Indicator</div>
+                        @if (yearLabel()) {
+                          <div>{{ yearLabel() }}</div>
+                        }
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

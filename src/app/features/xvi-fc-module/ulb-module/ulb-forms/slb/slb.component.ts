@@ -43,6 +43,7 @@ export class SlbComponent implements OnInit {
   private moduleService = inject(XvifcModuleService);
   public ulbName = signal('');
   public actors = signal<FormActor[]>([]);
+  readonly yearLabel = signal('');
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -122,6 +123,7 @@ export class SlbComponent implements OnInit {
           this.fields.set(data.questions);
           this.ulbName.set(data.ulbName);
           this.actors.set(data.actors);
+          this.yearLabel.set(data.designYear);
           this.createFormControls();
           this.isLoading.set(false);
         },

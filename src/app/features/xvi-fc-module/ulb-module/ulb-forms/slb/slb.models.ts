@@ -27,6 +27,7 @@ export interface SlbFormData {
   formId: number;
   ulbId: string;
   yearId: string;
+  designYear: string;
   ulbName: string;
   actors: FormActor[];
   currentFormStatus: number;
