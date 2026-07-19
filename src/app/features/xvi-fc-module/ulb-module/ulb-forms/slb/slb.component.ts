@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,13 +21,31 @@ import {
 import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { environment } from '../../../../../../environments/environment';
 import { SlbService } from './slb.service';
-import { ApiErrorMap, ApiErrorResponse, SlbDraftPayload, SlbFinalSubmitPayload, SlbPermissions, SubmitType } from './slb.models';
-import { FormActor, FormProgressComponent, FormStatusValue } from '../../../shared/form-progress/form-progress.component';
+import {
+  ApiErrorMap,
+  ApiErrorResponse,
+  SlbDraftPayload,
+  SlbFinalSubmitPayload,
+  SlbPermissions,
+  SubmitType,
+} from './slb.models';
+import {
+  FormActor,
+  FormProgressComponent,
+  FormStatusValue,
+} from '../../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 
 @Component({
   selector: 'app-slb',
-  imports: [CommonModule, ReactiveFormsModule, DynamicFormComponent, PreLoaderComponent, MatButtonModule, FormProgressComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DynamicFormComponent,
+    PreLoaderComponent,
+    MatButtonModule,
+    FormProgressComponent,
+  ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
 })
@@ -220,22 +238,36 @@ export class SlbComponent implements OnInit {
    * Determines whether the form passes validation for the given submit action.
    *
    * For `finalSubmit`: every error on visible controls must be absent.
-   * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed in a
-   * draft), but every other error blocks — including `requiredTrue`, which Angular reports
-   * under the same `required` error key. The field's `validations` config distinguishes them.
+   * For `saveAsDraft`: every required-style error is skipped (empty fields — including an
+   * unchecked self-declaration checkbox — are allowed in a draft); every other error still
+   * blocks. Angular reports `requiredTrue` under the same `required` error key as plain
+   * `required`, so both are skipped identically here — a draft is work in progress, not a
+   * certification.
+   *
+   * `actualTarget` fields store their `required` validator on the nested `actual`/`target`
+   * sub-controls rather than the parent group (see `createActualTargetGroup`), so the group's
+   * own `.errors` is always null — they must be checked sub-control by sub-control instead.
    */
   private isValidForSubmitType(action: SubmitType): boolean {
+    const hasBlockingError = (control: AbstractControl | null): boolean => {
+      if (!control?.errors) return false;
+      return Object.keys(control.errors).some((errorKey) => !(action === 'saveAsDraft' && errorKey === 'required'));
+    };
+
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
       if (!field.key) continue;
-      const control = this.form.get(field.key);
-      if (!control?.errors) continue;
 
-      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
-
-      for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
-        return false;
+      if (field.formFieldType === 'actualTarget') {
+        if (
+          hasBlockingError(this.form.get(`${field.key}.actual`)) ||
+          hasBlockingError(this.form.get(`${field.key}.target`))
+        ) {
+          return false;
+        }
+        continue;
       }
+
+      if (hasBlockingError(this.form.get(field.key))) return false;
     }
 
     return true;

@@ -40,6 +40,7 @@ function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormDat
     formId: 32,
     ulbId: 'ulb-test-id',
     yearId: 'year-test-id',
+    designYear: 'FY 2026-27',
     ulbName: 'Test ULB',
     currentFormStatus: 1,
     currentFormStatusLabel: 'Not Started',
@@ -192,5 +193,43 @@ describe('SlbComponent', () => {
       jasmine.objectContaining({ ulbId: 'ulb-test-id', yearId: 'year-test-id' }),
     );
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Draft saved successfully.');
+  }));
+
+  it('saves a draft even when a required indicator and the confirmation checkbox are left empty', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    // ind1.actual/target left empty (plain `required`) and checkboxConfirmation left unchecked
+    // (`requiredTrue`) — a draft is work in progress, so neither should block the save.
+    component.onSubmit('saveAsDraft');
+    tick(1);
+
+    expect(confirmDialogService.confirm).toHaveBeenCalled();
+    expect(saveSlbDraftSpy).toHaveBeenCalled();
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith(
+      'Please correct the errors in the form before saving as draft.',
+      'snackbar-danger',
+    );
+  }));
+
+  it('blocks final submit when a required indicator is left empty', fakeAsync(() => {
+    getSlbFormSpy.and.returnValue(
+      of(createSlbFormResponse({ permissions: { canView: true, canEdit: true, canFinalSubmit: true } })),
+    );
+
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    // ind1.actual/target left empty; checkboxConfirmation left unchecked.
+    component.onSubmit('finalSubmit');
+    tick(1);
+
+    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+      'Please correct the errors in the form before submitting.',
+      'snackbar-danger',
+    );
   }));
 });
