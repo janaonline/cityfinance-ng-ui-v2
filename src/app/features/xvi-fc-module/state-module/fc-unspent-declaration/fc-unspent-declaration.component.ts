@@ -246,14 +246,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
     isFcUnspentControl?.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef), takeUntil(this.formSubscriptionsTeardown$))
       .subscribe((value) => {
-        this.isYesBranchSignal.set(value === 'yes');
-        // Auto-add one blank row so the user always has an editable row when switching to Yes.
         // Switching to No intentionally leaves unspentUlbData untouched — rows are just not
         // rendered while hidden, mirroring the preserveHiddenValue behavior used for the other
         // conditional fields on this page.
-        if (value === 'yes' && this.unspentUlbData.length === 0) {
-          this.unspentUlbData.push(createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit()));
-        }
+        this.isYesBranchSignal.set(value === 'yes');
       });
 
     this.dependencyIndex = this.visibilityService.createDependencyIndex(this.fields());

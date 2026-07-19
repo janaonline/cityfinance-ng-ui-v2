@@ -326,11 +326,7 @@ describe('UnspentUlbTableComponent', () => {
 
   // ─── Change ULB on an existing row via the picker ───────────────────────────
 
-  it('shows a "Select ULB" button for a blank row and a name + "Change" button once selected', () => {
-    setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: null, unspentAmount: null })]);
-    expect(fixture.debugElement.query(By.css('button[aria-label="Select ULB"]'))).toBeTruthy();
-    expect(fixture.debugElement.query(By.css('button[aria-label="Change selected ULB"]'))).toBeFalsy();
-
+  it('shows a "Change selected ULB" button for a row with a ULB already selected', () => {
     setupWithRows(
       [createFcUnspentUlbRowGroup(dynamicService, true, { ulbId: ULB_OPTIONS[0].ulbId, unspentAmount: 1 })],
       {

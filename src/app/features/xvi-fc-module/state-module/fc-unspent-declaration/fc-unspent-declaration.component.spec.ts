@@ -394,7 +394,7 @@ describe('FcUnspentDeclarationComponent', () => {
     expect(table).toBeTruthy();
   });
 
-  it('adds a blank row when switching to yes with an empty array', () => {
+  it('leaves unspentUlbData empty when switching to yes with zero rows — Add ULB is the only way to add one', () => {
     component.unspentUlbData.removeAt(1);
     component.unspentUlbData.removeAt(0);
     isFcUnspentControl(component).setValue('no');
@@ -405,9 +405,7 @@ describe('FcUnspentDeclarationComponent', () => {
     isFcUnspentControl(component).setValue('yes');
     fixture.detectChanges();
 
-    expect(component.unspentUlbData.length).toBe(1);
-    expect(component.unspentUlbData.controls[0].controls.ulbId.value).toBeNull();
-    expect(component.unspentUlbData.controls[0].controls.unspentAmount.value).toBeNull();
+    expect(component.unspentUlbData.length).toBe(0);
   });
 
   it('fails final-submit validation when the Yes branch has zero rows', () => {

@@ -35,34 +35,21 @@
             <td>
               @let ulbIdErrorText = rowFieldErrorText(row, 'ulbId');
               <div class="d-flex align-items-center gap-2">
-                @if (row.controls.ulbId.value) {
-                  <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
-                    <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
-                      {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
-                    </span>
-                    <button
-                      type="button"
-                      matButton="outlined"
-                      class="unspent-row-btn flex-shrink-0"
-                      [disabled]="!canEdit()"
-                      (click)="openPickerForRow(i)"
-                      aria-label="Change selected ULB"
-                    >
-                      <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                } @else {
+                <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                  <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
+                    {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
+                  </span>
                   <button
                     type="button"
                     matButton="outlined"
-                    class="unspent-row-btn unspent-select-ulb-btn"
+                    class="unspent-row-btn flex-shrink-0"
                     [disabled]="!canEdit()"
                     (click)="openPickerForRow(i)"
-                    aria-label="Select ULB"
+                    aria-label="Change selected ULB"
                   >
-                    <i class="bi bi-search me-1" aria-hidden="true"></i>Select ULB
+                    <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                   </button>
-                }
+                </div>
                 @if (ulbIdErrorText) {
                   <button
                     type="button"
