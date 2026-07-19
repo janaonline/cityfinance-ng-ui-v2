@@ -120,6 +120,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
+  /** DB-driven metadata for the unspentUlbData row-table's ulbId/unspentAmount controls —
+   *  passed through to UnspentUlbTableComponent so createFcUnspentUlbRowGroup builds each
+   *  row's validators from the backend config instead of a hardcoded literal. */
+  readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
   readonly unspentUlbData = new FormArray<FcUnspentUlbRowGroup>([]);
@@ -215,6 +219,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
           this.canFinalSubmit.set(data.permissions.canFinalSubmit);
           this.dependency.set(data.dependency);
           this.savedUnspentUlbData.set(data.unspentUlbData);
+          this.rowEditFields.set(data.rowEditFields ?? []);
           // Defensive per-question clone — never mutate the fields array reference in place.
           this.fields.set(data.questions.map((question) => ({ ...question })));
           this.createFormControls(data.unspentUlbData);
@@ -246,14 +251,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
     isFcUnspentControl?.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef), takeUntil(this.formSubscriptionsTeardown$))
       .subscribe((value) => {
-        this.isYesBranchSignal.set(value === 'yes');
-        // Auto-add one blank row so the user always has an editable row when switching to Yes.
         // Switching to No intentionally leaves unspentUlbData untouched — rows are just not
         // rendered while hidden, mirroring the preserveHiddenValue behavior used for the other
         // conditional fields on this page.
-        if (value === 'yes' && this.unspentUlbData.length === 0) {
-          this.unspentUlbData.push(createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit()));
-        }
+        this.isYesBranchSignal.set(value === 'yes');
       });
 
     this.dependencyIndex = this.visibilityService.createDependencyIndex(this.fields());
@@ -274,7 +275,9 @@ export class FcUnspentDeclarationComponent implements OnInit {
 
   private hydrateUnspentUlbData(rows: readonly FcUnspentUlbData[]): void {
     for (const row of rows) {
-      this.unspentUlbData.push(createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), row));
+      this.unspentUlbData.push(
+        createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), row),
+      );
     }
   }
 
@@ -637,6 +640,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
     this.form = this.fb.group({});
     this.unspentUlbData.clear();
     this.fields.set([]);
+    this.rowEditFields.set([]);
     this.loadForm();
   }
 

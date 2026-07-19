@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
 import { MATERIAL_THEME_CLASS } from '../../../../../../core/theming/material-theme.providers';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
+import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dialog/ulb-picker-dialog.component';
 
@@ -41,82 +42,62 @@ interface FcUnspentUlbRowViewModel {
   eligible: boolean | null;
 }
 
-const ULB_ID_REQUIRED_MESSAGE = 'Please select a ULB.';
-const UNSPENT_AMOUNT_REQUIRED_MESSAGE = 'Unspent amount is required.';
-const UNSPENT_AMOUNT_MIN_MESSAGE = 'Amount must be greater than 0.';
-
-/** Maps a control's Angular validator error keys to the same messages used when the validator was
- *  bound via `createFcUnspentUlbRowGroup`, so the hover-icon text always matches. */
-const ULB_ID_ERROR_MESSAGES: Readonly<Record<string, string>> = { required: ULB_ID_REQUIRED_MESSAGE };
-const UNSPENT_AMOUNT_ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  required: UNSPENT_AMOUNT_REQUIRED_MESSAGE,
-  min: UNSPENT_AMOUNT_MIN_MESSAGE,
-};
-
 /** Resolves the single message to show for a control's current errors — a backend `apiErrors`
- *  entry always wins (it's the most specific/authoritative), otherwise the first matching
- *  client-validator message. */
-function firstControlErrorText(
-  control: AbstractControl,
-  messagesByErrorKey: Readonly<Record<string, string>>,
-): string | null {
+ *  entry always wins (it's the most specific/authoritative), otherwise the first validator in
+ *  `field.validations` whose name matches one of the control's current Angular error keys. Driven
+ *  entirely by the field config actually used to build the control, so the tooltip text can never
+ *  drift from whatever validator actually fired. */
+function firstControlErrorText(control: AbstractControl, field: ConditionalFieldConfig): string | null {
   const errors = control.errors;
   if (!errors) return null;
 
   const apiErrors = errors['apiErrors'];
   if (Array.isArray(apiErrors) && apiErrors.length > 0) return (apiErrors as string[]).join(' ');
 
-  for (const [key, message] of Object.entries(messagesByErrorKey)) {
-    if (errors[key]) return message;
+  for (const validation of field.validations ?? []) {
+    if (errors[validation.name]) return validation.message;
   }
 
   return null;
 }
 
+/** The backend's GET response (`rowEditFields`) is the sole source of truth for `ulbId`/
+ *  `unspentAmount` field config — no client-side fallback. A missing entry means
+ *  `FC_UNSPENT_ROW_EDIT_FIELDS` doesn't define one of the two mandatory row fields, which is a
+ *  backend/config bug that should surface loudly here rather than be silently papered over. */
+function requireRowFieldConfig(
+  rowEditFields: readonly ConditionalFieldConfig[],
+  key: 'ulbId' | 'unspentAmount',
+): ConditionalFieldConfig {
+  const field = rowEditFields.find((f) => f.key === key);
+  if (!field) {
+    throw new Error(`FC Unspent Declaration: rowEditFields is missing the '${key}' field config.`);
+  }
+  return field;
+}
+
 /**
  * Builds one editable ULB row via the shared `DynamicFormService.createContorl`, so validator and
  * readonly setup stays consistent with the rest of the page. Exported so both the parent (initial
- * hydration) and this component's own picker-driven add flow share one factory.
+ * hydration) and this component's own picker-driven add flow share one factory. `rowEditFields` is
+ * the backend-supplied field config for `ulbId`/`unspentAmount` (DB-driven `required`/`min`/`max`/
+ * etc.), looked up by `key` — every validator is built generically via `bindValidations` inside
+ * `createContorl`, so a new validator added to the backend config is picked up automatically;
+ * nothing here hardcodes which validator names exist.
  */
 export function createFcUnspentUlbRowGroup(
   dynamicService: DynamicFormService,
   canEdit: boolean,
+  rowEditFields: readonly ConditionalFieldConfig[],
   existingRow?: { ulbId: string | null; unspentAmount: number | null },
 ): FcUnspentUlbRowGroup {
   const readonly = !canEdit;
 
-  const ulbIdField = {
-    key: 'ulbId',
-    formFieldType: 'select',
-    value: existingRow?.ulbId ?? null,
-    readonly,
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: ULB_ID_REQUIRED_MESSAGE,
-      },
-    ],
-  };
+  const ulbIdConfig = requireRowFieldConfig(rowEditFields, 'ulbId');
+  const unspentAmountConfig = requireRowFieldConfig(rowEditFields, 'unspentAmount');
 
-  const unspentAmountField = {
-    key: 'unspentAmount',
-    formFieldType: 'number',
-    value: existingRow?.unspentAmount ?? null,
-    readonly,
-    validations: [
-      {
-        name: 'required',
-        validator: null,
-        message: UNSPENT_AMOUNT_REQUIRED_MESSAGE,
-      },
-      {
-        name: 'min',
-        validator: Number.MIN_VALUE,
-        message: UNSPENT_AMOUNT_MIN_MESSAGE,
-      },
-    ],
-  };
+  const ulbIdField = { ...ulbIdConfig, value: existingRow?.ulbId ?? null, readonly };
+  const unspentAmountField = { ...unspentAmountConfig, value: existingRow?.unspentAmount ?? null, readonly };
 
   const group = new FormGroup<FcUnspentUlbRowForm>({
     ulbId: dynamicService.createContorl(ulbIdField, false, ulbIdField.readonly) as FormControl<string | null>,
@@ -167,6 +148,11 @@ export class UnspentUlbTableComponent {
   readonly threshold = input.required<number>();
   readonly stateId = input.required<string>();
   readonly yearId = input.required<string>();
+  /** Backend-supplied field metadata for the ulbId/unspentAmount controls (DB-driven
+   *  validators/messages) — passed through to `createFcUnspentUlbRowGroup` for every row this
+   *  component builds itself (picker-driven add/replace flows). Required, not defaulted — this
+   *  component never falls back to a hardcoded field config of its own. */
+  readonly rowEditFields = input.required<readonly ConditionalFieldConfig[]>();
 
   /** Display data (name/codes/allocation) for ULBs actually picked via the dialog this session —
    *  the only ULB-options data ever cached locally, and only for rows a user chose. A fetched
@@ -251,7 +237,7 @@ export class UnspentUlbTableComponent {
 
       for (const option of rest) {
         this.rows().push(
-          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), {
+          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), {
             ulbId: option.ulbId,
             unspentAmount: null,
           }),
@@ -267,7 +253,7 @@ export class UnspentUlbTableComponent {
     this.openPicker(this.currentUlbIds(), (options) => {
       for (const option of options) {
         this.rows().push(
-          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), {
+          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), {
             ulbId: option.ulbId,
             unspentAmount: null,
           }),
@@ -289,7 +275,8 @@ export class UnspentUlbTableComponent {
   rowFieldErrorText(row: FcUnspentUlbRowGroup, field: 'ulbId' | 'unspentAmount'): string | null {
     const control = row.controls[field];
     if (!control.touched) return null;
-    return firstControlErrorText(control, field === 'ulbId' ? ULB_ID_ERROR_MESSAGES : UNSPENT_AMOUNT_ERROR_MESSAGES);
+
+    return firstControlErrorText(control, requireRowFieldConfig(this.rowEditFields(), field));
   }
 
   /**
