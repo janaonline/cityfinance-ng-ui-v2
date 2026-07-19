@@ -50,4 +50,12 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
+  // The placeholder shows the field's valid range (e.g. "0-100"), not an entered value —
+  // style it lighter and italic so it's never mistaken for actual/target data already saved.
+  input[type='number']::placeholder {
+    color: var(--bs-secondary-color, #6c757d);
+    opacity: 0.6;
+    font-style: italic;
+  }
 }
