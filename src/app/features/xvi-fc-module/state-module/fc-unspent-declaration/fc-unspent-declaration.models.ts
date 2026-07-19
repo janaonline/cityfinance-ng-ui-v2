@@ -126,17 +126,6 @@ export interface FcUnspentDeclarationData {
 }
 
 /**
- * Test-fixture envelope only — kept for `fc-unspent-declaration.mock.ts`/`.mock-scenarios.ts`, which
- * are no longer used at runtime but still back component unit tests. Never imported by the real
- * `FcUnspentDeclarationService`, which talks to the backend directly via `HttpClient`.
- */
-export interface FcUnspentDeclarationPreviewResponse {
-  success: boolean;
-  message: string;
-  data: FcUnspentDeclarationData & { ulbOptions: FcUnspentUlbOption[] };
-}
-
-/**
  * Save-draft/final-submit request body — matches the `{ stateId, yearId, data }` envelope used by
  * `SfcStatusDraftPayload`/`SfcStatusFinalSubmitPayload` (see `sfc-status.models.ts`) and
  * `SaveDraftDevolutionPayload`/`FinalSubmitDevolutionPayload` (see `devolution-formula.models.ts`).

@@ -7,21 +7,18 @@ import { By } from '@angular/platform-browser';
 import { Subject, of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
+import { FORM_STATUS } from '../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { UnspentUlbTableComponent } from './components/unspent-ulb-table/unspent-ulb-table.component';
 import { FcUnspentDeclarationComponent } from './fc-unspent-declaration.component';
 import { FcUnspentDeclarationService } from './fc-unspent-declaration.service';
 import { FcUnspentUlbOptionsCacheService } from './fc-unspent-ulb-options-cache.service';
-import { FC_UNSPENT_DECLARATION_MOCK_RESPONSE } from './fc-unspent-declaration.mock';
-import {
-  FC_UNSPENT_SCENARIO_DEVOLUTION_RETURNED,
-  FC_UNSPENT_SCENARIO_DEVOLUTION_UNDER_REVIEW,
-  FC_UNSPENT_SCENARIO_MISSING_DEVOLUTION_DATASET,
-} from './fc-unspent-declaration.mock-scenarios';
 import {
   FcUnspentDeclarationData,
   FcUnspentDeclarationTemplate,
   FcUnspentSavePayload,
+  FcUnspentUlbData,
 } from './fc-unspent-declaration.models';
 
 /** `form` is built dynamically (`fb.group({})`), so `.get()` isn't statically typed — narrow it here for tests. */
@@ -34,15 +31,257 @@ function getFormControl<T>(component: FcUnspentDeclarationComponent, key: string
   return component.form.get(key) as unknown as FormControl<T>;
 }
 
-/** What `FcUnspentDeclarationService.getForm()` returns — the mock fixture minus `ulbOptions`. */
-function previewData(): FcUnspentDeclarationData {
-  const { ulbOptions, ...data } = FC_UNSPENT_DECLARATION_MOCK_RESPONSE.data;
-  void ulbOptions;
-  return data;
-}
-
 function apiErrorResponse(errors: Record<string, { field?: string; message: string; code?: string }[]>) {
   return { success: false as const, message: 'Validation failed.', errors };
+}
+
+// ─── Test fixtures ────────────────────────────────────────────────────────────
+// Test-only data standing in for a real `getForm()` response — there is no static frontend
+// question source anymore; the real dynamic-form field config comes entirely from the backend
+// (see `fc-unspent-declaration.service.ts`'s HTTP-backed `getForm()`).
+
+const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
+  {
+    formFieldType: 'radio',
+    label: 'Do any ULBs in the state have unspent 14th FC balance to report?',
+    key: 'isFcUnspent',
+    value: 'no',
+    options: [
+      {
+        label: 'No (no ULB in the state has unspent 14th FC balance to report)',
+        id: 'no',
+      },
+      {
+        label: 'Yes (one or more ULBs have unspent 14th FC balance to report)',
+        id: 'yes',
+      },
+    ],
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+    radioLayout: 'vertical',
+    supportingContent: [
+      {
+        type: 'info',
+        position: 'after',
+        description:
+          'Select No if your state has confirmed that none of its ULBs hold any unspent 14th Finance Commission balance. Select Yes if one or more ULBs need to report a balance.',
+      },
+    ],
+  },
+  {
+    formFieldType: 'file',
+    label: 'State-Level Declaration - 14th Finance Commission',
+    key: 'fcDeclaration',
+    value: null,
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+    folderPath: 'fc-unspent/fc-declaration',
+    maxFileSize: 5,
+    allowedFileTypes: ['pdf'],
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [
+        {
+          key: 'isFcUnspent',
+          operator: 'equals',
+          value: 'no',
+        },
+      ],
+    },
+    clearValueWhenDisabled: true,
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+    supportingContent: [
+      {
+        type: 'actions',
+        position: 'before',
+        layout: 'inline',
+        separator: 'dot',
+        description:
+          'Download the official template, have it signed by the authorized State DMA officer, and upload the signed declaration. Declarations on unofficial letterhead will not be accepted.',
+        actions: [
+          {
+            id: 'download-template',
+            label: 'Download the official template',
+            icon: 'bi bi-file-earmark-word',
+            tone: 'primary',
+            visible: true,
+          },
+        ],
+        badges: [],
+      },
+    ],
+  },
+  {
+    formFieldType: 'checkbox',
+    key: 'checkboxConfirmation',
+    label:
+      'I certify that the 14th FC unspent balances entered above have been compiled from figures reported by each ULB, and are accurate to the best of my knowledge.',
+    value: false,
+    validations: [
+      {
+        name: 'requiredTrue',
+        validator: null,
+        message: 'Please confirm before submitting.',
+      },
+    ],
+    visibleWhen: {
+      mode: 'all',
+      conditions: [
+        {
+          key: 'isFcUnspent',
+          operator: 'equals',
+          value: 'yes',
+        },
+      ],
+    },
+    clearValueWhenDisabled: true,
+  },
+];
+
+function questionsForYesBranch(): FcUnspentDeclarationData['questions'] {
+  return [
+    { ...FC_UNSPENT_DECLARATION_FIELDS[0], value: 'yes' },
+    { ...FC_UNSPENT_DECLARATION_FIELDS[1], value: null },
+    { ...FC_UNSPENT_DECLARATION_FIELDS[2], value: true },
+  ];
+}
+
+const UNSPENT_ULB_ROWS: FcUnspentUlbData[] = [
+  {
+    slNo: 1,
+    ulbId: '66a000000000000000000001',
+    censusCode: '800123',
+    sbCode: null,
+    ulbName: 'Sample Municipal Corporation',
+    allocationAmount: 20,
+    unspentAmount: 1.5,
+    allocationPerc: 7.5,
+    eligibility: true,
+  },
+  {
+    slNo: 2,
+    ulbId: '66a000000000000000000002',
+    censusCode: null,
+    sbCode: 'SB-0142',
+    ulbName: 'Sample Municipal Council',
+    allocationAmount: 8,
+    unspentAmount: 1.2,
+    allocationPerc: 15,
+    eligibility: false,
+  },
+];
+
+/** Devolution is UNDER_REVIEW_BY_MOHUA — the normal, fully-editable-and-submittable case. */
+const FC_UNSPENT_SCENARIO_DEVOLUTION_UNDER_REVIEW: FcUnspentDeclarationData = {
+  stateName: 'Sample State',
+  applicableFc: '14TH_FC',
+  threshold: 10,
+  currentFormStatus: FORM_STATUS.IN_PROGRESS,
+  permissions: { canView: true, canEdit: true, canSaveDraft: true, canFinalSubmit: true },
+  dependency: {
+    devolutionStatus: FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
+    devolutionDatasetExists: true,
+    editableDueToDevolutionReturn: false,
+    blockingMessage: null,
+  },
+  actors: [],
+  questions: questionsForYesBranch(),
+  unspentUlbData: UNSPENT_ULB_ROWS,
+};
+
+/** Devolution was RETURNED_BY_MOHUA — FC Unspent reopens for editing/draft-saving, but final submit stays blocked. */
+const FC_UNSPENT_SCENARIO_DEVOLUTION_RETURNED: FcUnspentDeclarationData = {
+  stateName: 'Sample State',
+  applicableFc: '14TH_FC',
+  threshold: 10,
+  currentFormStatus: FORM_STATUS.IN_PROGRESS,
+  permissions: { canView: true, canEdit: true, canSaveDraft: true, canFinalSubmit: false },
+  dependency: {
+    devolutionStatus: FORM_STATUS.RETURNED_BY_MOHUA,
+    devolutionDatasetExists: true,
+    editableDueToDevolutionReturn: true,
+    blockingMessage:
+      'Devolution Formula was returned by MoHUA for correction. FC Unspent can be edited and saved as a draft, but final submission is blocked until Devolution is resubmitted and accepted.',
+  },
+  actors: [],
+  questions: questionsForYesBranch(),
+  unspentUlbData: UNSPENT_ULB_ROWS,
+};
+
+/**
+ * No active Installment-1 Devolution allocation dataset exists yet. Row-level unspent-amount entry
+ * is meaningless without an allocation to check it against, so this scenario locks the whole form
+ * (canEdit/canSaveDraft/canFinalSubmit all false) rather than allowing edits with no valid ULB
+ * allocation-dependent row actions available.
+ */
+const FC_UNSPENT_SCENARIO_MISSING_DEVOLUTION_DATASET: FcUnspentDeclarationData = {
+  stateName: 'Sample State',
+  applicableFc: '14TH_FC',
+  threshold: 10,
+  currentFormStatus: FORM_STATUS.NOT_STARTED,
+  permissions: { canView: true, canEdit: false, canSaveDraft: false, canFinalSubmit: false },
+  dependency: {
+    devolutionStatus: null,
+    devolutionDatasetExists: false,
+    editableDueToDevolutionReturn: false,
+    blockingMessage:
+      'An active Installment 1 Devolution allocation dataset is required before FC Unspent can be edited or submitted.',
+  },
+  actors: [],
+  questions: questionsForYesBranch(),
+  unspentUlbData: [],
+};
+
+/** What `FcUnspentDeclarationService.getForm()` returns for the default (Yes-branch, fully-permitted) case. */
+const DEFAULT_PREVIEW_DATA: FcUnspentDeclarationData = {
+  stateName: 'Sample State',
+  applicableFc: '14TH_FC',
+  threshold: 10,
+  currentFormStatus: FORM_STATUS.IN_PROGRESS,
+  permissions: { canView: true, canEdit: true, canSaveDraft: true, canFinalSubmit: true },
+  dependency: {
+    devolutionStatus: FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
+    devolutionDatasetExists: true,
+    editableDueToDevolutionReturn: false,
+    blockingMessage: null,
+  },
+  actors: [
+    {
+      action: 'Created by',
+      designation: 'State DMA Officer',
+      by: '15thfcdesk5@gmail.com',
+      date: '2026-07-13T13:06:49.890Z',
+    },
+    {
+      action: 'Updated by',
+      designation: 'State DMA Officer',
+      by: '15thfcdesk5@gmail.com',
+      date: '2026-07-13T13:06:52.370Z',
+    },
+  ],
+  questions: questionsForYesBranch(),
+  unspentUlbData: UNSPENT_ULB_ROWS,
+};
+
+function previewData(): FcUnspentDeclarationData {
+  return DEFAULT_PREVIEW_DATA;
 }
 
 describe('FcUnspentDeclarationComponent', () => {
