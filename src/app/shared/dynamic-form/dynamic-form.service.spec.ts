@@ -111,6 +111,31 @@ describe('DynamicFormService', () => {
     expect(control.valid).toBeTrue();
   });
 
+  it('preserves a CommonFile-shaped standalone file value (originalName/path/sizeKb) for patch/edit mode', () => {
+    const control = service.createContorl({
+      key: 'supportingDocumentFile',
+      label: 'Supporting Document',
+      formFieldType: 'file',
+      value: {
+        originalName: 'income-statement-schedules.pdf',
+        path: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
+        mimeType: 'application/pdf',
+        extension: 'pdf',
+        sizeKb: 964.44,
+        pageCount: 6,
+      },
+    } as FieldConfig);
+
+    expect(control.value).toEqual({
+      fileName: 'income-statement-schedules.pdf',
+      fileUrl: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
+      fileSize: 964.44 * 1024,
+      mimeType: 'application/pdf',
+      pageCount: 6,
+    });
+    expect(control.valid).toBeTrue();
+  });
+
   it('creates a disabled FormControl when field.disabled is true', () => {
     const control = service.createContorl({
       key: 'ulbCount',

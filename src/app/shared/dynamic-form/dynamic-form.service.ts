@@ -465,16 +465,26 @@ export class DynamicFormService {
     }
 
     const rawValue = value as Record<string, unknown>;
+    // Accepts the standalone `{fileName, fileUrl, fileSize}` contract as well as the `CommonFile`
+    // contract (`{originalName, path, sizeKb}`) used by some backend-persisted file fields (e.g.
+    // xvi-fc's supportingDocumentFile), so previously-uploaded files still populate on view/edit
+    // regardless of which shape they were stored in.
     const fileName =
-      this.getNonEmptyString(rawValue['fileName']) ?? this.getNonEmptyString(rawValue['name']);
+      this.getNonEmptyString(rawValue['fileName']) ??
+      this.getNonEmptyString(rawValue['name']) ??
+      this.getNonEmptyString(rawValue['originalName']);
     const fileUrl =
-      this.getNonEmptyString(rawValue['fileUrl']) ?? this.getNonEmptyString(rawValue['url']);
+      this.getNonEmptyString(rawValue['fileUrl']) ??
+      this.getNonEmptyString(rawValue['url']) ??
+      this.getNonEmptyString(rawValue['path']);
 
     if (!fileName && !fileUrl) {
       return null;
     }
 
-    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
+    const fileSize =
+      this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']) ??
+      this.normalizeFileSizeFromKb(rawValue['sizeKb']);
     const mimeType = this.getNonEmptyString(rawValue['mimeType']);
     const pageCount = this.normalizeFileSize(rawValue['pageCount'] ?? rawValue['pages'] ?? rawValue['noOfPage']);
 
@@ -507,6 +517,12 @@ export class DynamicFormService {
 
     const numericValue = Number(normalizedValue);
     return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
+  }
+
+  /** Converts a `CommonFile`-shaped `sizeKb` value (kilobytes) into bytes. */
+  private normalizeFileSizeFromKb(value: unknown): number | null {
+    const sizeKb = this.normalizeFileSize(value);
+    return sizeKb === null ? null : sizeKb * 1024;
   }
 
   private getFileNameFromUrl(fileUrl: string | null): string {

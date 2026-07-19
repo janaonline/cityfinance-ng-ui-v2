@@ -201,6 +201,25 @@ describe('FileComponent', () => {
     expect(component.showError()).toBeFalse();
   });
 
+  it('populates a previously-uploaded file stored in the CommonFile shape (originalName/path/sizeKb)', () => {
+    const field = createField();
+    const group = createGroup({
+      originalName: 'income-statement-schedules.pdf',
+      extension: 'pdf',
+      mimeType: 'application/pdf',
+      pageCount: 6,
+      path: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
+      sizeKb: 964.44,
+    });
+
+    setup(field, group);
+
+    expect(component.hasUploadedFile()).toBeTrue();
+    expect(component.uploadedFile()?.name).toBe('income-statement-schedules.pdf');
+    expect(component.uploadedFile()?.url).toContain('slb/supporting-document/income-statement-schedules.pdf');
+    expect(utilityService.formatBytes).toHaveBeenCalledWith(964.44 * 1024);
+  });
+
   describe('appearance customization', () => {
     describe('default state (no appearance config)', () => {
       let defaultField: FieldConfig;

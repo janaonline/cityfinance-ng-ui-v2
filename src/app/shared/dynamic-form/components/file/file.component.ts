@@ -858,18 +858,26 @@ export class FileComponent implements OnInit {
     }
 
     const rawValue = value as Record<string, unknown>;
+    // Accepts the standalone `{fileName, fileUrl, fileSize}` contract as well as the `CommonFile`
+    // contract (`{originalName, path, sizeKb}`) used by some backend-persisted file fields (e.g.
+    // xvi-fc's supportingDocumentFile), so previously-uploaded files still populate on view/edit
+    // regardless of which shape they were stored in.
     const fileName =
       this.utilityService.getNonEmptyString(rawValue['fileName']) ??
-      this.utilityService.getNonEmptyString(rawValue['name']);
+      this.utilityService.getNonEmptyString(rawValue['name']) ??
+      this.utilityService.getNonEmptyString(rawValue['originalName']);
     const fileUrl =
       this.utilityService.getNonEmptyString(rawValue['fileUrl']) ??
-      this.utilityService.getNonEmptyString(rawValue['url']);
+      this.utilityService.getNonEmptyString(rawValue['url']) ??
+      this.utilityService.getNonEmptyString(rawValue['path']);
 
     if (!fileName && !fileUrl) {
       return null;
     }
 
-    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
+    const fileSize =
+      this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']) ??
+      this.normalizeFileSizeFromKb(rawValue['sizeKb']);
     const mimeType = this.utilityService.getNonEmptyString(rawValue['mimeType']);
 
     return {
@@ -932,6 +940,16 @@ export class FileComponent implements OnInit {
 
     const numericValue = Number(normalizedValue);
     return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
+  }
+
+  /**
+   * Converts a `CommonFile`-shaped `sizeKb` value (kilobytes) into bytes for display.
+   * @param value - Candidate size-in-kilobytes value
+   * @returns File size in bytes or `null` when the value cannot be interpreted safely
+   */
+  private normalizeFileSizeFromKb(value: unknown): number | null {
+    const sizeKb = this.normalizeFileSize(value);
+    return sizeKb === null ? null : sizeKb * 1024;
   }
 
   /**
