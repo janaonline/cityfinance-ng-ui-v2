@@ -1,3 +1,5 @@
+import { UploadedFileMetadata } from '../../shared/dynamic-form/components/file/file-metadata.types';
+
 export interface IUlbApproval {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   submittedBy?: string | null;
@@ -6,13 +8,8 @@ export interface IUlbApproval {
   rejectReason?: string;
 }
 
-export interface IUlbGazetteFile {
-  fileName: string;
-  fileUrl: string;
-  fileSize: number | null;
-  mimeType?: string;
-  noOfPage: number | null;
-}
+/** Canonical dynamic-form uploaded-file shape persisted by the Register ULB form. */
+export type IUlbGazetteFile = UploadedFileMetadata;
 
 /** ULB master-data record, as returned by the cf-nest-api-v2 `master/ulb` CRUD endpoints. */
 export interface IUlbMaster {

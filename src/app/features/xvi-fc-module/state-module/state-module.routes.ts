@@ -80,6 +80,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     path: 'ulb-list',
     loadComponent: () => import('./ulb-list/ulb-list.component').then((m) => m.UlbListComponent),
   },
+  {
+    path: 'fc-unspent-declaration',
+    loadComponent: () =>
+      import('./fc-unspent-declaration/fc-unspent-declaration.component').then(
+        (m) => m.FcUnspentDeclarationComponent,
+      ),
+  },
 ];
 
 // Keep deferred routes close to the live config so they can be reactivated in one place

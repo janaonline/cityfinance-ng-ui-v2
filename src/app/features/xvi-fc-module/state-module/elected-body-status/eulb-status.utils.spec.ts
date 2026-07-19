@@ -8,9 +8,11 @@ import {
 
 describe('EULB status payload builders', () => {
   const fileValue: EulbFileValue = {
-    fileName: 'eulb.xlsx',
-    fileUrl: 'https://example.test/eulb.xlsx',
-    fileSize: 2048,
+    originalName: 'eulb.xlsx',
+    path: 'https://example.test/eulb.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    sizeKb: 2,
+    pageCount: null,
   };
 
   it('allows draft payload data to remain incomplete', () => {

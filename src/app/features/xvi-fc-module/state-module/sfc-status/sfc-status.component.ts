@@ -238,8 +238,8 @@ export class SfcStatusComponent implements OnInit {
    *
    * For `finalSubmit`: every error on visible controls must be absent.
    * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed in a
-   * draft), but every other error blocks — including `requiredTrue`, which Angular reports
-   * under the same `required` error key. The field's `validations` config distinguishes them.
+   * draft) — this currently includes `requiredTrue` too (see TODO below), which Angular
+   * reports under the same `required` error key.
    */
   private isValidForSubmitType(action: SubmitType): boolean {
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
@@ -247,31 +247,17 @@ export class SfcStatusComponent implements OnInit {
       const control = this.form.get(field.key);
       if (!control?.errors) continue;
 
-      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
+      // TODO: requiredTrue (declaration/confirmation checkboxes) is temporarily not mandatory for
+      // saveAsDraft either — uncomment both lines below to restore the original "still blocks drafts" behavior.
+      // const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
 
       for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
+        if (action === 'saveAsDraft' && errorKey === 'required' /* && !hasRequiredTrueValidator */) continue;
         return false;
       }
     }
 
     return true;
-  }
-
-  /**
-   * Returns the visible-field payload with `sfcReport`/`atrReport` restored to their raw control
-   * values. `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the
-   * backend `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers,
-   * but this form's backend contract expects `{ fileName, fileUrl, fileSize, mimeType }`.
-   */
-  private getVisiblePayloadWithRawFiles(): Record<string, unknown> {
-    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
-    for (const key of ['sfcReport', 'atrReport']) {
-      if (key in payload) {
-        payload[key] = this.form.get(key)?.value ?? null;
-      }
-    }
-    return payload;
   }
 
   private executeSaveDraft(): void {
@@ -281,7 +267,7 @@ export class SfcStatusComponent implements OnInit {
     const payload: SfcStatusDraftPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
-      data: this.getVisiblePayloadWithRawFiles(),
+      data: this.visibilityService.getVisiblePayload(this.form, this.fields()),
     };
 
     this.sfcStatusService
@@ -307,7 +293,7 @@ export class SfcStatusComponent implements OnInit {
     const payload: SfcStatusFinalSubmitPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
-      data: this.getVisiblePayloadWithRawFiles(),
+      data: this.visibilityService.getVisiblePayload(this.form, this.fields()),
     };
 
     this.sfcStatusService

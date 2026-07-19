@@ -3,6 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MaterialModule } from '../../../../../material.module';
 import { IUlbMaster } from '../../../../../core/models/ulb-master';
+import { SignedUrlDirective } from '../../../../../core/directives/storage-url.directive';
+import {
+  UploadedFileMetadata,
+  normalizeUploadedFileMetadata,
+} from '../../../../../shared/dynamic-form/components/file/file-metadata.types';
 
 export interface UlbReviewDialogData {
   ulb: IUlbMaster;
@@ -22,7 +27,7 @@ interface IReviewField {
 
 @Component({
   selector: 'app-ulb-review-dialog',
-  imports: [MatDialogModule, MaterialModule, FormsModule],
+  imports: [MatDialogModule, MaterialModule, FormsModule, SignedUrlDirective],
   templateUrl: './ulb-review-dialog.component.html',
   styleUrl: './ulb-review-dialog.component.scss',
 })
@@ -39,6 +44,7 @@ export class UlbReviewDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: UlbReviewDialogData,
   ) {
     this.fields = this.buildFields(this.data.ulb);
+    this.gazetteFile = normalizeUploadedFileMetadata(this.data.ulb.gazetteNotificationFile);
   }
 
   /** Mirrors the Register ULB page's field set (see DEFAULT_ULB_REGISTER_SECTIONS server-side) — not the full Ulb schema. */
@@ -59,9 +65,8 @@ export class UlbReviewDialogComponent {
     return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  get gazetteFile() {
-    return this.data.ulb.gazetteNotificationFile ?? null;
-  }
+  /** Normalizes records persisted before the canonical shape (fileName/fileUrl) alongside canonical ones. */
+  readonly gazetteFile: UploadedFileMetadata | null;
 
   /** Reason recorded the last time this ULB was rejected, if any — shown for context during re-review. */
   get previousRejectReason(): string | null {

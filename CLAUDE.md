@@ -76,7 +76,7 @@ All environments (`src/environments/`) derive `baseUrl` from `window.location.or
 ### Key Feature Areas
 
 - **CFR** (`features/cfr/`) — City Finance Ranking: state/ULB rankings, Leaflet India map, PDF export.
-- **XVI FC** (`features/xvi-fc-module/`) — 16th Finance Commission data entry split into mohua/state/ulb sub-modules.
+- **XVI FC** (`features/xvi-fc-module/`) — 16th Finance Commission data entry split into mohua/state/ulb/admin sub-modules (role-gated via `canMatch` in `xvi-fc-module.routes.ts`), plus `shared/` (dynamic form pieces, profile verification, years selection) and `styles/` (theme/layout partials) used across all four.
 - **XVI FC Form** (`features/xvi-fc-form/`) — Form submission for 16th FC; protected by `authGuard`.
 - **AFS Dashboard** (`pages/`) — Financial statement dashboards (current and legacy versions).
 - **OCR** (`admin/ocr/`) — Two-step Gemini OCR validation pipeline. Jobs are submitted via `ocr-validation/`, polled for status, and results shown with extraction metadata and financial validation checks. Key models live in `ocr-validation/ocr-validation-models.ts` (`OcrValidationExtraction`, `OcrValidationBasicCheck`, `OcrValidationResult`). The comparison table (`ocr-comparison-table/`) is a legacy view using a different response schema (`upload-file-ocr/ocr-response.ts`) — do not mix the two.

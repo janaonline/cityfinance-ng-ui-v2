@@ -48,10 +48,11 @@ describe('ElectedBodyStatusComponent', () => {
   const stateId = 'state-1';
   const yearId = 'year-1';
   const fileValue: EulbFileValue = {
-    fileName: 'eulb.xlsx',
-    fileUrl: 'https://example.test/eulb.xlsx',
-    fileSize: 1024,
+    originalName: 'eulb.xlsx',
+    path: 'https://example.test/eulb.xlsx',
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    sizeKb: 1,
+    pageCount: null,
   };
 
   let component: ElectedBodyStatusComponent;
@@ -176,12 +177,11 @@ describe('ElectedBodyStatusComponent', () => {
     );
   });
 
-  it('blocks save-as-draft when required confirmation is not checked', () => {
+  it('allows save-as-draft when required confirmation is not checked (requiredTrue is temporarily not mandatory for drafts)', () => {
     component.onSubmit('saveAsDraft');
 
-    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
-    expect(eulbService.saveDraft).not.toHaveBeenCalled();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
+    expect(confirmDialogService.confirm).toHaveBeenCalledOnceWith(SAVE_AS_DRAFT_DIALOG_DEFAULTS, undefined);
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith(
       'Please correct the errors in the form before saving as draft.',
       'snackbar-danger',
     );
@@ -302,7 +302,7 @@ describe('ElectedBodyStatusComponent', () => {
 
   it('does not call final-submit API when electedBodyExcelFile fails the validity check', () => {
     // Partial file object: passes Angular required validator (non-null object) but fails isValidEulbFileValue
-    setControlValue('electedBodyExcelFile', { fileName: '', fileUrl: '', fileSize: 0 });
+    setControlValue('electedBodyExcelFile', { originalName: '', path: '', sizeKb: 0 });
     setControlValue('checkboxConfirmation', true);
     confirmDialogService.confirm.and.returnValue(of(true));
 
