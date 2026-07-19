@@ -99,21 +99,33 @@
             @if (declarationFields().length) {
               <div class="slb-declaration mt-4">
                 <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">Self Declaration</div>
-                @for (item of declarationFields(); track item.key; let isLast = $last) {
-                  <div
-                    class="my-2"
-                    [class.border-bottom]="!isLast"
-                    [class.border-secondary]="!isLast"
-                    [class.border-opacity-25]="!isLast"
-                  >
-                    <app-dynamic-form
-                      class="p-2 d-block"
-                      [field]="item"
-                      [group]="form"
-                      [mode]="canEdit() ? 'edit' : 'view'"
-                    ></app-dynamic-form>
-                  </div>
-                }
+                <div class="slb-declaration-card rounded-3 p-3">
+                  @if (declarationTextFields().length) {
+                    <div class="row g-3">
+                      @for (item of declarationTextFields(); track item.key) {
+                        <div class="col-12 col-md-6">
+                          <app-dynamic-form
+                            class="d-block"
+                            [field]="item"
+                            [group]="form"
+                            [mode]="canEdit() ? 'edit' : 'view'"
+                          ></app-dynamic-form>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @for (item of declarationOtherFields(); track item.key) {
+                    <div class="mt-2">
+                      <app-dynamic-form
+                        class="d-block"
+                        [field]="item"
+                        [group]="form"
+                        [mode]="canEdit() ? 'edit' : 'view'"
+                      ></app-dynamic-form>
+                    </div>
+                  }
+                </div>
               </div>
             }
           </form>

@@ -51,6 +51,10 @@ export class SlbComponent implements OnInit {
   readonly indicatorFields = computed(() => this.visibleFields().filter((f) => f.formFieldType === 'actualTarget'));
   /** Self-declaration fields (name, designation, supporting document, confirmation) — rendered via the generic form renderer. */
   readonly declarationFields = computed(() => this.visibleFields().filter((f) => f.formFieldType !== 'actualTarget'));
+  /** Text inputs (name, designation) within the declaration — laid out two-per-row. */
+  readonly declarationTextFields = computed(() => this.declarationFields().filter((f) => f.formFieldType === 'text'));
+  /** Non-text declaration fields (supporting document, confirmation checkbox) — laid out full-width. */
+  readonly declarationOtherFields = computed(() => this.declarationFields().filter((f) => f.formFieldType !== 'text'));
 
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
