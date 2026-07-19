@@ -122,6 +122,10 @@ export interface FcUnspentDeclarationData {
   dependency: FcUnspentDevolutionDependency;
   actors: FormActor[];
   questions: ConditionalFieldConfig[];
+  /** DB-driven metadata for the unspentUlbData row-table columns (ulbId, unspentAmount,
+   *  censusCode, sbCode, ulbName, allocationAmount, allocationPerc, eligibility) — mirrors
+   *  DevolutionFormResponseData.rowEditFields / EulbFormResponseData.rowEditFields. */
+  rowEditFields?: ConditionalFieldConfig[];
   unspentUlbData: FcUnspentUlbData[];
 }
 

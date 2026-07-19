@@ -163,6 +163,28 @@ function questionsForYesBranch(): FcUnspentDeclarationData['questions'] {
   ];
 }
 
+/** Stand-in for the backend's `rowEditFields` metadata (ulbId/unspentAmount) — required now that
+ *  `UnspentUlbTableComponent`/`createFcUnspentUlbRowGroup` no longer fall back to a hardcoded
+ *  field config of their own. */
+const ROW_EDIT_FIELDS: ConditionalFieldConfig[] = [
+  {
+    key: 'ulbId',
+    label: 'ULB',
+    formFieldType: 'select',
+    validations: [{ name: 'required', validator: null, message: 'ULB selection is required.' }],
+  },
+  {
+    key: 'unspentAmount',
+    label: 'Unspent Amount',
+    formFieldType: 'number',
+    validations: [
+      { name: 'required', validator: null, message: 'Unspent amount is required.' },
+      { name: 'min', validator: Number.MIN_VALUE, message: 'Unspent amount must be greater than zero.' },
+      { name: 'max', validator: 1000, message: 'Unspent amount cannot exceed 1000.' },
+    ],
+  },
+];
+
 const UNSPENT_ULB_ROWS: FcUnspentUlbData[] = [
   {
     slNo: 1,
@@ -203,6 +225,7 @@ const FC_UNSPENT_SCENARIO_DEVOLUTION_UNDER_REVIEW: FcUnspentDeclarationData = {
   },
   actors: [],
   questions: questionsForYesBranch(),
+  rowEditFields: ROW_EDIT_FIELDS,
   unspentUlbData: UNSPENT_ULB_ROWS,
 };
 
@@ -222,6 +245,7 @@ const FC_UNSPENT_SCENARIO_DEVOLUTION_RETURNED: FcUnspentDeclarationData = {
   },
   actors: [],
   questions: questionsForYesBranch(),
+  rowEditFields: ROW_EDIT_FIELDS,
   unspentUlbData: UNSPENT_ULB_ROWS,
 };
 
@@ -246,6 +270,7 @@ const FC_UNSPENT_SCENARIO_MISSING_DEVOLUTION_DATASET: FcUnspentDeclarationData =
   },
   actors: [],
   questions: questionsForYesBranch(),
+  rowEditFields: ROW_EDIT_FIELDS,
   unspentUlbData: [],
 };
 
@@ -277,6 +302,7 @@ const DEFAULT_PREVIEW_DATA: FcUnspentDeclarationData = {
     },
   ],
   questions: questionsForYesBranch(),
+  rowEditFields: ROW_EDIT_FIELDS,
   unspentUlbData: UNSPENT_ULB_ROWS,
 };
 
