@@ -163,10 +163,10 @@ describe('DynamicFormService', () => {
     } as FieldConfig);
 
     expect(control.value).toEqual({
-      fileName: 'income-statement-schedules.pdf',
-      fileUrl: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
-      fileSize: 964.44 * 1024,
+      originalName: 'income-statement-schedules.pdf',
+      path: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
       mimeType: 'application/pdf',
+      sizeKb: 964.44,
       pageCount: 6,
     });
     expect(control.valid).toBeTrue();
