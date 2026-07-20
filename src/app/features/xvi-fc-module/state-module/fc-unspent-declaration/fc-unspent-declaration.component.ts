@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, SecurityContext, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, SecurityContext, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -120,9 +120,18 @@ export class FcUnspentDeclarationComponent implements OnInit {
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
+  /** DB-driven metadata for the unspentUlbData row-table's ulbId/unspentAmount controls —
+   *  passed through to UnspentUlbTableComponent so createFcUnspentUlbRowGroup builds each
+   *  row's validators from the backend config instead of a hardcoded literal. */
+  readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
   readonly unspentUlbData = new FormArray<FcUnspentUlbRowGroup>([]);
+  /** `UnspentUlbTableComponent` is `OnPush` and only rendered while the Yes branch is shown, so its
+   *  view can go stale after this component touches/sets errors on a row control from outside the
+   *  child's own template (a submit-validation pass, or an applied API error) — neither
+   *  `markAsTouched()` nor `setErrors()` emits `valueChanges`/`statusChanges` on their own. */
+  private readonly unspentUlbTable = viewChild(UnspentUlbTableComponent);
   private readonly isYesBranchSignal = signal(false);
   readonly isYesBranch = computed(() => this.isYesBranchSignal());
 
@@ -210,6 +219,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
           this.canFinalSubmit.set(data.permissions.canFinalSubmit);
           this.dependency.set(data.dependency);
           this.savedUnspentUlbData.set(data.unspentUlbData);
+          this.rowEditFields.set(data.rowEditFields ?? []);
           // Defensive per-question clone — never mutate the fields array reference in place.
           this.fields.set(data.questions.map((question) => ({ ...question })));
           this.createFormControls(data.unspentUlbData);
@@ -241,14 +251,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
     isFcUnspentControl?.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef), takeUntil(this.formSubscriptionsTeardown$))
       .subscribe((value) => {
-        this.isYesBranchSignal.set(value === 'yes');
-        // Auto-add one blank row so the user always has an editable row when switching to Yes.
         // Switching to No intentionally leaves unspentUlbData untouched — rows are just not
         // rendered while hidden, mirroring the preserveHiddenValue behavior used for the other
         // conditional fields on this page.
-        if (value === 'yes' && this.unspentUlbData.length === 0) {
-          this.unspentUlbData.push(createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit()));
-        }
+        this.isYesBranchSignal.set(value === 'yes');
       });
 
     this.dependencyIndex = this.visibilityService.createDependencyIndex(this.fields());
@@ -269,7 +275,9 @@ export class FcUnspentDeclarationComponent implements OnInit {
 
   private hydrateUnspentUlbData(rows: readonly FcUnspentUlbData[]): void {
     for (const row of rows) {
-      this.unspentUlbData.push(createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), row));
+      this.unspentUlbData.push(
+        createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), row),
+      );
     }
   }
 
@@ -350,6 +358,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
     const flatFieldsValid = this.isValidForSubmitType(action);
     const tableValid = this.isUnspentUlbDataValidForSubmitType(action);
     const branchValid = action !== 'finalSubmit' || this.resolveIsFcUnspentBoolean() !== null;
+
+    // `isUnspentUlbDataValidForSubmitType` may have just marked row controls touched — the table's
+    // hover-error icons only read `touched`, and won't otherwise notice from outside their own view.
+    this.unspentUlbTable()?.refreshValidationDisplay();
 
     if (!flatFieldsValid || !tableValid || !branchValid) {
       this.form.markAllAsTouched();
@@ -462,6 +474,10 @@ export class FcUnspentDeclarationComponent implements OnInit {
     if (response?.errors) {
       this.applyApiErrors(response.errors);
     }
+
+    // A row's `apiErrors` are set (and touched) asynchronously here, off the HTTP error callback —
+    // not a native event inside the table's own template — so its OnPush view needs an explicit nudge.
+    this.unspentUlbTable()?.refreshValidationDisplay();
   }
 
   /**
@@ -624,6 +640,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
     this.form = this.fb.group({});
     this.unspentUlbData.clear();
     this.fields.set([]);
+    this.rowEditFields.set([]);
     this.loadForm();
   }
 
@@ -641,8 +658,8 @@ export class FcUnspentDeclarationComponent implements OnInit {
   /**
    * For `finalSubmit`: every error on visible controls must be absent.
    * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed in a
-   * draft), but every other error blocks — including `requiredTrue`, which Angular reports
-   * under the same `required` error key. The field's `validations` config distinguishes them.
+   * draft) — this currently includes `requiredTrue` too (see TODO below), which Angular
+   * reports under the same `required` error key.
    */
   private isValidForSubmitType(action: SubmitType): boolean {
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
@@ -650,10 +667,12 @@ export class FcUnspentDeclarationComponent implements OnInit {
       const control = this.form.get(field.key);
       if (!control?.errors) continue;
 
-      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
+      // TODO: requiredTrue (declaration/confirmation checkboxes) is temporarily not mandatory for
+      // saveAsDraft either — uncomment both lines below to restore the original "still blocks drafts" behavior.
+      // const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
 
       for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
+        if (action === 'saveAsDraft' && errorKey === 'required' /* && !hasRequiredTrueValidator */) continue;
         return false;
       }
     }

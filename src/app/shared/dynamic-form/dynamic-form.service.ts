@@ -259,16 +259,39 @@ export class DynamicFormService {
 
     return validators.length > 0 ? Validators.compose(validators) : null;
   }
-  createContorl(field: any, validations = false, readonly = false) {
+  createContorl(field: any, validations = false, readonly = false): AbstractControl {
     const validationsData = validations || field.validations;
     // const val = field.value ? { value: field.value, disabled: readonly || field.readonly } : '';
     const resolvedReadonly = readonly || field.readonly;
+
+    if (field.formFieldType === 'actualTarget') {
+      return this.createActualTargetGroup(field, validationsData, resolvedReadonly);
+    }
+
     const val = {
       value: this.resolveInitialControlValue(field, false),
       disabled: field.disabled === true ? true : field.formFieldType === 'date' ? false : resolvedReadonly,
     };
     return new FormControl(val, this.bindValidations(validationsData, field));
     // return new FormControl(field.value || '');
+  }
+
+  /**
+   * Builds a nested FormGroup with `actual`/`target` sub-controls for a single
+   * `formFieldType: 'actualTarget'` question. Both sub-controls share the field's
+   * `validations` array (required/min/max) so a single question definition validates
+   * two related numbers. Angular's dot-path `form.get('key.actual')` resolves the
+   * sub-control directly, and `.value` naturally serializes to `{ actual, target }`.
+   */
+  private createActualTargetGroup(field: any, validationsData: any, readonly: boolean): FormGroup {
+    const pairValue = (field.value ?? {}) as { actual?: unknown; target?: unknown };
+    const disabled = field.disabled === true ? true : readonly;
+    const validators = this.bindValidations(validationsData, field);
+
+    return new FormGroup({
+      actual: new FormControl({ value: pairValue.actual ?? null, disabled }, validators),
+      target: new FormControl({ value: pairValue.target ?? null, disabled }, validators),
+    });
   }
   tabControl(fields: any[]) {
     // const form = this.fb.group({});

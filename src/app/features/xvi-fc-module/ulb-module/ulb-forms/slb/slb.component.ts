@@ -1,39 +1,43 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, distinctUntilChanged, map, startWith, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { getYearRangeDuration } from '../../../../core/validators/year-range.validator';
-import { UtilityService } from '../../../../core/services/utility.service';
-import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
-import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
-import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
+import { UtilityService } from '../../../../../core/services/utility.service';
+import { PreLoaderComponent } from '../../../../../shared/components/pre-loader/pre-loader.component';
+import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
+import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import {
   ConditionalFieldConfig,
   DependencyIndex,
   DynamicFormVisibilityService,
-} from '../../dynamic-form-visibility.service';
-import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+} from '../../../dynamic-form-visibility.service';
+import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
-} from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
-import { SfcStatusService } from './sfc-status.service';
+} from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
+import { environment } from '../../../../../../environments/environment';
+import { SlbService } from './slb.service';
 import {
   ApiErrorMap,
   ApiErrorResponse,
-  SfcStatusDraftPayload,
-  SfcStatusFinalSubmitPayload,
-  SfcStatusPermissions,
+  SlbDraftPayload,
+  SlbFinalSubmitPayload,
+  SlbPermissions,
   SubmitType,
-} from './sfc-status.models';
-import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
-import { XvifcModuleService } from '../../xvi-fc-module.service';
+} from './slb.models';
+import {
+  FormActor,
+  FormProgressComponent,
+  FormStatusValue,
+} from '../../../shared/form-progress/form-progress.component';
+import { XvifcModuleService } from '../../../xvi-fc-module.service';
 
 @Component({
-  selector: 'app-sfc-status',
+  selector: 'app-slb',
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -42,10 +46,10 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
     MatButtonModule,
     FormProgressComponent,
   ],
-  templateUrl: './sfc-status.component.html',
-  styleUrl: './sfc-status.component.scss',
+  templateUrl: './slb.component.html',
+  styleUrl: './slb.component.scss',
 })
-export class SfcStatusComponent implements OnInit {
+export class SlbComponent implements OnInit {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
   private utilityService = inject(UtilityService);
@@ -53,21 +57,31 @@ export class SfcStatusComponent implements OnInit {
   private visibilityService = inject(DynamicFormVisibilityService);
   private confirmDialogService = inject(ConfirmDialogService);
   private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
-  private sfcStatusService = inject(SfcStatusService);
+  private slbService = inject(SlbService);
   private moduleService = inject(XvifcModuleService);
-  public stateName = signal('');
+  public ulbName = signal('');
   public actors = signal<FormActor[]>([]);
+  readonly yearLabel = signal('');
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
+
+  /** The 28 SLB indicator questions, rendered as table rows. */
+  readonly indicatorFields = computed(() => this.visibleFields().filter((f) => f.formFieldType === 'actualTarget'));
+  /** Self-declaration fields (name, designation, supporting document, confirmation) — rendered via the generic form renderer. */
+  readonly declarationFields = computed(() => this.visibleFields().filter((f) => f.formFieldType !== 'actualTarget'));
+  /** Text inputs (name, designation) within the declaration — laid out two-per-row. */
+  readonly declarationTextFields = computed(() => this.declarationFields().filter((f) => f.formFieldType === 'text'));
+  /** Non-text declaration fields (supporting document, confirmation checkbox) — laid out full-width. */
+  readonly declarationOtherFields = computed(() => this.declarationFields().filter((f) => f.formFieldType !== 'text'));
 
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
 
-  readonly permissions = signal<SfcStatusPermissions>({
+  readonly permissions = signal<SlbPermissions>({
     canView: true,
     canEdit: true,
     canFinalSubmit: false,
@@ -79,16 +93,19 @@ export class SfcStatusComponent implements OnInit {
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
 
+  /** Dev/staging-only helper: shows the "Fill test data" button so QA can exercise the form without manual data entry. */
+  readonly isProduction = environment.isProduction;
+
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
   /** Tracks error codes injected per field by the most recent failed API response. */
   private readonly serverErrorKeys = new Map<string, string[]>();
   /** Emits once before each form rebuild so per-form subscriptions are torn down cleanly. */
   private readonly formSubscriptionsTeardown$ = new Subject<void>();
 
-  private get stateId(): string {
+  private get ulbId(): string {
     try {
       const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
-      return raw ? ((JSON.parse(raw) as { state?: string }).state ?? '') : '';
+      return raw ? ((JSON.parse(raw) as { ulb?: string }).ulb ?? '') : '';
     } catch {
       return '';
     }
@@ -103,18 +120,18 @@ export class SfcStatusComponent implements OnInit {
   }
 
   private loadForm(): void {
-    const stateId = this.stateId;
+    const ulbId = this.ulbId;
     const yearId = this.yearId;
 
-    if (!stateId || !yearId) {
-      this.utilityService.triggerSnackbar('Unable to load SFC Status form. Please try again.', 'snackbar-danger');
+    if (!ulbId || !yearId) {
+      this.utilityService.triggerSnackbar('Unable to load SLB form. Please try again.', 'snackbar-danger');
       return;
     }
 
     this.isLoading.set(true);
 
-    this.sfcStatusService
-      .getSfcStatusForm(stateId, yearId)
+    this.slbService
+      .getSlbForm(ulbId, yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -122,14 +139,15 @@ export class SfcStatusComponent implements OnInit {
           this.currentFormStatus.set(data.currentFormStatus);
           this.currentFormStatusLabel.set(data.currentFormStatusLabel);
           this.fields.set(data.questions);
-          this.stateName.set(data.stateName);
+          this.ulbName.set(data.ulbName);
           this.actors.set(data.actors);
+          this.yearLabel.set(data.designYear);
           this.createFormControls();
           this.isLoading.set(false);
         },
         error: (err: unknown) => {
-          console.error('Failed to load SFC status form', err);
-          this.utilityService.triggerSnackbar('Unable to load SFC Status form. Please try again.', 'snackbar-danger');
+          console.error('Failed to load SLB form', err);
+          this.utilityService.triggerSnackbar('Unable to load SLB form. Please try again.', 'snackbar-danger');
           this.isLoading.set(false);
         },
       });
@@ -139,7 +157,6 @@ export class SfcStatusComponent implements OnInit {
    * - Create form controls based on the field configurations and add them to the form
    * - Create a dependency index to map controller fields to their dependent fields for visibility
    * - Set up subscriptions for controller fields to update visibility of dependent fields
-   * - Derive awardPeriodDuration from awardPeriod so visibility rules can react to it
    * - Disable all controls when canEdit is false
    */
   createFormControls(): void {
@@ -152,11 +169,6 @@ export class SfcStatusComponent implements OnInit {
         return;
       }
 
-      // If field is readonly but has no value, make it editable to allow user input
-      const hasInitialValue = field.value !== null && field.value !== undefined && field.value !== '';
-      field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
-
-      // Create form control with validations and readonly state
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
       this.form.addControl(field.key, formControl);
     }
@@ -175,28 +187,17 @@ export class SfcStatusComponent implements OnInit {
       formTeardown$: this.formSubscriptionsTeardown$,
     });
 
-    // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
-    const awardPeriodControl = this.form.get('awardPeriod');
-    const durationControl = this.form.get('awardPeriodDuration') as FormControl<number | null> | null;
-    if (awardPeriodControl && durationControl) {
-      awardPeriodControl.valueChanges
-        .pipe(
-          startWith(awardPeriodControl.value),
-          map((v) => getYearRangeDuration(v)),
-          distinctUntilChanged(),
-          takeUntilDestroyed(this.destroyRef),
-          takeUntil(this.formSubscriptionsTeardown$),
-        )
-        .subscribe((duration) => {
-          durationControl.setValue(duration, { emitEvent: true });
-        });
-    }
-
     if (!this.canEdit()) {
       this.form.disable({ emitEvent: false });
     }
 
     this.isLoading.set(false);
+  }
+
+  /** Checks a named validation error on an indicator's `actual`/`target` sub-control, only after it's been touched. */
+  hasIndicatorError(key: string, sub: 'actual' | 'target', name: string): boolean {
+    const control = this.form.get(`${key}.${sub}`);
+    return !!control?.hasError(name) && (control.touched || control.dirty);
   }
 
   onSubmit(action: SubmitType): void {
@@ -237,24 +238,36 @@ export class SfcStatusComponent implements OnInit {
    * Determines whether the form passes validation for the given submit action.
    *
    * For `finalSubmit`: every error on visible controls must be absent.
-   * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed in a
-   * draft) — this currently includes `requiredTrue` too (see TODO below), which Angular
-   * reports under the same `required` error key.
+   * For `saveAsDraft`: every required-style error is skipped (empty fields — including an
+   * unchecked self-declaration checkbox — are allowed in a draft); every other error still
+   * blocks. Angular reports `requiredTrue` under the same `required` error key as plain
+   * `required`, so both are skipped identically here — a draft is work in progress, not a
+   * certification.
+   *
+   * `actualTarget` fields store their `required` validator on the nested `actual`/`target`
+   * sub-controls rather than the parent group (see `createActualTargetGroup`), so the group's
+   * own `.errors` is always null — they must be checked sub-control by sub-control instead.
    */
   private isValidForSubmitType(action: SubmitType): boolean {
+    const hasBlockingError = (control: AbstractControl | null): boolean => {
+      if (!control?.errors) return false;
+      return Object.keys(control.errors).some((errorKey) => !(action === 'saveAsDraft' && errorKey === 'required'));
+    };
+
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
       if (!field.key) continue;
-      const control = this.form.get(field.key);
-      if (!control?.errors) continue;
 
-      // TODO: requiredTrue (declaration/confirmation checkboxes) is temporarily not mandatory for
-      // saveAsDraft either — uncomment both lines below to restore the original "still blocks drafts" behavior.
-      // const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
-
-      for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' /* && !hasRequiredTrueValidator */) continue;
-        return false;
+      if (field.formFieldType === 'actualTarget') {
+        if (
+          hasBlockingError(this.form.get(`${field.key}.actual`)) ||
+          hasBlockingError(this.form.get(`${field.key}.target`))
+        ) {
+          return false;
+        }
+        continue;
       }
+
+      if (hasBlockingError(this.form.get(field.key))) return false;
     }
 
     return true;
@@ -264,14 +277,14 @@ export class SfcStatusComponent implements OnInit {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
 
-    const payload: SfcStatusDraftPayload = {
-      stateId: this.stateId,
+    const payload: SlbDraftPayload = {
+      ulbId: this.ulbId,
       yearId: this.yearId,
       data: this.visibilityService.getVisiblePayload(this.form, this.fields()),
     };
 
-    this.sfcStatusService
-      .saveSfcStatusDraft(payload)
+    this.slbService
+      .saveSlbDraft(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -290,19 +303,19 @@ export class SfcStatusComponent implements OnInit {
     this.clearAllApiErrors();
     this.isFinalSubmitting.set(true);
 
-    const payload: SfcStatusFinalSubmitPayload = {
-      stateId: this.stateId,
+    const payload: SlbFinalSubmitPayload = {
+      ulbId: this.ulbId,
       yearId: this.yearId,
       data: this.visibilityService.getVisiblePayload(this.form, this.fields()),
     };
 
-    this.sfcStatusService
-      .finalSubmitSfcStatus(payload)
+    this.slbService
+      .finalSubmitSlb(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.isFinalSubmitting.set(false);
-          this.utilityService.triggerSnackbar('Form submitted successfully.');
+          this.utilityService.triggerSnackbar('SLB form submitted to State DMA successfully.');
           this.reloadForm();
         },
         error: (err: unknown) => {
@@ -330,7 +343,6 @@ export class SfcStatusComponent implements OnInit {
   private extractApiErrorResponse(err: unknown): ApiErrorResponse | null {
     if (!this.isObject(err)) return null;
 
-    // HTTP 4xx — Angular puts the parsed body in err.error
     const errorBody = err['error'];
     if (this.isObject(errorBody)) {
       if (typeof errorBody['message'] === 'string') {
@@ -342,7 +354,6 @@ export class SfcStatusComponent implements OnInit {
       }
     }
 
-    // 2xx with success:false — service map threw the response object directly
     if (err['success'] === false && typeof err['message'] === 'string') {
       return {
         message: err['message'],
@@ -371,9 +382,7 @@ export class SfcStatusComponent implements OnInit {
    *
    * Two steps:
    * 1. Update the `fields` signal so each field's `validations` array contains an entry
-   *    matching the backend error `code` with the backend error `message`. This lets the
-   *    sub-component's existing `hasError(key, name)` + `{{ validation.message }}` flow
-   *    render the error without any API-specific template code.
+   *    matching the backend error `code` with the backend error `message`.
    * 2. Set the corresponding Angular error key (using `error.code`) on the matching form
    *    control so `hasError()` returns `true` for that validation name.
    */
@@ -382,8 +391,6 @@ export class SfcStatusComponent implements OnInit {
       fields.map((field) => {
         const fieldErrors = errors[field.key ?? ''];
         if (!fieldErrors?.length) return field;
-
-        // Don't inject validation entries for fields that are currently hidden.
         if (field.hidden) return field;
 
         const validations = [...(field.validations ?? [])];
@@ -411,11 +418,10 @@ export class SfcStatusComponent implements OnInit {
       const control = this.form.get(actualKey);
 
       if (!control) {
-        console.warn(`[SFC Status] API error for unknown field: ${actualKey}`);
+        console.warn(`[SLB] API error for unknown field: ${actualKey}`);
         continue;
       }
 
-      // Don't apply errors to fields that are currently hidden.
       if (fieldConfig?.hidden) continue;
 
       const errorMap = fieldErrors.reduce<Record<string, true>>((acc, error) => {
@@ -455,6 +461,48 @@ export class SfcStatusComponent implements OnInit {
     this.form = this.fb.group({});
     this.fields.set([]);
     this.loadForm();
+  }
+
+  /**
+   * Dev/staging-only helper: fills every visible field with a plausible value so the form can be
+   * saved/submitted without manual data entry. The supporting-document value is a fake reference
+   * (no real upload happens) purely so the "required" validation passes during testing.
+   */
+  fillTestData(): void {
+    for (const field of this.visibleFields()) {
+      if (!field.key) continue;
+      const control = this.form.get(field.key);
+      if (!control) continue;
+
+      switch (field.formFieldType) {
+        case 'actualTarget': {
+          const min = Number(field.validations?.find((v) => v.name === 'min')?.validator ?? 0);
+          const max = Number(field.validations?.find((v) => v.name === 'max')?.validator ?? 100);
+          const value = Math.round((min + max) / 2);
+          control.setValue({ actual: value, target: value });
+          break;
+        }
+        case 'text':
+          control.setValue(field.key === 'declarantDesignation' ? 'Municipal Engineer' : 'Test Declarant');
+          break;
+        case 'file':
+          control.setValue({
+            fileName: 'test-supporting-document.pdf',
+            fileUrl: 'slb/supporting-document/test-supporting-document.pdf',
+            fileSize: 10240,
+            pageCount: 1,
+          });
+          break;
+        case 'checkbox':
+          control.setValue(true);
+          break;
+      }
+
+      control.markAsDirty();
+      control.markAsTouched();
+    }
+
+    this.utilityService.triggerSnackbar('Test data filled. Supporting document is a fake reference for testing only.');
   }
 
   onCancel(): void {

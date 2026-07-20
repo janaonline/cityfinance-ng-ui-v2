@@ -67,10 +67,3 @@
   padding: 0;
   line-height: 1;
 }
-
-// "Select ULB" carries an icon + label, so it needs to grow beyond the fixed 32px square used by
-// the other row-action buttons (Change/Remove).
-.unspent-select-ulb-btn {
-  width: auto;
-  padding: 0 8px !important;
-}

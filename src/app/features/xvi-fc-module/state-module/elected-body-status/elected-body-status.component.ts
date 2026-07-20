@@ -545,7 +545,8 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /**
    * Checks every visible field's control for errors.
-   * For `saveAsDraft`, plain `required` errors (without `requiredTrue`) are ignored.
+   * For `saveAsDraft`, plain `required` errors are ignored — this currently includes
+   * `requiredTrue` too (see TODO below).
    * @param action - The submit type being validated.
    */
   private isValidForSubmitType(action: SubmitType): boolean {
@@ -554,10 +555,12 @@ export class ElectedBodyStatusComponent implements OnInit {
       const control = this.form.get(field.key);
       if (!control?.errors) continue;
 
-      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
+      // TODO: requiredTrue (declaration/confirmation checkboxes) is temporarily not mandatory for
+      // saveAsDraft either — uncomment both lines below to restore the original "still blocks drafts" behavior.
+      // const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
 
       for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
+        if (action === 'saveAsDraft' && errorKey === 'required' /* && !hasRequiredTrueValidator */) continue;
         return false;
       }
     }

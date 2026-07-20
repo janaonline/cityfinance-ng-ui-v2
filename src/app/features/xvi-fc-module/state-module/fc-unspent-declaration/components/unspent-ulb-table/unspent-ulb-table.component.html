@@ -33,8 +33,9 @@
           <tr [formGroup]="row">
             <td class="ps-3 small text-secondary">{{ i + 1 }}</td>
             <td>
-              @if (row.controls.ulbId.value) {
-                <div class="d-flex align-items-center gap-2">
+              @let ulbIdErrorText = rowFieldErrorText(row, 'ulbId');
+              <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                   <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
                     {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
                   </span>
@@ -49,48 +50,53 @@
                     <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                   </button>
                 </div>
-              } @else {
-                <button
-                  type="button"
-                  matButton="outlined"
-                  class="unspent-row-btn unspent-select-ulb-btn"
-                  [disabled]="!canEdit()"
-                  (click)="openPickerForRow(i)"
-                  aria-label="Select ULB"
-                >
-                  <i class="bi bi-search me-1" aria-hidden="true"></i>Select ULB
-                </button>
-              }
-              @if (row.controls.ulbId.errors?.['apiErrors']; as apiErrors) {
-                <div class="small text-danger mt-1" data-cy="fc-unspent-row-ulbid-api-error">
-                  @for (message of apiErrors; track message) {
-                    <div>{{ message }}</div>
-                  }
-                </div>
-              }
+                @if (ulbIdErrorText) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                    [matTooltip]="ulbIdErrorText"
+                    matTooltipPosition="above"
+                    aria-label="ULB selection has a validation error"
+                    data-cy="fc-unspent-row-ulbid-error-icon"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </button>
+                }
+              </div>
             </td>
             <td class="small text-center text-secondary text-nowrap text-truncate">
               {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
             </td>
             <td class="small text-end pe-3 text-secondary">{{ rowViewModels()[i].allocationAmount ?? '—' }}</td>
             <td>
+              @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
               <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>
-              <input
-                [id]="'fc-unspent-amount-' + i"
-                type="number"
-                min="0"
-                step="any"
-                class="form-control form-control-sm"
-                formControlName="unspentAmount"
-                aria-label="Unspent amount"
-              />
-              @if (row.controls.unspentAmount.errors?.['apiErrors']; as apiErrors) {
-                <div class="small text-danger mt-1" data-cy="fc-unspent-row-unspentamount-api-error">
-                  @for (message of apiErrors; track message) {
-                    <div>{{ message }}</div>
-                  }
-                </div>
-              }
+              <div class="d-flex align-items-center gap-2">
+                <input
+                  [id]="'fc-unspent-amount-' + i"
+                  type="number"
+                  min="0"
+                  step="any"
+                  class="form-control form-control-sm"
+                  [class.is-invalid]="!!unspentAmountErrorText"
+                  formControlName="unspentAmount"
+                  aria-label="Unspent amount"
+                />
+                @if (unspentAmountErrorText) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                    [matTooltip]="unspentAmountErrorText"
+                    matTooltipPosition="above"
+                    aria-label="Unspent amount has a validation error"
+                    data-cy="fc-unspent-row-unspentamount-error-icon"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </button>
+                }
+              </div>
             </td>
             <td class="small text-end pe-3">
               @if (rowViewModels()[i].allocationPerc !== null) {

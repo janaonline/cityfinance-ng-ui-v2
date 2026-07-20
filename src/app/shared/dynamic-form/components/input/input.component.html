@@ -25,7 +25,10 @@
 }
 @default {
 @if (displayLabel && !displayInlineLabel && !field.hideLabel) {
-<label [for]="field.key" class="fw-semibold">{{ field.position ? field.position + '. ' : '' }}{{ field.label }}</label>
+<label [for]="field.key" class="fw-semibold">{{ field.position ? field.position + '. ' : '' }}{{ field.label
+  }}@if (field.required) {
+  <span class="text-danger"><sup>*</sup></span>
+  }</label>
 }
 <mat-form-field [appearance]="readonly ? 'fill' : 'outline'" class="demo-full-width" [formGroup]="group">
   @if (displayInlineLabel && !field.hideLabel) {

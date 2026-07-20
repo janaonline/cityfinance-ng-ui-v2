@@ -122,18 +122,11 @@ export interface FcUnspentDeclarationData {
   dependency: FcUnspentDevolutionDependency;
   actors: FormActor[];
   questions: ConditionalFieldConfig[];
+  /** DB-driven metadata for the unspentUlbData row-table columns (ulbId, unspentAmount,
+   *  censusCode, sbCode, ulbName, allocationAmount, allocationPerc, eligibility) — mirrors
+   *  DevolutionFormResponseData.rowEditFields / EulbFormResponseData.rowEditFields. */
+  rowEditFields?: ConditionalFieldConfig[];
   unspentUlbData: FcUnspentUlbData[];
-}
-
-/**
- * Test-fixture envelope only — kept for `fc-unspent-declaration.mock.ts`/`.mock-scenarios.ts`, which
- * are no longer used at runtime but still back component unit tests. Never imported by the real
- * `FcUnspentDeclarationService`, which talks to the backend directly via `HttpClient`.
- */
-export interface FcUnspentDeclarationPreviewResponse {
-  success: boolean;
-  message: string;
-  data: FcUnspentDeclarationData & { ulbOptions: FcUnspentUlbOption[] };
 }
 
 /**
