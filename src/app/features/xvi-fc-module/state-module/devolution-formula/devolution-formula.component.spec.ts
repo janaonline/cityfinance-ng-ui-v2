@@ -26,7 +26,13 @@ import { DevolutionFormulaComponent } from './devolution-formula.component';
 import { DevolutionFormulaRowsDialogComponent } from './dialogs/rows-dialog/devolution-formula-rows-dialog.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 
-const mockFileValue = { fileName: 'test.xlsx', fileUrl: 'https://example.com/test.xlsx' };
+const mockFileValue = {
+  originalName: 'test.xlsx',
+  path: 'https://example.com/test.xlsx',
+  mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  sizeKb: 2,
+  pageCount: null,
+};
 
 const mockValidationSummary: DevolutionValidationSummary = {
   validationStatus: 'VALID',
@@ -72,12 +78,11 @@ const minimalFormData: DevolutionFormResponseData = {
     {
       key: 'ulbCount',
       formFieldType: 'number',
-      label: 'How many ULBs are there in the state as of March 31, 2026?',
+      label: 'Active ULBs registered on City Finance as of March 31, 2026',
       value: null,
-      validations: [
-        { name: 'required', validator: null, message: 'ULB count is required.' },
-        { name: 'min', validator: 1, message: 'ULB count must be at least 1.' },
-      ],
+      disabled: true,
+      includeInPayload: false,
+      disabledReason: 'This value is automatically computed from City Finance registered active ULBs.',
     },
     {
       key: 'checkboxConfirmation',
@@ -99,12 +104,11 @@ const formDataWithFile: DevolutionFormResponseData = {
     {
       key: 'ulbCount',
       formFieldType: 'number',
-      label: 'How many ULBs are there in the state as of March 31, 2026?',
+      label: 'Active ULBs registered on City Finance as of March 31, 2026',
       value: 100,
-      validations: [
-        { name: 'required', validator: null, message: 'ULB count is required.' },
-        { name: 'min', validator: 1, message: 'ULB count must be at least 1.' },
-      ],
+      disabled: true,
+      includeInPayload: false,
+      disabledReason: 'This value is automatically computed from City Finance registered active ULBs.',
     },
     {
       key: 'checkboxConfirmation',
@@ -419,19 +423,11 @@ describe('DevolutionFormulaComponent', () => {
       expect(dfService.getForm).toHaveBeenCalled();
     });
 
-    it('includes ulbCount in the draft payload when set', () => {
-      (component.form as UntypedFormGroup).get('ulbCount')!.setValue(120);
+    it('does not include ulbCount in the draft payload (backend-computed)', () => {
       component.onSubmit('saveAsDraft');
 
       const payload = dfService.saveDraft.calls.mostRecent().args[0];
-      expect(payload.data?.ulbCount).toBe(120);
-    });
-
-    it('omits ulbCount from the draft payload when left empty', () => {
-      component.onSubmit('saveAsDraft');
-
-      const payload = dfService.saveDraft.calls.mostRecent().args[0];
-      expect(payload.data?.ulbCount).toBeUndefined();
+      expect((payload.data as Record<string, unknown> | undefined)?.['ulbCount']).toBeUndefined();
     });
 
     it('shows a danger snackbar on draft save error', () => {
@@ -499,11 +495,10 @@ describe('DevolutionFormulaComponent', () => {
   // ─── finalSubmit ─────────────────────────────────────────────────────────────
 
   describe('finalSubmit', () => {
-    it('sends a data-wrapper payload with ulbCount, excelFile, and checkboxConfirmation', () => {
+    it('sends a data-wrapper payload with excelFile and checkboxConfirmation (no ulbCount)', () => {
       // Set without emitting to bypass the auto-validate trigger
       (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue, { emitEvent: false });
       (component.form as UntypedFormGroup).get('checkboxConfirmation')!.setValue(true);
-      (component.form as UntypedFormGroup).get('ulbCount')!.setValue(100);
 
       component.onSubmit('finalSubmit');
 
@@ -512,7 +507,7 @@ describe('DevolutionFormulaComponent', () => {
           stateId: 'state-1',
           yearId: 'year-1',
           installment: 1,
-          data: { ulbCount: 100, excelFile: mockFileValue, checkboxConfirmation: true },
+          data: { excelFile: mockFileValue, checkboxConfirmation: true },
         }),
       );
     });
@@ -520,42 +515,11 @@ describe('DevolutionFormulaComponent', () => {
     it('calls reloadForm (triggers another getForm call) after a successful final submit', () => {
       (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue, { emitEvent: false });
       (component.form as UntypedFormGroup).get('checkboxConfirmation')!.setValue(true);
-      (component.form as UntypedFormGroup).get('ulbCount')!.setValue(100);
       dfService.getForm.calls.reset();
 
       component.onSubmit('finalSubmit');
 
       expect(dfService.getForm).toHaveBeenCalled();
-    });
-
-    it('shows a danger snackbar and does not call service when ulbCount is missing', () => {
-      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue, { emitEvent: false });
-      (component.form as UntypedFormGroup).get('checkboxConfirmation')!.setValue(true);
-      utilityService.triggerSnackbar.calls.reset();
-
-      component.onSubmit('finalSubmit');
-
-      expect(dfService.finalSubmit).not.toHaveBeenCalled();
-      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
-        jasmine.stringContaining('errors'),
-        'snackbar-danger',
-      );
-    });
-
-    it('blocks final submit via client-side validation when ulbCount fails its backend min validator', () => {
-      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue, { emitEvent: false });
-      (component.form as UntypedFormGroup).get('checkboxConfirmation')!.setValue(true);
-      (component.form as UntypedFormGroup).get('ulbCount')!.setValue(0);
-      utilityService.triggerSnackbar.calls.reset();
-
-      component.onSubmit('finalSubmit');
-
-      expect(component.form.get('ulbCount')?.hasError('min')).toBeTrue();
-      expect(dfService.finalSubmit).not.toHaveBeenCalled();
-      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
-        jasmine.stringContaining('errors'),
-        'snackbar-danger',
-      );
     });
 
     it('shows a danger snackbar and does not call service when excelFile is missing', () => {
@@ -1554,6 +1518,54 @@ describe('DevolutionFormulaComponent', () => {
 
       const text = (fixture14.nativeElement as HTMLElement).textContent ?? '';
       expect(text).not.toContain('Register ULB');
+    });
+
+    it('onSupportingAction register-ulb navigates to /xvifc/:yearId/register-ulb via router.navigate', () => {
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'register-ulb' });
+      expect(router.navigate).toHaveBeenCalledWith(['/xvifc', 'year-1', 'register-ulb']);
+    });
+
+    it('onSupportingAction register-ulb is ignored for non-excelFile fields', () => {
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
+      component.onSupportingAction({ fieldKey: 'checkboxConfirmation', actionId: 'register-ulb' });
+      expect(router.navigate).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Backend-disabled ulbCount and excelInvalid ───────────────────────────────
+
+  describe('backend-disabled ulbCount and excelInvalid handling', () => {
+    it('ulbCount form control is disabled when the backend marks it disabled', () => {
+      expect(component.form.get('ulbCount')?.disabled).toBeTrue();
+    });
+
+    it('validateExcel is triggered when file is uploaded even though ulbCount is backend-disabled', () => {
+      dfService.validateExcel.calls.reset();
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
+      expect(dfService.validateExcel).toHaveBeenCalledOnceWith(jasmine.objectContaining({ excelFile: mockFileValue }));
+      expect(dfService.validateExcel.calls.mostRecent().args[0]).not.toContain('ulbCount' as never);
+    });
+
+    it('finalSubmit 400 with excelFile.excelInvalid injects the error into the excelFile control', () => {
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue, { emitEvent: false });
+      (component.form as UntypedFormGroup).get('checkboxConfirmation')!.setValue(true);
+      dfService.finalSubmit.and.returnValue(
+        throwError(() => ({
+          error: {
+            message: 'Row count mismatch.',
+            errors: {
+              excelFile: [{ field: 'excelFile', code: 'excelInvalid', message: 'Row count mismatch.' }],
+            },
+          },
+        })),
+      );
+
+      component.onSubmit('finalSubmit');
+
+      expect(component.form.get('excelFile')?.hasError('excelInvalid')).toBeTrue();
     });
   });
 });

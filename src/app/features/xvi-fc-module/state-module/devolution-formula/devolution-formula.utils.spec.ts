@@ -14,7 +14,13 @@ import {
   isValidDevolutionFileRef,
 } from './devolution-formula.utils';
 
-const mockFileValue = { fileName: 'test.xlsx', fileUrl: 'https://example.com/test.xlsx' };
+const mockFileValue = {
+  originalName: 'test.xlsx',
+  path: 'https://example.com/test.xlsx',
+  mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  sizeKb: 2,
+  pageCount: null,
+};
 
 const mockValidationSummary: DevolutionValidationSummary = {
   validationStatus: 'VALID',
@@ -44,12 +50,14 @@ describe('isRecord', () => {
 // ─── isValidDevolutionFileRef ─────────────────────────────────────────────────
 
 describe('isValidDevolutionFileRef', () => {
-  it('returns true when fileName and fileUrl are non-empty strings', () =>
+  it('returns true for a canonical uploaded-file value', () =>
     expect(isValidDevolutionFileRef(mockFileValue)).toBeTrue());
-  it('returns false when fileName is empty', () =>
-    expect(isValidDevolutionFileRef({ fileName: '', fileUrl: 'u' })).toBeFalse());
-  it('returns false when fileUrl is empty', () =>
-    expect(isValidDevolutionFileRef({ fileName: 'f', fileUrl: '' })).toBeFalse());
+  it('returns false when originalName is empty', () =>
+    expect(isValidDevolutionFileRef({ ...mockFileValue, originalName: '' })).toBeFalse());
+  it('returns false when path is empty', () =>
+    expect(isValidDevolutionFileRef({ ...mockFileValue, path: '' })).toBeFalse());
+  it('returns false for the pre-canonical fileName/fileUrl shape', () =>
+    expect(isValidDevolutionFileRef({ fileName: 'test.xlsx', fileUrl: 'https://example.com/test.xlsx' })).toBeFalse());
   it('returns false for null', () => expect(isValidDevolutionFileRef(null)).toBeFalse());
   it('returns false for a string', () => expect(isValidDevolutionFileRef('file.xlsx')).toBeFalse());
 });
@@ -293,16 +301,6 @@ describe('buildDevolutionDraftPayloadData', () => {
     const result = buildDevolutionDraftPayloadData({ excelFile: null, checkboxConfirmation: 'yes' });
     expect(result.checkboxConfirmation).toBeUndefined();
   });
-
-  it('includes ulbCount when value is a finite number', () => {
-    const result = buildDevolutionDraftPayloadData({ ulbCount: 100, excelFile: null, checkboxConfirmation: true });
-    expect(result.ulbCount).toBe(100);
-  });
-
-  it('omits ulbCount when value is null or non-numeric', () => {
-    const result = buildDevolutionDraftPayloadData({ ulbCount: null, excelFile: null, checkboxConfirmation: true });
-    expect(result.ulbCount).toBeUndefined();
-  });
 });
 
 // ─── getRegisterUlbErrorMessage ───────────────────────────────────────────────
@@ -340,43 +338,34 @@ describe('getRegisterUlbErrorMessage', () => {
 // ─── buildDevolutionFinalSubmitPayloadData ────────────────────────────────────
 
 describe('buildDevolutionFinalSubmitPayloadData', () => {
-  it('returns payload when ulbCount, excelFile, and checkboxConfirmation are all valid', () => {
+  it('returns payload when excelFile and checkboxConfirmation are present (ulbCount excluded by backend)', () => {
     const result = buildDevolutionFinalSubmitPayloadData({
-      ulbCount: 100,
       excelFile: mockFileValue,
       checkboxConfirmation: true,
     });
-    expect(result).toEqual({ ulbCount: 100, excelFile: mockFileValue, checkboxConfirmation: true });
+    expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
   });
 
   it('returns null when excelFile is missing', () => {
-    const result = buildDevolutionFinalSubmitPayloadData({ ulbCount: 100, checkboxConfirmation: true });
+    const result = buildDevolutionFinalSubmitPayloadData({ checkboxConfirmation: true });
     expect(result).toBeNull();
   });
 
   it('returns null when checkboxConfirmation is not a boolean', () => {
     const result = buildDevolutionFinalSubmitPayloadData({
-      ulbCount: 100,
       excelFile: mockFileValue,
       checkboxConfirmation: 'yes',
     });
     expect(result).toBeNull();
   });
 
-  it('returns null when ulbCount is missing', () => {
+  it('ignores ulbCount even when present in the payload (backend-owned field)', () => {
     const result = buildDevolutionFinalSubmitPayloadData({
+      ulbCount: 100,
       excelFile: mockFileValue,
       checkboxConfirmation: true,
     });
-    expect(result).toBeNull();
-  });
-
-  it('returns null when ulbCount is non-numeric', () => {
-    const result = buildDevolutionFinalSubmitPayloadData({
-      ulbCount: 'abc',
-      excelFile: mockFileValue,
-      checkboxConfirmation: true,
-    });
-    expect(result).toBeNull();
+    expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
+    expect((result as unknown as Record<string, unknown>)?.['ulbCount']).toBeUndefined();
   });
 });

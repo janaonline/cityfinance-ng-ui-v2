@@ -43,6 +43,7 @@ describe('EulbPostUpdateComponent', () => {
           allowedFileTypes: ['pdf'],
           maxFileSize: 20,
           folderPath: 'state/year-2024/elected-body/post-update',
+          // Intentional pre-canonical shape: exercises the hydration normalizer (empty → null control).
           value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
           validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
         },
@@ -137,11 +138,11 @@ describe('EulbPostUpdateComponent', () => {
 
   function createDocument(overrides: Partial<EulbPostSubmissionUpdateDocument> = {}): EulbPostSubmissionUpdateDocument {
     return {
-      fileName: 'combined.pdf',
-      fileUrl: 'state/eulb-post-submission-update/combined.pdf',
-      fileSize: 1024,
+      originalName: 'combined.pdf',
+      path: 'state/eulb-post-submission-update/combined.pdf',
       mimeType: 'application/pdf',
-      s3Key: 'state/eulb-post-submission-update/combined.pdf',
+      sizeKb: 1,
+      pageCount: 2,
       ...overrides,
     };
   }
@@ -709,26 +710,28 @@ describe('EulbPostUpdateComponent', () => {
 
     // FormGroup<{}> infers AbstractControl<never> for dynamic keys; widen to unknown to call setValue.
     (component.proofOfElectionForm.get('proofOfElection') as AbstractControl<unknown>).setValue({
-      fileName: 'combined.pdf',
-      fileUrl: 'state/eulb/combined.pdf',
-      fileSize: 1024,
+      originalName: 'combined.pdf',
+      path: 'state/eulb/combined.pdf',
       mimeType: 'application/pdf',
+      sizeKb: 1,
+      pageCount: 2,
     });
 
     expect(component.updateDocument()).toEqual(
-      jasmine.objectContaining({ fileName: 'combined.pdf', fileUrl: 'state/eulb/combined.pdf' }),
+      jasmine.objectContaining({ originalName: 'combined.pdf', path: 'state/eulb/combined.pdf' }),
     );
   });
 
-  it('clears updateDocument when proofOfElectionForm control value has no fileName', () => {
+  it('clears updateDocument when proofOfElectionForm control value has no file name or path', () => {
     fixture.detectChanges();
     component.updateDocument.set(createDocument());
 
     (component.proofOfElectionForm.get('proofOfElection') as AbstractControl<unknown>).setValue({
-      fileName: '',
-      fileUrl: '',
-      fileSize: null,
+      originalName: '',
+      path: '',
       mimeType: '',
+      sizeKb: 0,
+      pageCount: null,
     });
 
     expect(component.updateDocument()).toBeNull();

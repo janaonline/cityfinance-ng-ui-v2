@@ -8,11 +8,9 @@ import {
   AbstractControl,
   ValidatorFn,
 } from '@angular/forms';
-import {
-  compareArrFieldsValidator,
-  compareFieldsValidator,
-} from '../../core/validators/comparison.validator';
-import { FieldConfig, UploadedFileValue } from './field.interface';
+import { compareArrFieldsValidator, compareFieldsValidator } from '../../core/validators/comparison.validator';
+import { FieldConfig } from './field.interface';
+import { isUploadedFileMetadata, normalizeUploadedFileMetadata } from './components/file/file-metadata.types';
 import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
 import { resolveDateConstraint } from './date-constraint-resolver';
 import { yearRangeValidator } from '../../core/validators/year-range.validator';
@@ -180,9 +178,7 @@ export class DynamicFormService {
       fileValidator.push(Validators.required);
     }
     // except accept/reject others null
-    const verifyStatus = [2, 3].includes(Number(yearField.verifyStatus))
-      ? yearField.verifyStatus
-      : null;
+    const verifyStatus = [2, 3].includes(Number(yearField.verifyStatus)) ? yearField.verifyStatus : null;
     return new FormGroup({
       file: new FormGroup({
         name: new FormControl(yearField.file?.name || null, fileValidator),
@@ -263,16 +259,39 @@ export class DynamicFormService {
 
     return validators.length > 0 ? Validators.compose(validators) : null;
   }
-  createContorl(field: any, validations = false, readonly = false) {
+  createContorl(field: any, validations = false, readonly = false): AbstractControl {
     const validationsData = validations || field.validations;
     // const val = field.value ? { value: field.value, disabled: readonly || field.readonly } : '';
     const resolvedReadonly = readonly || field.readonly;
+
+    if (field.formFieldType === 'actualTarget') {
+      return this.createActualTargetGroup(field, validationsData, resolvedReadonly);
+    }
+
     const val = {
       value: this.resolveInitialControlValue(field, false),
-      disabled: field.formFieldType === 'date' ? false : resolvedReadonly,
+      disabled: field.disabled === true ? true : field.formFieldType === 'date' ? false : resolvedReadonly,
     };
     return new FormControl(val, this.bindValidations(validationsData, field));
     // return new FormControl(field.value || '');
+  }
+
+  /**
+   * Builds a nested FormGroup with `actual`/`target` sub-controls for a single
+   * `formFieldType: 'actualTarget'` question. Both sub-controls share the field's
+   * `validations` array (required/min/max) so a single question definition validates
+   * two related numbers. Angular's dot-path `form.get('key.actual')` resolves the
+   * sub-control directly, and `.value` naturally serializes to `{ actual, target }`.
+   */
+  private createActualTargetGroup(field: any, validationsData: any, readonly: boolean): FormGroup {
+    const pairValue = (field.value ?? {}) as { actual?: unknown; target?: unknown };
+    const disabled = field.disabled === true ? true : readonly;
+    const validators = this.bindValidations(validationsData, field);
+
+    return new FormGroup({
+      actual: new FormControl({ value: pairValue.actual ?? null, disabled }, validators),
+      target: new FormControl({ value: pairValue.target ?? null, disabled }, validators),
+    });
   }
   tabControl(fields: any[]) {
     // const form = this.fb.group({});
@@ -283,14 +302,10 @@ export class DynamicFormService {
         const formArrays: any[] = [];
         const validators: any = [];
         fieldFormArrays.forEach((childField: any) => {
-          const compareValid = childField.validations?.find(
-            (e: { name: string }) => e.name === 'greaterThanEqualTo',
-          );
+          const compareValid = childField.validations?.find((e: { name: string }) => e.name === 'greaterThanEqualTo');
 
           if (compareValid) {
-            validators.push(
-              compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name),
-            );
+            validators.push(compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name));
           }
           // table row
           const childFieldData: any = {};
@@ -342,11 +357,7 @@ export class DynamicFormService {
 
     for (const field of fields) {
       const key = field.key;
-      if (
-        typeof key !== 'string' ||
-        key.length === 0 ||
-        !Object.prototype.hasOwnProperty.call(values, key)
-      ) {
+      if (typeof key !== 'string' || key.length === 0 || !Object.prototype.hasOwnProperty.call(values, key)) {
         continue;
       }
 
@@ -358,7 +369,8 @@ export class DynamicFormService {
 
   serializeFieldValue(field: Pick<FieldConfig, 'formFieldType'>, value: unknown): unknown {
     if (field.formFieldType === 'file') {
-      return this.serializeFileFieldValue(value);
+      // Standalone file controls already hold the persistence-ready canonical shape.
+      return isUploadedFileMetadata(value) ? value : null;
     }
 
     if (field.formFieldType !== 'date') {
@@ -367,49 +379,6 @@ export class DynamicFormService {
 
     const serializedDate = toUtcIsoDateString(value);
     return serializedDate === undefined ? value : serializedDate;
-  }
-
-  /**
-   * Converts the dynamic-form file control value into the `CommonFile` shape expected by the
-   * backend (`originalName`, `path`, `mimeType`, `extension`, `sizeKb`), instead of the
-   * `{ fileName, fileUrl, fileSize, mimeType }` shape used internally by the file control.
-   */
-  private serializeFileFieldValue(value: unknown): unknown {
-    if (!value || typeof value !== 'object') {
-      return null;
-    }
-
-    const rawValue = value as Record<string, unknown>;
-    const fileName =
-      this.getNonEmptyString(rawValue['fileName']) ?? this.getNonEmptyString(rawValue['name']);
-    const fileUrl =
-      this.getNonEmptyString(rawValue['fileUrl']) ?? this.getNonEmptyString(rawValue['url']);
-
-    if (!fileName || !fileUrl) {
-      return null;
-    }
-
-    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
-    const mimeType = this.getNonEmptyString(rawValue['mimeType']) ?? '';
-    const pageCount = this.normalizeFileSize(rawValue['pageCount'] ?? rawValue['pages'] ?? rawValue['noOfPage']);
-
-    return {
-      originalName: fileName,
-      path: fileUrl,
-      mimeType,
-      extension: this.getFileExtension(fileName),
-      sizeKb: fileSize === null ? 0 : this.bytesToKb(fileSize),
-      pageCount,
-    };
-  }
-
-  private getFileExtension(fileName: string): string {
-    const parts = fileName.split('.');
-    return parts.length > 1 ? (parts.pop() ?? '').toLowerCase() : '';
-  }
-
-  private bytesToKb(bytes: number): number {
-    return Math.round((bytes / 1024) * 100) / 100;
   }
 
   /**
@@ -430,69 +399,9 @@ export class DynamicFormService {
     useEmptyStringFallback: boolean,
   ): unknown {
     if (field.formFieldType === 'file') {
-      return this.normalizeStandaloneFileValue(field.value);
+      return normalizeUploadedFileMetadata(field.value);
     }
 
     return useEmptyStringFallback ? field.value || '' : field.value;
-  }
-
-  private normalizeStandaloneFileValue(value: unknown): UploadedFileValue {
-    if (!value || typeof value !== 'object') {
-      return null;
-    }
-
-    const rawValue = value as Record<string, unknown>;
-    const fileName =
-      this.getNonEmptyString(rawValue['fileName']) ?? this.getNonEmptyString(rawValue['name']);
-    const fileUrl =
-      this.getNonEmptyString(rawValue['fileUrl']) ?? this.getNonEmptyString(rawValue['url']);
-
-    if (!fileName && !fileUrl) {
-      return null;
-    }
-
-    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
-    const mimeType = this.getNonEmptyString(rawValue['mimeType']);
-    const pageCount = this.normalizeFileSize(rawValue['pageCount'] ?? rawValue['pages'] ?? rawValue['noOfPage']);
-
-    return {
-      fileName: fileName ?? this.getFileNameFromUrl(fileUrl),
-      fileUrl: fileUrl ?? '',
-      fileSize,
-      pageCount,
-      ...(mimeType ? { mimeType } : {}),
-    };
-  }
-
-  private getNonEmptyString(value: unknown): string | null {
-    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
-  }
-
-  private normalizeFileSize(value: unknown): number | null {
-    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
-      return value;
-    }
-
-    if (typeof value !== 'string') {
-      return null;
-    }
-
-    const normalizedValue = value.trim();
-    if (!normalizedValue) {
-      return null;
-    }
-
-    const numericValue = Number(normalizedValue);
-    return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
-  }
-
-  private getFileNameFromUrl(fileUrl: string | null): string {
-    if (!fileUrl) {
-      return '';
-    }
-
-    const pathSegment = fileUrl.split(/[?#]/)[0];
-    const segments = pathSegment.split('/');
-    return segments[segments.length - 1] ?? '';
   }
 }

@@ -16,9 +16,22 @@
       <div class="section-header">
         <div>
           <h4>Create Benchmark</h4>
-          <p>Give a name and paste one job ID per line.</p>
+          <p>Paste job IDs directly, or upload a ground-truth Excel exported from an eval run.</p>
         </div>
       </div>
+
+      <div class="mode-toggle">
+        <button type="button" class="mode-toggle__btn" [class.mode-toggle__btn--active]="createMode() === 'jobs'"
+          (click)="createMode.set('jobs')">
+          From Job IDs
+        </button>
+        <button type="button" class="mode-toggle__btn" [class.mode-toggle__btn--active]="createMode() === 'excel'"
+          (click)="createMode.set('excel')">
+          From Excel
+        </button>
+      </div>
+
+      @if (createMode() === 'jobs') {
       <form [formGroup]="createForm" class="create-form">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Benchmark Name</mat-label>
@@ -31,14 +44,46 @@
         <div class="form-actions">
           <button type="button" class="btn btn-primary" [disabled]="createForm.invalid || creating()"
             (click)="createBenchmark()">
-            @if (creating()) {
-            Creating...
-            } @else {
-            Create Benchmark
-            }
+            @if (creating()) { Creating... } @else { Create Benchmark }
           </button>
         </div>
       </form>
+      } @else {
+      <div class="create-form">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Benchmark Name</mat-label>
+          <input matInput [ngModel]="excelName()" (ngModelChange)="excelName.set($event)"
+            placeholder="e.g. FY2024 Balance Sheets" />
+        </mat-form-field>
+
+        <div class="file-picker">
+          <span class="file-picker__label">Ground-truth Excel</span>
+          <input #excelFileInput type="file" class="file-input-hidden" accept=".xlsx,.xls"
+            (change)="onExcelFileSelected($event)" />
+          <button type="button" class="file-drop-box" (click)="openExcelFilePicker()">
+            @if (excelFile(); as f) {
+            <span class="file-box-name">{{ f.name }}</span>
+            <span class="file-box-meta">{{ (f.size / 1024).toFixed(0) }} KB — click to change</span>
+            } @else {
+            <span class="file-box-placeholder">Click to choose an .xlsx / .xls file</span>
+            <span class="file-box-meta">
+              Columns: Job ID, Input ULB/FY/Doc Type, Benchmark ULB/Doc Type/FY/Language/Seal/Signature, Table
+              Presence
+            </span>
+            }
+          </button>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" [disabled]="creating()" (click)="createBenchmarkFromExcel()">
+            @if (creating()) { Uploading... } @else { Create Benchmark }
+          </button>
+          @if (excelFile()) {
+          <button type="button" class="btn btn-outline-secondary" (click)="clearExcelFile()">Clear file</button>
+          }
+        </div>
+      </div>
+      }
     </section>
 
     <!-- Benchmarks list -->
@@ -67,14 +112,17 @@
             <th mat-header-cell *matHeaderCellDef>Name</th>
             <td mat-cell *matCellDef="let b">
               <span class="benchmark-name">{{ b.name }}</span>
+              @if (b.schema_version === 2) {
+              <span class="count-chip count-chip--excel" style="margin-left: 0.4rem">Ground Truth</span>
+              }
               <div class="mono dim" style="font-size: 0.7rem">{{ b.benchmark_id }}</div>
             </td>
           </ng-container>
 
           <ng-container matColumnDef="jobCount">
-            <th mat-header-cell *matHeaderCellDef>Jobs</th>
+            <th mat-header-cell *matHeaderCellDef>Rows</th>
             <td mat-cell *matCellDef="let b">
-              <span class="count-chip">{{ b.job_ids?.length || 0 }}</span>
+              <span class="count-chip">{{ b.rows.length || b.job_ids.length || 0 }}</span>
             </td>
           </ng-container>
 
@@ -117,11 +165,8 @@
       </button>
       <div>
         <h3>{{ selectedBenchmark()!.name }}</h3>
-        <p class="subcopy">
-          {{ selectedBenchmark()!.job_ids.length }} benchmark job{{
-          selectedBenchmark()!.job_ids.length === 1 ? '' : 's'
-          }}
-        </p>
+        <p class="subcopy">{{ selectedBenchmark()!.rows.length || selectedBenchmark()!.job_ids.length }} benchmark
+          row{{ (selectedBenchmark()!.rows.length || selectedBenchmark()!.job_ids.length) === 1 ? '' : 's' }}</p>
       </div>
     </div>
 
@@ -153,13 +198,11 @@
         </mat-checkbox>
         <div class="form-actions">
           <button type="button" class="btn btn-primary" [disabled]="runSubmitting()" (click)="triggerRun()">
-            @if (runSubmitting()) {
-            Queuing...
-            } @else {
-            Run Eval
-            }
+            @if (runSubmitting()) { Queuing... } @else { Run Eval }
           </button>
-          <button type="button" class="btn btn-outline-secondary" (click)="showRunForm.set(false)">Cancel</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="showRunForm.set(false)">
+            Cancel
+          </button>
         </div>
       </form>
     </section>
@@ -190,8 +233,29 @@
         </div>
       </div>
 
+      @if (selectedRunIds().length) {
+      <div class="compare-bar">
+        <span>{{ selectedRunIds().length }} run{{ selectedRunIds().length === 1 ? '' : 's' }} selected for
+          comparison</span>
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="selectedRunIds().length !== 2"
+          (click)="compareSelectedRuns()">
+          Compare Selected
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="selectedRunIds.set([])">Clear</button>
+      </div>
+      }
+
       <div class="table-shell">
         <table mat-table [dataSource]="runsDataSource" class="eval-table">
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let r">
+              <mat-checkbox [checked]="isRunSelected(r)" [disabled]="!isRunSelectable(r)"
+                (change)="toggleRunSelection(r)" [title]="isRunSelectable(r) ? 'Select for comparison' : 'Only completed runs can be compared'">
+              </mat-checkbox>
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="evalRunId">
             <th mat-header-cell *matHeaderCellDef>Run ID</th>
             <td mat-cell *matCellDef="let r">
@@ -276,14 +340,10 @@
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="runColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: runColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: runColumns;"></tr>
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell empty-state" colspan="6">
-              @if (runsLoading()) {
-              Loading runs...
-              } @else {
-              No runs yet. Click "+ New Run" to start an eval.
-              }
+            <td class="mat-cell empty-state" colspan="7">
+              @if (runsLoading()) { Loading runs... } @else { No runs yet. Click "+ New Run" to start an eval. }
             </td>
           </tr>
         </table>

@@ -17,19 +17,19 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { PDFDocument } from 'pdf-lib';
 import { filter, finalize, from, map, startWith, switchMap, tap } from 'rxjs';
 import Swal from 'sweetalert2';
-import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
+import { SignedUrlDirective } from '../../../../core/directives/storage-url.directive';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { MaterialModule } from '../../../../material.module';
 import { FileIconComponent, SupportedFileExtension } from '../../../components/file-icon/file-icon.component';
-import { FieldAppearanceColor, FieldConfig, LegacyFileValue, UploadedFileValue } from '../../field.interface';
+import { FieldAppearanceColor, FieldConfig } from '../../field.interface';
 import { DndDirective } from './dnd.directive';
+import { UploadedFileMetadata, normalizeUploadedFileMetadata } from './file-metadata.types';
 import { FileService, S3UrlResult } from './file.service';
 
 type FileParentFieldConfig = Pick<FieldConfig, 'readonly' | 'validations'>;
-type StandaloneFileControl = FormControl<UploadedFileValue | LegacyFileValue>;
+type StandaloneFileControl = FormControl<UploadedFileMetadata | null>;
 // type SupportedFileExtension = 'pdf' | 'xlsx' | 'xls' | 'docx' | 'doc' | 'txt';
 type FileMimeTypeMap = Readonly<Record<SupportedFileExtension, string>>;
-type NormalizedStandaloneFileValue = Exclude<UploadedFileValue, null>;
 type ValidationSnapshot = Readonly<{
   invalid: boolean;
   dirty: boolean;
@@ -65,13 +65,14 @@ const REQUIRED_VALIDATION_NAME = 'required';
  * and alignment with Angular v20, while continuing to support the legacy nested file-group
  * contract used by `<app-year-wise>` upload flows.
  * It also maintains compatibility with the two persisted file-value shapes currently used across the application:
- * - `UploadedFileValue` in standalone reactive controls
+ * - canonical `UploadedFileMetadata` (`{ originalName, path, mimeType, sizeKb, pageCount }`)
+ *   in standalone reactive controls
  * - `{ name, url, size }` in legacy nested groups.
  */
 @Component({
   selector: 'app-file',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MaterialModule, DndDirective, MatProgressBarModule, ToStorageUrlPipe, FileIconComponent],
+  imports: [MaterialModule, DndDirective, MatProgressBarModule, SignedUrlDirective, FileIconComponent],
   templateUrl: './file.component.html',
   styleUrl: './file.component.scss',
 })
@@ -130,7 +131,7 @@ export class FileComponent implements OnInit {
 
   /**
    * Resolves the standalone form control used by newer file fields.
-   * The full `UploadedFileValue` is stored in a single control based on field().key.
+   * The full `UploadedFileMetadata` is stored in a single control based on field().key.
    */
   readonly standaloneFileControl = computed<StandaloneFileControl | null>(() => {
     const control = this.group().get(this.field().key);
@@ -283,16 +284,16 @@ export class FileComponent implements OnInit {
   /** Normalized uploaded file data for the template across standalone and legacy formats. */
   readonly uploadedFile = computed<UploadedFileViewModel | null>(() => {
     if (this.standaloneFileControl()) {
-      const standaloneValue = this.normalizeStandaloneValue(this.fileValueSnapshot());
+      const standaloneValue = normalizeUploadedFileMetadata(this.fileValueSnapshot());
       if (!standaloneValue) {
         return null;
       }
 
       return {
-        name: standaloneValue.fileName,
-        url: standaloneValue.fileUrl,
-        sizeLabel: standaloneValue.fileSize === null ? null : this.utilityService.formatBytes(standaloneValue.fileSize),
-        mimeType: standaloneValue.mimeType ?? null,
+        name: standaloneValue.originalName,
+        url: standaloneValue.path,
+        sizeLabel: standaloneValue.sizeKb > 0 ? this.utilityService.formatBytes(standaloneValue.sizeKb * 1024) : null,
+        mimeType: standaloneValue.mimeType || null,
       };
     }
 
@@ -302,27 +303,16 @@ export class FileComponent implements OnInit {
   readonly hasUploadedFile = computed(() => !!this.uploadedFile());
 
   /**
-   * Returns the file URL only when it is an absolute HTTP/HTTPS URL that the browser can
-   * open directly (i.e. a backend-signed download URL). Raw storage paths like `/state/...`
-   * return `null` so the template never constructs a direct S3 link for private files.
+   * The stored file location used for the view link while no upload is in progress. May be an
+   * absolute backend-signed URL or a raw storage path — the template's `appSignedUrl` directive
+   * links absolute HTTPS URLs directly and resolves raw paths into signed URLs on click.
    */
   readonly previewUrl = computed(() => {
     if (this.isUploading()) {
       return null;
     }
 
-    const url = this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
-    return url && /^https?:\/\//i.test(url) ? url : null;
-  });
-
-  /**
-   * True when a file value is stored in the control but the URL is a raw storage path that
-   * has not yet been replaced by a signed download URL from the backend. Prompts the user to
-   * save or refresh to get a downloadable link.
-   */
-  readonly isPendingDownload = computed(() => {
-    if (this.isUploading() || this.previewUrl() || this.localPreviewUrl()) return false;
-    return !!this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
+    return this.utilityService.getNonEmptyString(this.uploadedFile()?.url);
   });
 
   /** Formatted size label for the transient file currently being uploaded. */
@@ -614,7 +604,7 @@ export class FileComponent implements OnInit {
             filter((event) => event.type === HttpEventType.Response),
             switchMap(() =>
               from(this.resolvePageCount(file)).pipe(
-                map((pageCount) => this.createUploadedFileValue(file, uploadTarget.storagePath, pageCount)),
+                map((pageCount) => this.createUploadedFileMetadata(file, uploadTarget.storagePath, pageCount)),
               ),
             ),
           ),
@@ -623,8 +613,8 @@ export class FileComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (uploadedFileValue) => {
-          this.patchUploadedFileValue(uploadedFileValue);
+        next: (uploadedFileMetadata) => {
+          this.patchUploadedFileMetadata(uploadedFileMetadata);
           this.uploadSuccessful();
         },
         error: (error: unknown) => {
@@ -727,17 +717,13 @@ export class FileComponent implements OnInit {
    * @param pageCount - Page count resolved for PDF uploads, or `null` when not applicable/unreadable
    * @returns Uploaded file value in the standalone control shape
    */
-  private createUploadedFileValue(
-    file: File,
-    storagePath: string,
-    pageCount: number | null,
-  ): Exclude<UploadedFileValue, null> {
+  private createUploadedFileMetadata(file: File, storagePath: string, pageCount: number | null): UploadedFileMetadata {
     return {
-      fileName: file.name,
-      fileUrl: storagePath,
-      fileSize: file.size,
+      originalName: file.name,
+      path: storagePath,
+      mimeType: file.type,
+      sizeKb: file.size / 1024,
       pageCount,
-      ...(file.type ? { mimeType: file.type } : {}),
     };
   }
 
@@ -766,13 +752,13 @@ export class FileComponent implements OnInit {
    * for the current form contract.
    * @param fileValue - Normalized uploaded file metadata to persist in the form
    */
-  private patchUploadedFileValue(fileValue: Exclude<UploadedFileValue, null>): void {
+  private patchUploadedFileMetadata(fileValue: UploadedFileMetadata): void {
     const legacyFileGroup = this.legacyFileGroup();
     if (legacyFileGroup) {
       legacyFileGroup.patchValue({
-        name: fileValue.fileName,
-        url: fileValue.fileUrl,
-        size: fileValue.fileSize === null ? null : this.utilityService.formatBytes(fileValue.fileSize),
+        name: fileValue.originalName,
+        url: fileValue.path,
+        size: this.utilityService.formatBytes(fileValue.sizeKb * 1024),
       });
       legacyFileGroup.get('name')?.markAsTouched();
       legacyFileGroup.markAsDirty();
@@ -843,41 +829,6 @@ export class FileComponent implements OnInit {
    */
   private isSupportedFileExtension(extension: string | undefined): extension is SupportedFileExtension {
     return !!extension && extension in this.fileMimeTypes;
-  }
-
-  /**
-   * Normalizes a standalone form value into the canonical uploaded-file shape expected by the
-   * component. This accepts both current keys and older aliases to remain compatible with patch/edit
-   * mode and previously persisted payloads.
-   * @param value - Raw standalone form-control value
-   * @returns Normalized uploaded file value or `null` when the value is effectively empty
-   */
-  private normalizeStandaloneValue(value: unknown): NormalizedStandaloneFileValue | null {
-    if (!value || typeof value !== 'object') {
-      return null;
-    }
-
-    const rawValue = value as Record<string, unknown>;
-    const fileName =
-      this.utilityService.getNonEmptyString(rawValue['fileName']) ??
-      this.utilityService.getNonEmptyString(rawValue['name']);
-    const fileUrl =
-      this.utilityService.getNonEmptyString(rawValue['fileUrl']) ??
-      this.utilityService.getNonEmptyString(rawValue['url']);
-
-    if (!fileName && !fileUrl) {
-      return null;
-    }
-
-    const fileSize = this.normalizeFileSize(rawValue['fileSize'] ?? rawValue['size']);
-    const mimeType = this.utilityService.getNonEmptyString(rawValue['mimeType']);
-
-    return {
-      fileName: fileName ?? this.utilityService.getFileNameFromUrl(fileUrl),
-      fileUrl: fileUrl ?? '',
-      fileSize,
-      ...(mimeType ? { mimeType } : {}),
-    };
   }
 
   /**

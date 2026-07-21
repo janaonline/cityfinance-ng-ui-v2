@@ -4,7 +4,7 @@ import { AbstractControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
@@ -48,10 +48,11 @@ describe('ElectedBodyStatusComponent', () => {
   const stateId = 'state-1';
   const yearId = 'year-1';
   const fileValue: EulbFileValue = {
-    fileName: 'eulb.xlsx',
-    fileUrl: 'https://example.test/eulb.xlsx',
-    fileSize: 1024,
+    originalName: 'eulb.xlsx',
+    path: 'https://example.test/eulb.xlsx',
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    sizeKb: 1,
+    pageCount: null,
   };
 
   let component: ElectedBodyStatusComponent;
@@ -80,6 +81,7 @@ describe('ElectedBodyStatusComponent', () => {
     eulbService.getFormData.and.returnValue(of(createFormResponse()));
     eulbService.saveDraft.and.returnValue(of(undefined));
     eulbService.finalSubmit.and.returnValue(of(undefined));
+    eulbService.validateExcel.and.returnValue(EMPTY);
 
     moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
     moduleService.yearId.and.returnValue(yearId);
@@ -175,12 +177,11 @@ describe('ElectedBodyStatusComponent', () => {
     );
   });
 
-  it('blocks save-as-draft when required confirmation is not checked', () => {
+  it('allows save-as-draft when required confirmation is not checked (requiredTrue is temporarily not mandatory for drafts)', () => {
     component.onSubmit('saveAsDraft');
 
-    expect(confirmDialogService.confirm).not.toHaveBeenCalled();
-    expect(eulbService.saveDraft).not.toHaveBeenCalled();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
+    expect(confirmDialogService.confirm).toHaveBeenCalledOnceWith(SAVE_AS_DRAFT_DIALOG_DEFAULTS, undefined);
+    expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith(
       'Please correct the errors in the form before saving as draft.',
       'snackbar-danger',
     );
@@ -232,7 +233,7 @@ describe('ElectedBodyStatusComponent', () => {
   });
 
   it('opens the final-submit confirmation with the current submit action', () => {
-    setValidFinalSubmitValues(15);
+    setValidFinalSubmitValues();
 
     component.onSubmit('finalSubmit');
 
@@ -241,7 +242,7 @@ describe('ElectedBodyStatusComponent', () => {
   });
 
   it('sends a complete, typed final-submit payload when confirmation is accepted', () => {
-    setValidFinalSubmitValues('15');
+    setValidFinalSubmitValues();
     confirmDialogService.confirm.and.returnValue(of(true));
 
     component.onSubmit('finalSubmit');
@@ -252,7 +253,6 @@ describe('ElectedBodyStatusComponent', () => {
       stateId,
       yearId,
       data: {
-        ulbCount: 15,
         electedBodyExcelFile: fileValue,
         checkboxConfirmation: true,
       },
@@ -263,11 +263,11 @@ describe('ElectedBodyStatusComponent', () => {
     eulbService.finalSubmit.and.returnValue(
       throwError(() =>
         createApiFailure('Final submit rejected by backend.', {
-          ulbCount: [{ field: 'ulbCount', message: 'ULB count is invalid.', code: 'invalidUlbCount' }],
+          electedBodyExcelFile: [{ field: 'electedBodyExcelFile', message: 'File is invalid.', code: 'invalidFile' }],
         }),
       ),
     );
-    setValidFinalSubmitValues(15);
+    setValidFinalSubmitValues();
     confirmDialogService.confirm.and.returnValue(of(true));
 
     component.onSubmit('finalSubmit');
@@ -276,9 +276,7 @@ describe('ElectedBodyStatusComponent', () => {
     expect(eulbService.getFormData).toHaveBeenCalledTimes(1);
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Final submit rejected by backend.', 'snackbar-danger');
     expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith('Form submitted successfully.');
-    expect(getControl('ulbCount')?.hasError('invalidUlbCount')).toBeTrue();
-    expect(getControl('ulbCount')?.dirty).toBeTrue();
-    expect(getControl('ulbCount')?.touched).toBeTrue();
+    expect(getControl('electedBodyExcelFile')?.hasError('invalidFile')).toBeTrue();
   });
 
   it('handles success:false body with optional data field — data is ignored, message and errors still applied', () => {
@@ -287,24 +285,24 @@ describe('ElectedBodyStatusComponent', () => {
         success: false,
         message: 'Rejected with context data.',
         errors: {
-          ulbCount: [{ field: 'ulbCount', message: 'Invalid ULB count.', code: 'invalidUlbCount' }],
+          electedBodyExcelFile: [{ field: 'electedBodyExcelFile', message: 'File error.', code: 'invalidFile' }],
         },
         data: { someContext: 'this must not break error parsing' },
       })),
     );
-    setValidFinalSubmitValues(15);
+    setValidFinalSubmitValues();
     confirmDialogService.confirm.and.returnValue(of(true));
 
     component.onSubmit('finalSubmit');
 
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Rejected with context data.', 'snackbar-danger');
-    expect(getControl('ulbCount')?.hasError('invalidUlbCount')).toBeTrue();
+    expect(getControl('electedBodyExcelFile')?.hasError('invalidFile')).toBeTrue();
     expect(eulbService.getFormData).toHaveBeenCalledTimes(1); // no reload on error
   });
 
-  it('does not call final-submit API when the final payload builder cannot narrow values', () => {
-    setControlValue('electedBodyExcelFile', fileValue);
-    setControlValue('ulbCount', 'not-a-number');
+  it('does not call final-submit API when electedBodyExcelFile fails the validity check', () => {
+    // Partial file object: passes Angular required validator (non-null object) but fails isValidEulbFileValue
+    setControlValue('electedBodyExcelFile', { originalName: '', path: '', sizeKb: 0 });
     setControlValue('checkboxConfirmation', true);
     confirmDialogService.confirm.and.returnValue(of(true));
 
@@ -323,7 +321,7 @@ describe('ElectedBodyStatusComponent', () => {
     expect(previousFileControl).withContext('Expected the initial file control to exist').not.toBeNull();
 
     eulbService.getFormData.and.returnValue(of(createFormResponse(fileValue)));
-    setValidFinalSubmitValues(15);
+    setValidFinalSubmitValues();
     confirmDialogService.confirm.and.returnValue(of(true));
 
     component.onSubmit('finalSubmit');
@@ -337,9 +335,95 @@ describe('ElectedBodyStatusComponent', () => {
     expect(confirmDialogService.confirm).not.toHaveBeenCalled();
   });
 
-  function setValidFinalSubmitValues(ulbCount: number | string): void {
+  it('creates the ulbCount control as disabled with the backend-supplied value', () => {
+    const control = getControl('ulbCount');
+    expect(control?.disabled).toBeTrue();
+    expect(control?.value).toBe(42);
+  });
+
+  it('save-draft payload sends ulbCount as undefined (excluded from JSON by includeInPayload:false)', () => {
+    setControlValue('checkboxConfirmation', true);
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    component.onSubmit('saveAsDraft');
+
+    const payload: EulbSaveDraftPayload = eulbService.saveDraft.calls.mostRecent().args[0];
+    expect(payload.data.ulbCount)
+      .withContext('ulbCount should not carry a numeric value to the backend')
+      .toBeUndefined();
+  });
+
+  it('final-submit payload does not include ulbCount', () => {
+    setValidFinalSubmitValues();
+    confirmDialogService.confirm.and.returnValue(of(true));
+
+    component.onSubmit('finalSubmit');
+
+    const payload: EulbFinalSubmitPayload = eulbService.finalSubmit.calls.mostRecent().args[0];
+    expect(Object.prototype.hasOwnProperty.call(payload.data, 'ulbCount'))
+      .withContext('ulbCount key should not appear in final-submit payload')
+      .toBeFalse();
+  });
+
+  it('validateExcel is called when file is uploaded even though ulbCount is backend-disabled', () => {
+    const validationSummary = {
+      dbUlbCount: 42,
+      maxAllowedExcelRows: 42,
+      excelRowCount: 42,
+      matchedDbUlbCount: 42,
+      missingDbUlbCount: 0,
+      extraExcelRowCount: 0,
+      errorRowCount: 0,
+      validationStatus: 'VALID' as const,
+      activeDatasetVersion: 1,
+    };
+    eulbService.validateExcel.and.returnValue(of({ data: { validationStatus: 'VALID', summary: validationSummary } }));
+
     setControlValue('electedBodyExcelFile', fileValue);
-    setControlValue('ulbCount', ulbCount);
+
+    const validateCallArg = eulbService.validateExcel.calls.mostRecent().args[0] as unknown as Record<string, unknown>;
+    expect(validateCallArg['electedBodyExcelFile']).toEqual(fileValue);
+    expect(Object.prototype.hasOwnProperty.call(validateCallArg, 'ulbCount'))
+      .withContext('ulbCount must not be sent to validateExcel')
+      .toBeFalse();
+  });
+
+  it('validateExcel 400 with newUlbsAdded applies field error to electedBodyExcelFile', () => {
+    eulbService.validateExcel.and.returnValue(
+      throwError(() => ({
+        error: {
+          statusCode: 400,
+          message: 'Excel contains extra ULB rows not registered on City Finance.',
+          errors: {
+            electedBodyExcelFile: [
+              { field: 'electedBodyExcelFile', message: 'Extra rows found.', code: 'newUlbsAdded' },
+            ],
+          },
+        },
+      })),
+    );
+
+    setControlValue('electedBodyExcelFile', fileValue);
+
+    expect(eulbService.validateExcel).toHaveBeenCalledTimes(1);
+    expect(getControl('electedBodyExcelFile')?.hasError('newUlbsAdded')).toBeTrue();
+  });
+
+  it('register-ulb supporting action navigates to /xvifc/:yearId/register-ulb', () => {
+    component.onSupportingAction({ fieldKey: 'electedBodyExcelFile', actionId: 'register-ulb' });
+
+    expect(router.navigate).toHaveBeenCalledOnceWith(['/xvifc', yearId, 'register-ulb']);
+  });
+
+  it('register-ulb is not navigated when action is for a different field', () => {
+    router.navigate.calls.reset();
+    component.onSupportingAction({ fieldKey: 'ulbCount', actionId: 'register-ulb' });
+
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  function setValidFinalSubmitValues(): void {
+    setControlValue('electedBodyExcelFile', fileValue);
     setControlValue('checkboxConfirmation', true);
   }
 
@@ -348,7 +432,6 @@ describe('ElectedBodyStatusComponent', () => {
     expect(control).withContext(`Expected control ${key} to exist`).not.toBeNull();
     control?.setValue(value);
     control?.markAsDirty();
-    control?.updateValueAndValidity();
     fixture.detectChanges();
   }
 
@@ -390,11 +473,13 @@ describe('ElectedBodyStatusComponent', () => {
   function createQuestions(restoredFileValue: EulbFileValue | null): ConditionalFieldConfig[] {
     return [
       {
-        label: 'ULB count',
+        label: 'Active ULBs Registered on City Finance as of March 31, 2026',
         key: 'ulbCount',
         formFieldType: 'number',
-        value: null,
-        validations: [{ name: 'required', validator: true, message: 'ULB count is required.' }],
+        value: 42,
+        disabled: true,
+        includeInPayload: false,
+        disabledReason: 'This value is automatically computed from City Finance registered active ULBs.',
       },
       {
         label: 'Elected body Excel file',

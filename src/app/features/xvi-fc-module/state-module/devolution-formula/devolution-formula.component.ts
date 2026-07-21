@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -19,6 +20,7 @@ import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { normalizeUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   ConditionalFieldConfig,
   DependencyIndex,
@@ -66,6 +68,7 @@ const DF_SUPPORTING_ACTION = {
   VIEW_UPLOADED_DATA: 'view-uploaded-data',
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
+  REGISTER_ULB: 'register-ulb',
 } as const;
 
 @Component({
@@ -93,6 +96,7 @@ export class DevolutionFormulaComponent implements OnInit {
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
   private readonly dfService = inject(DevolutionFormulaService);
   private readonly moduleService = inject(XvifcModuleService);
+  private readonly router = inject(Router);
 
   readonly stateName = signal('');
   readonly actors = signal<FormActor[]>([]);
@@ -223,7 +227,7 @@ export class DevolutionFormulaComponent implements OnInit {
           this.grantAllocationSummary.set(data.grantAllocationSummary ?? null);
 
           const fileField = data.questions.find((q) => q.key === 'excelFile');
-          this.lastPersistedExcelFile = isValidDevolutionFileRef(fileField?.value) ? fileField.value : null;
+          this.lastPersistedExcelFile = normalizeUploadedFileMetadata(fileField?.value);
 
           this.fields.set(data.questions);
           this.rowEditFields.set(data.rowEditFields ?? []);
@@ -259,7 +263,9 @@ export class DevolutionFormulaComponent implements OnInit {
       }
 
       const hasInitialValue = field.value !== null && field.value !== undefined && field.value !== '';
-      field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      if (!field.disabled) {
+        field.readonly = !hasInitialValue && field.readonly && field.formFieldType !== 'date' ? false : field.readonly;
+      }
 
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
       this.form.addControl(field.key, formControl);
@@ -505,6 +511,9 @@ export class DevolutionFormulaComponent implements OnInit {
       case DF_SUPPORTING_ACTION.REVALIDATE_EXCEL:
         this.revalidateExcel();
         return;
+      case DF_SUPPORTING_ACTION.REGISTER_ULB:
+        this.router.navigate(['/xvifc', this.yearId, 'register-ulb']);
+        return;
       default:
         return;
     }
@@ -680,8 +689,8 @@ export class DevolutionFormulaComponent implements OnInit {
 
   /**
    * For `finalSubmit`: every error on visible controls must be absent.
-   * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed),
-   * but all other errors block — including `requiredTrue`.
+   * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed) —
+   * this currently includes `requiredTrue` too (see TODO below).
    */
   private isValidForSubmitType(action: SubmitType): boolean {
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
@@ -689,29 +698,16 @@ export class DevolutionFormulaComponent implements OnInit {
       const control = this.form.get(field.key);
       if (!control?.errors) continue;
 
-      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
+      // TODO: requiredTrue (declaration/confirmation checkboxes) is temporarily not mandatory for
+      // saveAsDraft either — uncomment both lines below to restore the original "still blocks drafts" behavior.
+      // const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
 
       for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
+        if (action === 'saveAsDraft' && errorKey === 'required' /* && !hasRequiredTrueValidator */) continue;
         return false;
       }
     }
     return true;
-  }
-
-  /**
-   * Returns the visible-field payload with `excelFile` restored to its raw control value.
-   * `DynamicFormVisibilityService.getVisiblePayload` serializes file fields into the backend
-   * `CommonFile` shape (`originalName`/`path`/...) used by other dynamic-form consumers, but this
-   * form's own contract (`DevolutionFileRef`) expects `{ fileName, fileUrl, ... }`. Without this
-   * override, `isValidDevolutionFileRef` always fails and save-draft/final-submit silently no-op.
-   */
-  private getVisiblePayloadWithRawFile(): Record<string, unknown> {
-    const payload = this.visibilityService.getVisiblePayload(this.form, this.fields());
-    if ('excelFile' in payload) {
-      payload['excelFile'] = this.form.get('excelFile')?.value ?? null;
-    }
-    return payload;
   }
 
   /** Clears previous API errors, posts the visible payload as a draft, then reloads on success. */
@@ -719,7 +715,7 @@ export class DevolutionFormulaComponent implements OnInit {
     this.clearAllApiErrors();
     this.isSavingDraft.set(true);
 
-    const visiblePayload = this.getVisiblePayloadWithRawFile();
+    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
     const payload: SaveDraftDevolutionPayload = {
       stateId: this.stateId,
       yearId: this.yearId,
@@ -747,7 +743,7 @@ export class DevolutionFormulaComponent implements OnInit {
   private executeFinalSubmit(): void {
     this.clearAllApiErrors();
 
-    const visiblePayload = this.getVisiblePayloadWithRawFile();
+    const visiblePayload = this.visibilityService.getVisiblePayload(this.form, this.fields());
     const finalSubmitData = buildDevolutionFinalSubmitPayloadData(visiblePayload);
 
     if (!finalSubmitData) {

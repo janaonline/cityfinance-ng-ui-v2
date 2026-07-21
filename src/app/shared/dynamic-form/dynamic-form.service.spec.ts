@@ -4,18 +4,78 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { FieldConfig } from './field.interface';
+import { UploadedFileMetadata } from './components/file/file-metadata.types';
 import { DynamicFormService } from './dynamic-form.service';
 
 describe('DynamicFormService', () => {
   let service: DynamicFormService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }] });
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule],
+      providers: [
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: {} },
+      ],
+    });
     service = TestBed.inject(DynamicFormService);
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  describe('createContorl — actualTarget', () => {
+    const field = {
+      key: 'ind1',
+      label: 'Per capita supply of water',
+      formFieldType: 'actualTarget',
+      validations: [
+        { name: 'required', validator: null, message: 'Required.' },
+        { name: 'min', validator: 0, message: 'Cannot be negative.' },
+        { name: 'max', validator: 1000, message: 'Cannot exceed 1000.' },
+      ],
+    } as unknown as FieldConfig;
+
+    it('builds a nested FormGroup with actual/target sub-controls', () => {
+      const control = service.createContorl(field);
+
+      expect(control instanceof FormGroup).toBeTrue();
+      expect((control as FormGroup).get('actual')).toBeTruthy();
+      expect((control as FormGroup).get('target')).toBeTruthy();
+    });
+
+    it('seeds initial values from field.value and serializes back to { actual, target }', () => {
+      const control = service.createContorl({ ...field, value: { actual: 120, target: 150 } } as FieldConfig);
+
+      expect(control.value).toEqual({ actual: 120, target: 150 });
+    });
+
+    it('applies the shared validations array to both sub-controls independently', () => {
+      const control = service.createContorl(field) as FormGroup;
+
+      control.get('actual')?.setValue(-5);
+      control.get('target')?.setValue(5000);
+
+      expect(control.get('actual')?.hasError('min')).toBeTrue();
+      expect(control.get('actual')?.hasError('max')).toBeFalse();
+      expect(control.get('target')?.hasError('max')).toBeTrue();
+      expect(control.get('target')?.hasError('min')).toBeFalse();
+    });
+
+    it('marks both sub-controls required when empty', () => {
+      const control = service.createContorl(field) as FormGroup;
+
+      expect(control.get('actual')?.hasError('required')).toBeTrue();
+      expect(control.get('target')?.hasError('required')).toBeTrue();
+    });
+
+    it('disables both sub-controls when readonly', () => {
+      const control = service.createContorl(field, false, true) as FormGroup;
+
+      expect(control.get('actual')?.disabled).toBeTrue();
+      expect(control.get('target')?.disabled).toBeTrue();
+    });
   });
 
   it('normalizes an empty standalone file value to null so required validation starts invalid', () => {
@@ -39,23 +99,102 @@ describe('DynamicFormService', () => {
     expect(control.invalid).toBeTrue();
   });
 
-  it('preserves a populated standalone file value for patch/edit mode', () => {
-    const populatedValue = {
-      fileName: 'minutes.pdf',
-      fileUrl: '/objects/minutes.pdf',
-      fileSize: 1024,
-      mimeType: 'application/pdf',
-    };
-
+  it('normalizes a pre-canonical persisted file value into the canonical shape for patch/edit mode', () => {
     const control = service.createContorl({
       key: 'attachment',
       label: 'Attachment',
       formFieldType: 'file',
-      value: populatedValue,
+      value: {
+        fileName: 'minutes.pdf',
+        fileUrl: '/objects/minutes.pdf',
+        fileSize: 1024,
+        mimeType: 'application/pdf',
+      },
     } as FieldConfig);
 
-    expect(control.value).toEqual({ ...populatedValue, pageCount: null });
+    expect(control.value).toEqual({
+      originalName: 'minutes.pdf',
+      path: '/objects/minutes.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 1,
+      pageCount: null,
+    });
     expect(control.valid).toBeTrue();
+  });
+
+  it('preserves a canonical persisted file value and drops the obsolete extension key', () => {
+    const control = service.createContorl({
+      key: 'attachment',
+      label: 'Attachment',
+      formFieldType: 'file',
+      value: {
+        originalName: 'minutes.pdf',
+        path: '/objects/minutes.pdf',
+        mimeType: 'application/pdf',
+        extension: 'pdf',
+        sizeKb: 128,
+        pageCount: 4,
+      },
+    } as FieldConfig);
+
+    expect(control.value).toEqual({
+      originalName: 'minutes.pdf',
+      path: '/objects/minutes.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 128,
+      pageCount: 4,
+    });
+    expect(control.valid).toBeTrue();
+  });
+
+  it('preserves a CommonFile-shaped standalone file value (originalName/path/sizeKb) for patch/edit mode', () => {
+    const control = service.createContorl({
+      key: 'supportingDocumentFile',
+      label: 'Supporting Document',
+      formFieldType: 'file',
+      value: {
+        originalName: 'income-statement-schedules.pdf',
+        path: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
+        mimeType: 'application/pdf',
+        extension: 'pdf',
+        sizeKb: 964.44,
+        pageCount: 6,
+      },
+    } as FieldConfig);
+
+    expect(control.value).toEqual({
+      originalName: 'income-statement-schedules.pdf',
+      path: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 964.44,
+      pageCount: 6,
+    });
+    expect(control.valid).toBeTrue();
+  });
+
+  it('creates a disabled FormControl when field.disabled is true', () => {
+    const control = service.createContorl({
+      key: 'ulbCount',
+      label: 'ULB count',
+      formFieldType: 'number',
+      value: 431,
+      disabled: true,
+    } as FieldConfig);
+
+    expect(control.disabled).toBeTrue();
+    expect(control.value).toBe(431);
+  });
+
+  it('does not disable a date field when only field.readonly is true', () => {
+    const control = service.createContorl({
+      key: 'startDate',
+      label: 'Start date',
+      formFieldType: 'date',
+      value: null,
+      readonly: true,
+    } as FieldConfig);
+
+    expect(control.disabled).toBeFalse();
   });
 
   it('serializes date field payload values to UTC ISO strings', () => {
@@ -210,7 +349,10 @@ describe('DynamicFormService', () => {
           {
             key: 'questionnaireField',
             formFieldType: 'questionnaire',
-            data: [{ key: 'totVacancy', value: 1 }, { key: 'totSanction', value: 2 }],
+            data: [
+              { key: 'totVacancy', value: 1 },
+              { key: 'totSanction', value: 2 },
+            ],
           },
           {
             key: 'fileField',
@@ -265,17 +407,71 @@ describe('DynamicFormService', () => {
     } as FieldConfig);
 
     expect(withName.value).toEqual({
-      fileName: 'report.pdf',
-      fileUrl: '/docs/report.pdf',
-      fileSize: 2048,
+      originalName: 'report.pdf',
+      path: '/docs/report.pdf',
+      mimeType: '',
+      sizeKb: 2,
       pageCount: null,
     });
     expect(withUrlOnly.value).toEqual({
-      fileName: 'derived.pdf',
-      fileUrl: '/docs/derived.pdf?download=true',
-      fileSize: null,
+      originalName: 'derived.pdf',
+      path: '/docs/derived.pdf?download=true',
+      mimeType: '',
+      sizeKb: 0,
       pageCount: null,
     });
+  });
+
+  it('returns standalone file values unchanged and unmutated when serializing payloads', () => {
+    const fileValue: UploadedFileMetadata = {
+      originalName: 'report.pdf',
+      path: 'xvi-fc/state/example/report.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 128,
+      pageCount: 4,
+    };
+    const snapshot = { ...fileValue };
+    const fileField = { key: 'file', formFieldType: 'file' } as FieldConfig;
+
+    const serialized = service.serializeFieldValue(fileField, fileValue);
+
+    expect(serialized).toBe(fileValue);
+    expect(fileValue).toEqual(snapshot);
+  });
+
+  it('serializes a legacy-hydrated file value unchanged', () => {
+    const hydratedValue: UploadedFileMetadata = {
+      originalName: 'old.pdf',
+      path: '/objects/old.pdf',
+      mimeType: '',
+      sizeKb: 2,
+      pageCount: null,
+    };
+
+    const serialized = service.serializeFieldValue(
+      { key: 'file', formFieldType: 'file' } as FieldConfig,
+      hydratedValue,
+    );
+
+    expect(serialized).toBe(hydratedValue);
+  });
+
+  it('serializes empty or invalid file values to null', () => {
+    const fileField = { key: 'file', formFieldType: 'file' } as FieldConfig;
+
+    expect(service.serializeFieldValue(fileField, null)).toBeNull();
+    expect(service.serializeFieldValue(fileField, undefined)).toBeNull();
+    expect(service.serializeFieldValue(fileField, 'not-a-file')).toBeNull();
+    expect(service.serializeFieldValue(fileField, { fileName: 'old.pdf', fileUrl: '/objects/old.pdf' })).toBeNull();
+    expect(
+      service.serializeFieldValue(fileField, {
+        originalName: 'bad.pdf',
+        path: '/objects/bad.pdf',
+        mimeType: '',
+        sizeKb: Number.NaN,
+        pageCount: null,
+      }),
+    ).toBeNull();
   });
 
   it('skips missing keys while serializing form payloads', () => {

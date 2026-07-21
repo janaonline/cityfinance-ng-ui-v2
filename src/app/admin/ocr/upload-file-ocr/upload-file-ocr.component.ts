@@ -1,14 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-  OnInit,
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, computed, inject, signal, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -110,9 +101,7 @@ export class UploadFileOcrComponent implements OnInit {
   readonly showRawResponse = signal(false);
   readonly successfulResponse = computed<OcrResponse | null>(() => {
     const response = this.responseData();
-    return isSuccessfulOcrResponse(response) && !isErroredOcrJobResponse(response)
-      ? response
-      : null;
+    return isSuccessfulOcrResponse(response) && !isErroredOcrJobResponse(response) ? response : null;
   });
   readonly failedResponse = computed<FailedOcrResponse | null>(() => {
     const response = this.responseData();
@@ -124,7 +113,7 @@ export class UploadFileOcrComponent implements OnInit {
   });
 
   constructor() {
-    this.globalLoader.hideLayout();
+    // this.globalLoader.hideLayout();
   }
 
   ngOnInit(): void {
@@ -211,10 +200,7 @@ export class UploadFileOcrComponent implements OnInit {
           }
 
           this.uploadState.set('success');
-          this.utilityService.swalPopup(
-            'Upload complete',
-            'The OCR request has been submitted successfully.',
-          );
+          this.utilityService.swalPopup('Upload complete', 'The OCR request has been submitted successfully.');
         },
         error: (error) => {
           this.responseData.set((error?.error ?? error) as OcrApiResponse);

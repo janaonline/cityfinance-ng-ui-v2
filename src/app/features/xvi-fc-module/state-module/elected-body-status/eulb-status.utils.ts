@@ -1,3 +1,4 @@
+import { isUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -22,11 +23,11 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 export function isValidEulbFileValue(value: unknown): value is EulbFileValue {
-  return isRecord(value) && isNonEmptyString(value['fileName']) && isNonEmptyString(value['fileUrl']);
+  return isUploadedFileMetadata(value);
 }
 
 export function hasEulbFileValue(value: unknown): boolean {
-  return isRecord(value) && (isNonEmptyString(value['fileName']) || isNonEmptyString(value['fileUrl']));
+  return isRecord(value) && (isNonEmptyString(value['originalName']) || isNonEmptyString(value['path']));
 }
 
 function normalizeUlbCount(value: unknown): number | undefined {
@@ -55,23 +56,14 @@ export function buildEulbFormPayloadData(visiblePayload: Record<string, unknown>
 export function buildEulbFinalSubmitPayloadData(
   visiblePayload: Record<string, unknown>,
 ): EulbFinalSubmitPayloadData | null {
-  const ulbCount = normalizeUlbCount(visiblePayload['ulbCount']);
   const electedBodyExcelFile = visiblePayload['electedBodyExcelFile'];
   const checkboxConfirmation = visiblePayload['checkboxConfirmation'];
 
-  if (
-    ulbCount === undefined ||
-    !isValidEulbFileValue(electedBodyExcelFile) ||
-    typeof checkboxConfirmation !== 'boolean'
-  ) {
+  if (!isValidEulbFileValue(electedBodyExcelFile) || typeof checkboxConfirmation !== 'boolean') {
     return null;
   }
 
-  return {
-    ulbCount,
-    electedBodyExcelFile,
-    checkboxConfirmation,
-  };
+  return { electedBodyExcelFile, checkboxConfirmation };
 }
 
 function errorsMapToRowErrors(errorsMap: unknown): EulbRowUpdateApiError[] {

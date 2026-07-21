@@ -8,9 +8,11 @@ import {
 
 describe('EULB status payload builders', () => {
   const fileValue: EulbFileValue = {
-    fileName: 'eulb.xlsx',
-    fileUrl: 'https://example.test/eulb.xlsx',
-    fileSize: 2048,
+    originalName: 'eulb.xlsx',
+    path: 'https://example.test/eulb.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    sizeKb: 2,
+    pageCount: null,
   };
 
   it('allows draft payload data to remain incomplete', () => {
@@ -26,28 +28,46 @@ describe('EULB status payload builders', () => {
     });
   });
 
-  it('builds final-submit payload data only when all required values are valid', () => {
+  it('builds final-submit payload data when file and confirmation are present (ulbCount is backend-computed and excluded)', () => {
+    // ulbCount is excluded by includeInPayload:false — builder must succeed without it
     expect(
       buildEulbFinalSubmitPayloadData({
-        ulbCount: 100,
         electedBodyExcelFile: fileValue,
         checkboxConfirmation: true,
       }),
     ).toEqual({
-      ulbCount: 100,
       electedBodyExcelFile: fileValue,
       checkboxConfirmation: true,
     });
 
+    // missing file → null
     expect(
       buildEulbFinalSubmitPayloadData({
-        ulbCount: 100,
         checkboxConfirmation: true,
+      }),
+    ).toBeNull();
+
+    // missing confirmation → null
+    expect(
+      buildEulbFinalSubmitPayloadData({
+        electedBodyExcelFile: fileValue,
       }),
     ).toBeNull();
   });
 
-  it('converts numeric string ulbCount values to numbers before payload construction', () => {
+  it('buildEulbFinalSubmitPayloadData succeeds without ulbCount in the visible payload', () => {
+    expect(
+      buildEulbFinalSubmitPayloadData({
+        electedBodyExcelFile: fileValue,
+        checkboxConfirmation: true,
+      }),
+    ).toEqual({
+      electedBodyExcelFile: fileValue,
+      checkboxConfirmation: true,
+    });
+  });
+
+  it('converts numeric string ulbCount values to numbers in draft payloads', () => {
     expect(
       buildEulbFormPayloadData({
         ulbCount: '42',
@@ -56,31 +76,32 @@ describe('EULB status payload builders', () => {
       }).ulbCount,
     ).toBe(42);
 
+    // ulbCount is not part of the final-submit result (excluded by includeInPayload:false)
     expect(
       buildEulbFinalSubmitPayloadData({
-        ulbCount: '42',
         electedBodyExcelFile: fileValue,
         checkboxConfirmation: true,
       }),
     ).toEqual({
-      ulbCount: 42,
       electedBodyExcelFile: fileValue,
       checkboxConfirmation: true,
     });
   });
 
-  it('keeps final-submit stricter than draft payload data', () => {
-    const partialPayload = {
+  it('final-submit returns null when file or confirmation is missing', () => {
+    const payloadWithFile = {
       ulbCount: 12,
       checkboxConfirmation: true,
     };
 
-    expect(buildEulbFormPayloadData(partialPayload)).toEqual({
+    // Draft builder still accepts ulbCount from arbitrary payload objects
+    expect(buildEulbFormPayloadData(payloadWithFile)).toEqual({
       ulbCount: 12,
       electedBodyExcelFile: undefined,
       checkboxConfirmation: true,
     });
-    expect(buildEulbFinalSubmitPayloadData(partialPayload)).toBeNull();
+    // Final-submit builder returns null when file is missing
+    expect(buildEulbFinalSubmitPayloadData(payloadWithFile)).toBeNull();
   });
 
   it('builds row update payloads with the existing edit-field semantics', () => {

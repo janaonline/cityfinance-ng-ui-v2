@@ -120,13 +120,7 @@ export type FieldSupportingContent =
       badges?: FieldSupportingBadge[];
     };
 
-export type UploadedFileValue = {
-  fileName: string;
-  fileUrl: string;
-  fileSize: number | null;
-  mimeType?: string;
-  pageCount?: number | null;
-} | null;
+export type { UploadedFileMetadata } from './components/file/file-metadata.types';
 
 export interface LegacyFileValue {
   name: string;
@@ -177,6 +171,10 @@ export interface FieldConfig {
   render?: boolean;
   /** When `false`, the field is excluded from the visible payload on submit. Defaults to `true`. */
   includeInPayload?: boolean;
+  /** When `true`, the FormControl is created disabled (backend-computed field). */
+  disabled?: boolean;
+  /** Explanatory text shown as a hint when the field is disabled by the backend. */
+  disabledReason?: string;
   /** Bootstrap column class controlling this field's width within a `FormSectionGridComponent` row, e.g. 'col-12', 'col-md-6'. */
   grid?: string;
   /** Muted text rendered inline next to the field label, e.g. "(if available)". */

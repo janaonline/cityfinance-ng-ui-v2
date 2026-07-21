@@ -4,10 +4,14 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { HttpEventType, HttpResponse, HttpUploadProgressEvent } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { PDFDocument } from 'pdf-lib';
 import { of } from 'rxjs';
+import { SignedUrlDirective } from '../../../../core/directives/storage-url.directive';
 import { UtilityService } from '../../../../core/services/utility.service';
-import { FieldConfig, UploadedFileValue, Validator } from '../../field.interface';
+import { FieldConfig, Validator } from '../../field.interface';
+import { UploadedFileMetadata } from './file-metadata.types';
 import { FileService } from './file.service';
 import { FileComponent } from './file.component';
 
@@ -36,9 +40,8 @@ describe('FileComponent', () => {
       'getFileNameFromUrl',
     ]);
     fileService.checkSpcialCharInFileName.and.returnValue(true);
-    utilityService.getNonEmptyString.and.callFake(
-      (value: unknown): string | null =>
-        typeof value === 'string' && value.trim().length > 0 ? value.trim() : null,
+    utilityService.getNonEmptyString.and.callFake((value: unknown): string | null =>
+      typeof value === 'string' && value.trim().length > 0 ? value.trim() : null,
     );
     utilityService.formatBytes.and.callFake((bytes: number): string => `${bytes} Bytes`);
     utilityService.getFileNameFromUrl.and.callFake((fileUrl: string): string => {
@@ -47,7 +50,11 @@ describe('FileComponent', () => {
       return segments[segments.length - 1] ?? '';
     });
 
-    await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, FileComponent, ReactiveFormsModule, NoopAnimationsModule], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
+    await TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule, FileComponent, ReactiveFormsModule, NoopAnimationsModule],
+      providers: [
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: {} },
         { provide: FileService, useValue: fileService },
         { provide: UtilityService, useValue: utilityService },
       ],
@@ -68,7 +75,7 @@ describe('FileComponent', () => {
   }
 
   function createGroup(
-    initialValue: UploadedFileValue | Record<string, unknown> | null,
+    initialValue: UploadedFileMetadata | Record<string, unknown> | null,
     validators: Validator['validator'][] = [],
   ): FormGroup {
     return new FormGroup({
@@ -139,9 +146,9 @@ describe('FileComponent', () => {
 
     expect(group.invalid).toBeTrue();
     expect(component.showError()).toBeTrue();
-    expect(
-      (fixture.nativeElement.querySelector('[role="alert"]') as HTMLElement).textContent?.trim(),
-    ).toBe('File is required.');
+    expect((fixture.nativeElement.querySelector('[role="alert"]') as HTMLElement).textContent?.trim()).toBe(
+      'File is required.',
+    );
   });
 
   it('marks the standalone file control valid after a successful upload', async () => {
@@ -158,14 +165,179 @@ describe('FileComponent', () => {
 
     expect(fileControl.valid).toBeTrue();
     expect(fileControl.value).toEqual({
-      fileName: 'minutes.pdf',
-      fileUrl: '/objects/minutes.pdf',
-      fileSize: file.size,
-      pageCount: null,
+      originalName: 'minutes.pdf',
+      path: '/objects/minutes.pdf',
       mimeType: 'application/pdf',
+      sizeKb: file.size / 1024,
+      pageCount: null,
     });
     expect(component.showError()).toBeFalse();
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('File attached successfully!');
+  });
+
+  it('does not include pre-canonical keys in newly uploaded standalone values', async () => {
+    const group = createGroup(null);
+    const fileControl = group.get('attachment') as FormControl;
+    const file = new File(['minutes'], 'minutes.pdf', { type: 'application/pdf' });
+
+    mockSuccessfulUpload();
+    setup(createField(), group);
+
+    component.prepareFilesList(createFileList(file));
+    await waitUntil(() => fileControl.value !== null);
+
+    const value = fileControl.value as Record<string, unknown>;
+    // Timestamps (updatedAt server-side) are backend-owned and never created on the frontend.
+    for (const obsoleteKey of ['fileName', 'fileUrl', 'fileSize', 'extension', 'noOfPage', 'uploadedAt', 'updatedAt']) {
+      expect(obsoleteKey in value)
+        .withContext(obsoleteKey)
+        .toBeFalse();
+    }
+  });
+
+  it('stores the resolved page count for a parseable PDF upload', async () => {
+    const pdfDoc = await PDFDocument.create();
+    pdfDoc.addPage();
+    pdfDoc.addPage();
+    const pdfBytes = await pdfDoc.save();
+    const file = new File([pdfBytes], 'report.pdf', { type: 'application/pdf' });
+    const group = createGroup(null);
+    const fileControl = group.get('attachment') as FormControl;
+
+    mockSuccessfulUpload('/objects/report.pdf');
+    setup(createField(), group);
+
+    component.prepareFilesList(createFileList(file));
+    await waitUntil(() => fileControl.value !== null);
+
+    expect((fileControl.value as UploadedFileMetadata).pageCount).toBe(2);
+  });
+
+  it('stores pageCount null and the reported mime type for non-PDF uploads', async () => {
+    const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const file = new File(['a,b'], 'data.xlsx', { type: mimeType });
+    const group = createGroup(null);
+    const fileControl = group.get('attachment') as FormControl;
+
+    mockSuccessfulUpload('/objects/data.xlsx');
+    setup(createField({ allowedFileTypes: ['xlsx'] }), group);
+
+    component.prepareFilesList(createFileList(file));
+    await waitUntil(() => fileControl.value !== null);
+
+    const value = fileControl.value as UploadedFileMetadata;
+    expect(value.pageCount).toBeNull();
+    expect(value.mimeType).toBe(mimeType);
+    expect(value.sizeKb).toBe(file.size / 1024);
+  });
+
+  it('patches exactly name/url/size into a legacy nested file group after upload', async () => {
+    const legacyGroup = new FormGroup({
+      file: new FormGroup({
+        name: new FormControl<string | null>(null),
+        url: new FormControl<string | null>(null),
+        size: new FormControl<string | null>(null),
+      }),
+    });
+    const fileGroup = legacyGroup.get('file') as FormGroup;
+    const file = new File(['minutes'], 'minutes.pdf', { type: 'application/pdf' });
+
+    mockSuccessfulUpload();
+    setup(createField(), legacyGroup);
+
+    component.prepareFilesList(createFileList(file));
+    await waitUntil(() => fileGroup.get('name')?.value !== null);
+
+    // Exactly the legacy contract: no canonical keys leak into the nested group.
+    expect(fileGroup.getRawValue()).toEqual({
+      name: 'minutes.pdf',
+      url: '/objects/minutes.pdf',
+      size: `${file.size} Bytes`,
+    });
+    const rawValue = fileGroup.getRawValue() as Record<string, unknown>;
+    for (const canonicalKey of ['originalName', 'path', 'sizeKb', 'pageCount']) {
+      expect(canonicalKey in rawValue)
+        .withContext(canonicalKey)
+        .toBeFalse();
+    }
+  });
+
+  it('renders an existing canonical value through the standalone view model', () => {
+    const value: UploadedFileMetadata = {
+      originalName: 'report.pdf',
+      path: '/objects/report.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 128,
+      pageCount: 4,
+    };
+
+    setup(createField(), createGroup(value));
+
+    expect(component.uploadedFile()).toEqual({
+      name: 'report.pdf',
+      url: '/objects/report.pdf',
+      sizeLabel: `${128 * 1024} Bytes`,
+      mimeType: 'application/pdf',
+    });
+  });
+
+  it('renders a signed-url view link for a persisted raw storage path instead of a pending message', () => {
+    setup(
+      createField(),
+      createGroup({
+        originalName: 'sfc_form.pdf',
+        path: 'xvi-fc/state/example/sfc_form.pdf',
+        mimeType: 'application/pdf',
+        sizeKb: 27.5,
+        pageCount: 1,
+      }),
+    );
+
+    expect(component.previewUrl()).toBe('xvi-fc/state/example/sfc_form.pdf');
+    const link = fixture.debugElement.query(By.directive(SignedUrlDirective));
+    expect(link).toBeTruthy();
+    expect(link.injector.get(SignedUrlDirective).appSignedUrl()).toBe('xvi-fc/state/example/sfc_form.pdf');
+    // Raw path: href stays unset until the directive resolves a signed URL on click.
+    expect((link.nativeElement as HTMLAnchorElement).getAttribute('href')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Save to view file');
+  });
+
+  it('links an absolute https path directly without signing', () => {
+    setup(
+      createField(),
+      createGroup({
+        originalName: 'report.pdf',
+        path: 'https://signed.example.com/report.pdf',
+        mimeType: 'application/pdf',
+        sizeKb: 128,
+        pageCount: 4,
+      }),
+    );
+
+    const link = fixture.debugElement.query(By.directive(SignedUrlDirective));
+    expect(link).toBeTruthy();
+    expect((link.nativeElement as HTMLAnchorElement).getAttribute('href')).toBe(
+      'https://signed.example.com/report.pdf',
+    );
+  });
+
+  it('normalizes a pre-canonical persisted value (fileName/fileUrl/fileSize) for display', () => {
+    setup(
+      createField(),
+      createGroup({
+        fileName: 'old.pdf',
+        fileUrl: '/objects/old.pdf',
+        fileSize: 2048,
+        mimeType: 'application/pdf',
+      }),
+    );
+
+    expect(component.uploadedFile()).toEqual({
+      name: 'old.pdf',
+      url: '/objects/old.pdf',
+      sizeLabel: '2048 Bytes',
+      mimeType: 'application/pdf',
+    });
   });
 
   it('returns the standalone file control to the invalid required state after upload then delete', async () => {
@@ -199,6 +371,25 @@ describe('FileComponent', () => {
 
     expect(group.valid).toBeTrue();
     expect(component.showError()).toBeFalse();
+  });
+
+  it('populates a previously-uploaded file stored in the CommonFile shape (originalName/path/sizeKb)', () => {
+    const field = createField();
+    const group = createGroup({
+      originalName: 'income-statement-schedules.pdf',
+      extension: 'pdf',
+      mimeType: 'application/pdf',
+      pageCount: 6,
+      path: 'xvi-fc/ulb/681dd165c11cf21bf1cfd06a/2026-27/slb/supporting-document/income-statement-schedules.pdf',
+      sizeKb: 964.44,
+    });
+
+    setup(field, group);
+
+    expect(component.hasUploadedFile()).toBeTrue();
+    expect(component.uploadedFile()?.name).toBe('income-statement-schedules.pdf');
+    expect(component.uploadedFile()?.url).toContain('slb/supporting-document/income-statement-schedules.pdf');
+    expect(utilityService.formatBytes).toHaveBeenCalledWith(964.44 * 1024);
   });
 
   describe('appearance customization', () => {
@@ -311,10 +502,7 @@ describe('FileComponent', () => {
     });
 
     it('applies the configured icon to the dropzone', () => {
-      setup(
-        createField({ appearance: { color: 'success', icon: 'bi-cloud-arrow-up-fill' } }),
-        createGroup(null),
-      );
+      setup(createField({ appearance: { color: 'success', icon: 'bi-cloud-arrow-up-fill' } }), createGroup(null));
       const icon = fixture.nativeElement.querySelector('.file-dropzone i') as HTMLElement | null;
       expect(icon?.className).toContain('bi-cloud-arrow-up-fill');
     });
@@ -422,7 +610,9 @@ describe('FileComponent', () => {
   describe('data-cy selectors', () => {
     it('dropzone mode: main dropzone has field.key + -test selector', () => {
       setup(createField({ key: 'devolutionExcelFile', fileViewType: 'dropzone' }), createGroup(null));
-      const dropzone = fixture.nativeElement.querySelector('[data-cy="devolutionExcelFile-test"]') as HTMLElement | null;
+      const dropzone = fixture.nativeElement.querySelector(
+        '[data-cy="devolutionExcelFile-test"]',
+      ) as HTMLElement | null;
       expect(dropzone).toBeTruthy();
       expect(dropzone?.classList).toContain('file-dropzone');
     });
@@ -436,7 +626,9 @@ describe('FileComponent', () => {
 
     it('hidden file input has field.key + -file-input-test selector', () => {
       setup(createField({ key: 'devolutionExcelFile' }), createGroup(null));
-      const input = fixture.nativeElement.querySelector('[data-cy="devolutionExcelFile-file-input-test"]') as HTMLInputElement | null;
+      const input = fixture.nativeElement.querySelector(
+        '[data-cy="devolutionExcelFile-file-input-test"]',
+      ) as HTMLInputElement | null;
       expect(input).toBeTruthy();
       expect(input?.type).toBe('file');
     });
@@ -465,13 +657,8 @@ describe('FileComponent', () => {
 
   describe('fileRequirementText', () => {
     it('shows accepted formats and max file size when both are configured', () => {
-      setup(
-        createField({ allowedFileTypes: ['xlsx', 'xls'], maxFileSize: 20 }),
-        createGroup(null),
-      );
-      expect(component.fileRequirementText()).toBe(
-        'Accepted formats: .xlsx, .xls · Max file size: 20 MB',
-      );
+      setup(createField({ allowedFileTypes: ['xlsx', 'xls'], maxFileSize: 20 }), createGroup(null));
+      expect(component.fileRequirementText()).toBe('Accepted formats: .xlsx, .xls · Max file size: 20 MB');
       const el: HTMLElement | null = fixture.nativeElement.querySelector('.file-dropzone small:last-child');
       expect(el?.textContent?.trim()).toBe('Accepted formats: .xlsx, .xls · Max file size: 20 MB');
     });
@@ -505,9 +692,9 @@ describe('FileComponent', () => {
 
       expect(component.showStandaloneLabel()).toBeTrue();
       expect(fixture.nativeElement.querySelector('label')).toBeTruthy();
-      expect(
-        (fixture.nativeElement.querySelector('label') as HTMLElement).textContent?.trim(),
-      ).toContain('Upload Document');
+      expect((fixture.nativeElement.querySelector('label') as HTMLElement).textContent?.trim()).toContain(
+        'Upload Document',
+      );
     });
 
     it('hides the label when hideLabel is true', () => {

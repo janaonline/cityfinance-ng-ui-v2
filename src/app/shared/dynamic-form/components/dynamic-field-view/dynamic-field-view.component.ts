@@ -1,9 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
-import { ToStorageUrlPipe } from '../../../../core/pipes/to-storage-url.pipe';
+import { SignedUrlDirective } from '../../../../core/directives/storage-url.directive';
 import { MaterialModule } from '../../../../material.module';
 import { FieldConfig } from '../../field.interface';
+import { normalizeUploadedFileMetadata } from '../file/file-metadata.types';
 
 /** Em dash used as the empty-value placeholder across all field types. */
 const EMPTY = '—';
@@ -35,7 +36,7 @@ type TableRowConfig = {
  */
 @Component({
   selector: 'app-dynamic-field-view',
-  imports: [NgTemplateOutlet, MaterialModule, ToStorageUrlPipe],
+  imports: [NgTemplateOutlet, MaterialModule, SignedUrlDirective],
   template: `
     @if (normalizedType !== 'button') {
       @if (isCertificationField) {
@@ -55,13 +56,13 @@ type TableRowConfig = {
           </span>
         </div>
       } @else if (!field.hideLabel) {
-        <div class="row g-2 align-items-baseline">
-          <div class="col-12 col-md-4">
+        <div class="row g-3 my-2 align-items-start">
+          <div class="col-12 col-md-5">
             <p class="fw-semibold mb-0 custom-font-size-6">
               {{ field.position ? field.position + '. ' : '' }}{{ field.label }}
             </p>
           </div>
-          <div class="col-12 col-md-8 text-dark">
+          <div class="col-12 col-md-7">
             <ng-container [ngTemplateOutlet]="answerTpl"></ng-container>
           </div>
         </div>
@@ -109,13 +110,7 @@ type TableRowConfig = {
                 <small class="text-secondary">{{ fileView.sizeLabel }}</small>
               }
               @if (fileView.viewUrl) {
-                <a
-                  matButton="filled"
-                  [href]="fileView.viewUrl | toStorageUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="mt-1"
-                >
+                <a matButton="filled" [appSignedUrl]="fileView.viewUrl" target="_blank" class="mt-1">
                   <mat-icon>visibility</mat-icon>
                   View Document
                 </a>
@@ -124,6 +119,12 @@ type TableRowConfig = {
           } @else {
             <span class="text-secondary">&#x2014;</span>
           }
+        }
+        @case ('actualTarget') {
+          <span class="d-inline-flex flex-wrap gap-3">
+            <span><span class="text-secondary">Actual:</span> {{ actualTargetView.actual }}</span>
+            <span><span class="text-secondary">Target:</span> {{ actualTargetView.target }}</span>
+          </span>
         }
         @case ('table') {
           @if (tableRows.length) {
@@ -172,6 +173,7 @@ export class DynamicFieldViewComponent implements OnChanges {
   isChecked = false;
   fileView: FileViewModel | null = null;
   tableRows: TableRowView[] = [];
+  actualTargetView: { actual: string; target: string } = { actual: EMPTY, target: EMPTY };
 
   /**
    * True for checkbox fields and any field whose validations include `requiredTrue`.
@@ -205,6 +207,7 @@ export class DynamicFieldViewComponent implements OnChanges {
     this.isChecked = false;
     this.fileView = null;
     this.tableRows = [];
+    this.actualTargetView = { actual: EMPTY, target: EMPTY };
 
     switch (this.normalizedType) {
       case 'input':
@@ -230,6 +233,9 @@ export class DynamicFieldViewComponent implements OnChanges {
         break;
       case 'table':
         this.tableRows = this.buildTableRows();
+        break;
+      case 'actualTarget':
+        this.actualTargetView = this.buildActualTargetView(raw);
         break;
     }
   }
@@ -295,22 +301,19 @@ export class DynamicFieldViewComponent implements OnChanges {
     }
   }
 
-  /** Builds the file view model from either the standalone (`fileName/fileUrl`) or legacy (`name/url`) control shape. */
+  /** Builds the file view model from the canonical standalone control shape (pre-canonical persisted values are normalized). */
   private buildFileView(): FileViewModel | null {
     const control = this.group?.get(this.field?.key);
     if (!control) return null;
     const raw = control instanceof FormGroup ? control.getRawValue() : control.value;
-    if (!raw || typeof raw !== 'object') return null;
 
-    const v = raw as Record<string, unknown>;
-    const name = this.asNonEmptyString(v['fileName']) ?? this.asNonEmptyString(v['name']);
-    const url = this.asNonEmptyString(v['fileUrl']) ?? this.asNonEmptyString(v['url']);
-    if (!name && !url) return null;
+    const value = normalizeUploadedFileMetadata(raw);
+    if (!value) return null;
 
     return {
-      name: name ?? this.fileNameFromUrl(url),
-      sizeLabel: this.resolveFileSizeLabel(v['fileSize'] ?? v['size']),
-      viewUrl: url,
+      name: value.originalName,
+      sizeLabel: value.sizeKb > 0 ? this.formatBytes(value.sizeKb * 1024) : null,
+      viewUrl: value.path || null,
     };
   }
 
@@ -329,6 +332,16 @@ export class DynamicFieldViewComponent implements OnChanges {
       }));
       return { rowKey: row.key, rowLabel: row.label, cells };
     });
+  }
+
+  /** Formats a `{ actual, target }` pair value with the field's unit suffix, if any. */
+  private buildActualTargetView(raw: unknown): { actual: string; target: string } {
+    const pair = (raw ?? {}) as { actual?: unknown; target?: unknown };
+    const suffixText = this.field?.inputCardConfig?.suffixText;
+    const suffix = suffixText ? ` ${suffixText}` : '';
+    const format = (value: unknown): string =>
+      value === null || value === undefined || value === '' ? EMPTY : `${value}${suffix}`;
+    return { actual: format(pair.actual), target: format(pair.target) };
   }
 
   private asNonEmptyString(value: unknown): string | null {

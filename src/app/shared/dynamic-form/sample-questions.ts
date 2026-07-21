@@ -52,7 +52,7 @@ export const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
     allowedFileTypes: ['pdf'],
     maxFileSize: 20,
     folderPath: 'state/sfc-status/sfc-report',
-    value: { fileName: '', fileUrl: '', fileSize: null, mimeType: '' },
+    value: null,
     visibleWhen: {
       mode: 'all',
       conditions: [
@@ -106,12 +106,7 @@ export const TEMP_QUESTIONS: ConditionalFieldConfig[] = [
         message: 'This field is required.',
       },
     ],
-    value: {
-      fileName: '',
-      fileUrl: '',
-      fileSize: null,
-      mimeType: '',
-    },
+    value: null,
     folderPath: '',
     maxFileSize: 5,
     // fileViewType: 'button',

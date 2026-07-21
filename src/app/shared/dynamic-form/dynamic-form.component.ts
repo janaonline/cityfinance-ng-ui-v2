@@ -3,6 +3,7 @@ import { Component, Input, OnChanges, OnInit, SimpleChanges, output } from '@ang
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { DynamicFormMode, FieldSupportingActionEvent } from './field.interface';
 import { MaterialModule } from '../../material.module';
+import { ActualTargetComponent } from './components/actual-target/actual-target.component';
 import { ButtonComponent } from './components/button/button.component';
 import { CheckboxComponent } from './components/checkbox/checkbox.component';
 import { ChildFormComponent } from './components/child-form/child-form.component';
@@ -34,6 +35,7 @@ import { TextareaComponent } from './components/textarea/textarea.component';
     FileComponent,
     InputCardComponent,
     TextareaComponent,
+    ActualTargetComponent,
     DynamicFieldSupportingContentComponent,
     DynamicFieldViewComponent,
   ],

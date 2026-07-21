@@ -1,0 +1,357 @@
+<div class="container-fluid py-3">
+  @if (!stateId()) {
+    <!-- ─── State picker (no :stateId route param) ─────────────────────────── -->
+    <div class="card p-3" style="max-width: 480px">
+      <h1 class="h5 mb-3">FC Unspent Declaration — Select a State</h1>
+      @if (isLoadingStates()) {
+        <app-pre-loader></app-pre-loader>
+      } @else {
+        <label class="form-label small fw-semibold" for="fc-unspent-review-state-select">State</label>
+        <select
+          id="fc-unspent-review-state-select"
+          class="form-select mb-3"
+          [ngModel]="pickerStateId()"
+          (ngModelChange)="pickerStateId.set($event)"
+        >
+          <option [ngValue]="null" disabled>Select a state to review</option>
+          @for (state of states(); track state._id) {
+            <option [ngValue]="state._id">{{ state.name }}</option>
+          }
+        </select>
+        <button type="button" matButton="filled" [disabled]="!pickerStateId()" (click)="goToState()">
+          Review FC Unspent Declaration
+        </button>
+      }
+    </div>
+  } @else if (isLoadingReview()) {
+    <app-pre-loader></app-pre-loader>
+    <app-pre-loader></app-pre-loader>
+    <app-pre-loader></app-pre-loader>
+  } @else if (loadError()) {
+    <div class="alert alert-danger py-2 px-3" role="alert" data-cy="fc-unspent-review-load-error">
+      {{ loadError() }}
+    </div>
+    <button type="button" matButton="outlined" (click)="loadReview()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Retry
+    </button>
+  } @else {
+    @if (review(); as data) {
+      <!-- ─── Metadata ─────────────────────────────────────────────────────── -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+          <div>
+            <div class="text-secondary text-uppercase fw-semibold custom-font-size-7 mb-1">
+              {{ data.designYear }} &middot; {{ data.applicableFc === '15TH_FC' ? '15th' : '14th' }} FC
+            </div>
+            <h1 class="h5 mb-0">{{ data.stateName }}</h1>
+          </div>
+          <span class="badge text-bg-secondary align-self-center">{{ data.currentFormStatusLabel }}</span>
+        </div>
+
+        @if (formError()) {
+          <div class="alert alert-danger py-2 px-3 small mb-2" role="alert" data-cy="fc-unspent-review-form-error">
+            {{ formError() }}
+          </div>
+        }
+
+        <div class="row row-cols-2 row-cols-md-4 g-2 small mb-2">
+          <div>
+            <span class="text-secondary">Yes/No answer:</span>
+            {{ data.isFcUnspent === null ? 'Not answered' : isYesBranch() ? 'Yes' : 'No' }}
+          </div>
+          @if (isYesBranch()) {
+            <div>
+              <span class="text-secondary">Certification:</span>
+              {{ data.checkboxConfirmation ? 'Certified' : 'Not certified' }}
+            </div>
+          }
+        </div>
+
+        @if (data.actors.length) {
+          <div class="small text-secondary">
+            @for (actor of data.actors; track actor.action; let isLast = $last) {
+              <span
+                >{{ actor.action }} {{ actor.by ?? '—' }}
+                @if (actor.date) {
+                  on {{ actor.date | date: 'mediumDate' }}
+                }
+              </span>
+              @if (!isLast) {
+                <span class="mx-1">&middot;</span>
+              }
+            }
+          </div>
+        }
+
+        @if (isYesBranch()) {
+          <hr class="my-2" />
+          <div class="row row-cols-3 row-cols-md-7 g-2 text-center small">
+            <div>
+              <div class="fw-semibold">{{ data.rowSummary.total }}</div>
+              <div class="text-secondary">Total</div>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ data.rowSummary.active }}</div>
+              <div class="text-secondary">Active</div>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ data.rowSummary.updatePending }}</div>
+              <div class="text-secondary">Pending</div>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ data.rowSummary.rejected }}</div>
+              <div class="text-secondary">Rejected</div>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ data.rowSummary.needsUpdate }}</div>
+              <div class="text-secondary">Needs Update</div>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ data.rowSummary.eligible }}</div>
+              <div class="text-secondary">Eligible</div>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ data.rowSummary.ineligible }}</div>
+              <div class="text-secondary">Ineligible</div>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (isNoBranch()) {
+        <!-- ─── No branch: signed declaration only ────────────────────────────── -->
+        <div class="card p-3 mb-3">
+          <div class="text-body-secondary small mb-1">Signed Declaration</div>
+          @if (declarationFile(); as file) {
+            <a class="btn btn-outline-cfPrimary btn-sm" [appSignedUrl]="file.path" target="_blank">
+              <i class="bi bi-eye"></i> View Declaration
+            </a>
+          } @else {
+            <span class="text-muted small">No declaration on file.</span>
+          }
+        </div>
+      }
+
+      @if (isYesBranch()) {
+        <!-- ─── Filters ────────────────────────────────────────────────────────── -->
+        <div class="card p-3 mb-2">
+          <form [formGroup]="filterForm" class="row g-2 align-items-end">
+            <div class="col-sm-5">
+              <label class="form-label small fw-semibold" for="fc-unspent-review-search">Search</label>
+              <input
+                id="fc-unspent-review-search"
+                type="search"
+                class="form-control form-control-sm"
+                placeholder="ULB name, census/SB code…"
+                formControlName="search"
+              />
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label small fw-semibold" for="fc-unspent-review-status">Row status</label>
+              <select id="fc-unspent-review-status" class="form-select form-select-sm" formControlName="rowStatus">
+                <option value="">All statuses</option>
+                @for (
+                  status of [
+                    ROW_STATUS.ACTIVE,
+                    ROW_STATUS.UPDATE_PENDING,
+                    ROW_STATUS.REJECTED,
+                    ROW_STATUS.NEEDS_UPDATE,
+                  ];
+                  track status
+                ) {
+                  <option [value]="status">{{ ROW_STATUS_LABEL[status] }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label small fw-semibold" for="fc-unspent-review-eligibility">Eligibility</label>
+              <select
+                id="fc-unspent-review-eligibility"
+                class="form-select form-select-sm"
+                formControlName="eligibility"
+              >
+                <option value="">Any</option>
+                <option value="true">Eligible</option>
+                <option value="false">Ineligible</option>
+              </select>
+            </div>
+          </form>
+        </div>
+
+        <!-- ─── Bulk actions ───────────────────────────────────────────────────── -->
+        @if (canReviewRows()) {
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="small text-secondary" data-cy="fc-unspent-review-selected-count"
+              >{{ selectedCount() }} selected</span
+            >
+            <button
+              type="button"
+              matButton="outlined"
+              [disabled]="!canBulkApprove() || isBulkApproving()"
+              (click)="onBulkApprove()"
+              data-cy="fc-unspent-review-bulk-approve"
+            >
+              @if (isBulkApproving()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              }
+              Approve selected
+            </button>
+            <button
+              type="button"
+              matButton="outlined"
+              [disabled]="!canBulkReject() || isBulkRejecting()"
+              (click)="onBulkReject()"
+              data-cy="fc-unspent-review-bulk-reject"
+            >
+              Reject selected
+            </button>
+          </div>
+        }
+
+        <!-- ─── Row table ──────────────────────────────────────────────────────── -->
+        <div class="table-responsive mb-2">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light border-bottom">
+              <tr>
+                @if (canReviewRows()) {
+                  <th scope="col" class="ps-3">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="allReviewableSelectedOnPage()"
+                      [disabled]="reviewableRowsOnPage().length === 0"
+                      (change)="toggleSelectAllOnPage()"
+                      aria-label="Select all reviewable rows on this page"
+                    />
+                  </th>
+                }
+                <th scope="col" class="small fw-semibold text-nowrap">#</th>
+                <th scope="col" class="small fw-semibold text-nowrap">Census/SB Code</th>
+                <th scope="col" class="small fw-semibold">ULB</th>
+                <th scope="col" class="small fw-semibold text-end text-nowrap">Allocation</th>
+                <th scope="col" class="small fw-semibold text-end text-nowrap">Unspent</th>
+                <th scope="col" class="small fw-semibold text-end text-nowrap">% of Alloc.</th>
+                <th scope="col" class="small fw-semibold text-nowrap">Eligibility</th>
+                <th scope="col" class="small fw-semibold text-nowrap">Row Status</th>
+                <th scope="col" class="small fw-semibold">Rejection Remark</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (isLoadingRows()) {
+                <tr>
+                  <td [attr.colspan]="canReviewRows() ? 10 : 9" class="text-center py-3 text-secondary small">
+                    Loading rows…
+                  </td>
+                </tr>
+              } @else if (rowLoadError()) {
+                <tr>
+                  <td [attr.colspan]="canReviewRows() ? 10 : 9" class="text-center py-3 text-danger small">
+                    {{ rowLoadError() }}
+                  </td>
+                </tr>
+              } @else if (rows().length === 0) {
+                <tr>
+                  <td [attr.colspan]="canReviewRows() ? 10 : 9" class="text-center py-3 text-secondary small">
+                    No rows found.
+                  </td>
+                </tr>
+              } @else {
+                @for (row of rows(); track row._id) {
+                  <tr>
+                    @if (canReviewRows()) {
+                      <td class="ps-3">
+                        <input
+                          type="checkbox"
+                          class="form-check-input"
+                          [checked]="isSelected(row._id)"
+                          [disabled]="!row.permissions.canApprove && !row.permissions.canReject"
+                          (change)="toggleRow(row)"
+                          [attr.aria-label]="'Select ' + row.ulbName"
+                        />
+                      </td>
+                    }
+                    <td class="small text-secondary">{{ row.rowNumber }}</td>
+                    <td class="small text-secondary text-nowrap">{{ row.censusCode ?? row.sbCode ?? '—' }}</td>
+                    <td class="small">{{ row.ulbName }}</td>
+                    <td class="small text-end text-secondary">{{ row.allocationAmount }}</td>
+                    <td class="small text-end">{{ row.unspentAmount }}</td>
+                    <td class="small text-end">{{ row.allocationPerc | number: '1.0-2' }}%</td>
+                    <td class="small">
+                      @if (row.eligibility) {
+                        <span class="badge text-bg-success small">Eligible</span>
+                      } @else {
+                        <span class="badge text-bg-danger small">Not Eligible</span>
+                      }
+                    </td>
+                    <td class="small">
+                      @if (row.rowStatus) {
+                        <span class="badge small" [class]="ROW_STATUS_BADGE_CLASS[row.rowStatus]">{{
+                          ROW_STATUS_LABEL[row.rowStatus]
+                        }}</span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td class="small">{{ row.rejectionRemark ?? '—' }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ─── Pagination ─────────────────────────────────────────────────────── -->
+        <div class="d-flex align-items-center justify-content-end gap-2 mb-3">
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            [disabled]="!hasPrev()"
+            (click)="goToRowsPage(rowsPage() - 1)"
+          >
+            &lsaquo; Prev
+          </button>
+          <span class="text-secondary small">{{ rowsPage() }} / {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            [disabled]="!hasNext()"
+            (click)="goToRowsPage(rowsPage() + 1)"
+          >
+            Next &rsaquo;
+          </button>
+        </div>
+      }
+
+      <!-- ─── Complete-form actions ────────────────────────────────────────────── -->
+      @if (canApproveForm() || canRejectForm()) {
+        <div class="card p-3 d-flex flex-row justify-content-end gap-2">
+          @if (canRejectForm()) {
+            <button
+              type="button"
+              matButton="outlined"
+              [disabled]="isRejectingForm()"
+              (click)="onRejectForm()"
+              data-cy="fc-unspent-review-reject-form"
+            >
+              Reject declaration
+            </button>
+          }
+          @if (canApproveForm()) {
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="isApprovingForm()"
+              (click)="onApproveForm()"
+              data-cy="fc-unspent-review-approve-form"
+            >
+              @if (isApprovingForm()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              }
+              Approve declaration
+            </button>
+          }
+        </div>
+      }
+    }
+  }
+</div>

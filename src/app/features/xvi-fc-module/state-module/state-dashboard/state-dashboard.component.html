@@ -1,0 +1,256 @@
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="dashboard-container">
+    <div class="top-accent"></div>
+
+    <main class="content-wrap p-3 p-md-4">
+      @if (isLoading) {
+        <mat-card
+          appearance="outlined"
+          class="dashboard-state-card dashboard-loading-state"
+          data-cy="dashboard-loading"
+        >
+          <mat-progress-spinner
+            mode="indeterminate"
+            diameter="40"
+            aria-label="Loading State dashboard"
+          ></mat-progress-spinner>
+          <p>Loading State dashboard…</p>
+        </mat-card>
+      } @else if (errorMessage) {
+        <mat-card appearance="outlined" class="dashboard-state-card dashboard-error-state" data-cy="dashboard-error">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <p>{{ errorMessage }}</p>
+          <button mat-stroked-button type="button" (click)="retryDashboard()" data-cy="dashboard-retry">Retry</button>
+        </mat-card>
+      } @else if (isEmpty) {
+        <mat-card appearance="outlined" class="dashboard-state-card dashboard-empty-state" data-cy="dashboard-empty">
+          <mat-icon aria-hidden="true">inbox</mat-icon>
+          <p>No dashboard data is available for the selected State and financial year.</p>
+          <button mat-stroked-button type="button" (click)="retryDashboard()">Retry</button>
+        </mat-card>
+      } @else {
+        @if (dashboardData; as dashboard) {
+          <div class="content-stack d-flex flex-column gap-4" data-cy="dashboard-content">
+            <header class="dashboard-header">
+              <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="text-secondary text-uppercase fw-semibold custom-font-size-7">
+                  {{ roleLabel(dashboard.context.userRole) }} &nbsp;&middot;&nbsp; Grant-processing overview
+                </span>
+
+                <mat-chip-set aria-label="Selected financial year">
+                  <mat-chip>{{ dashboard.context.financialYear }}</mat-chip>
+                  @if (dashboard.context.grantType) {
+                    <mat-chip>{{ dashboard.context.grantType }}</mat-chip>
+                  }
+                </mat-chip-set>
+              </div>
+
+              <h1 class="page-title mb-2">{{ dashboard.context.stateName }}</h1>
+              <!-- <p class="page-subtitle text-secondary mb-0">
+                {{ roleLabel(dashboard.context.userRole) }} · Grant-processing overview
+              </p> -->
+            </header>
+
+            <section class="metric-grid" aria-label="State grant metrics">
+              @for (metric of metricCards; track metric.key) {
+                <mat-card appearance="outlined" class="metric-card" [attr.data-metric-key]="metric.key">
+                  <mat-card-content>
+                    <div class="metric-card__top">
+                      <p class="metric-card__label mb-2">{{ metric.label }}</p>
+                      <span class="dashboard-icon-badge metric-card__icon" aria-hidden="true">
+                        <mat-icon>{{ metricIcon(metric.key) }}</mat-icon>
+                      </span>
+                    </div>
+                    <p class="metric-card__value mb-2">{{ metric.value }}</p>
+                    <p class="metric-card__description mb-0">{{ metric.description }}</p>
+                  </mat-card-content>
+                </mat-card>
+              }
+            </section>
+
+            <section aria-labelledby="state-data-heading">
+              <mat-card appearance="outlined" class="dashboard-card">
+                <mat-card-header>
+                  <mat-card-title id="state-data-heading">Submit your State Data</mat-card-title>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="dashboard-list state-task-list">
+                    @for (task of dashboard.stateDataTasks; track task.key; let isLast = $last) {
+                      <div class="state-task-row" [attr.data-task-key]="task.key">
+                        <div class="state-task-row__main">
+                          <mat-icon
+                            class="task-icon"
+                            [class.task-icon--done]="task.status === 'DONE'"
+                            aria-hidden="true"
+                          >
+                            {{ taskIcon(task.status) }}
+                          </mat-icon>
+
+                          <div class="state-task-row__copy">
+                            <div class="list-title">{{ task.title }}</div>
+                            <div class="list-subtitle">{{ task.subtitle }}</div>
+                          </div>
+                        </div>
+
+                        <div class="state-task-row__action">
+                          @if (task.status === 'DONE') {
+                            <span class="status-pill status-pill--done">Done</span>
+                          } @else if (task.actionLabel) {
+                            <button
+                              matButton="text"
+                              type="button"
+                              class="action-button"
+                              (click)="onStateTaskAction(task)"
+                              [attr.aria-label]="task.actionLabel + ' ' + task.title"
+                              data-cy="state-dashboard-continue"
+                            >
+                              {{ task.actionLabel }} <span aria-hidden="true">→</span>
+                            </button>
+                          } @else {
+                            <span class="status-pill status-pill--pending">Pending</span>
+                          }
+                        </div>
+                      </div>
+
+                      @if (!isLast) {
+                        <mat-divider></mat-divider>
+                      }
+                    }
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </section>
+
+            <section aria-labelledby="ulb-submissions-heading">
+              <mat-card appearance="outlined" class="dashboard-card">
+                <mat-card-header>
+                  <mat-card-title id="ulb-submissions-heading">Review ULB Submissions</mat-card-title>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="status-grid" aria-label="ULB submission status summary">
+                    @for (summary of dashboard.ulbSubmissionSummary; track summary.key) {
+                      <div
+                        class="status-tile"
+                        [class]="'status-tile status-tile--' + summaryTone(summary.key)"
+                        [attr.data-summary-key]="summary.key"
+                      >
+                        <div class="status-tile__top">
+                          <p class="status-tile__label mb-2">{{ summary.label }}</p>
+                          <span class="dashboard-icon-badge status-tile__icon" aria-hidden="true">
+                            <mat-icon>{{ summaryIcon(summary.key) }}</mat-icon>
+                          </span>
+                        </div>
+                        <p class="status-tile__count mb-1">{{ summary.count }}</p>
+                        <p class="status-tile__description mb-0">{{ summary.description }}</p>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="submission-action">
+                    <button
+                      matButton="text"
+                      type="button"
+                      class="action-button action-button--wide"
+                      (click)="onViewUlbSubmissions()"
+                      aria-label="View ULB submissions"
+                      data-cy="state-dashboard-view-ulb-submissions"
+                    >
+                      VIEW ULB SUBMISSIONS <span aria-hidden="true">→</span>
+                    </button>
+                  </div>
+
+                  <mat-divider></mat-divider>
+
+                  <div class="completion-list" aria-label="Form completion status">
+                    @for (row of dashboard.formCompletion; track row.key) {
+                      <div class="completion-row" [attr.data-form-key]="row.key">
+                        <div class="completion-row__top">
+                          <span>{{ row.label }}</span>
+                          <strong>{{ row.completed }}/{{ row.total }}</strong>
+                        </div>
+                        <div
+                          class="completion-progress"
+                          role="progressbar"
+                          [attr.aria-label]="row.label + ' completion'"
+                          [attr.aria-valuenow]="getCompletionPercentage(row.completed, row.total)"
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                        >
+                          <span
+                            class="completion-progress__bar"
+                            [style.width.%]="getCompletionPercentage(row.completed, row.total)"
+                          ></span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </section>
+
+            <section aria-labelledby="claim-letters-heading">
+              <mat-card appearance="outlined" class="dashboard-card">
+                <mat-card-header>
+                  <mat-card-title id="claim-letters-heading">Claim Letters</mat-card-title>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="dashboard-list claim-letter-list">
+                    @for (letter of dashboard.claimLetters; track letter.key; let isLast = $last) {
+                      <div
+                        class="claim-letter-row"
+                        [class.claim-letter-row--locked]="letter.status === 'LOCKED'"
+                        [attr.data-claim-key]="letter.key"
+                      >
+                        <div class="claim-letter-row__main">
+                          <mat-icon
+                            class="claim-icon"
+                            [class.claim-icon--locked]="letter.status === 'LOCKED'"
+                            aria-hidden="true"
+                          >
+                            {{ claimIcon(letter) }}
+                          </mat-icon>
+
+                          <div class="claim-letter-row__copy">
+                            <div class="list-title">{{ letter.title }}</div>
+                            <div class="list-subtitle">{{ letter.subtitle }}</div>
+                            @if (letter.status === 'LOCKED' && letter.lockReason) {
+                              <div class="claim-lock-reason">{{ letter.lockReason }}</div>
+                            }
+                          </div>
+                        </div>
+
+                        <div class="claim-letter-row__action">
+                          @if (letter.status === 'LOCKED') {
+                            <span class="status-pill status-pill--locked">Locked</span>
+                          } @else if (letter.actionLabel) {
+                            <button
+                              matButton="text"
+                              type="button"
+                              class="action-button"
+                              (click)="onStartClaimLetter(letter)"
+                              [attr.aria-label]="letter.actionLabel + ' ' + letter.title"
+                              data-cy="claim-letter-action"
+                            >
+                              {{ letter.actionLabel }} <span aria-hidden="true">→</span>
+                            </button>
+                          }
+                        </div>
+                      </div>
+
+                      @if (!isLast) {
+                        <mat-divider></mat-divider>
+                      }
+                    }
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </section>
+          </div>
+        }
+      }
+    </main>
+  </div>
+</div>
