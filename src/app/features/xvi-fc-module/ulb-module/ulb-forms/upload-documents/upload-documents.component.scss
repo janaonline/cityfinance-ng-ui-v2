@@ -30,6 +30,47 @@
   }
 }
 
+.section-returned-banner {
+  background: var(--mat-sys-error-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  color: var(--mat-sys-on-error-container);
+
+  .returned-banner-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: var(--mat-sys-error);
+  }
+}
+
+.doc-returned-note,
+.doc-approved-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+
+  mat-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+  }
+}
+
+.doc-returned-note {
+  color: #c62828;
+  background: #fdecea;
+}
+
+.doc-approved-note {
+  color: #1e7e42;
+  background: #e6f6ec;
+}
+
 .body-sm {
   font-size: 0.82rem;
 }
@@ -88,15 +129,13 @@
   line-height: 32px;
 }
 
-.documents-card {
-  border-color: #e5e7eb;
-  box-shadow: 0 2px 4px -1px rgba(0,0,0,0.1), 0 4px 6px 0 rgba(0,0,0,0.07), 0 1px 10px 0 rgba(0,0,0,0.06);
-}
-
 // ── Doc row layout ────────────────────────────────────────────────────────────
+// Each row is its own bordered, rounded card — matches the STATE review page's document rows.
 
 .doc-row {
   background: #fff;
+  border: 1px solid #e2e6ec;
+  border-radius: 0.75rem;
   transition: background 0.15s;
 
   &:hover {
@@ -406,6 +445,29 @@
     .passed-dot {
       font-size: 0.5rem;
       color: #16a34a;
+      line-height: 1;
+    }
+  }
+
+  .returned-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 999px;
+    padding: 0 7px;
+    height: 18px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #991b1b;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    .returned-dot {
+      font-size: 0.5rem;
+      color: #dc2626;
       line-height: 1;
     }
   }

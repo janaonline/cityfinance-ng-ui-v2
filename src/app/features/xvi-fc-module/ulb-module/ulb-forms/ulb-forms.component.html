@@ -73,11 +73,11 @@
           <span class="conditions-deadline-badge">{{ group.deadline }}</span>
         </div>
 
-        <div class="conditions-card rounded-3 overflow-hidden mb-2 mat-elevation-z2">
-          @for (condition of group.conditions; track condition.id; let last = $last) {
+        <div class="conditions-list d-flex flex-column gap-2 mb-2">
+          @for (condition of group.conditions; track condition.id) {
             @let effectiveStatus = resolveStatus(condition);
             @let submitted = isSubmitted(condition);
-            <div class="condition-row d-flex align-items-center gap-3 px-3 py-2" [class.border-bottom]="!last">
+            <div class="condition-row d-flex align-items-center gap-3 px-3 py-2">
               @if (effectiveStatus === 'complete') {
                 <span class="condition-icon condition-icon--complete flex-shrink-0">
                   <mat-icon>check</mat-icon>
@@ -120,10 +120,11 @@
                 <button
                   mat-flat-button
                   class="condition-action-btn flex-shrink-0"
+                  [class.condition-action-btn--warning]="actionLabelFor(condition) === 'Re-upload'"
                   type="button"
                   (click)="navigateTo(condition.route!)"
                 >
-                  {{ condition.actionLabel }}
+                  {{ actionLabelFor(condition) }}
                 </button>
               } @else if (effectiveStatus === 'Awaiting State Upload') {
                 <span class="awaiting-state-badge flex-shrink-0">

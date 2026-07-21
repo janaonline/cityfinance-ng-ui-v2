@@ -124,10 +124,10 @@ const CONDITION_GROUPS: ConditionGroup[] = [
       {
         id: 'slb',
         title: 'Service Level Benchmarks',
-        subtitle: 'SLB data for water, sanitation and solid waste — opens in July',
-        status: 'locked',
-        actionLabel: null,
-        route: null,
+        subtitle: 'Report SLB data for water supply, sanitation, solid waste, and storm water drainage',
+        status: 'pending',
+        actionLabel: 'Open',
+        route: 'slb',
       },
     ],
   },
@@ -240,6 +240,20 @@ export class UlbFormsComponent implements OnInit {
     return condition.status;
   }
 
+  /** "Upload" becomes "Re-upload" once the state or MoHUA has sent this condition back for correction. */
+  actionLabelFor(condition: Condition): string {
+    const status = this.sectionFormStatus();
+    if (status) {
+      if (condition.id === 'audited-statement' && this.isReturnedStatus(status.auditedData.form_status)) {
+        return 'Re-upload';
+      }
+      if (condition.id === 'provisional-statement' && this.isReturnedStatus(status.unauditedData.form_status)) {
+        return 'Re-upload';
+      }
+    }
+    return condition.actionLabel ?? '';
+  }
+
   isSubmitted(condition: Condition): boolean {
     const status = this.sectionFormStatus();
     if (!status) return false;
@@ -270,6 +284,10 @@ export class UlbFormsComponent implements OnInit {
 
   private isPfmsSubmittedStatus(status: FormStatusType | null | undefined): boolean {
     return status != null && status !== FORM_STATUS.NO_STATUS && status !== FORM_STATUS.NOT_STARTED;
+  }
+
+  private isReturnedStatus(status: string): boolean {
+    return status === 'RETURNED_BY_STATE' || status === 'RETURNED_BY_MOHUA';
   }
 
   private resolveUlbId(): string | null {
