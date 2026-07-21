@@ -109,6 +109,11 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
   editForm: FormGroup = this.fb.group({});
 
   ngOnInit(): void {
+    if (this.data.initialValidationStatusFilter) {
+      this.filterForm.controls.validationStatus.setValue(this.data.initialValidationStatusFilter, {
+        emitEvent: false,
+      });
+    }
     this.loadRows();
     this.setupFilterSubscription();
   }
@@ -338,6 +343,15 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
           this.clearApiError(key);
         });
     }
+  }
+
+  /** Empty-state copy that reflects the currently active filters, instead of one generic string. */
+  emptyStateMessage(): string {
+    const { search, validationStatus } = this.filterForm.getRawValue();
+    if (validationStatus === 'INVALID') return 'No rows with validation errors found.';
+    if (validationStatus === 'VALID') return 'No valid rows found for the current filters.';
+    if (search) return 'No rows match your search.';
+    return 'No rows found for the current filters.';
   }
 
   private hasCellError(row: DevolutionRow, field: string): boolean {

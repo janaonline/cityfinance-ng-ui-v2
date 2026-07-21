@@ -32,9 +32,25 @@ export interface ApiValidationError {
   statusCode: number;
   message: string;
   errors: ApiErrorMap;
-  data?: { validationSummary?: DevolutionValidationSummary };
+  data?: { validationSummary?: DevolutionValidationSummary; rowErrors?: DfRowValidationError[] };
   timestamp: string;
   path: string;
+}
+
+/**
+ * One per-row validation failure from the backend's validate-excel/revalidate-excel `rowErrors`
+ * array. Distinct from `DevolutionRowError` (which lacks row identity) — this is the shape the
+ * backend actually sends at the top level of `response.data.rowErrors` / the thrown error's
+ * `data.rowErrors`.
+ */
+export interface DfRowValidationError {
+  rowNumber: number;
+  censusCode?: string;
+  ulbName?: string;
+  field: string;
+  code: string;
+  message: string;
+  value?: unknown;
 }
 
 // ─── Devolution-specific scalar types ────────────────────────────────────────
@@ -219,6 +235,9 @@ export interface DevolutionRowsDialogData {
   installment: DfInstallment;
   canEdit: boolean;
   rowEditFields: ConditionalFieldConfig[];
+  /** Pre-sets the dialog's validation-status filter on open (e.g. to jump straight to the rows a
+   *  failed validate-excel call just flagged), instead of the default "All" filter. */
+  initialValidationStatusFilter?: DfRowValidationStatus;
 }
 
 export interface DevolutionRowsDialogResult {
@@ -245,11 +264,13 @@ export interface ValidateExcelDevolutionResponseData {
   validationSummary: DevolutionValidationSummary;
   errorExcelFile?: DevolutionFileRef;
   errors?: DevolutionRowError[];
+  rowErrors: DfRowValidationError[];
 }
 
 export interface RevalidateDevolutionResponseData {
   validationSummary: DevolutionValidationSummary;
   errors?: DevolutionRowError[];
+  rowErrors: DfRowValidationError[];
 }
 
 export interface UpdateRowDevolutionResponseData {
