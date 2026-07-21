@@ -6,81 +6,65 @@
     </div>
 
     <p class="page-subtitle text-secondary mb-4">
-        {{ stateName() || '—' }} &middot; {{ totalUlbCount() }} ULBs &middot; {{ grantName() || '—' }} &middot; Review
-        one form at a time across all ULBs
+        {{ stateName() || '—' }} &middot; {{ grandTotal() }} ULBs total &middot; Basic Grants
     </p>
 
-    <div class="card border-0 shadow-sm">
+    <form [formGroup]="filterForm" class="d-flex flex-nowrap align-items-center gap-3 mb-4">
+        @for (item of filterSelects; track item.key) {
+        <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+            <mat-label>{{ item.label }}</mat-label>
+            <mat-select [id]="item.id" [formControlName]="item.key" [attr.aria-label]="item.ariaLabel">
+                @for (opt of item.options; track opt.value) {
+                <mat-option [value]="opt.value" [disabled]="opt.live === false">{{ opt.label }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+            <i matPrefix class="bi bi-search mx-2 text-secondary"></i>
+            <input matInput formControlName="search" placeholder="Search ULB name..."
+                aria-label="Search ULB name" />
+        </mat-form-field>
+    </form>
+
+    @if (isSelectedFormLive()) {
+    <div class="stat-cards mb-4">
+        @for (card of statCards(); track card.key) {
+        <button type="button" class="stat-card" [class]="'stat-card--' + card.key"
+            [class.stat-card--active]="selectedBucketKey() === card.key" (click)="selectBucket(card.key)">
+            <span class="stat-card__icon"><i [class]="'bi bi-' + card.icon"></i></span>
+            <span class="stat-card__count">{{ card.count }}</span>
+            <span class="stat-card__label">{{ card.label }}</span>
+            <span class="stat-card__percent">{{ card.percent }}% &middot; of {{ grandTotal() }}</span>
+        </button>
+        }
+    </div>
+    }
+
+    <div class="card border-0 shadow-sm" [@bucketSlide]="selectedBucketIndex()">
         <div class="card-body">
-            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
                 <div>
                     <h2 class="h6 fw-bold mb-1">{{ selectedFormLabel() }} &mdash; All ULBs</h2>
-                    <p class="text-secondary small mb-0">Select ULBs and use bulk actions, or click Review on individual
-                        rows.</p>
+                    <p class="text-secondary small mb-0">Select ULBs and use bulk actions, or click Review on
+                        individual rows.</p>
                 </div>
 
-                <button type="button" [matButton]="isFiltersOpen() ? 'filled' : 'outlined'" class="filters-toggle"
-                    [class.filters-toggle--attention]="!isFiltersOpen()" (click)="toggleFilters()"
-                    [attr.aria-expanded]="isFiltersOpen()" aria-controls="ulb-submissions-filters">
-                    <i class="bi bi-funnel me-1"></i>
-                    Filters
-                    <i class="bi bi-chevron-down filters-toggle__chevron ms-1"
-                        [class.filters-toggle__chevron--open]="isFiltersOpen()"></i>
-                </button>
-            </div>
-
-            <div class="filters-panel" [class.filters-panel--open]="isFiltersOpen()"
-                [attr.inert]="isFiltersOpen() ? null : ''">
-                <div class="filters-panel__inner">
-                    <form id="ulb-submissions-filters" [formGroup]="filterForm" class="pb-3">
-                        <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
-                            @for (item of filterSelects; track item.key) {
-                            <div class="filter-group flex-fill">
-                                <label class="filter-label" [for]="item.id">{{ item.label }}</label>
-                                <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
-                                    <mat-select [id]="item.id" [formControlName]="item.key"
-                                        [attr.aria-label]="item.ariaLabel">
-                                        @for (opt of item.options; track opt.value) {
-                                        <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                                        }
-                                    </mat-select>
-                                </mat-form-field>
-                            </div>
-                            }
-                        </div>
-
-                        <div class="d-flex flex-wrap align-items-center gap-2">
-                            <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
-                                <i matPrefix class="bi bi-search mx-2 text-secondary"></i>
-                                <input matInput formControlName="search" placeholder="Search ULB name..."
-                                    aria-label="Search ULB name" />
-                            </mat-form-field>
-
-                            <button type="button" matButton="outlined" [disabled]="isDownloading()"
-                                (click)="downloadExport()">
-                                @if (isDownloading()) {
-                                <span class="spinner-border spinner-border-sm me-1" role="status"
-                                    aria-hidden="true"></span>
-                                } @else {
-                                <i class="bi bi-download me-1"></i>
-                                }
-                                Download
-                            </button>
-                        </div>
-                    </form>
+                @if (isSelectedFormLive() && !hasNothingToReviewYet()) {
+                <div class="d-flex flex-wrap gap-2 bulk-actions">
+                    <button type="button" matButton="outlined" class="text-success"
+                        [disabled]="!selection.hasValue() || isBulkActionPending()" (click)="approveSelected()">
+                        <i class="bi bi-check2-circle me-1"></i>Approve all remaining
+                    </button>
                 </div>
+                }
             </div>
 
-            <div class="d-flex flex-wrap justify-content-end gap-2 mb-2 bulk-actions">
-                <button type="button" matButton="outlined" class="text-success"
-                    [disabled]="!selection.hasValue() || isBulkActionPending()" (click)="approveSelected()">
-                    <i class="bi bi-check2-circle me-1"></i>Approve all remaining
-                </button>
-                <button type="button" matButton="outlined" class="text-danger"
-                    [disabled]="!selection.hasValue() || isBulkActionPending()" (click)="returnSelected()">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>Return all remaining
-                </button>
-            </div>
+            @if (!isSelectedFormLive()) {
+            <p class="text-center text-secondary py-5 mb-0">Review for {{ selectedFormLabel() }} isn't available yet.
+            </p>
+            } @else {
 
             <div class="table-top-accent"></div>
             <div class="table-responsive">
@@ -106,14 +90,15 @@
                         <td mat-cell *matCellDef="let row"><span class="fw-semibold">{{ row.ulbName }}</span></td>
                     </ng-container>
 
-                    <ng-container matColumnDef="electedBodyStatus">
-                        <th mat-header-cell *matHeaderCellDef>Elected Body Status</th>
-                        <td mat-cell *matCellDef="let row">{{ getElectedBodyLabel(row.electedBodyStatus) }}</td>
-                    </ng-container>
-
-                    <ng-container matColumnDef="fcUnspentStatus">
-                        <th mat-header-cell *matHeaderCellDef mat-sort-header="fcUnspentStatus">FC Unspent</th>
-                        <td mat-cell *matCellDef="let row">{{ getStatusLabel(row.fcUnspentStatus) }}</td>
+                    <ng-container matColumnDef="daysPending">
+                        <th mat-header-cell *matHeaderCellDef>Days Pending</th>
+                        <td mat-cell *matCellDef="let row">
+                            @if (daysPending(row.lastUpdatedAt); as days) {
+                            <span class="badge rounded-pill days-pending-badge">{{ days }} days</span>
+                            } @else {
+                            <span class="text-secondary">&mdash;</span>
+                            }
+                        </td>
                     </ng-container>
 
                     <ng-container matColumnDef="formStatus">
@@ -123,11 +108,6 @@
                                 {{ getStatusLabel(row.formStatus) }}
                             </span>
                         </td>
-                    </ng-container>
-
-                    <ng-container matColumnDef="overallStatus">
-                        <th mat-header-cell *matHeaderCellDef mat-sort-header="overallStatus">Overall Status</th>
-                        <td mat-cell *matCellDef="let row">{{ formatOverallStatus(row) }}</td>
                     </ng-container>
 
                     <ng-container matColumnDef="action">
@@ -144,8 +124,8 @@
                         </td>
                     </ng-container>
 
-                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
                 </table>
 
                 @if (isLoading()) {
@@ -160,6 +140,8 @@
             <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="page() - 1"
                 [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)"
                 aria-label="Select page of ULB submissions"></mat-paginator>
+
+            }
         </div>
     </div>
 </main>

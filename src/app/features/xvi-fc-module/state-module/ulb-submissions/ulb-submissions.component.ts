@@ -1,13 +1,15 @@
 import { SelectionModel } from '@angular/cdk/collections';
+import { animate, style, transition, trigger } from '@angular/animations';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
-import FileSaver from 'file-saver';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
+import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 import { ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -15,22 +17,26 @@ import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.comp
 import {
   BulkReviewAction,
   FORM_OPTIONS,
-  OVERALL_STATUS_OPTIONS,
+  FORM_TO_TAB,
   ReviewFormId,
-  STATUS_OPTIONS,
+  ReviewStatus,
+  STATUS_BUCKETS,
   UlbSubmissionRow,
   UlbSubmissionSortField,
   UlbSubmissionsQuery,
 } from './ulb-submissions.models';
 import { UlbSubmissionsService } from './ulb-submissions.service';
-import {
-  formatOverallStatus,
-  getElectedBodyLabel,
-  getRowActionLabel,
-  getStatusBadgeClass,
-  getStatusLabel,
-  isRowReviewable,
-} from './ulb-submissions.utils';
+import { daysPending, getRowActionLabel, getStatusBadgeClass, getStatusLabel, isRowReviewable } from './ulb-submissions.utils';
+
+const EMPTY_COUNTS: Record<ReviewStatus, number> = {
+  NOT_STARTED: 0,
+  IN_PROGRESS: 0,
+  UNDER_REVIEW_BY_STATE: 0,
+  RETURNED_BY_STATE: 0,
+  UNDER_REVIEW_BY_MOHUA: 0,
+  RETURNED_BY_MOHUA: 0,
+  SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 0,
+};
 
 const BULK_APPROVE_CONFIRM: ConfirmDialogData = {
   title: 'Approve selected ULBs?',
@@ -43,30 +49,28 @@ const BULK_APPROVE_CONFIRM: ConfirmDialogData = {
 
 const PAGE_SIZE = 15;
 
+/** Slides the table left/right when the selected stat-card bucket changes, direction matching card order. */
+const BUCKET_SLIDE = trigger('bucketSlide', [
+  transition(':increment', [
+    style({ transform: 'translateX(40px)', opacity: 0 }),
+    animate('420ms ease-out', style({ transform: 'translateX(0)', opacity: 1 })),
+  ]),
+  transition(':decrement', [
+    style({ transform: 'translateX(-40px)', opacity: 0 }),
+    animate('420ms ease-out', style({ transform: 'translateX(0)', opacity: 1 })),
+  ]),
+]);
+
 interface FilterSelectConfig {
-  readonly key: 'form' | 'status' | 'overallStatus';
+  readonly key: 'form';
   readonly id: string;
   readonly label: string;
   readonly ariaLabel: string;
-  readonly options: ReadonlyArray<{ readonly value: string; readonly label: string }>;
+  readonly options: ReadonlyArray<{ readonly value: string; readonly label: string; readonly live?: boolean }>;
 }
 
 const FILTER_SELECTS: readonly FilterSelectConfig[] = [
   { key: 'form', id: 'ulb-submissions-form', label: 'Select Form', ariaLabel: 'Select Form', options: FORM_OPTIONS },
-  {
-    key: 'status',
-    id: 'ulb-submissions-status',
-    label: 'Form Status',
-    ariaLabel: 'Filter by form status',
-    options: STATUS_OPTIONS,
-  },
-  {
-    key: 'overallStatus',
-    id: 'ulb-submissions-overall-status',
-    label: 'Overall Status',
-    ariaLabel: 'Filter by overall status',
-    options: OVERALL_STATUS_OPTIONS,
-  },
 ];
 
 @Component({
@@ -74,13 +78,17 @@ const FILTER_SELECTS: readonly FilterSelectConfig[] = [
   imports: [MaterialModule, MatTableModule, MatSortModule],
   templateUrl: './ulb-submissions.component.html',
   styleUrl: './ulb-submissions.component.scss',
+  animations: [BUCKET_SLIDE],
 })
 export class UlbSubmissionsComponent {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly utilityService = inject(UtilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly ulbSubmissionsService = inject(UlbSubmissionsService);
+  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
 
   readonly filterSelects = FILTER_SELECTS;
   readonly pageSize = signal(PAGE_SIZE);
@@ -89,8 +97,6 @@ export class UlbSubmissionsComponent {
   readonly filterForm = this.fb.nonNullable.group({
     form: this.fb.nonNullable.control<ReviewFormId>(FORM_OPTIONS[0].value),
     search: this.fb.nonNullable.control(''),
-    status: this.fb.nonNullable.control<(typeof STATUS_OPTIONS)[number]['value']>('ALL'),
-    overallStatus: this.fb.nonNullable.control<(typeof OVERALL_STATUS_OPTIONS)[number]['value']>('ALL'),
   });
 
   private readonly selectedFormId = toSignal(this.filterForm.controls.form.valueChanges, {
@@ -99,47 +105,66 @@ export class UlbSubmissionsComponent {
   readonly selectedFormLabel = computed(
     () => FORM_OPTIONS.find((opt) => opt.value === this.selectedFormId())?.label ?? '',
   );
+  readonly isSelectedFormLive = computed(
+    () => FORM_OPTIONS.find((opt) => opt.value === this.selectedFormId())?.live ?? false,
+  );
 
   readonly selection = new SelectionModel<UlbSubmissionRow>(true, []);
 
   readonly rows = signal<UlbSubmissionRow[]>([]);
   readonly total = signal(0);
-  readonly stateName = signal('');
-  readonly grantName = signal('');
-  readonly totalUlbCount = signal(0);
+  readonly stateName = signal(this.resolveStateName());
+  readonly counts = signal<Record<ReviewStatus, number>>(EMPTY_COUNTS);
 
   readonly isLoading = signal(false);
   readonly isBulkActionPending = signal(false);
-  readonly isDownloading = signal(false);
 
   readonly yearLabel = signal(this.resolveYearLabel());
-  readonly isFiltersOpen = signal(false);
 
   readonly page = signal(1);
   readonly sortField = signal<UlbSubmissionSortField>('ulbName');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
-  readonly displayedColumns = [
-    'select',
-    'ulbName',
-    'electedBodyStatus',
-    'fcUnspentStatus',
-    'formStatus',
-    'overallStatus',
-    'action',
-  ];
+  /** Key of the currently selected stat-card bucket, or null when no bucket filter is applied. */
+  readonly selectedBucketKey = signal<string>('UNDER_STATE_REVIEW');
+
+  /** Position of the selected bucket among the stat cards — drives the slide direction. */
+  readonly selectedBucketIndex = computed(() =>
+    STATUS_BUCKETS.findIndex((bucket) => bucket.key === this.selectedBucketKey()),
+  );
+
+  readonly grandTotal = computed(() => Object.values(this.counts()).reduce((sum, n) => sum + n, 0));
+
+  readonly statCards = computed(() => {
+    const counts = this.counts();
+    const grandTotal = this.grandTotal();
+    return STATUS_BUCKETS.map((bucket) => {
+      const count = bucket.statuses.reduce((sum, status) => sum + (counts[status] ?? 0), 0);
+      return { ...bucket, count, percent: grandTotal > 0 ? Math.round((count / grandTotal) * 100) : 0 };
+    });
+  });
+
+  /** NOT_STARTED and IN_PROGRESS ULBs have nothing for the state to review yet — no pending duration, no action, no bulk approve. */
+  readonly hasNothingToReviewYet = computed(() =>
+    ['NOT_STARTED', 'IN_PROGRESS'].includes(this.selectedBucketKey()),
+  );
+
+  readonly displayedColumns = computed(() =>
+    this.hasNothingToReviewYet()
+      ? ['select', 'ulbName', 'formStatus']
+      : ['select', 'ulbName', 'daysPending', 'formStatus', 'action'],
+  );
 
   readonly reviewableRows = computed(() => this.rows().filter(isRowReviewable));
 
   readonly getStatusLabel = getStatusLabel;
   readonly getStatusBadgeClass = getStatusBadgeClass;
-  readonly getElectedBodyLabel = getElectedBodyLabel;
   readonly getRowActionLabel = getRowActionLabel;
-  readonly formatOverallStatus = formatOverallStatus;
   readonly isRowReviewable = isRowReviewable;
+  readonly daysPending = daysPending;
 
   constructor() {
-    this.loadRows();
+    if (this.isSelectedFormLive()) this.loadRows();
 
     this.filterForm.valueChanges
       .pipe(
@@ -149,12 +174,19 @@ export class UlbSubmissionsComponent {
       )
       .subscribe(() => {
         this.page.set(1);
-        this.loadRows();
+        this.selection.clear();
+        if (this.isSelectedFormLive()) this.loadRows();
+        else this.rows.set([]);
       });
   }
 
-  toggleFilters(): void {
-    this.isFiltersOpen.update((open) => !open);
+  /** Exactly one bucket is always selected — there's no "show all statuses" state. */
+  selectBucket(key: string): void {
+    if (this.selectedBucketKey() === key) return;
+    this.selectedBucketKey.set(key);
+    this.page.set(1);
+    this.selection.clear();
+    if (this.isSelectedFormLive()) this.loadRows();
   }
 
   isAllSelected(): boolean {
@@ -189,58 +221,40 @@ export class UlbSubmissionsComponent {
     }
 
     this.confirmDialogService
-      .confirm(BULK_APPROVE_CONFIRM)
+      .confirm(BULK_APPROVE_CONFIRM, this.themeClass ? { panelClass: this.themeClass } : undefined)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) this.submitBulkReview('APPROVE');
       });
   }
 
-  returnSelected(): void {
-    if (!this.selection.hasValue()) {
-      this.utilityService.triggerSnackbar('Select at least one ULB to return.', 'snackbar-danger');
-      return;
-    }
-
-    const reason = window.prompt('Reason for returning the selected ULBs:');
-    if (!reason?.trim()) return;
-    this.submitBulkReview('RETURN', reason.trim());
-  }
-
   onRowAction(row: UlbSubmissionRow): void {
-    this.utilityService.triggerSnackbar(`Detailed review for ${row.ulbName} is not wired up yet.`, 'snackbar-warn');
-  }
-
-  downloadExport(): void {
-    this.isDownloading.set(true);
-
-    this.ulbSubmissionsService
-      .exportList(this.buildQuery())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, `ulb-submissions-${this.filterForm.controls.form.value}.csv`);
-          this.isDownloading.set(false);
-        },
-        error: () => {
-          this.isDownloading.set(false);
-          this.utilityService.triggerSnackbar('Failed to download. Please try again.', 'snackbar-danger');
-        },
-      });
+    if (!row.recordId) return;
+    const section = FORM_TO_TAB[this.filterForm.controls.form.value];
+    this.router.navigate([row.ulbId, 'review'], {
+      relativeTo: this.route,
+      queryParams: section ? { section } : {},
+    });
   }
 
   private submitBulkReview(action: BulkReviewAction, reason?: string): void {
-    const ulbIds = this.selection.selected.map((row) => row.ulbId);
+    const recordIds = this.selection.selected
+      .map((row) => row.recordId)
+      .filter((id): id is string => !!id);
     this.isBulkActionPending.set(true);
 
     this.ulbSubmissionsService
-      .bulkReview({ ulbIds, form: this.filterForm.controls.form.value, action, reason })
+      .bulkReview({ recordIds, form: this.filterForm.controls.form.value, action, reason })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: (res) => {
           this.isBulkActionPending.set(false);
           this.selection.clear();
-          this.utilityService.triggerSnackbar(action === 'APPROVE' ? 'Selected ULBs approved.' : 'Selected ULBs returned.');
+          const verb = action === 'APPROVE' ? 'approved' : 'returned';
+          this.utilityService.triggerSnackbar(
+            res.failed > 0 ? `${res.succeeded} ${verb}, ${res.failed} failed.` : `${res.succeeded} ULB(s) ${verb}.`,
+            res.failed > 0 ? 'snackbar-warn' : undefined,
+          );
           this.loadRows();
         },
         error: () => {
@@ -260,9 +274,7 @@ export class UlbSubmissionsComponent {
         next: (res) => {
           this.rows.set([...res.rows]);
           this.total.set(res.total);
-          this.stateName.set(res.stateName);
-          this.grantName.set(res.grantName);
-          this.totalUlbCount.set(res.totalUlbCount);
+          this.counts.set(res.counts);
           this.selection.clear();
           this.isLoading.set(false);
         },
@@ -275,11 +287,12 @@ export class UlbSubmissionsComponent {
 
   private buildQuery(): UlbSubmissionsQuery {
     const value = this.filterForm.getRawValue();
+    const bucket = STATUS_BUCKETS.find((b) => b.key === this.selectedBucketKey());
     return {
+      designYearId: this.resolveDesignYearId(),
       form: value.form,
       search: value.search,
-      status: value.status,
-      overallStatus: value.overallStatus,
+      status: bucket?.statuses ?? null,
       page: this.page(),
       pageSize: this.pageSize(),
       sortField: this.sortField(),
@@ -287,9 +300,23 @@ export class UlbSubmissionsComponent {
     };
   }
 
+  private resolveDesignYearId(): string {
+    return (typeof localStorage !== 'undefined' ? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) : null) ?? '';
+  }
+
   private resolveYearLabel(): string {
     const stored =
       typeof localStorage !== 'undefined' ? localStorage.getItem(XVIFC_LS_KEYS.selectedYearString) : null;
     return stored ? stored.replace(/^FY-/, 'FY ') : 'FY —';
+  }
+
+  private resolveStateName(): string {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
+      if (!raw) return '';
+      return (JSON.parse(raw) as { stateName?: string }).stateName ?? '';
+    } catch {
+      return '';
+    }
   }
 }

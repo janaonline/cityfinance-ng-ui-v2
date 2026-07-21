@@ -1,62 +1,195 @@
-import { Injectable, signal } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import { buildMockUlbSubmissionRows, MOCK_GRANT_NAME, MOCK_STATE_NAME } from './ulb-submissions.mock-data';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable, map, throwError } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 import {
   BulkReviewPayload,
   BulkReviewResult,
+  FORM_TO_SECTION,
+  ReviewStatus,
   UlbSubmissionRow,
   UlbSubmissionsListResponse,
   UlbSubmissionsQuery,
 } from './ulb-submissions.models';
-import { filterRows, paginateRows, sortRows } from './ulb-submissions.utils';
 
-const MOCK_LATENCY_MS = 350;
+const ANNUAL_ACCOUNT_API = `${environment.api.url2}xvi-fc/annual-account/`;
+const BANK_ACCOUNT_API = `${environment.api.url2}xvi-fc/bank-account/`;
 
-/**
- * Mocked until the backend `xvi-fc/state/ulb-submissions` endpoints exist.
- * Every public method mirrors the HTTP contract it will eventually call, so
- * swapping the bodies for `this.http.get/post(...)` later needs no signature changes.
- */
+// The bank-account module's FORM_STATUS constant uses this exact 1-7 numbering,
+// matching the Annual Account module's form_status_id — one shared status vocabulary.
+const NUMERIC_TO_REVIEW_STATUS: Record<number, ReviewStatus> = {
+  1: 'NOT_STARTED',
+  2: 'IN_PROGRESS',
+  3: 'UNDER_REVIEW_BY_STATE',
+  4: 'RETURNED_BY_STATE',
+  5: 'UNDER_REVIEW_BY_MOHUA',
+  6: 'RETURNED_BY_MOHUA',
+  7: 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA',
+};
+
+const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
+  NOT_STARTED: 1,
+  IN_PROGRESS: 2,
+  UNDER_REVIEW_BY_STATE: 3,
+  RETURNED_BY_STATE: 4,
+  UNDER_REVIEW_BY_MOHUA: 5,
+  RETURNED_BY_MOHUA: 6,
+  SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 7,
+};
+
+// The dev backend may return bare objects instead of { success, data } wrappers.
+function unwrap<T>(response: unknown): T {
+  const r = response as Record<string, unknown>;
+  return (r && 'data' in r ? r['data'] : r) as T;
+}
+
+interface AnnualAccountSubmissionRow {
+  ulbId: string;
+  ulbCode: string;
+  ulbName: string;
+  formStatus: ReviewStatus;
+  formStatusId: number;
+  lastUpdatedAt: string | null;
+  annualAccountId: string | null;
+}
+
+interface AnnualAccountListResponse {
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: AnnualAccountSubmissionRow[];
+  counts: Record<ReviewStatus, number>;
+}
+
+interface BankAccountSubmissionRow {
+  ulbId: string;
+  ulbCode: string;
+  ulbName: string;
+  formStatus: number;
+  lastUpdatedAt: string | null;
+  bankAccountId: string | null;
+}
+
+interface BankAccountListResponse {
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: BankAccountSubmissionRow[];
+  counts: Record<number, number>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UlbSubmissionsService {
-  private readonly rows = signal<UlbSubmissionRow[]>(buildMockUlbSubmissionRows());
+  private readonly http = inject(HttpClient);
 
   list(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
-    const filtered = filterRows(this.rows(), query);
-    const sorted = sortRows(filtered, query.sortField, query.sortDirection);
-    const page = paginateRows(sorted, query.page, query.pageSize);
-
-    return of<UlbSubmissionsListResponse>({
-      stateName: MOCK_STATE_NAME,
-      grantName: MOCK_GRANT_NAME,
-      totalUlbCount: this.rows().length,
-      total: filtered.length,
-      rows: page,
-    }).pipe(delay(MOCK_LATENCY_MS));
+    if (query.form === 'PFMS_BANK_ACCOUNT') return this.listBankAccounts(query);
+    return this.listAnnualAccounts(query);
   }
 
   bulkReview(payload: BulkReviewPayload): Observable<BulkReviewResult> {
-    const nextStatus = payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED';
-    const targetIds = new Set(payload.ulbIds);
-
-    this.rows.update((rows) => rows.map((row) => (targetIds.has(row.ulbId) ? { ...row, formStatus: nextStatus } : row)));
-
-    return of<BulkReviewResult>({ success: true, updatedCount: payload.ulbIds.length }).pipe(delay(MOCK_LATENCY_MS));
+    if (payload.form === 'PFMS_BANK_ACCOUNT') return this.bulkReviewBankAccounts(payload);
+    return this.bulkReviewAnnualAccounts(payload);
   }
 
-  exportList(query: UlbSubmissionsQuery): Observable<Blob> {
-    const filtered = sortRows(filterRows(this.rows(), query), query.sortField, query.sortDirection);
-    const csv = buildCsv(filtered);
-    return of(new Blob([csv], { type: 'text/csv;charset=utf-8;' })).pipe(delay(MOCK_LATENCY_MS));
-  }
-}
+  private listAnnualAccounts(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
+    const section = FORM_TO_SECTION[query.form];
+    if (!section) throw new Error(`No backend support yet for form: ${query.form}`);
 
-function buildCsv(rows: readonly UlbSubmissionRow[]): string {
-  const header = 'ULB Code,ULB Name,Elected Body Status,FC Unspent,Form Status,Overall Status\n';
-  const lines = rows.map(
-    (row) =>
-      `${row.ulbCode},${row.ulbName},${row.electedBodyStatus},${row.fcUnspentStatus},${row.formStatus},${row.overallStatus.completed}/${row.overallStatus.total}`,
-  );
-  return header + lines.join('\n');
+    let params = new HttpParams()
+      .set('designYearId', query.designYearId)
+      .set('section', section)
+      .set('page', query.page)
+      .set('pageSize', query.pageSize)
+      .set('sortField', query.sortField)
+      .set('sortDirection', query.sortDirection);
+
+    if (query.search.trim()) params = params.set('search', query.search.trim());
+    if (query.status?.length) params = params.set('status', query.status.join(','));
+
+    return this.http.get<unknown>(`${ANNUAL_ACCOUNT_API}state/ulb-submissions`, { params }).pipe(
+      map((res) => {
+        const raw = unwrap<AnnualAccountListResponse>(res);
+        const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
+          ulbId: row.ulbId,
+          ulbCode: row.ulbCode,
+          ulbName: row.ulbName,
+          formStatus: row.formStatus,
+          formStatusId: row.formStatusId,
+          lastUpdatedAt: row.lastUpdatedAt,
+          recordId: row.annualAccountId,
+        }));
+
+        return { total: raw.total, page: raw.page, pageSize: raw.pageSize, rows, counts: raw.counts };
+      }),
+    );
+  }
+
+  private listBankAccounts(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
+    let params = new HttpParams()
+      .set('designYearId', query.designYearId)
+      .set('page', query.page)
+      .set('pageSize', query.pageSize)
+      .set('sortField', query.sortField)
+      .set('sortDirection', query.sortDirection);
+
+    if (query.search.trim()) params = params.set('search', query.search.trim());
+    if (query.status?.length) {
+      const numericStatuses = query.status.map((status) => REVIEW_STATUS_TO_NUMERIC[status]);
+      params = params.set('status', numericStatuses.join(','));
+    }
+
+    return this.http.get<unknown>(`${BANK_ACCOUNT_API}state/ulb-submissions`, { params }).pipe(
+      map((res) => {
+        const raw = unwrap<BankAccountListResponse>(res);
+        const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
+          ulbId: row.ulbId,
+          ulbCode: row.ulbCode,
+          ulbName: row.ulbName,
+          formStatus: NUMERIC_TO_REVIEW_STATUS[row.formStatus] ?? 'NOT_STARTED',
+          formStatusId: row.formStatus,
+          lastUpdatedAt: row.lastUpdatedAt,
+          recordId: row.bankAccountId,
+        }));
+        const counts = Object.fromEntries(
+          Object.entries(raw.counts).map(([numeric, count]) => [NUMERIC_TO_REVIEW_STATUS[Number(numeric)], count]),
+        ) as Record<ReviewStatus, number>;
+
+        return { total: raw.total, page: raw.page, pageSize: raw.pageSize, rows, counts };
+      }),
+    );
+  }
+
+  private bulkReviewAnnualAccounts(payload: BulkReviewPayload): Observable<BulkReviewResult> {
+    const section = FORM_TO_SECTION[payload.form];
+    if (!section) throw new Error(`No backend support yet for form: ${payload.form}`);
+
+    // Backend's POST /xvi-fc/annual-account/bulk-decision is commented out for now —
+    // bulk approve/return for Annual Accounts ships in a later push. Uncomment together.
+    // const body = {
+    //   section,
+    //   decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
+    //   note: payload.reason ?? null,
+    //   ids: payload.recordIds,
+    // };
+    // return this.http
+    //   .post<unknown>(`${ANNUAL_ACCOUNT_API}bulk-decision`, body)
+    //   .pipe(map((res) => unwrap<BulkReviewResult>(res)));
+    return throwError(() => new Error('Bulk approve/return for Annual Accounts is not available yet.'));
+  }
+
+  private bulkReviewBankAccounts(payload: BulkReviewPayload): Observable<BulkReviewResult> {
+    void payload; // unused while the bulk-decision endpoint below is commented out
+    // Backend's POST /xvi-fc/bank-account/bulk-decision is commented out for now —
+    // bulk approve/return for PFMS Bank Account ships in a later push. Uncomment together.
+    // const body = {
+    //   decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
+    //   note: payload.reason ?? null,
+    //   ids: payload.recordIds,
+    // };
+    // return this.http
+    //   .post<unknown>(`${BANK_ACCOUNT_API}bulk-decision`, body)
+    //   .pipe(map((res) => unwrap<BulkReviewResult>(res)));
+    return throwError(() => new Error('Bulk approve/return for PFMS Bank Account is not available yet.'));
+  }
 }

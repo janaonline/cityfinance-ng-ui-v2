@@ -5,13 +5,6 @@ import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
 
 export const routes: Routes = [
-  {
-    path: 'preview-ulb-submissions',
-    loadComponent: () =>
-      import('./features/xvi-fc-module/state-module/ulb-submissions/ulb-submissions.component').then(
-        (m) => m.UlbSubmissionsComponent,
-      ),
-  },
   // {
   //   path: '',
   //   // redirectTo: 'cfr',

@@ -6,66 +6,107 @@ export type ReviewFormId =
   | 'SERVICE_LEVEL_BENCHMARKS'
   | 'FORM_5_TBD';
 
-/** "Select Form" dropdown options. `FORM_5_TBD` is a placeholder until the 5th form (used in the Overall Status denominator) is confirmed. */
-export const FORM_OPTIONS: ReadonlyArray<{ readonly value: ReviewFormId; readonly label: string }> = [
-  { value: 'AUDITED_STATEMENTS', label: 'Audited Statements' },
-  { value: 'PROVISIONAL_STATEMENTS', label: 'Provisional Statements' },
-  { value: 'PFMS_BANK_ACCOUNT', label: 'PFMS Bank Account' },
-  { value: 'SERVICE_LEVEL_BENCHMARKS', label: 'Service Level Benchmarks' },
-  { value: 'FORM_5_TBD', label: 'Form 5 (TBD)' },
+/** "Select Form" dropdown options. Annual Accounts and PFMS Bank Account map to a real backend today. */
+export const FORM_OPTIONS: ReadonlyArray<{ readonly value: ReviewFormId; readonly label: string; readonly live: boolean }> = [
+  { value: 'AUDITED_STATEMENTS', label: 'Audited Statements', live: true },
+  { value: 'PROVISIONAL_STATEMENTS', label: 'Provisional Statements', live: true },
+  { value: 'PFMS_BANK_ACCOUNT', label: 'PFMS Bank Account', live: true },
+  { value: 'SERVICE_LEVEL_BENCHMARKS', label: 'Service Level Benchmarks (coming soon)', live: false },
+  { value: 'FORM_5_TBD', label: 'Form 5 (coming soon)', live: false },
 ];
 
-/** Per-form review status shown in the Form Status / FC Unspent columns. */
-export type ReviewStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' | 'EXEMPT';
+/** Maps a live `ReviewFormId` to the Annual Account section the backend understands. */
+export const FORM_TO_SECTION: Partial<Record<ReviewFormId, 'auditedData' | 'unauditedData'>> = {
+  AUDITED_STATEMENTS: 'auditedData',
+  PROVISIONAL_STATEMENTS: 'unauditedData',
+};
 
-export const STATUS_OPTIONS: ReadonlyArray<{ readonly value: 'ALL' | ReviewStatus; readonly label: string }> = [
-  { value: 'ALL', label: 'All Statuses' },
-  { value: 'NOT_STARTED', label: 'Not Started' },
-  { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'SUBMITTED', label: 'Submitted' },
-  { value: 'RETURNED', label: 'Returned' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'EXEMPT', label: 'Exempt' },
+/** Maps a live `ReviewFormId` to the review-page tab it should open on — passed as the `?section=` query param. */
+export const FORM_TO_TAB: Partial<Record<ReviewFormId, string>> = {
+  AUDITED_STATEMENTS: 'auditedData',
+  PROVISIONAL_STATEMENTS: 'unauditedData',
+  PFMS_BANK_ACCOUNT: 'PFMS',
+};
+
+/** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum. */
+export type ReviewStatus =
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'UNDER_REVIEW_BY_STATE'
+  | 'RETURNED_BY_STATE'
+  | 'UNDER_REVIEW_BY_MOHUA'
+  | 'RETURNED_BY_MOHUA'
+  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA';
+
+/** One clickable stat card, grouping one or more underlying statuses into a single reviewer-facing bucket. */
+export interface StatusBucket {
+  readonly key: string;
+  readonly label: string;
+  readonly statuses: readonly ReviewStatus[];
+  /** Bootstrap icon name (without the "bi-" prefix) shown as a corner badge on the stat card. */
+  readonly icon: string;
+}
+
+export const STATUS_BUCKETS: readonly StatusBucket[] = [
+  { key: 'NOT_STARTED', label: 'ULB Not Started', statuses: ['NOT_STARTED'], icon: 'circle' },
+  {
+    key: 'IN_PROGRESS',
+    label: 'ULB In Progress',
+    statuses: ['IN_PROGRESS', 'RETURNED_BY_MOHUA'],
+    icon: 'hourglass-split',
+  },
+  { key: 'UNDER_STATE_REVIEW', label: 'Under State Review', statuses: ['UNDER_REVIEW_BY_STATE'], icon: 'pencil-square' },
+  {
+    key: 'RETURNED_BY_STATE',
+    label: 'Returned by State',
+    statuses: ['RETURNED_BY_STATE'],
+    icon: 'arrow-counterclockwise',
+  },
+  {
+    key: 'UNDER_REVIEW_BY_MOHUA',
+    label: 'Under Review by MoHUA',
+    statuses: ['UNDER_REVIEW_BY_MOHUA'],
+    icon: 'send-check',
+  },
 ];
 
-/** Bucketed overall-progress filter, derived from `overallStatus.completed` vs `total`. */
-export type OverallStatusFilter = 'ALL' | 'FULLY_APPROVED' | 'IN_PROGRESS' | 'NOT_STARTED';
-
-export const OVERALL_STATUS_OPTIONS: ReadonlyArray<{ readonly value: OverallStatusFilter; readonly label: string }> = [
-  { value: 'ALL', label: 'All Overall Statuses' },
-  { value: 'FULLY_APPROVED', label: 'Fully Approved' },
-  { value: 'IN_PROGRESS', label: 'Partially Complete' },
-  { value: 'NOT_STARTED', label: 'Not Started' },
-];
-
-export type ElectedBodyStatus = 'CONSTITUTED' | 'NOT_CONSTITUTED';
+export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
+  NOT_STARTED: 'Not Started',
+  IN_PROGRESS: 'In Progress',
+  UNDER_REVIEW_BY_STATE: 'Under Review',
+  RETURNED_BY_STATE: 'Returned by State',
+  UNDER_REVIEW_BY_MOHUA: 'Forwarded to MoHUA',
+  RETURNED_BY_MOHUA: 'Returned by MoHUA',
+  SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'Approved by MoHUA',
+};
 
 export interface UlbSubmissionRow {
   readonly ulbId: string;
   readonly ulbCode: string;
   readonly ulbName: string;
-  readonly electedBodyStatus: ElectedBodyStatus;
-  readonly fcUnspentStatus: ReviewStatus;
   readonly formStatus: ReviewStatus;
-  readonly overallStatus: { readonly completed: number; readonly total: number };
-  readonly lastUpdatedAt: string;
+  readonly formStatusId: number;
+  readonly lastUpdatedAt: string | null;
+  /** The selected form's own record id (annual account doc, bank account doc, ...) — null if not started. */
+  readonly recordId: string | null;
 }
 
 export interface UlbSubmissionsListResponse {
-  readonly stateName: string;
-  readonly grantName: string;
-  readonly totalUlbCount: number;
   readonly total: number;
+  readonly page: number;
+  readonly pageSize: number;
   readonly rows: readonly UlbSubmissionRow[];
+  readonly counts: Readonly<Record<ReviewStatus, number>>;
 }
 
-export type UlbSubmissionSortField = 'ulbName' | 'fcUnspentStatus' | 'formStatus' | 'overallStatus';
+export type UlbSubmissionSortField = 'ulbName' | 'formStatus';
 
 export interface UlbSubmissionsQuery {
+  readonly designYearId: string;
   readonly form: ReviewFormId;
   readonly search: string;
-  readonly status: 'ALL' | ReviewStatus;
-  readonly overallStatus: OverallStatusFilter;
+  /** Underlying statuses for the currently selected stat-card bucket, or null to show every status. */
+  readonly status: readonly ReviewStatus[] | null;
   readonly page: number;
   readonly pageSize: number;
   readonly sortField: UlbSubmissionSortField;
@@ -75,13 +116,14 @@ export interface UlbSubmissionsQuery {
 export type BulkReviewAction = 'APPROVE' | 'RETURN';
 
 export interface BulkReviewPayload {
-  readonly ulbIds: readonly string[];
+  readonly recordIds: readonly string[];
   readonly form: ReviewFormId;
   readonly action: BulkReviewAction;
   readonly reason?: string;
 }
 
 export interface BulkReviewResult {
-  readonly success: boolean;
-  readonly updatedCount: number;
+  readonly total: number;
+  readonly succeeded: number;
+  readonly failed: number;
 }
