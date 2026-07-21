@@ -113,13 +113,13 @@
   border: 1px solid #fed7aa;
 }
 
-.conditions-card {
+// Each condition is its own bordered, rounded white card — matches the STATE review page's document rows.
+.condition-row {
+  min-height: 52px;
   background: #ffffff;
-
-  .border-bottom { border-color: #f3f4f6 !important; }
+  border: 1px solid #e2e6ec;
+  border-radius: 0.75rem;
 }
-
-.condition-row { min-height: 52px; }
 
 .condition-title    { font-size: 0.8rem; }
 .condition-subtitle { font-size: 0.7rem; line-height: 1.4; }
@@ -248,6 +248,11 @@
   padding: 0 14px !important;
   white-space: nowrap;
   box-shadow: 0 3px 10px rgba(21, 128, 61, 0.25) !important;
+
+  &--warning {
+    background: #b45309 !important;
+    box-shadow: 0 3px 10px rgba(180, 83, 9, 0.3) !important;
+  }
 }
 
 .not-yet-open-btn {

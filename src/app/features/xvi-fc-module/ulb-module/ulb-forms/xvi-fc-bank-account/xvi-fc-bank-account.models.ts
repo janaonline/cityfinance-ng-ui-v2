@@ -41,6 +41,12 @@ export interface SubmitXviFcBankAccountPayload {
   proofFile: XviFcBankAccountProofFile;
 }
 
+export interface XviFcBankAccountDecision {
+  status: 'APPROVED' | 'RETURNED';
+  note: string | null;
+  decidedAt: string;
+}
+
 export interface XviFcBankAccountResponse {
   _id?: string;
   ulb?: string;
@@ -52,6 +58,8 @@ export interface XviFcBankAccountResponse {
   proofFile: XviFcBankAccountProofFile;
   currentFormStatus: FormStatusType;
   currentFormStatusLabel: string;
+  stateDecision?: XviFcBankAccountDecision | null;
+  mohuaDecision?: XviFcBankAccountDecision | null;
   submittedBy?: string | null;
   submittedAt?: string | null;
   createdAt?: string;
