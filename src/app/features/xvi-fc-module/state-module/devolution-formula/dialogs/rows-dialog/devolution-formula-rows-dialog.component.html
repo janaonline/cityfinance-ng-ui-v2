@@ -50,7 +50,7 @@
       </div>
     } @else if (!rows().length) {
       <div class="text-center py-5 text-secondary small" data-cy="df-rows-empty">
-        No rows found for the current filters.
+        {{ emptyStateMessage() }}
       </div>
     } @else {
       <table class="table table-sm table-hover align-middle mb-0 df-rows-table" data-cy="df-rows-table">
