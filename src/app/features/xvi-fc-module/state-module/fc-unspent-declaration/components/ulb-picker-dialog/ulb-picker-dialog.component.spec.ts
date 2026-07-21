@@ -30,7 +30,12 @@ describe('UlbPickerDialogComponent', () => {
   let dialogRef: jasmine.SpyObj<MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption[]>>;
   let getUlbOptionsSpy: jasmine.Spy;
 
-  const data: UlbPickerDialogData = { stateId: 'state-1', yearId: 'year-1', excludeUlbIds: ['ulb-2'] };
+  const data: UlbPickerDialogData = {
+    stateId: 'state-1',
+    yearId: 'year-1',
+    excludeUlbIds: ['ulb-2'],
+    blockingMessage: null,
+  };
   const options = [makeOption('ulb-1', 'Alpha ULB'), makeOption('ulb-2', 'Beta ULB'), makeOption('ulb-3', 'Gamma ULB')];
 
   async function setup(): Promise<void> {
@@ -100,6 +105,29 @@ describe('UlbPickerDialogComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No ULBs found');
+  });
+
+  it('shows the blocking message instead of the generic empty-state text when one is provided', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, UlbPickerDialogComponent],
+      providers: [
+        { provide: MatDialogRef, useValue: dialogRef },
+        {
+          provide: MAT_DIALOG_DATA,
+          useValue: { ...data, blockingMessage: 'Devolution Formula must be submitted first.' },
+        },
+        FcUnspentUlbOptionsCacheService,
+      ],
+    }).compileComponents();
+
+    const blockedFixture = TestBed.createComponent(UlbPickerDialogComponent);
+    const blockedService = TestBed.inject(FcUnspentDeclarationService);
+    spyOn(blockedService, 'getUlbOptions').and.returnValue(of(makeResult([])));
+    blockedFixture.detectChanges();
+
+    expect(blockedFixture.nativeElement.textContent).toContain('Devolution Formula must be submitted first.');
+    expect(blockedFixture.nativeElement.textContent).not.toContain('No ULBs found');
   });
 
   it('shows a retryable failure state on error, and retry re-requests', () => {
