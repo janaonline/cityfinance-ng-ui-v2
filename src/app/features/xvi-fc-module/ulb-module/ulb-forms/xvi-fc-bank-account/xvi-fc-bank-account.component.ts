@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -52,6 +52,12 @@ const EDITABLE_FORM_STATUSES = new Set<FormStatusType>([
   FORM_STATUS.RETURNED_BY_STATE,
   FORM_STATUS.RETURNED_BY_MOHUA,
 ]);
+
+const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<FormStatusType, string>>> = {
+  [FORM_STATUS.UNDER_REVIEW_BY_STATE]: 'This form has been submitted to State DMA and is now locked for review.',
+  [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: 'This form has been approved by the state and is now under review by MoHUA.',
+  [FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA]: 'This form has been approved by MoHUA. No further changes are needed.',
+};
 
 interface UlbDetails {
   ulbName: string;
@@ -178,6 +184,22 @@ export class XviFcBankAccountComponent {
     const status = this.existingRecord()?.currentFormStatus;
     return status == null || EDITABLE_FORM_STATUSES.has(status);
   }
+
+  readonly lockedBannerMessage = computed(() => {
+    const status = this.existingRecord()?.currentFormStatus;
+    return (status != null && LOCKED_BANNER_MESSAGE[status]) || 'This form is not editable in the current status.';
+  });
+
+  // Shown when the form was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA) — explains why,
+  // even though the form itself is editable again at that point.
+  readonly returnNotice = computed(() => {
+    const record = this.existingRecord();
+    const status = record?.currentFormStatus;
+    if (status !== FORM_STATUS.RETURNED_BY_STATE && status !== FORM_STATUS.RETURNED_BY_MOHUA) return null;
+    const actor = status === FORM_STATUS.RETURNED_BY_STATE ? 'the state' : 'MoHUA';
+    const note = (status === FORM_STATUS.RETURNED_BY_STATE ? record?.stateDecision?.note : record?.mohuaDecision?.note) ?? null;
+    return note ? `Returned by ${actor}: ${note}` : `This form was returned by ${actor} for correction.`;
+  });
 
   shouldShowAccountNumberInputs(): boolean {
     return this.isEditable();

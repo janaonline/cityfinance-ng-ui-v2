@@ -1,0 +1,305 @@
+<main class="container-fluid px-3 px-md-4 px-xl-5 py-4 py-lg-5">
+  <button type="button" matButton class="back-btn mb-3" (click)="goBack()">
+    <i class="bi bi-arrow-left me-1"></i>Back to Submissions
+  </button>
+
+  @if (ulbName()) {
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <h1 class="ulb-name mb-0">{{ ulbName() }}</h1>
+      @if (currentSection()?.year; as year) {
+        <span class="badge rounded-pill fy-badge">FY {{ year }}</span>
+      }
+    </div>
+  }
+
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    @for (tab of sectionTabs; track tab.label) {
+      <button
+        type="button"
+        class="section-tab"
+        [class.section-tab--active]="activeSection() === tab.key"
+        [disabled]="tab.disabled"
+        [matTooltip]="tab.disabled ? 'Not available yet' : ''"
+        (click)="onTabClick(tab)"
+      >
+        <i [class]="'bi bi-' + tab.icon + ' me-1'"></i>{{ tab.label }}
+      </button>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <div class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+    </div>
+  } @else if (loadError()) {
+    <p class="text-center text-danger py-5 mb-0">Failed to load this submission. Please refresh and try again.</p>
+  } @else {
+    <!-- Single persistent host for @tabSlide — kept outside the PFMS/documents @if so switching tabs animates
+       the same element instead of destroying/recreating it (which skipped the animation for the PFMS tab). -->
+    <div class="card border-0 shadow-sm" [@tabSlide]="activeSectionIndex()">
+      <div class="card-body">
+        @if (activeSection() === 'PFMS') {
+          <h2 class="h6 fw-bold text-uppercase mb-3">PFMS Bank Account Details</h2>
+
+          @if (!bankAccountData()) {
+            <p class="text-secondary py-4 mb-0 text-center">This ULB hasn't submitted PFMS bank account details yet.</p>
+          } @else {
+            <div class="pfms-details-panel mb-3">
+              <div class="pfms-detail-row">
+                <span class="pfms-detail-label">Bank Name</span>
+                <span class="pfms-detail-value">{{ bankAccountData()!.bankDetails.name }}</span>
+              </div>
+              <div class="pfms-detail-row">
+                <span class="pfms-detail-label">Account Number</span>
+                <span class="pfms-detail-value">{{ bankAccountData()!.accountNumberMasked }}</span>
+              </div>
+              <div class="pfms-detail-row">
+                <span class="pfms-detail-label">IFSC Code</span>
+                <span class="pfms-detail-value">{{ bankAccountData()!.ifscCode }}</span>
+              </div>
+            </div>
+
+            <span class="badge rounded-pill doc-status-badge text-bg-light text-dark border mb-2">
+              {{ bankAccountData()!.currentFormStatusLabel }}
+            </span>
+
+            @if (bankAccountData()!.stateDecision?.status === 'RETURNED') {
+              <p class="returned-note mb-0 mt-2">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                Returned: {{ bankAccountData()!.stateDecision?.note ?? 'No reason given.' }}
+              </p>
+            }
+
+            <div class="return-box-wrapper" [class.return-box-wrapper--open]="pfmsReturning()">
+              <div class="return-box-inner">
+                <label class="return-box-label" for="pfms-return-note">
+                  Reason for returning this form <span class="text-danger">*</span>
+                </label>
+                <textarea
+                  id="pfms-return-note"
+                  class="return-box-textarea"
+                  rows="3"
+                  [maxLength]="returnNoteMaxLength"
+                  placeholder="e.g. IFSC code does not match the uploaded proof document."
+                  [value]="pfmsReturnNoteDraft()"
+                  (input)="pfmsReturnNoteDraft.set($any($event.target).value)"
+                ></textarea>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                  <span
+                    class="return-box-char-count"
+                    [class.return-box-char-count--invalid]="pfmsReturnNoteDraft().trim().length < returnNoteMinLength"
+                  >
+                    {{ pfmsReturnNoteDraft().trim().length }} / {{ returnNoteMaxLength }} &middot; minimum
+                    {{ returnNoteMinLength }} characters
+                  </span>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                  <button type="button" matButton (click)="cancelPfmsReturn()">Cancel</button>
+                  <button
+                    type="button"
+                    matButton="filled"
+                    class="return-box-submit"
+                    [disabled]="isDeciding() || !isReturnNoteValid(pfmsReturnNoteDraft())"
+                    (click)="confirmPfmsReturn()"
+                  >
+                    Submit and Return
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <h2 class="h6 fw-bold text-uppercase mb-0">Documents Review</h2>
+            @if (allPassed()) {
+              <span class="badge rounded-pill checks-badge">
+                <i class="bi bi-check-circle-fill me-1"></i>Automated checks passed
+              </span>
+            }
+          </div>
+
+          <p class="text-secondary small mb-1">
+            Approve or return individual documents using the controls on each row, then make an overall decision using
+            the action bar.
+          </p>
+          <p class="text-secondary small mb-3 review-meta">
+            FY {{ currentSection()?.year }} &middot; {{ rows().length }} documents
+          </p>
+
+          <div class="doc-list">
+            @for (row of rows(); track row.docId) {
+              <div class="doc-row">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                  <div>
+                    <p class="doc-title fw-semibold mb-0">{{ row.title }}</p>
+                    @if (row.uploadedAt) {
+                      <p class="doc-date text-secondary small mb-0">
+                        Uploaded on: {{ row.uploadedAt | date: 'mediumDate' }}
+                      </p>
+                    }
+                  </div>
+
+                  <div class="d-flex align-items-center gap-3 doc-row-controls">
+                    @if (row.latestDecision?.status === 'APPROVED') {
+                      <span class="badge rounded-pill doc-status-badge passed-badge">Approved</span>
+                    } @else if (row.latestDecision?.status === 'RETURNED') {
+                      <span class="badge rounded-pill doc-status-badge failed-badge">Returned</span>
+                    } @else if (row.processingStatus === 'PASSED') {
+                      <span class="badge rounded-pill doc-status-badge passed-badge">Passed</span>
+                    } @else if (row.processingStatus === 'FAILED') {
+                      <span class="badge rounded-pill doc-status-badge failed-badge">Failed</span>
+                    } @else {
+                      <span class="badge rounded-pill doc-status-badge text-bg-light text-dark border">{{
+                        row.processingStatus
+                      }}</span>
+                    }
+
+                    @if (row.wasReuploaded) {
+                      <span
+                        class="badge rounded-pill doc-status-badge reuploaded-badge"
+                        matTooltip="The ULB uploaded a corrected file after your last decision"
+                      >
+                        <i class="bi bi-arrow-repeat me-1"></i>Re-uploaded
+                      </span>
+                    }
+
+                    <button
+                      type="button"
+                      matButton="outlined"
+                      class="view-pdf-btn"
+                      [disabled]="!row.uploadId"
+                      (click)="previewFile(row)"
+                    >
+                      <i class="bi bi-eye me-1"></i>View PDF
+                    </button>
+
+                    @if (row.latestDecision?.status === 'APPROVED') {
+                      <span class="decision-badge decision-badge--approved" matTooltip="Approved — locked">
+                        <i class="bi bi-lock-fill"></i>
+                      </span>
+                    } @else if (row.latestDecision?.status === 'RETURNED') {
+                      <span
+                        class="decision-badge decision-badge--returned"
+                        matTooltip="Returned — awaiting a corrected re-upload from the ULB"
+                      >
+                        <i class="bi bi-hourglass-split"></i>
+                      </span>
+                    } @else if (canReview() && returningDocId() !== row.docId) {
+                      <button
+                        type="button"
+                        class="icon-action icon-action--approve"
+                        [disabled]="isDeciding() || row.processingStatus !== 'PASSED'"
+                        matTooltip="Approve this document"
+                        (click)="approveDocument(row.docId)"
+                      >
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-action icon-action--return"
+                        [disabled]="isDeciding() || row.processingStatus !== 'PASSED'"
+                        matTooltip="Return this document"
+                        (click)="startReturn(row.docId)"
+                      >
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                @if (row.latestDecision?.status === 'RETURNED') {
+                  <p class="returned-note mb-0">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Returned: {{ row.latestDecision?.note ?? 'No reason given.' }}
+                  </p>
+                }
+
+                <div class="return-box-wrapper" [class.return-box-wrapper--open]="returningDocId() === row.docId">
+                  <div class="return-box-inner">
+                    <label class="return-box-label" [for]="'return-note-' + row.docId">
+                      Reason for returning this document <span class="text-danger">*</span>
+                    </label>
+                    <textarea
+                      [id]="'return-note-' + row.docId"
+                      class="return-box-textarea"
+                      rows="3"
+                      [maxLength]="returnNoteMaxLength"
+                      placeholder="e.g. Page 3 is unreadable — please re-scan."
+                      [value]="returnNoteDraft()"
+                      (input)="returnNoteDraft.set($any($event.target).value)"
+                    ></textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                      <span
+                        class="return-box-char-count"
+                        [class.return-box-char-count--invalid]="returnNoteDraft().trim().length < returnNoteMinLength"
+                      >
+                        {{ returnNoteDraft().trim().length }} / {{ returnNoteMaxLength }} &middot; minimum
+                        {{ returnNoteMinLength }} characters
+                      </span>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                      <button type="button" matButton (click)="cancelReturn()">Cancel</button>
+                      <button
+                        type="button"
+                        matButton="filled"
+                        class="return-box-submit"
+                        [disabled]="isDeciding() || !isReturnNoteValid(returnNoteDraft())"
+                        (click)="confirmReturn(row.docId)"
+                      >
+                        Submit and Return
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (activeSection() === 'PFMS') {
+      @if (bankAccountData() && canApprovePfms() && !pfmsReturning()) {
+        <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
+          <button
+            type="button"
+            matButton="outlined"
+            class="text-danger"
+            [disabled]="isDeciding()"
+            (click)="startPfmsReturn()"
+          >
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Return for Correction
+          </button>
+          <button type="button" matButton="filled" [disabled]="isDeciding()" (click)="approvePfms()">
+            <i class="bi bi-check-circle-fill me-1"></i>Approve Form
+          </button>
+        </div>
+      }
+    } @else {
+      @if (canApprove()) {
+        <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
+          <button
+            type="button"
+            matButton="outlined"
+            class="text-danger"
+            [disabled]="isDeciding()"
+            (click)="decideSection('RETURNED')"
+          >
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Return Section
+          </button>
+          <button
+            type="button"
+            matButton="filled"
+            [disabled]="isDeciding() || !canApproveSection()"
+            [matTooltip]="
+              canApproveSection() ? '' : 'Cannot approve while a document has been returned — resolve it first'
+            "
+            (click)="decideSection('APPROVED')"
+          >
+            <i class="bi bi-check-circle-fill me-1"></i>Approve Section
+          </button>
+        </div>
+      }
+    }
+  }
+</main>
