@@ -46,6 +46,7 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
   readonly run = signal<EvalRunDetail | null>(null);
   readonly loading = signal(false);
   readonly exporting = signal(false);
+  readonly copiedKey = signal<string | null>(null);
 
   readonly dataSource = new MatTableDataSource<ResultRow>([]);
   readonly displayedColumns = ['jobFile', 'input', 'benchmark', 'error'];
@@ -91,6 +92,29 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
   refresh(): void {
     const runId = this.run()?.eval_run_id ?? this.route.snapshot.queryParamMap.get('runId');
     if (runId) this.loadRun(runId);
+  }
+
+  copyValue(label: string, value: string): void {
+    if (!value || value === '—') return;
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        const copyKey = `${label}:${value}`;
+        this.copiedKey.set(copyKey);
+        window.setTimeout(() => {
+          if (this.copiedKey() === copyKey) {
+            this.copiedKey.set(null);
+          }
+        }, 1500);
+      })
+      .catch(() => {
+        this.utilityService.swalPopup('Copy failed', `Unable to copy ${label.toLowerCase()}. Please try again.`, 'error');
+      });
+  }
+
+  isCopied(label: string, value: string): boolean {
+    return this.copiedKey() === `${label}:${value}`;
   }
 
   matchIcon(v: boolean | null): string {
@@ -153,6 +177,8 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
       { label: 'Seal', benchmark: this.boolText(bmk.seal_present), extracted: this.boolText(ext.seal_present), match: match.seal_present ?? null },
       { label: 'Signature', benchmark: this.boolText(bmk.signature_present), extracted: this.boolText(ext.signature_present), match: match.signature_present ?? null },
       { label: 'Table', benchmark: this.boolText(bmk.table_present), extracted: this.boolText(ext.table_present), match: match.table_present ?? null },
+      { label: 'Audit Date', benchmark: this.boolText(bmk.audit_date_present), extracted: ext.audited_date || '—', match: match.audit_date_present ?? null },
+      { label: 'Final Status', benchmark: bmk.final_status || '—', extracted: ext.document_status || '—', match: match.final_status ?? null },
     ];
 
     return {

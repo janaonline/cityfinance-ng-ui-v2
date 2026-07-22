@@ -14,7 +14,18 @@
         <div class="hero-row">
           <div>
             <h3>Eval Run Results</h3>
-            <p class="subcopy mono" style="font-size:0.82rem;">{{ r.eval_run_id }}</p>
+            <p class="subcopy mono id-line" style="font-size:0.82rem;">
+              {{ r.eval_run_id }}
+              <button
+                type="button"
+                class="copy-btn copy-btn--ghost"
+                [attr.aria-label]="isCopied('Run ID', r.eval_run_id) ? 'Copied' : 'Copy run ID'"
+                [attr.title]="isCopied('Run ID', r.eval_run_id) ? 'Copied' : 'Copy run ID'"
+                (click)="copyValue('Run ID', r.eval_run_id)"
+              >
+                <mat-icon>{{ isCopied('Run ID', r.eval_run_id) ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            </p>
           </div>
           <div class="hero-actions">
             <span class="status-badge" [ngClass]="getStatusClass(r.status)">{{ r.status | titlecase }}</span>
@@ -38,7 +49,20 @@
         </div>
         <div class="hero-meta">
           <span><span class="meta-lbl">Benchmark</span> {{ r.benchmark_id }}</span>
-          <span><span class="meta-lbl">Batch</span> {{ r.job_batch_id || '—' }}</span>
+          <span class="id-line">
+            <span class="meta-lbl">Batch</span> {{ r.job_batch_id || '—' }}
+            @if (r.job_batch_id) {
+              <button
+                type="button"
+                class="copy-btn copy-btn--ghost"
+                [attr.aria-label]="isCopied('Batch ID', r.job_batch_id) ? 'Copied' : 'Copy batch ID'"
+                [attr.title]="isCopied('Batch ID', r.job_batch_id) ? 'Copied' : 'Copy batch ID'"
+                (click)="copyValue('Batch ID', r.job_batch_id)"
+              >
+                <mat-icon>{{ isCopied('Batch ID', r.job_batch_id) ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            }
+          </span>
           <span><span class="meta-lbl">Extract</span> {{ r.extraction_model }}</span>
           <span><span class="meta-lbl">Validate</span> {{ r.validation_model }}</span>
           <span><span class="meta-lbl">Started</span> {{ formatDate(r.created_at) }}</span>
@@ -94,6 +118,14 @@
             <div class="stat-label">Table Accuracy</div>
             <div class="stat-value">{{ acc(r.metrics['table_present_accuracy']) }}</div>
           </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Audit Date Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['audit_date_present_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Final Status Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['final_status_accuracy']) }}</div>
+          </div>
           <div class="stat-card stat-card--indigo">
             <div class="stat-label">Overall Accuracy</div>
             <div class="stat-value stat-value--lg">{{ acc(r.metrics['overall_accuracy']) }}</div>
@@ -119,9 +151,27 @@
               <td mat-cell *matCellDef="let row">
                 <div class="id-line">
                   <span class="mono dim" style="font-size:0.7rem;" [title]="row.jobId">{{ truncate(row.jobId, 22) }}</span>
+                  <button
+                    type="button"
+                    class="copy-btn"
+                    [attr.aria-label]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    [attr.title]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    (click)="copyValue('Job ID', row.jobId)"
+                  >
+                    <mat-icon>{{ isCopied('Job ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
                 </div>
                 <div class="id-line" style="margin-top:0.3rem;">
                   <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 26) }}</span>
+                  <button
+                    type="button"
+                    class="copy-btn"
+                    [attr.aria-label]="isCopied('File Name', row.filename) ? 'Copied' : 'Copy file name'"
+                    [attr.title]="isCopied('File Name', row.filename) ? 'Copied' : 'Copy file name'"
+                    (click)="copyValue('File Name', row.filename)"
+                  >
+                    <mat-icon>{{ isCopied('File Name', row.filename) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
                 </div>
                 <div class="id-line" style="margin-top:0.3rem;">
                   <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>

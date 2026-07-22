@@ -173,6 +173,40 @@
   gap: 0.35rem;
 }
 
+/* Copy buttons */
+
+.copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+
+  mat-icon {
+    width: 0.85rem;
+    height: 0.85rem;
+    font-size: 0.85rem;
+    line-height: 0.85rem;
+  }
+
+  &:hover { background: #dbeafe; }
+}
+
+.copy-btn--ghost {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+
+  &:hover { background: rgba(255, 255, 255, 0.22); }
+}
+
 .field-grid {
   display: grid;
   gap: 0.3rem;
