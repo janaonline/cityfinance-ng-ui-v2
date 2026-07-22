@@ -78,6 +78,8 @@ interface UploadDocument extends UploadDocumentDef {
   validationDetails: string | null;
   failedChecks: string[];
   validationError: string | null;
+  // Most recent state decision against this specific document — null if never decided.
+  latestDecision: BackendDecision | null;
 }
 
 interface UlbDetails {
@@ -96,6 +98,13 @@ interface BackendOcrInfo {
   failedChecks: string[];
 }
 
+// A state/MoHUA approve-or-return call, as recorded on the backend.
+interface BackendDecision {
+  status: 'APPROVED' | 'RETURNED';
+  note: string | null;
+  decidedAt: string;
+}
+
 // Shape returned by GET /xvi-fc/annual-account/:id/status (and by-ulb lookup)
 interface BackendStatusDoc {
   docId: string;
@@ -110,13 +119,40 @@ interface BackendStatusDoc {
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
   } | null;
+  // Every state decision recorded against this document, oldest first — last entry is current.
+  stateDecision: BackendDecision[];
 }
 
+type AnnualAccountFormStatus =
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'UNDER_REVIEW_BY_STATE'
+  | 'RETURNED_BY_STATE'
+  | 'UNDER_REVIEW_BY_MOHUA'
+  | 'RETURNED_BY_MOHUA'
+  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA';
+
+// Statuses in which the ULB may still upload/edit/submit — mirrors the backend's canUlbEditForm allow-list.
+const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
+  'NOT_STARTED',
+  'IN_PROGRESS',
+  'RETURNED_BY_STATE',
+  'RETURNED_BY_MOHUA',
+]);
+
+const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, string>>> = {
+  UNDER_REVIEW_BY_STATE: 'This section has been submitted to State DMA and is now locked for review.',
+  UNDER_REVIEW_BY_MOHUA: 'This section has been approved by the state and is now under review by MoHUA.',
+  SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'This section has been approved by MoHUA. No further changes are needed.',
+};
+
 interface BackendStatusSection {
-  form_status: 'NOT_STARTED' | 'IN_PROGRESS' | 'UNDER_REVIEW_BY_STATE';
+  form_status: AnnualAccountFormStatus;
   yearId: string;
   year: string;
   documents: BackendStatusDoc[];
+  stateDecision: BackendDecision | null;
+  mohuaDecision: BackendDecision | null;
 }
 
 interface BackendStatusResponse {
@@ -167,6 +203,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     validationDetails: null,
     failedChecks: [],
     validationError: null,
+    latestDecision: null,
   };
 }
 
@@ -207,8 +244,38 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   // annualAccountId is known after first successful upload or on initial load
   readonly annualAccountId = signal<string | null>(null);
 
-  // True when this section has been submitted to State DMA — locks all edits for all roles
-  readonly sectionLocked = signal(false);
+  // Current section status as last reported by the backend — null until first load.
+  readonly sectionStatus = signal<AnnualAccountFormStatus | null>(null);
+
+  // True whenever the section is in any non-editable status (under review or fully acknowledged) —
+  // locks all edits for all roles, not just while under state review.
+  readonly sectionLocked = computed(() => {
+    const status = this.sectionStatus();
+    return status !== null && !ULB_EDITABLE_STATUSES.has(status);
+  });
+
+  readonly lockedBannerMessage = computed(() => {
+    const status = this.sectionStatus();
+    return (status && LOCKED_BANNER_MESSAGE[status]) ?? 'This section is currently locked for review.';
+  });
+
+  // Note attached to the state/MoHUA decision that most recently returned this section, if any.
+  private readonly sectionReturnNote = signal<string | null>(null);
+
+  // Shown when the section was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA) — explains why,
+  // even though the section itself is editable again at that point.
+  readonly returnNotice = computed(() => {
+    const status = this.sectionStatus();
+    if (status !== 'RETURNED_BY_STATE' && status !== 'RETURNED_BY_MOHUA') return null;
+    const actor = status === 'RETURNED_BY_STATE' ? 'the state' : 'MoHUA';
+    const note = this.sectionReturnNote();
+    return note ? `Returned by ${actor}: ${note}` : `This section was returned by ${actor} for correction.`;
+  });
+
+  /** An individually state-approved document stays locked from re-upload even while the rest of the section is open. */
+  isDocLocked(doc: UploadDocument): boolean {
+    return doc.latestDecision?.status === 'APPROVED';
+  }
 
   readonly passedCount = computed(() => this.documents().filter((d) => d.status === 'passed').length);
   readonly totalCount = computed(() => this.config()?.documents.length ?? 0);
@@ -216,9 +283,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const total = this.totalCount();
     return total === 0 ? 0 : Math.round((this.passedCount() / total) * 100);
   });
+  /** A returned document stays blocking even after OCR passes again — it must be resolved (re-decided or re-uploaded) first. */
+  readonly hasReturnedDocs = computed(() => this.documents().some((d) => d.latestDecision?.status === 'RETURNED'));
+
   readonly allPassed = computed(() => {
     const total = this.totalCount();
-    return total > 0 && this.passedCount() === total;
+    return total > 0 && this.passedCount() === total && !this.hasReturnedDocs();
   });
   readonly hasProcessingDocs = computed(() =>
     this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
@@ -339,8 +409,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     try {
       const ulbId = this.resolveUlbId();
+      const stateId = this.resolveStateId();
       const designYearId = this.resolveDesignYearId();
-      if (!ulbId || !designYearId) throw new Error('Missing ulbId or designYearId');
+      if (!ulbId || !stateId || !designYearId) throw new Error('Missing ulbId, stateId or designYearId');
 
       const cfg = this.config()!;
       const yearId = cfg.documentYearId;
@@ -370,7 +441,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       // Step 3 — Confirm upload to NestJS (saves metadata + triggers OCR)
       const confirmResult = await firstValueFrom(
         this.http.post<unknown>(`${API}xvi-fc/annual-account/confirm-upload`, {
-          uploadId, s3Key, ulbId, designYearId, section, docId, yearId, year,
+          uploadId, s3Key, ulbId, stateId, designYearId, section, docId, yearId, year,
           originalName: file.name,
           fileSize: file.size,
         }),
@@ -610,16 +681,37 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
 
       const section = this.config()!.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
-      this.sectionLocked.set(section?.form_status === 'UNDER_REVIEW_BY_STATE');
+      this.sectionStatus.set(section?.form_status ?? null);
+      this.sectionReturnNote.set(
+        (section?.form_status === 'RETURNED_BY_STATE'
+          ? section.stateDecision?.note
+          : section?.form_status === 'RETURNED_BY_MOHUA'
+            ? section.mohuaDecision?.note
+            : null) ?? null,
+      );
       if (!section?.documents?.length) return;
 
       this.documents.update((docs) =>
         docs.map((doc) => {
           const saved = section.documents.find((d) => d.docId === doc.id);
-          if (!saved?.currentUpload) return doc;
+          if (!saved) return doc;
+
+          const rawLatestDecision = saved.stateDecision.length
+            ? saved.stateDecision[saved.stateDecision.length - 1]
+            : null;
+
+          if (!saved.currentUpload) return { ...doc, latestDecision: rawLatestDecision };
 
           const cu = saved.currentUpload;
           const status = this.backendStatusToLocal(saved.processingStatus);
+
+          // A decision only counts against the file it was made on. If this file was
+          // (re-)uploaded after that decision, the old APPROVED/RETURNED verdict is stale —
+          // treat the document as freshly pending review again until STATE re-decides it.
+          const latestDecision =
+            rawLatestDecision && new Date(cu.uploadedAt).getTime() > new Date(rawLatestDecision.decidedAt).getTime()
+              ? null
+              : rawLatestDecision;
 
           return {
             ...doc,
@@ -639,6 +731,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationStatus: cu.ocrInfo.validationStatus ?? null,
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
+            latestDecision,
           };
         }),
       );
@@ -824,6 +917,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const raw = localStorage.getItem('userData');
       if (!raw) return null;
       return (JSON.parse(raw) as { ulb?: string }).ulb ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private resolveStateId(): string | null {
+    try {
+      const raw = localStorage.getItem('userData');
+      if (!raw) return null;
+      return (JSON.parse(raw) as { state?: string }).state ?? null;
     } catch {
       return null;
     }

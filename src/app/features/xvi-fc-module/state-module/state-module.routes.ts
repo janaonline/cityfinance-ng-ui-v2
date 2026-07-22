@@ -21,6 +21,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./ulb-submissions/ulb-submissions.component').then((m) => m.UlbSubmissionsComponent),
   },
   {
+    path: 'ulb-submissions/:ulbId/review',
+    loadComponent: () =>
+      import('./ulb-submissions/annual-account-review/annual-account-review.component').then(
+        (m) => m.AnnualAccountReviewComponent,
+      ),
+  },
+  {
     path: 'insights',
     loadComponent: () => import('./insights/insights.component').then((m) => m.InsightsComponent),
   },
@@ -79,6 +86,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'ulb-list',
     loadComponent: () => import('./ulb-list/ulb-list.component').then((m) => m.UlbListComponent),
+  },
+  {
+    path: 'fc-unspent-declaration',
+    loadComponent: () =>
+      import('./fc-unspent-declaration/fc-unspent-declaration.component').then(
+        (m) => m.FcUnspentDeclarationComponent,
+      ),
   },
 ];
 

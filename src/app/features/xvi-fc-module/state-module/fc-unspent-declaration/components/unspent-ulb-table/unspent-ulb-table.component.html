@@ -1,0 +1,135 @@
+<div class="unspent-ulb-table-wrap mt-2">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0 unspent-ulb-table border">
+      <colgroup>
+        <col class="col-slno" />
+        <col class="col-ulb" />
+        <col class="col-code" />
+        <col class="col-alloc" />
+        <col class="col-unspent" />
+        <col class="col-pct" />
+        <col class="col-eligible" />
+        <col class="col-action" />
+      </colgroup>
+      <thead class="table-light border-bottom">
+        <tr>
+          <th scope="col" class="ps-3 text-center small fw-semibold">#</th>
+          <th scope="col" class="text-center small fw-semibold">ULB</th>
+          <th scope="col" class="text-center small fw-semibold">Census Code</th>
+          <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in Cr.)</th>
+          <th scope="col" class="text-center small fw-semibold">{{ applicableFcLabel() }} FC Unspent (in Cr.)</th>
+          <th scope="col" class="text-center small fw-semibold">% of Alloc.</th>
+          <th scope="col" class="text-center small fw-semibold">Eligible?</th>
+          <th scope="col" class="text-center text-nowrap small fw-semibold text-end pe-3">Remove</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (rows().controls.length === 0) {
+          <tr>
+            <td colspan="8" class="text-center text-secondary small py-3">No ULBs added yet.</td>
+          </tr>
+        }
+        @for (row of rows().controls; track row; let i = $index) {
+          <tr [formGroup]="row">
+            <td class="ps-3 small text-secondary">{{ i + 1 }}</td>
+            <td>
+              @let ulbIdErrorText = rowFieldErrorText(row, 'ulbId');
+              <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                  <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
+                    {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
+                  </span>
+                </div>
+                @if (ulbIdErrorText) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                    [matTooltip]="ulbIdErrorText"
+                    matTooltipPosition="above"
+                    aria-label="ULB selection has a validation error"
+                    data-cy="fc-unspent-row-ulbid-error-icon"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </button>
+                }
+              </div>
+            </td>
+            <td class="small text-center text-secondary text-nowrap text-truncate">
+              {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
+            </td>
+            <td class="small text-end pe-3 text-secondary">{{ rowViewModels()[i].allocationAmount ?? '—' }}</td>
+            <td>
+              @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
+              <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>
+              <div class="d-flex align-items-center gap-2">
+                <input
+                  [id]="'fc-unspent-amount-' + i"
+                  type="number"
+                  min="0"
+                  step="any"
+                  class="form-control form-control-sm"
+                  [class.is-invalid]="!!unspentAmountErrorText"
+                  formControlName="unspentAmount"
+                  aria-label="Unspent amount"
+                />
+                @if (unspentAmountErrorText) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                    [matTooltip]="unspentAmountErrorText"
+                    matTooltipPosition="above"
+                    aria-label="Unspent amount has a validation error"
+                    data-cy="fc-unspent-row-unspentamount-error-icon"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </button>
+                }
+              </div>
+            </td>
+            <td class="small text-end pe-3">
+              @if (rowViewModels()[i].allocationPerc !== null) {
+                {{ rowViewModels()[i].allocationPerc | number: '1.0-2' }}%
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </td>
+            <td class="text-center">
+              @if (rowViewModels()[i].eligible === null) {
+                <span class="text-muted">—</span>
+              } @else if (rowViewModels()[i].eligible) {
+                <span class="badge rounded px-1 text-bg-success small">Eligible</span>
+              } @else {
+                <span class="badge rounded px-1 text-bg-danger small">Not Eligible</span>
+              }
+            </td>
+            <td class="text-end pe-3">
+              <button
+                type="button"
+                matButton="outlined"
+                class="unspent-row-btn"
+                [disabled]="!canEdit()"
+                (click)="removeRow(i)"
+                aria-label="Remove row"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <button
+    type="button"
+    matButton="outlined"
+    class="mt-2"
+    [disabled]="!canEdit()"
+    (click)="addRow()"
+    aria-label="Add ULB"
+  >
+    <i class="bi bi-plus-lg me-1"></i>Add ULB
+  </button>
+</div>

@@ -922,7 +922,7 @@ describe('SfcStatusComponent', () => {
     createComponent();
     completeInitialLoad();
 
-    // checkboxConfirmation is requiredTrue — must be true even in draft
+    // checkboxConfirmation is requiredTrue — currently optional for saveAsDraft too, set true here anyway
     getControl('checkboxConfirmation')?.setValue(true);
     // Other required fields intentionally left empty — allowed for saveAsDraft
     fixture.detectChanges();

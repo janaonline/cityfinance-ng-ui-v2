@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { environment } from '../../../../../../environments/environment';
 import { GlobalLoaderService } from '../../../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { UserUtility } from '../../../../../core/util/user/user';
@@ -29,6 +30,9 @@ export class RegisterUlbComponent implements OnInit {
   sections: FormSectionConfig[] = [];
 
   private fields: FieldConfig[] = [];
+
+  /** Dev/staging-only helper: shows the "Fill test data" button so QA can exercise the form without manual data entry. */
+  readonly isProduction = environment.isProduction;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -114,5 +118,74 @@ export class RegisterUlbComponent implements OnInit {
     const message = error?.error?.message;
     if (Array.isArray(message)) return message.join(', ');
     return message || errMsg;
+  }
+
+  /**
+   * Dev/staging-only helper: fills every field with a plausible value so the form can be
+   * submitted without manual data entry. `censusCode` is deliberately left blank so the
+   * submission exercises the backend's auto-generated `sbCode` fallback. The gazette notification
+   * value is a fake storage reference (no real upload happens) purely so the "required"
+   * validation passes during testing. Name/email/mobile are timestamp-suffixed to dodge the
+   * backend's uniqueness checks on repeated test runs.
+   */
+  fillTestData(): void {
+    const unique = Date.now();
+
+    for (const field of this.fields) {
+      const control = this.form.get(field.key);
+      if (!control) continue;
+
+      switch (field.formFieldType) {
+        case 'text':
+          if (field.key === 'censusCode') continue; // left blank to exercise the auto-generated sbCode fallback
+          control.setValue(this.testTextValue(field.key, unique));
+          break;
+        case 'select': {
+          const first = field.options?.[0];
+          if (first !== undefined) {
+            control.setValue(typeof first === 'object' ? (first.id ?? first.value ?? first._id) : first);
+          }
+          break;
+        }
+        case 'date':
+          control.setValue(new Date());
+          break;
+        case 'file':
+          control.setValue({
+            originalName: 'test-gazette-notification.pdf',
+            path: 'ulb/gazette-notifications/test-gazette-notification.pdf',
+            mimeType: 'application/pdf',
+            sizeKb: 10,
+            pageCount: 1,
+          });
+          break;
+      }
+
+      control.markAsDirty();
+      control.markAsTouched();
+    }
+
+    this.utilityService.triggerSnackbar('Test data filled. Gazette notification is a fake reference for testing only.');
+  }
+
+  private testTextValue(key: string, unique: number): string {
+    switch (key) {
+      case 'name':
+        return `Test ULB ${unique}`;
+      case 'district':
+        return 'Test District';
+      case 'gazetteNotificationNumber':
+        return `TEST/GN/${unique}`;
+      case 'primaryContactName':
+        return 'Test Contact';
+      case 'primaryContactDesignation':
+        return 'Commissioner';
+      case 'primaryContactEmail':
+        return `test.contact.${unique}@example.com`;
+      case 'primaryContactMobile':
+        return `9${String(unique).slice(-9)}`;
+      default:
+        return 'Test Value';
+    }
   }
 }

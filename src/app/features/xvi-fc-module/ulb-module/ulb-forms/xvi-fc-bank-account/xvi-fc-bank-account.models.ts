@@ -33,7 +33,6 @@ export const FORM_STATUS = {
 
 export interface SubmitXviFcBankAccountPayload {
   ulbId?: string;
-  stateId: string;
   designYearId: string;
   ifscCode: string;
   accountNumber: string;
@@ -42,10 +41,15 @@ export interface SubmitXviFcBankAccountPayload {
   proofFile: XviFcBankAccountProofFile;
 }
 
+export interface XviFcBankAccountDecision {
+  status: 'APPROVED' | 'RETURNED';
+  note: string | null;
+  decidedAt: string;
+}
+
 export interface XviFcBankAccountResponse {
   _id?: string;
   ulb?: string;
-  state?: string;
   designYear?: string;
   ifscCode: string;
   bankDetails: XviFcBankDetails;
@@ -54,6 +58,8 @@ export interface XviFcBankAccountResponse {
   proofFile: XviFcBankAccountProofFile;
   currentFormStatus: FormStatusType;
   currentFormStatusLabel: string;
+  stateDecision?: XviFcBankAccountDecision | null;
+  mohuaDecision?: XviFcBankAccountDecision | null;
   submittedBy?: string | null;
   submittedAt?: string | null;
   createdAt?: string;

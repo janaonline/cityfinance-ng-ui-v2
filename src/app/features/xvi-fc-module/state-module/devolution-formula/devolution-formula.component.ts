@@ -43,6 +43,7 @@ import {
   DevolutionRowsDialogResult,
   DevolutionValidationSummary,
   DfInstallment,
+  DfRowValidationStatus,
   FinalSubmitDevolutionPayload,
   SaveDraftDevolutionPayload,
   SubmitType,
@@ -350,11 +351,12 @@ export class DevolutionFormulaComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.lastPersistedExcelFile = fileValue;
+          const rowErrorCount = res.data.rowErrors?.length ?? 0;
           if (res.data.validationStatus === 'VALID') {
             this.utilityService.triggerSnackbar('Excel validated successfully.');
           } else {
             this.utilityService.triggerSnackbar(
-              'Excel validation completed with errors. Please review uploaded data.',
+              `Excel validation completed with ${rowErrorCount} row error(s). Click "View Uploaded Data" to review.`,
               'snackbar-danger',
             );
           }
@@ -373,7 +375,8 @@ export class DevolutionFormulaComponent implements OnInit {
             this.validationSummary.set(summary);
           }
 
-          if (hasPersistedValidationData(err)) {
+          const persisted = hasPersistedValidationData(err);
+          if (persisted) {
             if (response?.errors) {
               this.applyApiErrors(response.errors);
               this.pendingPostReloadErrors = response.errors;
@@ -503,7 +506,9 @@ export class DevolutionFormulaComponent implements OnInit {
         this.downloadTemplate();
         return;
       case DF_SUPPORTING_ACTION.VIEW_UPLOADED_DATA:
-        this.openRowsDialog();
+        // If the last known validation had row errors, land the user directly on the Invalid
+        // filter instead of "All" — still fully user-initiated, no dialog opens without a click.
+        this.openRowsDialog(this.validationSummary()?.errorRowCount ? 'INVALID' : undefined);
         return;
       case DF_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET:
         this.downloadErrorSheet();
@@ -519,14 +524,19 @@ export class DevolutionFormulaComponent implements OnInit {
     }
   }
 
-  /** Opens the uploaded rows viewer dialog. Reloads form if any rows were saved. */
-  openRowsDialog(): void {
+  /**
+   * Opens the uploaded rows viewer dialog. Reloads form if any rows were saved.
+   * @param initialFilter Pre-sets the dialog's validation-status filter (e.g. 'INVALID' to jump
+   * straight to a failed validation's affected rows) instead of the default "All" filter.
+   */
+  openRowsDialog(initialFilter?: DfRowValidationStatus): void {
     const data: DevolutionRowsDialogData = {
       stateId: this.stateId,
       yearId: this.yearId,
       installment: this.installment(),
       canEdit: this.canEdit(),
       rowEditFields: this.rowEditFields(),
+      initialValidationStatusFilter: initialFilter,
     };
     const panelClasses = this.themeClass ? [this.themeClass, 'df-rows-dialog-panel'] : ['df-rows-dialog-panel'];
     const ref = this.dialog.open(DevolutionFormulaRowsDialogComponent, {
@@ -617,11 +627,12 @@ export class DevolutionFormulaComponent implements OnInit {
       .subscribe({
         next: (res) => {
           const status = res.data.validationSummary?.validationStatus;
+          const rowErrorCount = res.data.rowErrors?.length ?? 0;
           if (status === 'VALID') {
             this.utilityService.triggerSnackbar('Excel revalidated successfully.');
           } else {
             this.utilityService.triggerSnackbar(
-              'Revalidation completed with errors. Please review uploaded data.',
+              `Revalidation completed with ${rowErrorCount} row error(s). Click "View Uploaded Data" to review.`,
               'snackbar-danger',
             );
           }
@@ -689,8 +700,8 @@ export class DevolutionFormulaComponent implements OnInit {
 
   /**
    * For `finalSubmit`: every error on visible controls must be absent.
-   * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed),
-   * but all other errors block — including `requiredTrue`.
+   * For `saveAsDraft`: plain `required` errors are skipped (empty fields are allowed) —
+   * this currently includes `requiredTrue` too (see TODO below).
    */
   private isValidForSubmitType(action: SubmitType): boolean {
     for (const field of this.visibilityService.getVisibleFields(this.fields())) {
@@ -698,10 +709,12 @@ export class DevolutionFormulaComponent implements OnInit {
       const control = this.form.get(field.key);
       if (!control?.errors) continue;
 
-      const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
+      // TODO: requiredTrue (declaration/confirmation checkboxes) is temporarily not mandatory for
+      // saveAsDraft either — uncomment both lines below to restore the original "still blocks drafts" behavior.
+      // const hasRequiredTrueValidator = field.validations?.some((v) => v.name === 'requiredTrue') ?? false;
 
       for (const errorKey of Object.keys(control.errors)) {
-        if (action === 'saveAsDraft' && errorKey === 'required' && !hasRequiredTrueValidator) continue;
+        if (action === 'saveAsDraft' && errorKey === 'required' /* && !hasRequiredTrueValidator */) continue;
         return false;
       }
     }
