@@ -100,6 +100,7 @@ interface SetupOptions {
   savedRows?: readonly FcUnspentUlbData[];
   threshold?: number;
   rowEditFields?: readonly ConditionalFieldConfig[];
+  blockingMessage?: string | null;
 }
 
 describe('UnspentUlbTableComponent', () => {
@@ -129,6 +130,7 @@ describe('UnspentUlbTableComponent', () => {
     fixture.componentRef.setInput('stateId', 'state-1');
     fixture.componentRef.setInput('yearId', 'year-1');
     fixture.componentRef.setInput('rowEditFields', options.rowEditFields ?? TEST_ROW_EDIT_FIELDS);
+    fixture.componentRef.setInput('blockingMessage', options.blockingMessage ?? null);
     fixture.detectChanges();
   }
 
@@ -261,13 +263,28 @@ describe('UnspentUlbTableComponent', () => {
     expect(dialog.open).toHaveBeenCalledTimes(1);
     const [, config] = dialog.open.calls.mostRecent().args as [
       unknown,
-      { data: { stateId: string; yearId: string; excludeUlbIds: string[] } },
+      { data: { stateId: string; yearId: string; excludeUlbIds: string[]; blockingMessage: string | null } },
     ];
-    expect(config.data).toEqual({ stateId: 'state-1', yearId: 'year-1', excludeUlbIds: [] });
+    expect(config.data).toEqual({
+      stateId: 'state-1',
+      yearId: 'year-1',
+      excludeUlbIds: [],
+      blockingMessage: null,
+    });
 
     expect(rows.length).toBe(1);
     expect(rows.at(0).controls.ulbId.value).toBe(ULB_OPTIONS[0].ulbId);
     expect(rows.at(0).controls.unspentAmount.value).toBeNull();
+  });
+
+  it('passes the blockingMessage input through to the picker dialog data', () => {
+    setupWithRows([], { blockingMessage: 'Devolution Formula must be submitted first.' });
+    dialog.open.and.returnValue(dialogRefReturning(undefined));
+
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
+
+    const [, config] = dialog.open.calls.mostRecent().args as [unknown, { data: { blockingMessage: string | null } }];
+    expect(config.data.blockingMessage).toBe('Devolution Formula must be submitted first.');
   });
 
   it('passes its own injector into the dialog config, so the picker can resolve the shared ULB-options cache', () => {
@@ -402,119 +419,17 @@ describe('UnspentUlbTableComponent', () => {
     expect(dialog.open).not.toHaveBeenCalled();
   });
 
-  // ─── Change ULB on an existing row via the picker ───────────────────────────
-
-  it('shows a "Change selected ULB" button for a row with a ULB already selected', () => {
-    setupWithRows(
-      [
-        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
-          ulbId: ULB_OPTIONS[0].ulbId,
-          unspentAmount: 1,
-        }),
-      ],
-      {
-        savedRows: SAVED_ROWS,
-      },
-    );
-    expect(fixture.debugElement.query(By.css('button[aria-label="Change selected ULB"]'))).toBeTruthy();
-  });
-
-  it('replaces the row ulbId with the picker selection and excludes every other row', () => {
-    setupWithRows(
-      [
-        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
-          ulbId: ULB_OPTIONS[0].ulbId,
-          unspentAmount: 1.5,
-        }),
-        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
-          ulbId: ULB_OPTIONS[1].ulbId,
-          unspentAmount: 1.2,
-        }),
-      ],
-      { savedRows: SAVED_ROWS },
-    );
+  it('renders name/allocation from the freshly picked option immediately after adding a row', () => {
+    setupWithRows([]);
     dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[2]]));
 
-    component.openPickerForRow(0);
-
-    const [, config] = dialog.open.calls.mostRecent().args as [unknown, { data: { excludeUlbIds: string[] } }];
-    // Excludes the *other* row's ulbId, but not row 0's own current selection.
-    expect(config.data.excludeUlbIds).toEqual([ULB_OPTIONS[1].ulbId]);
-
-    expect(rows.at(0).controls.ulbId.value).toBe(ULB_OPTIONS[2].ulbId);
-    expect(rows.at(0).controls.ulbId.touched).toBe(true);
-  });
-
-  it('replaces the row with the first selection and appends every additional selection as a new row', () => {
-    setupWithRows(
-      [
-        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
-          ulbId: ULB_OPTIONS[0].ulbId,
-          unspentAmount: 1.5,
-        }),
-      ],
-      { savedRows: SAVED_ROWS },
-    );
-    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[2], ULB_OPTIONS[3]]));
-
-    component.openPickerForRow(0);
-
-    expect(rows.length).toBe(2);
-    expect(rows.at(0).controls.ulbId.value).toBe(ULB_OPTIONS[2].ulbId);
-    expect(rows.at(1).controls.ulbId.value).toBe(ULB_OPTIONS[3].ulbId);
-  });
-
-  it('renders name/allocation from the freshly picked option for a row with no saved snapshot', () => {
-    setupWithRows([
-      createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, { ulbId: null, unspentAmount: null }),
-    ]);
-    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[2]]));
-
-    component.openPickerForRow(0);
+    fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
     fixture.detectChanges();
 
     const cells = fixture.debugElement.queryAll(By.css('tbody tr td'));
     expect(cells[1].nativeElement.textContent).toContain(ULB_OPTIONS[2].ulbName);
     expect(cells[2].nativeElement.textContent).toContain('800456');
     expect(cells[3].nativeElement.textContent).toContain('12.5');
-  });
-
-  it('never applies a picker selection that would duplicate a ulbId already present in another row', () => {
-    setupWithRows(
-      [
-        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
-          ulbId: ULB_OPTIONS[0].ulbId,
-          unspentAmount: 1.5,
-        }),
-        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, { ulbId: null, unspentAmount: null }),
-      ],
-      { savedRows: SAVED_ROWS },
-    );
-    // Simulate a race: the picker (opened for row 1) somehow resolves with row 0's own ulbId.
-    dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0]]));
-
-    component.openPickerForRow(1);
-
-    expect(rows.at(1).controls.ulbId.value).toBeNull();
-  });
-
-  it('does not open the picker for an existing row when canEdit is false', () => {
-    setupWithRows(
-      [
-        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
-          ulbId: ULB_OPTIONS[0].ulbId,
-          unspentAmount: 1,
-        }),
-      ],
-      {
-        canEdit: false,
-        savedRows: SAVED_ROWS,
-      },
-    );
-
-    component.openPickerForRow(0);
-
-    expect(dialog.open).not.toHaveBeenCalled();
   });
 
   // ─── Remove ──────────────────────────────────────────────────────────────────
@@ -740,7 +655,7 @@ describe('UnspentUlbTableComponent', () => {
     expect(group.controls.unspentAmount.errors?.['apiErrors']).toBeUndefined();
   });
 
-  it('disables add/remove/select actions when canEdit is false', () => {
+  it('disables add/remove actions when canEdit is false', () => {
     setupWithRows(
       [
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
@@ -753,10 +668,8 @@ describe('UnspentUlbTableComponent', () => {
 
     const addButton = fixture.debugElement.query(By.css('button[aria-label="Add ULB"]'));
     const removeButton = fixture.debugElement.query(By.css('button.unspent-row-btn[aria-label="Remove row"]'));
-    const changeButton = fixture.debugElement.query(By.css('button[aria-label="Change selected ULB"]'));
 
     expect(addButton.nativeElement.disabled).toBe(true);
     expect(removeButton.nativeElement.disabled).toBe(true);
-    expect(changeButton.nativeElement.disabled).toBe(true);
   });
 });

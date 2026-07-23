@@ -13,6 +13,10 @@ export interface UlbPickerDialogData {
   yearId: string;
   /** ulbIds already selected by other rows in the current session — disabled in the results list. */
   excludeUlbIds: string[];
+  /** Backend-composed explanation of why the Devolution dependency is currently blocking something
+   *  (`FcUnspentDevolutionDependency.blockingMessage`). Shown in place of the generic empty-state
+   *  text whenever non-null — the same condition the parent page's own banner uses. */
+  blockingMessage: string | null;
 }
 
 const ULB_PICKER_PAGE_SIZE = 20;

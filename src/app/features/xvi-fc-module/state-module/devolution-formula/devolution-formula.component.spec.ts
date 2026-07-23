@@ -159,14 +159,14 @@ describe('DevolutionFormulaComponent', () => {
     dfService.validateExcel.and.returnValue(
       of({
         success: true,
-        data: { validationStatus: 'VALID' as const, validationSummary: fullValidationSummaryMock },
+        data: { validationStatus: 'VALID' as const, validationSummary: fullValidationSummaryMock, rowErrors: [] },
         timestamp: '',
       }),
     );
     dfService.revalidateExcel.and.returnValue(
       of({
         success: true,
-        data: { validationSummary: fullValidationSummaryMock },
+        data: { validationSummary: fullValidationSummaryMock, rowErrors: [] },
         timestamp: '',
       }),
     );
@@ -490,6 +490,107 @@ describe('DevolutionFormulaComponent', () => {
 
       expect(component.validationSummary()).toEqual(jasmine.objectContaining({ validationStatus: 'INVALID' }));
     });
+
+    it('does not open the rows dialog when the response is VALID with no row errors', () => {
+      dialogOpenSpy.calls.reset();
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
+
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not open the rows dialog on a 200 response with populated rowErrors (no auto-open — user must click View Uploaded Data)', () => {
+      dfService.validateExcel.and.returnValue(
+        of({
+          success: true,
+          data: {
+            validationStatus: 'INVALID' as const,
+            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
+            rowErrors: [
+              {
+                rowNumber: 1,
+                censusCode: '802685',
+                ulbName: 'Achalpur Muncipal Council',
+                field: 'devolutionFormula',
+                code: 'required',
+                message: 'Devolution Formula is required.',
+              },
+            ],
+          },
+          timestamp: '',
+        }),
+      );
+      dialogOpenSpy.calls.reset();
+
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
+
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it('shows a snackbar stating the actual row-error count instead of a generic message', () => {
+      dfService.validateExcel.and.returnValue(
+        of({
+          success: true,
+          data: {
+            validationStatus: 'INVALID' as const,
+            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
+            rowErrors: [
+              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+              { rowNumber: 2, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+            ],
+          },
+          timestamp: '',
+        }),
+      );
+      utilityService.triggerSnackbar.calls.reset();
+
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        jasmine.stringContaining('2 row error(s)'),
+        'snackbar-danger',
+      );
+    });
+
+    it('does not open the rows dialog on a 400 error that carries persisted rowErrors (e.g. new-ULB rows alongside other invalid rows)', () => {
+      dfService.validateExcel.and.returnValue(
+        throwError(() => ({
+          status: 400,
+          error: {
+            message: 'Validation failed.',
+            errors: { excelFile: [{ field: 'excelFile', code: 'newUlbsAdded', message: 'You have added 1 ULB(s).' }] },
+            data: {
+              validationSummary: { ...mockValidationSummary, excelRowCount: 5 },
+              rowErrors: [
+                { rowNumber: 3, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+              ],
+            },
+          },
+        })),
+      );
+      dialogOpenSpy.calls.reset();
+
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
+
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not open the rows dialog on a 400 error with no persisted data (e.g. missing headers)', () => {
+      dfService.validateExcel.and.returnValue(
+        throwError(() => ({
+          status: 400,
+          error: {
+            message: 'Missing required columns.',
+            errors: { excelFile: [{ field: 'excelFile', code: 'missingHeaders', message: 'Missing required columns.' }] },
+            data: {},
+          },
+        })),
+      );
+      dialogOpenSpy.calls.reset();
+
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
+
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
+    });
   });
 
   // ─── finalSubmit ─────────────────────────────────────────────────────────────
@@ -555,6 +656,32 @@ describe('DevolutionFormulaComponent', () => {
       expect(dfService.revalidateExcel).toHaveBeenCalledOnceWith('state-1', 'year-1', 1);
     });
 
+    it('revalidate-excel does not open the rows dialog when the response carries rowErrors (no auto-open)', () => {
+      dfService.revalidateExcel.and.returnValue(
+        of({
+          success: true,
+          data: {
+            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
+            rowErrors: [
+              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+            ],
+          },
+          timestamp: '',
+        }),
+      );
+      dialogOpenSpy.calls.reset();
+
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'revalidate-excel' });
+
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it('revalidate-excel does not open the rows dialog when the response is VALID with no row errors', () => {
+      dialogOpenSpy.calls.reset();
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'revalidate-excel' });
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
+    });
+
     it('view-uploaded-data opens the rows dialog with stateId, yearId, and installment', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'view-uploaded-data' });
       expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
@@ -567,6 +694,38 @@ describe('DevolutionFormulaComponent', () => {
           }),
         }),
       );
+    });
+
+    it('view-uploaded-data passes initialValidationStatusFilter: INVALID when the loaded form has row errors', () => {
+      dfService.getForm.and.returnValue(
+        of({ ...minimalFormData, validationSummary: { ...mockValidationSummary, errorRowCount: 431 } }),
+      );
+      const fixture6 = TestBed.createComponent(DevolutionFormulaComponent);
+      fixture6.detectChanges();
+      dialogOpenSpy.calls.reset();
+
+      fixture6.componentInstance.onSupportingAction({ fieldKey: 'excelFile', actionId: 'view-uploaded-data' });
+
+      const callArgs = dialogOpenSpy.calls.mostRecent().args[1] as {
+        data: { initialValidationStatusFilter?: string };
+      };
+      expect(callArgs.data.initialValidationStatusFilter).toBe('INVALID');
+    });
+
+    it('view-uploaded-data passes no filter (defaults to All) when there are no row errors', () => {
+      dfService.getForm.and.returnValue(
+        of({ ...minimalFormData, validationSummary: { ...mockValidationSummary, errorRowCount: 0 } }),
+      );
+      const fixture7 = TestBed.createComponent(DevolutionFormulaComponent);
+      fixture7.detectChanges();
+      dialogOpenSpy.calls.reset();
+
+      fixture7.componentInstance.onSupportingAction({ fieldKey: 'excelFile', actionId: 'view-uploaded-data' });
+
+      const callArgs = dialogOpenSpy.calls.mostRecent().args[1] as {
+        data: { initialValidationStatusFilter?: string };
+      };
+      expect(callArgs.data.initialValidationStatusFilter).toBeUndefined();
     });
 
     it('view-uploaded-data passes canEdit from permissions into the dialog data', () => {
