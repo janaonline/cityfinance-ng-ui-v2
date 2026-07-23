@@ -197,6 +197,11 @@
   }
 
   &:hover { background: #dbeafe; }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 .copy-btn--ghost {

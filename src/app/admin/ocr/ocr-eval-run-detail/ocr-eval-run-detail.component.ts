@@ -1,10 +1,11 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { AfterViewInit, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
 import { saveAs } from 'file-saver';
+import { environment } from '../../../../environments/environment';
 import { MaterialModule } from '../../../material.module';
 import { UtilityService } from '../../../core/services/utility.service';
 import { EvalRunDetail, EvalRunRowResult, OcrService } from '../ocr.service';
@@ -32,7 +33,7 @@ interface ResultRow {
 @Component({
   standalone: true,
   selector: 'app-ocr-eval-run-detail',
-  imports: [CommonModule, MaterialModule, MatTableModule, MatPaginatorModule],
+  imports: [CommonModule, RouterModule, MaterialModule, MatTableModule, MatPaginatorModule],
   templateUrl: './ocr-eval-run-detail.component.html',
   styleUrl: './ocr-eval-run-detail.component.scss',
 })
@@ -87,6 +88,11 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
         error: (err) =>
           this.utilityService.swalPopup('Export failed', err?.error?.detail || 'Please try again.', 'error'),
       });
+  }
+
+  downloadJobFile(row: ResultRow): void {
+    if (!row.jobId || row.jobId === '—') return;
+    window.open(`${environment.api.url3}ocr-validation/jobs/${row.jobId}/download`, '_blank', 'noopener');
   }
 
   refresh(): void {
