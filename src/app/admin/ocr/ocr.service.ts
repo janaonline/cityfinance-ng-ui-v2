@@ -65,6 +65,7 @@ export interface BenchmarkFieldValue {
   signature_present?: boolean | null;
   table_present?: boolean | null;
   audit_date_present?: boolean | null;
+  doc_quality_good?: boolean | null;
   final_status?: string | null;
 }
 
@@ -125,6 +126,7 @@ export interface EvalExtractedValue {
   signature_present?: boolean | null;
   table_present?: boolean | null;
   audited_date?: string | null;
+  pdf_quality_status?: string | null;
   document_status?: string | null;
 }
 
@@ -137,6 +139,7 @@ export interface EvalFieldMatch {
   signature_present: boolean | null;
   table_present: boolean | null;
   audit_date_present: boolean | null;
+  doc_quality_good: boolean | null;
   final_status: boolean | null;
   overall: boolean;
 }

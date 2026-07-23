@@ -178,6 +178,7 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
       { label: 'Signature', benchmark: this.boolText(bmk.signature_present), extracted: this.boolText(ext.signature_present), match: match.signature_present ?? null },
       { label: 'Table', benchmark: this.boolText(bmk.table_present), extracted: this.boolText(ext.table_present), match: match.table_present ?? null },
       { label: 'Audit Date', benchmark: this.boolText(bmk.audit_date_present), extracted: ext.audited_date || '—', match: match.audit_date_present ?? null },
+      { label: 'Doc Quality', benchmark: this.boolText(bmk.doc_quality_good), extracted: ext.pdf_quality_status || '—', match: match.doc_quality_good ?? null },
       { label: 'Final Status', benchmark: bmk.final_status || '—', extracted: ext.document_status || '—', match: match.final_status ?? null },
     ];
 
