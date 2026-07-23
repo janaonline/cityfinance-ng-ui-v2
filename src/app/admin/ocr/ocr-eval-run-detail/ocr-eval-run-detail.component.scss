@@ -197,6 +197,11 @@
   }
 
   &:hover { background: #dbeafe; }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 .copy-btn--ghost {
@@ -360,6 +365,13 @@
   font-weight: 700;
   color: #0f172a;
   background: #eff6ff;
+}
+
+::ng-deep .results-table .mat-column-serialNo {
+  width: 2.5rem;
+  max-width: 2.5rem;
+  text-align: center;
+  color: #64748b;
 }
 
 ::ng-deep .results-table .mat-mdc-cell,

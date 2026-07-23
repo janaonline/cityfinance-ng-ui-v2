@@ -1,10 +1,11 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { AfterViewInit, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
 import { saveAs } from 'file-saver';
+import { environment } from '../../../../environments/environment';
 import { MaterialModule } from '../../../material.module';
 import { UtilityService } from '../../../core/services/utility.service';
 import { EvalRunDetail, EvalRunRowResult, OcrService } from '../ocr.service';
@@ -32,7 +33,7 @@ interface ResultRow {
 @Component({
   standalone: true,
   selector: 'app-ocr-eval-run-detail',
-  imports: [CommonModule, MaterialModule, MatTableModule, MatPaginatorModule],
+  imports: [CommonModule, RouterModule, MaterialModule, MatTableModule, MatPaginatorModule],
   templateUrl: './ocr-eval-run-detail.component.html',
   styleUrl: './ocr-eval-run-detail.component.scss',
 })
@@ -49,7 +50,7 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
   readonly copiedKey = signal<string | null>(null);
 
   readonly dataSource = new MatTableDataSource<ResultRow>([]);
-  readonly displayedColumns = ['jobFile', 'input', 'benchmark', 'error'];
+  readonly displayedColumns = ['serialNo', 'jobFile', 'input', 'benchmark', 'error'];
 
   ngOnInit(): void {
     const runId = this.route.snapshot.queryParamMap.get('runId');
@@ -89,6 +90,11 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
       });
   }
 
+  downloadJobFile(row: ResultRow): void {
+    if (!row.jobId || row.jobId === '—') return;
+    window.open(`${environment.api.url3}ocr-validation/jobs/${row.jobId}/download`, '_blank', 'noopener');
+  }
+
   refresh(): void {
     const runId = this.run()?.eval_run_id ?? this.route.snapshot.queryParamMap.get('runId');
     if (runId) this.loadRun(runId);
@@ -115,6 +121,12 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
 
   isCopied(label: string, value: string): boolean {
     return this.copiedKey() === `${label}:${value}`;
+  }
+
+  serialNumber(index: number): number {
+    const pageIndex = this.paginator?.pageIndex ?? 0;
+    const pageSize = this.paginator?.pageSize ?? 25;
+    return pageIndex * pageSize + index + 1;
   }
 
   matchIcon(v: boolean | null): string {

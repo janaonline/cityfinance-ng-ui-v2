@@ -149,6 +149,12 @@
         <div class="table-shell">
           <table mat-table [dataSource]="dataSource" class="results-table">
 
+            <!-- Serial No -->
+            <ng-container matColumnDef="serialNo">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let row; let i = index">{{ serialNumber(i) }}</td>
+            </ng-container>
+
             <!-- Job / File -->
             <ng-container matColumnDef="jobFile">
               <th mat-header-cell *matHeaderCellDef>Job / File</th>
@@ -164,6 +170,19 @@
                   >
                     <mat-icon>{{ isCopied('Job ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
                   </button>
+                  @if (row.jobId && row.jobId !== '—') {
+                    <a
+                      class="copy-btn"
+                      [routerLink]="['/ocr/validation']"
+                      [queryParams]="{ jobId: row.jobId }"
+                      target="_blank"
+                      rel="noopener"
+                      aria-label="View job"
+                      title="View job result (opens in new tab)"
+                    >
+                      <mat-icon>open_in_new</mat-icon>
+                    </a>
+                  }
                 </div>
                 <div class="id-line" style="margin-top:0.3rem;">
                   <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 26) }}</span>
@@ -176,6 +195,17 @@
                   >
                     <mat-icon>{{ isCopied('File Name', row.filename) ? 'check' : 'content_copy' }}</mat-icon>
                   </button>
+                  @if (row.jobId && row.jobId !== '—') {
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      aria-label="Download file"
+                      title="Open source file in a new tab"
+                      (click)="downloadJobFile(row)"
+                    >
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  }
                 </div>
                 <div class="id-line" style="margin-top:0.3rem;">
                   <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
