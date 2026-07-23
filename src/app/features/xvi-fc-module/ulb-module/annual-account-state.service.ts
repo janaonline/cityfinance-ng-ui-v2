@@ -2,7 +2,6 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { FormStatusType } from './ulb-forms/xvi-fc-bank-account/xvi-fc-bank-account.models';
 
 export interface FormStatusData {
   annualAccountId: string | null;
@@ -13,8 +12,8 @@ export interface FormStatusData {
     form_status_id: null;
   };
   xviFcBankAccount?: {
-    form_status: FormStatusType;
-    form_status_id: number | null;
+    form_status: string;
+    form_status_id: number;
   };
 }
 
