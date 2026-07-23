@@ -64,6 +64,7 @@ interface UlbDetails {
   stateName: string;
   selectedYear: string;
   ulbId?: string;
+  stateId?: string;
   designYearId?: string;
 }
 
@@ -175,7 +176,8 @@ export class XviFcBankAccountComponent {
       !!this.bankDetails() &&
       !!this.selectedProof() &&
       !this.proofError() &&
-      !!this.ulbDetails()?.designYearId
+      !!this.ulbDetails()?.designYearId &&
+      !!this.ulbDetails()?.stateId
     );
   }
 
@@ -188,6 +190,11 @@ export class XviFcBankAccountComponent {
   readonly lockedBannerMessage = computed(() => {
     const status = this.existingRecord()?.currentFormStatus;
     return (status != null && LOCKED_BANNER_MESSAGE[status]) || 'This form is not editable in the current status.';
+  });
+
+  readonly isReturnedStatus = computed(() => {
+    const status = this.existingRecord()?.currentFormStatus;
+    return status === FORM_STATUS.RETURNED_BY_STATE || status === FORM_STATUS.RETURNED_BY_MOHUA;
   });
 
   // Shown when the form was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA) — explains why,
@@ -354,7 +361,7 @@ export class XviFcBankAccountComponent {
     }
 
     const details = this.ulbDetails();
-    if (!details?.designYearId) {
+    if (!details?.designYearId || !details.stateId) {
       this.loadError.set('Selected year context is missing. Please reopen this form from the condition tile.');
       this.utilityService.triggerSnackbar(this.loadError()!, 'snackbar-danger');
       return;
@@ -374,6 +381,7 @@ export class XviFcBankAccountComponent {
     this.bankAccountService
       .submitBankAccount({
         ulbId: details.ulbId,
+        stateId: details.stateId,
         designYearId: details.designYearId,
         ifscCode: this.form.controls.ifscCode.value ?? '',
         accountNumber: this.form.controls.accountNumber.value ?? '',
@@ -477,14 +485,15 @@ export class XviFcBankAccountComponent {
       if (!parsed.ulbName || !parsed.stateName || !parsed.selectedYear) return null;
 
       const userDataRaw = localStorage.getItem('userData');
-      const userUlbId = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string })?.ulb : undefined;
+      const userData = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string; state?: string }) : undefined;
 
       return {
         ulbName: parsed.ulbName,
         stateName: parsed.stateName,
         selectedYear: parsed.selectedYear,
         designYearId: parsed.designYearId ?? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) ?? undefined,
-        ulbId: parsed.ulbId ?? parsed._id ?? parsed.ulb?._id ?? parsed.ulb?.id ?? userUlbId ?? undefined,
+        ulbId: parsed.ulbId ?? parsed._id ?? parsed.ulb?._id ?? parsed.ulb?.id ?? userData?.ulb ?? undefined,
+        stateId: userData?.state ?? undefined,
       };
     } catch {
       return null;
