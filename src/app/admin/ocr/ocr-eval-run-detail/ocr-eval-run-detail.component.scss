@@ -362,6 +362,13 @@
   background: #eff6ff;
 }
 
+::ng-deep .results-table .mat-column-serialNo {
+  width: 2.5rem;
+  max-width: 2.5rem;
+  text-align: center;
+  color: #64748b;
+}
+
 ::ng-deep .results-table .mat-mdc-cell,
 ::ng-deep .results-table .mat-mdc-header-cell {
   padding: 0.7rem 0.85rem;

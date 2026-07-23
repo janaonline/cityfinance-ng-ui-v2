@@ -49,7 +49,7 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
   readonly copiedKey = signal<string | null>(null);
 
   readonly dataSource = new MatTableDataSource<ResultRow>([]);
-  readonly displayedColumns = ['jobFile', 'input', 'benchmark', 'error'];
+  readonly displayedColumns = ['serialNo', 'jobFile', 'input', 'benchmark', 'error'];
 
   ngOnInit(): void {
     const runId = this.route.snapshot.queryParamMap.get('runId');
@@ -115,6 +115,12 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
 
   isCopied(label: string, value: string): boolean {
     return this.copiedKey() === `${label}:${value}`;
+  }
+
+  serialNumber(index: number): number {
+    const pageIndex = this.paginator?.pageIndex ?? 0;
+    const pageSize = this.paginator?.pageSize ?? 25;
+    return pageIndex * pageSize + index + 1;
   }
 
   matchIcon(v: boolean | null): string {

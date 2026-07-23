@@ -149,6 +149,12 @@
         <div class="table-shell">
           <table mat-table [dataSource]="dataSource" class="results-table">
 
+            <!-- Serial No -->
+            <ng-container matColumnDef="serialNo">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let row; let i = index">{{ serialNumber(i) }}</td>
+            </ng-container>
+
             <!-- Job / File -->
             <ng-container matColumnDef="jobFile">
               <th mat-header-cell *matHeaderCellDef>Job / File</th>
