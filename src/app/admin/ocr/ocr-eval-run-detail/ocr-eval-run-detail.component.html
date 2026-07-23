@@ -123,6 +123,10 @@
             <div class="stat-value">{{ acc(r.metrics['audit_date_present_accuracy']) }}</div>
           </div>
           <div class="stat-card stat-card--blue">
+            <div class="stat-label">Doc Quality Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['doc_quality_good_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
             <div class="stat-label">Final Status Accuracy</div>
             <div class="stat-value">{{ acc(r.metrics['final_status_accuracy']) }}</div>
           </div>
