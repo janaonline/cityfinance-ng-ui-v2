@@ -19,7 +19,14 @@
   @if (sectionLocked()) {
     <div class="section-locked-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
       <mat-icon class="locked-banner-icon">lock</mat-icon>
-      <span class="body-sm">This section has been submitted to State DMA and is now locked for review.</span>
+      <span class="body-sm">{{ lockedBannerMessage() }}</span>
+    </div>
+  }
+
+  @if (returnNotice(); as notice) {
+    <div class="section-returned-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
+      <mat-icon class="returned-banner-icon">error_outline</mat-icon>
+      <span class="body-sm">{{ notice }}</span>
     </div>
   }
 
@@ -50,11 +57,13 @@
     <span class="body-xs text-muted text-nowrap">{{ passedCount() }} of {{ totalCount() }} verified</span>
   </div>
 
-  <div class="documents-card rounded-3 border overflow-hidden mb-4">
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="documents-list d-flex flex-column gap-3">
 
     @if (isLoadingConfig() || isLoadingExisting()) {
       @for (i of [1,2,3,4,5]; track i) {
-        <div class="doc-row doc-row--skeleton border-bottom">
+        <div class="doc-row doc-row--skeleton">
           <div class="d-flex align-items-center gap-3 px-3 py-3">
             <div class="flex-grow-1">
               <div class="skeleton-line skeleton-line--title mb-1"></div>
@@ -65,9 +74,9 @@
         </div>
       }
     } @else {
-      @for (doc of documents(); track doc.id; let last = $last) {
+      @for (doc of documents(); track doc.id) {
 
-        <div class="doc-row" [class.border-bottom]="!last">
+        <div class="doc-row">
 
           <!-- ── Main row: title + status control ─────────────────────────── -->
           <div class="doc-row-main d-flex align-items-start gap-3 px-3 py-3">
@@ -120,9 +129,15 @@
                     @if (doc.versionLabel) {
                       <span class="chip-meta">· {{ doc.versionLabel }}</span>
                     }
-                    <span class="passed-badge ms-1">
-                      <span class="passed-dot">●</span> PASSED
-                    </span>
+                    @if (doc.latestDecision?.status === 'RETURNED') {
+                      <span class="returned-badge ms-1">
+                        <span class="returned-dot">●</span> RETURNED
+                      </span>
+                    } @else {
+                      <span class="passed-badge ms-1">
+                        <span class="passed-dot">●</span> PASSED
+                      </span>
+                    }
                     <button
                       mat-icon-button
                       class="chip-icon-btn"
@@ -132,7 +147,7 @@
                     >
                       <mat-icon class="chip-icon">visibility</mat-icon>
                     </button>
-                    @if (canDelete() && !sectionLocked()) {
+                    @if (!isDocLocked(doc) && doc.latestDecision?.status !== 'RETURNED' && canDelete() && !sectionLocked()) {
                       <button
                         mat-icon-button
                         class="chip-icon-btn chip-icon-btn--delete"
@@ -150,6 +165,11 @@
                       &nbsp;·&nbsp;{{ timeAgo(doc.uploadedAt) }}
                     }
                   </p>
+                  @if (doc.latestDecision?.status === 'RETURNED' && canUpload() && !sectionLocked()) {
+                    <button mat-stroked-button class="upload-btn mt-1" type="button" (click)="triggerUpload(doc.id)">
+                      <mat-icon>upload</mat-icon> Re-upload
+                    </button>
+                  }
                 </div>
               }
 
@@ -190,7 +210,7 @@
                   </span>
                 </div>
                 <button mat-stroked-button class="upload-btn w-100" type="button"
-                  [disabled]="!canUpload() || sectionLocked()"
+                  [disabled]="!canUpload() || sectionLocked() || isDocLocked(doc)"
                   (click)="triggerUpload(doc.id)">
                   <mat-icon>upload</mat-icon> Upload
                 </button>
@@ -199,7 +219,7 @@
               <!-- PENDING -->
               @if (doc.status === 'pending') {
                 <button mat-stroked-button class="upload-btn" type="button"
-                  [disabled]="!canUpload() || sectionLocked()"
+                  [disabled]="!canUpload() || sectionLocked() || isDocLocked(doc)"
                   (click)="triggerUpload(doc.id)">
                   <mat-icon>upload</mat-icon> Upload
                 </button>
@@ -207,6 +227,23 @@
 
             </div>
           </div>
+
+          <!-- ── Approved/returned banner (full-width, spans the whole row) ── -->
+          @if (doc.status === 'passed' && isDocLocked(doc)) {
+            <div class="px-3 pb-3">
+              <p class="doc-approved-note mb-0">
+                <mat-icon class="align-middle">check_circle</mat-icon>
+                Approved by your state — this document is locked and cannot be re-uploaded.
+              </p>
+            </div>
+          } @else if (doc.status === 'passed' && doc.latestDecision?.status === 'RETURNED') {
+            <div class="px-3 pb-3">
+              <p class="doc-returned-note mb-0">
+                <mat-icon class="align-middle">error_outline</mat-icon>
+                Returned by your state: {{ doc.latestDecision?.note ?? 'No reason given.' }}
+              </p>
+            </div>
+          }
 
           <!-- ── Validation results panel (full-width, only when FAILED with details) ── -->
           @if (doc.status === 'failed' && (doc.failedChecks.length || doc.validationDetails)) {
@@ -240,6 +277,8 @@
       }
     }
 
+      </div>
+    </div>
   </div>
 
   @if (canConfirm() && !sectionLocked()) {
@@ -255,7 +294,11 @@
           {{ config()?.confirmLabel }}
         </button>
         <p class="footer-note body-xs text-muted mb-0">
-          All documents must pass verification before confirming. Once confirmed, documents are locked.
+          @if (hasReturnedDocs()) {
+            Please re-upload the returned document(s) above before confirming.
+          } @else {
+            All documents must pass verification before confirming. Once confirmed, documents are locked.
+          }
         </p>
       </div>
     </div>

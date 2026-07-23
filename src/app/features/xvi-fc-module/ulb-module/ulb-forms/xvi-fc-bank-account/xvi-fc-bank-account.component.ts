@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -53,11 +53,18 @@ const EDITABLE_FORM_STATUSES = new Set<FormStatusType>([
   FORM_STATUS.RETURNED_BY_MOHUA,
 ]);
 
+const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<FormStatusType, string>>> = {
+  [FORM_STATUS.UNDER_REVIEW_BY_STATE]: 'This form has been submitted to State DMA and is now locked for review.',
+  [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: 'This form has been approved by the state and is now under review by MoHUA.',
+  [FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA]: 'This form has been approved by MoHUA. No further changes are needed.',
+};
+
 interface UlbDetails {
   ulbName: string;
   stateName: string;
   selectedYear: string;
   ulbId?: string;
+  stateId?: string;
   designYearId?: string;
 }
 
@@ -169,7 +176,8 @@ export class XviFcBankAccountComponent {
       !!this.bankDetails() &&
       !!this.selectedProof() &&
       !this.proofError() &&
-      !!this.ulbDetails()?.designYearId
+      !!this.ulbDetails()?.designYearId &&
+      !!this.ulbDetails()?.stateId
     );
   }
 
@@ -178,6 +186,27 @@ export class XviFcBankAccountComponent {
     const status = this.existingRecord()?.currentFormStatus;
     return status == null || EDITABLE_FORM_STATUSES.has(status);
   }
+
+  readonly lockedBannerMessage = computed(() => {
+    const status = this.existingRecord()?.currentFormStatus;
+    return (status != null && LOCKED_BANNER_MESSAGE[status]) || 'This form is not editable in the current status.';
+  });
+
+  readonly isReturnedStatus = computed(() => {
+    const status = this.existingRecord()?.currentFormStatus;
+    return status === FORM_STATUS.RETURNED_BY_STATE || status === FORM_STATUS.RETURNED_BY_MOHUA;
+  });
+
+  // Shown when the form was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA) — explains why,
+  // even though the form itself is editable again at that point.
+  readonly returnNotice = computed(() => {
+    const record = this.existingRecord();
+    const status = record?.currentFormStatus;
+    if (status !== FORM_STATUS.RETURNED_BY_STATE && status !== FORM_STATUS.RETURNED_BY_MOHUA) return null;
+    const actor = status === FORM_STATUS.RETURNED_BY_STATE ? 'the state' : 'MoHUA';
+    const note = (status === FORM_STATUS.RETURNED_BY_STATE ? record?.stateDecision?.note : record?.mohuaDecision?.note) ?? null;
+    return note ? `Returned by ${actor}: ${note}` : `This form was returned by ${actor} for correction.`;
+  });
 
   shouldShowAccountNumberInputs(): boolean {
     return this.isEditable();
@@ -332,7 +361,7 @@ export class XviFcBankAccountComponent {
     }
 
     const details = this.ulbDetails();
-    if (!details?.designYearId) {
+    if (!details?.designYearId || !details.stateId) {
       this.loadError.set('Selected year context is missing. Please reopen this form from the condition tile.');
       this.utilityService.triggerSnackbar(this.loadError()!, 'snackbar-danger');
       return;
@@ -352,6 +381,7 @@ export class XviFcBankAccountComponent {
     this.bankAccountService
       .submitBankAccount({
         ulbId: details.ulbId,
+        stateId: details.stateId,
         designYearId: details.designYearId,
         ifscCode: this.form.controls.ifscCode.value ?? '',
         accountNumber: this.form.controls.accountNumber.value ?? '',
@@ -455,14 +485,15 @@ export class XviFcBankAccountComponent {
       if (!parsed.ulbName || !parsed.stateName || !parsed.selectedYear) return null;
 
       const userDataRaw = localStorage.getItem('userData');
-      const userUlbId = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string })?.ulb : undefined;
+      const userData = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string; state?: string }) : undefined;
 
       return {
         ulbName: parsed.ulbName,
         stateName: parsed.stateName,
         selectedYear: parsed.selectedYear,
         designYearId: parsed.designYearId ?? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) ?? undefined,
-        ulbId: parsed.ulbId ?? parsed._id ?? parsed.ulb?._id ?? parsed.ulb?.id ?? userUlbId ?? undefined,
+        ulbId: parsed.ulbId ?? parsed._id ?? parsed.ulb?._id ?? parsed.ulb?.id ?? userData?.ulb ?? undefined,
+        stateId: userData?.state ?? undefined,
       };
     } catch {
       return null;

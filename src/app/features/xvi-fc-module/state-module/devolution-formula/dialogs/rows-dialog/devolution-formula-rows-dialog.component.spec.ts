@@ -230,6 +230,38 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     });
   });
 
+  // ─── initialValidationStatusFilter ─────────────────────────────────────────
+
+  describe('initialValidationStatusFilter', () => {
+    it('pre-sets the validationStatus filter and includes it on the first getRows call', () => {
+      TestBed.overrideProvider(MAT_DIALOG_DATA, {
+        useValue: { ...dialogData, initialValidationStatusFilter: 'INVALID' },
+      });
+
+      createComponent();
+
+      expect(component.filterForm.get('validationStatus')!.value).toBe('INVALID');
+      expect(dfService.getRows).toHaveBeenCalledWith(
+        'state-1',
+        'year-1',
+        1,
+        jasmine.objectContaining({ validationStatus: 'INVALID' }),
+      );
+    });
+
+    it('defaults to the "All" filter when no initialValidationStatusFilter is provided', () => {
+      createComponent();
+
+      expect(component.filterForm.get('validationStatus')!.value).toBe('');
+      expect(dfService.getRows).toHaveBeenCalledWith(
+        'state-1',
+        'year-1',
+        1,
+        jasmine.objectContaining({ validationStatus: undefined }),
+      );
+    });
+  });
+
   // ─── query parameters ──────────────────────────────────────────────────────
 
   describe('query parameters', () => {

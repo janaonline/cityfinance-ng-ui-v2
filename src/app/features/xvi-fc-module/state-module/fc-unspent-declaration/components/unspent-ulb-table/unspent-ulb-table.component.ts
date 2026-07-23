@@ -153,6 +153,10 @@ export class UnspentUlbTableComponent {
    *  component builds itself (picker-driven add/replace flows). Required, not defaulted — this
    *  component never falls back to a hardcoded field config of its own. */
   readonly rowEditFields = input.required<readonly ConditionalFieldConfig[]>();
+  /** Backend-composed explanation of why the Devolution dependency is currently blocking something
+   *  (see `FcUnspentDevolutionDependency.blockingMessage`) — passed through to the ULB picker so its
+   *  empty state can explain *why* no ULBs are available, instead of implying a search issue. */
+  readonly blockingMessage = input<string | null>(null);
 
   /** Display data (name/codes/allocation) for ULBs actually picked via the dialog this session —
    *  the only ULB-options data ever cached locally, and only for rows a user chose. A fetched
@@ -216,36 +220,6 @@ export class UnspentUlbTableComponent {
     });
   });
 
-  /**
-   * Opens the picker to change the ULB already selected for an existing row. If the State selects
-   * more than one ULB in that session, the first replaces this row's own selection and every
-   * additional one is appended as a brand-new row — no selected ULB is ever silently dropped.
-   */
-  openPickerForRow(index: number): void {
-    if (!this.canEdit()) return;
-    const row = this.rows().at(index);
-    if (!row) return;
-
-    const currentUlbId = row.controls.ulbId.value;
-    const excludeUlbIds = this.currentUlbIds().filter((ulbId) => ulbId !== currentUlbId);
-
-    this.openPicker(excludeUlbIds, (options) => {
-      const [first, ...rest] = options;
-      row.controls.ulbId.setValue(first.ulbId);
-      row.controls.ulbId.markAsDirty();
-      row.controls.ulbId.markAsTouched();
-
-      for (const option of rest) {
-        this.rows().push(
-          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), {
-            ulbId: option.ulbId,
-            unspentAmount: null,
-          }),
-        );
-      }
-    });
-  }
-
   /** Opens the picker to add one or more brand-new rows, in the order they were selected. */
   addRow(): void {
     if (!this.canEdit()) return;
@@ -291,7 +265,12 @@ export class UnspentUlbTableComponent {
 
   private openPicker(excludeUlbIds: string[], applySelections: (options: FcUnspentUlbOption[]) => void): void {
     const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'ulb-picker-dialog-panel'];
-    const data: UlbPickerDialogData = { stateId: this.stateId(), yearId: this.yearId(), excludeUlbIds };
+    const data: UlbPickerDialogData = {
+      stateId: this.stateId(),
+      yearId: this.yearId(),
+      excludeUlbIds,
+      blockingMessage: this.blockingMessage(),
+    };
 
     const dialogRef = this.dialog.open(UlbPickerDialogComponent, {
       panelClass,

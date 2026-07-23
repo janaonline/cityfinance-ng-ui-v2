@@ -31,7 +31,9 @@
         </button>
       </div>
     } @else if (!options().length) {
-      <div class="text-center py-5 text-secondary small">No ULBs found for the current search.</div>
+      <div class="text-center py-5 text-secondary small">
+        {{ data.blockingMessage || 'No ULBs found for the current search.' }}
+      </div>
     } @else {
       <table class="table table-sm table-hover align-middle mb-0 ulb-picker-table">
         <thead class="table-light border-bottom">
