@@ -77,8 +77,23 @@
           @for (condition of group.conditions; track condition.id) {
             @let effectiveStatus = resolveStatus(condition);
             @let submitted = isSubmitted(condition);
+            @let display = conditionStatusDisplay(condition);
             <div class="condition-row d-flex align-items-center gap-3 px-3 py-2">
-              @if (effectiveStatus === 'complete') {
+              @if (display) {
+                @if (display.iconTier === 'success') {
+                  <span class="condition-icon condition-icon--complete flex-shrink-0">
+                    <mat-icon>check</mat-icon>
+                  </span>
+                } @else if (display.iconTier === 'warning') {
+                  <span class="condition-icon condition-icon--warning flex-shrink-0">
+                    <mat-icon>priority_high</mat-icon>
+                  </span>
+                } @else if (display.iconTier === 'pending-active') {
+                  <span class="condition-icon condition-icon--pending-active flex-shrink-0" aria-hidden="true"></span>
+                } @else {
+                  <span class="condition-icon condition-icon--pending-neutral flex-shrink-0" aria-hidden="true"></span>
+                }
+              } @else if (effectiveStatus === 'complete') {
                 <span class="condition-icon condition-icon--complete flex-shrink-0">
                   <mat-icon>check</mat-icon>
                 </span>
@@ -93,7 +108,34 @@
                 <p class="condition-subtitle text-muted mb-0">{{ condition.subtitle }}</p>
               </div>
 
-              @if (submitted) {
+              @if (display) {
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <button
+                    mat-flat-button
+                    class="condition-action-btn flex-shrink-0"
+                    [class.condition-action-btn--warning]="display.iconTier === 'warning'"
+                    [class.condition-action-btn--pending-active]="display.iconTier === 'pending-active'"
+                    [class.condition-action-btn--pending-neutral]="display.iconTier === 'pending-neutral'"
+                    type="button"
+                    (click)="navigateTo(condition.route!)"
+                  >
+                    {{ display.buttonLabel }}
+                  </button>
+                  @if (display.showPreview) {
+                    <button
+                      mat-icon-button
+                      class="preview-icon-btn"
+                      type="button"
+                      [matTooltip]="
+                        condition.id === 'xvi-fc-bank-account' ? 'View Bank Account Details' : 'View uploaded documents'
+                      "
+                      (click)="navigateTo(condition.route!)"
+                    >
+                      <mat-icon class="preview-icon">visibility</mat-icon>
+                    </button>
+                  }
+                </div>
+              } @else if (submitted) {
                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
                   <span class="submitted-badge">
                     <mat-icon class="submitted-badge__icon">check_circle</mat-icon>
@@ -120,7 +162,6 @@
                 <button
                   mat-flat-button
                   class="condition-action-btn flex-shrink-0"
-                  [class.condition-action-btn--warning]="actionLabelFor(condition) === 'Re-upload'"
                   type="button"
                   (click)="navigateTo(condition.route!)"
                 >

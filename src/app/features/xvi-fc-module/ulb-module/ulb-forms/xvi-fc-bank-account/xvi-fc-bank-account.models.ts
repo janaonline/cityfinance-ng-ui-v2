@@ -33,6 +33,7 @@ export const FORM_STATUS = {
 
 export interface SubmitXviFcBankAccountPayload {
   ulbId?: string;
+  stateId: string;
   designYearId: string;
   ifscCode: string;
   accountNumber: string;

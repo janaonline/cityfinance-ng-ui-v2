@@ -55,7 +55,7 @@ describe('XviFcBankAccountComponent', () => {
       JSON.stringify({ ulbName: 'Test ULB', stateName: 'Test State', selectedYear: 'FY-2026-27', ulbId: 'ulb-id' }),
     );
     localStorage.setItem('xvifc_selectedYearId', 'year-id');
-    localStorage.setItem('userData', JSON.stringify({ ulb: 'ulb-id' }));
+    localStorage.setItem('userData', JSON.stringify({ ulb: 'ulb-id', state: 'state-id' }));
 
     service = jasmine.createSpyObj<XviFcBankAccountService>('XviFcBankAccountService', [
       'getBankAccount',
