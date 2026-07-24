@@ -195,9 +195,19 @@ export class OcrService {
 
   readonly models: ModelOption[] = [
     {
+      value: 'gemini-3.6-flash',
+      label: 'Gemini 3.6 Flash',
+      pricing: { inputPerM: 1.5, outputPerM: 7.5, thinkingPerM: 7.5 },
+    },
+    {
       value: 'gemini-3.5-flash',
       label: 'Gemini 3.5 Flash',
       pricing: { inputPerM: 1.5, outputPerM: 9.0, thinkingPerM: 9.0 },
+    },
+    {
+      value: 'gemini-3.5-flash-lite',
+      label: 'Gemini 3.5 Flash-Lite',
+      pricing: { inputPerM: 0.3, outputPerM: 2.5, thinkingPerM: 2.5 },
     },
     {
       value: 'gemini-3.1-flash-lite',
