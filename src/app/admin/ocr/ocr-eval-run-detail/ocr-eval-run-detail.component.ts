@@ -185,7 +185,6 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
       { label: 'ULB', benchmark: bmk.ulb_name || '—', extracted: ext.ulb_name || '—', match: match.ulb_name ?? null },
       { label: 'FY', benchmark: bmk.financial_year || '—', extracted: ext.financial_year || '—', match: match.financial_year ?? null },
       { label: 'Doc Type', benchmark: bmk.doc_type || '—', extracted: ext.document_type || '—', match: match.doc_type ?? null },
-      { label: 'Language', benchmark: bmk.language || '—', extracted: ext.language_detected || '—', match: match.language ?? null },
       { label: 'Seal', benchmark: this.boolText(bmk.seal_present), extracted: this.boolText(ext.seal_present), match: match.seal_present ?? null },
       { label: 'Signature', benchmark: this.boolText(bmk.signature_present), extracted: this.boolText(ext.signature_present), match: match.signature_present ?? null },
       { label: 'Table', benchmark: this.boolText(bmk.table_present), extracted: this.boolText(ext.table_present), match: match.table_present ?? null },
