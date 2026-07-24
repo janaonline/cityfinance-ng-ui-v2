@@ -55,7 +55,7 @@ export const SAVE_AS_DRAFT_DIALOG_DEFAULTS: Required<ConfirmDialogData> = {
   template: `
     <h2 mat-dialog-title class="confirm-dialog-title d-flex align-items-center gap-2">
       @if (resolved.icon) {
-        <i [class]="iconColorClass + ' ' + resolved.icon" aria-hidden="true"></i>
+        <i [class]="'bi fs-5 ' + iconColorClass + ' ' + resolved.icon" aria-hidden="true"></i>
       }
       <span>{{ resolved.title }}</span>
     </h2>
