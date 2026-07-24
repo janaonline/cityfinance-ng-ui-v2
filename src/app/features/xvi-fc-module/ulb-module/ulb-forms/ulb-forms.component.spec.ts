@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { convertToParamMap, ActivatedRoute, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { AnnualAccountStateService, FormStatusData } from '../annual-account-state.service';
-import { FORM_STATUS } from './xvi-fc-bank-account/xvi-fc-bank-account.models';
 import { UlbFormsComponent } from './ulb-forms.component';
 
 describe('UlbFormsComponent', () => {
@@ -19,8 +18,8 @@ describe('UlbFormsComponent', () => {
     unauditedData: { form_status: 'NOT_STARTED', form_status_id: 1 },
     unspentBalanceDisclosure: { form_status: 'NOT_STARTED', form_status_id: null },
     xviFcBankAccount: {
-      form_status: FORM_STATUS.NOT_STARTED,
-      form_status_id: null,
+      form_status: 'NOT_STARTED',
+      form_status_id: 1,
     },
     ...overrides,
   });
@@ -83,40 +82,64 @@ describe('UlbFormsComponent', () => {
     return row!;
   }
 
-  it('shows Open button for PFMS when status is NOT_STARTED', () => {
+  it('shows Start Upload button for PFMS when status is NOT_STARTED (1), no preview icon yet', () => {
     createComponent(baseStatus());
 
     const row = rowFor('XVI-FC Bank Account (PFMS)');
 
-    expect(row.textContent).toContain('Open');
+    expect(row.textContent).toContain('Start Upload');
     expect(row.querySelector('.submitted-badge')).toBeNull();
     expect(row.querySelector('.preview-icon-btn')).toBeNull();
   });
 
-  it('shows Submitted label for PFMS when status is UNDER_REVIEW_BY_STATE', () => {
+  it('shows Continue Uploading + preview icon for PFMS when status is IN_PROGRESS (2)', () => {
+    createComponent(
+      baseStatus({ xviFcBankAccount: { form_status: 'IN_PROGRESS', form_status_id: 2 } }),
+    );
+
+    const row = rowFor('XVI-FC Bank Account (PFMS)');
+
+    expect(row.textContent).toContain('Continue Uploading');
+    expect(row.querySelector('.preview-icon-btn')).toBeTruthy();
+  });
+
+  it('shows Submitted button for PFMS when status is UNDER_REVIEW_BY_STATE (3)', () => {
+    createComponent(
+      baseStatus({ xviFcBankAccount: { form_status: 'UNDER_REVIEW_BY_STATE', form_status_id: 3 } }),
+    );
+
+    const row = rowFor('XVI-FC Bank Account (PFMS)');
+
+    expect(row.textContent).toContain('Submitted');
+    expect(row.textContent).not.toContain('Start Upload');
+  });
+
+  it('shows Reupload button in warning colour for PFMS when status is RETURNED_BY_STATE (4)', () => {
+    createComponent(
+      baseStatus({ xviFcBankAccount: { form_status: 'RETURNED_BY_STATE', form_status_id: 4 } }),
+    );
+
+    const row = rowFor('XVI-FC Bank Account (PFMS)');
+
+    expect(row.textContent).toContain('Reupload');
+    expect(row.querySelector('.condition-action-btn--warning')).toBeTruthy();
+  });
+
+  it('shows Approved by MoHUA button for PFMS when status is SUBMISSION_ACKNOWLEDGED_BY_MOHUA (7)', () => {
     createComponent(
       baseStatus({
-        xviFcBankAccount: {
-          form_status: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          form_status_id: null,
-        },
+        xviFcBankAccount: { form_status: 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA', form_status_id: 7 },
       }),
     );
 
     const row = rowFor('XVI-FC Bank Account (PFMS)');
 
-    expect(row.querySelector('.submitted-badge')?.textContent).toContain('SUBMITTED');
-    expect(row.textContent).not.toContain('Open');
+    expect(row.textContent).toContain('Approved by MoHUA');
   });
 
   it('shows view icon for PFMS when status is UNDER_REVIEW_BY_STATE', () => {
     createComponent(
-      baseStatus({
-        xviFcBankAccount: {
-          form_status: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          form_status_id: null,
-        },
-      }),
+      baseStatus({ xviFcBankAccount: { form_status: 'UNDER_REVIEW_BY_STATE', form_status_id: 3 } }),
     );
 
     const row = rowFor('XVI-FC Bank Account (PFMS)');
@@ -127,12 +150,7 @@ describe('UlbFormsComponent', () => {
 
   it('navigates PFMS view icon to the PFMS route', () => {
     createComponent(
-      baseStatus({
-        xviFcBankAccount: {
-          form_status: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          form_status_id: null,
-        },
-      }),
+      baseStatus({ xviFcBankAccount: { form_status: 'UNDER_REVIEW_BY_STATE', form_status_id: 3 } }),
     );
 
     const row = rowFor('XVI-FC Bank Account (PFMS)');
