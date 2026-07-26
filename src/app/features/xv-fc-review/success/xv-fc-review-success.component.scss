@@ -1,0 +1,28 @@
+@use '../shared-buttons';
+
+.success-wrap {
+  max-width: 620px;
+}
+
+.success-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #198754, #145230);
+  box-shadow: 0 8px 24px rgba(25, 135, 84, 0.28);
+
+  mat-icon {
+    color: #fff;
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.success-card {
+  max-width: 480px;
+}
+
+.summary-row span:first-child {
+  font-size: 0.86rem;
+}

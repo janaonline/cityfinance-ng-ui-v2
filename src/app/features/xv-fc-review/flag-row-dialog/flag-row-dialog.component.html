@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>Raise Feedback</h2>
+
+<mat-dialog-content>
+  <div class="row-label bg-light border rounded px-3 py-2 mb-3 text-muted small">
+    {{ data.code }} — {{ data.label }}
+  </div>
+
+  <form [formGroup]="form">
+    <label class="fw-bold small d-block mb-2" for="corrected-value">
+      Correct value <span class="text-danger">*</span>
+    </label>
+    <input
+      id="corrected-value"
+      type="number"
+      class="comment-field value-field"
+      [formControl]="form.controls.correctedValue"
+      [placeholder]="correctedValuePlaceholder"
+      [step]="correctedValueStep"
+    />
+    @if (orderConstraint) {
+      <div class="text-muted small mt-1">
+        @if (orderConstraint.type === 'max') {
+          {{ data.code }} cannot be greater than {{ orderConstraint.otherCode }}.
+        } @else {
+          {{ data.code }} cannot be less than {{ orderConstraint.otherCode }}.
+        }
+      </div>
+    }
+    @if (form.get('correctedValue')?.touched && form.get('correctedValue')?.errors; as errors) {
+      @if (errors['required']) {
+        <div class="text-danger small mb-3">Enter the correct value.</div>
+      } @else if (errors['min']) {
+        @if (errors['min'].min === 0) {
+          <div class="text-danger small mb-3">No negative figures can be entered.</div>
+        } @else {
+          <div class="text-danger small mb-3">Value must be at least {{ errors['min'].min }}.</div>
+        }
+      } @else if (errors['max']) {
+        <div class="text-danger small mb-3">Value must be at most {{ errors['max'].max }}.</div>
+      } @else if (errors['decimalLimit']) {
+        <div class="text-danger small mb-3">
+          Max {{ errors['decimalLimit'].limit }} decimal place{{ errors['decimalLimit'].limit === 1 ? '' : 's' }} allowed.
+        </div>
+      } @else if (errors['orderMax']) {
+        <div class="text-danger small mb-3">{{ data.code }} cannot be greater than {{ errors['orderMax'].otherCode }}.</div>
+      } @else if (errors['orderMin']) {
+        <div class="text-danger small mb-3">{{ data.code }} cannot be less than {{ errors['orderMin'].otherCode }}.</div>
+      }
+    }
+
+    <label class="fw-bold small d-block mb-2 mt-3" for="flag-comment">
+      Additional comments <span class="text-danger">*</span> required
+    </label>
+    <textarea
+      id="flag-comment"
+      class="comment-field"
+      [formControl]="form.controls.comment"
+      placeholder="Describe the issue or correction needed…"
+    ></textarea>
+    @if (form.get('comment')?.invalid && form.get('comment')?.touched) {
+      <div class="text-danger small mt-1">Add a comment explaining the correction.</div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  @if (data.existing) {
+    <button class="btn-outline-danger-custom me-auto" type="button" (click)="unflag()">
+      Remove flag
+    </button>
+  }
+  <button class="btn-outline-custom" type="button" (click)="cancel()">Cancel</button>
+  <button class="btn-primary-custom" type="button" (click)="save()">Submit Feedback</button>
+</mat-dialog-actions>

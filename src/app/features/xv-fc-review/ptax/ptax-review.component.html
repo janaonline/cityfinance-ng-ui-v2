@@ -1,0 +1,491 @@
+@switch (screen()) {
+  @case ('preview') {
+    <div class="container py-4">
+      <button class="btn-back-link mb-3" type="button" (click)="backToEdit()">
+        <mat-icon>arrow_back</mat-icon>
+        Back to edit
+      </button>
+
+      <div class="text-uppercase small fw-bold text-primary mb-1" style="letter-spacing:.06em;">
+        Step 2 of 2 · Nothing is submitted yet
+      </div>
+      <h1 class="page-title">Review before you submit</h1>
+      <p class="text-muted mb-4">
+        This is exactly what the CityFinance team will receive for FY {{ currentFy() }}. Check it over, then confirm.
+      </p>
+
+      <div class="row g-0 summary-strip mb-4">
+        <div class="col-6 col-md-3 summary-cell">
+          <div class="s-label">Decision</div>
+          <div class="s-value">{{ pendingAction() === 'ACCEPT_NO_CHANGES' ? 'Accept — no changes' : 'Submit with comments' }}</div>
+        </div>
+        <div class="col-6 col-md-3 summary-cell">
+          <div class="s-label">Metrics</div>
+          <div class="s-value">{{ metrics().length }}</div>
+        </div>
+        <div class="col-6 col-md-3 summary-cell">
+          <div class="s-label">Flagged</div>
+          <div class="s-value">{{ flagCount() }}</div>
+        </div>
+        <div class="col-6 col-md-3 summary-cell">
+          <div class="s-label">Financial year</div>
+          <div class="s-value">FY {{ currentFy() }}</div>
+        </div>
+      </div>
+
+      <mat-card>
+        <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+          <span class="fw-bold small">Property Tax — all metrics</span>
+          <span class="text-muted small">FY {{ currentFy() }}</span>
+        </div>
+        <mat-card-content class="p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-borderless review-table mb-0">
+              <thead>
+                <tr class="border-bottom">
+                  <th style="width:76px;">Code</th>
+                  <th>Metric</th>
+                  <th class="text-end" style="width:170px;">Value</th>
+                  <th class="text-center" style="width:130px;">Your review</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (metric of metrics(); track metric.code) {
+                  <tr [class.is-flagged]="metric.flagged">
+                    <td class="code">{{ metric.code }}</td>
+                    <td>{{ metric.label }}</td>
+                    <td class="text-end num">{{ formatValue(metric) }}</td>
+                    <td class="text-center">
+                      @if (metric.flagged) {
+                        <span class="badge text-bg-warning-subtle text-warning-emphasis">
+                          <mat-icon inline="true" class="fs-6 align-middle">flag</mat-icon> Flagged
+                        </span>
+                      } @else {
+                        <span class="badge text-bg-success-subtle text-success-emphasis">
+                          <mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> Accepted
+                        </span>
+                      }
+                    </td>
+                  </tr>
+                  @if (metric.flagged) {
+                    <tr class="flag-note-row">
+                      <td colspan="4">
+                        <div class="flag-note">
+                          <mat-icon inline="true" class="fs-6">flag</mat-icon>
+                          <div>
+                            @if (metric.proposedValue != null) {
+                              <div><b>Correct value</b> - {{ metric.proposedValue | number: '1.2-2' }}</div>
+                            }
+                            <div><b>Additional Comment</b> - {{ metric.comment }}</div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="sticky-footer d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <div>
+          <div class="fw-bold">{{ pendingAction() === 'ACCEPT_NO_CHANGES' ? 'Confirm — Accept, no changes' : 'Confirm — submit with comments' }}</div>
+          <div class="text-success small">You can still go back and change anything before confirming.</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-outline-custom" type="button" [disabled]="submitting()" (click)="backToEdit()">Back to edit</button>
+          <button class="btn-primary-custom" type="button" [disabled]="submitting()" (click)="onConfirmSubmit()">
+            {{ submitting() ? 'Submitting…' : (pendingAction() === 'ACCEPT_NO_CHANGES' ? 'Confirm acceptance' : 'Confirm submission') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+  @case ('success') {
+    <div class="container py-4">
+      <div class="success-wrap mx-auto text-center py-5">
+        <div class="success-icon mx-auto mb-4 d-flex align-items-center justify-content-center">
+          <mat-icon>check</mat-icon>
+        </div>
+        <h2 class="fw-bold mb-2">Review submitted</h2>
+        <p class="text-muted mb-4">
+          Your Property Tax review for FY {{ successFy() }} has been recorded and sent to the CityFinance team.
+        </p>
+
+        @if (service.fyDetail(); as detail) {
+          <mat-card class="text-start mb-4 mx-auto success-card">
+            <mat-card-content>
+              <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted">Financial year</span><span class="fw-bold">FY {{ successFy() }}</span>
+              </div>
+              <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted">Decision</span>
+                <span class="fw-bold">{{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accept — no changes' : 'Submit with comments' }}</span>
+              </div>
+              <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted">Metrics flagged</span>
+                <span class="fw-bold">{{ flagCount() }}</span>
+              </div>
+              @if (detail.submittedAt) {
+                <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+                  <span class="text-muted">Submitted on</span>
+                  <span class="fw-bold">{{ detail.submittedAt | date: 'medium' }}</span>
+                </div>
+              }
+              <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted">Declaration</span>
+                <span class="fw-bold">{{ detail.declaration?.file?.name ?? 'None' }}</span>
+              </div>
+              <div class="summary-row d-flex justify-content-between py-2">
+                <span class="text-muted">Supporting document</span>
+                <span class="fw-bold">{{ detail.supportingDocument?.name ?? 'None' }}</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+
+        <div class="d-flex gap-2 justify-content-center flex-wrap mb-4">
+          <button class="btn-primary-custom" type="button" (click)="onBackToReview()">
+            Back to Ptax Review
+          </button>
+        </div>
+
+        <div class="text-muted small d-flex align-items-center justify-content-center gap-1">
+          <mat-icon inline="true" class="fs-6">lock</mat-icon>
+          FY {{ successFy() }} is now locked — reach out to CityFinance support if you need it reopened.
+        </div>
+      </div>
+    </div>
+  }
+  @default {
+    <div class="container py-4">
+      @if (service.summaryError()) {
+        <app-page-error-state
+          title="Failed to load your review years"
+          message="We couldn't load the list of financial years available for Property Tax review."
+          (retry)="service.loadSummary()"
+        />
+      } @else if (service.summaryLoading()) {
+        <div class="d-flex justify-content-center py-5">
+          <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+        </div>
+      } @else if (service.summaries().length === 0) {
+        <p class="text-muted">No Property Tax data is available yet for any financial year.</p>
+      } @else {
+        <!-- FY tabs -->
+        <div class="fy-tabs d-inline-flex mb-4">
+          @for (s of service.summaries(); track s.yearId) {
+            <button
+              type="button"
+              class="fy-tab"
+              [class.active]="s.yearId === currentYearId()"
+              (click)="switchYear(s.financialYear, s.yearId)"
+            >
+              FY {{ s.financialYear }}
+              @if (fyDotClass(s.yearId)) {
+                <span class="fy-dot" [ngClass]="fyDotClass(s.yearId)"></span>
+              }
+            </button>
+          }
+        </div>
+
+        @if (service.fyDetail(); as detail) {
+          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+            <span class="text-muted small">
+              @if (detail.submittedAt) {
+                Last updated on {{ detail.submittedAt | date: 'd MMM y' }} ·
+              }
+              <b class="text-body">{{ flagCount() }}</b> row{{ flagCount() === 1 ? '' : 's' }} flagged
+            </span>
+            <div class="ms-auto d-flex align-items-center gap-2">
+              <label for="ptax-unit-select" class="text-muted small mb-0">Show as</label>
+              <select id="ptax-unit-select" #unitSelect class="unit-select" [value]="currentUnit()" (change)="switchUnit(unitSelect.value)">
+                @for (u of units; track u) {
+                  <option [value]="u">{{ unitLabels[u] }}</option>
+                }
+              </select>
+              <button class="btn-outline-custom btn-sm" type="button" (click)="downloadTable()">
+                <mat-icon>download</mat-icon>
+                Download
+              </button>
+            </div>
+          </div>
+        }
+
+        <div class="info-note mb-4 p-3">
+          <div class="fw-bold mb-2">How to review this statement</div>
+          <p class="mb-2">
+            These figures are pulled directly from the Property Tax form you submitted as part of XV-FC compliance.
+            Please check them against your own records.
+          </p>
+          <p class="mb-2">
+            <b>If something looks wrong:</b> Click the flag icon on that row, enter the corrected value and attach a
+            supporting document. Your comments will be reviewed by the CityFinance team.
+          </p>
+          <p class="mb-0">
+            <b>If everything looks correct:</b> Complete the declaration below and click Accept — No Changes.
+          </p>
+        </div>
+
+        @if (service.fyDetail(); as detail) {
+          @if (isRejected()) {
+            <div class="locked-banner d-flex align-items-center gap-2 mb-3 p-3">
+              <mat-icon class="flex-shrink-0">error_outline</mat-icon>
+              <span>
+                <b>FY {{ currentFy() }} was rejected.</b> Update the flagged metrics or attach a better supporting
+                document, then resubmit.
+              </span>
+            </div>
+          } @else if (isLocked()) {
+            <div class="locked-banner d-flex align-items-center gap-2 mb-3 p-3">
+              <mat-icon class="flex-shrink-0">lock</mat-icon>
+              <span>
+                <b>FY {{ currentFy() }} is locked.</b>
+                @if (detail.submittedAt) {
+                  You submitted this review on {{ detail.submittedAt | date: 'medium' }}
+                }
+                ({{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accepted — no changes' : 'Submitted with comments' }}).
+                <a href="javascript:void(0)" (click)="onViewSubmission(currentFy() ?? '')">View submission summary</a>
+              </span>
+            </div>
+          }
+
+          @if (metrics().length === 0) {
+            <div class="locked-banner d-flex align-items-center gap-2 mb-3 p-3">
+              <mat-icon class="flex-shrink-0">info</mat-icon>
+              <span>There is no standardised data for this year.</span>
+            </div>
+          } @else {
+            <!-- Metric table -->
+            <mat-card class="mb-4">
+              <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                <span class="fw-bold small">Property Tax Details</span>
+                <span class="text-muted small">FY {{ currentFy() }} · {{ unitLabels[currentUnit()] }}</span>
+              </div>
+              <mat-card-content class="p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-borderless review-table mb-0">
+                    <thead>
+                      <tr class="border-bottom">
+                        <th style="width:76px;">Code</th>
+                        <th>Line Item</th>
+                        <th class="text-end" style="width:170px;">Amount ({{ unitLabels[currentUnit()] }})</th>
+                        <th class="text-center" style="width:56px;">Flag</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (metric of metrics(); track metric.code) {
+                        <tr [class.is-flagged]="metric.flagged">
+                          <td class="code">{{ metric.code }}</td>
+                          <td>{{ metric.label }}</td>
+                          <td class="text-end num">{{ formatValue(metric) }}</td>
+                          <td class="text-center">
+                            @if (metric.flagged) {
+                              <button
+                                mat-icon-button
+                                type="button"
+                                class="flag-btn is-flagged"
+                                [disabled]="isLocked()"
+                                (click)="openFlagDialog(metric)"
+                                aria-label="Edit flag"
+                              >
+                                <mat-icon>flag</mat-icon>
+                              </button>
+                            } @else if (isLocked()) {
+                              <span class="badge text-bg-light border">Accepted</span>
+                            } @else {
+                              <button
+                                mat-icon-button
+                                type="button"
+                                class="flag-btn"
+                                (click)="openFlagDialog(metric)"
+                                aria-label="Flag this value"
+                              >
+                                <mat-icon>outlined_flag</mat-icon>
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                        @if (metric.flagged) {
+                          <tr class="flag-note-row">
+                            <td colspan="4">
+                              <div class="flag-note">
+                                <mat-icon inline="true" class="fs-6">flag</mat-icon>
+                                <div>
+                                  @if (metric.proposedValue != null) {
+                                    <div><b>Correct value</b> - {{ metric.proposedValue | number: '1.2-2' }}</div>
+                                  }
+                                  <div><b>Additional Comment</b> - {{ metric.comment }}</div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Declaration & sign-off -->
+            <div class="decl-card p-4 mb-4">
+              <div class="decl-label mb-3">
+                Declaration &amp; sign-off <span class="text-danger">*</span> required for both actions below
+              </div>
+
+              <input #declInput type="file" class="d-none" (change)="onDeclarationChosen($event)" />
+              @if (!detail.declaration) {
+                <div
+                  class="upload-zone border border-dashed rounded p-3 text-center"
+                  role="button"
+                  tabindex="0"
+                  (click)="uploadingDeclaration() ? null : declInput.click()"
+                  (keydown.enter)="declInput.click()"
+                >
+                  <mat-icon class="d-block mx-auto mb-1">cloud_upload</mat-icon>
+                  <div class="fw-bold small">
+                    {{ uploadingDeclaration() ? 'Uploading…' : 'Upload signed declaration (PDF)' }}
+                  </div>
+                  <div class="text-muted small">Click to browse · PDF only · max 5MB</div>
+                </div>
+              } @else {
+                <div class="file-row d-flex align-items-center gap-2">
+                  <mat-icon>description</mat-icon>
+                  <span class="flex-grow-1 text-truncate">{{ detail.declaration.file.name }}</span>
+                  <button class="btn-outline-custom btn-sm" type="button" (click)="viewDeclaration()">
+                    <mat-icon>visibility</mat-icon>
+                    Preview
+                  </button>
+                  @if (!isLocked()) {
+                    <button class="btn-remove-file" type="button" (click)="removeDeclaration()" aria-label="Remove file">
+                      <mat-icon>close</mat-icon> Remove
+                    </button>
+                  }
+                </div>
+              }
+
+              <div class="mt-4 pt-4 support-docs">
+                <div class="fw-bold small mb-1">
+                  Supporting documents
+                  @if (flagCount() > 0) {
+                    <span class="text-danger">*</span> required — {{ flagCount() }} metric{{ flagCount() === 1 ? '' : 's' }} flagged
+                  } @else {
+                    <span class="fw-normal text-muted">(only required if you flag a metric)</span>
+                  }
+                </div>
+                <div class="text-muted small mb-2">Bank statements, working papers, or other evidence for the flagged metrics.</div>
+
+                <input #supportInput type="file" class="d-none" (change)="onCommonSupportFileChosen($event)" />
+                @if (commonSupportingDocument(); as doc) {
+                  <div class="file-row d-flex align-items-center gap-2">
+                    <mat-icon>description</mat-icon>
+                    <span class="flex-grow-1 text-truncate">{{ doc.name }}</span>
+                    <button class="btn-outline-custom btn-sm" type="button" (click)="viewSupportingDocument()">
+                      <mat-icon>visibility</mat-icon>
+                      Preview
+                    </button>
+                    @if (!isLocked()) {
+                      <button
+                        class="btn-outline-custom btn-sm"
+                        type="button"
+                        [disabled]="uploadingSupportDoc() || flagCount() === 0"
+                        (click)="supportInput.click()"
+                      >
+                        {{ uploadingSupportDoc() ? 'Uploading…' : 'Replace' }}
+                      </button>
+                    }
+                  </div>
+                } @else if (flagCount() > 0 && !isLocked()) {
+                  <div
+                    class="upload-zone border border-dashed rounded p-3 text-center"
+                    role="button"
+                    tabindex="0"
+                    (click)="uploadingSupportDoc() ? null : supportInput.click()"
+                    (keydown.enter)="supportInput.click()"
+                  >
+                    <mat-icon class="d-block mx-auto mb-1">attach_file</mat-icon>
+                    <div class="fw-bold small">
+                      {{ uploadingSupportDoc() ? 'Uploading…' : 'Click to attach a supporting document' }}
+                    </div>
+                    <div class="text-muted small">PDF, image, or spreadsheet</div>
+                  </div>
+                } @else {
+                  <div class="text-muted small">No metrics are flagged, so no document is needed.</div>
+                }
+              </div>
+
+              <p class="text-muted small mt-3 mb-0">
+                By uploading the signed declaration, you confirm your comments are final for this year and agree the
+                finalised dataset may be used for official analysis and publication.
+              </p>
+            </div>
+          }
+        } @else if (service.detailError()) {
+          <app-page-error-state
+            title="Failed to load this year's review"
+            message="We couldn't load the Property Tax metrics for this financial year."
+            (retry)="switchYear(currentFy() ?? '', currentYearId() ?? '')"
+          />
+        } @else {
+          <div class="d-flex justify-content-center py-5">
+            <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- sticky footer -->
+    @if (service.fyDetail(); as detail) {
+      @if (metrics().length > 0) {
+        <div class="sticky-footer">
+          <div class="container d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            @if (isLocked()) {
+              <div>
+                <div class="fw-bold">FY {{ currentFy() }} — submitted &amp; locked</div>
+                <div class="text-success small"><mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> No further changes can be made for this year.</div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn-outline-custom" type="button" (click)="onViewSubmission(currentFy() ?? '')">View submission summary</button>
+              </div>
+            } @else {
+              <div>
+                <div class="fw-bold">{{ isRejected() ? 'Resubmit review' : 'Submit review' }} — FY {{ currentFy() }}</div>
+                <div class="small" [class.text-success]="canSubmit()" [class.decl-hint-pending]="!canSubmit()">
+                  @if (canSubmit()) {
+                    <mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> Ready to submit.
+                  } @else {
+                    <mat-icon inline="true" class="fs-6 align-middle">arrow_upward</mat-icon>
+                    {{ submitBlockedReason() }}
+                  }
+                </div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button
+                  class="btn-outline-custom"
+                  type="button"
+                  [disabled]="!canSubmit()"
+                  [matTooltip]="canSubmit() ? '' : submitBlockedReason()"
+                  (click)="openPreview('SUBMIT_WITH_COMMENTS')"
+                >
+                  Submit with comments
+                </button>
+                <button
+                  class="btn-primary-custom"
+                  type="button"
+                  [disabled]="!canSubmit()"
+                  [matTooltip]="canSubmit() ? '' : submitBlockedReason()"
+                  (click)="openPreview('ACCEPT_NO_CHANGES')"
+                >
+                  Accept — no changes
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  }
+}
