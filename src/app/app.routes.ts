@@ -18,6 +18,18 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    // Standalone page (no XVI-FC side-menu shell). Uses xvifcAuthGuard (not the generic
+    // authGuard) so an unauthenticated visit lands on the explicit /auth/login/16thFC form
+    // instead of the generic /auth/login page, which defaults to the unrelated "15thFC"
+    // login type and can bounce off-app on redirect.
+    path: 'xv-fc-review',
+    loadComponent: () =>
+      import('./features/xv-fc-review/xv-fc-data-review.component').then(
+        (m) => m.XvFcDataReviewComponent,
+      ),
+    canActivate: [xvifcAuthGuard],
+  },
+  {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then((mod) => mod.ADMIN_ROUTES),
     canActivate: [authGuard],
