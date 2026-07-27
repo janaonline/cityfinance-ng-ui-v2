@@ -1,0 +1,329 @@
+import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { environment } from '../../../../../environments/environment';
+import { ClaimLetterService } from './claim-letter.service';
+import { ClaimLetterApiResponse, ClaimLetterBatchSummary } from './claim-letter.models';
+
+const BASE_URL = `${environment.api.url2}xvi-fc/state/claim-letter/`;
+
+const stateId = 'state-1';
+const yearId = 'year-1';
+const claimLetterId = 'claim-1';
+
+const financialSummary = {
+  totalInstallmentAllocation: 0,
+  totalAlreadyAcknowledged: 0,
+  selectedAllocation: 0,
+  currentSelectedClaim: 0,
+  remainingIfAcknowledged: 0,
+};
+
+const sampleSummary: ClaimLetterBatchSummary = {
+  claimLetterId,
+  installment: 1,
+  batchNumber: 1,
+  version: 1,
+  currentFormStatus: 2,
+  currentFormStatusLabel: 'In Progress',
+  assemblyStatus: 'READY',
+  ulbCount: 1,
+  isAbandoned: false,
+  hasSignedFile: false,
+  financialSummary,
+  revision: 0,
+  submittedAt: null,
+  resolvedAt: null,
+  supersedes: null,
+  supersededBy: null,
+  createdAt: '2026-07-01T00:00:00.000Z',
+};
+
+describe('ClaimLetterService', () => {
+  let service: ClaimLetterService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [ClaimLetterService],
+    });
+    service = TestBed.inject(ClaimLetterService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  describe('getEligibilitySummary', () => {
+    const url = `${BASE_URL}${stateId}/${yearId}/1/eligibility-summary`;
+
+    it('calls the exact GET URL and emits the response data on success', () => {
+      let result: unknown;
+      service.getEligibilitySummary(stateId, yearId, 1).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      const summary = {
+        installment: 1,
+        stateLevelGate: { passed: true, sources: [] },
+        expectedUlbCount: 10,
+        batchSlotsUsed: 1,
+        batchSlotsMax: 3,
+      };
+      req.flush({ success: true, message: 'OK', data: summary });
+
+      expect(result).toEqual(summary);
+    });
+
+    it('throws the original response object when success:false', () => {
+      const errorBody: ClaimLetterApiResponse = { success: false, message: 'Forbidden' };
+      let caughtError: unknown;
+      service.getEligibilitySummary(stateId, yearId, 1).subscribe({ error: (err: unknown) => (caughtError = err) });
+
+      httpMock.expectOne(url).flush(errorBody);
+
+      expect(caughtError).toBe(errorBody);
+    });
+  });
+
+  describe('getUlbOptions', () => {
+    const url = `${BASE_URL}${stateId}/${yearId}/1/ulb-options`;
+
+    it('sends no query params when the query is empty', () => {
+      service.getUlbOptions(stateId, yearId, 1, {}).subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === url);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.keys().length).toBe(0);
+      req.flush({ success: true, message: 'OK', data: [], meta: { page: 1, limit: 20, total: 0 } });
+    });
+
+    it('sends search/eligibilityFilter/claimLetterId/page/limit as query params', () => {
+      service
+        .getUlbOptions(stateId, yearId, 1, {
+          search: 'nagar',
+          eligibilityFilter: 'ELIGIBLE',
+          claimLetterId,
+          page: 2,
+          limit: 50,
+        })
+        .subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === url);
+      expect(req.request.params.get('search')).toBe('nagar');
+      expect(req.request.params.get('eligibilityFilter')).toBe('ELIGIBLE');
+      expect(req.request.params.get('claimLetterId')).toBe(claimLetterId);
+      expect(req.request.params.get('page')).toBe('2');
+      expect(req.request.params.get('limit')).toBe('50');
+      req.flush({ success: true, message: 'OK', data: [], meta: { page: 2, limit: 50, total: 0 } });
+    });
+
+    it('resolves options + pagination meta on success', () => {
+      const options = [
+        {
+          ulbId: 'ulb-1',
+          ulbName: 'Sample ULB',
+          censusCode: '800123',
+          sbCode: null,
+          allocationAmount: 12.5,
+          eligible: true,
+          ineligibleReasonCode: null,
+        },
+      ];
+      let result: unknown;
+      service.getUlbOptions(stateId, yearId, 1, {}).subscribe((r) => (result = r));
+
+      httpMock
+        .expectOne((r) => r.url === url)
+        .flush({ success: true, message: 'OK', data: options, meta: { page: 1, limit: 20, total: 1 } });
+
+      expect(result).toEqual({ options, page: 1, limit: 20, total: 1 });
+    });
+  });
+
+  describe('createDraft', () => {
+    const url = `${BASE_URL}${stateId}/${yearId}/1/draft`;
+    const payload = { ulbSelections: [{ ulbId: 'ulb-1', claimedAmount: 10 }] };
+
+    it('posts the exact URL and body, resolving the mapped summary on success', () => {
+      let result: unknown;
+      service.createDraft(stateId, yearId, 1, payload).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(payload);
+      req.flush({ success: true, message: 'Created.', data: sampleSummary });
+
+      expect(result).toEqual(sampleSummary);
+    });
+
+    it('throws the original response object when success:false', () => {
+      const errorBody: ClaimLetterApiResponse = { success: false, message: 'Ineligible ULB.' };
+      let caughtError: unknown;
+      service.createDraft(stateId, yearId, 1, payload).subscribe({ error: (err: unknown) => (caughtError = err) });
+
+      httpMock.expectOne(url).flush(errorBody);
+
+      expect(caughtError).toBe(errorBody);
+    });
+  });
+
+  describe('updateDraft', () => {
+    const url = `${BASE_URL}${claimLetterId}/draft`;
+    const payload = { ulbSelections: [{ ulbId: 'ulb-1', claimedAmount: 10 }], expectedRevision: 2 };
+
+    it('sends a PATCH with the exact body, resolving the mapped summary on success', () => {
+      let result: unknown;
+      service.updateDraft(claimLetterId, payload).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual(payload);
+      req.flush({ success: true, message: 'Updated.', data: sampleSummary });
+
+      expect(result).toEqual(sampleSummary);
+    });
+  });
+
+  describe('abandonDraft', () => {
+    const url = `${BASE_URL}${claimLetterId}/abandon`;
+
+    it('posts with an empty body, resolving the mapped summary on success', () => {
+      let result: unknown;
+      service.abandonDraft(claimLetterId).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({});
+      req.flush({ success: true, message: 'Abandoned.', data: { ...sampleSummary, isAbandoned: true } });
+
+      expect(result).toEqual({ ...sampleSummary, isAbandoned: true });
+    });
+  });
+
+  describe('uploadSignedFile', () => {
+    const url = `${BASE_URL}${claimLetterId}/signed-file`;
+    const fileRef = {
+      originalName: 'signed.pdf',
+      path: 'x/signed.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 100,
+      pageCount: 2,
+    };
+
+    it('posts the exact file ref body, resolving the mapped summary on success', () => {
+      let result: unknown;
+      service.uploadSignedFile(claimLetterId, fileRef).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(fileRef);
+      req.flush({ success: true, message: 'Uploaded.', data: { ...sampleSummary, hasSignedFile: true } });
+
+      expect(result).toEqual({ ...sampleSummary, hasSignedFile: true });
+    });
+  });
+
+  describe('submit', () => {
+    const url = `${BASE_URL}${claimLetterId}/submit`;
+
+    it('posts with an empty body, resolving the mapped summary on success', () => {
+      let result: unknown;
+      service.submit(claimLetterId).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('POST');
+      req.flush({ success: true, message: 'Submitted.', data: { ...sampleSummary, currentFormStatus: 5 } });
+
+      expect(result).toEqual({ ...sampleSummary, currentFormStatus: 5 });
+    });
+  });
+
+  describe('listHistory', () => {
+    const url = `${BASE_URL}${stateId}/${yearId}/history`;
+
+    it('sends installment/page/limit as query params when provided', () => {
+      service.listHistory(stateId, yearId, { installment: 1, page: 2, limit: 10 }).subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === url);
+      expect(req.request.params.get('installment')).toBe('1');
+      expect(req.request.params.get('page')).toBe('2');
+      expect(req.request.params.get('limit')).toBe('10');
+      req.flush({ success: true, message: 'OK', data: [], meta: { page: 2, limit: 10, total: 0 } });
+    });
+
+    it('resolves claims + pagination meta on success', () => {
+      let result: unknown;
+      service.listHistory(stateId, yearId, {}).subscribe((r) => (result = r));
+
+      httpMock
+        .expectOne((r) => r.url === url)
+        .flush({ success: true, message: 'OK', data: [sampleSummary], meta: { page: 1, limit: 20, total: 1 } });
+
+      expect(result).toEqual({ claims: [sampleSummary], page: 1, limit: 20, total: 1 });
+    });
+  });
+
+  describe('getDetail', () => {
+    const url = `${BASE_URL}${claimLetterId}`;
+
+    it('calls the exact GET URL and emits the response data on success', () => {
+      let result: unknown;
+      service.getDetail(claimLetterId).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      req.flush({ success: true, message: 'OK', data: sampleSummary });
+
+      expect(result).toEqual(sampleSummary);
+    });
+
+    it('throws the original response object when success:false', () => {
+      const errorBody: ClaimLetterApiResponse = { success: false, message: 'Not found.' };
+      let caughtError: unknown;
+      service.getDetail(claimLetterId).subscribe({ error: (err: unknown) => (caughtError = err) });
+
+      httpMock.expectOne(url).flush(errorBody);
+
+      expect(caughtError).toBe(errorBody);
+    });
+  });
+
+  describe('getUlbs', () => {
+    const url = `${BASE_URL}${claimLetterId}/ulbs`;
+
+    it('sends search/page/limit as query params when provided', () => {
+      service.getUlbs(claimLetterId, { search: 'nagar', page: 2, limit: 10 }).subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === url);
+      expect(req.request.params.get('search')).toBe('nagar');
+      expect(req.request.params.get('page')).toBe('2');
+      expect(req.request.params.get('limit')).toBe('10');
+      req.flush({ success: true, message: 'OK', data: [], meta: { page: 2, limit: 10, total: 0 } });
+    });
+
+    it('resolves rows + pagination meta on success', () => {
+      const rows = [
+        {
+          ulbId: 'ulb-1',
+          ulbName: 'Sample ULB',
+          censusCode: '800123',
+          sbCode: null,
+          allocationAmount: 10,
+          claimAmount: 10,
+          differencePercentage: 0,
+          eligible: true,
+        },
+      ];
+      let result: unknown;
+      service.getUlbs(claimLetterId, {}).subscribe((r) => (result = r));
+
+      httpMock
+        .expectOne((r) => r.url === url)
+        .flush({ success: true, message: 'OK', data: rows, meta: { page: 1, limit: 20, total: 1 } });
+
+      expect(result).toEqual({ rows, page: 1, limit: 20, total: 1 });
+    });
+  });
+});

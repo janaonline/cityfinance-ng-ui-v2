@@ -1,0 +1,165 @@
+<h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-2 d-flex align-items-center justify-content-between">
+  <span>Select ULBs</span>
+  <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="cancel()">
+    <i class="bi bi-x-circle-fill fs-5"></i>
+  </button>
+</h2>
+
+<mat-dialog-content class="p-0 claim-letter-ulb-picker-dialog-content">
+  <div class="border-bottom px-3 py-2 d-flex flex-wrap align-items-end justify-content-between gap-2">
+    <div>
+      <label class="form-label small fw-semibold mb-1" for="claim-letter-ulb-picker-search">Search</label>
+      <input
+        id="claim-letter-ulb-picker-search"
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="ULB name, Census Code or SB Code"
+        [formControl]="search"
+      />
+    </div>
+
+    <div class="btn-group" role="group" aria-label="Filter by eligibility">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [class.active]="eligibilityFilter() === 'ALL'"
+        (click)="setEligibilityFilter('ALL')"
+      >
+        All
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [class.active]="eligibilityFilter() === 'ELIGIBLE'"
+        (click)="setEligibilityFilter('ELIGIBLE')"
+      >
+        Eligible
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [class.active]="eligibilityFilter() === 'INELIGIBLE'"
+        (click)="setEligibilityFilter('INELIGIBLE')"
+      >
+        Ineligible
+      </button>
+    </div>
+  </div>
+
+  <div class="table-responsive claim-letter-ulb-picker-table-wrap">
+    @if (isLoading()) {
+      <div class="d-flex justify-content-center align-items-center py-5">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+        <span class="small text-secondary">Loading ULBs…</span>
+      </div>
+    } @else if (loadError()) {
+      <div class="d-flex flex-column align-items-center gap-2 py-5">
+        <span class="small text-danger">We couldn't load the ULB list.</span>
+        <button type="button" matButton="outlined" (click)="loadOptions()" aria-label="Retry loading ULBs">
+          <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Retry
+        </button>
+      </div>
+    } @else if (!options().length) {
+      <div class="text-center py-5 text-secondary small">No ULBs found for the current search.</div>
+    } @else {
+      <table class="table table-sm table-hover align-middle mb-0 claim-letter-ulb-picker-table">
+        <thead class="table-light border-bottom">
+          <tr>
+            <th scope="col" class="ps-3 small fw-semibold">ULB Name</th>
+            <th scope="col" class="small fw-semibold">Census Code</th>
+            <th scope="col" class="small fw-semibold text-end">Allocation</th>
+            <th scope="col" class="small fw-semibold">Eligibility</th>
+            <th scope="col" class="small fw-semibold text-end pe-3">Select</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (option of options(); track option.ulbId) {
+            <tr
+              [class.text-muted]="isDisabled(option)"
+              [class.claim-letter-ulb-picker-row-selectable]="!isDisabled(option)"
+              (click)="onRowClick(option, $event)"
+              data-cy="claim-letter-ulb-picker-row"
+            >
+              <td class="ps-3 small">{{ option.ulbName }}</td>
+              <td class="small">{{ option.censusCode ?? option.sbCode ?? '—' }}</td>
+              <td class="small text-end">{{ formatCrore(option.allocationAmount) }}</td>
+              <td class="small">
+                @if (option.eligible) {
+                  <span class="badge text-bg-success">Eligible</span>
+                } @else {
+                  <span
+                    class="badge text-bg-secondary"
+                    [matTooltip]="option.ineligibleReasonCode ? humanizeToken(option.ineligibleReasonCode) : ''"
+                  >
+                    Ineligible
+                  </span>
+                }
+              </td>
+              <td class="text-end pe-3">
+                <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                  @if (isExcluded(option.ulbId)) {
+                    <span class="small text-secondary" title="Already added to the table">Added</span>
+                  }
+                  <input
+                    type="checkbox"
+                    class="form-check-input mt-0"
+                    [checked]="isSelected(option.ulbId)"
+                    [disabled]="isDisabled(option)"
+                    (change)="toggle(option)"
+                    [attr.aria-label]="
+                      isDisabled(option) ? option.ulbName + ' cannot be selected' : 'Select ' + option.ulbName
+                    "
+                    data-cy="claim-letter-ulb-picker-checkbox"
+                  />
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="border-top px-3 py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+  <span class="small text-secondary" aria-live="polite" data-cy="claim-letter-ulb-picker-selected-count">
+    {{ selectedCount() }} {{ selectedCount() === 1 ? 'ULB' : 'ULBs' }} selected
+  </span>
+
+  @if (total() > 0) {
+    <div class="d-flex align-items-center gap-2 small">
+      <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+      <button
+        type="button"
+        class="btn btn-link btn-sm p-0 text-decoration-none"
+        [disabled]="!hasPrev()"
+        (click)="goToPage(page() - 1)"
+        aria-label="Previous page"
+      >
+        &lsaquo; Prev
+      </button>
+      <button
+        type="button"
+        class="btn btn-link btn-sm p-0 text-decoration-none"
+        [disabled]="!hasNext()"
+        (click)="goToPage(page() + 1)"
+        aria-label="Next page"
+      >
+        Next &rsaquo;
+      </button>
+    </div>
+  }
+
+  <button
+    type="button"
+    matButton="filled"
+    [disabled]="selectedCount() === 0 || isConfirming()"
+    (click)="confirm()"
+    data-cy="claim-letter-ulb-picker-confirm"
+  >
+    Add selected ULBs
+    @if (selectedCount() > 0) {
+      ({{ selectedCount() }})
+    }
+  </button>
+</mat-dialog-actions>

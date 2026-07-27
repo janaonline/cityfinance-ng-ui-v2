@@ -1,0 +1,8 @@
+<div class="claim-letter-summary-tiles d-flex flex-wrap gap-3" data-cy="claim-letter-summary-tiles">
+  @for (tile of tiles(); track tile.label) {
+    <div class="summary-tile border rounded-3 px-3 py-2">
+      <div class="small text-secondary">{{ tile.label }}</div>
+      <div class="fw-semibold">{{ formatCrore(tile.value) }}</div>
+    </div>
+  }
+</div>

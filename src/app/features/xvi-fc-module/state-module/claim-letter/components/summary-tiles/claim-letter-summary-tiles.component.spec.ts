@@ -1,0 +1,37 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ClaimLetterSummaryTilesComponent } from './claim-letter-summary-tiles.component';
+
+describe('ClaimLetterSummaryTilesComponent', () => {
+  let fixture: ComponentFixture<ClaimLetterSummaryTilesComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ClaimLetterSummaryTilesComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ClaimLetterSummaryTilesComponent);
+  });
+
+  it('renders one tile per input entry, with its label and formatted Crore value', () => {
+    fixture.componentRef.setInput('tiles', [
+      { label: 'Total Allocation', value: 25 },
+      { label: 'Already Claimed', value: 5 },
+    ]);
+    fixture.detectChanges();
+
+    const tiles = fixture.debugElement.queryAll(By.css('.summary-tile'));
+    expect(tiles.length).toBe(2);
+    expect(tiles[0].nativeElement.textContent).toContain('Total Allocation');
+    expect(tiles[0].nativeElement.textContent).toContain('25 Cr.');
+    expect(tiles[1].nativeElement.textContent).toContain('Already Claimed');
+    expect(tiles[1].nativeElement.textContent).toContain('5 Cr.');
+  });
+
+  it('renders nothing when given an empty tile list', () => {
+    fixture.componentRef.setInput('tiles', []);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.queryAll(By.css('.summary-tile')).length).toBe(0);
+  });
+});
