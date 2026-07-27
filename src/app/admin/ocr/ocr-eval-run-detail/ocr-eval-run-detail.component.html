@@ -138,7 +138,26 @@
         <div class="section-header">
           <div>
             <h4>Per-Job Results</h4>
-            <p>{{ dataSource.data.length }} job{{ dataSource.data.length === 1 ? '' : 's' }}</p>
+            <p>{{ dataSource.filteredData.length }} job{{ dataSource.filteredData.length === 1 ? '' : 's' }}</p>
+          </div>
+          <div class="match-filter-group">
+            <mat-form-field appearance="outline" class="match-filter-field">
+              <mat-label>Field</mat-label>
+              <mat-select [value]="matchField()" (selectionChange)="onMatchFieldChange($event.value)">
+                @for (opt of matchFieldOptions; track opt.key) {
+                  <mat-option [value]="opt.key">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="match-filter-field">
+              <mat-label>Match</mat-label>
+              <mat-select [value]="matchValue()" (selectionChange)="onMatchValueChange($event.value)">
+                <mat-option value="all">All</mat-option>
+                <mat-option value="match">Match</mat-option>
+                <mat-option value="mismatch">Mismatch</mat-option>
+                <mat-option value="na">N/A</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
         </div>
 
