@@ -58,8 +58,9 @@ const METRIC_LABELS: Record<string, string> = {
   audit_date_present_accuracy: 'Audit Date Accuracy',
   doc_quality_good_accuracy: 'Doc Quality Accuracy',
   final_status_accuracy: 'Final Status Accuracy',
-  overall_accuracy: 'Overall Accuracy',
 };
+
+const HIDDEN_METRIC_KEYS = new Set(['language_accuracy', 'overall_accuracy']);
 
 @Component({
   standalone: true,
@@ -113,11 +114,13 @@ export class OcrEvalRunCompareComponent implements OnInit {
           this.comparison.set(res);
           this.dataSource.data = res.rows.map((r) => this.mapRow(r));
           this.metricEntries.set(
-            Object.entries(res.metrics_delta).map(([key, delta]) => ({
-              key,
-              label: METRIC_LABELS[key] || key,
-              delta,
-            })),
+            Object.entries(res.metrics_delta)
+              .filter(([key]) => !HIDDEN_METRIC_KEYS.has(key))
+              .map(([key, delta]) => ({
+                key,
+                label: METRIC_LABELS[key] || key,
+                delta,
+              })),
           );
         },
         error: (err) =>
