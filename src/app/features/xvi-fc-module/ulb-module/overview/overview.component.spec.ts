@@ -4,6 +4,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { OverviewComponent } from './overview.component';
+import { UlbNotificationService } from '../ulb-notification.service';
 
 describe('OverviewComponent', () => {
   let component: OverviewComponent;
@@ -21,5 +22,14 @@ describe('OverviewComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('loads the ULB notification form status on init', () => {
+    const ulbNotifications = TestBed.inject(UlbNotificationService);
+    const ensureLoadedSpy = spyOn(ulbNotifications, 'ensureLoadedForUlb').and.resolveTo();
+
+    component.ngOnInit();
+
+    expect(ensureLoadedSpy).toHaveBeenCalled();
   });
 });

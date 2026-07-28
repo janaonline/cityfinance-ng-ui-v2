@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppMenuItemComponent } from './app-menu-item.component';
 import { MenuItem } from '../../models/menu.model';
+import { UlbNotificationService } from '../../../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
 
 // ---------------------------------------------------------------------------
 // Minimal dummy page for router test routes
@@ -39,6 +41,7 @@ describe('AppMenuItemComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         AppMenuItemComponent,
+        HttpClientTestingModule,
         RouterTestingModule.withRoutes([{ path: 'home', component: DummyPageComponent }]),
       ],
     }).compileComponents();
@@ -250,5 +253,24 @@ describe('AppMenuItemComponent', () => {
 
     const a = fixture.nativeElement.querySelector('a.menu-item') as HTMLAnchorElement;
     expect(a.getAttribute('rel')).toBeNull();
+  });
+
+  // ── 10. Notification badge dot ─────────────────────────────────────────────
+
+  it('router link matching a pending notification: renders a severity badge dot', () => {
+    const notifications = TestBed.inject(UlbNotificationService);
+    spyOn(notifications, 'severityByRoute').and.returnValue(new Map([['upload-audited', 'returned']]));
+
+    setItem(fixture, { label: 'Audited', routerLink: ['/xvifc', 'yr', 'upload-audited'], icon: 'bi bi-file' });
+
+    const badge = fixture.nativeElement.querySelector('.menu-item-badge') as HTMLElement;
+    expect(badge).toBeTruthy();
+    expect(badge.classList).toContain('menu-item-badge--returned');
+  });
+
+  it('router link with no pending notification: renders no badge', () => {
+    setItem(fixture, { label: 'Audited', routerLink: ['/xvifc', 'yr', 'upload-audited'], icon: 'bi bi-file' });
+
+    expect(fixture.nativeElement.querySelector('.menu-item-badge')).toBeNull();
   });
 });

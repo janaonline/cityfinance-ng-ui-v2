@@ -14,6 +14,12 @@ import { NoteDialogService } from '../../../../../shared/components/note-dialog/
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import type { UploadPageConfig } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.component';
 import { UploadDocumentsService } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.service';
+import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import type {
+  ActionGate,
+  DocumentRuntimeState,
+  ResolvedDocumentAction,
+} from '../../../../../shared/components/document-action-row/document-action-row.types';
 
 type SectionKey = 'auditedData' | 'unauditedData';
 type TabKey = SectionKey | 'PFMS';
@@ -45,7 +51,7 @@ interface StatusDoc {
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
   } | null;
-  stateDecision: DecisionEntry[];
+  stateDecision: DecisionEntry | null;
 }
 
 interface StatusSection {
@@ -71,6 +77,8 @@ interface ReviewDocRow {
   docId: string;
   title: string;
   subtitle: string;
+  /** false → optional document; no approve/return controls, and it never blocks section approval. */
+  required: boolean;
   processingStatus: StatusDoc['processingStatus'];
   fileName: string | null;
   sizeKb: number | null;
@@ -187,7 +195,7 @@ const RETURN_NOTE_MAX_LENGTH = 200;
 @Component({
   selector: 'app-annual-account-review',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatTooltipModule],
+  imports: [DatePipe, MatButtonModule, MatTooltipModule, DocumentActionRowComponent],
   templateUrl: './annual-account-review.component.html',
   styleUrl: './annual-account-review.component.scss',
   animations: [TAB_SLIDE],
@@ -285,7 +293,7 @@ export class AnnualAccountReviewComponent {
 
     return config.documents.map((def): ReviewDocRow => {
       const doc = section.documents.find((d) => d.docId === def.id);
-      const rawLatestDecision = doc?.stateDecision.length ? doc.stateDecision[doc.stateDecision.length - 1] : null;
+      const rawLatestDecision = doc?.stateDecision ?? null;
       const uploadedAt = doc?.currentUpload?.uploadedAt ? new Date(doc.currentUpload.uploadedAt) : null;
 
       // A decision only counts against the file it was made on. If the ULB re-uploaded a
@@ -299,6 +307,7 @@ export class AnnualAccountReviewComponent {
         docId: def.id,
         title: def.title,
         subtitle: def.subtitle,
+        required: def.required !== false,
         processingStatus: doc?.processingStatus ?? 'NOT_STARTED',
         fileName: doc?.currentUpload?.file.originalName ?? null,
         sizeKb: doc?.currentUpload?.file.sizeKb ?? null,
@@ -312,7 +321,11 @@ export class AnnualAccountReviewComponent {
     });
   });
 
-  readonly allPassed = computed(() => this.rows().length > 0 && this.rows().every((r) => r.processingStatus === 'PASSED'));
+  /** Optional documents never gate this cosmetic indicator — mirrors the ULB upload page's gating. */
+  readonly allPassed = computed(() => {
+    const requiredRows = this.rows().filter((r) => r.required !== false);
+    return requiredRows.length > 0 && requiredRows.every((r) => r.processingStatus === 'PASSED');
+  });
 
   readonly approvedRowCount = computed(() => this.rows().filter((r) => r.latestDecision?.status === 'APPROVED').length);
 
@@ -328,6 +341,15 @@ export class AnnualAccountReviewComponent {
 
   readonly canReview = computed(() => this.currentSection()?.permissions.canReview ?? false);
   readonly canApprove = computed(() => this.currentSection()?.permissions.canApprove ?? false);
+
+  // Inputs for the shared document-action-row component — the gate is a UI-visibility hint
+  // only; canReview() (real backend permission) is what actually gates the click.
+  readonly sectionStatusId = computed(() => this.currentSection()?.form_status_id ?? 0);
+  readonly actionGates = computed<readonly ActionGate[]>(() => {
+    const key = this.activeSection();
+    if (key === 'PFMS') return [];
+    return this.configBySection()[key]?.actionGates ?? [];
+  });
 
   readonly canReviewPfms = computed(() => this.bankAccountData()?.permissions.canReview ?? false);
   readonly canApprovePfms = computed(() => this.bankAccountData()?.permissions.canApprove ?? false);
@@ -368,6 +390,35 @@ export class AnnualAccountReviewComponent {
     }
     if (!this.configBySection()[tab]) {
       await this.loadConfigForSection(tab);
+    }
+  }
+
+  /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
+  toRuntimeState(row: ReviewDocRow): DocumentRuntimeState {
+    return {
+      docKey: row.docId,
+      required: row.required,
+      hasFile: row.fileName !== null,
+      processingStatus: row.processingStatus,
+      latestDecision: row.latestDecision ? { status: row.latestDecision.status } : null,
+    };
+  }
+
+  /** Routes the shared action-row component's click event to the existing handlers — Return
+   *  only opens the inline reason panel here (submitDocumentDecision fires from confirmReturn). */
+  onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    switch (event.action) {
+      case 'approve':
+        void this.approveDocument(event.docKey);
+        return;
+      case 'return':
+        this.startReturn(event.docKey);
+        return;
+      case 'undo':
+        void this.undoDocument(event.docKey);
+        return;
+      default:
+        return; // upload/reupload/retry/delete/*Section aren't emitted on this page's document rows
     }
   }
 
@@ -666,6 +717,24 @@ export class AnnualAccountReviewComponent {
           decision,
           note,
         }),
+      );
+      this.statusData.set(unwrap<StatusResponse>(result));
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+    }
+  }
+
+  /** Reverts a document's own APPROVED/RETURNED decision back to undecided — only possible
+   *  while the section itself hasn't been finalized (canReview() mirrors the backend gate). */
+  async undoDocument(docId: string): Promise<void> {
+    const id = this.statusData()?.annualAccountId;
+    if (!id) return;
+    this.isDeciding.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.http.delete<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision?section=${this.activeSection()}`),
       );
       this.statusData.set(unwrap<StatusResponse>(result));
     } catch {
