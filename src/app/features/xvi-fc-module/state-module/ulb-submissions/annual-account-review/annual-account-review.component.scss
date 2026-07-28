@@ -136,49 +136,6 @@
   }
 }
 
-.icon-action {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid transparent;
-  display: inline-grid;
-  place-items: center;
-  background: #fff;
-  transition: all 150ms ease;
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  &--approve {
-    border-color: #1e7e42;
-    color: #1e7e42;
-
-    &:not(:disabled):hover {
-      background: #e6f6ec;
-    }
-  }
-
-  &--return {
-    border-color: #c62828;
-    color: #c62828;
-
-    &:not(:disabled):hover {
-      background: #fdecea;
-    }
-  }
-
-  &--undo {
-    border-color: #f59e0b;
-    color: #f59e0b;
-
-    &:not(:disabled):hover {
-      background: #fef3c7;
-    }
-  }
-}
-
 .returned-note {
   font-size: 0.8rem;
   color: #c62828;

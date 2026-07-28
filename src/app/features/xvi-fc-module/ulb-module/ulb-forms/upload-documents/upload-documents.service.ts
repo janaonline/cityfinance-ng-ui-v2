@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import type { ActionGate } from '../../../../../shared/components/document-action-row/document-action-row.types';
 import type { UploadDocumentDef, UploadPageConfig } from './upload-documents.component';
 
 interface ApiFieldConfig {
@@ -23,6 +24,7 @@ interface UploadConfigApiData {
     documentYear: string;
   };
   data: ApiFieldConfig[];
+  actionGates?: ActionGate[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -51,6 +53,7 @@ export class UploadDocumentsService {
       confirmLabel: apiData.meta.confirmLabel,
       documentYearId: apiData.meta.documentYearId,
       documentYear: apiData.meta.documentYear,
+      actionGates: apiData.actionGates ?? [],
       documents: apiData.data.map(
         (field): UploadDocumentDef => ({
           id: field.key,

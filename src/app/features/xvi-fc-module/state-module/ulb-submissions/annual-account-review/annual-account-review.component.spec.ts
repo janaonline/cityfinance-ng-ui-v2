@@ -17,6 +17,7 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
     confirmLabel: 'Submit',
     documentYearId: 'year-1',
     documentYear: 'FY 2024-25',
+    actionGates: [],
     documents: [
       {
         id: 'auditors-report',
@@ -188,5 +189,105 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
     expect(updatedRow?.latestDecision).toBeNull();
 
     httpMock.verify();
+  });
+
+  describe('onDocAction — bridges the shared action-row component to the existing handlers', () => {
+    beforeEach(() => {
+      component.activeSection.set('auditedData');
+      component.configBySection.set({ auditedData: config });
+      component.statusData.set({
+        annualAccountId: 'account-1',
+        ulbName: 'Test ULB',
+        ulbCode: 'T1',
+        auditedData: {
+          form_status: 'UNDER_REVIEW_BY_STATE',
+          form_status_id: 3,
+          yearId: 'year-1',
+          year: '2024-25',
+          permissions: {
+            canView: true,
+            canUpload: false,
+            canReview: true,
+            canApprove: true,
+            canMohuaReview: false,
+            canMohuaApprove: false,
+          },
+          stateDecision: null,
+          mohuaDecision: null,
+          documents: [],
+        },
+        unauditedData: null,
+      });
+    });
+
+    it('routes an approve action to approveDocument', () => {
+      const spy = spyOn(component, 'approveDocument').and.resolveTo();
+      component.onDocAction({ action: 'approve', docKey: 'auditors-report' });
+      expect(spy).toHaveBeenCalledWith('auditors-report');
+    });
+
+    it('routes a return action to startReturn (opens the inline panel, does not submit directly)', () => {
+      const spy = spyOn(component, 'startReturn');
+      component.onDocAction({ action: 'return', docKey: 'auditors-report' });
+      expect(spy).toHaveBeenCalledWith('auditors-report');
+    });
+
+    it('routes an undo action to undoDocument', () => {
+      const spy = spyOn(component, 'undoDocument').and.resolveTo();
+      component.onDocAction({ action: 'undo', docKey: 'auditors-report' });
+      expect(spy).toHaveBeenCalledWith('auditors-report');
+    });
+
+    it('ignores ULB-only actions on this page', () => {
+      const approveSpy = spyOn(component, 'approveDocument').and.resolveTo();
+      const startReturnSpy = spyOn(component, 'startReturn');
+      const undoSpy = spyOn(component, 'undoDocument').and.resolveTo();
+
+      component.onDocAction({ action: 'upload', docKey: 'auditors-report' });
+
+      expect(approveSpy).not.toHaveBeenCalled();
+      expect(startReturnSpy).not.toHaveBeenCalled();
+      expect(undoSpy).not.toHaveBeenCalled();
+    });
+
+    it('exposes the section status id and action gates the shared component needs', () => {
+      component.configBySection.set({
+        auditedData: {
+          ...config,
+          actionGates: [{ docKey: null, scope: 'document', role: 'STATE', action: 'approve', statusIds: [3] }],
+        },
+      });
+
+      expect(component.sectionStatusId()).toBe(3);
+      expect(component.actionGates()).toEqual([
+        { docKey: null, scope: 'document', role: 'STATE', action: 'approve', statusIds: [3] },
+      ]);
+    });
+
+    it('maps a row into the runtime state the resolver expects', () => {
+      const runtime = component.toRuntimeState({
+        docId: 'auditors-report',
+        title: 'Auditor Report',
+        subtitle: '',
+        required: true,
+        processingStatus: 'PASSED',
+        fileName: 'report.pdf',
+        sizeKb: 100,
+        versionLabel: 'v1',
+        uploadedAt: null,
+        uploaderRole: null,
+        uploadId: 'upload-1',
+        latestDecision: { status: 'RETURNED', note: 'fix it', decidedAt: new Date().toISOString() },
+        wasReuploaded: false,
+      });
+
+      expect(runtime).toEqual({
+        docKey: 'auditors-report',
+        required: true,
+        hasFile: true,
+        processingStatus: 'PASSED',
+        latestDecision: { status: 'RETURNED' },
+      });
+    });
   });
 });

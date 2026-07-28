@@ -294,49 +294,15 @@
                       <i class="bi bi-eye me-1"></i>View PDF
                     </button>
 
-                    @if (row.latestDecision?.status === 'APPROVED') {
-                      @if (canReview()) {
-                        <button
-                          type="button"
-                          class="icon-action icon-action--undo"
-                          [disabled]="isDeciding()"
-                          matTooltip="Undo this approval"
-                          (click)="undoDocument(row.docId)"
-                        >
-                          <i class="bi bi-arrow-counterclockwise"></i>
-                        </button>
-                      }
-                    } @else if (row.latestDecision?.status === 'RETURNED') {
-                      @if (canReview()) {
-                        <button
-                          type="button"
-                          class="icon-action icon-action--undo"
-                          [disabled]="isDeciding()"
-                          matTooltip="Undo this return"
-                          (click)="undoDocument(row.docId)"
-                        >
-                          <i class="bi bi-arrow-counterclockwise"></i>
-                        </button>
-                      }
-                    } @else if (row.required !== false && canReview() && returningDocId() !== row.docId) {
-                      <button
-                        type="button"
-                        class="icon-action icon-action--approve"
-                        [disabled]="isDeciding() || row.processingStatus !== 'PASSED'"
-                        matTooltip="Approve this document"
-                        (click)="approveDocument(row.docId)"
-                      >
-                        <i class="bi bi-check-lg"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="icon-action icon-action--return"
-                        [disabled]="isDeciding() || row.processingStatus !== 'PASSED'"
-                        matTooltip="Return this document"
-                        (click)="startReturn(row.docId)"
-                      >
-                        <i class="bi bi-x-lg"></i>
-                      </button>
+                    @if (returningDocId() !== row.docId) {
+                      <app-document-action-row
+                        role="STATE"
+                        [sectionStatusId]="sectionStatusId()"
+                        [gates]="actionGates()"
+                        [doc]="toRuntimeState(row)"
+                        [readOnly]="!canReview() || isDeciding()"
+                        (actionClicked)="onDocAction($event)"
+                      />
                     }
                   </div>
                 </div>

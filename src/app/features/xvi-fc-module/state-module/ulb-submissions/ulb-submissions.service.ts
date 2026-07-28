@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, throwError } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   BulkReviewPayload,
@@ -176,17 +176,13 @@ export class UlbSubmissionsService {
   }
 
   private bulkReviewBankAccounts(payload: BulkReviewPayload): Observable<BulkReviewResult> {
-    void payload; // unused while the bulk-decision endpoint below is commented out
-    // Backend's POST /xvi-fc/bank-account/bulk-decision is commented out for now —
-    // bulk approve/return for PFMS Bank Account ships in a later push. Uncomment together.
-    // const body = {
-    //   decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
-    //   note: payload.reason ?? null,
-    //   ids: payload.recordIds,
-    // };
-    // return this.http
-    //   .post<unknown>(`${BANK_ACCOUNT_API}bulk-decision`, body)
-    //   .pipe(map((res) => unwrap<BulkReviewResult>(res)));
-    return throwError(() => new Error('Bulk approve/return for PFMS Bank Account is not available yet.'));
+    const body = {
+      decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
+      note: payload.reason ?? null,
+      ids: payload.recordIds,
+    };
+    return this.http
+      .post<unknown>(`${BANK_ACCOUNT_API}bulk-decision`, body)
+      .pipe(map((res) => unwrap<BulkReviewResult>(res)));
   }
 }

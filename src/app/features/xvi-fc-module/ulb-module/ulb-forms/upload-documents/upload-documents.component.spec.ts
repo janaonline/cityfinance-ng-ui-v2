@@ -64,6 +64,7 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
     confirmLabel: 'Submit',
     documentYearId: 'year-1',
     documentYear: 'FY 2024-25',
+    actionGates: [],
     documents: [requiredDoc, optionalDoc],
   };
 
@@ -143,6 +144,7 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
     confirmLabel: 'Submit',
     documentYearId: 'year-1',
     documentYear: 'FY 2024-25',
+    actionGates: [],
     documents: [requiredDoc],
   };
 

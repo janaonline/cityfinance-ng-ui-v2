@@ -25,6 +25,12 @@ import { EMPTY, Subscription, firstValueFrom, interval, switchMap } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
+import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import type {
+  ActionGate,
+  DocumentRuntimeState,
+  ResolvedDocumentAction,
+} from '../../../../../shared/components/document-action-row/document-action-row.types';
 import {
   UlbFormsDialogComponent,
   ULB_FORMS_DIALOG_PANEL_CLASS,
@@ -50,6 +56,7 @@ export interface UploadPageConfig {
   confirmLabel: string;
   documentYearId: string;
   documentYear: string;
+  actionGates: ReadonlyArray<ActionGate>;
   documents: ReadonlyArray<UploadDocumentDef>;
 }
 
@@ -150,6 +157,7 @@ const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, st
 
 interface BackendStatusSection {
   form_status: AnnualAccountFormStatus;
+  form_status_id: number;
   yearId: string;
   year: string;
   documents: BackendStatusDoc[];
@@ -212,7 +220,15 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
 @Component({
   selector: 'app-upload-documents',
   standalone: true,
-  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, MatTooltipModule, PageErrorStateComponent],
+  imports: [
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTooltipModule,
+    PageErrorStateComponent,
+    DocumentActionRowComponent,
+  ],
   templateUrl: './upload-documents.component.html',
   styleUrl: './upload-documents.component.scss',
 })
@@ -248,6 +264,11 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
   // Current section status as last reported by the backend — null until first load.
   readonly sectionStatus = signal<AnnualAccountFormStatus | null>(null);
+  // Numeric form_status_id — what the document-action-row gate is actually keyed on.
+  readonly sectionStatusId = signal<number | null>(null);
+
+  /** Action-row gates fetched alongside the upload config — a UI-visibility hint only. */
+  readonly actionGates = computed<readonly ActionGate[]>(() => this.config()?.actionGates ?? []);
 
   // True whenever the section is in any non-editable status (under review or fully acknowledged) —
   // locks all edits for all roles, not just while under state review.
@@ -277,6 +298,47 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   /** An individually state-approved document stays locked from re-upload even while the rest of the section is open. */
   isDocLocked(doc: UploadDocument): boolean {
     return doc.latestDecision?.status === 'APPROVED';
+  }
+
+  /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
+  toRuntimeState(doc: UploadDocument): DocumentRuntimeState {
+    const processingStatusMap: Record<UploadDocument['status'], DocumentRuntimeState['processingStatus']> = {
+      pending: 'NOT_STARTED',
+      uploading: 'NOT_STARTED',
+      error: 'NOT_STARTED',
+      processing: 'PROCESSING',
+      passed: 'PASSED',
+      failed: 'FAILED',
+    };
+    return {
+      docKey: doc.id,
+      required: doc.required !== false,
+      hasFile: doc.fileName !== null,
+      processingStatus: processingStatusMap[doc.status],
+      latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
+    };
+  }
+
+  /** Routes the shared action-row component's click event to the existing handlers — the
+   *  gate/resolver only decide what to show; permission is re-checked here at the point of action. */
+  onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    switch (event.action) {
+      case 'upload':
+      case 'reupload':
+        if (!this.canUpload()) return;
+        this.triggerUpload(event.docKey);
+        return;
+      case 'retry':
+        if (!this.canUpload()) return;
+        void this.retryUpload(event.docKey);
+        return;
+      case 'delete':
+        if (!this.canDelete()) return;
+        void this.removeDocument(event.docKey);
+        return;
+      default:
+        return; // approve/return/undo/*Section are STATE-only — never emitted on this page
+    }
   }
 
   /** Optional documents never gate progress/submission — mirrors the backend's submitSection check. */
@@ -682,12 +744,18 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       );
 
       const statusData = unwrap<BackendStatusResponse | null>(result);
-      if (!statusData) return;
+      if (!statusData) {
+        // No annual-account document exists yet for this ULB/year — same as the
+        // backend's own default for a section with no data (NOT_STARTED).
+        this.sectionStatusId.set(1);
+        return;
+      }
 
       this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
 
       const section = this.config()!.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
       this.sectionStatus.set(section?.form_status ?? null);
+      this.sectionStatusId.set(section?.form_status_id ?? null);
       this.sectionReturnNote.set(
         (section?.form_status === 'RETURNED_BY_STATE'
           ? section.stateDecision?.note

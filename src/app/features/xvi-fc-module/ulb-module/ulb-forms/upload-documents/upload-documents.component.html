@@ -128,43 +128,42 @@
               <!-- PASSED -->
               @if (doc.status === 'passed') {
                 <div class="uploaded-block">
-                  <div class="file-chip file-chip--passed d-flex align-items-center gap-2 px-3 py-2 rounded-2">
-                    <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{ doc.fileName }}</span>
-                    @if (doc.sizeKb) {
-                      <span class="chip-meta">· {{ formatFileSize(doc.sizeKb) }}</span>
-                    }
-                    @if (doc.versionLabel) {
-                      <span class="chip-meta">· {{ doc.versionLabel }}</span>
-                    }
-                    @if (doc.latestDecision?.status === 'RETURNED') {
-                      <span class="returned-badge ms-1">
-                        <span class="returned-dot">●</span> RETURNED
-                      </span>
-                    } @else {
-                      <span class="passed-badge ms-1">
-                        <span class="passed-dot">●</span> PASSED
-                      </span>
-                    }
-                    <button
-                      mat-icon-button
-                      class="chip-icon-btn"
-                      type="button"
-                      matTooltip="Preview document"
-                      (click)="previewFile(doc)"
-                    >
-                      <mat-icon class="chip-icon">visibility</mat-icon>
-                    </button>
-                    @if (!isDocLocked(doc) && doc.latestDecision?.status !== 'RETURNED' && canDelete() && !sectionLocked()) {
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="file-chip file-chip--passed d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                      <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{ doc.fileName }}</span>
+                      @if (doc.sizeKb) {
+                        <span class="chip-meta">· {{ formatFileSize(doc.sizeKb) }}</span>
+                      }
+                      @if (doc.versionLabel) {
+                        <span class="chip-meta">· {{ doc.versionLabel }}</span>
+                      }
+                      @if (doc.latestDecision?.status === 'RETURNED') {
+                        <span class="returned-badge ms-1">
+                          <span class="returned-dot">●</span> RETURNED
+                        </span>
+                      } @else {
+                        <span class="passed-badge ms-1">
+                          <span class="passed-dot">●</span> PASSED
+                        </span>
+                      }
                       <button
                         mat-icon-button
-                        class="chip-icon-btn chip-icon-btn--delete"
+                        class="chip-icon-btn"
                         type="button"
-                        matTooltip="Remove and re-upload"
-                        (click)="removeDocument(doc.id)"
+                        matTooltip="Preview document"
+                        (click)="previewFile(doc)"
                       >
-                        <mat-icon class="chip-icon">delete_outline</mat-icon>
+                        <mat-icon class="chip-icon">visibility</mat-icon>
                       </button>
-                    }
+                    </div>
+                    <app-document-action-row
+                      role="ULB"
+                      [sectionStatusId]="sectionStatusId() ?? 1"
+                      [gates]="actionGates()"
+                      [doc]="toRuntimeState(doc)"
+                      [readOnly]="!canDelete() && !canUpload()"
+                      (actionClicked)="onDocAction($event)"
+                    />
                   </div>
                   <p class="uploader-meta body-xs text-muted mt-1 mb-0">
                     Uploaded by <strong>{{ uploaderLabel(doc) }}</strong>
@@ -172,11 +171,6 @@
                       &nbsp;·&nbsp;{{ timeAgo(doc.uploadedAt) }}
                     }
                   </p>
-                  @if (doc.latestDecision?.status === 'RETURNED' && canUpload() && !sectionLocked()) {
-                    <button mat-stroked-button class="upload-btn mt-1" type="button" (click)="triggerUpload(doc.id)">
-                      <mat-icon>upload</mat-icon> Re-upload
-                    </button>
-                  }
                 </div>
               }
 
@@ -193,16 +187,16 @@
                       <span class="failed-dot">●</span> FAILED
                     </span>
                   </div>
-                  @if (canDelete() && !sectionLocked()) {
-                    <div class="d-flex gap-2 mt-2">
-                      <button mat-stroked-button class="retry-btn flex-grow-1" type="button" (click)="retryUpload(doc.id)">
-                        <mat-icon>refresh</mat-icon> Retry Verification
-                      </button>
-                      <button mat-stroked-button class="upload-btn" type="button" (click)="triggerUpload(doc.id)">
-                        <mat-icon>upload</mat-icon> Re-upload
-                      </button>
-                    </div>
-                  }
+                  <div class="d-flex gap-2 mt-2">
+                    <app-document-action-row
+                      role="ULB"
+                      [sectionStatusId]="sectionStatusId() ?? 1"
+                      [gates]="actionGates()"
+                      [doc]="toRuntimeState(doc)"
+                      [readOnly]="!canUpload()"
+                      (actionClicked)="onDocAction($event)"
+                    />
+                  </div>
                 </div>
               }
 
@@ -216,20 +210,26 @@
                     {{ doc.validationError ?? 'Upload failed. Try again.' }}
                   </span>
                 </div>
-                <button mat-stroked-button class="upload-btn w-100" type="button"
-                  [disabled]="!canUpload() || sectionLocked() || isDocLocked(doc)"
-                  (click)="triggerUpload(doc.id)">
-                  <mat-icon>upload</mat-icon> Upload
-                </button>
+                <app-document-action-row
+                  role="ULB"
+                  [sectionStatusId]="sectionStatusId() ?? 1"
+                  [gates]="actionGates()"
+                  [doc]="toRuntimeState(doc)"
+                  [readOnly]="!canUpload()"
+                  (actionClicked)="onDocAction($event)"
+                />
               }
 
               <!-- PENDING -->
               @if (doc.status === 'pending') {
-                <button mat-stroked-button class="upload-btn" type="button"
-                  [disabled]="!canUpload() || sectionLocked() || isDocLocked(doc)"
-                  (click)="triggerUpload(doc.id)">
-                  <mat-icon>upload</mat-icon> Upload
-                </button>
+                <app-document-action-row
+                  role="ULB"
+                  [sectionStatusId]="sectionStatusId() ?? 1"
+                  [gates]="actionGates()"
+                  [doc]="toRuntimeState(doc)"
+                  [readOnly]="!canUpload()"
+                  (actionClicked)="onDocAction($event)"
+                />
               }
 
             </div>

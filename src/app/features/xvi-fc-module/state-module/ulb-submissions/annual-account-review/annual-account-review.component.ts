@@ -14,6 +14,12 @@ import { NoteDialogService } from '../../../../../shared/components/note-dialog/
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import type { UploadPageConfig } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.component';
 import { UploadDocumentsService } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.service';
+import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import type {
+  ActionGate,
+  DocumentRuntimeState,
+  ResolvedDocumentAction,
+} from '../../../../../shared/components/document-action-row/document-action-row.types';
 
 type SectionKey = 'auditedData' | 'unauditedData';
 type TabKey = SectionKey | 'PFMS';
@@ -189,7 +195,7 @@ const RETURN_NOTE_MAX_LENGTH = 200;
 @Component({
   selector: 'app-annual-account-review',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatTooltipModule],
+  imports: [DatePipe, MatButtonModule, MatTooltipModule, DocumentActionRowComponent],
   templateUrl: './annual-account-review.component.html',
   styleUrl: './annual-account-review.component.scss',
   animations: [TAB_SLIDE],
@@ -336,6 +342,15 @@ export class AnnualAccountReviewComponent {
   readonly canReview = computed(() => this.currentSection()?.permissions.canReview ?? false);
   readonly canApprove = computed(() => this.currentSection()?.permissions.canApprove ?? false);
 
+  // Inputs for the shared document-action-row component — the gate is a UI-visibility hint
+  // only; canReview() (real backend permission) is what actually gates the click.
+  readonly sectionStatusId = computed(() => this.currentSection()?.form_status_id ?? 0);
+  readonly actionGates = computed<readonly ActionGate[]>(() => {
+    const key = this.activeSection();
+    if (key === 'PFMS') return [];
+    return this.configBySection()[key]?.actionGates ?? [];
+  });
+
   readonly canReviewPfms = computed(() => this.bankAccountData()?.permissions.canReview ?? false);
   readonly canApprovePfms = computed(() => this.bankAccountData()?.permissions.canApprove ?? false);
 
@@ -375,6 +390,35 @@ export class AnnualAccountReviewComponent {
     }
     if (!this.configBySection()[tab]) {
       await this.loadConfigForSection(tab);
+    }
+  }
+
+  /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
+  toRuntimeState(row: ReviewDocRow): DocumentRuntimeState {
+    return {
+      docKey: row.docId,
+      required: row.required,
+      hasFile: row.fileName !== null,
+      processingStatus: row.processingStatus,
+      latestDecision: row.latestDecision ? { status: row.latestDecision.status } : null,
+    };
+  }
+
+  /** Routes the shared action-row component's click event to the existing handlers — Return
+   *  only opens the inline reason panel here (submitDocumentDecision fires from confirmReturn). */
+  onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    switch (event.action) {
+      case 'approve':
+        void this.approveDocument(event.docKey);
+        return;
+      case 'return':
+        this.startReturn(event.docKey);
+        return;
+      case 'undo':
+        void this.undoDocument(event.docKey);
+        return;
+      default:
+        return; // upload/reupload/retry/delete/*Section aren't emitted on this page's document rows
     }
   }
 
