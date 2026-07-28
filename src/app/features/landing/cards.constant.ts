@@ -32,6 +32,17 @@ export const landingCards: RoleCard[] = [
     allowedRoles: ['ULB', 'ADMIN'],
     route: ['/auth/login', 'XVIFC'],
   },
+  {
+    title: 'OCR Validation',
+    subtitle: 'Admin REVIEWER',
+    description:
+      'Review state-validated submissions, run compliance checks, and issue sanction letters for fund release.',
+    icon: 'track_changes',
+    accent: 'orange',
+    col: 'col-12 col-md-4',
+    allowedRoles: ['ADMIN'],
+    route: ['/auth/login', 'XVIFC'],
+  },
   //   {
   //     title: 'MoHUA Reviewer',
   //     subtitle: 'MINISTRY REVIEWER',
