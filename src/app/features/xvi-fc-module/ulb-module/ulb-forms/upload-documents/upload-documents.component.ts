@@ -37,6 +37,8 @@ export interface UploadDocumentDef {
   id: string;
   title: string;
   subtitle: string;
+  /** false → optional document; does not block submission and shows no required asterisk. */
+  required: boolean;
   allowedFileTypes: string[];
   maxFileSize: number;  // MB
   minPages?: number;
@@ -60,7 +62,7 @@ export interface UploadPageConfig {
 // error → network/validation error during upload
 type DocumentStatus = 'pending' | 'uploading' | 'processing' | 'passed' | 'failed' | 'error';
 
-interface UploadDocument extends UploadDocumentDef {
+export interface UploadDocument extends UploadDocumentDef {
   status: DocumentStatus;
   fileName: string | null;
   fileSize: number | null;
@@ -99,7 +101,7 @@ interface BackendOcrInfo {
 }
 
 // A state/MoHUA approve-or-return call, as recorded on the backend.
-interface BackendDecision {
+export interface BackendDecision {
   status: 'APPROVED' | 'RETURNED';
   note: string | null;
   decidedAt: string;
@@ -119,8 +121,8 @@ interface BackendStatusDoc {
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
   } | null;
-  // Every state decision recorded against this document, oldest first — last entry is current.
-  stateDecision: BackendDecision[];
+  // STATE's current decision on this document, or null if undecided/undone.
+  stateDecision: BackendDecision | null;
 }
 
 type AnnualAccountFormStatus =
@@ -277,14 +279,18 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.latestDecision?.status === 'APPROVED';
   }
 
-  readonly passedCount = computed(() => this.documents().filter((d) => d.status === 'passed').length);
-  readonly totalCount = computed(() => this.config()?.documents.length ?? 0);
+  /** Optional documents never gate progress/submission — mirrors the backend's submitSection check. */
+  readonly requiredDocuments = computed(() => this.documents().filter((d) => d.required !== false));
+  readonly passedCount = computed(() => this.requiredDocuments().filter((d) => d.status === 'passed').length);
+  readonly totalCount = computed(() => this.requiredDocuments().length);
   readonly progressPct = computed(() => {
     const total = this.totalCount();
     return total === 0 ? 0 : Math.round((this.passedCount() / total) * 100);
   });
   /** A returned document stays blocking even after OCR passes again — it must be resolved (re-decided or re-uploaded) first. */
-  readonly hasReturnedDocs = computed(() => this.documents().some((d) => d.latestDecision?.status === 'RETURNED'));
+  readonly hasReturnedDocs = computed(() =>
+    this.requiredDocuments().some((d) => d.latestDecision?.status === 'RETURNED'),
+  );
 
   readonly allPassed = computed(() => {
     const total = this.totalCount();
@@ -691,14 +697,17 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       );
       if (!section?.documents?.length) return;
 
+      // Per-document decisions are provisional and undoable until STATE finalizes the whole
+      // section (Approve Section/Return Section) — mask them from the ULB until then, so an
+      // in-progress "Returned"/"Approved" verdict that might still get undone never leaks.
+      const decisionsVisible = section.form_status !== 'UNDER_REVIEW_BY_STATE';
+
       this.documents.update((docs) =>
         docs.map((doc) => {
           const saved = section.documents.find((d) => d.docId === doc.id);
           if (!saved) return doc;
 
-          const rawLatestDecision = saved.stateDecision.length
-            ? saved.stateDecision[saved.stateDecision.length - 1]
-            : null;
+          const rawLatestDecision = decisionsVisible ? saved.stateDecision : null;
 
           if (!saved.currentUpload) return { ...doc, latestDecision: rawLatestDecision };
 

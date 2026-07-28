@@ -45,7 +45,7 @@ interface StatusDoc {
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
   } | null;
-  stateDecision: DecisionEntry[];
+  stateDecision: DecisionEntry | null;
 }
 
 interface StatusSection {
@@ -71,6 +71,8 @@ interface ReviewDocRow {
   docId: string;
   title: string;
   subtitle: string;
+  /** false → optional document; no approve/return controls, and it never blocks section approval. */
+  required: boolean;
   processingStatus: StatusDoc['processingStatus'];
   fileName: string | null;
   sizeKb: number | null;
@@ -285,7 +287,7 @@ export class AnnualAccountReviewComponent {
 
     return config.documents.map((def): ReviewDocRow => {
       const doc = section.documents.find((d) => d.docId === def.id);
-      const rawLatestDecision = doc?.stateDecision.length ? doc.stateDecision[doc.stateDecision.length - 1] : null;
+      const rawLatestDecision = doc?.stateDecision ?? null;
       const uploadedAt = doc?.currentUpload?.uploadedAt ? new Date(doc.currentUpload.uploadedAt) : null;
 
       // A decision only counts against the file it was made on. If the ULB re-uploaded a
@@ -299,6 +301,7 @@ export class AnnualAccountReviewComponent {
         docId: def.id,
         title: def.title,
         subtitle: def.subtitle,
+        required: def.required !== false,
         processingStatus: doc?.processingStatus ?? 'NOT_STARTED',
         fileName: doc?.currentUpload?.file.originalName ?? null,
         sizeKb: doc?.currentUpload?.file.sizeKb ?? null,
@@ -312,7 +315,11 @@ export class AnnualAccountReviewComponent {
     });
   });
 
-  readonly allPassed = computed(() => this.rows().length > 0 && this.rows().every((r) => r.processingStatus === 'PASSED'));
+  /** Optional documents never gate this cosmetic indicator — mirrors the ULB upload page's gating. */
+  readonly allPassed = computed(() => {
+    const requiredRows = this.rows().filter((r) => r.required !== false);
+    return requiredRows.length > 0 && requiredRows.every((r) => r.processingStatus === 'PASSED');
+  });
 
   readonly approvedRowCount = computed(() => this.rows().filter((r) => r.latestDecision?.status === 'APPROVED').length);
 
@@ -666,6 +673,24 @@ export class AnnualAccountReviewComponent {
           decision,
           note,
         }),
+      );
+      this.statusData.set(unwrap<StatusResponse>(result));
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+    }
+  }
+
+  /** Reverts a document's own APPROVED/RETURNED decision back to undecided — only possible
+   *  while the section itself hasn't been finalized (canReview() mirrors the backend gate). */
+  async undoDocument(docId: string): Promise<void> {
+    const id = this.statusData()?.annualAccountId;
+    if (!id) return;
+    this.isDeciding.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.http.delete<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision?section=${this.activeSection()}`),
       );
       this.statusData.set(unwrap<StatusResponse>(result));
     } catch {

@@ -8,6 +8,7 @@ interface ApiFieldConfig {
   key: string;
   label: string;
   placeholder?: string;
+  required?: boolean;
   allowedFileTypes?: string[];
   maxFileSize?: number;
   validations?: Array<{ name: string; validator: unknown; message: string }>;
@@ -55,6 +56,7 @@ export class UploadDocumentsService {
           id: field.key,
           title: field.label,
           subtitle: field.placeholder ?? '',
+          required: field.required !== false,
           allowedFileTypes: field.allowedFileTypes ?? ['pdf'],
           maxFileSize: field.maxFileSize ?? 50,
           minPages: field.validations?.find((v) => v.name === 'minPages')?.validator as number | undefined,
