@@ -16,8 +16,10 @@ export interface RoleCard {
   icon: string;
   accent: CardAccent;
   col?: string;
-  route: string[];
+  route?: string[];
   btnLabel?: string;
+  allowedRoles?: string[];
+  link?: string;
 }
 
 interface LandingCardsConfig {
