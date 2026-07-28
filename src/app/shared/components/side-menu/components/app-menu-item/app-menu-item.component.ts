@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { RouterLinkActive, RouterModule } from '@angular/router';
+import { UlbNotificationService } from '../../../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
 import { MenuItem } from '../../models/menu.model';
 
 @Component({
@@ -11,9 +12,19 @@ import { MenuItem } from '../../models/menu.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppMenuItemComponent {
+  private readonly ulbNotifications = inject(UlbNotificationService);
+
   readonly item = input.required<MenuItem>();
   readonly root = input<boolean>(false);
   readonly collapsed = input<boolean>(false);
+
+  /** Colored-dot severity for this item's route, if it has a pending ULB notification. */
+  readonly badgeSeverity = computed(() => {
+    const routerLink = this.item().routerLink;
+    const lastSegment = Array.isArray(routerLink) ? routerLink[routerLink.length - 1] : routerLink;
+    if (typeof lastSegment !== 'string') return undefined;
+    return this.ulbNotifications.severityByRoute().get(lastSegment);
+  });
 
   /**
    * Emitted when any interactive element in this item is activated

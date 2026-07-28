@@ -1,0 +1,16 @@
+@for (action of actions(); track action.action) {
+  <button
+    type="button"
+    class="doc-action-btn"
+    [class]="'doc-action-btn--' + action.action"
+    [disabled]="action.disabled"
+    [title]="action.label"
+    [attr.aria-label]="action.label"
+    (click)="onClick(action)"
+  >
+    <i [class]="'bi ' + action.icon" aria-hidden="true"></i>
+    @if (!isIconOnly(action.action)) {
+      <span>{{ action.label }}</span>
+    }
+  </button>
+}

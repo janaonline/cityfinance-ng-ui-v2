@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { AppMenuComponent } from './app-menu.component';
 import { SideBarModel } from '../../models/menu.model';
 
@@ -67,7 +68,7 @@ describe('AppMenuComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent, RouterTestingModule],
+      imports: [TestHostComponent, RouterTestingModule, HttpClientTestingModule],
     }).compileComponents();
   });
 
