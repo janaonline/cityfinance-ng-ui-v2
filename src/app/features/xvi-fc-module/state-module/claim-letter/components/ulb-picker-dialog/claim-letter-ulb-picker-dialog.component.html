@@ -18,32 +18,16 @@
       />
     </div>
 
-    <div class="btn-group" role="group" aria-label="Filter by eligibility">
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-secondary"
-        [class.active]="eligibilityFilter() === 'ALL'"
-        (click)="setEligibilityFilter('ALL')"
-      >
-        All
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-secondary"
-        [class.active]="eligibilityFilter() === 'ELIGIBLE'"
-        (click)="setEligibilityFilter('ELIGIBLE')"
-      >
-        Eligible
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-secondary"
-        [class.active]="eligibilityFilter() === 'INELIGIBLE'"
-        (click)="setEligibilityFilter('INELIGIBLE')"
-      >
-        Ineligible
-      </button>
-    </div>
+    <mat-button-toggle-group
+      [value]="eligibilityFilter()"
+      (change)="setEligibilityFilter($event.value ?? 'ALL')"
+      aria-label="Filter by eligibility"
+      data-cy="claim-letter-ulb-picker-eligibility-filter"
+    >
+      <mat-button-toggle value="ALL">All</mat-button-toggle>
+      <mat-button-toggle value="ELIGIBLE">Eligible</mat-button-toggle>
+      <mat-button-toggle value="INELIGIBLE">Ineligible</mat-button-toggle>
+    </mat-button-toggle-group>
   </div>
 
   <div class="table-responsive claim-letter-ulb-picker-table-wrap">

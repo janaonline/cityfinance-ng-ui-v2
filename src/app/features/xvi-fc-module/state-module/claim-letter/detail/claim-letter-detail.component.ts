@@ -44,6 +44,8 @@ import {
   ClaimLetterUlbSelection,
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
+import { buildBatchNarrative } from '../claim-letter.utils';
+import { MatCardModule } from '@angular/material/card';
 
 const CLAIM_LETTER_ABANDON_CONFIRM: Required<ConfirmDialogData> = {
   title: 'Abandon this claim letter draft?',
@@ -67,6 +69,7 @@ const CLAIM_LETTER_SUBMIT_CONFIRM: Required<ConfirmDialogData> = {
 @Component({
   selector: 'app-claim-letter-detail',
   imports: [
+    MatCardModule,
     MatButtonModule,
     PreLoaderComponent,
     ClaimUlbTableComponent,
@@ -98,6 +101,9 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   readonly claimLetterId = signal<string | null>(this.isCreateMode ? null : this.routeClaimLetterId);
   readonly claim = signal<ClaimLetterBatchSummary | null>(null);
+  /** Exposed for the template's subtitle text — kept dynamic rather than a literal "Installment 1"
+   *  so that copy needs no change once Installment 2 is enabled. */
+  readonly installment = CLAIM_LETTER_INSTALLMENT;
 
   readonly rows = new FormArray<ClaimUlbRowGroup>([]);
   readonly savedUlbRows = signal<readonly ClaimLetterUlbRow[]>([]);
@@ -145,17 +151,24 @@ export class ClaimLetterDetailComponent implements OnInit {
   );
 
   readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => {
-    const listLink: XvifcBreadcrumbLink = { label: 'Claim Letter', routerLink: ['/xvifc', this.yearId, 'claim-letter'] };
+    const listLink: XvifcBreadcrumbLink = {
+      label: 'Claim Letter',
+      routerLink: ['/xvifc', this.yearId, 'claim-letter'],
+    };
     if (this.isCreateMode) return [listLink, { label: 'New Claim Letter' }];
     const claim = this.claim();
     return [listLink, { label: claim ? 'Batch #' + claim.batchNumber : 'Claim Letter' }];
   });
 
-  /** Create mode only ever knows the two state-wide figures (no batch/"current claim" exists yet);
-   *  the detail/view page shows all four, with "Claimed in This Batch"/"Remaining After This Batch"
-   *  recomputed live from the ULB table as amounts are edited, matching the per-row live-variance-
-   *  pill pattern already used there — falling back to the last-saved snapshot before the table
-   *  (a view child, only available once rendered) exists. */
+  /** Create mode shows the same 3 state-wide tiles as the list page (no batch/"current claim" exists
+   *  yet — the full 5-figure breakdown, including "Claim in Progress"/"Claim in Draft", lives on the
+   *  list page only; the narrative below the tiles carries that nuance in prose here instead, see
+   *  `batchNarrative`). The detail/view page shows 4, with "Claimed in This Batch"/"Remaining After
+   *  This Batch" recomputed live from the ULB table as amounts are edited, matching the per-row
+   *  live-variance-pill pattern already used there — falling back to the last-saved snapshot before
+   *  the table (a view child, only available once rendered) exists. "Remaining After This Batch" also
+   *  nets out other concurrent batches (draft/under-review), not just this state's already-
+   *  acknowledged claims — see `ClaimLetterFinancialSummary`'s doc comment. */
   readonly summaryTiles = computed<ClaimLetterSummaryTile[]>(() => {
     if (this.isCreateMode) {
       const overview = this.eligibilityOverview()?.financialOverview;
@@ -163,16 +176,14 @@ export class ClaimLetterDetailComponent implements OnInit {
       return [
         { label: 'Total Allocation', value: overview.totalInstallmentAllocation },
         { label: 'Already Claimed (Acknowledged)', value: overview.totalAlreadyAcknowledged },
-        {
-          label: 'Available to Claim',
-          value: overview.totalInstallmentAllocation - overview.totalAlreadyAcknowledged,
-        },
+        { label: 'Available to Claim', value: overview.availableToClaim },
       ];
     }
 
     const claim = this.claim();
     if (!claim) return [];
-    const { totalInstallmentAllocation, totalAlreadyAcknowledged } = claim.financialSummary;
+    const { totalInstallmentAllocation, totalAlreadyAcknowledged, totalClaimInProgress, totalClaimInDraft } =
+      claim.financialSummary;
     const currentSelectedClaim = this.claimTable()?.totalClaim() ?? claim.financialSummary.currentSelectedClaim;
 
     return [
@@ -181,9 +192,77 @@ export class ClaimLetterDetailComponent implements OnInit {
       { label: 'Claimed in This Batch', value: currentSelectedClaim },
       {
         label: 'Remaining After This Batch',
-        value: totalInstallmentAllocation - totalAlreadyAcknowledged - currentSelectedClaim,
+        value:
+          totalInstallmentAllocation -
+          totalAlreadyAcknowledged -
+          totalClaimInProgress -
+          totalClaimInDraft -
+          currentSelectedClaim,
       },
     ];
+  });
+
+  /** Short, live-updating story of what this batch means for the state's overall allocation — shown
+   *  between the tiles and the ULB table while the batch is editable. In edit mode the financial
+   *  inputs come from `claim().financialSummary` (already self-excludes this batch from the
+   *  in-progress/draft buckets — see `ClaimLetterFinancialSummary`'s doc comment) rather than
+   *  `eligibilityOverview()`, which does NOT exclude this batch; combining the overview's in-
+   *  progress/draft totals with this batch's own live claim would double-count it. `expectedUlbCount`/
+   *  batch-slot figures only exist on the overview, so those are always sourced from there. */
+  readonly batchNarrative = computed<string[]>(() => {
+    if (!this.canEdit()) return [];
+    const overview = this.eligibilityOverview();
+    if (!overview) return [];
+
+    const rowCount = this.claimTable()?.currentUlbIds().length ?? 0;
+    const liveClaimedTotal = this.claimTable()?.totalClaim() ?? 0;
+
+    let totalInstallmentAllocation: number;
+    let remainingAfterThisBatch: number;
+    let slotsRemaining: number;
+
+    if (this.isCreateMode) {
+      const financialOverview = overview.financialOverview;
+      totalInstallmentAllocation = financialOverview.totalInstallmentAllocation;
+      remainingAfterThisBatch = financialOverview.availableToClaim - liveClaimedTotal;
+      slotsRemaining = overview.nextBatchNumber !== null ? overview.batchSlotsMax - overview.nextBatchNumber : 0;
+    } else {
+      const claim = this.claim();
+      if (!claim) return [];
+      const {
+        totalInstallmentAllocation: total,
+        totalAlreadyAcknowledged,
+        totalClaimInProgress,
+        totalClaimInDraft,
+      } = claim.financialSummary;
+      totalInstallmentAllocation = total;
+      remainingAfterThisBatch =
+        total - totalAlreadyAcknowledged - totalClaimInProgress - totalClaimInDraft - liveClaimedTotal;
+      slotsRemaining = overview.batchSlotsMax - overview.batchSlotsUsed;
+    }
+
+    return buildBatchNarrative({
+      rowCount,
+      expectedUlbCount: overview.expectedUlbCount,
+      liveClaimedTotal,
+      totalInstallmentAllocation,
+      remainingAfterThisBatch,
+      slotsRemaining,
+      installment: CLAIM_LETTER_INSTALLMENT,
+    });
+  });
+
+  /** True once any row is already known — with certainty, not just incompletely filled in — to be
+   *  ineligible or outside the ±10% band, so Create/Save can be disabled before a round trip. */
+  readonly hasInvalidRows = computed(() => (this.claimTable()?.invalidRowIdentifiers().length ?? 0) > 0);
+
+  /** Same wording as the backend's own `buildChildren()` rejection message, so a user who somehow
+   *  still hits a race between this check and save sees one consistent message, not two phrasings. */
+  readonly rowValidationMessage = computed<string | null>(() => {
+    const identifiers = this.claimTable()?.invalidRowIdentifiers() ?? [];
+    return identifiers.length
+      ? `The following ULBs are ineligible or have an invalid claimed amount: ${identifiers.join(', ')}`
+      : null;
   });
 
   get stateId(): string {
@@ -200,10 +279,12 @@ export class ClaimLetterDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Fetched in both modes now — the narrative bullets below the summary tiles need
+    // expectedUlbCount/batchSlots* while an existing draft is being edited too, not just at create
+    // time. Still non-fatal/independent of loadDetail()'s isLoading/loadError gating either way.
+    this.loadEligibilityOverview();
     if (!this.isCreateMode) {
       this.loadDetail();
-    } else {
-      this.loadEligibilityOverview();
     }
   }
 
@@ -230,14 +311,17 @@ export class ClaimLetterDetailComponent implements OnInit {
 
     forkJoin({
       detail: this.claimLetterService.getDetail(claimLetterId),
-      ulbs: this.claimLetterService.getUlbs(claimLetterId, {}),
+      // Pages through every ULB of the batch (not just the backend's default first page) — a batch
+      // can have 700+ ULBs, and both the displayed total and the save payload must reflect all of
+      // them (see ClaimLetterService.getAllUlbs).
+      ulbs: this.claimLetterService.getAllUlbs(claimLetterId),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ detail, ulbs }) => {
           this.claim.set(detail);
-          this.savedUlbRows.set(ulbs.rows);
-          this.hydrateRows(ulbs.rows);
+          this.savedUlbRows.set(ulbs);
+          this.hydrateRows(ulbs);
           this.initSignedFileFormIfNeeded(detail);
           this.isLoading.set(false);
         },

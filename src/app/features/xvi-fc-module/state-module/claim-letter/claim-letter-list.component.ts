@@ -2,25 +2,36 @@ import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
-import { ClaimLetterSummaryTilesComponent, ClaimLetterSummaryTile } from './components/summary-tiles/claim-letter-summary-tiles.component';
 import {
   CLAIM_LETTER_INSTALLMENT,
   ClaimLetterBatchSummary,
   ClaimLetterEligibilitySummary,
 } from './claim-letter.models';
+import { ClaimLetterEligibilityChecklistComponent } from './components/eligibility-checklist/claim-letter-eligibility-checklist.component';
+import {
+  ClaimLetterSummaryTile,
+  ClaimLetterSummaryTilesComponent,
+} from './components/summary-tiles/claim-letter-summary-tiles.component';
 import { ClaimLetterService } from './claim-letter.service';
-import { formatCrore, humanizeToken } from './claim-letter.utils';
-
+import { formatCrore } from './claim-letter.utils';
 const CLAIM_LETTER_HISTORY_PAGE_SIZE = 10;
 
 @Component({
   selector: 'app-claim-letter-list',
-  imports: [DatePipe, MatButtonModule, PreLoaderComponent, ClaimLetterSummaryTilesComponent],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatCardModule,
+    PreLoaderComponent,
+    ClaimLetterSummaryTilesComponent,
+    ClaimLetterEligibilityChecklistComponent,
+  ],
   templateUrl: './claim-letter-list.component.html',
   styleUrl: './claim-letter-list.component.scss',
 })
@@ -37,6 +48,9 @@ export class ClaimLetterListComponent implements OnInit {
 
   readonly eligibility = signal<ClaimLetterEligibilitySummary | null>(null);
   readonly claims = signal<readonly ClaimLetterBatchSummary[]>([]);
+  /** Collapsed by default — a returning user doesn't need the full walkthrough re-shown on every
+   *  visit just to reach "New Claim"; one click away for anyone who does. */
+  readonly showInstructions = signal(false);
 
   readonly page = signal(1);
   readonly total = signal(0);
@@ -45,10 +59,6 @@ export class ClaimLetterListComponent implements OnInit {
   readonly hasPrev = computed(() => this.page() > 1);
   readonly hasNext = computed(() => this.page() < this.totalPages());
 
-  readonly failedEligibilitySources = computed(() =>
-    (this.eligibility()?.stateLevelGate.sources ?? []).filter((source) => source.result !== 'PASSED'),
-  );
-
   readonly canCreateNewClaim = computed(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
@@ -56,20 +66,29 @@ export class ClaimLetterListComponent implements OnInit {
   });
 
   /** State-wide context only — "claimed in current batch"/"remaining after batch" don't mean
-   *  anything here since no specific batch is in view (only on the Batch #n detail page). */
+   *  anything here since no specific batch is in view (only on the Batch #n detail page). The full
+   *  5-figure breakdown lives here (not on the create/edit pages, which stay leaner and let their
+   *  narrative bullets carry the "in progress"/"in draft" nuance in prose instead) — "Available to
+   *  Claim" is visually emphasized since it's the one number that most directly answers "can I act
+   *  right now." */
   readonly summaryTiles = computed<ClaimLetterSummaryTile[]>(() => {
     const overview = this.eligibility()?.financialOverview;
     if (!overview) return [];
-    const availableToClaim = overview.totalInstallmentAllocation - overview.totalAlreadyAcknowledged;
     return [
+      { label: 'Available to Claim', value: overview.availableToClaim, emphasized: true },
       { label: 'Total Allocation', value: overview.totalInstallmentAllocation },
       { label: 'Already Claimed (Acknowledged)', value: overview.totalAlreadyAcknowledged },
-      { label: 'Available to Claim', value: availableToClaim },
+      { label: 'Claim in Progress (Under Review)', value: overview.totalClaimInProgress },
+      { label: 'Claim in Draft', value: overview.totalClaimInDraft },
     ];
   });
 
   readonly formatCrore = formatCrore;
-  readonly humanizeToken = humanizeToken;
+  readonly installment = CLAIM_LETTER_INSTALLMENT;
+
+  toggleInstructions(): void {
+    this.showInstructions.update((value) => !value);
+  }
 
   get stateId(): string {
     try {

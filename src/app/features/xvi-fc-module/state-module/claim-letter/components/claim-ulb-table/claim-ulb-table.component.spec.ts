@@ -289,6 +289,64 @@ describe('ClaimUlbTableComponent', () => {
     expect(component.rowViewModels()[0].liveWithinVariance).toBeNull();
   });
 
+  // ─── invalidRowIdentifiers (known-invalid rows, for pre-submit gating) ───────
+
+  it('is empty when every row is within variance and eligible', () => {
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[0].ulbId, claimedAmount: 21 })], {
+      savedRows: [ALLOCATION_ROW],
+    });
+    expect(component.invalidRowIdentifiers()).toEqual([]);
+  });
+
+  it('is empty for an incomplete row (no claim amount yet), not a false positive', () => {
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[0].ulbId, claimedAmount: null })], {
+      savedRows: [ALLOCATION_ROW],
+    });
+    expect(component.invalidRowIdentifiers()).toEqual([]);
+  });
+
+  it('includes the censusCode of a row outside the ±10% band', () => {
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[0].ulbId, claimedAmount: 23 })], {
+      savedRows: [ALLOCATION_ROW],
+    }); // 20 * 1.15, ALLOCATION_ROW.censusCode is '800123'
+    expect(component.invalidRowIdentifiers()).toEqual(['800123']);
+  });
+
+  it('includes the censusCode of an ineligible row even when its claim amount is within variance', () => {
+    const ineligibleRow: ClaimLetterUlbRow = { ...ALLOCATION_ROW, eligible: false };
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[0].ulbId, claimedAmount: 20 })], {
+      savedRows: [ineligibleRow],
+    });
+    expect(component.invalidRowIdentifiers()).toEqual(['800123']);
+  });
+
+  it('falls back to sbCode when censusCode is unavailable on an invalid row', () => {
+    const sbCodeOnlyInvalid: ClaimLetterUlbRow = {
+      ...ALLOCATION_ROW,
+      ulbId: ULB_OPTIONS[1].ulbId,
+      censusCode: null,
+      sbCode: 'SB-0142',
+    };
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[1].ulbId, claimedAmount: 23 })], {
+      savedRows: [sbCodeOnlyInvalid],
+    });
+    expect(component.invalidRowIdentifiers()).toEqual(['SB-0142']);
+  });
+
+  it('falls back to ulbName when neither censusCode nor sbCode is available on an invalid row', () => {
+    const neitherCodeInvalid: ClaimLetterUlbRow = {
+      ...ALLOCATION_ROW,
+      ulbId: ULB_OPTIONS[1].ulbId,
+      ulbName: ULB_OPTIONS[1].ulbName,
+      censusCode: null,
+      sbCode: null,
+    };
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[1].ulbId, claimedAmount: 23 })], {
+      savedRows: [neitherCodeInvalid],
+    });
+    expect(component.invalidRowIdentifiers()).toEqual(['Sample Municipal Council']);
+  });
+
   // ─── Validation error icon ────────────────────────────────────────────────────
 
   it('shows a required error icon once the claim amount control is touched and empty', () => {

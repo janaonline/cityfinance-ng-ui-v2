@@ -12,6 +12,9 @@ import { ClaimLetterService } from './claim-letter.service';
 const financialSummary = {
   totalInstallmentAllocation: 0,
   totalAlreadyAcknowledged: 0,
+  totalClaimInProgress: 0,
+  totalClaimInDraft: 0,
+  availableToClaim: 0,
   selectedAllocation: 0,
   currentSelectedClaim: 5,
   remainingIfAcknowledged: 0,
@@ -45,7 +48,13 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
     batchSlotsUsed: 1,
     batchSlotsMax: 3,
     nextBatchNumber: 2,
-    financialOverview: { totalInstallmentAllocation: 25, totalAlreadyAcknowledged: 5 },
+    financialOverview: {
+      totalInstallmentAllocation: 25,
+      totalAlreadyAcknowledged: 5,
+      totalClaimInProgress: 3,
+      totalClaimInDraft: 2,
+      availableToClaim: 15,
+    },
     ...overrides,
   };
 }
@@ -106,7 +115,7 @@ describe('ClaimLetterListComponent', () => {
     expect(component.canCreateNewClaim()).toBeTrue();
   });
 
-  it('disables New Claim and surfaces failed sources when the gate fails', () => {
+  it('disables New Claim and exposes the failing source when the gate fails', () => {
     (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
       of(
         buildEligibility({
@@ -121,14 +130,19 @@ describe('ClaimLetterListComponent', () => {
     component.loadAll();
 
     expect(component.canCreateNewClaim()).toBeFalse();
-    expect(component.failedEligibilitySources().length).toBe(1);
+    // The eligibility-checklist component (tested separately) derives tick/cross rendering from
+    // this signal directly — the list component itself no longer filters failed sources.
+    expect(component.eligibility()?.stateLevelGate.sources.length).toBe(1);
+    expect(component.eligibility()?.stateLevelGate.sources[0].result).toBe('FAILED');
   });
 
-  it('derives Total Allocation, Already Claimed, and Available to Claim from financialOverview', () => {
+  it('derives all 5 tiles from financialOverview, with Available to Claim emphasized first', () => {
     expect(component.summaryTiles()).toEqual([
+      { label: 'Available to Claim', value: 15, emphasized: true },
       { label: 'Total Allocation', value: 25 },
       { label: 'Already Claimed (Acknowledged)', value: 5 },
-      { label: 'Available to Claim', value: 20 },
+      { label: 'Claim in Progress (Under Review)', value: 3 },
+      { label: 'Claim in Draft', value: 2 },
     ]);
   });
 
@@ -197,6 +211,16 @@ describe('ClaimLetterListComponent', () => {
     });
     expect(claimLetterService.getEligibilitySummary).not.toHaveBeenCalled();
     expect(component.page()).toBe(2);
+  });
+
+  it('instructions stay collapsed by default and toggle on demand', () => {
+    expect(component.showInstructions()).toBeFalse();
+
+    component.toggleInstructions();
+    expect(component.showInstructions()).toBeTrue();
+
+    component.toggleInstructions();
+    expect(component.showInstructions()).toBeFalse();
   });
 
   it('goToPage ignores out-of-range page numbers', () => {

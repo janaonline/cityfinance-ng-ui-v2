@@ -1,3 +1,5 @@
+import { ClaimLetterInstallment } from './claim-letter.models';
+
 /**
  * Formats an already Crore-denominated, display-ready amount. Never rescales — the backend has
  * already done the paise→Crore conversion (see `claim-letter.models.ts`'s `ClaimLetterFinancialSummary`
@@ -39,4 +41,72 @@ export function humanizeToken(token: string): string {
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
+}
+
+/** Short display name for an eligibility source — `displayLabel` when the backend configured one,
+ *  else a humanized `formType` so an unconfigured source never renders blank. */
+export function describeEligibilitySourceLabel(source: { formType: string; displayLabel?: string }): string {
+  return source.displayLabel ?? humanizeToken(source.formType);
+}
+
+/** One-line requirement statement for an eligibility source — `displayDescription` when the backend
+ *  configured one, else a generated sentence in the same "must be submitted" phrasing used by every
+ *  configured source today, so an unconfigured source still reads like the rest of the checklist. */
+export function describeEligibilitySourceDescription(source: {
+  formType: string;
+  displayDescription?: string;
+}): string {
+  return source.displayDescription ?? `${humanizeToken(source.formType)} must be submitted by the state.`;
+}
+
+/** One decimal place, matching the live difference-percentage badge's existing rounding convention
+ *  (`claim-ulb-table.component.html`'s `number:'1.0-1'` pipe usage). */
+function formatPercent(value: number): string {
+  return value.toFixed(1);
+}
+
+export interface BatchNarrativeInput {
+  /** Live count of ULBs currently in the batch's ULB table (including unsaved additions). */
+  rowCount: number;
+  /** State-wide expected ULB count, from the eligibility summary. */
+  expectedUlbCount: number;
+  /** Live sum of claimed amounts across the batch's current rows (Crore). */
+  liveClaimedTotal: number;
+  /** State-wide Installment allocation pool (Crore). */
+  totalInstallmentAllocation: number;
+  /** What would remain state-wide after this batch, at its current live claim total (Crore). */
+  remainingAfterThisBatch: number;
+  /** How many more batches (of `CLAIM_LETTER_MAX_BATCH_NUMBER`) could still be created after this
+   *  one — 0 or negative means none. */
+  slotsRemaining: number;
+  installment: ClaimLetterInstallment;
+}
+
+/**
+ * Short, live-updating story of what this batch means for the state's overall allocation — shown
+ * between the summary tiles and the ULB table while a batch is editable (create mode, or an
+ * existing draft). Deliberately not installment-specific text ("Installment 1") baked in as a
+ * literal — interpolates `installment` so this needs no change once Installment 2 is enabled.
+ */
+export function buildBatchNarrative(input: BatchNarrativeInput): string[] {
+  if (input.rowCount === 0) {
+    return ["Add ULBs below to see how this batch affects your state's overall allocation."];
+  }
+
+  const ulbPercent =
+    input.expectedUlbCount > 0 ? formatPercent((input.rowCount / input.expectedUlbCount) * 100) : '0.0';
+  const claimPercent =
+    input.totalInstallmentAllocation > 0
+      ? formatPercent((input.liveClaimedTotal / input.totalInstallmentAllocation) * 100)
+      : '0.0';
+  const slotsRemaining = Math.max(input.slotsRemaining, 0);
+  const batchWord = slotsRemaining === 1 ? 'batch' : 'batches';
+
+  return [
+    `This batch includes ${input.rowCount} of ${input.expectedUlbCount} eligible ULBs (${ulbPercent}%).`,
+    `You're claiming ${formatCrore(input.liveClaimedTotal)} — ${claimPercent}% of the state's total ` +
+      `Installment ${input.installment} allocation (${formatCrore(input.totalInstallmentAllocation)}).`,
+    `${formatCrore(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch — ` +
+      `enough for ${slotsRemaining} more ${batchWord}.`,
+  ];
 }

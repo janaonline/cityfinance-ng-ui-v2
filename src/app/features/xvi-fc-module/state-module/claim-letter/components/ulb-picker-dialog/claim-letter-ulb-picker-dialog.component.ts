@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, injec
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -33,7 +34,7 @@ const CLAIM_LETTER_ULB_PICKER_PAGE_SIZE = 20;
  */
 @Component({
   selector: 'app-claim-letter-ulb-picker-dialog',
-  imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatTooltipModule],
+  imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatButtonToggleModule, MatTooltipModule],
   templateUrl: './claim-letter-ulb-picker-dialog.component.html',
   styleUrl: './claim-letter-ulb-picker-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

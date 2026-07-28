@@ -1,9 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { UploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
+  CLAIM_LETTER_ULB_ROWS_PAGE_SIZE,
   ClaimLetterApiResponse,
   ClaimLetterBatchSummary,
   ClaimLetterEligibilitySummary,
@@ -169,5 +170,23 @@ export class ClaimLetterService {
           };
         }),
       );
+  }
+
+  /**
+   * Pages through `getUlbs()` until every row of the batch has been fetched, rather than trusting a
+   * single (backend-defaulted, ≤20-row) page — a batch can have 700+ ULBs, and both the displayed
+   * total and the save payload must reflect all of them, not just the first page. Emits once, with
+   * the fully-accumulated row list.
+   */
+  getAllUlbs(claimLetterId: string, search?: string): Observable<ClaimLetterUlbRow[]> {
+    const limit = CLAIM_LETTER_ULB_ROWS_PAGE_SIZE;
+    return this.getUlbs(claimLetterId, { search, page: 1, limit }).pipe(
+      expand((result) =>
+        result.rows.length > 0 && result.page * result.limit < result.total
+          ? this.getUlbs(claimLetterId, { search, page: result.page + 1, limit })
+          : EMPTY,
+      ),
+      reduce((allRows: ClaimLetterUlbRow[], result) => allRows.concat(result.rows), []),
+    );
   }
 }

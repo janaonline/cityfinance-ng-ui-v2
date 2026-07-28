@@ -159,6 +159,15 @@ export class ClaimUlbTableComponent {
     });
   });
 
+  /** Rows we can already say, with certainty, will be rejected server-side — mirrors the backend's
+   *  own `buildChildren()` validation (ineligible or outside the ±10% band). Rows with not-yet-known
+   *  state (`null`) are excluded here; that's `validateRows()`'s required-field concern, not this one. */
+  readonly invalidRowIdentifiers = computed(() =>
+    this.rowViewModels()
+      .filter((row) => row.eligible === false || row.liveWithinVariance === false)
+      .map((row) => row.censusCode ?? row.sbCode ?? row.ulbName ?? 'Unknown ULB'),
+  );
+
   /** Client-computed running totals — always available from the live FormArray, independent of
    *  whether a real `financialSummary` exists yet on the backend (create mode has none). */
   readonly totalAllocation = computed(() =>

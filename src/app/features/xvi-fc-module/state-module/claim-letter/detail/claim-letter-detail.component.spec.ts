@@ -12,6 +12,7 @@ import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { createClaimUlbRowGroup } from '../components/claim-ulb-table/claim-ulb-table.component';
 import { ClaimLetterBatchSummary, ClaimLetterEligibilitySummary, ClaimLetterUlbRow } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
+import { formatCrore } from '../claim-letter.utils';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
 
 const SIGNED_FILE_FIELD: ConditionalFieldConfig = {
@@ -36,6 +37,9 @@ const SAMPLE_FILE_METADATA: UploadedFileMetadata = {
 const financialSummary = {
   totalInstallmentAllocation: 0,
   totalAlreadyAcknowledged: 0,
+  totalClaimInProgress: 0,
+  totalClaimInDraft: 0,
+  availableToClaim: 0,
   selectedAllocation: 0,
   currentSelectedClaim: 21,
   remainingIfAcknowledged: 0,
@@ -72,7 +76,13 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
     batchSlotsUsed: 0,
     batchSlotsMax: 3,
     nextBatchNumber: 1,
-    financialOverview: { totalInstallmentAllocation: 25, totalAlreadyAcknowledged: 5 },
+    financialOverview: {
+      totalInstallmentAllocation: 25,
+      totalAlreadyAcknowledged: 5,
+      totalClaimInProgress: 3,
+      totalClaimInDraft: 2,
+      availableToClaim: 15,
+    },
     ...overrides,
   };
 }
@@ -148,16 +158,37 @@ describe('ClaimLetterDetailComponent', () => {
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
       expect(claimLetterService.getEligibilitySummary).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1);
+      // Same 3-tile shape as the list page — the full 5-figure breakdown lives there only; this page
+      // stays lean and lets the narrative bullets carry the "in progress"/"in draft" nuance instead.
+      // "Available to Claim" is the server-computed field, not a client subtraction.
       expect(component.summaryTiles()).toEqual([
         { label: 'Total Allocation', value: 25 },
         { label: 'Already Claimed (Acknowledged)', value: 5 },
-        { label: 'Available to Claim', value: 20 },
+        { label: 'Available to Claim', value: 15 },
       ]);
     });
 
     it('shows no summary tiles when the financial overview has not loaded (e.g. the request failed)', () => {
       component.eligibilityOverview.set(null);
       expect(component.summaryTiles()).toEqual([]);
+    });
+
+    it('shows a neutral placeholder narrative before any ULB rows are added', () => {
+      expect(component.batchNarrative()).toEqual([
+        "Add ULBs below to see how this batch affects your state's overall allocation.",
+      ]);
+    });
+
+    it('builds live narrative bullets once rows exist, using dynamic Installment text', () => {
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-1', claimedAmount: 5 }));
+      fixture.detectChanges();
+
+      const narrative = component.batchNarrative();
+      // financialOverview: totalInstallmentAllocation=25, expectedUlbCount=10, availableToClaim=15.
+      expect(narrative[0]).toBe('This batch includes 1 of 10 eligible ULBs (10.0%).');
+      expect(narrative[1]).toContain('Installment 1 allocation');
+      expect(narrative[1]).toContain('20.0%'); // 5 / 25
+      expect(narrative[2]).toContain('10 Cr.'); // 15 (availableToClaim) - 5 (live claim)
     });
 
     it('breadcrumb reads Claim Letter > New Claim Letter, linking back to the list', () => {
@@ -167,11 +198,11 @@ describe('ClaimLetterDetailComponent', () => {
       ]);
     });
 
-    it('never calls getDetail/getUlbs on init', () => {
+    it('never calls getDetail/getAllUlbs on init', () => {
       const getDetailSpy = spyOn(claimLetterService, 'getDetail');
-      const getUlbsSpy = spyOn(claimLetterService, 'getUlbs');
+      const getAllUlbsSpy = spyOn(claimLetterService, 'getAllUlbs');
       expect(getDetailSpy).not.toHaveBeenCalled();
-      expect(getUlbsSpy).not.toHaveBeenCalled();
+      expect(getAllUlbsSpy).not.toHaveBeenCalled();
     });
 
     it('createDraft refuses to submit with zero rows', () => {
@@ -256,17 +287,21 @@ describe('ClaimLetterDetailComponent', () => {
     async function setupEdit(claim: ClaimLetterBatchSummary = buildClaim()): Promise<void> {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(claim));
-      spyOn(claimLetterService, 'getUlbs').and.returnValue(of({ rows: SAVED_ULB_ROWS, page: 1, limit: 20, total: 1 }));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      // ngOnInit() now fetches the eligibility overview in edit mode too (for the narrative bullets'
+      // expectedUlbCount/batch-slot figures), not just create mode — mocked here so every edit-mode
+      // test has a consistent, non-dangling response.
+      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(buildEligibility()));
       fixture.detectChanges();
     }
 
-    it('is not create mode, and loads detail + ulbs on init, hydrating the table', async () => {
+    it('is not create mode, and loads detail + all ulbs on init, hydrating the table', async () => {
       await setupEdit();
 
       expect(component.isCreateMode).toBe(false);
       expect(component.claimLetterId()).toBe('claim-1');
       expect(claimLetterService.getDetail).toHaveBeenCalledWith('claim-1');
-      expect(claimLetterService.getUlbs).toHaveBeenCalledWith('claim-1', {});
+      expect(claimLetterService.getAllUlbs).toHaveBeenCalledWith('claim-1');
       expect(component.claim()?.claimLetterId).toBe('claim-1');
       expect(component.rows.length).toBe(1);
       expect(component.rows.at(0).controls.ulbId.value).toBe('ulb-1');
@@ -281,15 +316,18 @@ describe('ClaimLetterDetailComponent', () => {
       ]);
     });
 
-    it('shows all four financial-summary tiles straight from the loaded claim', async () => {
+    it('shows all four financial-summary tiles straight from the loaded claim, netting out other concurrent batches', async () => {
       await setupEdit(
         buildClaim({
           financialSummary: {
             totalInstallmentAllocation: 25,
             totalAlreadyAcknowledged: 5,
+            totalClaimInProgress: 3,
+            totalClaimInDraft: 1,
+            availableToClaim: 16,
             selectedAllocation: 20,
             currentSelectedClaim: 21,
-            remainingIfAcknowledged: -1,
+            remainingIfAcknowledged: -5,
           },
         }),
       );
@@ -298,7 +336,7 @@ describe('ClaimLetterDetailComponent', () => {
         { label: 'Total Allocation', value: 25 },
         { label: 'Already Claimed (Acknowledged)', value: 5 },
         { label: 'Claimed in This Batch', value: 21 },
-        { label: 'Remaining After This Batch', value: -1 },
+        { label: 'Remaining After This Batch', value: -5 }, // 25 - 5 - 3 - 1 - 21
       ]);
     });
 
@@ -308,9 +346,12 @@ describe('ClaimLetterDetailComponent', () => {
           financialSummary: {
             totalInstallmentAllocation: 25,
             totalAlreadyAcknowledged: 5,
+            totalClaimInProgress: 3,
+            totalClaimInDraft: 1,
+            availableToClaim: 16,
             selectedAllocation: 20,
             currentSelectedClaim: 21,
-            remainingIfAcknowledged: -1,
+            remainingIfAcknowledged: -5,
           },
         }),
       );
@@ -320,7 +361,69 @@ describe('ClaimLetterDetailComponent', () => {
 
       const tiles = component.summaryTiles();
       expect(tiles.find((t) => t.label === 'Claimed in This Batch')?.value).toBe(10);
-      expect(tiles.find((t) => t.label === 'Remaining After This Batch')?.value).toBe(10); // 25 - 5 - 10
+      expect(tiles.find((t) => t.label === 'Remaining After This Batch')?.value).toBe(6); // 25 - 5 - 3 - 1 - 10
+    });
+
+    // ─── Client-side pre-submit validation (known-invalid rows block Save/Create) ───
+
+    it('has no invalid rows for a freshly-loaded, in-variance, eligible draft', async () => {
+      await setupEdit(); // SAVED_ULB_ROWS: allocationAmount 20, claimAmount 21 (within ±10%), eligible true
+      expect(component.hasInvalidRows()).toBe(false);
+      expect(component.rowValidationMessage()).toBeNull();
+    });
+
+    it('flags the row and matches the backend wording once a claim amount drifts outside ±10%', async () => {
+      await setupEdit();
+
+      component.rows.at(0).controls.claimedAmount.setValue(100); // allocation is 20
+      fixture.detectChanges();
+
+      expect(component.hasInvalidRows()).toBe(true);
+      expect(component.rowValidationMessage()).toBe(
+        'The following ULBs are ineligible or have an invalid claimed amount: 800123',
+      );
+    });
+
+    it('clears once the claim amount is corrected back within variance', async () => {
+      await setupEdit();
+      component.rows.at(0).controls.claimedAmount.setValue(100);
+      fixture.detectChanges();
+      expect(component.hasInvalidRows()).toBe(true);
+
+      component.rows.at(0).controls.claimedAmount.setValue(21);
+      fixture.detectChanges();
+
+      expect(component.hasInvalidRows()).toBe(false);
+      expect(component.rowValidationMessage()).toBeNull();
+    });
+
+    it('narrative uses the self-excluded financialSummary fields, not the raw eligibility overview (which would double-count this batch)', async () => {
+      // eligibilityOverview (state-wide, NOT self-excluded): totalClaimInProgress=3, totalClaimInDraft=2.
+      // claim().financialSummary (self-excluded already): totalClaimInProgress=0, totalClaimInDraft=0
+      // — as if this very batch were the only contributor to those buckets before self-exclusion.
+      await setupEdit(
+        buildClaim({
+          financialSummary: {
+            totalInstallmentAllocation: 25,
+            totalAlreadyAcknowledged: 5,
+            totalClaimInProgress: 0,
+            totalClaimInDraft: 0,
+            availableToClaim: 20,
+            selectedAllocation: 20,
+            currentSelectedClaim: 21,
+            remainingIfAcknowledged: -1,
+          },
+        }),
+      );
+
+      const narrative = component.batchNarrative();
+      // If the (incorrect) raw overview totals were used instead, this would read 25-5-3-2-21=-6.
+      expect(narrative[2]).toContain(formatCrore(25 - 5 - 0 - 0 - 21));
+    });
+
+    it('narrative is empty (hidden) once the batch is no longer editable', async () => {
+      await setupEdit(buildClaim({ currentFormStatus: 5 })); // UNDER_REVIEW_BY_MOHUA, read-only
+      expect(component.batchNarrative()).toEqual([]);
     });
 
     it('is editable while IN_PROGRESS and not abandoned', async () => {
@@ -341,7 +444,8 @@ describe('ClaimLetterDetailComponent', () => {
     it('sets loadError and shows a snackbar when the initial load fails', async () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(throwError(() => new Error('boom')));
-      spyOn(claimLetterService, 'getUlbs').and.returnValue(of({ rows: [], page: 1, limit: 20, total: 0 }));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
+      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(buildEligibility()));
 
       fixture.detectChanges();
 
@@ -353,7 +457,7 @@ describe('ClaimLetterDetailComponent', () => {
     it('saveChanges sends the current expectedRevision and reloads on success', async () => {
       await setupEdit(buildClaim({ revision: 4 }));
       (claimLetterService.getDetail as jasmine.Spy).calls.reset();
-      (claimLetterService.getUlbs as jasmine.Spy).calls.reset();
+      (claimLetterService.getAllUlbs as jasmine.Spy).calls.reset();
       spyOn(claimLetterService, 'updateDraft').and.returnValue(of(buildClaim({ revision: 5 })));
 
       component.rows.at(0).controls.claimedAmount.setValue(19);
@@ -366,7 +470,7 @@ describe('ClaimLetterDetailComponent', () => {
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-success');
       // reloadForm-equivalent: reloads real state from the backend rather than hand-patching it
       expect(claimLetterService.getDetail).toHaveBeenCalledWith('claim-1');
-      expect(claimLetterService.getUlbs).toHaveBeenCalledWith('claim-1', {});
+      expect(claimLetterService.getAllUlbs).toHaveBeenCalledWith('claim-1');
     });
 
     it('saveChanges surfaces a revision-conflict message on failure without reloading', async () => {

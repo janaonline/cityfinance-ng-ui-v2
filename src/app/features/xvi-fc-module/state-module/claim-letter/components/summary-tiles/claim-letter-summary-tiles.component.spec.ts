@@ -34,4 +34,16 @@ describe('ClaimLetterSummaryTilesComponent', () => {
 
     expect(fixture.debugElement.queryAll(By.css('.summary-tile')).length).toBe(0);
   });
+
+  it('applies the emphasized class only to tiles flagged emphasized', () => {
+    fixture.componentRef.setInput('tiles', [
+      { label: 'Available to Claim', value: 15, emphasized: true },
+      { label: 'Total Allocation', value: 25 },
+    ]);
+    fixture.detectChanges();
+
+    const tiles = fixture.debugElement.queryAll(By.css('.summary-tile'));
+    expect(tiles[0].nativeElement.classList).toContain('summary-tile-emphasized');
+    expect(tiles[1].nativeElement.classList).not.toContain('summary-tile-emphasized');
+  });
 });

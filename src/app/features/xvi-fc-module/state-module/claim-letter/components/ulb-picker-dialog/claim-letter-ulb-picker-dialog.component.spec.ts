@@ -176,6 +176,23 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
     expect(getUlbOptionsSpy).not.toHaveBeenCalled();
   });
 
+  it('clicking the Eligible mat-button-toggle sends the mapped query param', () => {
+    getUlbOptionsSpy.calls.reset();
+    const group = fixture.debugElement.query(
+      By.css('[data-cy="claim-letter-ulb-picker-eligibility-filter"]'),
+    );
+    const toggleButtons = group.queryAll(By.css('button'));
+    toggleButtons[1].nativeElement.click(); // ALL, ELIGIBLE, INELIGIBLE
+    fixture.detectChanges();
+
+    expect(getUlbOptionsSpy).toHaveBeenCalledWith(
+      'state-1',
+      'year-1',
+      1,
+      jasmine.objectContaining({ eligibilityFilter: 'ELIGIBLE', page: 1 }),
+    );
+  });
+
   // ─── Disabled rows (excluded vs. server-ineligible) ─────────────────────────
 
   it('disables an already-added ULB even though the server reports it eligible', () => {

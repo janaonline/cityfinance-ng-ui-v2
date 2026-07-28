@@ -8,23 +8,40 @@ export type ClaimLetterBatchNumber = 1 | 2 | 3;
 export type ClaimLetterAssemblyStatus = 'BUILDING' | 'READY';
 export type ClaimLetterEligibilityResult = 'PASSED' | 'EXEMPTED' | 'FAILED';
 
+/** Matches the backend's own per-request cap (`CLAIM_LETTER_PAGINATION_MAX_LIMIT`) — used when
+ *  paging through every ULB of a batch rather than trusting a single page (see `getAllUlbs`). */
+export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = 100;
+
 /**
- * One eligibility-gate source result. Only the fields this UI actually renders (pass/fail state +
- * a reason code) are modeled — never the full backend `EligibilityEvaluationResult` shape, most of
- * which (evidence, dataset versions, snapshot ids) is audit-only and never shown here.
+ * One eligibility-gate source result. Only the fields this UI actually renders (pass/fail state,
+ * a reason code, and optional display copy) are modeled — never the full backend
+ * `EligibilityEvaluationResult` shape, most of which (evidence, dataset versions, snapshot ids) is
+ * audit-only and never shown here.
  */
 export interface ClaimLetterEligibilitySource {
   formType: string;
   result: ClaimLetterEligibilityResult;
   reasonCode: string;
+  /** Short human-readable name for this criterion (e.g. "Devolution Formula"). Falls back to a
+   *  humanized `formType` when absent — see `humanizeToken`/`describeEligibilitySource`. */
+  displayLabel?: string;
+  /** One-line requirement statement, same wording regardless of pass/fail — only the tick/cross
+   *  indicator changes. Falls back to a generated sentence when absent. */
+  displayDescription?: string;
 }
 
-/** State-wide financial context, independent of any one batch — the only two `financialSummary`
- *  concepts that still mean something before a specific claim letter exists, so they're surfaced
- *  here rather than waiting for a batch's own `ClaimLetterFinancialSummary`. */
+/** State-wide financial context, independent of any one batch — the `financialSummary` concepts
+ *  that still mean something before a specific claim letter exists, so they're surfaced here
+ *  rather than waiting for a batch's own `ClaimLetterFinancialSummary`. */
 export interface ClaimLetterFinancialOverview {
   totalInstallmentAllocation: number;
   totalAlreadyAcknowledged: number;
+  /** Sum claimed across this state/year/installment's other batches currently under MoHUA review. */
+  totalClaimInProgress: number;
+  /** Sum claimed across this state/year/installment's other batches still in draft. */
+  totalClaimInDraft: number;
+  /** totalInstallmentAllocation − totalAlreadyAcknowledged − totalClaimInProgress − totalClaimInDraft. */
+  availableToClaim: number;
 }
 
 export interface ClaimLetterEligibilitySummary {
@@ -108,8 +125,16 @@ export interface ClaimLetterUlbRowsResult {
 export interface ClaimLetterFinancialSummary {
   totalInstallmentAllocation: number;
   totalAlreadyAcknowledged: number;
+  /** Self-excludes this batch — sums the state's OTHER batches at each status. Persisted (not just
+   *  transient) so the detail page can live-recompute `remainingIfAcknowledged`-equivalent values as
+   *  the user edits claim amounts, without a fresh server round-trip on every keystroke. */
+  totalClaimInProgress: number;
+  totalClaimInDraft: number;
+  availableToClaim: number;
   selectedAllocation: number;
   currentSelectedClaim: number;
+  /** = availableToClaim − currentSelectedClaim — accounts for other concurrent batches, not just
+   *  this state's already-acknowledged claims. */
   remainingIfAcknowledged: number;
 }
 

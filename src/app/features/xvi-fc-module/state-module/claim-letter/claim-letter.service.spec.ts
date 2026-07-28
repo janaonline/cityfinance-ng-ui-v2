@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from '../../../../../environments/environment';
 import { ClaimLetterService } from './claim-letter.service';
-import { ClaimLetterApiResponse, ClaimLetterBatchSummary } from './claim-letter.models';
+import { CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, ClaimLetterApiResponse, ClaimLetterBatchSummary } from './claim-letter.models';
 
 const BASE_URL = `${environment.api.url2}xvi-fc/state/claim-letter/`;
 
@@ -13,10 +13,26 @@ const claimLetterId = 'claim-1';
 const financialSummary = {
   totalInstallmentAllocation: 0,
   totalAlreadyAcknowledged: 0,
+  totalClaimInProgress: 0,
+  totalClaimInDraft: 0,
+  availableToClaim: 0,
   selectedAllocation: 0,
   currentSelectedClaim: 0,
   remainingIfAcknowledged: 0,
 };
+
+function sampleRow(ulbId: string) {
+  return {
+    ulbId,
+    ulbName: `ULB ${ulbId}`,
+    censusCode: '800123',
+    sbCode: null,
+    allocationAmount: 10,
+    claimAmount: 10,
+    differencePercentage: 0,
+    eligible: true,
+  };
+}
 
 const sampleSummary: ClaimLetterBatchSummary = {
   claimLetterId,
@@ -324,6 +340,59 @@ describe('ClaimLetterService', () => {
         .flush({ success: true, message: 'OK', data: rows, meta: { page: 1, limit: 20, total: 1 } });
 
       expect(result).toEqual({ rows, page: 1, limit: 20, total: 1 });
+    });
+  });
+
+  describe('getAllUlbs', () => {
+    const url = `${BASE_URL}${claimLetterId}/ulbs`;
+
+    it('resolves every row in one page when the batch fits within the page size', () => {
+      const rows = [sampleRow('ulb-1'), sampleRow('ulb-2')];
+      let result: unknown;
+      service.getAllUlbs(claimLetterId).subscribe((r) => (result = r));
+
+      const req = httpMock.expectOne((r) => r.url === url);
+      expect(req.request.params.get('page')).toBe('1');
+      expect(req.request.params.get('limit')).toBe(String(CLAIM_LETTER_ULB_ROWS_PAGE_SIZE));
+      req.flush({ success: true, message: 'OK', data: rows, meta: { page: 1, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total: 2 } });
+
+      expect(result).toEqual(rows);
+    });
+
+    it('pages through until every row is fetched when the batch spans more than one page', () => {
+      const total = CLAIM_LETTER_ULB_ROWS_PAGE_SIZE + 5;
+      const page1Rows = Array.from({ length: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE }, (_, i) => sampleRow(`ulb-${i}`));
+      const page2Rows = Array.from({ length: 5 }, (_, i) => sampleRow(`ulb-${CLAIM_LETTER_ULB_ROWS_PAGE_SIZE + i}`));
+
+      let result: unknown;
+      service.getAllUlbs(claimLetterId).subscribe((r) => (result = r));
+
+      const req1 = httpMock.expectOne((r) => r.url === url && r.params.get('page') === '1');
+      req1.flush({
+        success: true,
+        message: 'OK',
+        data: page1Rows,
+        meta: { page: 1, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total },
+      });
+
+      const req2 = httpMock.expectOne((r) => r.url === url && r.params.get('page') === '2');
+      expect(req2.request.params.get('limit')).toBe(String(CLAIM_LETTER_ULB_ROWS_PAGE_SIZE));
+      req2.flush({
+        success: true,
+        message: 'OK',
+        data: page2Rows,
+        meta: { page: 2, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total },
+      });
+
+      expect(result).toEqual([...page1Rows, ...page2Rows]);
+    });
+
+    it('passes the search term through to every page request', () => {
+      service.getAllUlbs(claimLetterId, 'nagar').subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === url);
+      expect(req.request.params.get('search')).toBe('nagar');
+      req.flush({ success: true, message: 'OK', data: [], meta: { page: 1, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total: 0 } });
     });
   });
 });
