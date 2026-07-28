@@ -43,7 +43,7 @@ interface UsageStep {
   pricing: GeminiPricing | null;
 }
 
-const USD_TO_INR = 93.5; // Example conversion rate, should be updated with real-time data in production
+const USD_TO_INR = 96.28; // Example conversion rate, should be updated with real-time data in production
 
 interface GeminiPricing {
   inputPerM: number;

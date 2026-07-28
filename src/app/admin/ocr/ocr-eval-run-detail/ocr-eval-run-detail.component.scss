@@ -151,6 +151,19 @@
   gap: 1rem;
 }
 
+.match-filter-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.match-filter-field {
+  width: 150px;
+
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    height: 44px;
+  }
+}
+
 /* Table */
 
 .table-shell {
@@ -197,6 +210,11 @@
   }
 
   &:hover { background: #dbeafe; }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 .copy-btn--ghost {
@@ -360,6 +378,13 @@
   font-weight: 700;
   color: #0f172a;
   background: #eff6ff;
+}
+
+::ng-deep .results-table .mat-column-serialNo {
+  width: 2.5rem;
+  max-width: 2.5rem;
+  text-align: center;
+  color: #64748b;
 }
 
 ::ng-deep .results-table .mat-mdc-cell,

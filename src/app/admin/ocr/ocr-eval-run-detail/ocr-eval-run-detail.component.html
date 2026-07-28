@@ -103,10 +103,6 @@
             <div class="stat-value">{{ acc(r.metrics['doc_type_accuracy']) }}</div>
           </div>
           <div class="stat-card stat-card--blue">
-            <div class="stat-label">Language Accuracy</div>
-            <div class="stat-value">{{ acc(r.metrics['language_accuracy']) }}</div>
-          </div>
-          <div class="stat-card stat-card--blue">
             <div class="stat-label">Seal Accuracy</div>
             <div class="stat-value">{{ acc(r.metrics['seal_present_accuracy']) }}</div>
           </div>
@@ -142,12 +138,37 @@
         <div class="section-header">
           <div>
             <h4>Per-Job Results</h4>
-            <p>{{ dataSource.data.length }} job{{ dataSource.data.length === 1 ? '' : 's' }}</p>
+            <p>{{ dataSource.filteredData.length }} job{{ dataSource.filteredData.length === 1 ? '' : 's' }}</p>
+          </div>
+          <div class="match-filter-group">
+            <mat-form-field appearance="outline" class="match-filter-field">
+              <mat-label>Field</mat-label>
+              <mat-select [value]="matchField()" (selectionChange)="onMatchFieldChange($event.value)">
+                @for (opt of matchFieldOptions; track opt.key) {
+                  <mat-option [value]="opt.key">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="match-filter-field">
+              <mat-label>Match</mat-label>
+              <mat-select [value]="matchValue()" (selectionChange)="onMatchValueChange($event.value)">
+                <mat-option value="all">All</mat-option>
+                <mat-option value="match">Match</mat-option>
+                <mat-option value="mismatch">Mismatch</mat-option>
+                <mat-option value="na">N/A</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
         </div>
 
         <div class="table-shell">
           <table mat-table [dataSource]="dataSource" class="results-table">
+
+            <!-- Serial No -->
+            <ng-container matColumnDef="serialNo">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let row; let i = index">{{ serialNumber(i) }}</td>
+            </ng-container>
 
             <!-- Job / File -->
             <ng-container matColumnDef="jobFile">
@@ -164,6 +185,19 @@
                   >
                     <mat-icon>{{ isCopied('Job ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
                   </button>
+                  @if (row.jobId && row.jobId !== '—') {
+                    <a
+                      class="copy-btn"
+                      [routerLink]="['/ocr/validation']"
+                      [queryParams]="{ jobId: row.jobId }"
+                      target="_blank"
+                      rel="noopener"
+                      aria-label="View job"
+                      title="View job result (opens in new tab)"
+                    >
+                      <mat-icon>open_in_new</mat-icon>
+                    </a>
+                  }
                 </div>
                 <div class="id-line" style="margin-top:0.3rem;">
                   <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 26) }}</span>
@@ -176,6 +210,17 @@
                   >
                     <mat-icon>{{ isCopied('File Name', row.filename) ? 'check' : 'content_copy' }}</mat-icon>
                   </button>
+                  @if (row.jobId && row.jobId !== '—') {
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      aria-label="Download file"
+                      title="Open source file in a new tab"
+                      (click)="downloadJobFile(row)"
+                    >
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  }
                 </div>
                 <div class="id-line" style="margin-top:0.3rem;">
                   <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
