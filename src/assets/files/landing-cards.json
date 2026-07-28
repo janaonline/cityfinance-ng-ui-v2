@@ -65,23 +65,10 @@
       "description": "Ask questions, share resources, and discuss urban local body grants with officials across states and ministries.",
       "icon": "groups",
       "accent": "green",
-      "browseLabel": "Browse",
-      "btnLabel": "Sign in to post",
+      "btnLabel": "Browse",
       "route": [
         "/auth/login"
       ]
     }
-  ],
-  "community": {
-    "title": "Community Board",
-    "subtitle": "OPEN DISCUSSION",
-    "description": "Ask questions, share resources, and discuss urban local body grants with officials across states and ministries.",
-    "icon": "groups",
-    "accent": "green",
-    "browseLabel": "Browse",
-    "btnLabel": "Sign in to post",
-    "route": [
-      "/auth/login"
-    ]
-  }
+  ]
 }

@@ -37,6 +37,11 @@ $accent-colors: (
   }
 }
 
+.example-header-image {
+  background-image: url('https://material.angular.dev/assets/img/examples/shiba1.jpg');
+  background-size: cover;
+}
+
 .role-card__icon {
   width: 40px;
   height: 40px;

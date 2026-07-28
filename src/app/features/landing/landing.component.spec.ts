@@ -28,7 +28,7 @@ describe('LandingComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
-    httpMock.expectOne('/assets/files/landing-cards.json').flush({ cards: [], community: null });
+    httpMock.expectOne('/assets/files/landing-cards.json').flush({ cards: [] });
   });
 
   it('loads card data from the landing-cards.json asset', () => {
@@ -36,10 +36,8 @@ describe('LandingComponent', () => {
     expect(req.request.method).toBe('GET');
     req.flush({
       cards: [{ title: 'ULB', subtitle: 'ULB', description: '', icon: 'bar_chart', accent: 'green', col: 'col-md-6', route: ['/auth/login'] }],
-      community: { title: 'Community Board', subtitle: 'OPEN', description: '', icon: 'groups', accent: 'green', browseLabel: 'Browse', signInLabel: 'Sign in', signInRoute: ['/auth/login'] },
     });
 
     expect(component['cards']().length).toBe(1);
-    expect(component['community']()?.title).toBe('Community Board');
   });
 });

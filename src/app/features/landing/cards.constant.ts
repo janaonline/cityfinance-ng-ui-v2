@@ -1,0 +1,60 @@
+import type { RoleCard } from './landing.component';
+
+export const landingCards: RoleCard[] = [
+  {
+    title: 'Urban Local Body',
+    subtitle: 'ULB',
+    description: 'Upload compliance documents, track submission status, and monitor your eligible grant amount.',
+    icon: 'bar_chart',
+    accent: 'green',
+    col: 'col-12 col-md-6',
+    route: ['/auth/login', 'XVIFC'],
+  },
+  {
+    title: 'State DMA',
+    subtitle: 'STATE REVIEWER',
+    description: 'Review ULB submissions, validate compliance documents, and forward eligible applications to MoHUA.',
+    icon: 'account_balance',
+    accent: 'blue',
+    col: 'col-12 col-md-6',
+    route: ['/auth/login', 'XVIFC'],
+  },
+  {
+    title: 'MoHUA Reviewer',
+    subtitle: 'MINISTRY REVIEWER',
+    description:
+      'Review state-validated submissions, run compliance checks, and issue sanction letters for fund release.',
+    icon: 'track_changes',
+    accent: 'orange',
+    col: 'col-12 col-md-4',
+    route: ['/auth/login', 'XVIFC'],
+  },
+  {
+    title: 'Dept. of Expenditure',
+    subtitle: 'DOE',
+    description: 'Track received sanction letters and execute fund releases to eligible Urban Local Bodies.',
+    icon: 'lock',
+    accent: 'gray',
+    col: 'col-12 col-md-4',
+    route: ['/auth/login', 'XVIFC'],
+  },
+  {
+    title: 'Admin (Tech Team)',
+    subtitle: 'ADMIN',
+    description: 'Send system notifications, bulk reminders, and manage communications across all user roles.',
+    icon: 'notifications',
+    accent: 'indigo',
+    col: 'col-12 col-md-4',
+    route: ['/auth/login'],
+  },
+  {
+    title: 'Community Board',
+    subtitle: 'OPEN DISCUSSION',
+    description:
+      'Ask questions, share resources, and discuss urban local body grants with officials across states and ministries.',
+    icon: 'groups',
+    accent: 'green',
+    btnLabel: 'Browse',
+    route: ['/auth/login'],
+  },
+];

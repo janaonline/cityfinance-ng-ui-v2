@@ -5,34 +5,23 @@ import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { landingCards } from './cards.constant';
 
-type CardAccent = 'green' | 'blue' | 'orange' | 'gray' | 'indigo';
+export type CardAccent = 'green' | 'blue' | 'orange' | 'gray' | 'indigo';
 
-interface RoleCard {
+export interface RoleCard {
   title: string;
   subtitle: string;
   description: string;
   icon: string;
   accent: CardAccent;
-  col: string;
+  col?: string;
   route: string[];
-  btnLabel: string;
-}
-
-interface CommunityCard {
-  title: string;
-  subtitle: string;
-  description: string;
-  icon: string;
-  accent: CardAccent;
-  browseLabel: string;
-  btnLabel: string;
-  route: string[];
+  btnLabel?: string;
 }
 
 interface LandingCardsConfig {
   cards: RoleCard[];
-  community: CommunityCard;
 }
 
 @Component({
@@ -44,13 +33,12 @@ interface LandingCardsConfig {
 export class LandingComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
-  protected readonly cards = signal<RoleCard[]>([]);
-  protected readonly community = signal<CommunityCard | null>(null);
+  protected readonly cards = signal<RoleCard[]>(landingCards);
 
   ngOnInit(): void {
-    this.http.get<LandingCardsConfig>('/assets/files/landing-cards.json').subscribe((config) => {
-      this.cards.set(config.cards ?? []);
-      this.community.set(config.community ?? null);
-    });
+    this.cards.set(landingCards ?? []);
+    // this.http.get<LandingCardsConfig>('/assets/files/landing-cards.json').subscribe((config) => {
+
+    // });
   }
 }
