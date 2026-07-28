@@ -1,51 +1,44 @@
 <section class="landing">
-  <div class="landing__row landing__row--primary">
-    <article class="role-card role-card--{{ card.accent }}" *ngFor="let card of primaryCards">
-      <div class="role-card__icon">
-        <i class="bi {{ card.icon }}"></i>
-      </div>
-      <h3 class="role-card__title">{{ card.title }}</h3>
-      <p class="role-card__subtitle">{{ card.subtitle }}</p>
-      <p class="role-card__description">{{ card.description }}</p>
-      <a class="role-card__cta" [routerLink]="card.route">
-        Enter <i class="bi bi-arrow-right"></i>
-      </a>
-    </article>
+  <div class="row g-3 mb-3" *ngIf="cards().length">
+    <div [class]="card.col" *ngFor="let card of cards()">
+      <mat-card class="role-card role-card--{{ card.accent }}" appearance="outlined">
+        <div class="role-card__icon">
+          <mat-icon>{{ card.icon }}</mat-icon>
+        </div>
+        <mat-card-title class="role-card__title">{{ card.title }}</mat-card-title>
+        <p class="role-card__subtitle">{{ card.subtitle }}</p>
+        <mat-card-content class="role-card__description">{{ card.description }}</mat-card-content>
+        <mat-card-actions class="role-card__actions">
+          <a mat-flat-button class="role-card__cta" [routerLink]="card.route">
+            Enter <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+          </a>
+        </mat-card-actions>
+      </mat-card>
+    </div>
   </div>
 
-  <div class="landing__row landing__row--secondary">
-    <article class="role-card role-card--{{ card.accent }}" *ngFor="let card of secondaryCards">
-      <div class="role-card__icon">
-        <i class="bi {{ card.icon }}"></i>
-      </div>
-      <h3 class="role-card__title">{{ card.title }}</h3>
-      <p class="role-card__subtitle">{{ card.subtitle }}</p>
-      <p class="role-card__description">{{ card.description }}</p>
-      <a class="role-card__cta" [routerLink]="card.route">
-        Enter <i class="bi bi-arrow-right"></i>
-      </a>
-    </article>
-  </div>
-
-  <div class="community-card">
+  <mat-card
+    class="community-card community-card--{{ community()?.accent }}"
+    appearance="outlined"
+    *ngIf="community() as c"
+  >
     <div class="community-card__info">
       <div class="community-card__icon">
-        <i class="bi bi-people-fill"></i>
+        <mat-icon>{{ c.icon }}</mat-icon>
       </div>
       <div>
-        <h3 class="community-card__title">Community Board</h3>
-        <p class="community-card__subtitle">OPEN DISCUSSION</p>
+        <h3 class="community-card__title">{{ c.title }}</h3>
+        <p class="community-card__subtitle">{{ c.subtitle }}</p>
       </div>
     </div>
-    <p class="community-card__description">
-      Ask questions, share resources, and discuss urban local body grants with officials across
-      states and ministries.
-    </p>
+    <p class="community-card__description">{{ c.description }}</p>
     <div class="community-card__actions">
-      <button type="button" class="community-card__browse" disabled>
-        <i class="bi bi-list-ul"></i> Browse
+      <button mat-stroked-button class="community-card__browse" disabled>
+        <mat-icon>list</mat-icon> {{ c.browseLabel }}
       </button>
-      <a class="community-card__signin" routerLink="/auth/login"> Sign in to post <i class="bi bi-arrow-right"></i> </a>
+      <a mat-flat-button class="community-card__signin" [routerLink]="c.route">
+        {{ c.btnLabel }} <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+      </a>
     </div>
-  </div>
+  </mat-card>
 </section>

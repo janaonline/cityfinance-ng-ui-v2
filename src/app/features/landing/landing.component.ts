@@ -1,6 +1,10 @@
-import { Component } from '@angular/core';
-import { NgFor } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 type CardAccent = 'green' | 'blue' | 'orange' | 'gray' | 'indigo';
 
@@ -10,64 +14,43 @@ interface RoleCard {
   description: string;
   icon: string;
   accent: CardAccent;
+  col: string;
   route: string[];
+  btnLabel: string;
+}
+
+interface CommunityCard {
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: string;
+  accent: CardAccent;
+  browseLabel: string;
+  btnLabel: string;
+  route: string[];
+}
+
+interface LandingCardsConfig {
+  cards: RoleCard[];
+  community: CommunityCard;
 }
 
 @Component({
   selector: 'app-landing',
-  imports: [NgFor, RouterLink],
+  imports: [CommonModule, RouterLink, MatCardModule, MatIconModule, MatButtonModule],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.scss',
 })
-export class LandingComponent {
-  protected readonly primaryCards: readonly RoleCard[] = [
-    {
-      title: 'Urban Local Body',
-      subtitle: 'ULB',
-      description:
-        'Upload compliance documents, track submission status, and monitor your eligible grant amount.',
-      icon: 'bi-bar-chart-fill',
-      accent: 'green',
-      route: ['/auth/login', 'XVIFC'],
-    },
-    {
-      title: 'State DMA',
-      subtitle: 'STATE REVIEWER',
-      description:
-        'Review ULB submissions, validate compliance documents, and forward eligible applications to MoHUA.',
-      icon: 'bi-bank',
-      accent: 'blue',
-      route: ['/auth/login', 'XVIFC'],
-    },
-  ];
+export class LandingComponent implements OnInit {
+  private readonly http = inject(HttpClient);
 
-  protected readonly secondaryCards: readonly RoleCard[] = [
-    {
-      title: 'MoHUA Reviewer',
-      subtitle: 'MINISTRY REVIEWER',
-      description:
-        'Review state-validated submissions, run compliance checks, and issue sanction letters for fund release.',
-      icon: 'bi-bullseye',
-      accent: 'orange',
-      route: ['/auth/login', 'XVIFC'],
-    },
-    {
-      title: 'Dept. of Expenditure',
-      subtitle: 'DOE',
-      description:
-        'Track received sanction letters and execute fund releases to eligible Urban Local Bodies.',
-      icon: 'bi-shield-lock',
-      accent: 'gray',
-      route: ['/auth/login', 'XVIFC'],
-    },
-    {
-      title: 'Admin (Tech Team)',
-      subtitle: 'ADMIN',
-      description:
-        'Send system notifications, bulk reminders, and manage communications across all user roles.',
-      icon: 'bi-bell-fill',
-      accent: 'indigo',
-      route: ['/auth/login'],
-    },
-  ];
+  protected readonly cards = signal<RoleCard[]>([]);
+  protected readonly community = signal<CommunityCard | null>(null);
+
+  ngOnInit(): void {
+    this.http.get<LandingCardsConfig>('/assets/files/landing-cards.json').subscribe((config) => {
+      this.cards.set(config.cards ?? []);
+      this.community.set(config.community ?? null);
+    });
+  }
 }
