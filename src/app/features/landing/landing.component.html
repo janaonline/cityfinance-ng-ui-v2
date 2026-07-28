@@ -1,0 +1,51 @@
+<section class="landing">
+  <div class="landing__row landing__row--primary">
+    <article class="role-card role-card--{{ card.accent }}" *ngFor="let card of primaryCards">
+      <div class="role-card__icon">
+        <i class="bi {{ card.icon }}"></i>
+      </div>
+      <h3 class="role-card__title">{{ card.title }}</h3>
+      <p class="role-card__subtitle">{{ card.subtitle }}</p>
+      <p class="role-card__description">{{ card.description }}</p>
+      <a class="role-card__cta" [routerLink]="card.route">
+        Enter <i class="bi bi-arrow-right"></i>
+      </a>
+    </article>
+  </div>
+
+  <div class="landing__row landing__row--secondary">
+    <article class="role-card role-card--{{ card.accent }}" *ngFor="let card of secondaryCards">
+      <div class="role-card__icon">
+        <i class="bi {{ card.icon }}"></i>
+      </div>
+      <h3 class="role-card__title">{{ card.title }}</h3>
+      <p class="role-card__subtitle">{{ card.subtitle }}</p>
+      <p class="role-card__description">{{ card.description }}</p>
+      <a class="role-card__cta" [routerLink]="card.route">
+        Enter <i class="bi bi-arrow-right"></i>
+      </a>
+    </article>
+  </div>
+
+  <div class="community-card">
+    <div class="community-card__info">
+      <div class="community-card__icon">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div>
+        <h3 class="community-card__title">Community Board</h3>
+        <p class="community-card__subtitle">OPEN DISCUSSION</p>
+      </div>
+    </div>
+    <p class="community-card__description">
+      Ask questions, share resources, and discuss urban local body grants with officials across
+      states and ministries.
+    </p>
+    <div class="community-card__actions">
+      <button type="button" class="community-card__browse" disabled>
+        <i class="bi bi-list-ul"></i> Browse
+      </button>
+      <a class="community-card__signin" routerLink="/auth/login"> Sign in to post <i class="bi bi-arrow-right"></i> </a>
+    </div>
+  </div>
+</section>
