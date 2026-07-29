@@ -102,6 +102,19 @@
   border: 1px solid #badbcc;
   border-radius: 999px;
   padding: 0.25rem 0.65rem;
+
+  &--returned {
+    color: #c62828;
+    background: #fdecea;
+    border-color: #fbd6d1;
+  }
+}
+
+.returned-notice-banner {
+  color: #c62828;
+  background: #fdecea;
+  border: 1px solid #fbd6d1;
+  border-radius: 0.5rem;
 }
 
 .masked-account {

@@ -27,7 +27,7 @@ export class OcrEvalBenchmarksComponent implements OnInit {
   readonly loading = signal(false);
   readonly creating = signal(false);
 
-  readonly createMode = signal<'jobs' | 'excel'>('jobs');
+  readonly createMode = signal<'jobs' | 'excel'>('excel');
   readonly excelFile = signal<File | null>(null);
   readonly excelName = signal('');
 
