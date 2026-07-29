@@ -1,6 +1,7 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
 import { By } from '@angular/platform-browser';
 import { Subject, of, throwError } from 'rxjs';
 import { ClaimLetterUlbOption, ClaimLetterUlbOptionsResult } from '../../claim-letter.models';
@@ -19,6 +20,7 @@ function makeOption(id: string, name: string, overrides: Partial<ClaimLetterUlbO
     allocationAmount: 10,
     eligible: true,
     ineligibleReasonCode: null,
+    ineligibleReasonDetail: null,
     ...overrides,
   };
 }
@@ -317,5 +319,38 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
 
     second$.next(makeResult([options[1]]));
     expect(component.options()).toEqual([options[1]]);
+  });
+
+  // ─── Ineligible tooltip ────────────────────────────────────────────────────
+
+  function tooltipMessageFor(ulbId: string): string {
+    return rowFor(ulbId).query(By.directive(MatTooltip)).injector.get(MatTooltip).message;
+  }
+
+  it('shows the specific failing form(s) when the backend supplies ineligibleReasonDetail', () => {
+    getUlbOptionsSpy.and.returnValue(
+      of(
+        makeResult([
+          makeOption('ulb-3', 'Gamma ULB', {
+            eligible: false,
+            ineligibleReasonCode: 'ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET',
+            ineligibleReasonDetail: 'SLB eligibility criteria not met',
+          }),
+        ]),
+      ),
+    );
+    component.loadOptions();
+    fixture.detectChanges();
+
+    // Only one row is rendered by this override, so query it directly rather than via rowFor()
+    // (which indexes into the outer, 3-item `options` fixture).
+    const row = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-row"]'));
+    const message = row.query(By.directive(MatTooltip)).injector.get(MatTooltip).message;
+    expect(message).toBe('SLB eligibility criteria not met');
+  });
+
+  it('falls back to the humanized reason code when ineligibleReasonDetail is absent', () => {
+    // options[2] ('Gamma ULB') is ineligible with reasonCode 'FORM_STATUS_3_NOT_ACCEPTED' and no detail.
+    expect(tooltipMessageFor('ulb-3')).toBe('Form Status 3 Not Accepted');
   });
 });

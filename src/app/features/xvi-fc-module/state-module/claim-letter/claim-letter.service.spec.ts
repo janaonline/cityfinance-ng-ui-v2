@@ -145,6 +145,7 @@ describe('ClaimLetterService', () => {
           allocationAmount: 12.5,
           eligible: true,
           ineligibleReasonCode: null,
+          ineligibleReasonDetail: null,
         },
       ];
       let result: unknown;

@@ -143,6 +143,17 @@ export class ClaimLetterDetailComponent implements OnInit {
     return !!claim && claim.currentFormStatus === FORM_STATUS.IN_PROGRESS && !claim.isAbandoned;
   });
 
+  /** FE's first line of defense for the final-batch completeness rule (BE is the actual authority,
+   *  enforced in `submit()` — this just avoids a round-trip for the common case): once this is the
+   *  state's last batch slot, submission is blocked here too while any expected ULB still has no
+   *  home in any batch, since there would be nowhere left to add it afterward. */
+  readonly finalBatchIncomplete = computed(() => {
+    const claim = this.claim();
+    const overview = this.eligibilityOverview();
+    if (!claim || !overview) return false;
+    return claim.batchNumber === overview.batchSlotsMax && overview.remainingUlbCount > 0;
+  });
+
   /** `ClaimLetterBatchSummary.currentFormStatus` is a plain backend `number`; `FormProgressComponent`
    *  expects the narrower `FormStatusValue` union — cast at this one boundary rather than widening
    *  the shared component's input type. */
@@ -293,12 +304,19 @@ export class ClaimLetterDetailComponent implements OnInit {
     const yearId = this.yearId;
     if (!stateId || !yearId) return;
 
+    this.isLoading.set(true);
     this.claimLetterService
       .getEligibilitySummary(stateId, yearId, CLAIM_LETTER_INSTALLMENT)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (eligibility) => this.eligibilityOverview.set(eligibility),
-        error: (err: unknown) => console.error('Failed to load the claim-letter financial overview', err),
+        next: (eligibility) => {
+          this.eligibilityOverview.set(eligibility);
+          this.isLoading.set(false);
+        },
+        error: (err: unknown) => {
+          console.error('Failed to load the claim-letter financial overview', err);
+          this.isLoading.set(false);
+        },
       });
   }
 
@@ -388,7 +406,7 @@ export class ClaimLetterDetailComponent implements OnInit {
   submitToMohua(): void {
     const claimLetterId = this.claimLetterId();
     const claim = this.claim();
-    if (!claimLetterId || !claim?.hasSignedFile) return;
+    if (!claimLetterId || !claim?.hasSignedFile || this.finalBatchIncomplete()) return;
 
     const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService

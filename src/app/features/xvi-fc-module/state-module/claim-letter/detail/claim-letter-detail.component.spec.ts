@@ -1,6 +1,7 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
@@ -83,6 +84,9 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
       totalClaimInDraft: 2,
       availableToClaim: 15,
     },
+    ulbLevelCriteria: [],
+    ulbReadiness: { eligible: 10, total: 10 },
+    remainingUlbCount: 0,
     ...overrides,
   };
 }
@@ -620,6 +624,75 @@ describe('ClaimLetterDetailComponent', () => {
         'Eligibility gate is no longer satisfied.',
         'snackbar-danger',
       );
+    });
+
+    // ─── Final-batch completeness guard (FE's first line of defense; BE is the real authority) ───
+
+    it('finalBatchIncomplete is true on the last batch slot while ULBs remain unclaimed', async () => {
+      await setup('claim-1');
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
+        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      );
+      fixture.detectChanges();
+
+      expect(component.finalBatchIncomplete()).toBeTrue();
+    });
+
+    it('finalBatchIncomplete is false once no ULBs remain unclaimed, even on the last batch slot', async () => {
+      await setup('claim-1');
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
+        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 0 })),
+      );
+      fixture.detectChanges();
+
+      expect(component.finalBatchIncomplete()).toBeFalse();
+    });
+
+    it('finalBatchIncomplete is false on a non-final batch, even with ULBs still unclaimed', async () => {
+      await setup('claim-1');
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 1, hasSignedFile: true })));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
+        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      );
+      fixture.detectChanges();
+
+      expect(component.finalBatchIncomplete()).toBeFalse();
+    });
+
+    it('disables the submit button and shows the inline warning when finalBatchIncomplete', async () => {
+      await setup('claim-1');
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
+        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 4 })),
+      );
+      fixture.detectChanges();
+
+      const submitButton = fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]'));
+      expect((submitButton.nativeElement as HTMLButtonElement).disabled).toBeTrue();
+      const warning = fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-blocked"]'));
+      expect(warning).not.toBeNull();
+      expect(warning.nativeElement.textContent).toContain('4');
+    });
+
+    it('submitToMohua is a no-op when finalBatchIncomplete, even if somehow invoked', async () => {
+      await setup('claim-1');
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
+        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      );
+      fixture.detectChanges();
+      const confirmSpy = spyOn(TestBed.inject(ConfirmDialogService), 'confirm');
+
+      component.submitToMohua();
+
+      expect(confirmSpy).not.toHaveBeenCalled();
     });
 
     // ─── Status stepper ───────────────────────────────────────────────────────────

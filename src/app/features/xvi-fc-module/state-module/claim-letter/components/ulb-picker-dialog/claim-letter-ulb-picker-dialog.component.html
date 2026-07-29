@@ -73,7 +73,11 @@
                 } @else {
                   <span
                     class="badge text-bg-secondary"
-                    [matTooltip]="option.ineligibleReasonCode ? humanizeToken(option.ineligibleReasonCode) : ''"
+                    [matTooltip]="
+                      option.ineligibleReasonCode
+                        ? (option.ineligibleReasonDetail ?? humanizeToken(option.ineligibleReasonCode))
+                        : ''
+                    "
                   >
                     Ineligible
                   </span>

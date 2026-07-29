@@ -12,6 +12,14 @@ export type ClaimLetterEligibilityResult = 'PASSED' | 'EXEMPTED' | 'FAILED';
  *  paging through every ULB of a batch rather than trusting a single page (see `getAllUlbs`). */
 export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = 100;
 
+/** Per-ULB eligible/ineligible/exempted tally behind a criterion — see `ClaimLetterEligibilitySource.ulbBreakdown`. */
+export interface ClaimLetterUlbEligibilityTally {
+  eligible: number;
+  ineligible: number;
+  exempted: number;
+  total: number;
+}
+
 /**
  * One eligibility-gate source result. Only the fields this UI actually renders (pass/fail state,
  * a reason code, and optional display copy) are modeled — never the full backend
@@ -20,7 +28,10 @@ export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = 100;
  */
 export interface ClaimLetterEligibilitySource {
   formType: string;
-  result: ClaimLetterEligibilityResult;
+  /** Absent for the ULB-only criteria (SLB, Provisional, Audited) merged in from `ulbLevelCriteria`
+   *  at render time — they have no single state-wide pass/fail, so the checklist renders a neutral
+   *  icon and excludes them from the "all passing" computation when `result` is undefined. */
+  result?: ClaimLetterEligibilityResult;
   reasonCode: string;
   /** Short human-readable name for this criterion (e.g. "Devolution Formula"). Falls back to a
    *  humanized `formType` when absent — see `humanizeToken`/`describeEligibilitySource`. */
@@ -28,6 +39,10 @@ export interface ClaimLetterEligibilitySource {
   /** One-line requirement statement, same wording regardless of pass/fail — only the tick/cross
    *  indicator changes. Falls back to a generated sentence when absent. */
   displayDescription?: string;
+  /** Per-ULB tally behind this requirement — populated for Elected Body/FC Unspent (state forms
+   *  representing ULB-level data) and for the 3 ULB-only criteria merged in from `ulbLevelCriteria`.
+   *  Absent for pure state-form checks (SFC, Devolution), which have no per-ULB meaning. */
+  ulbBreakdown?: ClaimLetterUlbEligibilityTally;
 }
 
 /** State-wide financial context, independent of any one batch — the `financialSummary` concepts
@@ -57,6 +72,23 @@ export interface ClaimLetterEligibilitySummary {
    *  all `batchSlotsMax` slots are occupied by a non-abandoned batch. */
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
+  /** Tallies for ULB-only criteria with no state action to gate on (SLB, Provisional/Audited
+   *  Annual Accounts) — never affects `stateLevelGate.passed`. Merged into the same unified
+   *  checklist as `stateLevelGate.sources` at render time (see `claim-letter-list.component.ts`). */
+  ulbLevelCriteria: {
+    displayLabel?: string;
+    displayDescription?: string;
+    tally: ClaimLetterUlbEligibilityTally;
+  }[];
+  /** How many of `expectedUlbCount` ULBs pass *every* ULB-bulk criterion (SLB, Provisional/Audited
+   *  Accounts, Elected Body row, FC Unspent row) — the true intersection, not derivable from any
+   *  single criterion's tally. Scoped to just those criteria: it does NOT factor in Devolution
+   *  allocation or "locked in another claim," so it is not the same as "pickable in the picker." */
+  ulbReadiness: { eligible: number; total: number };
+  /** `expectedUlbCount` minus every ULB currently locked into *any* batch (draft or acknowledged,
+   *  regardless of current eligibility) — how many ULBs still have no home in any batch at all.
+   *  Drives the "must all be in your final batch" warning and the final-batch submit guard. */
+  remainingUlbCount: number;
 }
 
 /**
@@ -73,6 +105,10 @@ export interface ClaimLetterUlbOption {
   allocationAmount: number | null;
   eligible: boolean;
   ineligibleReasonCode: string | null;
+  /** Specific, human-readable reason naming the failing form(s) (e.g. "SLB eligibility criteria not
+   *  met") — populated only for `ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET`; `null` otherwise, in which
+   *  case the UI falls back to humanizing `ineligibleReasonCode`. */
+  ineligibleReasonDetail: string | null;
 }
 
 /** Query params for the lazy ULB-options endpoint — `stateId`/`yearId`/installment are path params

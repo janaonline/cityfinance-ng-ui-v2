@@ -2,6 +2,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
@@ -55,6 +56,9 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
       totalClaimInDraft: 2,
       availableToClaim: 15,
     },
+    ulbLevelCriteria: [],
+    ulbReadiness: { eligible: 10, total: 10 },
+    remainingUlbCount: 0,
     ...overrides,
   };
 }
@@ -111,6 +115,67 @@ describe('ClaimLetterListComponent', () => {
     expect(component.isLoading()).toBeFalse();
   });
 
+  it('renders the ULB-readiness stat in the banner, without special styling when ULBs are ready', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ ulbReadiness: { eligible: 431, total: 431 } })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    const stat = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-readiness"]'));
+    expect(stat.nativeElement.textContent).toContain('431/431');
+    expect((stat.nativeElement as HTMLElement).classList).not.toContain('text-danger');
+  });
+
+  it('flags the ULB-readiness stat when zero ULBs currently meet every requirement', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ ulbReadiness: { eligible: 0, total: 431 } })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    const stat = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-readiness"]'));
+    expect(stat.nativeElement.textContent).toContain('0/431');
+    expect((stat.nativeElement as HTMLElement).classList).toContain('text-danger');
+  });
+
+  it('shows the final-batch warning once exactly one slot remains and ULBs are still unclaimed', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ batchSlotsUsed: 2, batchSlotsMax: 3, expectedUlbCount: 33, remainingUlbCount: 5 })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(component.showFinalBatchWarning()).toBeTrue();
+    const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-warning"]'));
+    expect(banner).not.toBeNull();
+    expect(banner.nativeElement.textContent).toContain('28');
+    expect(banner.nativeElement.textContent).toContain('33');
+    expect(banner.nativeElement.textContent).toContain('5');
+  });
+
+  it('hides the final-batch warning when more than one slot remains, even with ULBs unclaimed', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ batchSlotsUsed: 1, batchSlotsMax: 3, remainingUlbCount: 5 })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(component.showFinalBatchWarning()).toBeFalse();
+    expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-warning"]'))).toBeNull();
+  });
+
+  it('hides the final-batch warning once exactly one slot remains but nothing is left unclaimed', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ batchSlotsUsed: 2, batchSlotsMax: 3, remainingUlbCount: 0 })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(component.showFinalBatchWarning()).toBeFalse();
+    expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-warning"]'))).toBeNull();
+  });
+
   it('enables New Claim when the gate passes and slots remain', () => {
     expect(component.canCreateNewClaim()).toBeTrue();
   });
@@ -134,6 +199,85 @@ describe('ClaimLetterListComponent', () => {
     // this signal directly — the list component itself no longer filters failed sources.
     expect(component.eligibility()?.stateLevelGate.sources.length).toBe(1);
     expect(component.eligibility()?.stateLevelGate.sources[0].result).toBe('FAILED');
+  });
+
+  it('disables New Claim and marks Not Eligible when ulbReadiness has 0 eligible ULBs, even though the state gate passes', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(
+        buildEligibility({
+          stateLevelGate: { passed: true, sources: [] },
+          ulbReadiness: { eligible: 0, total: 431 },
+        }),
+      ),
+    );
+
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(component.ulbReadinessBlocked()).toBeTrue();
+    expect(component.isEligible()).toBeFalse();
+    expect(component.canCreateNewClaim()).toBeFalse();
+    const badge = fixture.debugElement.query(By.css('.badge'));
+    expect(badge.nativeElement.textContent).toContain('Not Eligible');
+  });
+
+  it('does NOT disable New Claim when ulbReadiness has some (not zero) eligible ULBs', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(
+        buildEligibility({
+          stateLevelGate: { passed: true, sources: [] },
+          ulbReadiness: { eligible: 1, total: 431 },
+        }),
+      ),
+    );
+
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(component.ulbReadinessBlocked()).toBeFalse();
+    expect(component.isEligible()).toBeTrue();
+    expect(component.canCreateNewClaim()).toBeTrue();
+    const badge = fixture.debugElement.query(By.css('.badge'));
+    expect(badge.nativeElement.textContent).toContain('Eligible');
+    expect(badge.nativeElement.textContent).not.toContain('Not Eligible');
+  });
+
+  it('checklistItems is empty before eligibility has loaded', () => {
+    component.eligibility.set(null);
+    expect(component.checklistItems()).toEqual([]);
+  });
+
+  it('checklistItems merges stateLevelGate.sources with ulbLevelCriteria into one unified list', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(
+        buildEligibility({
+          stateLevelGate: {
+            passed: true,
+            sources: [{ formType: 'SFC', result: 'PASSED', reasonCode: 'OK' }],
+          },
+          ulbLevelCriteria: [
+            {
+              displayLabel: 'Service Level Benchmarks (SLB)',
+              displayDescription: 'SLB status must be submitted by the ULB.',
+              tally: { eligible: 5, ineligible: 2, exempted: 0, total: 7 },
+            },
+          ],
+        }),
+      ),
+    );
+
+    component.loadAll();
+
+    expect(component.checklistItems()).toEqual([
+      { formType: 'SFC', result: 'PASSED', reasonCode: 'OK' },
+      {
+        formType: 'Service Level Benchmarks (SLB)',
+        reasonCode: 'ULB_LEVEL_ONLY',
+        displayLabel: 'Service Level Benchmarks (SLB)',
+        displayDescription: 'SLB status must be submitted by the ULB.',
+        ulbBreakdown: { eligible: 5, ineligible: 2, exempted: 0, total: 7 },
+      },
+    ]);
   });
 
   it('derives all 5 tiles from financialOverview, with Available to Claim emphasized first', () => {

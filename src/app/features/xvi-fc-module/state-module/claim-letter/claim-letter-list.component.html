@@ -50,7 +50,7 @@
               data-cy="claim-letter-eligibility-panel"
             >
               <div class="d-flex flex-wrap align-items-center gap-3">
-                @if (eligibilitySummary.stateLevelGate.passed) {
+                @if (isEligible()) {
                   <span class="custom-font-size-6 badge text-bg-success">Eligible</span>
                 } @else {
                   <span class="custom-font-size-6 badge text-bg-danger">Not Eligible</span>
@@ -58,6 +58,16 @@
                 &middot;
                 <span class="small">
                   Expected ULBs: <b>{{ eligibilitySummary.expectedUlbCount }}</b>
+                </span>
+                &middot;
+                <span
+                  class="small"
+                  [class.text-danger]="eligibilitySummary.ulbReadiness.eligible === 0"
+                  [class.fw-semibold]="eligibilitySummary.ulbReadiness.eligible === 0"
+                  data-cy="claim-letter-ulb-readiness"
+                >
+                  ULBs meeting all requirements:
+                  <b>{{ eligibilitySummary.ulbReadiness.eligible }}/{{ eligibilitySummary.ulbReadiness.total }}</b>
                 </span>
                 &middot;
                 <span class="small">
@@ -73,9 +83,28 @@
                 }
               </div>
 
-              @if (eligibilitySummary.stateLevelGate.sources.length) {
+              @if (checklistItems().length) {
                 <hr class="my-1 text-body-tertiary" />
-                <app-claim-letter-eligibility-checklist [sources]="eligibilitySummary.stateLevelGate.sources" />
+                <app-claim-letter-eligibility-checklist
+                  [sources]="checklistItems()"
+                  [ulbReadiness]="eligibilitySummary.ulbReadiness"
+                />
+              }
+
+              @if (showFinalBatchWarning()) {
+                <div
+                  class="alert alert-warning d-flex align-items-start gap-2 py-2 mb-0"
+                  role="alert"
+                  data-cy="claim-letter-final-batch-warning"
+                >
+                  <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+                  <span class="small">
+                    <b>{{ eligibilitySummary.expectedUlbCount - eligibilitySummary.remainingUlbCount }}</b> of
+                    <b>{{ eligibilitySummary.expectedUlbCount }}</b> ULBs claimed so far. The remaining
+                    <b>{{ eligibilitySummary.remainingUlbCount }}</b> ULB(s) must all be included in your final batch
+                    (Batch {{ eligibilitySummary.batchSlotsMax }}) — any ULB left out cannot be claimed after that.
+                  </span>
+                </div>
               }
 
               <hr class="my-1 text-body-tertiary" />
@@ -103,11 +132,11 @@
                         will be selectable in the picker.
                       </li>
                       <li>
-                        Pick ULBs and select <strong>Add selected ULBs</strong> — each one starts pre-filled with its
+                        Pick ULBs and select <strong>Add selected ULBs</strong> - each one starts pre-filled with its
                         full allocation amount, which you can adjust from there.
                       </li>
                       <li>
-                        Each ULB's claim amount must stay within <strong>&plusmn;10%</strong> of its allocation — saving
+                        Each ULB's claim amount must stay within <strong>&plusmn;10%</strong> of its allocation - saving
                         outside that range will be rejected.
                       </li>
                       <li>
@@ -162,7 +191,7 @@
                           <td class="small text-end">{{ claim.ulbCount }}</td>
                           <td class="small text-end">{{ formatCrore(claim.financialSummary.currentSelectedClaim) }}</td>
                           <td class="small text-center">
-                            {{ claim.submittedAt ? (claim.submittedAt | date: 'mediumDate') : '—' }}
+                            {{ claim.submittedAt ? (claim.submittedAt | date: 'mediumDate') : '-' }}
                           </td>
                           <td class="text-center pe-3">
                             <button

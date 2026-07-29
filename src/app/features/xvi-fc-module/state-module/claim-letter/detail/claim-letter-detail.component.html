@@ -185,7 +185,7 @@
             <button
               type="button"
               matButton="filled"
-              [disabled]="isSaving() || isAbandoning() || isSubmitting() || !claim()?.hasSignedFile"
+              [disabled]="isSaving() || isAbandoning() || isSubmitting() || !claim()?.hasSignedFile || finalBatchIncomplete()"
               (click)="submitToMohua()"
               data-cy="claim-letter-detail-submit"
             >
@@ -199,6 +199,14 @@
             </button>
           }
         </div>
+
+        @if (finalBatchIncomplete()) {
+          <div class="text-danger small mt-2" data-cy="claim-letter-final-batch-blocked">
+            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
+            {{ eligibilityOverview()?.remainingUlbCount }} ULB(s) are still unclaimed — every ULB must be included in
+            this final batch before it can be submitted.
+          </div>
+        }
       </div>
     }
   </div>

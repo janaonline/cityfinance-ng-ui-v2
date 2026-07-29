@@ -11,6 +11,7 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
 import {
   CLAIM_LETTER_INSTALLMENT,
   ClaimLetterBatchSummary,
+  ClaimLetterEligibilitySource,
   ClaimLetterEligibilitySummary,
 } from './claim-letter.models';
 import { ClaimLetterEligibilityChecklistComponent } from './components/eligibility-checklist/claim-letter-eligibility-checklist.component';
@@ -59,10 +60,54 @@ export class ClaimLetterListComponent implements OnInit {
   readonly hasPrev = computed(() => this.page() > 1);
   readonly hasNext = computed(() => this.page() < this.totalPages());
 
+  /** Unified 7-item checklist: the 4 state-level gate sources (SFC, Devolution, Elected Body, FC
+   *  Unspent) plus the 3 ULB-only criteria (SLB, Provisional, Audited) from `ulbLevelCriteria`,
+   *  mapped into the same item shape with `result` left `undefined` — the checklist component
+   *  renders those with a neutral icon and excludes them from "all passing" (plan: one unified
+   *  list, not a separate informational block). */
+  readonly checklistItems = computed<ClaimLetterEligibilitySource[]>(() => {
+    const eligibility = this.eligibility();
+    if (!eligibility) return [];
+
+    const ulbOnlyItems: ClaimLetterEligibilitySource[] = eligibility.ulbLevelCriteria.map((criterion, index) => ({
+      formType: criterion.displayLabel ?? `ULB_LEVEL_CRITERION_${index}`,
+      reasonCode: 'ULB_LEVEL_ONLY',
+      displayLabel: criterion.displayLabel,
+      displayDescription: criterion.displayDescription,
+      ulbBreakdown: criterion.tally,
+    }));
+
+    return [...eligibility.stateLevelGate.sources, ...ulbOnlyItems];
+  });
+
+  /** True exactly when zero ULBs meet every ULB-bulk requirement at once — the true intersection
+   *  across SLB/Provisional/Audited plus the Elected Body/FC Unspent row tallies, not just whether
+   *  any single criterion individually hits 0 (a criterion can each look fine on its own while no
+   *  ULB passes all of them, e.g. different ULBs failing different criteria). Same `ulbReadiness`
+   *  stat shown in the top banner and passed into the checklist component, so this button, the top
+   *  badge, and the checklist's ULB section always agree on whether ULBs are actually pickable. */
+  readonly ulbReadinessBlocked = computed(() => (this.eligibility()?.ulbReadiness.eligible ?? 0) === 0);
+
+  readonly isEligible = computed(() => {
+    const eligibility = this.eligibility();
+    if (!eligibility) return false;
+    return eligibility.stateLevelGate.passed && !this.ulbReadinessBlocked();
+  });
+
   readonly canCreateNewClaim = computed(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
-    return eligibility.stateLevelGate.passed && eligibility.batchSlotsUsed < eligibility.batchSlotsMax;
+    return this.isEligible() && eligibility.batchSlotsUsed < eligibility.batchSlotsMax;
+  });
+
+  /** Proactive "last call" warning — fires once exactly one batch slot remains (this state's
+   *  penultimate batch already exists) and at least one expected ULB still has no home in any
+   *  batch. Any ULB left out of the final batch becomes permanently unclaimable for this
+   *  installment, so this is shown well before that batch is even opened. */
+  readonly showFinalBatchWarning = computed(() => {
+    const eligibility = this.eligibility();
+    if (!eligibility) return false;
+    return eligibility.batchSlotsMax - eligibility.batchSlotsUsed === 1 && eligibility.remainingUlbCount > 0;
   });
 
   /** State-wide context only — "claimed in current batch"/"remaining after batch" don't mean

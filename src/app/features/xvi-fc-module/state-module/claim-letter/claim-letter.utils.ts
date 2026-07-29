@@ -1,4 +1,4 @@
-import { ClaimLetterInstallment } from './claim-letter.models';
+import { ClaimLetterInstallment, ClaimLetterUlbEligibilityTally } from './claim-letter.models';
 
 /**
  * Formats an already Crore-denominated, display-ready amount. Never rescales — the backend has
@@ -51,12 +51,23 @@ export function describeEligibilitySourceLabel(source: { formType: string; displ
 
 /** One-line requirement statement for an eligibility source — `displayDescription` when the backend
  *  configured one, else a generated sentence in the same "must be submitted" phrasing used by every
- *  configured source today, so an unconfigured source still reads like the rest of the checklist. */
+ *  configured source today, so an unconfigured source still reads like the rest of the checklist.
+ *  When `ulbBreakdown` is present, the per-ULB tally is appended in parentheses — e.g. "Elected Body
+ *  constitution must be submitted by the state. (100 eligible, 20 ineligible, 3 exempted out of 123
+ *  ULBs)" — applied uniformly to every criterion that carries a tally, not just row-level ones. */
 export function describeEligibilitySourceDescription(source: {
   formType: string;
   displayDescription?: string;
+  ulbBreakdown?: ClaimLetterUlbEligibilityTally;
 }): string {
-  return source.displayDescription ?? `${humanizeToken(source.formType)} must be submitted by the state.`;
+  const description = source.displayDescription ?? `${humanizeToken(source.formType)} must be submitted by the state.`;
+  return source.ulbBreakdown ? `${description} (${formatUlbBreakdown(source.ulbBreakdown)})` : description;
+}
+
+/** `"100 eligible, 20 ineligible, 3 exempted out of 123 ULBs"` — shared phrasing for every
+ *  per-ULB tally shown in the eligibility checklist (see `describeEligibilitySourceDescription`). */
+export function formatUlbBreakdown(tally: ClaimLetterUlbEligibilityTally): string {
+  return `${tally.eligible} eligible, ${tally.ineligible} ineligible, ${tally.exempted} exempted out of ${tally.total} ULBs`;
 }
 
 /** One decimal place, matching the live difference-percentage badge's existing rounding convention

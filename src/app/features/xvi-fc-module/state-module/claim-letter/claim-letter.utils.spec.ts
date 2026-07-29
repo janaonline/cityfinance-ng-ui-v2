@@ -4,6 +4,7 @@ import {
   describeEligibilitySourceDescription,
   describeEligibilitySourceLabel,
   formatCrore,
+  formatUlbBreakdown,
   humanizeToken,
   isClaimWithinVariance,
 } from './claim-letter.utils';
@@ -61,6 +62,23 @@ describe('describeEligibilitySourceDescription', () => {
   it('falls back to a generated "must be submitted" sentence when displayDescription is absent', () =>
     expect(describeEligibilitySourceDescription({ formType: 'SFC_STATUS' })).toBe(
       'Sfc Status must be submitted by the state.',
+    ));
+  it('appends the ULB count breakdown in parentheses when ulbBreakdown is present', () =>
+    expect(
+      describeEligibilitySourceDescription({
+        formType: 'ELECTED_BODY',
+        displayDescription: 'Elected Body constitution must be submitted by the state.',
+        ulbBreakdown: { eligible: 100, ineligible: 20, exempted: 3, total: 123 },
+      }),
+    ).toBe(
+      'Elected Body constitution must be submitted by the state. (100 eligible, 20 ineligible, 3 exempted out of 123 ULBs)',
+    ));
+});
+
+describe('formatUlbBreakdown', () => {
+  it('formats the tally as "N eligible, N ineligible, N exempted out of N ULBs"', () =>
+    expect(formatUlbBreakdown({ eligible: 100, ineligible: 20, exempted: 3, total: 123 })).toBe(
+      '100 eligible, 20 ineligible, 3 exempted out of 123 ULBs',
     ));
 });
 
