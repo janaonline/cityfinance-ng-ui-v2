@@ -186,7 +186,13 @@
                       <span class="failed-dot">●</span> FAILED
                     </span>
                   </div>
-                  @if (canDelete() && !sectionLocked()) {
+
+                  @if (doc.isManualReviewRequested) {
+                    <div class="manual-review-note mt-2">
+                      <mat-icon class="align-middle">support_agent</mat-icon>
+                      Manual review requested — our team will review this document.
+                    </div>
+                  } @else if (canDelete() && !sectionLocked()) {
                     <div class="d-flex gap-2 mt-2">
                       <button mat-stroked-button class="retry-btn flex-grow-1" type="button" (click)="retryUpload(doc.id)">
                         <mat-icon>refresh</mat-icon> Retry Verification
@@ -195,6 +201,16 @@
                         <mat-icon>upload</mat-icon> Re-upload
                       </button>
                     </div>
+                    @if (doc.hasRetried) {
+                      <div class="d-flex mt-2">
+                        <button mat-stroked-button class="manual-review-btn flex-grow-1" type="button" (click)="requestManualReview(doc.id)">
+                          <mat-icon>support_agent</mat-icon> Request Manual Review
+                        </button>
+                      </div>
+                    }
+                    @if (doc.manualReviewError) {
+                      <p class="manual-review-error mt-1 mb-0">{{ doc.manualReviewError }}</p>
+                    }
                   }
                 </div>
               }
