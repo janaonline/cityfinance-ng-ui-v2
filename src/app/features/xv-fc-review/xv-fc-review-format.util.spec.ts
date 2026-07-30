@@ -34,10 +34,16 @@ describe('formatXvFcAmount', () => {
   it('does not apply the extra-precision fallback once the crore value is large enough to survive rounding', () => {
     expect(formatXvFcAmount(1, 'crores')).toBe('0.01');
   });
+
+  it('groups thousands with commas (Indian digit grouping) in lakhs and crores, not just whole rupees', () => {
+    expect(formatXvFcAmount(123456.78, 'lakhs')).toBe('1,23,456.78');
+    expect(formatXvFcAmount(1234567, 'crores')).toBe('12,345.67');
+  });
 });
 
 describe('groupXvFcLineItems', () => {
-  const item = (code: string, section: string) => ({ code, section }) as unknown as XvFcLineItem;
+  const item = (code: string, section: string, subSection?: string) =>
+    ({ code, section, subSection }) as unknown as XvFcLineItem;
 
   it('groups line items by section, preserving first-seen section order', () => {
     const items = [item('1.1', 'Revenue'), item('2.1', 'Expenditure'), item('1.2', 'Revenue')];
@@ -45,8 +51,34 @@ describe('groupXvFcLineItems', () => {
     const groups = groupXvFcLineItems(items);
 
     expect(groups.map((g) => g.section)).toEqual(['Revenue', 'Expenditure']);
-    expect(groups[0].items.map((i) => i.code)).toEqual(['1.1', '1.2']);
-    expect(groups[1].items.map((i) => i.code)).toEqual(['2.1']);
+    expect(groups[0].subGroups.flatMap((sg) => sg.items).map((i) => i.code)).toEqual(['1.1', '1.2']);
+    expect(groups[1].subGroups.flatMap((sg) => sg.items).map((i) => i.code)).toEqual(['2.1']);
+  });
+
+  it('further splits a section into subSections, preserving first-seen order, when items carry one', () => {
+    const items = [
+      item('1.1', 'Revenue', 'Tax'),
+      item('1.2', 'Revenue', 'Non-tax'),
+      item('1.3', 'Revenue', 'Tax'),
+      item('1.4', 'Revenue'),
+    ];
+
+    const [group] = groupXvFcLineItems(items);
+
+    expect(group.subGroups.map((sg) => sg.subSection)).toEqual(['Tax', 'Non-tax', null]);
+    expect(group.subGroups[0].items.map((i) => i.code)).toEqual(['1.1', '1.3']);
+    expect(group.subGroups[1].items.map((i) => i.code)).toEqual(['1.2']);
+    expect(group.subGroups[2].items.map((i) => i.code)).toEqual(['1.4']);
+  });
+
+  it('puts every item in one null-keyed subGroup when none carry a subSection', () => {
+    const items = [item('1.1', 'Revenue'), item('1.2', 'Revenue')];
+
+    const [group] = groupXvFcLineItems(items);
+
+    expect(group.subGroups.length).toBe(1);
+    expect(group.subGroups[0].subSection).toBeNull();
+    expect(group.subGroups[0].items.map((i) => i.code)).toEqual(['1.1', '1.2']);
   });
 
   it('returns an empty array for an empty input', () => {

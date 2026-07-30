@@ -26,14 +26,19 @@
 
   &:hover {
     color: #212121;
+    background: rgba(0, 0, 0, 0.05);
   }
 
   &.active {
-    background: #fff;
+    background: var(--color-primary);
     border-color: var(--color-primary);
-    color: var(--color-primary);
+    color: var(--color-on-primary, #fff);
     font-weight: 700;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 3px 10px var(--color-primary-shadow, rgba(0, 0, 0, 0.18));
+
+    &:hover {
+      background: var(--color-primary-hover, var(--color-primary));
+    }
   }
 }
 
@@ -83,23 +88,29 @@
 
 .fy-tab {
   background: none;
-  border: none;
+  border: 1px solid transparent;
   padding: 7px 16px;
   border-radius: 0.45rem;
   font-size: 0.82rem;
   font-weight: 500;
   color: #757575;
-  transition: background 0.14s, color 0.14s;
+  transition: background 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
 
   &:hover {
     color: #212121;
+    background: rgba(0, 0, 0, 0.05);
   }
 
   &.active {
-    background: #fff;
-    color: var(--color-primary);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary, #fff);
     font-weight: 700;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--color-primary-shadow, rgba(0, 0, 0, 0.18));
+
+    &:hover {
+      background: var(--color-primary-hover, var(--color-primary));
+    }
   }
 }
 
@@ -117,6 +128,10 @@
 
   &.dot-flag {
     background: #e67e15;
+  }
+
+  .fy-tab.active & {
+    box-shadow: 0 0 0 1.5px #fff;
   }
 }
 
@@ -157,9 +172,11 @@
   td.num {
     font-variant-numeric: tabular-nums;
     font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #1a1d1f;
   }
 
-  .neg {
+  td.num.neg {
     color: #c62828;
   }
 
@@ -174,7 +191,18 @@
     padding-bottom: 7px;
   }
 
-  tbody tr:not(.section-row):not(.flag-note-row) {
+  .subsection-row td {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #4e6a6a;
+    background: #eef6f6;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  tbody tr:not(.section-row):not(.subsection-row):not(.flag-note-row) {
     border-bottom: 1px solid #eef1f1;
   }
 

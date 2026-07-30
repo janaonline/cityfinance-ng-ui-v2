@@ -312,11 +312,11 @@ export class XvFcDataReviewComponent {
 
   openPreview(action: XvFcFinalAction) {
     if (action === 'SUBMIT_WITH_COMMENTS' && this.flagCount() === 0) {
-      this.toast('Nothing is flagged — use "Accept — no changes" instead, or flag a row first.');
+      this.toast('Nothing is flagged - use "Accept - no changes" instead, or flag a row first.');
       return;
     }
     if (action === 'ACCEPT_NO_CHANGES' && this.flagCount() > 0) {
-      this.toast('You have flagged items — use "Submit with comments", or remove the flags first.');
+      this.toast('You have flagged items - use "Submit with comments", or remove the flags first.');
       return;
     }
     this.pendingAction.set(action);

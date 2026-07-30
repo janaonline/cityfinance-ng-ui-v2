@@ -11,22 +11,36 @@
   This is exactly what the CityFinance team will receive for FY {{ fy }}. Check it over, then confirm.
 </p>
 
-<div class="row g-0 summary-strip mb-4">
-  <div class="col-6 col-md-3 summary-cell">
-    <div class="s-label">Decision</div>
-    <div class="s-value">{{ action === 'ACCEPT_NO_CHANGES' ? 'Accept — no changes' : 'Submit with comments' }}</div>
+<div class="summary-strip mb-4">
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>fact_check</mat-icon></div>
+    <div>
+      <div class="s-label">Decision</div>
+      <div class="s-value" [class.s-value-accent]="action === 'ACCEPT_NO_CHANGES'">
+        {{ action === 'ACCEPT_NO_CHANGES' ? 'Accept - no changes' : 'Submit with comments' }}
+      </div>
+    </div>
   </div>
-  <div class="col-6 col-md-3 summary-cell">
-    <div class="s-label">Line items</div>
-    <div class="s-value">{{ totalItems }}</div>
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>list_alt</mat-icon></div>
+    <div>
+      <div class="s-label">Line items</div>
+      <div class="s-value">{{ totalItems }}</div>
+    </div>
   </div>
-  <div class="col-6 col-md-3 summary-cell">
-    <div class="s-label">Flagged</div>
-    <div class="s-value">{{ flagCount }}</div>
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>flag</mat-icon></div>
+    <div>
+      <div class="s-label">Flagged</div>
+      <div class="s-value" [class.s-value-warn]="flagCount > 0">{{ flagCount }}</div>
+    </div>
   </div>
-  <div class="col-6 col-md-3 summary-cell">
-    <div class="s-label">Financial year</div>
-    <div class="s-value">FY {{ fy }}</div>
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>event</mat-icon></div>
+    <div>
+      <div class="s-label">Financial year</div>
+      <div class="s-value">FY {{ fy }}</div>
+    </div>
   </div>
 </div>
 
@@ -78,39 +92,46 @@
             <tr class="section-row">
               <td colspan="4">{{ group.section }}</td>
             </tr>
-            @for (item of group.items; track item.code) {
-              <tr [class.is-flagged]="item.flagged">
-                <td class="code">{{ item.code }}</td>
-                <td>{{ item.name }}</td>
-                <td class="text-end num" [class.neg]="(item.standardizedAmount ?? 0) < 0">
-                  {{ formatAmount(item.standardizedAmount) }}
-                </td>
-                <td class="text-center">
-                  @if (item.flagged) {
-                    <span class="badge text-bg-warning-subtle text-warning-emphasis">
-                      <mat-icon inline="true" class="fs-6 align-middle">flag</mat-icon> Flagged
-                    </span>
-                  } @else {
-                    <span class="badge text-bg-success-subtle text-success-emphasis">
-                      <mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> Accepted
-                    </span>
-                  }
-                </td>
-              </tr>
-              @if (item.flagged) {
-                <tr class="flag-note-row">
-                  <td colspan="4">
-                    <div class="flag-note">
-                      <mat-icon inline="true" class="fs-6">flag</mat-icon>
-                      <div>
-                        @if (item.proposedValue != null) {
-                          <div><b>Correct value</b> - {{ item.proposedValue | number: '1.2-2' }}</div>
-                        }
-                        <div><b>Additional Comment</b> - {{ item.comment }}</div>
-                      </div>
-                    </div>
+            @for (subGroup of group.subGroups; track subGroup.subSection ?? '') {
+              @if (subGroup.subSection) {
+                <tr class="subsection-row">
+                  <td colspan="4">{{ subGroup.subSection }}</td>
+                </tr>
+              }
+              @for (item of subGroup.items; track item.code) {
+                <tr [class.is-flagged]="item.flagged">
+                  <td class="code">{{ item.code }}</td>
+                  <td>{{ item.name }}</td>
+                  <td class="text-end num" [class.neg]="(item.standardizedAmount ?? 0) < 0">
+                    {{ formatAmount(item.standardizedAmount) }}
+                  </td>
+                  <td class="text-center">
+                    @if (item.flagged) {
+                      <span class="badge text-bg-warning-subtle text-warning-emphasis">
+                        <mat-icon inline="true" class="fs-6 align-middle">flag</mat-icon> Flagged
+                      </span>
+                    } @else {
+                      <span class="badge text-bg-success-subtle text-success-emphasis">
+                        <mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> Accepted
+                      </span>
+                    }
                   </td>
                 </tr>
+                @if (item.flagged) {
+                  <tr class="flag-note-row">
+                    <td colspan="4">
+                      <div class="flag-note">
+                        <mat-icon inline="true" class="fs-6">flag</mat-icon>
+                        <div>
+                          @if (item.proposedValue != null) {
+                            <div><b>Correct value</b> - {{ item.proposedValue | number: '1.2-2' }}</div>
+                          }
+                          <div><b>Additional Comment</b> - {{ item.comment }}</div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
               }
             }
           }
@@ -123,7 +144,7 @@
 <div class="sticky-footer">
   <div class="container d-flex align-items-center justify-content-between gap-3 flex-wrap">
     <div>
-      <div class="fw-bold">{{ action === 'ACCEPT_NO_CHANGES' ? 'Confirm — Accept, no changes' : 'Confirm — submit with comments' }}</div>
+      <div class="fw-bold">{{ action === 'ACCEPT_NO_CHANGES' ? 'Confirm - Accept, no changes' : 'Confirm - submit with comments' }}</div>
       <div class="text-success small">You can still go back and change anything before confirming.</div>
     </div>
     <div class="d-flex gap-2">

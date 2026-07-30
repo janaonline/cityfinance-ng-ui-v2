@@ -29,29 +29,67 @@
 }
 
 .summary-strip {
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background: #e0e0e0;
-  gap: 1px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
 .summary-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: #fff;
-  padding: 14px 18px;
+  border: 1px solid #e6ecec;
+  border-radius: 0.6rem;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .s-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 0.5rem;
+    background: var(--color-primary-accent);
+    color: var(--color-primary);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
 
   .s-label {
-    font-size: 0.66rem;
+    font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #757575;
-    margin-bottom: 4px;
+    color: #8a9494;
+    margin-bottom: 2px;
   }
 
   .s-value {
-    font-size: 1.2rem;
+    font-size: 0.92rem;
     font-weight: 700;
+    line-height: 1.2;
+    color: #1a1d1f;
+
+    &.s-value-accent {
+      color: #198754;
+    }
+
+    &.s-value-warn {
+      color: #e67e15;
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  .summary-strip {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -80,9 +118,11 @@
   td.num {
     font-variant-numeric: tabular-nums;
     font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #1a1d1f;
   }
 
-  .neg {
+  td.num.neg {
     color: #c62828;
   }
 
@@ -97,7 +137,18 @@
     padding-bottom: 7px;
   }
 
-  tbody tr:not(.section-row):not(.flag-note-row) {
+  .subsection-row td {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #4e6a6a;
+    background: #eef6f6;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  tbody tr:not(.section-row):not(.subsection-row):not(.flag-note-row) {
     border-bottom: 1px solid #eef1f1;
   }
 

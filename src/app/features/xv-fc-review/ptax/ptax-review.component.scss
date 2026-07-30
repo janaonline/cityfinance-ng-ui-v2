@@ -44,23 +44,29 @@
 
 .fy-tab {
   background: none;
-  border: none;
+  border: 1px solid transparent;
   padding: 7px 16px;
   border-radius: 0.45rem;
   font-size: 0.82rem;
   font-weight: 500;
   color: #757575;
-  transition: background 0.14s, color 0.14s;
+  transition: background 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
 
   &:hover {
     color: #212121;
+    background: rgba(0, 0, 0, 0.05);
   }
 
   &.active {
-    background: #fff;
-    color: var(--color-primary);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary, #fff);
     font-weight: 700;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--color-primary-shadow, rgba(0, 0, 0, 0.18));
+
+    &:hover {
+      background: var(--color-primary-hover, var(--color-primary));
+    }
   }
 }
 
@@ -78,6 +84,10 @@
 
   &.dot-flag {
     background: #e67e15;
+  }
+
+  .fy-tab.active & {
+    box-shadow: 0 0 0 1.5px #fff;
   }
 }
 
@@ -106,6 +116,8 @@
   td.num {
     font-variant-numeric: tabular-nums;
     font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #1a1d1f;
   }
 
   tbody tr:not(.flag-note-row) {
@@ -230,29 +242,67 @@
 }
 
 .summary-strip {
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background: #e0e0e0;
-  gap: 1px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
 .summary-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: #fff;
-  padding: 14px 18px;
+  border: 1px solid #e6ecec;
+  border-radius: 0.6rem;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .s-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 0.5rem;
+    background: var(--color-primary-accent);
+    color: var(--color-primary);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
 
   .s-label {
-    font-size: 0.66rem;
+    font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #757575;
-    margin-bottom: 4px;
+    color: #8a9494;
+    margin-bottom: 2px;
   }
 
   .s-value {
-    font-size: 1.2rem;
+    font-size: 0.92rem;
     font-weight: 700;
+    line-height: 1.2;
+    color: #1a1d1f;
+
+    &.s-value-accent {
+      color: #198754;
+    }
+
+    &.s-value-warn {
+      color: #e67e15;
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  .summary-strip {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

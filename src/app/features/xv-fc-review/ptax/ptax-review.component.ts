@@ -65,11 +65,8 @@ export class PtaxReviewComponent {
     const detail = this.service.fyDetail();
     return !!detail && isPtaxSubmittedStatus(detail.status) && !this.isLocked();
   });
-  /** One shared supporting document for the whole FY — required once anything is flagged. */
+  /** One shared supporting document for the whole FY — always optional, never blocks submission. */
   commonSupportingDocument = computed(() => this.service.fyDetail()?.supportingDocument ?? null);
-  hasRequiredSupportDoc = computed(
-    () => this.flagCount() === 0 || !!this.commonSupportingDocument(),
-  );
   /** Order rules (e.g. 1.10 must not exceed 1.9) currently broken by the metrics' effective values. */
   orderRuleViolations = computed(() => {
     const rules = this.service.fyDetail()?.metricOrderRules ?? [];
@@ -87,16 +84,12 @@ export class PtaxReviewComponent {
     () =>
       !!this.service.fyDetail()?.declaration &&
       this.flaggedItems().every((m) => !!m.comment) &&
-      this.hasRequiredSupportDoc() &&
       this.orderRuleViolations().length === 0 &&
       !this.isLocked(),
   );
   submitBlockedReason = computed(() => {
     const detail = this.service.fyDetail();
     if (!detail?.declaration) return 'Upload the signed declaration above to enable this.';
-    if (!this.hasRequiredSupportDoc()) {
-      return 'Attach a supporting document for the metrics you flagged to enable this.';
-    }
     if (!this.flaggedItems().every((m) => !!m.comment)) {
       return 'Add a comment for every metric you flagged to enable this.';
     }
@@ -325,11 +318,11 @@ export class PtaxReviewComponent {
 
   openPreview(action: PtaxFinalAction) {
     if (action === 'SUBMIT_WITH_COMMENTS' && this.flagCount() === 0) {
-      this.toast('Nothing is flagged — use "Accept — no changes" instead, or flag a metric first.');
+      this.toast('Nothing is flagged - use "Accept - no changes" instead, or flag a metric first.');
       return;
     }
     if (action === 'ACCEPT_NO_CHANGES' && this.flagCount() > 0) {
-      this.toast('You have flagged metrics — use "Submit with comments", or remove the flags first.');
+      this.toast('You have flagged metrics - use "Submit with comments", or remove the flags first.');
       return;
     }
     this.pendingAction.set(action);

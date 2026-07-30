@@ -44,6 +44,8 @@ export interface XvFcLineItem {
   code: string;
   name: string;
   section: string;
+  /** Further breakdown within a section — not every item has one. */
+  subSection?: string | null;
   /** Standardised amount — the backend always stores/returns this in ₹ Lakhs. Can be null. */
   standardizedAmount: number | null;
   flagged: boolean;
@@ -54,10 +56,16 @@ export interface XvFcLineItem {
   adminDecision: Record<string, unknown> | null;
 }
 
-/** UI grouping of line items by `section`. */
+/** UI sub-grouping of a section's items by `subSection`, when present. */
+export interface XvFcLineItemSubGroup {
+  subSection: string | null;
+  items: XvFcLineItem[];
+}
+
+/** UI grouping of line items by `section`, further split into `subSection`s where available. */
 export interface XvFcLineItemGroup {
   section: string;
-  items: XvFcLineItem[];
+  subGroups: XvFcLineItemSubGroup[];
 }
 
 export interface XvFcSourceDocument {
