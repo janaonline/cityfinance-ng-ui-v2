@@ -7,6 +7,7 @@ import {
   CLAIM_LETTER_ULB_ROWS_PAGE_SIZE,
   ClaimLetterApiResponse,
   ClaimLetterBatchSummary,
+  ClaimLetterClaimContext,
   ClaimLetterEligibilitySummary,
   ClaimLetterHistoryQuery,
   ClaimLetterHistoryResult,
@@ -44,6 +45,21 @@ export class ClaimLetterService {
         ClaimLetterApiResponse<ClaimLetterEligibilitySummary>
       >(`${this.baseUrl}${stateId}/${yearId}/${installment}/eligibility-summary`)
       .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterEligibilitySummary));
+  }
+
+  /** Lean sibling of `getEligibilitySummary` for the create/edit page — same financial/batch-slot/
+   *  ULB-count fields, without the expensive eligibility-checklist evaluation neither page mode
+   *  displays. */
+  getClaimContext(
+    stateId: string,
+    yearId: string,
+    installment: ClaimLetterInstallment,
+  ): Observable<ClaimLetterClaimContext> {
+    return this.http
+      .get<
+        ClaimLetterApiResponse<ClaimLetterClaimContext>
+      >(`${this.baseUrl}${stateId}/${yearId}/${installment}/claim-context`)
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterClaimContext));
   }
 
   /** Lazy, paginated, State-scoped ULB lookup list for the select dialog. */

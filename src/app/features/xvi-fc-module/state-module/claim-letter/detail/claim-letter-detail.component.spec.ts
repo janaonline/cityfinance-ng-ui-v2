@@ -11,7 +11,7 @@ import { UploadedFileMetadata } from '../../../../../shared/dynamic-form/compone
 import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { createClaimUlbRowGroup } from '../components/claim-ulb-table/claim-ulb-table.component';
-import { ClaimLetterBatchSummary, ClaimLetterEligibilitySummary, ClaimLetterUlbRow } from '../claim-letter.models';
+import { ClaimLetterBatchSummary, ClaimLetterClaimContext, ClaimLetterUlbRow } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
 import { formatCrore } from '../claim-letter.utils';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
@@ -69,10 +69,8 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
   };
 }
 
-function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}): ClaimLetterEligibilitySummary {
+function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): ClaimLetterClaimContext {
   return {
-    installment: 1,
-    stateLevelGate: { passed: true, sources: [] },
     expectedUlbCount: 10,
     batchSlotsUsed: 0,
     batchSlotsMax: 3,
@@ -84,8 +82,6 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
       totalClaimInDraft: 2,
       availableToClaim: 15,
     },
-    ulbLevelCriteria: [],
-    ulbReadiness: { eligible: 10, total: 10 },
     remainingUlbCount: 0,
     ...overrides,
   };
@@ -150,7 +146,7 @@ describe('ClaimLetterDetailComponent', () => {
   describe('create mode', () => {
     beforeEach(async () => {
       await setup('new');
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(buildEligibility()));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
       fixture.detectChanges();
     });
 
@@ -161,7 +157,7 @@ describe('ClaimLetterDetailComponent', () => {
     });
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
-      expect(claimLetterService.getEligibilitySummary).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1);
+      expect(claimLetterService.getClaimContext).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1);
       // Same 3-tile shape as the list page — the full 5-figure breakdown lives there only; this page
       // stays lean and lets the narrative bullets carry the "in progress"/"in draft" nuance instead.
       // "Available to Claim" is the server-computed field, not a client subtraction.
@@ -295,7 +291,7 @@ describe('ClaimLetterDetailComponent', () => {
       // ngOnInit() now fetches the eligibility overview in edit mode too (for the narrative bullets'
       // expectedUlbCount/batch-slot figures), not just create mode — mocked here so every edit-mode
       // test has a consistent, non-dangling response.
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(buildEligibility()));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
       fixture.detectChanges();
     }
 
@@ -449,7 +445,7 @@ describe('ClaimLetterDetailComponent', () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(throwError(() => new Error('boom')));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(buildEligibility()));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
 
       fixture.detectChanges();
 
@@ -632,8 +628,8 @@ describe('ClaimLetterDetailComponent', () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
-        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
       );
       fixture.detectChanges();
 
@@ -644,8 +640,8 @@ describe('ClaimLetterDetailComponent', () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
-        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 0 })),
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 0 })),
       );
       fixture.detectChanges();
 
@@ -656,8 +652,8 @@ describe('ClaimLetterDetailComponent', () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 1, hasSignedFile: true })));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
-        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
       );
       fixture.detectChanges();
 
@@ -668,8 +664,8 @@ describe('ClaimLetterDetailComponent', () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
-        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 4 })),
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 4 })),
       );
       fixture.detectChanges();
 
@@ -684,8 +680,8 @@ describe('ClaimLetterDetailComponent', () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(
-        of(buildEligibility({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
       );
       fixture.detectChanges();
       const confirmSpy = spyOn(TestBed.inject(ConfirmDialogService), 'confirm');

@@ -92,6 +92,21 @@ export interface ClaimLetterEligibilitySummary {
 }
 
 /**
+ * Lean sibling of `ClaimLetterEligibilitySummary` for the create/edit claim-letter page — exactly
+ * the subset of fields that page reads (financial/batch-slot/ULB-count context), with none of the
+ * `stateLevelGate`/`ulbLevelCriteria`/`ulbReadiness` fields that page never displays. Backed by
+ * `GET .../claim-context`, which skips the expensive eligibility-checklist evaluation entirely.
+ */
+export interface ClaimLetterClaimContext {
+  expectedUlbCount: number;
+  batchSlotsUsed: number;
+  batchSlotsMax: number;
+  nextBatchNumber: ClaimLetterBatchNumber | null;
+  financialOverview: ClaimLetterFinancialOverview;
+  remainingUlbCount: number;
+}
+
+/**
  * One selectable-ULB picker row, sourced from the lazy/searchable `ulb-options` endpoint — never
  * part of the claim detail response. `eligible`/`ineligibleReasonCode` are server-computed; the
  * picker must never re-derive eligibility client-side.

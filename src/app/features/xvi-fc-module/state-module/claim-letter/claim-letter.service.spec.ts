@@ -103,6 +103,45 @@ describe('ClaimLetterService', () => {
     });
   });
 
+  describe('getClaimContext', () => {
+    const url = `${BASE_URL}${stateId}/${yearId}/1/claim-context`;
+
+    it('calls the exact GET URL and emits the response data on success', () => {
+      let result: unknown;
+      service.getClaimContext(stateId, yearId, 1).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      const context = {
+        expectedUlbCount: 10,
+        batchSlotsUsed: 1,
+        batchSlotsMax: 3,
+        nextBatchNumber: 2,
+        financialOverview: {
+          totalInstallmentAllocation: 25,
+          totalAlreadyAcknowledged: 5,
+          totalClaimInProgress: 0,
+          totalClaimInDraft: 0,
+          availableToClaim: 20,
+        },
+        remainingUlbCount: 3,
+      };
+      req.flush({ success: true, message: 'OK', data: context });
+
+      expect(result).toEqual(context);
+    });
+
+    it('throws the original response object when success:false', () => {
+      const errorBody: ClaimLetterApiResponse = { success: false, message: 'Forbidden' };
+      let caughtError: unknown;
+      service.getClaimContext(stateId, yearId, 1).subscribe({ error: (err: unknown) => (caughtError = err) });
+
+      httpMock.expectOne(url).flush(errorBody);
+
+      expect(caughtError).toBe(errorBody);
+    });
+  });
+
   describe('getUlbOptions', () => {
     const url = `${BASE_URL}${stateId}/${yearId}/1/ulb-options`;
 

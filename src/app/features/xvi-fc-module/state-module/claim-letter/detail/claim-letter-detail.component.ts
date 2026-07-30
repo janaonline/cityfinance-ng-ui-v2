@@ -39,7 +39,7 @@ import {
   CLAIM_LETTER_INSTALLMENT,
   ClaimLetterApiErrorResponse,
   ClaimLetterBatchSummary,
-  ClaimLetterEligibilitySummary,
+  ClaimLetterClaimContext,
   ClaimLetterUlbRow,
   ClaimLetterUlbSelection,
 } from '../claim-letter.models';
@@ -109,10 +109,12 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly savedUlbRows = signal<readonly ClaimLetterUlbRow[]>([]);
 
   /** Only meaningful in create mode — no batch exists yet, so the state-wide pool/acknowledged
-   *  totals come from eligibility-summary rather than a (non-existent) `financialSummary`. Failing
-   *  to load this is non-fatal: it only powers an optional overview strip, never the core ULB-picking
-   *  workflow, so it's fetched independently of `loadDetail()`'s isLoading/loadError gating. */
-  readonly eligibilityOverview = signal<ClaimLetterEligibilitySummary | null>(null);
+   *  totals come from claim-context rather than a (non-existent) `financialSummary`. Failing to
+   *  load this is non-fatal: it only powers an optional overview strip, never the core ULB-picking
+   *  workflow, so it's fetched independently of `loadDetail()`'s isLoading/loadError gating. Backed
+   *  by the lean `claim-context` endpoint rather than `eligibility-summary` — this page never
+   *  displays the checklist/ULB-readiness fields the full endpoint also computes. */
+  readonly eligibilityOverview = signal<ClaimLetterClaimContext | null>(null);
 
   /** `UnspentUlbTableComponent`'s counterpart here — an `OnPush` child whose view can go stale after
    *  this component touches a row control from outside the child's own template (a submit-time
@@ -306,11 +308,11 @@ export class ClaimLetterDetailComponent implements OnInit {
 
     this.isLoading.set(true);
     this.claimLetterService
-      .getEligibilitySummary(stateId, yearId, CLAIM_LETTER_INSTALLMENT)
+      .getClaimContext(stateId, yearId, CLAIM_LETTER_INSTALLMENT)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (eligibility) => {
-          this.eligibilityOverview.set(eligibility);
+        next: (context) => {
+          this.eligibilityOverview.set(context);
           this.isLoading.set(false);
         },
         error: (err: unknown) => {
