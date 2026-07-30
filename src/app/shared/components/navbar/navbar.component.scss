@@ -206,6 +206,7 @@ a {
 }
 
 ::ng-deep .notification-menu-panel {
+  min-width: 20rem;
   max-width: 22rem;
 
   .mat-mdc-menu-content {
@@ -220,21 +221,21 @@ a {
 
 ::ng-deep .notification-menu-item {
   display: flex !important;
-  align-items: flex-start !important;
-  gap: 0.6rem;
+  align-items: center !important;
+  gap: 0.5rem;
   padding: 0.5rem 1rem !important;
   height: auto !important;
   line-height: 1.3 !important;
-  white-space: normal !important;
 
   i {
-    margin-top: 0.15rem;
-    font-size: 0.95rem;
+    flex-shrink: 0;
+    font-size: 0.85rem;
   }
 
   .notification-menu-item__text {
     display: flex;
     flex-direction: column;
+    gap: 0.1rem;
 
     strong {
       font-size: 0.85rem;

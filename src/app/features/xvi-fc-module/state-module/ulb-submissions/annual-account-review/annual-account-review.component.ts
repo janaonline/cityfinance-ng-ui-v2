@@ -47,7 +47,7 @@ interface StatusDoc {
   currentUpload: {
     uploadId: string;
     versionLabel: string;
-    file: { originalName: string; sizeKb: number };
+    file: { originalName: string; sizeKb: number; fileUrl: string | null };
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
   } | null;
@@ -82,6 +82,7 @@ interface ReviewDocRow {
   processingStatus: StatusDoc['processingStatus'];
   fileName: string | null;
   sizeKb: number | null;
+  fileUrl: string | null;
   versionLabel: string | null;
   uploadedAt: Date | null;
   uploaderRole: string | null;
@@ -97,7 +98,7 @@ interface BankAccountData {
   bankDetails: { name: string; branch: string; address: string; city: string; state?: string; micr: string | null };
   accountNumberMasked: string;
   accountNumberLast4: string;
-  proofFile: { originalName: string; mimeType: string; sizeKb: number; s3Key: string };
+  proofFile: { originalName: string; mimeType: string; sizeKb: number; s3Key: string; fileUrl: string | null };
   currentFormStatus: number;
   currentFormStatusLabel: string;
   stateDecision: DecisionEntry | null;
@@ -311,6 +312,7 @@ export class AnnualAccountReviewComponent {
         processingStatus: doc?.processingStatus ?? 'NOT_STARTED',
         fileName: doc?.currentUpload?.file.originalName ?? null,
         sizeKb: doc?.currentUpload?.file.sizeKb ?? null,
+        fileUrl: doc?.currentUpload?.file.fileUrl ?? null,
         versionLabel: doc?.currentUpload?.versionLabel ?? null,
         uploadedAt,
         uploaderRole: doc?.currentUpload?.userInfo?.role ?? null,
@@ -422,31 +424,25 @@ export class AnnualAccountReviewComponent {
     }
   }
 
-  async previewFile(row: ReviewDocRow): Promise<void> {
-    const id = this.statusData()?.annualAccountId;
-    if (!row.uploadId || !id) return;
-    try {
-      const result = await firstValueFrom(this.http.get<unknown>(`${API_ANNUAL}${id}/documents/${row.uploadId}/signed-url`));
-      window.open(unwrap<{ url: string }>(result).url, '_blank', 'noopener');
-    } catch {
+  previewFile(row: ReviewDocRow): void {
+    if (!row.fileUrl) {
       this.utilityService.triggerSnackbar('Failed to open document preview.', 'snackbar-danger');
+      return;
     }
+    window.open(row.fileUrl, '_blank', 'noopener');
   }
 
   formatFileSize(sizeKb: number): string {
     return `${sizeKb.toFixed(2)} KB`;
   }
 
-  async viewPfmsProof(): Promise<void> {
-    const id = this.bankAccountData()?.id;
-    if (!id) return;
-
-    try {
-      const result = await firstValueFrom(this.http.get<unknown>(`${API_BANK}${id}/proof-signed-url`));
-      window.open(unwrap<{ url: string }>(result).url, '_blank', 'noopener');
-    } catch {
+  viewPfmsProof(): void {
+    const fileUrl = this.bankAccountData()?.proofFile.fileUrl;
+    if (!fileUrl) {
       this.utilityService.triggerSnackbar('Unable to open proof document. Please try again.', 'snackbar-danger');
+      return;
     }
+    window.open(fileUrl, '_blank', 'noopener');
   }
 
   async approveDocument(docId: string): Promise<void> {

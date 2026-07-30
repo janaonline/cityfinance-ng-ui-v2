@@ -273,6 +273,7 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
         processingStatus: 'PASSED',
         fileName: 'report.pdf',
         sizeKb: 100,
+        fileUrl: null,
         versionLabel: 'v1',
         uploadedAt: null,
         uploaderRole: null,

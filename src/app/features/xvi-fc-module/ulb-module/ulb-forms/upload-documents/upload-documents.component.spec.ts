@@ -20,6 +20,7 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     fileName: null,
     fileSize: null,
     sizeKb: null,
+    fileUrl: null,
     localPreviewUrl: null,
     pageCount: null,
     mimeType: null,
