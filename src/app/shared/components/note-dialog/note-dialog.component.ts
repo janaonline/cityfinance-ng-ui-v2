@@ -8,6 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 export interface NoteDialogData {
   title?: string;
   message?: string;
+  /** Distinct red callout for a consequence the user should notice before confirming (e.g. "this will also affect N other items"). */
+  warning?: string;
   placeholder?: string;
   confirmText?: string;
   cancelText?: string;
@@ -18,6 +20,7 @@ export interface NoteDialogData {
 const NOTE_DIALOG_DEFAULTS: Required<NoteDialogData> = {
   title: 'Add a note',
   message: '',
+  warning: '',
   placeholder: 'Type your note here...',
   confirmText: 'Confirm',
   cancelText: 'Cancel',
@@ -40,6 +43,11 @@ const NOTE_DIALOG_DEFAULTS: Required<NoteDialogData> = {
       @if (resolved.message) {
         <p class="mb-2">{{ resolved.message }}</p>
       }
+      @if (resolved.warning) {
+        <p class="note-dialog-warning mb-2">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ resolved.warning }}
+        </p>
+      }
       <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
         <textarea
           matInput
@@ -56,6 +64,15 @@ const NOTE_DIALOG_DEFAULTS: Required<NoteDialogData> = {
         {{ resolved.confirmText }}
       </button>
     </mat-dialog-actions>
+  `,
+  styles: `
+    .note-dialog-warning {
+      color: #c62828;
+      background: #fdecea;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+    }
   `,
 })
 export class NoteDialogComponent {
