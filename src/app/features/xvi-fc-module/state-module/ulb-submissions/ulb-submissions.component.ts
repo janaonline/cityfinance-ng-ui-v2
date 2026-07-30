@@ -151,8 +151,8 @@ export class UlbSubmissionsComponent {
 
   readonly displayedColumns = computed(() =>
     this.hasNothingToReviewYet()
-      ? ['select', 'ulbName', 'formStatus']
-      : ['select', 'ulbName', 'daysPending', 'formStatus', 'action'],
+      ? ['select', 'ulbName', 'censusCode', 'formStatus']
+      : ['select', 'ulbName', 'censusCode', 'daysPending', 'formStatus', 'action'],
   );
 
   readonly reviewableRows = computed(() => this.rows().filter(isRowReviewable));

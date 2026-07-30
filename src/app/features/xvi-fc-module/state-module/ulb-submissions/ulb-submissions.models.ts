@@ -83,6 +83,7 @@ export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
 export interface UlbSubmissionRow {
   readonly ulbId: string;
   readonly ulbCode: string;
+  readonly censusCode: string;
   readonly ulbName: string;
   readonly formStatus: ReviewStatus;
   readonly formStatusId: number;

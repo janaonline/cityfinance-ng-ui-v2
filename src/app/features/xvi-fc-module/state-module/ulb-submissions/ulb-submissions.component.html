@@ -90,6 +90,11 @@
                         <td mat-cell *matCellDef="let row"><span class="fw-semibold">{{ row.ulbName }}</span></td>
                     </ng-container>
 
+                    <ng-container matColumnDef="censusCode">
+                        <th mat-header-cell *matHeaderCellDef>Census Code</th>
+                        <td mat-cell *matCellDef="let row">{{ row.censusCode }}</td>
+                    </ng-container>
+
                     <ng-container matColumnDef="daysPending">
                         <th mat-header-cell *matHeaderCellDef>Days Pending</th>
                         <td mat-cell *matCellDef="let row">
