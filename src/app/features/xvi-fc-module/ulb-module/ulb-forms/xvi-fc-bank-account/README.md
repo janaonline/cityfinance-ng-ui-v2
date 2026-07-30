@@ -52,14 +52,14 @@ Bank details displayed after IFSC lookup:
 
 - `GET /xvi-fc/bank-account?yearId={designYearId}&ulbId={ulbId}`
 - `POST /xvi-fc/bank-account`
-- `POST /s3/signed-url`
+- `POST /file/signed-url`
 
 All calls use `environment.api.url2`, resolving to `/api/v2/...`.
 
 ## Proof Upload Flow
 
 1. Client validates file type and size.
-2. Client requests signed URL from shared `POST /s3/signed-url`.
+2. Client requests signed URL from shared `POST /file/signed-url`.
 3. Client uploads file to S3 with `PUT` against the signed URL.
 4. Client stores returned metadata in component state.
 5. Submit sends metadata only to `POST /xvi-fc/bank-account`.
@@ -148,7 +148,7 @@ Submit is allowed only when:
 The component handles:
 
 - backend validation error maps by applying messages to relevant controls/proof state
-- proof signed-url errors from shared `/s3/signed-url`
+- proof signed-url errors from shared `/file/signed-url`
 - S3 upload errors
 - submit errors
 - missing local context (`ulbId` / `designYearId`)
