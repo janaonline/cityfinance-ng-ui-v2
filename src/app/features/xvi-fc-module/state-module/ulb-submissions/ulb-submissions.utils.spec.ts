@@ -5,6 +5,7 @@ function makeRow(overrides: Partial<UlbSubmissionRow>): UlbSubmissionRow {
   return {
     ulbId: 'ulb-1',
     ulbCode: 'AP-001',
+    censusCode: '123456',
     ulbName: 'Adanki (TP)',
     formStatus: 'UNDER_REVIEW_BY_STATE',
     formStatusId: 3,
