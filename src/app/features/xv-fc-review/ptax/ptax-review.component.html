@@ -14,28 +14,42 @@
         This is exactly what the CityFinance team will receive for FY {{ currentFy() }}. Check it over, then confirm.
       </p>
 
-      <div class="row g-0 summary-strip mb-4">
-        <div class="col-6 col-md-3 summary-cell">
-          <div class="s-label">Decision</div>
-          <div class="s-value">{{ pendingAction() === 'ACCEPT_NO_CHANGES' ? 'Accept — no changes' : 'Submit with comments' }}</div>
+      <div class="summary-strip mb-4">
+        <div class="summary-cell">
+          <div class="s-icon"><mat-icon>fact_check</mat-icon></div>
+          <div>
+            <div class="s-label">Decision</div>
+            <div class="s-value" [class.s-value-accent]="pendingAction() === 'ACCEPT_NO_CHANGES'">
+              {{ pendingAction() === 'ACCEPT_NO_CHANGES' ? 'Accept - no changes' : 'Submit with comments' }}
+            </div>
+          </div>
         </div>
-        <div class="col-6 col-md-3 summary-cell">
-          <div class="s-label">Metrics</div>
-          <div class="s-value">{{ metrics().length }}</div>
+        <div class="summary-cell">
+          <div class="s-icon"><mat-icon>list_alt</mat-icon></div>
+          <div>
+            <div class="s-label">Metrics</div>
+            <div class="s-value">{{ metrics().length }}</div>
+          </div>
         </div>
-        <div class="col-6 col-md-3 summary-cell">
-          <div class="s-label">Flagged</div>
-          <div class="s-value">{{ flagCount() }}</div>
+        <div class="summary-cell">
+          <div class="s-icon"><mat-icon>flag</mat-icon></div>
+          <div>
+            <div class="s-label">Flagged</div>
+            <div class="s-value" [class.s-value-warn]="flagCount() > 0">{{ flagCount() }}</div>
+          </div>
         </div>
-        <div class="col-6 col-md-3 summary-cell">
-          <div class="s-label">Financial year</div>
-          <div class="s-value">FY {{ currentFy() }}</div>
+        <div class="summary-cell">
+          <div class="s-icon"><mat-icon>event</mat-icon></div>
+          <div>
+            <div class="s-label">Financial year</div>
+            <div class="s-value">FY {{ currentFy() }}</div>
+          </div>
         </div>
       </div>
 
       <mat-card>
         <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
-          <span class="fw-bold small">Property Tax — all metrics</span>
+          <span class="fw-bold small">Property Tax - all metrics</span>
           <span class="text-muted small">FY {{ currentFy() }}</span>
         </div>
         <mat-card-content class="p-0">
@@ -91,7 +105,7 @@
 
       <div class="sticky-footer d-flex align-items-center justify-content-between gap-3 flex-wrap">
         <div>
-          <div class="fw-bold">{{ pendingAction() === 'ACCEPT_NO_CHANGES' ? 'Confirm — Accept, no changes' : 'Confirm — submit with comments' }}</div>
+          <div class="fw-bold">{{ pendingAction() === 'ACCEPT_NO_CHANGES' ? 'Confirm - Accept, no changes' : 'Confirm - submit with comments' }}</div>
           <div class="text-success small">You can still go back and change anything before confirming.</div>
         </div>
         <div class="d-flex gap-2">
@@ -122,7 +136,7 @@
               </div>
               <div class="summary-row d-flex justify-content-between py-2 border-bottom">
                 <span class="text-muted">Decision</span>
-                <span class="fw-bold">{{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accept — no changes' : 'Submit with comments' }}</span>
+                <span class="fw-bold">{{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accept - no changes' : 'Submit with comments' }}</span>
               </div>
               <div class="summary-row d-flex justify-content-between py-2 border-bottom">
                 <span class="text-muted">Metrics flagged</span>
@@ -154,7 +168,7 @@
 
         <div class="text-muted small d-flex align-items-center justify-content-center gap-1">
           <mat-icon inline="true" class="fs-6">lock</mat-icon>
-          FY {{ successFy() }} is now locked — reach out to CityFinance support if you need it reopened.
+          FY {{ successFy() }} is now locked - reach out to CityFinance support if you need it reopened.
         </div>
       </div>
     </div>
@@ -203,7 +217,7 @@
               <label for="ptax-unit-select" class="text-muted small mb-0">Show as</label>
               <select id="ptax-unit-select" #unitSelect class="unit-select" [value]="currentUnit()" (change)="switchUnit(unitSelect.value)">
                 @for (u of units; track u) {
-                  <option [value]="u">{{ unitLabels[u] }}</option>
+                  <option [value]="u" [selected]="u === currentUnit()">{{ unitLabels[u] }}</option>
                 }
               </select>
               <button class="btn-outline-custom btn-sm" type="button" (click)="downloadTable()">
@@ -224,8 +238,12 @@
             <b>If something looks wrong:</b> Click the flag icon on that row, enter the corrected value and attach a
             supporting document. Your comments will be reviewed by the CityFinance team.
           </p>
+          <p class="mb-2">
+            <b>If everything looks correct:</b> Complete the declaration below and click Accept - No Changes.
+          </p>
           <p class="mb-0">
-            <b>If everything looks correct:</b> Complete the declaration below and click Accept — No Changes.
+            For any discrepancies, queries, or feedback regarding the data, please contact:
+            <a href="mailto:feedback@cityfinance.in">feedback&#64;cityfinance.in</a>
           </p>
         </div>
 
@@ -246,7 +264,7 @@
                 @if (detail.submittedAt) {
                   You submitted this review on {{ detail.submittedAt | date: 'medium' }}
                 }
-                ({{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accepted — no changes' : 'Submitted with comments' }}).
+                ({{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accepted - no changes' : 'Submitted with comments' }}).
                 <a href="javascript:void(0)" (click)="onViewSubmission(currentFy() ?? '')">View submission summary</a>
               </span>
             </div>
@@ -370,11 +388,7 @@
               <div class="mt-4 pt-4 support-docs">
                 <div class="fw-bold small mb-1">
                   Supporting documents
-                  @if (flagCount() > 0) {
-                    <span class="text-danger">*</span> required — {{ flagCount() }} metric{{ flagCount() === 1 ? '' : 's' }} flagged
-                  } @else {
-                    <span class="fw-normal text-muted">(only required if you flag a metric)</span>
-                  }
+                  <span class="fw-normal text-muted">(optional)</span>
                 </div>
                 <div class="text-muted small mb-2">Bank statements, working papers, or other evidence for the flagged metrics.</div>
 
@@ -391,14 +405,14 @@
                       <button
                         class="btn-outline-custom btn-sm"
                         type="button"
-                        [disabled]="uploadingSupportDoc() || flagCount() === 0"
+                        [disabled]="uploadingSupportDoc()"
                         (click)="supportInput.click()"
                       >
                         {{ uploadingSupportDoc() ? 'Uploading…' : 'Replace' }}
                       </button>
                     }
                   </div>
-                } @else if (flagCount() > 0 && !isLocked()) {
+                } @else if (!isLocked()) {
                   <div
                     class="upload-zone border border-dashed rounded p-3 text-center"
                     role="button"
@@ -412,8 +426,6 @@
                     </div>
                     <div class="text-muted small">PDF, image, or spreadsheet</div>
                   </div>
-                } @else {
-                  <div class="text-muted small">No metrics are flagged, so no document is needed.</div>
                 }
               </div>
 
@@ -444,7 +456,7 @@
           <div class="container d-flex align-items-center justify-content-between gap-3 flex-wrap">
             @if (isLocked()) {
               <div>
-                <div class="fw-bold">FY {{ currentFy() }} — submitted &amp; locked</div>
+                <div class="fw-bold">FY {{ currentFy() }} - submitted &amp; locked</div>
                 <div class="text-success small"><mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> No further changes can be made for this year.</div>
               </div>
               <div class="d-flex gap-2">
@@ -452,7 +464,7 @@
               </div>
             } @else {
               <div>
-                <div class="fw-bold">{{ isRejected() ? 'Resubmit review' : 'Submit review' }} — FY {{ currentFy() }}</div>
+                <div class="fw-bold">{{ isRejected() ? 'Resubmit review' : 'Submit review' }} - FY {{ currentFy() }}</div>
                 <div class="small" [class.text-success]="canSubmit()" [class.decl-hint-pending]="!canSubmit()">
                   @if (canSubmit()) {
                     <mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> Ready to submit.
@@ -479,7 +491,7 @@
                   [matTooltip]="canSubmit() ? '' : submitBlockedReason()"
                   (click)="openPreview('ACCEPT_NO_CHANGES')"
                 >
-                  Accept — no changes
+                  Accept - no changes
                 </button>
               </div>
             }

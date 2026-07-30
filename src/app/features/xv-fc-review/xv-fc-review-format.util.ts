@@ -1,6 +1,15 @@
-import { XvFcCurrencyUnit, XvFcLineItem, XvFcLineItemGroup } from './models/xv-fc-review.model';
+import {
+  XvFcCurrencyUnit,
+  XvFcLineItem,
+  XvFcLineItemGroup,
+  XvFcLineItemSubGroup,
+} from './models/xv-fc-review.model';
 
-/** Groups the FY detail's flat line-item list by `section`, preserving first-seen order. */
+/**
+ * Groups the FY detail's flat line-item list by `section`, preserving first-seen order, then
+ * further splits each section by `subSection` where items carry one. Items without a
+ * `subSection` land in a single `null`-keyed sub-group (rendered with no sub-header).
+ */
 export function groupXvFcLineItems(items: XvFcLineItem[]): XvFcLineItemGroup[] {
   const order: string[] = [];
   const bySection = new Map<string, XvFcLineItem[]>();
@@ -11,7 +20,24 @@ export function groupXvFcLineItems(items: XvFcLineItem[]): XvFcLineItemGroup[] {
     }
     bySection.get(item.section)!.push(item);
   }
-  return order.map((section) => ({ section, items: bySection.get(section)! }));
+  return order.map((section) => ({
+    section,
+    subGroups: groupBySubSection(bySection.get(section)!),
+  }));
+}
+
+function groupBySubSection(items: XvFcLineItem[]): XvFcLineItemSubGroup[] {
+  const order: (string | null)[] = [];
+  const bySubSection = new Map<string | null, XvFcLineItem[]>();
+  for (const item of items) {
+    const key = item.subSection ?? null;
+    if (!bySubSection.has(key)) {
+      bySubSection.set(key, []);
+      order.push(key);
+    }
+    bySubSection.get(key)!.push(item);
+  }
+  return order.map((subSection) => ({ subSection, items: bySubSection.get(subSection)! }));
 }
 
 /**
@@ -35,10 +61,10 @@ export function formatXvFcAmount(
     // A small-but-nonzero lakh amount can round away to "0.00" in crores at 2-decimal
     // precision — fall back to more decimals so it doesn't silently disappear.
     if (divided !== 0 && Math.abs(divided) < 0.01) {
-      return divided.toFixed(6);
+      return divided.toLocaleString('en-IN', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
     }
-    return divided.toFixed(2);
+    return divided.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   // lakhs — already the base unit, no conversion needed.
-  return amountInLakhs.toFixed(2);
+  return amountInLakhs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
