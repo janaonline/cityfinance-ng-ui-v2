@@ -74,6 +74,8 @@ export interface UploadDocument extends UploadDocumentDef {
   fileName: string | null;
   fileSize: number | null;
   sizeKb: number | null;
+  /** Short-lived signed download URL for the uploaded file, from the backend — null until loaded. */
+  fileUrl: string | null;
   localPreviewUrl: string | null;
   pageCount: number | null;
   mimeType: string | null;
@@ -123,7 +125,7 @@ interface BackendStatusDoc {
     uploadId: string;
     version: number;
     versionLabel: string;
-    file: { originalName: string; mimeType: string; pageCount: number; sizeKb: number };
+    file: { originalName: string; mimeType: string; pageCount: number; sizeKb: number; fileUrl: string | null };
     ocrInfo: BackendOcrInfo;
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
@@ -200,6 +202,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     fileName: null,
     fileSize: null,
     sizeKb: null,
+    fileUrl: null,
     localPreviewUrl: null,
     pageCount: null,
     mimeType: null,
@@ -490,7 +493,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const uploadId = crypto.randomUUID();
       const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
       const presignResult = await firstValueFrom(
-        this.http.post<unknown>(`${API}s3/signed-url`, [
+        this.http.post<unknown>(`${API}file/signed-url`, [
           { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
         ]),
       );
@@ -582,22 +585,10 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async previewFile(doc: UploadDocument): Promise<void> {
-    if (doc.localPreviewUrl) {
-      window.open(doc.localPreviewUrl, '_blank', 'noopener');
-      return;
-    }
-    if (!doc.uploadId || !this.annualAccountId()) return;
-    try {
-      const result = await firstValueFrom(
-        this.http.get<unknown>(
-          `${API}xvi-fc/annual-account/${this.annualAccountId()}/documents/${doc.uploadId}/signed-url`,
-        ),
-      );
-      window.open(unwrap<{ url: string }>(result).url, '_blank', 'noopener');
-    } catch (err) {
-      console.error('[preview] failed to get signed URL', err);
-    }
+  previewFile(doc: UploadDocument): void {
+    const url = doc.localPreviewUrl ?? doc.fileUrl;
+    if (!url) return;
+    window.open(url, '_blank', 'noopener');
   }
 
   async removeDocument(docId: string): Promise<void> {
@@ -796,6 +787,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             fileName: cu.file.originalName,
             fileSize: null,
             sizeKb: cu.file.sizeKb,
+            fileUrl: cu.file.fileUrl ?? null,
             localPreviewUrl: null,
             pageCount: cu.file.pageCount,
             mimeType: cu.file.mimeType,
