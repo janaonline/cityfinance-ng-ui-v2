@@ -46,6 +46,7 @@ function unwrap<T>(response: unknown): T {
 interface AnnualAccountSubmissionRow {
   ulbId: string;
   ulbCode: string;
+  censusCode: string;
   ulbName: string;
   formStatus: ReviewStatus;
   formStatusId: number;
@@ -64,6 +65,7 @@ interface AnnualAccountListResponse {
 interface BankAccountSubmissionRow {
   ulbId: string;
   ulbCode: string;
+  censusCode: string;
   ulbName: string;
   formStatus: number;
   lastUpdatedAt: string | null;
@@ -113,6 +115,7 @@ export class UlbSubmissionsService {
         const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
           ulbId: row.ulbId,
           ulbCode: row.ulbCode,
+          censusCode: row.censusCode,
           ulbName: row.ulbName,
           formStatus: row.formStatus,
           formStatusId: row.formStatusId,
@@ -145,6 +148,7 @@ export class UlbSubmissionsService {
         const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
           ulbId: row.ulbId,
           ulbCode: row.ulbCode,
+          censusCode: row.censusCode,
           ulbName: row.ulbName,
           formStatus: NUMERIC_TO_REVIEW_STATUS[row.formStatus] ?? 'NOT_STARTED',
           formStatusId: row.formStatus,
