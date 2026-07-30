@@ -137,14 +137,16 @@
                       @if (doc.versionLabel) {
                         <span class="chip-meta">· {{ doc.versionLabel }}</span>
                       }
-                      @if (doc.latestDecision?.status === 'RETURNED') {
-                        <span class="returned-badge ms-1">
-                          <span class="returned-dot">●</span> RETURNED
-                        </span>
-                      } @else {
-                        <span class="passed-badge ms-1">
-                          <span class="passed-dot">●</span> PASSED
-                        </span>
+                      @if (doc.required !== false) {
+                        @if (doc.latestDecision?.status === 'RETURNED') {
+                          <span class="returned-badge ms-1">
+                            <span class="returned-dot">●</span> RETURNED
+                          </span>
+                        } @else {
+                          <span class="passed-badge ms-1">
+                            <span class="passed-dot">●</span> PASSED
+                          </span>
+                        }
                       }
                       <button
                         mat-icon-button
