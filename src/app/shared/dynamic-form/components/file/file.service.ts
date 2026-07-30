@@ -64,7 +64,7 @@ export class FileService {
       },
     ];
     return this.http
-      .post<ApiResponse<S3UrlResult[]> | S3UrlResult[]>(`${environment.api.url2}s3/signed-url`, items)
+      .post<ApiResponse<S3UrlResult[]> | S3UrlResult[]>(`${environment.api.url2}file/signed-url`, items)
       .pipe(map((res) => this.unwrap(res)));
   }
 
