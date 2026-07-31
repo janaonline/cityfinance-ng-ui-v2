@@ -3,7 +3,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
@@ -36,6 +36,8 @@ const EMPTY_COUNTS: Record<ReviewStatus, number> = {
   UNDER_REVIEW_BY_MOHUA: 0,
   RETURNED_BY_MOHUA: 0,
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 0,
+  APPROVED_BY_STATE: 0,
+  AWAITING_CLAIM_LETTER: 0,
 };
 
 const BULK_APPROVE_CONFIRM: ConfirmDialogData = {
@@ -300,7 +302,15 @@ export class UlbSubmissionsComponent {
     };
   }
 
+  // The design year lives on the route as :yearId (see xvi-fc-module.routes.ts), a few levels
+  // up from this component's own route — not in this component's own paramMap directly.
   private resolveDesignYearId(): string {
+    let snapshot: ActivatedRouteSnapshot | null = this.route.snapshot;
+    while (snapshot) {
+      const value = snapshot.paramMap.get('yearId')?.trim();
+      if (value) return value;
+      snapshot = snapshot.parent;
+    }
     return (typeof localStorage !== 'undefined' ? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) : null) ?? '';
   }
 

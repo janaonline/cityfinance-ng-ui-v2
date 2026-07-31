@@ -142,7 +142,9 @@ type AnnualAccountFormStatus =
   | 'RETURNED_BY_STATE'
   | 'UNDER_REVIEW_BY_MOHUA'
   | 'RETURNED_BY_MOHUA'
-  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA';
+  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
+  | 'APPROVED_BY_STATE'
+  | 'AWAITING_CLAIM_LETTER';
 
 // Statuses in which the ULB may still upload/edit/submit — mirrors the backend's canUlbEditForm allow-list.
 const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
@@ -154,6 +156,9 @@ const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
 
 const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, string>>> = {
   UNDER_REVIEW_BY_STATE: 'This section has been submitted to State DMA and is now locked for review.',
+  APPROVED_BY_STATE: 'This section has been approved by your State DMA and is now locked.',
+  AWAITING_CLAIM_LETTER:
+    'This section has been approved by your State DMA and is awaiting claim letter generation before moving to MoHUA.',
   UNDER_REVIEW_BY_MOHUA: 'This section has been approved by the state and is now under review by MoHUA.',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'This section has been approved by MoHUA. No further changes are needed.',
 };
