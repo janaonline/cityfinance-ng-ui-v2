@@ -21,6 +21,7 @@ import { FlagRowDialogComponent, FlagRowDialogData } from './flag-row-dialog/fla
 import { XvFcReviewPreviewComponent } from './preview/xv-fc-review-preview.component';
 import { XvFcReviewSuccessComponent } from './success/xv-fc-review-success.component';
 import { formatXvFcAmount, groupXvFcLineItems } from './xv-fc-review-format.util';
+import { extractApiErrorMessage } from './xv-fc-review-error.util';
 import { PageErrorStateComponent } from '../xvi-fc-module/shared/page-error-state/page-error-state.component';
 import { PtaxReviewComponent } from './ptax/ptax-review.component';
 
@@ -68,7 +69,7 @@ export class XvFcDataReviewComponent {
   currentFy = signal<string | null>(null);
   /** Backend id for `currentFy` — this, not the FY label, is what every API call uses. */
   currentYearId = signal<string | null>(null);
-  currentUnit = signal<XvFcCurrencyUnit>('lakhs');
+  currentUnit = signal<XvFcCurrencyUnit>('whole');
   pendingAction = signal<XvFcFinalAction>('ACCEPT_NO_CHANGES');
   successFy = signal<string | null>(null);
 
@@ -142,8 +143,8 @@ export class XvFcDataReviewComponent {
   }
 
   // ── Amount formatting ────────────────────────────────────────────────
-  formatAmount(amountInLakhs: number | null | undefined): string {
-    return formatXvFcAmount(amountInLakhs, this.currentUnit());
+  formatAmount(amountInWholeRupees: number | null | undefined): string {
+    return formatXvFcAmount(amountInWholeRupees, this.currentUnit(), 'whole');
   }
 
   downloadPdf() {
@@ -160,7 +161,7 @@ export class XvFcDataReviewComponent {
         URL.revokeObjectURL(url);
         this.toast('Downloaded XV-FC-Review-' + fy + '.pdf');
       },
-      error: () => this.toast('Failed to download the PDF. Please try again.'),
+      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to download the PDF. Please try again.')),
     });
   }
 
@@ -174,7 +175,7 @@ export class XvFcDataReviewComponent {
     if (!yearId) return;
     this.service.getDocumentSignedUrl(yearId, targetCode).subscribe({
       next: (url) => window.open(url, '_blank', 'noopener'),
-      error: () => this.toast('Failed to open this document. Please try again.'),
+      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.')),
     });
   }
 
@@ -197,6 +198,7 @@ export class XvFcDataReviewComponent {
         existing: item.flagged
           ? { flagged: item.flagged, proposedValue: item.proposedValue, comment: item.comment }
           : null,
+        amountUnitLabel: '₹',
       },
       panelClass: this.themeClass ?? undefined,
     });
@@ -252,9 +254,9 @@ export class XvFcDataReviewComponent {
         this.uploadingSupportDoc.set(false);
         this.toast('Supporting document attached.');
       },
-      error: () => {
+      error: (err) => {
         this.uploadingSupportDoc.set(false);
-        this.toast('Failed to upload the supporting document. Please try again.');
+        this.toast(extractApiErrorMessage(err, 'Failed to upload the supporting document. Please try again.'));
       },
     });
   }
@@ -273,9 +275,9 @@ export class XvFcDataReviewComponent {
         this.uploadingDeclaration.set(false);
         this.toast('Declaration attached.');
       },
-      error: () => {
+      error: (err) => {
         this.uploadingDeclaration.set(false);
-        this.toast('Failed to upload the declaration. Please try again.');
+        this.toast(extractApiErrorMessage(err, 'Failed to upload the declaration. Please try again.'));
       },
     });
   }
@@ -303,9 +305,9 @@ export class XvFcDataReviewComponent {
         this.savingDraft.set(false);
         this.toast('Draft saved. Come back anytime to finish this review.');
       },
-      error: () => {
+      error: (err) => {
         this.savingDraft.set(false);
-        this.toast('Failed to save the draft. Please try again.');
+        this.toast(extractApiErrorMessage(err, 'Failed to save the draft. Please try again.'));
       },
     });
   }
@@ -346,9 +348,9 @@ export class XvFcDataReviewComponent {
           this.toast('FY ' + fy + ' review submitted.');
           void this.service.loadSummary();
         },
-        error: () => {
+        error: (err) => {
           this.submitting.set(false);
-          this.toast('Failed to submit. Please try again.');
+          this.toast(extractApiErrorMessage(err, 'Failed to submit. Please try again.'));
         },
       });
   }

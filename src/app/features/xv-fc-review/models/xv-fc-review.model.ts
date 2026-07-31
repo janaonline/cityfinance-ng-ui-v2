@@ -46,10 +46,10 @@ export interface XvFcLineItem {
   section: string;
   /** Further breakdown within a section — not every item has one. */
   subSection?: string | null;
-  /** Standardised amount — the backend always stores/returns this in ₹ Lakhs. Can be null. */
+  /** Standardised amount — AFS's backend always stores/returns this in whole ₹ (unlike Ptax, which uses ₹ Lakhs). Can be null. */
   standardizedAmount: number | null;
   flagged: boolean;
-  /** The ULB-entered correct value for a flagged row, always in ₹ Lakhs — a separate field from `comment`. */
+  /** The ULB-entered correct value for a flagged row, always in whole ₹ — a separate field from `comment`. */
   proposedValue: number | null;
   comment: string;
   /** Shape not yet surfaced in the UI — typed loosely until the backend contract is confirmed. */
