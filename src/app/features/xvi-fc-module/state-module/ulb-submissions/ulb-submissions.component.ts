@@ -4,10 +4,12 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 import { ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -91,6 +93,7 @@ export class UlbSubmissionsComponent {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly ulbSubmissionsService = inject(UlbSubmissionsService);
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly http = inject(HttpClient);
 
   readonly filterSelects = FILTER_SELECTS;
   readonly pageSize = signal(PAGE_SIZE);
@@ -167,6 +170,24 @@ export class UlbSubmissionsComponent {
 
   constructor() {
     if (this.isSelectedFormLive()) this.loadRows();
+
+    // The FY label cached in localStorage can be stale/empty (e.g. this session never went
+    // through years-selection) — resolve it authoritatively from the route's yearId instead.
+    const designYearId = this.resolveDesignYearId();
+    if (designYearId) {
+      this.http
+        .get<unknown>(`${environment.api.url2}xvi-fc/years`)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (response) => {
+            const r = response as { data?: Array<{ _id: string; year: string }> };
+            const items = Array.isArray(response) ? response : (r?.data ?? []);
+            const match = (items as Array<{ _id: string; year: string }>).find((y) => y._id === designYearId);
+            if (match) this.yearLabel.set(`FY ${match.year}`);
+          },
+          error: () => undefined,
+        });
+    }
 
     this.filterForm.valueChanges
       .pipe(
