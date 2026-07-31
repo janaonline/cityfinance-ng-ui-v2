@@ -55,6 +55,9 @@ const EDITABLE_FORM_STATUSES = new Set<FormStatusType>([
 
 const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<FormStatusType, string>>> = {
   [FORM_STATUS.UNDER_REVIEW_BY_STATE]: 'This form has been submitted to State DMA and is now locked for review.',
+  [FORM_STATUS.APPROVED_BY_STATE]: 'This form has been approved by your State DMA and is now locked.',
+  [FORM_STATUS.AWAITING_CLAIM_LETTER]:
+    'This form has been approved by your State DMA and is awaiting claim letter generation before moving to MoHUA.',
   [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: 'This form has been approved by the state and is now under review by MoHUA.',
   [FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA]: 'This form has been approved by MoHUA. No further changes are needed.',
 };
