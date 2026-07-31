@@ -94,3 +94,30 @@ a.menu-item.active {
     margin: 0;
   }
 }
+
+.menu-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu-item-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--nav-surface, #fff);
+
+  &--returned {
+    background: #c62828;
+  }
+
+  &--review {
+    background: #2563eb;
+  }
+
+  &--approved {
+    background: #15803d;
+  }
+}

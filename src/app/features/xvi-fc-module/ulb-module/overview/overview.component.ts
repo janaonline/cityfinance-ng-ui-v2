@@ -4,6 +4,7 @@ import {
   OverviewData,
 } from '../../shared/overview-card/overview-card.component';
 import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
+import { UlbNotificationService } from '../ulb-notification.service';
 import { UlbOverviewService } from './overview-card.service';
 import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 
@@ -16,6 +17,7 @@ import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 })
 export class OverviewComponent implements OnInit {
   private readonly overviewService = inject(UlbOverviewService);
+  private readonly ulbNotifications = inject(UlbNotificationService);
 
   get selectedYear(): string | null {
     return localStorage.getItem('xvifc_selectedYearString') ?? null;
@@ -36,6 +38,7 @@ export class OverviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadOverview();
+    void this.ulbNotifications.ensureLoadedForUlb(this.ulbId);
   }
 
   loadOverview(): void {

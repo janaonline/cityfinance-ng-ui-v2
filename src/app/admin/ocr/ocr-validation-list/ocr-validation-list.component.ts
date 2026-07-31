@@ -49,18 +49,6 @@ const PROGRESS_STEP_OPTIONS = [
   { value: 'financial_validation_failed', label: 'Financial Validation Failed' },
 ];
 
-const VALIDATION_MODEL_OPTIONS = [
-  'gemini-2.5-pro',
-  'gemini-2.5-flash',
-  'gemini-3.1-pro-preview',
-  'gemini-3.1-flash-lite',
-  'gemini-3.1-flash-lite-preview',
-  'gemini-3.1-flash-image-preview',
-  'gemini-3-pro-image-preview',
-  'gemini-3-flash-preview',
-  'gemini-3.5-flash',
-];
-
 @Component({
   standalone: true,
   selector: 'app-ocr-validation-list',
@@ -97,7 +85,7 @@ export class OcrValidationListComponent implements OnInit {
   readonly docTypeOptions = this.ocrService.documentTypes;
   readonly errorCodeOptions = ERROR_CODE_OPTIONS;
   readonly progressStepOptions = PROGRESS_STEP_OPTIONS;
-  readonly validationModelOptions = VALIDATION_MODEL_OPTIONS;
+  readonly validationModelOptions = this.ocrService.models.map((m) => m.value);
 
   readonly filterForm = this.fb.nonNullable.group({
     status: [''],

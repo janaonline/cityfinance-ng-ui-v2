@@ -1,0 +1,213 @@
+<div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="form-container">
+    <div class="top-accent"></div>
+
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack d-flex flex-column gap-4">
+        <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+
+        <div>
+          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">16th Finance Commission</div>
+
+          <h1 class="page-title mb-2">
+            @if (isCreateMode) {
+              New Claim Letter
+            } @else {
+              Claim Letter{{ claim() ? ' — Batch #' + claim()!.batchNumber : '' }}
+            }
+          </h1>
+
+          <p class="page-subtitle text-secondary mb-0">
+            Select the ULBs you are claiming Installment {{ installment }} funds for, and enter each ULB's claim amount.
+          </p>
+        </div>
+
+        <hr class="my-0 text-body-tertiary" />
+
+        @if (isLoading()) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        } @else if (loadError()) {
+          <div class="d-flex flex-column align-items-start gap-2 py-3">
+            <p class="text-secondary mb-0">We couldn't load this claim letter.</p>
+            <button type="button" matButton="outlined" (click)="loadDetail()" data-cy="claim-letter-detail-retry">
+              <i class="bi bi-arrow-clockwise me-1"></i>Retry
+            </button>
+          </div>
+        } @else {
+          @if (!isCreateMode && claim()) {
+            <app-form-progress formType="state" [formStatus]="currentFormStatusValue()"></app-form-progress>
+          }
+
+          @if (summaryTiles().length) {
+            <app-claim-letter-summary-tiles [tiles]="summaryTiles()" />
+          }
+
+          @if (formLevelErrors().length) {
+            <div
+              class="alert alert-danger d-flex align-items-start gap-2 py-2 mb-0"
+              role="alert"
+              data-cy="claim-letter-detail-form-errors-alert"
+            >
+              <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
+              <ul class="small mb-0 ps-3">
+                @for (message of formLevelErrors(); track message) {
+                  <li>{{ message }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (!canEdit() && !isCreateMode) {
+            <div class="alert alert-secondary py-2 mb-0" role="status" data-cy="claim-letter-detail-readonly-alert">
+              This claim letter is read-only in its current status.
+            </div>
+          }
+
+          @if (batchNarrative().length) {
+            <div
+              class="alert alert-primary d-flex align-items-start gap-2 py-2 mt-2 mb-0"
+              role="note"
+              data-cy="new-claim-narative"
+            >
+              <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+              <ul class="small mb-0 ps-3" data-cy="claim-letter-detail-narrative">
+                @for (line of batchNarrative(); track line) {
+                  <li>{{ line }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-card-title class="small fw-semibold">Verify Claim Amount</mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content class="p-2">
+              <app-claim-ulb-table
+                [rows]="rows"
+                [savedRows]="savedUlbRows()"
+                [canEdit]="canEdit()"
+                [stateId]="stateId"
+                [yearId]="yearId"
+                [claimLetterId]="claimLetterId() ?? undefined"
+              ></app-claim-ulb-table>
+            </mat-card-content>
+          </mat-card>
+
+          @if (!isCreateMode && signedClaimFileField(); as field) {
+            <app-dynamic-form
+              [field]="field"
+              [group]="signedFileForm"
+              [mode]="canEdit() ? 'edit' : 'view'"
+            ></app-dynamic-form>
+          }
+        }
+      </div>
+    </div>
+
+    @if (!isLoading() && !loadError() && (isCreateMode || canEdit())) {
+      <div class="acknowledgement border-top p-3">
+        @if (rowValidationMessage(); as message) {
+          <div
+            class="alert alert-danger d-flex align-items-start gap-2 py-2 mb-2"
+            role="alert"
+            data-cy="claim-letter-detail-row-validation-alert"
+          >
+            <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
+            <span class="small">{{ message }}</span>
+          </div>
+        }
+
+        <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+          @if (isCreateMode) {
+            <button
+              type="button"
+              matButton="outlined"
+              [disabled]="isSaving()"
+              (click)="cancel()"
+              data-cy="claim-letter-detail-cancel"
+            >
+              <i class="bi bi-x-circle-fill d-md-none"></i>
+              <span class="d-none d-md-inline">Cancel</span>
+            </button>
+
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="isSaving() || hasInvalidRows()"
+              (click)="createDraft()"
+              data-cy="claim-letter-detail-create"
+            >
+              @if (isSaving()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Creating...</span>
+              } @else {
+                <i class="bi bi-plus-lg d-md-none"></i>
+                <span class="d-none d-md-inline">Create Draft</span>
+              }
+            </button>
+          } @else {
+            <button
+              type="button"
+              matButton="outlined"
+              class="text-danger"
+              [disabled]="isSaving() || isAbandoning() || isSubmitting()"
+              (click)="abandonDraft()"
+              data-cy="claim-letter-detail-abandon"
+            >
+              @if (isAbandoning()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Abandoning...</span>
+              } @else {
+                <i class="bi bi-x-circle d-md-none"></i>
+                <span class="d-none d-md-inline">Abandon Draft</span>
+              }
+            </button>
+
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="isSaving() || isAbandoning() || isSubmitting() || hasInvalidRows()"
+              (click)="saveChanges()"
+              data-cy="claim-letter-detail-save"
+            >
+              @if (isSaving()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Saving...</span>
+              } @else {
+                <i class="bi bi-bookmark-check-fill d-md-none"></i>
+                <span class="d-none d-md-inline">Save Changes</span>
+              }
+            </button>
+
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="isSaving() || isAbandoning() || isSubmitting() || !claim()?.hasSignedFile || finalBatchIncomplete()"
+              (click)="submitToMohua()"
+              data-cy="claim-letter-detail-submit"
+            >
+              @if (isSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Submitting...</span>
+              } @else {
+                <i class="bi bi-send-check-fill d-md-none"></i>
+                <span class="d-none d-md-inline">Submit to MoHUA</span>
+              }
+            </button>
+          }
+        </div>
+
+        @if (finalBatchIncomplete()) {
+          <div class="text-danger small mt-2" data-cy="claim-letter-final-batch-blocked">
+            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
+            {{ eligibilityOverview()?.remainingUlbCount }} ULB(s) are still unclaimed — every ULB must be included in
+            this final batch before it can be submitted.
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

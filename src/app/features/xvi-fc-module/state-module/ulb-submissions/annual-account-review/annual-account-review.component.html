@@ -245,7 +245,12 @@
               <div class="doc-row">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
                   <div>
-                    <p class="doc-title fw-semibold mb-0">{{ row.title }}</p>
+                    <p class="doc-title fw-semibold mb-0">
+                      {{ row.title }}
+                      @if (row.required === false) {
+                        <span class="optional-badge ms-1">Optional</span>
+                      }
+                    </p>
                     @if (row.uploadedAt) {
                       <p class="doc-date text-secondary small mb-0">
                         Uploaded on: {{ row.uploadedAt | date: 'mediumDate' }}
@@ -254,69 +259,63 @@
                   </div>
 
                   <div class="d-flex align-items-center gap-3 doc-row-controls">
-                    @if (row.latestDecision?.status === 'APPROVED') {
-                      <span class="badge rounded-pill doc-status-badge passed-badge">Approved</span>
-                    } @else if (row.latestDecision?.status === 'RETURNED') {
-                      <span class="badge rounded-pill doc-status-badge failed-badge">Returned</span>
-                    } @else if (row.processingStatus === 'PASSED') {
-                      <span class="badge rounded-pill doc-status-badge passed-badge">Passed</span>
-                    } @else if (row.processingStatus === 'FAILED') {
-                      <span class="badge rounded-pill doc-status-badge failed-badge">Failed</span>
+                    @if (row.required === false && !row.uploadId) {
+                      <span class="text-secondary small fst-italic">ULB has not uploaded this document</span>
                     } @else {
-                      <span class="badge rounded-pill doc-status-badge text-bg-light text-dark border">{{
-                        row.processingStatus
-                      }}</span>
-                    }
+                      @if (row.required !== false) {
+                        @if (row.latestDecision?.status === 'APPROVED') {
+                          <span class="badge rounded-pill doc-status-badge passed-badge">Approved</span>
+                        } @else if (row.latestDecision?.status === 'RETURNED') {
+                          <span class="badge rounded-pill doc-status-badge failed-badge">Returned</span>
+                        } @else if (row.processingStatus === 'PASSED') {
+                          <span class="badge rounded-pill doc-status-badge passed-badge">Passed</span>
+                        } @else if (row.processingStatus === 'FAILED') {
+                          <span class="badge rounded-pill doc-status-badge failed-badge">Failed</span>
+                        } @else {
+                          <span class="badge rounded-pill doc-status-badge text-bg-light text-dark border">{{
+                            row.processingStatus
+                          }}</span>
+                        }
+                      }
 
-                    @if (row.wasReuploaded) {
-                      <span
-                        class="badge rounded-pill doc-status-badge reuploaded-badge"
-                        matTooltip="The ULB uploaded a corrected file after your last decision"
-                      >
-                        <i class="bi bi-arrow-repeat me-1"></i>Re-uploaded
-                      </span>
-                    }
+                      @if (row.wasReuploaded) {
+                        <span
+                          class="badge rounded-pill doc-status-badge reuploaded-badge"
+                          matTooltip="The ULB uploaded a corrected file after your last decision"
+                        >
+                          <i class="bi bi-arrow-repeat me-1"></i>Re-uploaded
+                        </span>
+                      }
 
-                    <button
-                      type="button"
-                      matButton="outlined"
-                      class="view-pdf-btn"
-                      [disabled]="!row.uploadId"
-                      (click)="previewFile(row)"
-                    >
-                      <i class="bi bi-eye me-1"></i>View PDF
-                    </button>
-
-                    @if (row.latestDecision?.status === 'APPROVED') {
-                      <span class="decision-badge decision-badge--approved" matTooltip="Approved — locked">
-                        <i class="bi bi-lock-fill"></i>
-                      </span>
-                    } @else if (row.latestDecision?.status === 'RETURNED') {
-                      <span
-                        class="decision-badge decision-badge--returned"
-                        matTooltip="Returned — awaiting a corrected re-upload from the ULB"
-                      >
-                        <i class="bi bi-hourglass-split"></i>
-                      </span>
-                    } @else if (canReview() && returningDocId() !== row.docId) {
                       <button
                         type="button"
-                        class="icon-action icon-action--approve"
-                        [disabled]="isDeciding() || row.processingStatus !== 'PASSED'"
-                        matTooltip="Approve this document"
-                        (click)="approveDocument(row.docId)"
+                        matButton="outlined"
+                        class="view-pdf-btn"
+                        [disabled]="!row.uploadId || decidingDocId() === row.docId"
+                        (click)="previewFile(row)"
                       >
-                        <i class="bi bi-check-lg"></i>
+                        @if (decidingDocId() === row.docId) {
+                          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        } @else {
+                          <i class="bi bi-eye me-1"></i>
+                        }
+                        View PDF
                       </button>
-                      <button
-                        type="button"
-                        class="icon-action icon-action--return"
-                        [disabled]="isDeciding() || row.processingStatus !== 'PASSED'"
-                        matTooltip="Return this document"
-                        (click)="startReturn(row.docId)"
-                      >
-                        <i class="bi bi-x-lg"></i>
-                      </button>
+
+                      @if (returningDocId() !== row.docId) {
+                        @if (decidingDocId() === row.docId) {
+                          <span class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></span>
+                        } @else {
+                          <app-document-action-row
+                            role="STATE"
+                            [sectionStatusId]="sectionStatusId()"
+                            [gates]="actionGates()"
+                            [doc]="toRuntimeState(row)"
+                            [readOnly]="!canReview() || isDeciding()"
+                            (actionClicked)="onDocAction($event)"
+                          />
+                        }
+                      }
                     }
                   </div>
                 </div>
@@ -399,7 +398,12 @@
             [disabled]="isDeciding()"
             (click)="decideSection('RETURNED')"
           >
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Return Section
+            @if (sectionDecisionInFlight() === 'RETURNED') {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            } @else {
+              <i class="bi bi-arrow-counterclockwise me-1"></i>
+            }
+            Return Section
           </button>
           <button
             type="button"
@@ -410,7 +414,12 @@
             "
             (click)="decideSection('APPROVED')"
           >
-            <i class="bi bi-check-circle-fill me-1"></i>Approve Section
+            @if (sectionDecisionInFlight() === 'APPROVED') {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            } @else {
+              <i class="bi bi-check-circle-fill me-1"></i>
+            }
+            Approve Section
           </button>
         </div>
       }

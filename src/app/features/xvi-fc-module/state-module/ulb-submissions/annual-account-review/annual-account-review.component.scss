@@ -83,6 +83,22 @@
   font-size: 0.8rem;
 }
 
+.optional-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 7px;
+  height: 16px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .doc-date {
   font-size: 0.68rem;
   margin-top: 0.1rem;
@@ -117,58 +133,6 @@
 
   i {
     font-size: 0.85rem;
-  }
-}
-
-.icon-action {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid transparent;
-  display: inline-grid;
-  place-items: center;
-  background: #fff;
-  transition: all 150ms ease;
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  &--approve {
-    border-color: #1e7e42;
-    color: #1e7e42;
-
-    &:not(:disabled):hover {
-      background: #e6f6ec;
-    }
-  }
-
-  &--return {
-    border-color: #c62828;
-    color: #c62828;
-
-    &:not(:disabled):hover {
-      background: #fdecea;
-    }
-  }
-}
-
-.decision-badge {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  display: inline-grid;
-  place-items: center;
-
-  &--approved {
-    background: #e6f6ec;
-    color: #1e7e42;
-  }
-
-  &--returned {
-    background: #fdecea;
-    color: #c62828;
   }
 }
 
