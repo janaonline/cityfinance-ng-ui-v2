@@ -35,50 +35,24 @@
 .stat-card {
   position: relative;
   text-align: left;
-  background: var(--stat-bg, #fff);
-  border: 1px solid var(--stat-border, #e9eef2);
+  // One uniform color for every card regardless of status — only the active card's
+  // border/shadow distinguishes selection.
+  --stat-bg: #eef6ff;
+  --stat-border: #cfe3fb;
+  --stat-accent: #2563eb;
+  background: var(--stat-bg);
+  border: 1px solid var(--stat-border);
   border-radius: 0.6rem;
   padding: 0.55rem 0.7rem;
   transition: all 150ms ease;
 
   &:hover {
-    border-color: var(--stat-accent, #b9c1cb);
+    border-color: var(--stat-accent);
   }
 
   &--active {
-    border-color: var(--stat-accent, var(--color-primary, #114551));
-    box-shadow: 0 0 0 1px var(--stat-accent, var(--color-primary, #114551));
-  }
-
-  // Status → color mapping: neutral (not started) through the review pipeline to done.
-  &--NOT_STARTED {
-    --stat-bg: #f3f4f6;
-    --stat-border: #e2e4e8;
-    --stat-accent: #6b7280;
-  }
-
-  &--IN_PROGRESS {
-    --stat-bg: #eef4ff;
-    --stat-border: #dbe6fe;
-    --stat-accent: #3b82f6;
-  }
-
-  &--UNDER_STATE_REVIEW {
-    --stat-bg: #fff7ed;
-    --stat-border: #fde9cf;
-    --stat-accent: #d97706;
-  }
-
-  &--RETURNED_BY_STATE {
-    --stat-bg: #fdecea;
-    --stat-border: #fbd6d1;
-    --stat-accent: #c62828;
-  }
-
-  &--UNDER_REVIEW_BY_MOHUA {
-    --stat-bg: #eff6ff;
-    --stat-border: #d9e9ff;
-    --stat-accent: #2563eb;
+    border-color: var(--stat-accent);
+    box-shadow: 0 0 0 1px var(--stat-accent);
   }
 }
 

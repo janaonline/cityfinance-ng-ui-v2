@@ -15,6 +15,7 @@ import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.c
 import type { UploadPageConfig } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.component';
 import { UploadDocumentsService } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.service';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import type {
   ActionGate,
   DocumentRuntimeState,
@@ -36,6 +37,8 @@ interface SectionPermissions {
   canUpload: boolean;
   canReview: boolean;
   canApprove: boolean;
+  /** True only while the section is Approved by State — the door STATE can still undo through. */
+  canUndoApproval: boolean;
   canMohuaReview: boolean;
   canMohuaApprove: boolean;
 }
@@ -104,7 +107,7 @@ interface BankAccountData {
   stateDecision: DecisionEntry | null;
   mohuaDecision: DecisionEntry | null;
   submittedAt: string | null;
-  permissions: { canReview: boolean; canApprove: boolean };
+  permissions: { canReview: boolean; canApprove: boolean; canUndoApproval: boolean };
 }
 
 /** Raw shape returned by GET /xvi-fc/bank-account — the record id comes back as `_id`, not `id`. */
@@ -151,6 +154,7 @@ const NOT_STARTED_PERMISSIONS: SectionPermissions = {
   canUpload: false,
   canReview: false,
   canApprove: false,
+  canUndoApproval: false,
   canMohuaReview: false,
   canMohuaApprove: false,
 };
@@ -196,7 +200,7 @@ const RETURN_NOTE_MAX_LENGTH = 200;
 @Component({
   selector: 'app-annual-account-review',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatTooltipModule, DocumentActionRowComponent],
+  imports: [DatePipe, MatButtonModule, MatTooltipModule, DocumentActionRowComponent, PageErrorStateComponent],
   templateUrl: './annual-account-review.component.html',
   styleUrl: './annual-account-review.component.scss',
   animations: [TAB_SLIDE],
@@ -353,6 +357,7 @@ export class AnnualAccountReviewComponent {
 
   readonly canReview = computed(() => this.currentSection()?.permissions.canReview ?? false);
   readonly canApprove = computed(() => this.currentSection()?.permissions.canApprove ?? false);
+  readonly canUndoApproval = computed(() => this.currentSection()?.permissions.canUndoApproval ?? false);
 
   // Inputs for the shared document-action-row component — the gate is a UI-visibility hint
   // only; canReview() (real backend permission) is what actually gates the click.
@@ -365,6 +370,23 @@ export class AnnualAccountReviewComponent {
 
   readonly canReviewPfms = computed(() => this.bankAccountData()?.permissions.canReview ?? false);
   readonly canApprovePfms = computed(() => this.bankAccountData()?.permissions.canApprove ?? false);
+  readonly canUndoApprovalPfms = computed(() => this.bankAccountData()?.permissions.canUndoApproval ?? false);
+
+  /** Status-to-badge-color for the PFMS header — reuses the same visual language as the per-document badges. */
+  readonly pfmsStatusBadgeClass = computed(() => {
+    switch (this.bankAccountData()?.currentFormStatus) {
+      case 4: // RETURNED_BY_STATE
+      case 6: // RETURNED_BY_MOHUA
+        return 'failed-badge';
+      case 8: // APPROVED_BY_STATE
+      case 7: // SUBMISSION_ACKNOWLEDGED_BY_MOHUA
+        return 'passed-badge';
+      case 9: // AWAITING_CLAIM_LETTER
+        return 'reuploaded-badge';
+      default: // NOT_STARTED, IN_PROGRESS, UNDER_REVIEW_BY_STATE, UNDER_REVIEW_BY_MOHUA
+        return 'pending-badge';
+    }
+  });
 
   // A stateDecision only counts against the file it was made on — same staleness rule as the
   // per-document decisions above. The bank account record's stateDecision isn't cleared when
@@ -553,10 +575,10 @@ export class AnnualAccountReviewComponent {
     } else {
       const message =
         approvedCount === 0
-          ? `This will approve all ${total} documents in this section and hand it off to MoHUA for their review. This cannot be undone.`
+          ? `This will approve all ${total} documents in this section. You can still undo this from here until you generate the claim letter.`
           : remainingCount > 0
-            ? `You've already approved ${approvedCount} of ${total} documents individually. Approving the section will automatically approve the remaining ${remainingCount} as well and hand it off to MoHUA for their review. This cannot be undone.`
-            : 'This hands the section off to MoHUA for their review. This cannot be undone.';
+            ? `You've already approved ${approvedCount} of ${total} documents individually. Approving the section will automatically approve the remaining ${remainingCount} as well. You can still undo this from here until you generate the claim letter.`
+            : 'You can still undo this from here until you generate the claim letter.';
 
       const confirmed = await firstValueFrom(
         this.confirmDialogService.confirm(
@@ -593,12 +615,43 @@ export class AnnualAccountReviewComponent {
     }
   }
 
+  async undoSectionApproval(): Promise<void> {
+    const id = this.statusData()?.annualAccountId;
+    const section = this.activeSection();
+    if (!id || section === 'PFMS') return;
+
+    const confirmed = await firstValueFrom(
+      this.confirmDialogService.confirm(
+        {
+          title: 'Undo this approval?',
+          message: 'This will move the section back to Under Review by State, so you can re-decide it.',
+          confirmText: 'Yes, undo',
+          confirmButtonColor: 'warn',
+          icon: 'bi-arrow-counterclockwise',
+        },
+        this.themeClass ? { panelClass: this.themeClass } : undefined,
+      ),
+    );
+    if (!confirmed) return;
+
+    this.isDeciding.set(true);
+    try {
+      await firstValueFrom(this.http.post<unknown>(`${API_ANNUAL}${id}/undo-approval?section=${section}`, {}));
+      this.utilityService.triggerSnackbar('Approval undone.');
+      await this.loadStatus();
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+    }
+  }
+
   async approvePfms(): Promise<void> {
     const confirmed = await firstValueFrom(
       this.confirmDialogService.confirm(
         {
           title: 'Approve this bank account form?',
-          message: 'This hands the form off to MoHUA for their review. This cannot be undone.',
+          message: 'You can still undo this from here until you generate the claim letter.',
           confirmText: 'Yes, approve',
           confirmButtonColor: 'primary',
           icon: 'bi-check-circle-fill',
@@ -608,6 +661,36 @@ export class AnnualAccountReviewComponent {
     );
     if (!confirmed) return;
     await this.submitPfmsDecision('APPROVED', undefined);
+  }
+
+  async undoPfmsApproval(): Promise<void> {
+    const id = this.bankAccountData()?.id;
+    if (!id) return;
+
+    const confirmed = await firstValueFrom(
+      this.confirmDialogService.confirm(
+        {
+          title: 'Undo this approval?',
+          message: 'This will move the form back to Under Review by State, so you can re-decide it.',
+          confirmText: 'Yes, undo',
+          confirmButtonColor: 'warn',
+          icon: 'bi-arrow-counterclockwise',
+        },
+        this.themeClass ? { panelClass: this.themeClass } : undefined,
+      ),
+    );
+    if (!confirmed) return;
+
+    this.isDeciding.set(true);
+    try {
+      await firstValueFrom(this.http.post<unknown>(`${API_BANK}${id}/undo-approval`, {}));
+      this.utilityService.triggerSnackbar('Approval undone.');
+      await this.loadBankAccount();
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+    }
   }
 
   /** Inline return-reason panel state for the PFMS tab — same slide-open pattern as per-document returns. */
@@ -757,7 +840,7 @@ export class AnnualAccountReviewComponent {
     }
   }
 
-  private async loadStatus(): Promise<void> {
+  async loadStatus(): Promise<void> {
     this.isLoading.set(true);
     this.loadError.set(false);
 
