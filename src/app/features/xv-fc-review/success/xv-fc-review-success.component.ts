@@ -28,7 +28,7 @@ export class XvFcReviewSuccessComponent {
 
   downloadAcknowledgement() {
     this.downloading = true;
-    this.service.downloadPdf(this.fy, 'lakhs').subscribe({
+    this.service.downloadPdf(this.fy, 'whole').subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

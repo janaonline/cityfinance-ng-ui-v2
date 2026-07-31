@@ -44,8 +44,8 @@ export class XvFcReviewPreviewComponent {
     return this.detail?.supportingDocument ?? null;
   }
 
-  formatAmount(amountInLakhs: number | null): string {
-    return formatXvFcAmount(amountInLakhs, this.unit);
+  formatAmount(amountInWholeRupees: number | null): string {
+    return formatXvFcAmount(amountInWholeRupees, this.unit, 'whole');
   }
 
   onBack() {

@@ -24,6 +24,7 @@ import {
 } from '../flag-row-dialog/flag-row-dialog.component';
 import { XvFcCurrencyUnit, XV_FC_CURRENCY_UNIT_LABELS } from '../models/xv-fc-review.model';
 import { formatXvFcAmount } from '../xv-fc-review-format.util';
+import { extractApiErrorMessage } from '../xv-fc-review-error.util';
 import { PageErrorStateComponent } from '../../xvi-fc-module/shared/page-error-state/page-error-state.component';
 
 type Screen = 'review' | 'preview' | 'success';
@@ -252,9 +253,9 @@ export class PtaxReviewComponent {
         this.uploadingDeclaration.set(false);
         this.toast('Declaration uploaded.');
       },
-      error: () => {
+      error: (err) => {
         this.uploadingDeclaration.set(false);
-        this.toast('Failed to upload the declaration. Please try again.');
+        this.toast(extractApiErrorMessage(err, 'Failed to upload the declaration. Please try again.'));
       },
     });
   }
@@ -268,7 +269,7 @@ export class PtaxReviewComponent {
     if (!yearId) return;
     this.service.getDocumentSignedUrl(yearId, PTAX_DECLARATION_TARGET_CODE).subscribe({
       next: (url) => window.open(url, '_blank', 'noopener'),
-      error: () => this.toast('Failed to open this document. Please try again.'),
+      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.')),
     });
   }
 
@@ -286,9 +287,9 @@ export class PtaxReviewComponent {
         this.uploadingSupportDoc.set(false);
         this.toast('Supporting document attached.');
       },
-      error: () => {
+      error: (err) => {
         this.uploadingSupportDoc.set(false);
-        this.toast('Failed to upload the supporting document. Please try again.');
+        this.toast(extractApiErrorMessage(err, 'Failed to upload the supporting document. Please try again.'));
       },
     });
   }
@@ -302,7 +303,7 @@ export class PtaxReviewComponent {
     if (!yearId) return;
     this.service.getDocumentSignedUrl(yearId, PTAX_SUPPORTING_DOCUMENT_TARGET_CODE).subscribe({
       next: (url) => window.open(url, '_blank', 'noopener'),
-      error: () => this.toast('Failed to open this document. Please try again.'),
+      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.')),
     });
   }
 
@@ -352,9 +353,9 @@ export class PtaxReviewComponent {
           this.toast('FY ' + fy + ' Ptax review submitted.');
           void this.service.loadSummary();
         },
-        error: () => {
+        error: (err) => {
           this.submitting.set(false);
-          this.toast('Failed to submit. Please try again.');
+          this.toast(extractApiErrorMessage(err, 'Failed to submit. Please try again.'));
         },
       });
   }

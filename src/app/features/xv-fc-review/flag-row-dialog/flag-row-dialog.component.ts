@@ -33,6 +33,8 @@ export interface FlagRowDialogData {
   validation?: FlagRowDialogValidation | null;
   /** Cross-field ordering constraint against a sibling metric's current effective value, if any applies to this row. */
   orderConstraint?: FlagRowDialogOrderConstraint | null;
+  /** Unit label shown in the "correct value" placeholder for amount-type rows. Defaults to "₹ lakhs" (Ptax's base unit) — AFS passes "₹" since its base unit is whole rupees. */
+  amountUnitLabel?: string;
 }
 
 export type FlagRowDialogResult =
@@ -98,7 +100,7 @@ export class FlagRowDialogComponent {
   readonly correctedValuePlaceholder =
     this.validation && !this.validation.isRupee
       ? 'Enter the correct count'
-      : 'Enter the correct amount (₹ lakhs)';
+      : `Enter the correct amount (${this.data.amountUnitLabel ?? '₹ lakhs'})`;
 
   readonly correctedValueStep = this.validation
     ? this.validation.decimalLimit > 0
