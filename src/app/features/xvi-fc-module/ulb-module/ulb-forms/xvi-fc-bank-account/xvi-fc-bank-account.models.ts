@@ -72,25 +72,6 @@ export interface XviFcIfscLookupResponse {
   bankDetails: XviFcBankDetails;
 }
 
-export interface S3SignedUrlRequestItem {
-  fileName: string;
-  folder: string;
-  mimeType: string;
-  fileSize?: number;
-  pages?: number;
-  uploadId: string;
-  expiresIn: number;
-}
-
-export interface S3UrlResult {
-  url: string;
-  fileUrl: string;
-  fileAlias?: string;
-  path?: string;
-  fileSize?: number;
-  uploadId?: string;
-}
-
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;

@@ -8,6 +8,8 @@ export interface S3SignedUrlRequestItem {
   fileName: string;
   folder: string;
   mimeType: string;
+  fileSize?: number;
+  pages?: number;
   uploadId?: string;
   expiresIn: number;
 }
@@ -53,16 +55,7 @@ export class FileService {
     // .pipe(map((response) => this.changeKeys(response['data'][0])));
   }
 
-  // getSignedUrls(items: S3SignedUrlRequestItem[]): Observable<S3UrlResult[]> {
-  getSignedUrls(fileName: File['name'], fileType: File['type'], folderName: string): Observable<S3UrlResult[]> {
-    const items: S3SignedUrlRequestItem[] = [
-      {
-        fileName,
-        folder: folderName,
-        mimeType: fileType,
-        expiresIn: 3600,
-      },
-    ];
+  getSignedUrls(items: S3SignedUrlRequestItem[]): Observable<S3UrlResult[]> {
     return this.http
       .post<ApiResponse<S3UrlResult[]> | S3UrlResult[]>(`${environment.api.url2}file/signed-url`, items)
       .pipe(map((res) => this.unwrap(res)));

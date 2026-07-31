@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UploadDocumentsService } from './upload-documents.service';
+import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -244,6 +245,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly permissions = inject(AuthPermissionService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
+  private readonly fileService = inject(FileService);
 
   readonly canUpload = () => this.permissions.canUploadDocuments();
   readonly canDelete = () => this.permissions.canDeleteDocuments();
@@ -492,14 +494,13 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       // Step 1 — Get presigned PUT URL from generic S3 endpoint
       const uploadId = crypto.randomUUID();
       const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
-      const presignResult = await firstValueFrom(
-        this.http.post<unknown>(`${API}file/signed-url`, [
+      const [presignData] = await firstValueFrom(
+        this.fileService.getSignedUrls([
           { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
         ]),
       );
-      const [presignData] = unwrap<Array<{ url: string; path: string }>>(presignResult);
       const presignedUrl = presignData.url;
-      const s3Key = presignData.path;
+      const s3Key = presignData.path!;
 
       // Step 2 — Upload directly to S3 using fetch (bypasses Angular interceptors — auth headers must not reach S3)
       const s3Response = await fetch(presignedUrl, {
