@@ -595,7 +595,7 @@ export class FileComponent implements OnInit {
     this.startUpload(file);
 
     this.fileService
-      .getSignedUrls(file.name, file.type, this.uploadFolderName())
+      .getSignedUrls([{ fileName: file.name, folder: this.uploadFolderName(), mimeType: file.type, expiresIn: 3600 }])
       .pipe(
         map((response) => this.resolveUploadTarget(response)),
         switchMap((uploadTarget) =>

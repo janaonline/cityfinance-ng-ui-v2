@@ -36,7 +36,9 @@ export type ReviewStatus =
   | 'RETURNED_BY_STATE'
   | 'UNDER_REVIEW_BY_MOHUA'
   | 'RETURNED_BY_MOHUA'
-  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA';
+  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
+  | 'APPROVED_BY_STATE'
+  | 'AWAITING_CLAIM_LETTER';
 
 /** One clickable stat card, grouping one or more underlying statuses into a single reviewer-facing bucket. */
 export interface StatusBucket {
@@ -55,7 +57,13 @@ export const STATUS_BUCKETS: readonly StatusBucket[] = [
     statuses: ['IN_PROGRESS', 'RETURNED_BY_MOHUA'],
     icon: 'hourglass-split',
   },
-  { key: 'UNDER_STATE_REVIEW', label: 'Under State Review', statuses: ['UNDER_REVIEW_BY_STATE'], icon: 'pencil-square' },
+  { key: 'UNDER_STATE_REVIEW', label: 'Under Review by State', statuses: ['UNDER_REVIEW_BY_STATE'], icon: 'pencil-square' },
+  {
+    key: 'APPROVED_BY_STATE',
+    label: 'Approved by State',
+    statuses: ['APPROVED_BY_STATE'],
+    icon: 'check-circle',
+  },
   {
     key: 'RETURNED_BY_STATE',
     label: 'Returned by State',
@@ -78,6 +86,8 @@ export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   UNDER_REVIEW_BY_MOHUA: 'Forwarded to MoHUA',
   RETURNED_BY_MOHUA: 'Returned by MoHUA',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'Approved by MoHUA',
+  APPROVED_BY_STATE: 'Approved by State',
+  AWAITING_CLAIM_LETTER: 'Awaiting Claim Letter',
 };
 
 export interface UlbSubmissionRow {

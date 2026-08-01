@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UploadDocumentsService } from './upload-documents.service';
+import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -141,7 +142,9 @@ type AnnualAccountFormStatus =
   | 'RETURNED_BY_STATE'
   | 'UNDER_REVIEW_BY_MOHUA'
   | 'RETURNED_BY_MOHUA'
-  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA';
+  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
+  | 'APPROVED_BY_STATE'
+  | 'AWAITING_CLAIM_LETTER';
 
 // Statuses in which the ULB may still upload/edit/submit — mirrors the backend's canUlbEditForm allow-list.
 const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
@@ -153,6 +156,9 @@ const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
 
 const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, string>>> = {
   UNDER_REVIEW_BY_STATE: 'This section has been submitted to State DMA and is now locked for review.',
+  APPROVED_BY_STATE: 'This section has been approved by your State DMA and is now locked.',
+  AWAITING_CLAIM_LETTER:
+    'This section has been approved by your State DMA and is awaiting claim letter generation before moving to MoHUA.',
   UNDER_REVIEW_BY_MOHUA: 'This section has been approved by the state and is now under review by MoHUA.',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'This section has been approved by MoHUA. No further changes are needed.',
 };
@@ -244,6 +250,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly permissions = inject(AuthPermissionService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
+  private readonly fileService = inject(FileService);
 
   readonly canUpload = () => this.permissions.canUploadDocuments();
   readonly canDelete = () => this.permissions.canDeleteDocuments();
@@ -492,14 +499,13 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       // Step 1 — Get presigned PUT URL from generic S3 endpoint
       const uploadId = crypto.randomUUID();
       const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
-      const presignResult = await firstValueFrom(
-        this.http.post<unknown>(`${API}file/signed-url`, [
+      const [presignData] = await firstValueFrom(
+        this.fileService.getSignedUrls([
           { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
         ]),
       );
-      const [presignData] = unwrap<Array<{ url: string; path: string }>>(presignResult);
       const presignedUrl = presignData.url;
-      const s3Key = presignData.path;
+      const s3Key = presignData.path!;
 
       // Step 2 — Upload directly to S3 using fetch (bypasses Angular interceptors — auth headers must not reach S3)
       const s3Response = await fetch(presignedUrl, {
