@@ -1,4 +1,5 @@
 import { isUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
+import { getXviFcFieldErrorMessage, getXviFcRowErrorMessage } from '../../common/utils/xvi-fc-error-lookup.utils';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -165,9 +166,12 @@ export function buildDevolutionFinalSubmitPayloadData(
 
 /** Returns the backend message for a `newUlbsAdded` error on `excelFile`, or null when absent. */
 export function getRegisterUlbErrorMessage(errors: ApiErrorMap | undefined): string | null {
-  const excelErrors = errors?.['excelFile'] ?? [];
-  const registerError = excelErrors.find((error) => error.code === 'newUlbsAdded');
-  return registerError?.message ?? null;
+  return getXviFcFieldErrorMessage(errors, 'excelFile', 'newUlbsAdded');
+}
+
+/** Returns the message of the first row-level `duplicate` ULB error, or null when absent. */
+export function getDuplicateUlbMessage(rowErrors: DfRowValidationError[] | undefined): string | null {
+  return getXviFcRowErrorMessage(rowErrors, 'duplicate');
 }
 
 export function getDfValidationStatusLabel(status: DfValidationStatus): string {

@@ -409,6 +409,142 @@ describe('ElectedBodyStatusComponent', () => {
     expect(getControl('electedBodyExcelFile')?.hasError('newUlbsAdded')).toBeTrue();
   });
 
+  it('validateExcel 400 with newUlbsAdded shows a danger snackbar with the specific backend message', () => {
+    eulbService.validateExcel.and.returnValue(
+      throwError(() => ({
+        error: {
+          statusCode: 400,
+          message: 'Validation failed.',
+          errors: {
+            electedBodyExcelFile: [
+              {
+                field: 'electedBodyExcelFile',
+                message: 'You have added 1 ULB(s) not registered in City Finance. Please register before proceeding.',
+                code: 'newUlbsAdded',
+              },
+            ],
+          },
+        },
+      })),
+    );
+    utilityService.triggerSnackbar.calls.reset();
+
+    setControlValue('electedBodyExcelFile', fileValue);
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+      'You have added 1 ULB(s) not registered in City Finance. Please register before proceeding.',
+      'snackbar-danger',
+    );
+  });
+
+  it('revalidateUploadedExcel 400 with newUlbsAdded shows a danger snackbar with the specific backend message', () => {
+    eulbService.revalidateUploadedExcel.and.returnValue(
+      throwError(() => ({
+        error: {
+          statusCode: 400,
+          message: 'Validation failed.',
+          errors: {
+            electedBodyExcelFile: [
+              {
+                field: 'electedBodyExcelFile',
+                message: 'You have added 2 ULB(s) not registered in City Finance. Please register before proceeding.',
+                code: 'newUlbsAdded',
+              },
+            ],
+          },
+        },
+      })),
+    );
+    utilityService.triggerSnackbar.calls.reset();
+
+    component.onSupportingAction({ fieldKey: 'electedBodyExcelFile', actionId: 'revalidate-excel' });
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+      'You have added 2 ULB(s) not registered in City Finance. Please register before proceeding.',
+      'snackbar-danger',
+    );
+  });
+
+  it('validateExcel 200 INVALID with a duplicate row shows the specific duplicate message as a second snackbar', () => {
+    const summary = {
+      dbUlbCount: 42,
+      maxAllowedExcelRows: 42,
+      excelRowCount: 42,
+      matchedDbUlbCount: 42,
+      missingDbUlbCount: 0,
+      extraExcelRowCount: 0,
+      errorRowCount: 1,
+      validationStatus: 'INVALID' as const,
+      activeDatasetVersion: 1,
+    };
+    eulbService.validateExcel.and.returnValue(
+      of({
+        data: {
+          validationStatus: 'INVALID',
+          summary,
+          errors: [
+            {
+              field: 'censusCode',
+              code: 'duplicate',
+              message: 'A ULB with this census code already exists for the selected design year.',
+            },
+          ],
+        },
+      }),
+    );
+    utilityService.triggerSnackbar.calls.reset();
+
+    setControlValue('electedBodyExcelFile', fileValue);
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+      'Excel validation completed with errors. Please review uploaded data.',
+      'snackbar-danger',
+    );
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+      'A ULB with this census code already exists for the selected design year.',
+      'snackbar-danger',
+    );
+  });
+
+  it('revalidateUploadedExcel success with a duplicate row shows the specific duplicate message as a second snackbar', () => {
+    const validationSummary = {
+      dbUlbCount: 42,
+      maxAllowedExcelRows: 42,
+      excelRowCount: 42,
+      matchedDbUlbCount: 42,
+      missingDbUlbCount: 0,
+      extraExcelRowCount: 0,
+      errorRowCount: 1,
+      validationStatus: 'INVALID' as const,
+      activeDatasetVersion: 1,
+    };
+    eulbService.revalidateUploadedExcel.and.returnValue(
+      of({
+        success: true,
+        message: 'Excel revalidation completed with errors.',
+        data: {
+          validationSummary,
+          errors: [
+            {
+              field: 'censusCode',
+              code: 'duplicate',
+              message: 'A ULB with this census code already exists for the selected design year.',
+            },
+          ],
+        },
+      }),
+    );
+    utilityService.triggerSnackbar.calls.reset();
+
+    component.onSupportingAction({ fieldKey: 'electedBodyExcelFile', actionId: 'revalidate-excel' });
+
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Excel revalidation completed with errors.');
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+      'A ULB with this census code already exists for the selected design year.',
+      'snackbar-danger',
+    );
+  });
+
   it('register-ulb supporting action navigates to /xvifc/:yearId/register-ulb', () => {
     component.onSupportingAction({ fieldKey: 'electedBodyExcelFile', actionId: 'register-ulb' });
 

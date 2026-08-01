@@ -3,6 +3,8 @@ import {
   buildEulbFinalSubmitPayloadData,
   buildEulbFormPayloadData,
   buildEulbRowUpdatePayload,
+  getDuplicateCensusCodeMessage,
+  getRegisterUlbErrorMessage,
   parseEulbRowUpdateErrors,
 } from './eulb-status.utils';
 
@@ -120,21 +122,7 @@ describe('EULB status payload builders', () => {
     });
   });
 
-  it('includes censusCode and ulbName in the payload when present in the form value', () => {
-    const payload = buildEulbRowUpdatePayload({
-      electedBodyStatus: undefined,
-      dateOfConstitution: '',
-      dateOfExpiry: '',
-      remarks: '',
-      censusCode: 'NEW001',
-      ulbName: 'New ULB Name',
-    });
-
-    expect(payload.censusCode).toBe('NEW001');
-    expect(payload.ulbName).toBe('New ULB Name');
-  });
-
-  it('omits censusCode and ulbName from the payload when absent from the form value', () => {
+  it('never includes censusCode or ulbName in the payload — identity fields are not portal-editable', () => {
     const payload = buildEulbRowUpdatePayload({
       electedBodyStatus: 'Constituted',
       dateOfConstitution: '',
@@ -198,5 +186,65 @@ describe('EULB status payload builders', () => {
     // Old format: errors was a flat array; new backend always sends a field-keyed map
     expect(parseEulbRowUpdateErrors({ error: { errors: [{ field: 'remarks', message: 'Required.' }] } })).toEqual([]);
     expect(parseEulbRowUpdateErrors({ errors: [{ field: 'dateOfExpiry', message: 'Invalid.' }] })).toEqual([]);
+  });
+});
+
+// ─── getRegisterUlbErrorMessage ───────────────────────────────────────────────
+
+describe('getRegisterUlbErrorMessage', () => {
+  it('returns the backend message when electedBodyExcelFile has a newUlbsAdded error', () => {
+    const errors = {
+      electedBodyExcelFile: [
+        {
+          field: 'electedBodyExcelFile',
+          code: 'newUlbsAdded',
+          message: 'You have added 1 ULB(s) not registered in City Finance. Please register before proceeding.',
+        },
+      ],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBe(
+      'You have added 1 ULB(s) not registered in City Finance. Please register before proceeding.',
+    );
+  });
+
+  it('returns null when electedBodyExcelFile errors do not include newUlbsAdded', () => {
+    const errors = {
+      electedBodyExcelFile: [{ field: 'electedBodyExcelFile', code: 'conflict', message: 'Please refresh.' }],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBeNull();
+  });
+
+  it('returns null when electedBodyExcelFile key is absent', () => {
+    expect(getRegisterUlbErrorMessage({ ulbCount: [{ message: 'Required.' }] })).toBeNull();
+  });
+
+  it('returns null when errors is undefined', () => {
+    expect(getRegisterUlbErrorMessage(undefined)).toBeNull();
+  });
+});
+
+// ─── getDuplicateCensusCodeMessage ─────────────────────────────────────────────
+
+describe('getDuplicateCensusCodeMessage', () => {
+  it('returns the message of the first duplicate row error', () => {
+    const errors = [
+      {
+        field: 'censusCode',
+        code: 'duplicate',
+        message: 'A ULB with this census code already exists for the selected design year.',
+      },
+    ];
+    expect(getDuplicateCensusCodeMessage(errors)).toBe(
+      'A ULB with this census code already exists for the selected design year.',
+    );
+  });
+
+  it('returns null when no row error has code duplicate', () => {
+    const errors = [{ field: 'censusCode', code: 'unknownUlb', message: 'Unknown ULB.' }];
+    expect(getDuplicateCensusCodeMessage(errors)).toBeNull();
+  });
+
+  it('returns null when errors is undefined', () => {
+    expect(getDuplicateCensusCodeMessage(undefined)).toBeNull();
   });
 });
