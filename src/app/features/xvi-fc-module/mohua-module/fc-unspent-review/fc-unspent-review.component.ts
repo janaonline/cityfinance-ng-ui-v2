@@ -247,7 +247,9 @@ export class FcUnspentMohuaReviewComponent implements OnInit {
       page: this.rowsPage(),
       limit: this.rowsLimit,
       search: search || undefined,
-      rowStatus: (rowStatus || undefined) as RowStatusType | undefined,
+      // Native <select> FormControls always read back a string from the DOM, even though
+      // RowStatusType is numeric — convert explicitly rather than casting past it.
+      rowStatus: rowStatus ? (Number(rowStatus) as RowStatusType) : undefined,
       eligibility: eligibility === '' ? undefined : eligibility === 'true',
     };
 
