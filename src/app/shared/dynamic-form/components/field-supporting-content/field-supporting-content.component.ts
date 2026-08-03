@@ -95,6 +95,20 @@ export class DynamicFieldSupportingContentComponent {
     return map[action.tone ?? 'primary'] ?? 'link-primary';
   }
 
+  descriptionToneClass(item: Extract<FieldSupportingContent, { type: 'actions' }>): string {
+    if (!item.descriptionTone) return 'text-body-secondary';
+    const map: Record<string, string> = {
+      primary: 'text-primary',
+      secondary: 'text-secondary',
+      success: 'text-success',
+      warning: 'text-warning',
+      danger: 'text-danger',
+      info: 'text-info',
+      muted: 'text-body-secondary',
+    };
+    return map[item.descriptionTone] ?? 'text-body-secondary';
+  }
+
   badgeToneClass(badge: FieldSupportingBadge): string {
     const map: Record<string, string> = {
       primary: 'text-bg-primary',
