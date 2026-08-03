@@ -16,6 +16,7 @@ describe('DocumentActionRowComponent', () => {
     hasFile: false,
     processingStatus: 'NOT_STARTED',
     latestDecision: null,
+    isStale: false,
   };
 
   beforeEach(async () => {
@@ -78,6 +79,7 @@ describe('DocumentActionRowComponent', () => {
       hasFile: true,
       processingStatus: 'PROCESSING',
       latestDecision: null,
+      isStale: false,
     };
     setInputs('STATE', 3, stateGates, passedNotOcrPassedDoc);
 

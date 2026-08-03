@@ -1,9 +1,11 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Observable, forkJoin, map, of, startWith, tap } from 'rxjs';
+import { FieldSupportingActionEvent, FieldSupportingContent } from '../../../../../shared/dynamic-form/field.interface';
 import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import {
@@ -40,12 +42,23 @@ import {
   ClaimLetterApiErrorResponse,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
+  ClaimLetterDocumentData,
   ClaimLetterUlbRow,
   ClaimLetterUlbSelection,
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
 import { buildBatchNarrative } from '../claim-letter.utils';
+import { buildClaimLetterPdfDocDefinition } from '../claim-letter-pdf.builder';
+import { pdfMake } from '../pdfmake-setup';
+import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
 import { MatCardModule } from '@angular/material/card';
+
+/** Supporting-content action ids on `signedClaimFile` — must match the backend's
+ *  `CLAIM_LETTER_ACTION_PREVIEW_TEMPLATE`/`CLAIM_LETTER_ACTION_DOWNLOAD_TEMPLATE` constants. */
+const CLAIM_LETTER_ACTION = {
+  PREVIEW_TEMPLATE: 'preview-template',
+  DOWNLOAD_TEMPLATE: 'download-template',
+} as const;
 
 const CLAIM_LETTER_ABANDON_CONFIRM: Required<ConfirmDialogData> = {
   title: 'Abandon this claim letter draft?',
@@ -91,6 +104,7 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly moduleService = inject(XvifcModuleService);
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
   private readonly dynamicService = inject(DynamicFormService);
+  private readonly dialog = inject(MatDialog);
 
   /** The literal `new` route segment (or no param at all) means create mode; any other value is a
    *  real claim letter id to load. Read once via `snapshot` — `new` and `:claimLetterId` are
@@ -127,12 +141,79 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly signedClaimFileField = signal<ConditionalFieldConfig | null>(null);
   readonly signedFileForm = new FormGroup({});
 
+  /** Bridges `rows`' FormArray `valueChanges` (including structural push/removeAt changes) into a
+   *  signal — a raw FormArray reference isn't itself change-detection-reactive. Mirrors
+   *  `ClaimUlbTableComponent`'s identical `rowValues` bridge, including the `?? null` normalization:
+   *  typed reactive forms type a group's `.value` fields as optional (to account for disabled
+   *  controls being excluded), so `valueChanges` emits `ulbId`/`claimedAmount` as possibly
+   *  `undefined` even though `getRawValue()` never is. */
+  private readonly rowValues = toSignal(
+    this.rows.valueChanges.pipe(
+      startWith(this.rows.getRawValue()),
+      map((values) => values.map((value) => ({ ulbId: value.ulbId ?? null, claimedAmount: value.claimedAmount ?? null }))),
+    ),
+    { initialValue: [] as { ulbId: string | null; claimedAmount: number | null }[] },
+  );
+
+  /** True once any row's claimed amount (or the selected ULB set itself) diverges from
+   *  `savedUlbRows()`, the last-persisted snapshot. `GET :claimLetterId/document` (Preview/Download
+   *  Template) only ever reflects persisted data, so while this is true the two actions are disabled
+   *  via `effectiveSignedClaimFileField` instead of silently showing stale amounts. */
+  readonly hasUnsavedRowChanges = computed(() => {
+    if (this.isCreateMode) return false;
+    const savedAmountByUlbId = new Map(this.savedUlbRows().map((row) => [row.ulbId, row.claimAmount]));
+    const liveRows = this.rowValues().filter(
+      (row): row is { ulbId: string; claimedAmount: number } => row.ulbId !== null && row.claimedAmount !== null,
+    );
+    if (liveRows.length !== savedAmountByUlbId.size) return true;
+    return liveRows.some((row) => savedAmountByUlbId.get(row.ulbId) !== row.claimedAmount);
+  });
+
+  /** `signedClaimFileField()` with the Preview/Download Template actions disabled — and their
+   *  description swapped to explain why — while `hasUnsavedRowChanges()` is true. Overridden purely
+   *  client-side, on top of the backend-supplied field config, since only this component knows about
+   *  in-progress, unsaved form edits; the backend has no way to compute this. */
+  readonly effectiveSignedClaimFileField = computed<ConditionalFieldConfig | null>(() => {
+    const field = this.signedClaimFileField();
+    if (!field || !this.hasUnsavedRowChanges()) return field;
+
+    return {
+      ...field,
+      supportingContent: field.supportingContent?.map((block): FieldSupportingContent =>
+        block.type === 'actions'
+          ? {
+              ...block,
+              description: 'Save your changes to update the claim letter preview and download.',
+              descriptionTone: 'danger',
+              actions: block.actions.map((action) =>
+                action.id === CLAIM_LETTER_ACTION.PREVIEW_TEMPLATE ||
+                action.id === CLAIM_LETTER_ACTION.DOWNLOAD_TEMPLATE
+                  ? { ...action, disabled: true }
+                  : action,
+              ),
+            }
+          : block,
+      ),
+    };
+  });
+
   readonly isLoading = signal(false);
   readonly loadError = signal(false);
   readonly isSaving = signal(false);
   readonly isAbandoning = signal(false);
   readonly isUploadingSignedFile = signal(false);
   readonly isSubmitting = signal(false);
+
+  /** Covering letter + Annexure 1 + Annexure 2 content, shared by both "Preview Template" and
+   *  "Download Template" — fetched once per `claim().revision` and cached here so a second action
+   *  click (or switching between preview/download) never re-fetches (see `loadDocumentData`). Keyed
+   *  off `revision` — the same optimistic-concurrency counter `saveChanges()` already sends as
+   *  `expectedRevision` — rather than being fetched forever, since the batch's persisted claimed
+   *  amounts (and therefore the document) change exactly when `revision` is bumped by a save. */
+  private readonly documentData = signal<ClaimLetterDocumentData | null>(null);
+  private documentDataRevision: number | null = null;
+  readonly isLoadingDocument = signal(false);
+  readonly isDownloadingDocument = signal(false);
 
   /** Top-level alert text from the most recent failed save/create/abandon — this feature's DTO
    *  validation throws one descriptive message rather than FC Unspent's per-row `ApiErrorMap`, so
@@ -401,6 +482,94 @@ export class ClaimLetterDetailComponent implements OnInit {
             emitEvent: false,
           });
           this.handleSaveError(err, 'Unable to upload the signed claim letter. Please try again.');
+        },
+      });
+  }
+
+  /** Routes action events from `DynamicFormComponent` for the `signedClaimFile` field to the
+   *  appropriate handler. */
+  onSupportingAction(event: FieldSupportingActionEvent): void {
+    if (event.fieldKey !== 'signedClaimFile') return;
+    // Belt-and-suspenders alongside the UI-level `disabled` on the rendered buttons (see
+    // `effectiveSignedClaimFileField`) — the document endpoint only ever reflects saved data.
+    if (this.hasUnsavedRowChanges()) return;
+    switch (event.actionId) {
+      case CLAIM_LETTER_ACTION.PREVIEW_TEMPLATE:
+        this.previewTemplate();
+        return;
+      case CLAIM_LETTER_ACTION.DOWNLOAD_TEMPLATE:
+        this.downloadTemplate();
+        return;
+      default:
+        return;
+    }
+  }
+
+  /** Single-flight fetch of the claim letter document data, cached in `documentData` so Preview and
+   *  Download share one request instead of each fetching independently — but only while
+   *  `claim().revision` hasn't moved on since the cache was populated, so a save that changes claimed
+   *  amounts is always reflected on the next Preview/Download click. */
+  private loadDocumentData(): Observable<ClaimLetterDocumentData> {
+    const currentRevision = this.claim()?.revision ?? null;
+    const cached = this.documentData();
+    if (cached && this.documentDataRevision === currentRevision) return of(cached);
+
+    const claimLetterId = this.claimLetterId();
+    if (!claimLetterId) throw new Error('Cannot load the claim letter document before it has an id.');
+
+    return this.claimLetterService.getDocumentData(claimLetterId).pipe(
+      tap((documentData) => {
+        this.documentData.set(documentData);
+        this.documentDataRevision = currentRevision;
+      }),
+    );
+  }
+
+  previewTemplate(): void {
+    if (this.isLoadingDocument()) return;
+    this.isLoadingDocument.set(true);
+
+    this.loadDocumentData()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (documentData) => {
+          this.isLoadingDocument.set(false);
+          const panelClass = this.themeClass ? [this.themeClass] : undefined;
+          this.dialog.open(ClaimLetterDocumentPreviewDialogComponent, {
+            data: { documentData },
+            panelClass,
+            width: '85vw',
+            maxWidth: '85vw',
+            height: '85vh',
+            maxHeight: '85vh',
+            autoFocus: false,
+          });
+        },
+        error: (err: unknown) => {
+          console.error('Failed to load the claim letter document', err);
+          this.isLoadingDocument.set(false);
+          this.utilityService.triggerSnackbar('Unable to load the claim letter. Please try again.', 'snackbar-danger');
+        },
+      });
+  }
+
+  downloadTemplate(): void {
+    if (this.isDownloadingDocument()) return;
+    this.isDownloadingDocument.set(true);
+
+    this.loadDocumentData()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (documentData) => {
+          const docDefinition = buildClaimLetterPdfDocDefinition(documentData);
+          const fileNameSafeRefNo = documentData.refNo.replace(/[/\\]/g, '-');
+          pdfMake.createPdf(docDefinition).download(`claim-letter-${fileNameSafeRefNo}.pdf`);
+          this.isDownloadingDocument.set(false);
+        },
+        error: (err: unknown) => {
+          console.error('Failed to load the claim letter document', err);
+          this.isDownloadingDocument.set(false);
+          this.utilityService.triggerSnackbar('Unable to download the claim letter. Please try again.', 'snackbar-danger');
         },
       });
   }

@@ -551,6 +551,35 @@ describe('DevolutionFormulaComponent', () => {
       );
     });
 
+    it('shows the specific duplicate-ULB message as a second snackbar when a row error has code duplicate', () => {
+      dfService.validateExcel.and.returnValue(
+        of({
+          success: true,
+          data: {
+            validationStatus: 'INVALID' as const,
+            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
+            rowErrors: [
+              {
+                rowNumber: 2,
+                field: 'censusCode',
+                code: 'duplicate',
+                message: 'This ULB appears more than once in the uploaded Excel file.',
+              },
+            ],
+          },
+          timestamp: '',
+        }),
+      );
+      utilityService.triggerSnackbar.calls.reset();
+
+      (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        'This ULB appears more than once in the uploaded Excel file.',
+        'snackbar-danger',
+      );
+    });
+
     it('does not open the rows dialog on a 400 error that carries persisted rowErrors (e.g. new-ULB rows alongside other invalid rows)', () => {
       dfService.validateExcel.and.returnValue(
         throwError(() => ({
@@ -680,6 +709,26 @@ describe('DevolutionFormulaComponent', () => {
       dialogOpenSpy.calls.reset();
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'revalidate-excel' });
       expect(dialogOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it('revalidate-excel shows the specific duplicate-ULB message as a second snackbar when present', () => {
+      dfService.revalidateExcel.and.returnValue(
+        of({
+          success: true,
+          data: {
+            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
+            rowErrors: [
+              { rowNumber: 2, field: 'censusCode', code: 'duplicate', message: 'Duplicate ULB in dataset.' },
+            ],
+          },
+          timestamp: '',
+        }),
+      );
+      utilityService.triggerSnackbar.calls.reset();
+
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'revalidate-excel' });
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Duplicate ULB in dataset.', 'snackbar-danger');
     });
 
     it('view-uploaded-data opens the rows dialog with stateId, yearId, and installment', () => {

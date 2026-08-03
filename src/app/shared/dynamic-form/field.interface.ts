@@ -116,6 +116,8 @@ export type FieldSupportingContent =
       layout?: FieldSupportingActionLayout;
       separator?: FieldSupportingActionSeparator;
       description?: string;
+      /** Text color for `description`. Defaults to the muted `text-body-secondary` when unset. */
+      descriptionTone?: FieldSupportingActionTone;
       actions: FieldSupportingAction[];
       badges?: FieldSupportingBadge[];
     };

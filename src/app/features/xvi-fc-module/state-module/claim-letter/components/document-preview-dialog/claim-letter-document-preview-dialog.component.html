@@ -1,0 +1,149 @@
+<h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-2 d-flex align-items-center justify-content-between">
+  <span><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Claim Letter — Preview</span>
+  <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="close()">
+    <i class="bi bi-x-circle-fill fs-5"></i>
+  </button>
+</h2>
+
+<mat-dialog-content class="p-0 claim-letter-document-preview-dialog-content">
+  <mat-tab-group animationDuration="0ms" mat-stretch-tabs="false">
+    <mat-tab label="Covering Letter">
+      <div class="claim-letter-document-preview-body p-4">
+        <h3 class="fs-5 fw-bold mb-0">{{ data.documentData.stateName }} — {{ data.documentData.departmentName }}</h3>
+        <p class="text-secondary small mb-3">Government of {{ data.documentData.stateName }}</p>
+        <hr class="border-2 border-dark opacity-75" />
+
+        <div class="d-flex justify-content-between small mb-3">
+          <span><strong>Ref No.:</strong> {{ data.documentData.refNo }}</span>
+          <span><strong>Date:</strong> {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}</span>
+        </div>
+
+        <div class="border rounded p-3 mb-3 bg-light-subtle">
+          <strong>Subject:</strong> {{ data.documentData.subjectLine }}
+        </div>
+
+        <p>{{ data.documentData.introParagraph }}</p>
+
+        <div class="table-responsive mb-3">
+          <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">S.No.</th>
+                <th scope="col">Urban Local Body</th>
+                <th scope="col" class="text-end">Amount (₹ Cr.)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of data.documentData.coveringLetterRows; track row.ulbId) {
+                <tr>
+                  <td>{{ row.slNo }}</td>
+                  <td>{{ row.ulbName }}</td>
+                  <td class="text-end">{{ formatCrore(row.claimAmount) }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="fw-semibold">
+                <td colspan="2" class="text-end">Total</td>
+                <td class="text-end">{{ formatCrore(data.documentData.totalClaimAmount) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <p>{{ data.documentData.closingParagraph }}</p>
+
+        <div class="mt-4">
+          <p class="fw-semibold mb-0">{{ data.documentData.signatoryName }}</p>
+          <p class="text-secondary small mb-0">{{ data.documentData.signatoryDesignation }}</p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Annexure 1 — FC Disclosures">
+      <div class="claim-letter-document-preview-body p-4">
+        <h3 class="fs-6 fw-bold">Annexure 1 — FC Unspent Balance Disclosures</h3>
+        <p class="small text-secondary">Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}</p>
+        <p class="small">
+          The following table summarises the FC unspent balance disclosures submitted by all recommended Urban
+          Local Bodies.
+        </p>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">S.No.</th>
+                <th scope="col">Urban Local Body</th>
+                <th scope="col" class="text-end">{{ data.documentData.priorFcCycleLabel }} Unspent (₹ Cr.)</th>
+                <th scope="col" class="text-end">16th FC Allocation (₹ Cr.)</th>
+                <th scope="col" class="text-center">Eligible (&lt;10%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of data.documentData.annexure1Rows; track row.ulbId) {
+                <tr>
+                  <td>{{ row.slNo }}</td>
+                  <td>{{ row.ulbName }}</td>
+                  <td class="text-end">{{ formatCrore(row.priorFcUnspentAmount) }}</td>
+                  <td class="text-end">{{ formatCrore(row.claimedAmount) }}</td>
+                  <td class="text-center">
+                    @if (row.eligible) {
+                      <i class="bi bi-check-lg text-success" aria-label="Eligible"></i>
+                    } @else {
+                      <i class="bi bi-x-lg text-danger" aria-label="Not eligible"></i>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Annexure 2 — City Conditions">
+      <div class="claim-letter-document-preview-body p-4">
+        <h3 class="fs-6 fw-bold">Annexure 2 — City-wise Eligibility Conditions</h3>
+        <p class="small text-secondary">Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}</p>
+        <p class="small">
+          Confirmation that each recommended Urban Local Body has met all prescribed eligibility conditions as on
+          the date of this letter.
+        </p>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">S.No.</th>
+                <th scope="col">Urban Local Body</th>
+                @for (col of data.documentData.annexure2Columns; track col.type) {
+                  <th scope="col" class="text-center" [title]="col.label">{{ col.shortLabel }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of data.documentData.annexure2Rows; track row.ulbId) {
+                <tr>
+                  <td>{{ row.slNo }}</td>
+                  <td>{{ row.ulbName }}</td>
+                  @for (result of row.criteria; track result.type) {
+                    <td class="text-center">
+                      @if (result.met) {
+                        <i class="bi bi-check-lg text-success" aria-label="Yes"></i>
+                      } @else {
+                        <i class="bi bi-x-lg text-danger" aria-label="No"></i>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <p class="small text-secondary mt-3 mb-0">{{ annexure2Legend() }}</p>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>

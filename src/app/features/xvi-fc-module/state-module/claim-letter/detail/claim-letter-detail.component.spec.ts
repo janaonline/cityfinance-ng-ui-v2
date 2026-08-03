@@ -2,18 +2,27 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UploadedFileMetadata } from '../../../../../shared/dynamic-form/components/file/file-metadata.types';
+import { FieldSupportingContent } from '../../../../../shared/dynamic-form/field.interface';
 import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { createClaimUlbRowGroup } from '../components/claim-ulb-table/claim-ulb-table.component';
-import { ClaimLetterBatchSummary, ClaimLetterClaimContext, ClaimLetterUlbRow } from '../claim-letter.models';
+import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
+import {
+  ClaimLetterBatchSummary,
+  ClaimLetterClaimContext,
+  ClaimLetterDocumentData,
+  ClaimLetterUlbRow,
+} from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
 import { formatCrore } from '../claim-letter.utils';
+import { pdfMake } from '../pdfmake-setup';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
 
 const SIGNED_FILE_FIELD: ConditionalFieldConfig = {
@@ -112,6 +121,7 @@ describe('ClaimLetterDetailComponent', () => {
   let claimLetterService: ClaimLetterService;
   let router: Router;
   let utilityService: UtilityService;
+  let dialogOpenSpy: jasmine.Spy;
 
   async function setup(routeParam: string | null): Promise<void> {
     localStorage.setItem('userData', JSON.stringify({ state: 'state-test-id' }));
@@ -119,13 +129,20 @@ describe('ClaimLetterDetailComponent', () => {
     const moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
     moduleService.yearId.and.returnValue('year-test-id');
 
+    const mockDialogRef = jasmine.createSpyObj<MatDialogRef<unknown>>('MatDialogRef', ['afterClosed', 'close']);
+    mockDialogRef.afterClosed.and.returnValue(of(undefined));
+    dialogOpenSpy = jasmine.createSpy('MatDialog.open').and.returnValue(mockDialogRef);
+
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, RouterTestingModule, ClaimLetterDetailComponent],
       providers: [
         { provide: XvifcModuleService, useValue: moduleService },
         { provide: ActivatedRoute, useValue: routeWithParam(routeParam) },
       ],
-    }).compileComponents();
+    })
+      // overrideProvider forcefully replaces even providedIn:'root' singletons
+      .overrideProvider(MatDialog, { useValue: { open: dialogOpenSpy } })
+      .compileComponents();
 
     claimLetterService = TestBed.inject(ClaimLetterService);
     router = TestBed.inject(Router);
@@ -571,6 +588,175 @@ describe('ClaimLetterDetailComponent', () => {
         'snackbar-danger',
       );
       expect(component.signedFileForm.get('signedClaimFile')?.value).toBeNull();
+    });
+
+    // ─── Preview / Download Template ───────────────────────────────────────────────
+
+    describe('Preview Template / Download Template', () => {
+      const SIGNED_FILE_FIELD_WITH_ACTIONS: ConditionalFieldConfig = {
+        ...SIGNED_FILE_FIELD,
+        supportingContent: [
+          {
+            type: 'actions',
+            position: 'before',
+            layout: 'inline',
+            separator: 'dot',
+            description: 'Preview or download the claim letter for this batch, then upload the signed copy below.',
+            actions: [
+              { id: 'preview-template', label: 'Preview Template', icon: 'bi bi-eye', tone: 'primary', visible: true },
+              {
+                id: 'download-template',
+                label: 'Download Template',
+                icon: 'bi bi-file-earmark-arrow-down',
+                tone: 'primary',
+                visible: true,
+              },
+            ],
+          },
+        ],
+      };
+
+      const sampleDocumentData: ClaimLetterDocumentData = {
+        refNo: 'CL/AP/2026-27/1-1',
+        letterDate: '2026-06-30T00:00:00.000Z',
+        stateName: 'Andhra Pradesh',
+        departmentName: 'Directorate of Municipal Administration',
+        designYearLabel: '2026-27',
+        installment: 1,
+        batchNumber: 1,
+        priorFcCycleLabel: '14th FC',
+        subjectLine: 'Subject',
+        introParagraph: 'Intro',
+        closingParagraph: 'Closing',
+        signatoryName: 'Vikram Rao',
+        signatoryDesignation: 'Finance Analyst',
+        coveringLetterRows: [],
+        totalClaimAmount: 0,
+        annexure1Rows: [],
+        annexure2Columns: [],
+        annexure2Rows: [],
+      };
+
+      it('onSupportingAction ignores events for fields other than signedClaimFile', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData');
+
+        component.onSupportingAction({ fieldKey: 'someOtherField', actionId: 'preview-template' });
+
+        expect(getDocumentDataSpy).not.toHaveBeenCalled();
+      });
+
+      it('onSupportingAction routes preview-template to previewTemplate()', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
+
+        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'preview-template' });
+
+        expect(claimLetterService.getDocumentData).toHaveBeenCalledWith('claim-1');
+        expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
+          ClaimLetterDocumentPreviewDialogComponent,
+          jasmine.objectContaining({ data: { documentData: sampleDocumentData } }),
+        );
+      });
+
+      it('onSupportingAction routes download-template to downloadTemplate()', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
+        const downloadSpy = jasmine.createSpy('download');
+        spyOn(pdfMake, 'createPdf').and.returnValue({ download: downloadSpy } as never);
+
+        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
+
+        expect(claimLetterService.getDocumentData).toHaveBeenCalledWith('claim-1');
+        expect(pdfMake.createPdf).toHaveBeenCalled();
+        expect(downloadSpy).toHaveBeenCalledWith('claim-letter-CL-AP-2026-27-1-1.pdf');
+      });
+
+      it('shares one fetch between previewTemplate() and downloadTemplate() (single-flight cache)', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
+        spyOn(pdfMake, 'createPdf').and.returnValue({ download: jasmine.createSpy('download') } as never);
+
+        component.previewTemplate();
+        component.downloadTemplate();
+
+        expect(getDocumentDataSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it('previewTemplate() surfaces an error snackbar and does not open the dialog on failure', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        spyOn(claimLetterService, 'getDocumentData').and.returnValue(
+          throwError(() => ({ success: false, message: 'Not found.' })),
+        );
+
+        component.previewTemplate();
+
+        expect(dialogOpenSpy).not.toHaveBeenCalled();
+        expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
+      });
+
+      it('invalidates the cached document once the claim revision changes after a reload (e.g. a save)', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD], revision: 2 }));
+        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(
+          of(sampleDocumentData),
+        );
+
+        component.previewTemplate();
+        expect(getDocumentDataSpy).toHaveBeenCalledTimes(1);
+
+        // Simulate the post-save reload: loadDetail() re-fetches getDetail(), which now reflects the
+        // bumped revision from the edited/saved claimed amounts.
+        (claimLetterService.getDetail as jasmine.Spy).and.returnValue(
+          of(buildClaim({ questions: [SIGNED_FILE_FIELD], revision: 3 })),
+        );
+        component.loadDetail();
+
+        component.previewTemplate();
+        expect(getDocumentDataSpy).toHaveBeenCalledTimes(2);
+      });
+
+      it('hasUnsavedRowChanges() is false right after load and true once a claimed amount is edited', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+
+        expect(component.hasUnsavedRowChanges()).toBe(false);
+
+        component.rows.at(0).controls.claimedAmount.setValue(99);
+
+        expect(component.hasUnsavedRowChanges()).toBe(true);
+      });
+
+      it('effectiveSignedClaimFileField() disables Preview/Download and swaps the description while dirty', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
+
+        expect(component.effectiveSignedClaimFileField()).toBe(component.signedClaimFileField());
+
+        component.rows.at(0).controls.claimedAmount.setValue(99);
+
+        const actionsBlock = component
+          .effectiveSignedClaimFileField()
+          ?.supportingContent?.find(
+            (block): block is Extract<FieldSupportingContent, { type: 'actions' }> => block.type === 'actions',
+          );
+        expect(actionsBlock?.description).toBe('Save your changes to update the claim letter preview and download.');
+        expect(actionsBlock?.actions.every((action) => action.disabled)).toBe(true);
+
+        // Unaffected: the backend-supplied field config itself is never mutated.
+        expect(
+          (component.signedClaimFileField()?.supportingContent?.[0] as { actions: { disabled?: boolean }[] })
+            .actions[0].disabled,
+        ).toBeFalsy();
+      });
+
+      it('onSupportingAction is a no-op for preview-template/download-template while there are unsaved edits', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
+        component.rows.at(0).controls.claimedAmount.setValue(99);
+
+        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'preview-template' });
+        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
+
+        expect(getDocumentDataSpy).not.toHaveBeenCalled();
+      });
     });
 
     // ─── Submit to MoHUA ──────────────────────────────────────────────────────────

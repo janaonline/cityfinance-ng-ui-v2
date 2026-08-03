@@ -27,10 +27,11 @@ export type EulbFileValue = UploadedFileMetadata;
 
 export type EulbValidationStatus = 'NOT_VALIDATED' | 'VALID' | 'INVALID';
 export type EulbRowValidationStatus = 'VALID' | 'INVALID';
-export type EulbRowType = 'DB_ULB' | 'EXTRA_ULB';
 export type EulbBodyStatus = 'Constituted' | 'Not Constituted' | 'Exempt';
 export const EULB_EDITABLE_FIELDS = ['electedBodyStatus', 'dateOfConstitution', 'dateOfExpiry', 'remarks'] as const;
 export type EulbEditableFieldKey = (typeof EULB_EDITABLE_FIELDS)[number];
+// censusCode/ulbName are still rendered as read-only cells (via EulbFieldCellKey) but are never
+// editable — every row is registry-backed, so identity fields belong to the ULB registry.
 export type EulbFieldCellKey = EulbEditableFieldKey | 'censusCode' | 'ulbName';
 
 export interface EulbValidationSummary {
@@ -63,7 +64,6 @@ export interface EulbFormResponseData {
   permissions: EulbPermissions;
   actors?: FormActor[];
   rowEditFields?: ConditionalFieldConfig[];
-  extraUlbEditFields?: ConditionalFieldConfig[];
   validationSummary?: EulbValidationSummary;
   errorExcelFile?: EulbFileValue;
   /** Some backend versions nest errorExcelFile here; normalised in loadForm(). */
@@ -117,7 +117,6 @@ export interface EulbRow {
   dateOfConstitution?: string;
   dateOfExpiry?: string;
   remarks?: string;
-  rowType: EulbRowType;
   validationStatus: EulbRowValidationStatus;
   errors: EulbRowError[];
 }
@@ -127,7 +126,6 @@ export interface EulbRowsQuery {
   limit?: number;
   search?: string;
   validationStatus?: EulbRowValidationStatus | '';
-  rowType?: EulbRowType | '';
   errorField?: string;
 }
 
@@ -145,8 +143,6 @@ export interface EulbUpdateRowPayload {
   dateOfConstitution?: string;
   dateOfExpiry?: string;
   remarks?: string;
-  censusCode?: string;
-  ulbName?: string;
 }
 
 export interface EulbRowEditFormValue {
@@ -154,8 +150,6 @@ export interface EulbRowEditFormValue {
   dateOfConstitution?: string;
   dateOfExpiry?: string;
   remarks?: string;
-  censusCode?: string;
-  ulbName?: string;
 }
 
 export interface EulbRowUpdateApiError {
@@ -205,7 +199,6 @@ export interface EulbRowsDialogData {
   stateId: string;
   yearId: string;
   rowEditFields?: ConditionalFieldConfig[];
-  extraUlbEditFields?: ConditionalFieldConfig[];
   canEdit: boolean;
 }
 
@@ -274,7 +267,6 @@ export interface EulbPostSubmissionUpdateRow {
   dateOfConstitution: string | null;
   dateOfExpiry: string | null;
   remarks: string | null;
-  rowType: EulbRowType;
   validationStatus: EulbRowValidationStatus;
   errors: EulbPostUpdateRowError[];
 }

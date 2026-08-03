@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
-import { FcUnspentMohuaRow } from '../../fc-unspent-review.models';
+import { FcUnspentMohuaRow, ROW_STATUS } from '../../fc-unspent-review.models';
 import { FcUnspentMohuaReviewService } from '../../fc-unspent-review.service';
 import { BulkRejectRowsDialogComponent, BulkRejectRowsDialogData } from './bulk-reject-rows-dialog.component';
 
@@ -18,7 +18,7 @@ function makeRow(id: string, ulbName: string): FcUnspentMohuaRow {
     unspentAmount: 1.5,
     allocationPerc: 7.5,
     eligibility: true,
-    rowStatus: 'update_pending',
+    rowStatus: ROW_STATUS.UPDATE_PENDING,
     rejectionRemark: null,
     permissions: { canApprove: true, canReject: true },
   };

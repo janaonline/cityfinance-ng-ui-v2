@@ -96,11 +96,12 @@
             </mat-card-content>
           </mat-card>
 
-          @if (!isCreateMode && signedClaimFileField(); as field) {
+          @if (!isCreateMode && effectiveSignedClaimFileField(); as field) {
             <app-dynamic-form
               [field]="field"
               [group]="signedFileForm"
               [mode]="canEdit() ? 'edit' : 'view'"
+              (supportingAction)="onSupportingAction($event)"
             ></app-dynamic-form>
           }
         }

@@ -97,6 +97,8 @@ export interface UploadDocument extends UploadDocumentDef {
   hasRetried: boolean;
   isManualReviewRequested: boolean;
   manualReviewError: string | null;
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
 }
 
 interface UlbDetails {
@@ -128,6 +130,8 @@ interface BackendStatusDoc {
   docId: string;
   uploadStatus: string;
   processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
   currentUpload: {
     uploadId: string;
     version: number;
@@ -232,6 +236,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     hasRetried: false,
     isManualReviewRequested: false,
     manualReviewError: null,
+    isStale: false,
   };
 }
 
@@ -335,6 +340,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       hasFile: doc.fileName !== null,
       processingStatus: processingStatusMap[doc.status],
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
+      isStale: doc.isStale,
     };
   }
 
@@ -595,6 +601,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               hasRetried: true,
               isManualReviewRequested: false,
               manualReviewError: null,
+              isStale: false,
             }
           : d,
       ),
@@ -879,6 +886,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
             isManualReviewRequested: cu.ocrInfo.isManualReviewRequested ?? false,
+            isStale: saved.isStale,
             latestDecision,
           };
         }),
@@ -927,7 +935,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               if (!remote?.currentUpload || remote.currentUpload.uploadId !== doc.uploadId) return doc;
 
               const newStatus = this.backendStatusToLocal(remote.processingStatus);
-              if (newStatus === doc.status) return doc;
+              // Re-check even when the status itself hasn't changed — isStale flips to true purely
+              // from time passing while still PROCESSING, so a status-only comparison would miss it.
+              if (newStatus === doc.status && remote.isStale === doc.isStale) return doc;
 
               return {
                 ...doc,
@@ -937,6 +947,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
                 isManualReviewRequested: remote.currentUpload.ocrInfo.isManualReviewRequested ?? false,
+                isStale: remote.isStale,
               };
             }),
           );

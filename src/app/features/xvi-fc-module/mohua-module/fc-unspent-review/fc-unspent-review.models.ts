@@ -4,6 +4,7 @@ import {
   ApiFieldError,
   FcUnspentApiResponse,
 } from '../../state-module/fc-unspent-declaration/fc-unspent-declaration.models';
+import { FORM_STATUS } from '../../common/constants/form-status.constants';
 
 // Generic envelope/error types are the same wire shape the State-side FC Unspent service already
 // established (mirrors the backend's shared XviFcApiResponse / XviFcValidationErrorMap) — reused
@@ -11,12 +12,16 @@ import {
 // describe the State submitter's own form, not the MoHUA reviewer's read/approve/reject view.
 export type { ApiErrorMap, ApiErrorResponse, ApiFieldError, FcUnspentApiResponse };
 
-/** Exact wire values — never rename/relabel these; use `ROW_STATUS_LABEL`/`ROW_STATUS_BADGE_CLASS` for display. */
+/**
+ * Numeric FORM_STATUS subset — never rename/relabel these; use `ROW_STATUS_LABEL`/
+ * `ROW_STATUS_BADGE_CLASS` for display. Sourced from the shared FORM_STATUS constant rather than
+ * hand-typed numbers, matching the backend's row-review-status.constants.ts mapping.
+ */
 export const ROW_STATUS = {
-  ACTIVE: 'active',
-  NEEDS_UPDATE: 'needs_update',
-  UPDATE_PENDING: 'update_pending',
-  REJECTED: 'rejected',
+  UPDATE_PENDING: FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
+  ACTIVE: FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA,
+  REJECTED: FORM_STATUS.RETURNED_BY_MOHUA,
+  NEEDS_UPDATE: FORM_STATUS.ACTION_REQUIRED,
 } as const;
 export type RowStatusType = (typeof ROW_STATUS)[keyof typeof ROW_STATUS];
 

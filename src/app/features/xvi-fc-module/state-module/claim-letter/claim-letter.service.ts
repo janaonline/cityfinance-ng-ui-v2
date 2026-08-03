@@ -8,6 +8,7 @@ import {
   ClaimLetterApiResponse,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
+  ClaimLetterDocumentData,
   ClaimLetterEligibilitySummary,
   ClaimLetterHistoryQuery,
   ClaimLetterHistoryResult,
@@ -186,6 +187,14 @@ export class ClaimLetterService {
           };
         }),
       );
+  }
+
+  /** Covering letter + Annexure 1 + Annexure 2 content for Preview Template / Download Template —
+   *  fetch once, shared by both (see `claim-letter-detail.component.ts`). */
+  getDocumentData(claimLetterId: string): Observable<ClaimLetterDocumentData> {
+    return this.http
+      .get<ClaimLetterApiResponse<ClaimLetterDocumentData>>(`${this.baseUrl}${claimLetterId}/document`)
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterDocumentData));
   }
 
   /**

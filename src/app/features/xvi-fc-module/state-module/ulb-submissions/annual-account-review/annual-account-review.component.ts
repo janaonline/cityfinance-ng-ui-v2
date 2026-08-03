@@ -435,6 +435,8 @@ export class AnnualAccountReviewComponent {
       hasFile: row.fileName !== null,
       processingStatus: row.processingStatus,
       latestDecision: row.latestDecision ? { status: row.latestDecision.status } : null,
+      // STATE's action-row branch never reads isStale — Retry/Re-upload are ULB-only actions.
+      isStale: false,
     };
   }
 

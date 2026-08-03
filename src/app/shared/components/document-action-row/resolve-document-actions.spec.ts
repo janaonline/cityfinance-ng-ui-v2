@@ -7,6 +7,7 @@ const baseDoc = (overrides: Partial<DocumentRuntimeState> = {}): DocumentRuntime
   hasFile: false,
   processingStatus: 'NOT_STARTED',
   latestDecision: null,
+  isStale: false,
   ...overrides,
 });
 

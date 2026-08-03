@@ -33,6 +33,7 @@ import {
   EulbFormPayloadData,
   EulbPermissions,
   EulbRevalidateExcelResponse,
+  EulbRowError,
   EulbRowsDialogResult,
   EulbSaveDraftPayload,
   SubmitType,
@@ -41,7 +42,9 @@ import {
   buildEulbFinalSubmitPayloadData,
   buildEulbFormPayloadData,
   extractApiErrorResponse,
+  getDuplicateCensusCodeMessage,
   getHttpStatus,
+  getRegisterUlbErrorMessage,
   hasEulbFileValue,
   hasPersistedValidationData,
   isValidEulbFileValue,
@@ -110,7 +113,6 @@ export class ElectedBodyStatusComponent implements OnInit {
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
-  readonly extraUlbEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
   readonly isLoading = signal(false);
@@ -207,7 +209,6 @@ export class ElectedBodyStatusComponent implements OnInit {
 
           this.fields.set(data.questions);
           this.rowEditFields.set(data.rowEditFields ?? []);
-          this.extraUlbEditFields.set(data.extraUlbEditFields ?? []);
           this.createFormControls();
           this.isLoading.set(false);
         },
@@ -335,6 +336,7 @@ export class ElectedBodyStatusComponent implements OnInit {
               'Excel validation completed with errors. Please review uploaded data.',
               'snackbar-danger',
             );
+            this.notifyDuplicateCensusCodeError(res.data.errors);
           }
           this.reloadForm();
         },
@@ -352,6 +354,7 @@ export class ElectedBodyStatusComponent implements OnInit {
           } else if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
+          this.notifyRegisterUlbError(response?.errors);
         },
       });
   }
@@ -376,6 +379,7 @@ export class ElectedBodyStatusComponent implements OnInit {
       .subscribe({
         next: (res: EulbRevalidateExcelResponse) => {
           this.utilityService.triggerSnackbar(res.message);
+          this.notifyDuplicateCensusCodeError(res.data.errors);
           this.reloadForm();
         },
         error: (err: unknown) => {
@@ -387,8 +391,25 @@ export class ElectedBodyStatusComponent implements OnInit {
           if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
+          this.notifyRegisterUlbError(response?.errors);
         },
       });
+  }
+
+  /** Shows the specific `newUlbsAdded` message as a second snackbar, alongside the generic one. */
+  private notifyRegisterUlbError(errors: ApiErrorMap | undefined): void {
+    const message = getRegisterUlbErrorMessage(errors);
+    if (message) {
+      this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+    }
+  }
+
+  /** Shows the specific `duplicate` census-code message as a second snackbar, alongside the generic one. */
+  private notifyDuplicateCensusCodeError(errors: EulbRowError[] | undefined): void {
+    const message = getDuplicateCensusCodeMessage(errors);
+    if (message) {
+      this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+    }
   }
 
   /** Downloads the EULB Excel template as a blob and saves it via FileSaver. */
@@ -428,7 +449,6 @@ export class ElectedBodyStatusComponent implements OnInit {
         stateId: this.stateId,
         yearId: this.yearId,
         rowEditFields: this.rowEditFields(),
-        extraUlbEditFields: this.extraUlbEditFields(),
         canEdit: this.canEdit(),
       },
     });
