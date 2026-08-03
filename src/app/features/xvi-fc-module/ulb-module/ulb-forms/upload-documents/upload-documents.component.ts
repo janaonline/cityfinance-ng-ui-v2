@@ -92,6 +92,8 @@ export interface UploadDocument extends UploadDocumentDef {
   validationError: string | null;
   // Most recent state decision against this specific document — null if never decided.
   latestDecision: BackendDecision | null;
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
 }
 
 interface UlbDetails {
@@ -122,6 +124,8 @@ interface BackendStatusDoc {
   docId: string;
   uploadStatus: string;
   processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
   currentUpload: {
     uploadId: string;
     version: number;
@@ -223,6 +227,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    isStale: false,
   };
 }
 
@@ -326,6 +331,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       hasFile: doc.fileName !== null,
       processingStatus: processingStatusMap[doc.status],
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
+      isStale: doc.isStale,
     };
   }
 
@@ -575,6 +581,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
+              isStale: false,
             }
           : d,
       ),
@@ -806,6 +813,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationStatus: cu.ocrInfo.validationStatus ?? null,
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
+            isStale: saved.isStale,
             latestDecision,
           };
         }),
@@ -854,7 +862,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               if (!remote?.currentUpload || remote.currentUpload.uploadId !== doc.uploadId) return doc;
 
               const newStatus = this.backendStatusToLocal(remote.processingStatus);
-              if (newStatus === doc.status) return doc;
+              // Re-check even when the status itself hasn't changed — isStale flips to true purely
+              // from time passing while still PROCESSING, so a status-only comparison would miss it.
+              if (newStatus === doc.status && remote.isStale === doc.isStale) return doc;
 
               return {
                 ...doc,
@@ -863,6 +873,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationStatus: remote.currentUpload.ocrInfo.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
+                isStale: remote.isStale,
               };
             }),
           );

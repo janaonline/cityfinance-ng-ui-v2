@@ -61,7 +61,10 @@ export function resolveDocumentActions(
     if (!doc.hasFile) {
       return gated('upload') ? [build('upload', false)] : [];
     }
-    if (doc.processingStatus === 'PROCESSING') return [];
+    if (doc.processingStatus === 'PROCESSING') {
+      if (!doc.isStale) return [];
+      return (['retry', 'reupload'] as const).filter(gated).map((a) => build(a, false));
+    }
     if (doc.processingStatus === 'FAILED') {
       return (['retry', 'reupload'] as const).filter(gated).map((a) => build(a, false));
     }
