@@ -80,6 +80,7 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
           canUpload: false,
           canReview: true,
           canApprove: true,
+          canUndoApproval: false,
           canMohuaReview: false,
           canMohuaApprove: false,
         },
@@ -129,6 +130,7 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
           canUpload: false,
           canReview: true,
           canApprove: true,
+          canUndoApproval: false,
           canMohuaReview: false,
           canMohuaApprove: false,
         },
@@ -209,6 +211,7 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
             canUpload: false,
             canReview: true,
             canApprove: true,
+            canUndoApproval: false,
             canMohuaReview: false,
             canMohuaApprove: false,
           },
@@ -288,6 +291,7 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
         hasFile: true,
         processingStatus: 'PASSED',
         latestDecision: { status: 'RETURNED' },
+        isStale: false,
       });
     });
   });
