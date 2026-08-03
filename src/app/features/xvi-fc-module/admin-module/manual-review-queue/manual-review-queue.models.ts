@@ -18,6 +18,7 @@ export interface ManualReviewQueueRow {
   year: string;
   docId: string;
   uploadId: string;
+  jobId: string | null;
   fileName: string | null;
   sizeKb: number | null;
   validationStatus: string | null;

@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -26,7 +27,7 @@ const SECTION_LABEL: Record<AnnualAccountSectionKey, string> = {
 
 @Component({
   selector: 'app-manual-review-queue',
-  imports: [ReactiveFormsModule, MaterialModule, MatTableModule, PreLoaderComponent, DatePipe],
+  imports: [ReactiveFormsModule, MaterialModule, MatTableModule, PreLoaderComponent, DatePipe, RouterLink],
   templateUrl: './manual-review-queue.component.html',
   styleUrl: './manual-review-queue.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

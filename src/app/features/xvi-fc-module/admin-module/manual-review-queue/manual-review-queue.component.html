@@ -74,6 +74,17 @@
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
               <div class="d-flex justify-content-center gap-2">
+                @if (row.jobId) {
+                  <a
+                    class="btn btn-outline-secondary btn-sm"
+                    routerLink="/ocr/validation"
+                    [queryParams]="{ jobId: row.jobId }"
+                    target="_blank"
+                    title="View OCR job log"
+                  >
+                    <i class="bi bi-eye"></i> Log
+                  </a>
+                }
                 <button
                   type="button"
                   class="btn btn-outline-secondary btn-sm"
