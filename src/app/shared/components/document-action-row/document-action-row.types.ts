@@ -34,6 +34,8 @@ export interface DocumentRuntimeState {
   hasFile: boolean;
   processingStatus: DocumentProcessingStatus;
   latestDecision: { status: 'APPROVED' | 'RETURNED' } | null;
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload instead of just spinning. */
+  isStale: boolean;
 }
 
 export interface ResolvedDocumentAction {
