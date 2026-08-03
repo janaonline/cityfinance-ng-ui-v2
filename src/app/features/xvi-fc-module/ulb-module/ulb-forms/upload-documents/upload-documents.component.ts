@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UploadDocumentsService } from './upload-documents.service';
+import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -91,6 +92,8 @@ export interface UploadDocument extends UploadDocumentDef {
   validationError: string | null;
   // Most recent state decision against this specific document — null if never decided.
   latestDecision: BackendDecision | null;
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
 }
 
 interface UlbDetails {
@@ -121,6 +124,8 @@ interface BackendStatusDoc {
   docId: string;
   uploadStatus: string;
   processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
   currentUpload: {
     uploadId: string;
     version: number;
@@ -141,7 +146,9 @@ type AnnualAccountFormStatus =
   | 'RETURNED_BY_STATE'
   | 'UNDER_REVIEW_BY_MOHUA'
   | 'RETURNED_BY_MOHUA'
-  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA';
+  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
+  | 'APPROVED_BY_STATE'
+  | 'AWAITING_CLAIM_LETTER';
 
 // Statuses in which the ULB may still upload/edit/submit — mirrors the backend's canUlbEditForm allow-list.
 const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
@@ -153,6 +160,9 @@ const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
 
 const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, string>>> = {
   UNDER_REVIEW_BY_STATE: 'This section has been submitted to State DMA and is now locked for review.',
+  APPROVED_BY_STATE: 'This section has been approved by your State DMA and is now locked.',
+  AWAITING_CLAIM_LETTER:
+    'This section has been approved by your State DMA and is awaiting claim letter generation before moving to MoHUA.',
   UNDER_REVIEW_BY_MOHUA: 'This section has been approved by the state and is now under review by MoHUA.',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'This section has been approved by MoHUA. No further changes are needed.',
 };
@@ -217,6 +227,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    isStale: false,
   };
 }
 
@@ -244,6 +255,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly permissions = inject(AuthPermissionService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
+  private readonly fileService = inject(FileService);
 
   readonly canUpload = () => this.permissions.canUploadDocuments();
   readonly canDelete = () => this.permissions.canDeleteDocuments();
@@ -319,6 +331,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       hasFile: doc.fileName !== null,
       processingStatus: processingStatusMap[doc.status],
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
+      isStale: doc.isStale,
     };
   }
 
@@ -492,14 +505,13 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       // Step 1 — Get presigned PUT URL from generic S3 endpoint
       const uploadId = crypto.randomUUID();
       const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
-      const presignResult = await firstValueFrom(
-        this.http.post<unknown>(`${API}file/signed-url`, [
+      const [presignData] = await firstValueFrom(
+        this.fileService.getSignedUrls([
           { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
         ]),
       );
-      const [presignData] = unwrap<Array<{ url: string; path: string }>>(presignResult);
       const presignedUrl = presignData.url;
-      const s3Key = presignData.path;
+      const s3Key = presignData.path!;
 
       // Step 2 — Upload directly to S3 using fetch (bypasses Angular interceptors — auth headers must not reach S3)
       const s3Response = await fetch(presignedUrl, {
@@ -569,6 +581,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
+              isStale: false,
             }
           : d,
       ),
@@ -800,6 +813,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationStatus: cu.ocrInfo.validationStatus ?? null,
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
+            isStale: saved.isStale,
             latestDecision,
           };
         }),
@@ -848,7 +862,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               if (!remote?.currentUpload || remote.currentUpload.uploadId !== doc.uploadId) return doc;
 
               const newStatus = this.backendStatusToLocal(remote.processingStatus);
-              if (newStatus === doc.status) return doc;
+              // Re-check even when the status itself hasn't changed — isStale flips to true purely
+              // from time passing while still PROCESSING, so a status-only comparison would miss it.
+              if (newStatus === doc.status && remote.isStale === doc.isStale) return doc;
 
               return {
                 ...doc,
@@ -857,6 +873,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationStatus: remote.currentUpload.ocrInfo.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
+                isStale: remote.isStale,
               };
             }),
           );

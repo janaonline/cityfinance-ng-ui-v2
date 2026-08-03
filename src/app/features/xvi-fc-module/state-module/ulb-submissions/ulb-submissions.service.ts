@@ -25,6 +25,8 @@ const NUMERIC_TO_REVIEW_STATUS: Record<number, ReviewStatus> = {
   5: 'UNDER_REVIEW_BY_MOHUA',
   6: 'RETURNED_BY_MOHUA',
   7: 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA',
+  8: 'APPROVED_BY_STATE',
+  9: 'AWAITING_CLAIM_LETTER',
 };
 
 const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
@@ -35,6 +37,8 @@ const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
   UNDER_REVIEW_BY_MOHUA: 5,
   RETURNED_BY_MOHUA: 6,
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 7,
+  APPROVED_BY_STATE: 8,
+  AWAITING_CLAIM_LETTER: 9,
 };
 
 // The dev backend may return bare objects instead of { success, data } wrappers.

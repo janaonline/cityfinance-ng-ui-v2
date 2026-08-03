@@ -3,11 +3,13 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 import { ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -36,6 +38,8 @@ const EMPTY_COUNTS: Record<ReviewStatus, number> = {
   UNDER_REVIEW_BY_MOHUA: 0,
   RETURNED_BY_MOHUA: 0,
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 0,
+  APPROVED_BY_STATE: 0,
+  AWAITING_CLAIM_LETTER: 0,
 };
 
 const BULK_APPROVE_CONFIRM: ConfirmDialogData = {
@@ -89,6 +93,7 @@ export class UlbSubmissionsComponent {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly ulbSubmissionsService = inject(UlbSubmissionsService);
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly http = inject(HttpClient);
 
   readonly filterSelects = FILTER_SELECTS;
   readonly pageSize = signal(PAGE_SIZE);
@@ -165,6 +170,24 @@ export class UlbSubmissionsComponent {
 
   constructor() {
     if (this.isSelectedFormLive()) this.loadRows();
+
+    // The FY label cached in localStorage can be stale/empty (e.g. this session never went
+    // through years-selection) — resolve it authoritatively from the route's yearId instead.
+    const designYearId = this.resolveDesignYearId();
+    if (designYearId) {
+      this.http
+        .get<unknown>(`${environment.api.url2}xvi-fc/years`)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (response) => {
+            const r = response as { data?: Array<{ _id: string; year: string }> };
+            const items = Array.isArray(response) ? response : (r?.data ?? []);
+            const match = (items as Array<{ _id: string; year: string }>).find((y) => y._id === designYearId);
+            if (match) this.yearLabel.set(`FY ${match.year}`);
+          },
+          error: () => undefined,
+        });
+    }
 
     this.filterForm.valueChanges
       .pipe(
@@ -300,7 +323,15 @@ export class UlbSubmissionsComponent {
     };
   }
 
+  // The design year lives on the route as :yearId (see xvi-fc-module.routes.ts), a few levels
+  // up from this component's own route — not in this component's own paramMap directly.
   private resolveDesignYearId(): string {
+    let snapshot: ActivatedRouteSnapshot | null = this.route.snapshot;
+    while (snapshot) {
+      const value = snapshot.paramMap.get('yearId')?.trim();
+      if (value) return value;
+      snapshot = snapshot.parent;
+    }
     return (typeof localStorage !== 'undefined' ? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) : null) ?? '';
   }
 

@@ -32,7 +32,11 @@
       <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
     </div>
   } @else if (loadError()) {
-    <p class="text-center text-danger py-5 mb-0">Failed to load this submission. Please refresh and try again.</p>
+    <app-page-error-state
+      title="Failed to load this submission"
+      message="We couldn't load this submission. Please check your connection and try again."
+      (retry)="loadStatus()"
+    />
   } @else {
     <!-- Single persistent host for @tabSlide — kept outside the PFMS/documents @if so switching tabs animates
        the same element instead of destroying/recreating it (which skipped the animation for the PFMS tab). -->
@@ -42,6 +46,11 @@
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div class="d-flex flex-wrap align-items-center gap-2">
               <h2 class="h6 fw-bold text-uppercase mb-0">PFMS Bank Account Details</h2>
+              @if (bankAccountData(); as data) {
+                <span class="badge rounded-pill doc-status-badge" [class]="pfmsStatusBadgeClass()">
+                  {{ data.currentFormStatusLabel }}
+                </span>
+              }
               @if (pfmsWasReuploaded()) {
                 <span class="badge rounded-pill doc-status-badge reuploaded-badge"
                   matTooltip="The ULB uploaded a corrected file after your last decision">
@@ -388,6 +397,19 @@
           </button>
         </div>
       }
+      @if (bankAccountData() && canUndoApprovalPfms()) {
+        <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
+          <button
+            type="button"
+            matButton="outlined"
+            class="text-danger"
+            [disabled]="isDeciding()"
+            (click)="undoPfmsApproval()"
+          >
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Approval
+          </button>
+        </div>
+      }
     } @else {
       @if (canApprove()) {
         <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
@@ -420,6 +442,19 @@
               <i class="bi bi-check-circle-fill me-1"></i>
             }
             Approve Section
+          </button>
+        </div>
+      }
+      @if (canUndoApproval()) {
+        <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
+          <button
+            type="button"
+            matButton="outlined"
+            class="text-danger"
+            [disabled]="isDeciding()"
+            (click)="undoSectionApproval()"
+          >
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Approval
           </button>
         </div>
       }
