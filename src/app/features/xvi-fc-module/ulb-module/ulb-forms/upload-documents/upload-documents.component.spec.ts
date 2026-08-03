@@ -35,6 +35,7 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    isStale: false,
   };
 }
 
@@ -158,6 +159,7 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
           docId: 'auditors-report',
           uploadStatus: 'UPLOADED',
           processingStatus: 'PASSED',
+          isStale: false,
           currentUpload: {
             uploadId: 'upload-1',
             version: 1,
