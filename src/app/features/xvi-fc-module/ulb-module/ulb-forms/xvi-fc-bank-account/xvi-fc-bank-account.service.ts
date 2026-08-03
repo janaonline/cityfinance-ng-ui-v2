@@ -2,10 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, from, map } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import { FileService, S3SignedUrlRequestItem, S3UrlResult } from '../../../../../shared/dynamic-form/components/file/file.service';
 import {
   ApiResponse,
-  S3SignedUrlRequestItem,
-  S3UrlResult,
   SubmitXviFcBankAccountPayload,
   XviFcBankAccountResponse,
   XviFcIfscLookupResponse,
@@ -14,6 +13,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class XviFcBankAccountService {
   private readonly http = inject(HttpClient);
+  private readonly fileService = inject(FileService);
   private readonly baseUrl = environment.api.url2;
 
   getBankAccount(params: { yearId: string; ulbId?: string }): Observable<XviFcBankAccountResponse | null> {
@@ -45,12 +45,7 @@ export class XviFcBankAccountService {
   }
 
   getSignedUrls(items: S3SignedUrlRequestItem[]): Observable<S3UrlResult[]> {
-    return this.http
-      .post<ApiResponse<S3UrlResult[]> | S3UrlResult[]>(
-        `${this.baseUrl}s3/signed-url`,
-        items,
-      )
-      .pipe(map((res) => this.unwrap(res)));
+    return this.fileService.getSignedUrls(items);
   }
 
   uploadProofToS3(signedUrl: string, file: File): Observable<void> {

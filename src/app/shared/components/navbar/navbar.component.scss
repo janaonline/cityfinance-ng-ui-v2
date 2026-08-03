@@ -98,7 +98,7 @@ a {
     padding-block: 0.25rem;
   }
 
-  nav>div {
+  nav > div {
     padding-block: 0.35rem;
   }
 }
@@ -125,4 +125,137 @@ a {
   letter-spacing: 0.06em;
   line-height: 1.6;
   vertical-align: middle;
+}
+
+// ── Notification bell ──────────────────────────────────────────────────────
+.notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-right: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--clr-secondary);
+  font-size: 1.15rem;
+  border-radius: 50%;
+
+  &:hover {
+    background: rgba(17, 69, 81, 0.08);
+  }
+}
+
+.notification-bell--ring i {
+  display: inline-block;
+  transform-origin: top center;
+  animation: notification-bell-ring 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-bell--ring i {
+    animation: none;
+  }
+}
+
+@keyframes notification-bell-ring {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  1% {
+    transform: rotate(14deg);
+  }
+  3% {
+    transform: rotate(-12deg);
+  }
+  5% {
+    transform: rotate(10deg);
+  }
+  7% {
+    transform: rotate(-8deg);
+  }
+  9% {
+    transform: rotate(6deg);
+  }
+  11% {
+    transform: rotate(-4deg);
+  }
+  13% {
+    transform: rotate(0deg);
+  }
+}
+
+.notification-bell__badge {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.1rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #c62828;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+::ng-deep .notification-menu-panel {
+  min-width: 20rem;
+  max-width: 22rem;
+
+  .mat-mdc-menu-content {
+    padding: 0.25rem 0 !important;
+  }
+}
+
+::ng-deep .notification-menu-empty {
+  color: var(--clr-secondary);
+  font-size: 0.85rem;
+}
+
+::ng-deep .notification-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem !important;
+  height: auto !important;
+  line-height: 1.3 !important;
+
+  i {
+    flex-shrink: 0;
+    font-size: 0.85rem;
+  }
+
+  .notification-menu-item__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+
+    strong {
+      font-size: 0.85rem;
+    }
+
+    span {
+      font-size: 0.75rem;
+      color: var(--clr-secondary);
+    }
+  }
+
+  &--returned i {
+    color: #c62828;
+  }
+
+  &--review i {
+    color: #2563eb;
+  }
+
+  &--approved i {
+    color: #15803d;
+  }
 }

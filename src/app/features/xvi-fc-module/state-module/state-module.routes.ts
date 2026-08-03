@@ -13,8 +13,7 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   },
   {
     path: 'dashboard',
-    loadComponent: () =>
-      import('./state-dashboard/state-dashboard.component').then((m) => m.StateDashboardComponent),
+    loadComponent: () => import('./state-dashboard/state-dashboard.component').then((m) => m.StateDashboardComponent),
   },
   {
     path: 'ulb-submissions',
@@ -90,9 +89,23 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'fc-unspent-declaration',
     loadComponent: () =>
-      import('./fc-unspent-declaration/fc-unspent-declaration.component').then(
-        (m) => m.FcUnspentDeclarationComponent,
-      ),
+      import('./fc-unspent-declaration/fc-unspent-declaration.component').then((m) => m.FcUnspentDeclarationComponent),
+  },
+  {
+    path: 'claim-letter',
+    loadComponent: () => import('./claim-letter/claim-letter-list.component').then((m) => m.ClaimLetterListComponent),
+  },
+  // 'new' must be declared before the ':claimLetterId' param route below — Angular matches routes in
+  // declaration order, and a param segment would otherwise swallow the literal 'new' path first.
+  {
+    path: 'claim-letter/new',
+    loadComponent: () =>
+      import('./claim-letter/detail/claim-letter-detail.component').then((m) => m.ClaimLetterDetailComponent),
+  },
+  {
+    path: 'claim-letter/:claimLetterId',
+    loadComponent: () =>
+      import('./claim-letter/detail/claim-letter-detail.component').then((m) => m.ClaimLetterDetailComponent),
   },
 ];
 
