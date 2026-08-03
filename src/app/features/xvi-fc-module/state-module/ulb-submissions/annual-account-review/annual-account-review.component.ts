@@ -14,6 +14,13 @@ import { NoteDialogService } from '../../../../../shared/components/note-dialog/
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import type { UploadPageConfig } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.component';
 import { UploadDocumentsService } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.service';
+import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
+import type {
+  ActionGate,
+  DocumentRuntimeState,
+  ResolvedDocumentAction,
+} from '../../../../../shared/components/document-action-row/document-action-row.types';
 
 type SectionKey = 'auditedData' | 'unauditedData';
 type TabKey = SectionKey | 'PFMS';
@@ -30,6 +37,8 @@ interface SectionPermissions {
   canUpload: boolean;
   canReview: boolean;
   canApprove: boolean;
+  /** True only while the section is Approved by State — the door STATE can still undo through. */
+  canUndoApproval: boolean;
   canMohuaReview: boolean;
   canMohuaApprove: boolean;
 }
@@ -41,11 +50,11 @@ interface StatusDoc {
   currentUpload: {
     uploadId: string;
     versionLabel: string;
-    file: { originalName: string; sizeKb: number };
+    file: { originalName: string; sizeKb: number; fileUrl: string | null };
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
   } | null;
-  stateDecision: DecisionEntry[];
+  stateDecision: DecisionEntry | null;
 }
 
 interface StatusSection {
@@ -71,9 +80,12 @@ interface ReviewDocRow {
   docId: string;
   title: string;
   subtitle: string;
+  /** false → optional document; no approve/return controls, and it never blocks section approval. */
+  required: boolean;
   processingStatus: StatusDoc['processingStatus'];
   fileName: string | null;
   sizeKb: number | null;
+  fileUrl: string | null;
   versionLabel: string | null;
   uploadedAt: Date | null;
   uploaderRole: string | null;
@@ -89,13 +101,13 @@ interface BankAccountData {
   bankDetails: { name: string; branch: string; address: string; city: string; state?: string; micr: string | null };
   accountNumberMasked: string;
   accountNumberLast4: string;
-  proofFile: { originalName: string; mimeType: string; sizeKb: number; s3Key: string };
+  proofFile: { originalName: string; mimeType: string; sizeKb: number; s3Key: string; fileUrl: string | null };
   currentFormStatus: number;
   currentFormStatusLabel: string;
   stateDecision: DecisionEntry | null;
   mohuaDecision: DecisionEntry | null;
   submittedAt: string | null;
-  permissions: { canReview: boolean; canApprove: boolean };
+  permissions: { canReview: boolean; canApprove: boolean; canUndoApproval: boolean };
 }
 
 /** Raw shape returned by GET /xvi-fc/bank-account — the record id comes back as `_id`, not `id`. */
@@ -142,6 +154,7 @@ const NOT_STARTED_PERMISSIONS: SectionPermissions = {
   canUpload: false,
   canReview: false,
   canApprove: false,
+  canUndoApproval: false,
   canMohuaReview: false,
   canMohuaApprove: false,
 };
@@ -187,7 +200,7 @@ const RETURN_NOTE_MAX_LENGTH = 200;
 @Component({
   selector: 'app-annual-account-review',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatTooltipModule],
+  imports: [DatePipe, MatButtonModule, MatTooltipModule, DocumentActionRowComponent, PageErrorStateComponent],
   templateUrl: './annual-account-review.component.html',
   styleUrl: './annual-account-review.component.scss',
   animations: [TAB_SLIDE],
@@ -265,6 +278,10 @@ export class AnnualAccountReviewComponent {
 
   readonly isLoading = signal(true);
   readonly isDeciding = signal(false);
+  /** docId currently being approved/returned — drives the per-row loading spinner. */
+  readonly decidingDocId = signal<string | null>(null);
+  /** Which section-level decision (if any) is currently in flight — drives that button's spinner. */
+  readonly sectionDecisionInFlight = signal<Decision | null>(null);
   readonly loadError = signal(false);
 
   readonly currentSection = computed(() => {
@@ -285,7 +302,7 @@ export class AnnualAccountReviewComponent {
 
     return config.documents.map((def): ReviewDocRow => {
       const doc = section.documents.find((d) => d.docId === def.id);
-      const rawLatestDecision = doc?.stateDecision.length ? doc.stateDecision[doc.stateDecision.length - 1] : null;
+      const rawLatestDecision = doc?.stateDecision ?? null;
       const uploadedAt = doc?.currentUpload?.uploadedAt ? new Date(doc.currentUpload.uploadedAt) : null;
 
       // A decision only counts against the file it was made on. If the ULB re-uploaded a
@@ -299,9 +316,11 @@ export class AnnualAccountReviewComponent {
         docId: def.id,
         title: def.title,
         subtitle: def.subtitle,
+        required: def.required !== false,
         processingStatus: doc?.processingStatus ?? 'NOT_STARTED',
         fileName: doc?.currentUpload?.file.originalName ?? null,
         sizeKb: doc?.currentUpload?.file.sizeKb ?? null,
+        fileUrl: doc?.currentUpload?.file.fileUrl ?? null,
         versionLabel: doc?.currentUpload?.versionLabel ?? null,
         uploadedAt,
         uploaderRole: doc?.currentUpload?.userInfo?.role ?? null,
@@ -312,9 +331,19 @@ export class AnnualAccountReviewComponent {
     });
   });
 
-  readonly allPassed = computed(() => this.rows().length > 0 && this.rows().every((r) => r.processingStatus === 'PASSED'));
+  /** Optional documents never gate this cosmetic indicator — mirrors the ULB upload page's gating. */
+  readonly allPassed = computed(() => {
+    const requiredRows = this.rows().filter((r) => r.required !== false);
+    return requiredRows.length > 0 && requiredRows.every((r) => r.processingStatus === 'PASSED');
+  });
 
   readonly approvedRowCount = computed(() => this.rows().filter((r) => r.latestDecision?.status === 'APPROVED').length);
+  readonly returnedRowCount = computed(() => this.rows().filter((r) => r.latestDecision?.status === 'RETURNED').length);
+
+  /** Required docs with no individual decision yet — Return Section/Approve Section sweeps these in automatically. */
+  readonly undecidedRequiredRowCount = computed(
+    () => this.rows().filter((r) => r.required !== false && r.latestDecision === null).length,
+  );
 
   /** Approve Section is blocked only by a currently-returned document — undecided documents get auto-approved. */
   readonly canApproveSection = computed(
@@ -328,9 +357,36 @@ export class AnnualAccountReviewComponent {
 
   readonly canReview = computed(() => this.currentSection()?.permissions.canReview ?? false);
   readonly canApprove = computed(() => this.currentSection()?.permissions.canApprove ?? false);
+  readonly canUndoApproval = computed(() => this.currentSection()?.permissions.canUndoApproval ?? false);
+
+  // Inputs for the shared document-action-row component — the gate is a UI-visibility hint
+  // only; canReview() (real backend permission) is what actually gates the click.
+  readonly sectionStatusId = computed(() => this.currentSection()?.form_status_id ?? 0);
+  readonly actionGates = computed<readonly ActionGate[]>(() => {
+    const key = this.activeSection();
+    if (key === 'PFMS') return [];
+    return this.configBySection()[key]?.actionGates ?? [];
+  });
 
   readonly canReviewPfms = computed(() => this.bankAccountData()?.permissions.canReview ?? false);
   readonly canApprovePfms = computed(() => this.bankAccountData()?.permissions.canApprove ?? false);
+  readonly canUndoApprovalPfms = computed(() => this.bankAccountData()?.permissions.canUndoApproval ?? false);
+
+  /** Status-to-badge-color for the PFMS header — reuses the same visual language as the per-document badges. */
+  readonly pfmsStatusBadgeClass = computed(() => {
+    switch (this.bankAccountData()?.currentFormStatus) {
+      case 4: // RETURNED_BY_STATE
+      case 6: // RETURNED_BY_MOHUA
+        return 'failed-badge';
+      case 8: // APPROVED_BY_STATE
+      case 7: // SUBMISSION_ACKNOWLEDGED_BY_MOHUA
+        return 'passed-badge';
+      case 9: // AWAITING_CLAIM_LETTER
+        return 'reuploaded-badge';
+      default: // NOT_STARTED, IN_PROGRESS, UNDER_REVIEW_BY_STATE, UNDER_REVIEW_BY_MOHUA
+        return 'pending-badge';
+    }
+  });
 
   // A stateDecision only counts against the file it was made on — same staleness rule as the
   // per-document decisions above. The bank account record's stateDecision isn't cleared when
@@ -371,47 +427,63 @@ export class AnnualAccountReviewComponent {
     }
   }
 
-  async previewFile(row: ReviewDocRow): Promise<void> {
-    const id = this.statusData()?.annualAccountId;
-    if (!row.uploadId || !id) return;
-    try {
-      const result = await firstValueFrom(this.http.get<unknown>(`${API_ANNUAL}${id}/documents/${row.uploadId}/signed-url`));
-      window.open(unwrap<{ url: string }>(result).url, '_blank', 'noopener');
-    } catch {
-      this.utilityService.triggerSnackbar('Failed to open document preview.', 'snackbar-danger');
+  /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
+  toRuntimeState(row: ReviewDocRow): DocumentRuntimeState {
+    return {
+      docKey: row.docId,
+      required: row.required,
+      hasFile: row.fileName !== null,
+      processingStatus: row.processingStatus,
+      latestDecision: row.latestDecision ? { status: row.latestDecision.status } : null,
+      // STATE's action-row branch never reads isStale — Retry/Re-upload are ULB-only actions.
+      isStale: false,
+    };
+  }
+
+  /** Routes the shared action-row component's click event to the existing handlers — Return
+   *  only opens the inline reason panel here (submitDocumentDecision fires from confirmReturn). */
+  onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    switch (event.action) {
+      case 'approve':
+        void this.approveDocument(event.docKey);
+        return;
+      case 'return':
+        this.startReturn(event.docKey);
+        return;
+      case 'undo':
+        void this.undoDocument(event.docKey);
+        return;
+      default:
+        return; // upload/reupload/retry/delete/*Section aren't emitted on this page's document rows
     }
+  }
+
+  previewFile(row: ReviewDocRow): void {
+    if (!row.fileUrl) {
+      this.utilityService.triggerSnackbar('Failed to open document preview.', 'snackbar-danger');
+      return;
+    }
+    window.open(row.fileUrl, '_blank', 'noopener');
   }
 
   formatFileSize(sizeKb: number): string {
     return `${sizeKb.toFixed(2)} KB`;
   }
 
-  async viewPfmsProof(): Promise<void> {
-    const id = this.bankAccountData()?.id;
-    if (!id) return;
-
-    try {
-      const result = await firstValueFrom(this.http.get<unknown>(`${API_BANK}${id}/proof-signed-url`));
-      window.open(unwrap<{ url: string }>(result).url, '_blank', 'noopener');
-    } catch {
+  viewPfmsProof(): void {
+    const fileUrl = this.bankAccountData()?.proofFile.fileUrl;
+    if (!fileUrl) {
       this.utilityService.triggerSnackbar('Unable to open proof document. Please try again.', 'snackbar-danger');
+      return;
     }
+    window.open(fileUrl, '_blank', 'noopener');
   }
 
+  /**
+   * No confirmation dialog — Undo (available while the section is still under STATE review)
+   * is the safety net for a mis-click here, not a confirm-before-you-click gate.
+   */
   async approveDocument(docId: string): Promise<void> {
-    const confirmed = await firstValueFrom(
-      this.confirmDialogService.confirm(
-        {
-          title: 'Approve this document?',
-          message: 'The document will be locked and cannot be re-uploaded by the ULB once approved.',
-          confirmText: 'Yes, approve',
-          confirmButtonColor: 'primary',
-          icon: 'bi-check-circle-fill',
-        },
-        this.themeClass ? { panelClass: this.themeClass } : undefined,
-      ),
-    );
-    if (!confirmed) return;
     await this.submitDocumentDecision(docId, 'APPROVED', undefined);
   }
 
@@ -448,7 +520,9 @@ export class AnnualAccountReviewComponent {
     let note: string | undefined;
 
     const dialogConfig = this.themeClass ? { panelClass: this.themeClass } : undefined;
-    const total = this.rows().length;
+    // Optional documents (e.g. Notes to Accounts) are never individually decided and never
+    // swept into a section decision — excluded from every count shown to the reviewer here.
+    const total = this.rows().filter((r) => r.required !== false).length;
     const approvedCount = this.approvedRowCount();
     const remainingCount = total - approvedCount;
 
@@ -473,16 +547,24 @@ export class AnnualAccountReviewComponent {
         if (!confirmed) return;
         note = 'Every document in this section was already reviewed individually before the section was returned.';
       } else {
-        const message =
-          approvedCount > 0
-            ? `${approvedCount} of ${total} documents are already approved and will remain approved and locked. Explain what needs to be corrected in the rest — the ULB will see this note.`
-            : 'Explain what needs to be corrected — the ULB will see this note.';
+        const returnedCount = this.returnedRowCount();
+        const undecidedCount = this.undecidedRequiredRowCount();
+
+        const message = 'Explain what needs to be corrected — the ULB will see this note.';
+
+        // Always state the concrete outcome, even when nothing's been individually decided
+        // yet — a consequential, semi-irreversible action should never rely on "obvious
+        // default behavior" to go unstated; the reviewer should never have to infer impact.
+        const approvedClause = approvedCount > 0 ? `${approvedCount} document(s) is marked for approval. ` : '';
+        const selectedClause = returnedCount > 0 ? ` and the ${returnedCount} selected document(s)` : '';
+        const warning = `${approvedClause}Continuing will return the remaining ${undecidedCount} pending document(s)${selectedClause} to the ULB.`;
 
         note = await firstValueFrom(
           this.noteDialogService.prompt(
             {
               title: 'Return this section to the ULB?',
               message,
+              warning,
               placeholder: 'e.g. Balance Sheet figures do not match the Income and Expenditure Statement.',
               confirmText: 'Return section',
               required: true,
@@ -495,10 +577,10 @@ export class AnnualAccountReviewComponent {
     } else {
       const message =
         approvedCount === 0
-          ? `This will approve all ${total} documents in this section and hand it off to MoHUA for their review. This cannot be undone.`
+          ? `This will approve all ${total} documents in this section. You can still undo this from here until you generate the claim letter.`
           : remainingCount > 0
-            ? `You've already approved ${approvedCount} of ${total} documents individually. Approving the section will automatically approve the remaining ${remainingCount} as well and hand it off to MoHUA for their review. This cannot be undone.`
-            : 'This hands the section off to MoHUA for their review. This cannot be undone.';
+            ? `You've already approved ${approvedCount} of ${total} documents individually. Approving the section will automatically approve the remaining ${remainingCount} as well. You can still undo this from here until you generate the claim letter.`
+            : 'You can still undo this from here until you generate the claim letter.';
 
       const confirmed = await firstValueFrom(
         this.confirmDialogService.confirm(
@@ -516,6 +598,7 @@ export class AnnualAccountReviewComponent {
     }
 
     this.isDeciding.set(true);
+    this.sectionDecisionInFlight.set(decision);
     try {
       await firstValueFrom(
         this.http.post<unknown>(`${API_ANNUAL}${id}/decision`, {
@@ -530,6 +613,38 @@ export class AnnualAccountReviewComponent {
       this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
     } finally {
       this.isDeciding.set(false);
+      this.sectionDecisionInFlight.set(null);
+    }
+  }
+
+  async undoSectionApproval(): Promise<void> {
+    const id = this.statusData()?.annualAccountId;
+    const section = this.activeSection();
+    if (!id || section === 'PFMS') return;
+
+    const confirmed = await firstValueFrom(
+      this.confirmDialogService.confirm(
+        {
+          title: 'Undo this approval?',
+          message: 'This will move the section back to Under Review by State, so you can re-decide it.',
+          confirmText: 'Yes, undo',
+          confirmButtonColor: 'warn',
+          icon: 'bi-arrow-counterclockwise',
+        },
+        this.themeClass ? { panelClass: this.themeClass } : undefined,
+      ),
+    );
+    if (!confirmed) return;
+
+    this.isDeciding.set(true);
+    try {
+      await firstValueFrom(this.http.post<unknown>(`${API_ANNUAL}${id}/undo-approval?section=${section}`, {}));
+      this.utilityService.triggerSnackbar('Approval undone.');
+      await this.loadStatus();
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
     }
   }
 
@@ -538,7 +653,7 @@ export class AnnualAccountReviewComponent {
       this.confirmDialogService.confirm(
         {
           title: 'Approve this bank account form?',
-          message: 'This hands the form off to MoHUA for their review. This cannot be undone.',
+          message: 'You can still undo this from here until you generate the claim letter.',
           confirmText: 'Yes, approve',
           confirmButtonColor: 'primary',
           icon: 'bi-check-circle-fill',
@@ -548,6 +663,36 @@ export class AnnualAccountReviewComponent {
     );
     if (!confirmed) return;
     await this.submitPfmsDecision('APPROVED', undefined);
+  }
+
+  async undoPfmsApproval(): Promise<void> {
+    const id = this.bankAccountData()?.id;
+    if (!id) return;
+
+    const confirmed = await firstValueFrom(
+      this.confirmDialogService.confirm(
+        {
+          title: 'Undo this approval?',
+          message: 'This will move the form back to Under Review by State, so you can re-decide it.',
+          confirmText: 'Yes, undo',
+          confirmButtonColor: 'warn',
+          icon: 'bi-arrow-counterclockwise',
+        },
+        this.themeClass ? { panelClass: this.themeClass } : undefined,
+      ),
+    );
+    if (!confirmed) return;
+
+    this.isDeciding.set(true);
+    try {
+      await firstValueFrom(this.http.post<unknown>(`${API_BANK}${id}/undo-approval`, {}));
+      this.utilityService.triggerSnackbar('Approval undone.');
+      await this.loadBankAccount();
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+    }
   }
 
   /** Inline return-reason panel state for the PFMS tab — same slide-open pattern as per-document returns. */
@@ -657,6 +802,7 @@ export class AnnualAccountReviewComponent {
     const id = this.statusData()?.annualAccountId;
     if (!id) return;
     this.isDeciding.set(true);
+    this.decidingDocId.set(docId);
     try {
       // decideDocument's response is the same full StatusResponse shape as loadStatus()'s GET —
       // consume it directly instead of immediately re-fetching the same data over a second round trip.
@@ -672,10 +818,31 @@ export class AnnualAccountReviewComponent {
       this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
     } finally {
       this.isDeciding.set(false);
+      this.decidingDocId.set(null);
     }
   }
 
-  private async loadStatus(): Promise<void> {
+  /** Reverts a document's own APPROVED/RETURNED decision back to undecided — only possible
+   *  while the section itself hasn't been finalized (canReview() mirrors the backend gate). */
+  async undoDocument(docId: string): Promise<void> {
+    const id = this.statusData()?.annualAccountId;
+    if (!id) return;
+    this.isDeciding.set(true);
+    this.decidingDocId.set(docId);
+    try {
+      const result = await firstValueFrom(
+        this.http.delete<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision?section=${this.activeSection()}`),
+      );
+      this.statusData.set(unwrap<StatusResponse>(result));
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+      this.decidingDocId.set(null);
+    }
+  }
+
+  async loadStatus(): Promise<void> {
     this.isLoading.set(true);
     this.loadError.set(false);
 

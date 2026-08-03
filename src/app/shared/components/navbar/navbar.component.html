@@ -79,6 +79,43 @@
         }
       </ul>
 
+      <!-- Notification bell (ULB only) -->
+      @if (showNotificationBell) {
+        <button
+          type="button"
+          class="notification-bell"
+          [class.notification-bell--ring]="ulbNotifications.notifications().length > 0"
+          [matMenuTriggerFor]="notificationMenu"
+          [attr.aria-label]="ulbNotifications.notifications().length + ' notifications'"
+        >
+          <i class="bi bi-bell-fill"></i>
+          @if (ulbNotifications.notifications().length > 0) {
+            <span class="notification-bell__badge">{{ ulbNotifications.notifications().length }}</span>
+          }
+        </button>
+        <mat-menu #notificationMenu="matMenu" class="notification-menu-panel">
+          @if (ulbNotifications.notifications().length === 0) {
+            <p class="notification-menu-empty mb-0 px-3 py-2">No updates right now.</p>
+          } @else {
+            @for (n of ulbNotifications.notifications(); track n.route) {
+              <button
+                type="button"
+                mat-menu-item
+                class="notification-menu-item"
+                [class]="'notification-menu-item--' + n.severity"
+                (click)="navigateToNotification(n.route)"
+              >
+                <i [class]="'bi ' + n.icon"></i>
+                <span class="notification-menu-item__text">
+                  <strong>{{ n.title }}</strong>
+                  <span>{{ n.message }}</span>
+                </span>
+              </button>
+            }
+          }
+        </mat-menu>
+      }
+
       <!-- Login/ Logout -->
       <div class="ms-2">
         @if (!isAuthResolved) {

@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, throwError } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   BulkReviewPayload,
@@ -25,6 +25,8 @@ const NUMERIC_TO_REVIEW_STATUS: Record<number, ReviewStatus> = {
   5: 'UNDER_REVIEW_BY_MOHUA',
   6: 'RETURNED_BY_MOHUA',
   7: 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA',
+  8: 'APPROVED_BY_STATE',
+  9: 'AWAITING_CLAIM_LETTER',
 };
 
 const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
@@ -35,6 +37,8 @@ const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
   UNDER_REVIEW_BY_MOHUA: 5,
   RETURNED_BY_MOHUA: 6,
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 7,
+  APPROVED_BY_STATE: 8,
+  AWAITING_CLAIM_LETTER: 9,
 };
 
 // The dev backend may return bare objects instead of { success, data } wrappers.
@@ -46,6 +50,7 @@ function unwrap<T>(response: unknown): T {
 interface AnnualAccountSubmissionRow {
   ulbId: string;
   ulbCode: string;
+  censusCode: string;
   ulbName: string;
   formStatus: ReviewStatus;
   formStatusId: number;
@@ -64,6 +69,7 @@ interface AnnualAccountListResponse {
 interface BankAccountSubmissionRow {
   ulbId: string;
   ulbCode: string;
+  censusCode: string;
   ulbName: string;
   formStatus: number;
   lastUpdatedAt: string | null;
@@ -113,6 +119,7 @@ export class UlbSubmissionsService {
         const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
           ulbId: row.ulbId,
           ulbCode: row.ulbCode,
+          censusCode: row.censusCode,
           ulbName: row.ulbName,
           formStatus: row.formStatus,
           formStatusId: row.formStatusId,
@@ -145,6 +152,7 @@ export class UlbSubmissionsService {
         const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
           ulbId: row.ulbId,
           ulbCode: row.ulbCode,
+          censusCode: row.censusCode,
           ulbName: row.ulbName,
           formStatus: NUMERIC_TO_REVIEW_STATUS[row.formStatus] ?? 'NOT_STARTED',
           formStatusId: row.formStatus,
@@ -164,32 +172,25 @@ export class UlbSubmissionsService {
     const section = FORM_TO_SECTION[payload.form];
     if (!section) throw new Error(`No backend support yet for form: ${payload.form}`);
 
-    // Backend's POST /xvi-fc/annual-account/bulk-decision is commented out for now —
-    // bulk approve/return for Annual Accounts ships in a later push. Uncomment together.
-    // const body = {
-    //   section,
-    //   decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
-    //   note: payload.reason ?? null,
-    //   ids: payload.recordIds,
-    // };
-    // return this.http
-    //   .post<unknown>(`${ANNUAL_ACCOUNT_API}bulk-decision`, body)
-    //   .pipe(map((res) => unwrap<BulkReviewResult>(res)));
-    return throwError(() => new Error('Bulk approve/return for Annual Accounts is not available yet.'));
+    const body = {
+      section,
+      decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
+      note: payload.reason ?? null,
+      ids: payload.recordIds,
+    };
+    return this.http
+      .post<unknown>(`${ANNUAL_ACCOUNT_API}bulk-decision`, body)
+      .pipe(map((res) => unwrap<BulkReviewResult>(res)));
   }
 
   private bulkReviewBankAccounts(payload: BulkReviewPayload): Observable<BulkReviewResult> {
-    void payload; // unused while the bulk-decision endpoint below is commented out
-    // Backend's POST /xvi-fc/bank-account/bulk-decision is commented out for now —
-    // bulk approve/return for PFMS Bank Account ships in a later push. Uncomment together.
-    // const body = {
-    //   decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
-    //   note: payload.reason ?? null,
-    //   ids: payload.recordIds,
-    // };
-    // return this.http
-    //   .post<unknown>(`${BANK_ACCOUNT_API}bulk-decision`, body)
-    //   .pipe(map((res) => unwrap<BulkReviewResult>(res)));
-    return throwError(() => new Error('Bulk approve/return for PFMS Bank Account is not available yet.'));
+    const body = {
+      decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
+      note: payload.reason ?? null,
+      ids: payload.recordIds,
+    };
+    return this.http
+      .post<unknown>(`${BANK_ACCOUNT_API}bulk-decision`, body)
+      .pipe(map((res) => unwrap<BulkReviewResult>(res)));
   }
 }

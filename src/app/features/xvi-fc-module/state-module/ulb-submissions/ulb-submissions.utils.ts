@@ -8,6 +8,8 @@ const STATUS_BADGE_CLASS: Readonly<Record<ReviewStatus, string>> = {
   UNDER_REVIEW_BY_MOHUA: 'text-bg-success',
   RETURNED_BY_MOHUA: 'text-bg-danger',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'text-bg-success',
+  APPROVED_BY_STATE: 'text-bg-success',
+  AWAITING_CLAIM_LETTER: 'text-bg-info',
 };
 
 export function getStatusBadgeClass(status: ReviewStatus): string {

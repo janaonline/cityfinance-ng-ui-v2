@@ -1,0 +1,55 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.doc-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--clr-primary, #114551);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--clr-primary, #114551);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &:not(:disabled):hover {
+    background: rgba(17, 69, 81, 0.06);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.doc-action-btn--approve {
+  border-color: #1e7e42;
+  color: #1e7e42;
+
+  &:not(:disabled):hover {
+    background: rgba(30, 126, 66, 0.08);
+  }
+}
+
+.doc-action-btn--return {
+  border-color: #c62828;
+  color: #c62828;
+
+  &:not(:disabled):hover {
+    background: rgba(198, 40, 40, 0.08);
+  }
+}
+
+.doc-action-btn--undo {
+  border-color: #b8860b;
+  color: #b8860b;
+
+  &:not(:disabled):hover {
+    background: rgba(184, 134, 11, 0.08);
+  }
+}

@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UploadDocumentsService } from './upload-documents.service';
+import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -25,6 +26,12 @@ import { EMPTY, Subscription, firstValueFrom, interval, switchMap } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
+import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import type {
+  ActionGate,
+  DocumentRuntimeState,
+  ResolvedDocumentAction,
+} from '../../../../../shared/components/document-action-row/document-action-row.types';
 import {
   UlbFormsDialogComponent,
   ULB_FORMS_DIALOG_PANEL_CLASS,
@@ -37,6 +44,8 @@ export interface UploadDocumentDef {
   id: string;
   title: string;
   subtitle: string;
+  /** false → optional document; does not block submission and shows no required asterisk. */
+  required: boolean;
   allowedFileTypes: string[];
   maxFileSize: number;  // MB
   minPages?: number;
@@ -48,6 +57,7 @@ export interface UploadPageConfig {
   confirmLabel: string;
   documentYearId: string;
   documentYear: string;
+  actionGates: ReadonlyArray<ActionGate>;
   documents: ReadonlyArray<UploadDocumentDef>;
 }
 
@@ -60,11 +70,13 @@ export interface UploadPageConfig {
 // error → network/validation error during upload
 type DocumentStatus = 'pending' | 'uploading' | 'processing' | 'passed' | 'failed' | 'error';
 
-interface UploadDocument extends UploadDocumentDef {
+export interface UploadDocument extends UploadDocumentDef {
   status: DocumentStatus;
   fileName: string | null;
   fileSize: number | null;
   sizeKb: number | null;
+  /** Short-lived signed download URL for the uploaded file, from the backend — null until loaded. */
+  fileUrl: string | null;
   localPreviewUrl: string | null;
   pageCount: number | null;
   mimeType: string | null;
@@ -80,6 +92,8 @@ interface UploadDocument extends UploadDocumentDef {
   validationError: string | null;
   // Most recent state decision against this specific document — null if never decided.
   latestDecision: BackendDecision | null;
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
 }
 
 interface UlbDetails {
@@ -99,7 +113,7 @@ interface BackendOcrInfo {
 }
 
 // A state/MoHUA approve-or-return call, as recorded on the backend.
-interface BackendDecision {
+export interface BackendDecision {
   status: 'APPROVED' | 'RETURNED';
   note: string | null;
   decidedAt: string;
@@ -110,17 +124,19 @@ interface BackendStatusDoc {
   docId: string;
   uploadStatus: string;
   processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
+  /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
+  isStale: boolean;
   currentUpload: {
     uploadId: string;
     version: number;
     versionLabel: string;
-    file: { originalName: string; mimeType: string; pageCount: number; sizeKb: number };
+    file: { originalName: string; mimeType: string; pageCount: number; sizeKb: number; fileUrl: string | null };
     ocrInfo: BackendOcrInfo;
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
   } | null;
-  // Every state decision recorded against this document, oldest first — last entry is current.
-  stateDecision: BackendDecision[];
+  // STATE's current decision on this document, or null if undecided/undone.
+  stateDecision: BackendDecision | null;
 }
 
 type AnnualAccountFormStatus =
@@ -130,7 +146,9 @@ type AnnualAccountFormStatus =
   | 'RETURNED_BY_STATE'
   | 'UNDER_REVIEW_BY_MOHUA'
   | 'RETURNED_BY_MOHUA'
-  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA';
+  | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
+  | 'APPROVED_BY_STATE'
+  | 'AWAITING_CLAIM_LETTER';
 
 // Statuses in which the ULB may still upload/edit/submit — mirrors the backend's canUlbEditForm allow-list.
 const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
@@ -142,12 +160,16 @@ const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
 
 const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, string>>> = {
   UNDER_REVIEW_BY_STATE: 'This section has been submitted to State DMA and is now locked for review.',
+  APPROVED_BY_STATE: 'This section has been approved by your State DMA and is now locked.',
+  AWAITING_CLAIM_LETTER:
+    'This section has been approved by your State DMA and is awaiting claim letter generation before moving to MoHUA.',
   UNDER_REVIEW_BY_MOHUA: 'This section has been approved by the state and is now under review by MoHUA.',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'This section has been approved by MoHUA. No further changes are needed.',
 };
 
 interface BackendStatusSection {
   form_status: AnnualAccountFormStatus;
+  form_status_id: number;
   yearId: string;
   year: string;
   documents: BackendStatusDoc[];
@@ -190,6 +212,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     fileName: null,
     fileSize: null,
     sizeKb: null,
+    fileUrl: null,
     localPreviewUrl: null,
     pageCount: null,
     mimeType: null,
@@ -204,13 +227,22 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    isStale: false,
   };
 }
 
 @Component({
   selector: 'app-upload-documents',
   standalone: true,
-  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, MatTooltipModule, PageErrorStateComponent],
+  imports: [
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTooltipModule,
+    PageErrorStateComponent,
+    DocumentActionRowComponent,
+  ],
   templateUrl: './upload-documents.component.html',
   styleUrl: './upload-documents.component.scss',
 })
@@ -223,6 +255,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly permissions = inject(AuthPermissionService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
+  private readonly fileService = inject(FileService);
 
   readonly canUpload = () => this.permissions.canUploadDocuments();
   readonly canDelete = () => this.permissions.canDeleteDocuments();
@@ -246,6 +279,11 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
   // Current section status as last reported by the backend — null until first load.
   readonly sectionStatus = signal<AnnualAccountFormStatus | null>(null);
+  // Numeric form_status_id — what the document-action-row gate is actually keyed on.
+  readonly sectionStatusId = signal<number | null>(null);
+
+  /** Action-row gates fetched alongside the upload config — a UI-visibility hint only. */
+  readonly actionGates = computed<readonly ActionGate[]>(() => this.config()?.actionGates ?? []);
 
   // True whenever the section is in any non-editable status (under review or fully acknowledged) —
   // locks all edits for all roles, not just while under state review.
@@ -277,14 +315,60 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.latestDecision?.status === 'APPROVED';
   }
 
-  readonly passedCount = computed(() => this.documents().filter((d) => d.status === 'passed').length);
-  readonly totalCount = computed(() => this.config()?.documents.length ?? 0);
+  /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
+  toRuntimeState(doc: UploadDocument): DocumentRuntimeState {
+    const processingStatusMap: Record<UploadDocument['status'], DocumentRuntimeState['processingStatus']> = {
+      pending: 'NOT_STARTED',
+      uploading: 'NOT_STARTED',
+      error: 'NOT_STARTED',
+      processing: 'PROCESSING',
+      passed: 'PASSED',
+      failed: 'FAILED',
+    };
+    return {
+      docKey: doc.id,
+      required: doc.required !== false,
+      hasFile: doc.fileName !== null,
+      processingStatus: processingStatusMap[doc.status],
+      latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
+      isStale: doc.isStale,
+    };
+  }
+
+  /** Routes the shared action-row component's click event to the existing handlers — the
+   *  gate/resolver only decide what to show; permission is re-checked here at the point of action. */
+  onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    switch (event.action) {
+      case 'upload':
+      case 'reupload':
+        if (!this.canUpload()) return;
+        this.triggerUpload(event.docKey);
+        return;
+      case 'retry':
+        if (!this.canUpload()) return;
+        void this.retryUpload(event.docKey);
+        return;
+      case 'delete':
+        if (!this.canDelete()) return;
+        void this.removeDocument(event.docKey);
+        return;
+      default:
+        return; // approve/return/undo/*Section are STATE-only — never emitted on this page
+    }
+  }
+
+  /** Optional documents never gate progress/submission — mirrors the backend's submitSection check. */
+  readonly requiredDocuments = computed(() => this.documents().filter((d) => d.required !== false));
+  readonly passedCount = computed(() => this.requiredDocuments().filter((d) => d.status === 'passed').length);
+  readonly totalCount = computed(() => this.requiredDocuments().length);
   readonly progressPct = computed(() => {
     const total = this.totalCount();
     return total === 0 ? 0 : Math.round((this.passedCount() / total) * 100);
   });
   /** A returned document stays blocking even after OCR passes again — it must be resolved (re-decided or re-uploaded) first. */
-  readonly hasReturnedDocs = computed(() => this.documents().some((d) => d.latestDecision?.status === 'RETURNED'));
+  readonly hasReturnedDocs = computed(() =>
+    this.requiredDocuments().some((d) => d.latestDecision?.status === 'RETURNED'),
+  );
 
   readonly allPassed = computed(() => {
     const total = this.totalCount();
@@ -421,14 +505,13 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       // Step 1 — Get presigned PUT URL from generic S3 endpoint
       const uploadId = crypto.randomUUID();
       const folder = `xvi-fc/annual-accounts/${ulbId}/${designYearId}/${section}/${docId}`;
-      const presignResult = await firstValueFrom(
-        this.http.post<unknown>(`${API}s3/signed-url`, [
+      const [presignData] = await firstValueFrom(
+        this.fileService.getSignedUrls([
           { fileName: file.name, folder, mimeType: 'application/pdf', uploadId, expiresIn: 300 },
         ]),
       );
-      const [presignData] = unwrap<Array<{ url: string; path: string }>>(presignResult);
       const presignedUrl = presignData.url;
-      const s3Key = presignData.path;
+      const s3Key = presignData.path!;
 
       // Step 2 — Upload directly to S3 using fetch (bypasses Angular interceptors — auth headers must not reach S3)
       const s3Response = await fetch(presignedUrl, {
@@ -498,6 +581,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
+              isStale: false,
             }
           : d,
       ),
@@ -514,22 +598,10 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async previewFile(doc: UploadDocument): Promise<void> {
-    if (doc.localPreviewUrl) {
-      window.open(doc.localPreviewUrl, '_blank', 'noopener');
-      return;
-    }
-    if (!doc.uploadId || !this.annualAccountId()) return;
-    try {
-      const result = await firstValueFrom(
-        this.http.get<unknown>(
-          `${API}xvi-fc/annual-account/${this.annualAccountId()}/documents/${doc.uploadId}/signed-url`,
-        ),
-      );
-      window.open(unwrap<{ url: string }>(result).url, '_blank', 'noopener');
-    } catch (err) {
-      console.error('[preview] failed to get signed URL', err);
-    }
+  previewFile(doc: UploadDocument): void {
+    const url = doc.localPreviewUrl ?? doc.fileUrl;
+    if (!url) return;
+    window.open(url, '_blank', 'noopener');
   }
 
   async removeDocument(docId: string): Promise<void> {
@@ -676,12 +748,18 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       );
 
       const statusData = unwrap<BackendStatusResponse | null>(result);
-      if (!statusData) return;
+      if (!statusData) {
+        // No annual-account document exists yet for this ULB/year — same as the
+        // backend's own default for a section with no data (NOT_STARTED).
+        this.sectionStatusId.set(1);
+        return;
+      }
 
       this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
 
       const section = this.config()!.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
       this.sectionStatus.set(section?.form_status ?? null);
+      this.sectionStatusId.set(section?.form_status_id ?? null);
       this.sectionReturnNote.set(
         (section?.form_status === 'RETURNED_BY_STATE'
           ? section.stateDecision?.note
@@ -691,14 +769,17 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       );
       if (!section?.documents?.length) return;
 
+      // Per-document decisions are provisional and undoable until STATE finalizes the whole
+      // section (Approve Section/Return Section) — mask them from the ULB until then, so an
+      // in-progress "Returned"/"Approved" verdict that might still get undone never leaks.
+      const decisionsVisible = section.form_status !== 'UNDER_REVIEW_BY_STATE';
+
       this.documents.update((docs) =>
         docs.map((doc) => {
           const saved = section.documents.find((d) => d.docId === doc.id);
           if (!saved) return doc;
 
-          const rawLatestDecision = saved.stateDecision.length
-            ? saved.stateDecision[saved.stateDecision.length - 1]
-            : null;
+          const rawLatestDecision = decisionsVisible ? saved.stateDecision : null;
 
           if (!saved.currentUpload) return { ...doc, latestDecision: rawLatestDecision };
 
@@ -719,6 +800,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             fileName: cu.file.originalName,
             fileSize: null,
             sizeKb: cu.file.sizeKb,
+            fileUrl: cu.file.fileUrl ?? null,
             localPreviewUrl: null,
             pageCount: cu.file.pageCount,
             mimeType: cu.file.mimeType,
@@ -731,6 +813,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationStatus: cu.ocrInfo.validationStatus ?? null,
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
+            isStale: saved.isStale,
             latestDecision,
           };
         }),
@@ -779,7 +862,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               if (!remote?.currentUpload || remote.currentUpload.uploadId !== doc.uploadId) return doc;
 
               const newStatus = this.backendStatusToLocal(remote.processingStatus);
-              if (newStatus === doc.status) return doc;
+              // Re-check even when the status itself hasn't changed — isStale flips to true purely
+              // from time passing while still PROCESSING, so a status-only comparison would miss it.
+              if (newStatus === doc.status && remote.isStale === doc.isStale) return doc;
 
               return {
                 ...doc,
@@ -788,6 +873,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationStatus: remote.currentUpload.ocrInfo.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
+                isStale: remote.isStale,
               };
             }),
           );
