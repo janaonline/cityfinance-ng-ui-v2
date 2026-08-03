@@ -1,4 +1,5 @@
 import { isUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
+import { getXviFcFieldErrorMessage, getXviFcRowErrorMessage } from '../../common/utils/xvi-fc-error-lookup.utils';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -6,6 +7,7 @@ import {
   EulbFinalSubmitPayloadData,
   EulbFormPayloadData,
   EulbRowEditFormValue,
+  EulbRowError,
   EulbRowUpdateApiError,
   EulbUpdateRowPayload,
 } from './eulb-status.models';
@@ -95,14 +97,6 @@ export function buildEulbRowUpdatePayload(raw: EulbRowEditFormValue): EulbUpdate
     payload.electedBodyStatus = raw.electedBodyStatus;
   }
 
-  if (raw.censusCode !== undefined) {
-    payload.censusCode = raw.censusCode;
-  }
-
-  if (raw.ulbName !== undefined) {
-    payload.ulbName = raw.ulbName;
-  }
-
   return payload;
 }
 
@@ -162,4 +156,14 @@ export function hasPersistedValidationData(err: unknown): boolean {
 
 export function getHttpStatus(err: unknown): number | undefined {
   return isRecord(err) && typeof err['status'] === 'number' ? err['status'] : undefined;
+}
+
+/** Returns the backend message for a `newUlbsAdded` error on `electedBodyExcelFile`, or null when absent. */
+export function getRegisterUlbErrorMessage(errors: ApiErrorMap | undefined): string | null {
+  return getXviFcFieldErrorMessage(errors, 'electedBodyExcelFile', 'newUlbsAdded');
+}
+
+/** Returns the message of the first row-level `duplicate` census-code error, or null when absent. */
+export function getDuplicateCensusCodeMessage(errors: EulbRowError[] | undefined): string | null {
+  return getXviFcRowErrorMessage(errors, 'duplicate');
 }

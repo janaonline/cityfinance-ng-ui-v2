@@ -77,7 +77,6 @@ describe('EulbPostUpdateComponent', () => {
       dateOfConstitution: '2020-01-01',
       dateOfExpiry: '2030-01-01',
       remarks: null,
-      rowType: 'DB_ULB',
       validationStatus: 'VALID',
       errors: [],
       ...overrides,

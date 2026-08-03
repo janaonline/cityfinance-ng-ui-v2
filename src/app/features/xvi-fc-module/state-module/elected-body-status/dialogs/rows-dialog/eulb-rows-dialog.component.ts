@@ -30,7 +30,6 @@ import {
   EulbRowsDialogData,
   EulbRowsDialogResult,
   EulbRowsQuery,
-  EulbRowType,
   EulbValidationSummary,
 } from '../../eulb-status.models';
 import { buildEulbRowUpdatePayload, getRecordValue, isRecord, parseEulbRowUpdateErrors } from '../../eulb-status.utils';
@@ -47,20 +46,11 @@ import {
 import { EulbEditableFieldCellComponent } from '../../components/editable-field-cell/eulb-editable-field-cell.component';
 import { EulbValidationBadgeComponent } from '../../components/validation-badge/eulb-validation-badge.component';
 
-function isRowType(value: unknown): value is EulbRowType {
-  return value === 'DB_ULB' || value === 'EXTRA_ULB';
-}
-
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
-type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks' | 'censusCode' | 'ulbName';
-
-const ROW_TYPE_OPTIONS: ReadonlyArray<{ readonly value: EulbRowType; readonly label: string }> = [
-  { value: 'DB_ULB', label: 'DB ULB' },
-  { value: 'EXTRA_ULB', label: 'Extra ULB' },
-];
+type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks';
 
 const ERROR_FIELD_OPTIONS: ReadonlyArray<{ readonly value: EulbEditableFieldKey; readonly label: string }> = [
   { value: 'electedBodyStatus', label: 'Elected Body Status' },
@@ -99,7 +89,6 @@ export class EulbRowsDialogComponent implements OnInit {
   readonly stateId = this.data.stateId;
   readonly yearId = this.data.yearId;
   readonly rowEditFields = signal<ConditionalFieldConfig[]>(this.data.rowEditFields ?? []);
-  readonly extraUlbEditFields = signal<ConditionalFieldConfig[]>(this.data.extraUlbEditFields ?? []);
   readonly canEditRows = !!this.data.canEdit;
 
   readonly rows = signal<EulbRow[]>([]);
@@ -120,7 +109,6 @@ export class EulbRowsDialogComponent implements OnInit {
 
   readonly electedBodyStatusOptions: EulbBodyStatus[] = ['Constituted', 'Not Constituted', 'Exempt'];
   readonly validationStatusOptions = EULB_ROW_VALIDATION_STATUS_OPTIONS;
-  readonly rowTypeOptions = ROW_TYPE_OPTIONS;
   readonly errorFieldOptions = ERROR_FIELD_OPTIONS;
 
   private hasSavedRowChanges = false;
@@ -131,7 +119,6 @@ export class EulbRowsDialogComponent implements OnInit {
   filterForm = this.fb.group({
     search: [''],
     validationStatus: [''],
-    rowType: [''],
     errorField: [''],
   });
 
@@ -151,13 +138,12 @@ export class EulbRowsDialogComponent implements OnInit {
     const requestId = ++this.loadRequestId;
     this.isLoading.set(true);
 
-    const { search, validationStatus, rowType, errorField } = this.filterForm.getRawValue();
+    const { search, validationStatus, errorField } = this.filterForm.getRawValue();
     const query: EulbRowsQuery = {
       page: this.page(),
       limit: this.limit,
       search: search || undefined,
       validationStatus: isEulbRowValidationStatus(validationStatus) ? validationStatus : undefined,
-      rowType: isRowType(rowType) ? rowType : undefined,
       errorField: errorField || undefined,
     };
 
@@ -190,9 +176,10 @@ export class EulbRowsDialogComponent implements OnInit {
     this.loadRows();
   }
 
-  /** Returns the edit-field config list appropriate for the given row's type. */
-  getEditableFieldsForRow(row: EulbRow): ConditionalFieldConfig[] {
-    return row.rowType === 'EXTRA_ULB' ? this.extraUlbEditFields() : this.rowEditFields();
+  /** Returns the edit-field config list — the same for every row, since every row is
+   *  registry-backed (censusCode/ulbName are never portal-editable). */
+  getEditableFieldsForRow(): ConditionalFieldConfig[] {
+    return this.rowEditFields();
   }
 
   /**
@@ -218,20 +205,11 @@ export class EulbRowsDialogComponent implements OnInit {
     const electedBodyStatus =
       electedBodyStatusValue === '' || isEulbBodyStatus(electedBodyStatusValue) ? electedBodyStatusValue : undefined;
 
-    const isExtraUlb =
-      this.rows().find((r) => r._id === this.editingRowId())?.rowType === 'EXTRA_ULB';
-
     return {
       electedBodyStatus,
       dateOfConstitution: this.getRowStringEditControlValue('dateOfConstitution'),
       dateOfExpiry: this.getRowStringEditControlValue('dateOfExpiry'),
       remarks: this.getRowStringEditControlValue('remarks'),
-      ...(isExtraUlb
-        ? {
-            censusCode: this.getRowStringEditControlValue('censusCode'),
-            ulbName: this.getRowStringEditControlValue('ulbName'),
-          }
-        : {}),
     };
   }
 
@@ -425,14 +403,6 @@ export class EulbRowsDialogComponent implements OnInit {
   }
 
   /**
-   * Returns the short display label (`'DB'` or `'Extra'`) for a row type.
-   * @param rowType - The row's `rowType` value.
-   */
-  getRowTypeLabel(rowType: EulbRowType): string {
-    return rowType === 'DB_ULB' ? 'DB' : 'Extra';
-  }
-
-  /**
    * Builds the edit form dynamically from the row-specific field list, setting initial values from the row.
    * Subscribes to each control's `valueChanges` to auto-clear stale API errors on input.
    * @param row - The row whose current values pre-fill the form controls.
@@ -440,7 +410,7 @@ export class EulbRowsDialogComponent implements OnInit {
   private buildEditForm(row: EulbRow): void {
     this.resetEditFormSubscriptions();
     this.editForm = this.fb.group({});
-    this.currentEditFields = this.getEditableFieldsForRow(row);
+    this.currentEditFields = this.getEditableFieldsForRow();
 
     for (const field of this.currentEditFields) {
       const key = field.key;
@@ -556,12 +526,11 @@ export class EulbRowsDialogComponent implements OnInit {
    * The `search` field is debounced by 400 ms; all other controls react immediately.
    */
   private setupFilterSubscription(): void {
-    const { search, validationStatus, rowType, errorField } = this.filterForm.controls;
+    const { search, validationStatus, errorField } = this.filterForm.controls;
 
     merge(
       search.valueChanges.pipe(debounceTime(400), distinctUntilChanged()),
       validationStatus.valueChanges,
-      rowType.valueChanges,
       errorField.valueChanges,
     )
       .pipe(takeUntilDestroyed(this.destroyRef))

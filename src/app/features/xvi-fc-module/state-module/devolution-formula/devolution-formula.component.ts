@@ -43,6 +43,7 @@ import {
   DevolutionRowsDialogResult,
   DevolutionValidationSummary,
   DfInstallment,
+  DfRowValidationError,
   DfRowValidationStatus,
   FinalSubmitDevolutionPayload,
   SaveDraftDevolutionPayload,
@@ -55,6 +56,7 @@ import {
   buildDevolutionFinalSubmitPayloadData,
   extractApiErrorResponse,
   extractValidationSummaryFromError,
+  getDuplicateUlbMessage,
   getHttpStatus,
   getRegisterUlbErrorMessage,
   hasDevolutionFileRef,
@@ -359,6 +361,7 @@ export class DevolutionFormulaComponent implements OnInit {
               `Excel validation completed with ${rowErrorCount} row error(s). Click "View Uploaded Data" to review.`,
               'snackbar-danger',
             );
+            this.notifyDuplicateUlbError(res.data.rowErrors);
           }
           this.reloadForm();
         },
@@ -635,6 +638,7 @@ export class DevolutionFormulaComponent implements OnInit {
               `Revalidation completed with ${rowErrorCount} row error(s). Click "View Uploaded Data" to review.`,
               'snackbar-danger',
             );
+            this.notifyDuplicateUlbError(res.data.rowErrors);
           }
           this.reloadForm();
         },
@@ -814,6 +818,14 @@ export class DevolutionFormulaComponent implements OnInit {
   /** Shows a snackbar with the backend message when a validate/revalidate error reports `newUlbsAdded`. */
   private notifyRegisterUlbError(errors: ApiErrorMap | undefined): void {
     const message = getRegisterUlbErrorMessage(errors);
+    if (message) {
+      this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+    }
+  }
+
+  /** Shows the specific `duplicate` ULB message as a second snackbar, alongside the generic one. */
+  private notifyDuplicateUlbError(rowErrors: DfRowValidationError[] | undefined): void {
+    const message = getDuplicateUlbMessage(rowErrors);
     if (message) {
       this.utilityService.triggerSnackbar(message, 'snackbar-danger');
     }

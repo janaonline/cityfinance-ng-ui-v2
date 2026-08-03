@@ -39,7 +39,7 @@ export class FcUnspentMohuaReviewService {
     if (query.search) params = params.set('search', query.search);
     if (query.page !== undefined) params = params.set('page', String(query.page));
     if (query.limit !== undefined) params = params.set('limit', String(query.limit));
-    if (query.rowStatus) params = params.set('rowStatus', query.rowStatus);
+    if (query.rowStatus !== undefined) params = params.set('rowStatus', String(query.rowStatus));
     if (query.eligibility !== undefined) params = params.set('eligibility', String(query.eligibility));
 
     return this.http
