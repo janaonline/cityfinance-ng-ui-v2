@@ -130,6 +130,17 @@ export class ClaimLetterDetailComponent implements OnInit {
    *  displays the checklist/ULB-readiness fields the full endpoint also computes. */
   readonly eligibilityOverview = signal<ClaimLetterClaimContext | null>(null);
 
+  /** DB-driven claimed-vs-allocated variance band, fed into `<app-claim-ulb-table>`'s live preview —
+   *  never hardcoded here. Edit mode reads it off `claim()` (`getDetail`); create mode reads it off
+   *  `eligibilityOverview()` (`getClaimContext`). The 90/110 fallback only ever shows before either
+   *  has loaded — inert until then, since the live preview needs a real `allocationAmount` too. */
+  readonly varianceLowerPercent = computed(
+    () => this.claim()?.varianceLowerPercent ?? this.eligibilityOverview()?.varianceLowerPercent ?? 90,
+  );
+  readonly varianceUpperPercent = computed(
+    () => this.claim()?.varianceUpperPercent ?? this.eligibilityOverview()?.varianceUpperPercent ?? 110,
+  );
+
   /** `UnspentUlbTableComponent`'s counterpart here — an `OnPush` child whose view can go stale after
    *  this component touches a row control from outside the child's own template (a submit-time
    *  validation pass). */

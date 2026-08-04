@@ -63,10 +63,12 @@
     <mat-tab label="Annexure 1 — FC Disclosures">
       <div class="claim-letter-document-preview-body p-4">
         <h3 class="fs-6 fw-bold">Annexure 1 — FC Unspent Balance Disclosures</h3>
-        <p class="small text-secondary">Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}</p>
+        <p class="small text-secondary">
+          Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}
+        </p>
         <p class="small">
-          The following table summarises the FC unspent balance disclosures submitted by all recommended Urban
-          Local Bodies.
+          The following table summarises the FC unspent balance disclosures submitted by all recommended Urban Local
+          Bodies.
         </p>
 
         <div class="table-responsive">
@@ -86,7 +88,9 @@
                   <td>{{ row.slNo }}</td>
                   <td>{{ row.ulbName }}</td>
                   <td class="text-end">{{ formatCrore(row.priorFcUnspentAmount) }}</td>
-                  <td class="text-end">{{ formatCrore(row.claimedAmount) }}</td>
+                  <td class="text-end" [title]="formatCroreFull(row.claimedAmount)">
+                    {{ formatCrore(row.claimedAmount) }}
+                  </td>
                   <td class="text-center">
                     @if (row.eligible) {
                       <i class="bi bi-check-lg text-success" aria-label="Eligible"></i>
@@ -105,10 +109,12 @@
     <mat-tab label="Annexure 2 — City Conditions">
       <div class="claim-letter-document-preview-body p-4">
         <h3 class="fs-6 fw-bold">Annexure 2 — City-wise Eligibility Conditions</h3>
-        <p class="small text-secondary">Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}</p>
+        <p class="small text-secondary">
+          Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}
+        </p>
         <p class="small">
-          Confirmation that each recommended Urban Local Body has met all prescribed eligibility conditions as on
-          the date of this letter.
+          Confirmation that each recommended Urban Local Body has met all prescribed eligibility conditions as on the
+          date of this letter.
         </p>
 
         <div class="table-responsive">

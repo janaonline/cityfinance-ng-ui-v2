@@ -8,7 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { ClaimLetterInstallment, ClaimLetterUlbOption } from '../../claim-letter.models';
 import { ClaimLetterService } from '../../claim-letter.service';
-import { formatCrore, humanizeToken } from '../../claim-letter.utils';
+import { formatCrore, formatCroreFull, humanizeToken } from '../../claim-letter.utils';
 
 export type ClaimLetterEligibilityFilter = 'ALL' | 'ELIGIBLE' | 'INELIGIBLE';
 
@@ -68,6 +68,7 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
   private readonly excludeSet = computed(() => new Set(this.data.excludeUlbIds));
 
   readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
   readonly humanizeToken = humanizeToken;
 
   /** Monotonically increasing request id — guards against a stale page/search/filter response

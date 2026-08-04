@@ -54,7 +54,9 @@
             >
               <td class="ps-3 small">{{ option.ulbName }}</td>
               <td class="small">{{ option.censusCode ?? option.sbCode ?? '—' }}</td>
-              <td class="small text-end">{{ option.allocationAmount }}</td>
+              <td class="small text-end" [title]="formatCroreFull(option.allocationAmount)">
+                {{ formatCrore(option.allocationAmount) }}
+              </td>
               <td class="text-end pe-3">
                 <div class="d-inline-flex align-items-center justify-content-end gap-2">
                   @if (isExcluded(option.ulbId)) {
