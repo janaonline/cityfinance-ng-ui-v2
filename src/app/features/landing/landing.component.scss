@@ -1,0 +1,164 @@
+$accent-colors: (
+  'green': #1f6b3f,
+  'blue': #2554c7,
+  'orange': #c2571c,
+  'gray': #4b5563,
+  'indigo': #372f8f,
+);
+
+.landing {
+  padding: 24px;
+  background: #eef1ee;
+  min-height: 100%;
+}
+
+.role-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-top: 4px solid transparent !important;
+  border-radius: 12px !important;
+  padding: 20px;
+
+  @each $name, $color in $accent-colors {
+    &--#{$name} {
+      border-top-color: $color !important;
+
+      .role-card__icon {
+        background: rgba($color, 0.12);
+        color: $color;
+      }
+
+      .role-card__cta {
+        background-color: $color !important;
+        color: #fff !important;
+      }
+    }
+  }
+}
+
+.example-header-image {
+  background-image: url('https://material.angular.dev/assets/img/examples/shiba1.jpg');
+  background-size: cover;
+}
+
+.role-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.role-card__title {
+  margin: 0 0 2px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #1f2422;
+}
+
+.role-card__subtitle {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #8a9089;
+  text-transform: uppercase;
+}
+
+.role-card__description {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7169;
+  flex: 1;
+}
+
+.role-card__actions {
+  padding: 16px 0 0 !important;
+  min-height: 0 !important;
+}
+
+.role-card__cta,
+.community-card__signin {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.community-card {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  border-top: 4px solid transparent !important;
+  border-radius: 12px !important;
+  padding: 20px 24px;
+
+  @each $name, $color in $accent-colors {
+    &--#{$name} {
+      border-top-color: $color !important;
+
+      .community-card__icon {
+        background: rgba($color, 0.12);
+        color: $color;
+      }
+
+      .community-card__signin {
+        background-color: $color !important;
+        color: #fff !important;
+      }
+    }
+  }
+}
+
+.community-card__info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+}
+
+.community-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.community-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2422;
+}
+
+.community-card__subtitle {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #8a9089;
+  text-transform: uppercase;
+}
+
+.community-card__description {
+  flex: 1 1 320px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7169;
+}
+
+.community-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}

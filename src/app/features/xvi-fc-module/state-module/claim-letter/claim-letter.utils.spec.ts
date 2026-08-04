@@ -4,6 +4,7 @@ import {
   describeEligibilitySourceDescription,
   describeEligibilitySourceLabel,
   formatCrore,
+  formatCroreFull,
   formatUlbBreakdown,
   humanizeToken,
   isClaimWithinVariance,
@@ -14,6 +15,13 @@ describe('formatCrore', () => {
   it('returns "—" for undefined', () => expect(formatCrore(undefined)).toBe('—'));
   it('appends "Cr." without rescaling', () => expect(formatCrore(13.948)).toBe('13.95 Cr.'));
   it('formats zero', () => expect(formatCrore(0)).toBe('0 Cr.'));
+});
+
+describe('formatCroreFull', () => {
+  it('returns "—" for null', () => expect(formatCroreFull(null)).toBe('—'));
+  it('returns "—" for undefined', () => expect(formatCroreFull(undefined)).toBe('—'));
+  it('appends "Cr." without rounding', () => expect(formatCroreFull(13.948235)).toBe('13.948235 Cr.'));
+  it('formats zero', () => expect(formatCroreFull(0)).toBe('0 Cr.'));
 });
 
 describe('computeClaimDifferencePercentage', () => {
@@ -27,11 +35,16 @@ describe('computeClaimDifferencePercentage', () => {
 });
 
 describe('isClaimWithinVariance', () => {
-  it('is true exactly at the lower 90% boundary', () => expect(isClaimWithinVariance(10, 9)).toBe(true));
-  it('is true exactly at the upper 110% boundary', () => expect(isClaimWithinVariance(10, 11)).toBe(true));
-  it('is false just below the lower boundary', () => expect(isClaimWithinVariance(10, 8.9)).toBe(false));
-  it('is false just above the upper boundary', () => expect(isClaimWithinVariance(10, 11.1)).toBe(false));
-  it('is true when claimed equals allocation', () => expect(isClaimWithinVariance(10, 10)).toBe(true));
+  it('is true exactly at the lower 90% boundary', () => expect(isClaimWithinVariance(10, 9, 90, 110)).toBe(true));
+  it('is true exactly at the upper 110% boundary', () => expect(isClaimWithinVariance(10, 11, 90, 110)).toBe(true));
+  it('is false just below the lower boundary', () => expect(isClaimWithinVariance(10, 8.9, 90, 110)).toBe(false));
+  it('is false just above the upper boundary', () => expect(isClaimWithinVariance(10, 11.1, 90, 110)).toBe(false));
+  it('is true when claimed equals allocation', () => expect(isClaimWithinVariance(10, 10, 90, 110)).toBe(true));
+  it('respects a configured non-default variance band', () => {
+    expect(isClaimWithinVariance(10, 10, 100, 100)).toBe(true);
+    expect(isClaimWithinVariance(10, 9.9, 100, 100)).toBe(false);
+    expect(isClaimWithinVariance(10, 10.1, 100, 100)).toBe(false);
+  });
 });
 
 describe('humanizeToken', () => {

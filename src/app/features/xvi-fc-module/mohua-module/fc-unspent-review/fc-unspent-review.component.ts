@@ -17,8 +17,14 @@ import {
   normalizeUploadedFileMetadata,
 } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
-import { BulkRejectRowsDialogComponent, BulkRejectRowsDialogData } from './dialogs/bulk-reject-rows-dialog/bulk-reject-rows-dialog.component';
-import { MohuaRemarksDialogComponent, MohuaRemarksDialogData } from './dialogs/mohua-remarks-dialog/mohua-remarks-dialog.component';
+import {
+  BulkRejectRowsDialogComponent,
+  BulkRejectRowsDialogData,
+} from './dialogs/bulk-reject-rows-dialog/bulk-reject-rows-dialog.component';
+import {
+  MohuaRemarksDialogComponent,
+  MohuaRemarksDialogData,
+} from './dialogs/mohua-remarks-dialog/mohua-remarks-dialog.component';
 import {
   FcUnspentMohuaReviewData,
   FcUnspentMohuaRow,
@@ -27,18 +33,35 @@ import {
   RowStatusType,
 } from './fc-unspent-review.models';
 import { FcUnspentMohuaReviewService } from './fc-unspent-review.service';
-import { extractApiErrorResponse, ROW_STATUS_BADGE_CLASS, ROW_STATUS_LABEL } from './fc-unspent-review.utils';
+import {
+  extractApiErrorResponse,
+  formatCrore,
+  formatCroreFull,
+  ROW_STATUS_BADGE_CLASS,
+  ROW_STATUS_LABEL,
+} from './fc-unspent-review.utils';
 
 const ROWS_PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-fc-unspent-mohua-review',
-  imports: [ReactiveFormsModule, FormsModule, MatButtonModule, PreLoaderComponent, SignedUrlDirective, DatePipe, DecimalPipe],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    MatButtonModule,
+    PreLoaderComponent,
+    SignedUrlDirective,
+    DatePipe,
+    DecimalPipe,
+  ],
   templateUrl: './fc-unspent-review.component.html',
   styleUrl: './fc-unspent-review.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FcUnspentMohuaReviewComponent implements OnInit {
+  readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -96,7 +119,9 @@ export class FcUnspentMohuaReviewComponent implements OnInit {
   // ─── Selection (keyed by row id, storing the row itself so permissions survive paging) ────
   readonly selectedRows = signal<Map<string, FcUnspentMohuaRow>>(new Map());
   readonly selectedCount = computed(() => this.selectedRows().size);
-  readonly reviewableRowsOnPage = computed(() => this.rows().filter((r) => r.permissions.canApprove || r.permissions.canReject));
+  readonly reviewableRowsOnPage = computed(() =>
+    this.rows().filter((r) => r.permissions.canApprove || r.permissions.canReject),
+  );
   readonly allReviewableSelectedOnPage = computed(() => {
     const reviewable = this.reviewableRowsOnPage();
     return reviewable.length > 0 && reviewable.every((r) => this.selectedRows().has(r._id));
@@ -285,7 +310,11 @@ export class FcUnspentMohuaReviewComponent implements OnInit {
 
   private setupFilterSubscription(): void {
     const { search, rowStatus, eligibility } = this.filterForm.controls;
-    merge(search.valueChanges.pipe(debounceTime(400), distinctUntilChanged()), rowStatus.valueChanges, eligibility.valueChanges)
+    merge(
+      search.valueChanges.pipe(debounceTime(400), distinctUntilChanged()),
+      rowStatus.valueChanges,
+      eligibility.valueChanges,
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.rowsPage.set(1);

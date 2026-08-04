@@ -47,7 +47,7 @@ export interface UploadDocumentDef {
   /** false → optional document; does not block submission and shows no required asterisk. */
   required: boolean;
   allowedFileTypes: string[];
-  maxFileSize: number;  // MB
+  maxFileSize: number; // MB
   minPages?: number;
 }
 
@@ -92,6 +92,11 @@ export interface UploadDocument extends UploadDocumentDef {
   validationError: string | null;
   // Most recent state decision against this specific document — null if never decided.
   latestDecision: BackendDecision | null;
+  // Client-side only — true once this doc's OCR has failed and the ULB has retried at least
+  // once this session. Gates the "Request Manual Review" button; resets on reload.
+  hasRetried: boolean;
+  isManualReviewRequested: boolean;
+  manualReviewError: string | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
   isStale: boolean;
 }
@@ -110,6 +115,7 @@ interface BackendOcrInfo {
   validationStatus: string | null;
   validationDetails: string | null;
   failedChecks: string[];
+  isManualReviewRequested: boolean;
 }
 
 // A state/MoHUA approve-or-return call, as recorded on the backend.
@@ -227,6 +233,9 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    hasRetried: false,
+    isManualReviewRequested: false,
+    manualReviewError: null,
     isStale: false,
   };
 }
@@ -524,7 +533,15 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       // Step 3 — Confirm upload to NestJS (saves metadata + triggers OCR)
       const confirmResult = await firstValueFrom(
         this.http.post<unknown>(`${API}xvi-fc/annual-account/confirm-upload`, {
-          uploadId, s3Key, ulbId, stateId, designYearId, section, docId, yearId, year,
+          uploadId,
+          s3Key,
+          ulbId,
+          stateId,
+          designYearId,
+          section,
+          docId,
+          yearId,
+          year,
           originalName: file.name,
           fileSize: file.size,
         }),
@@ -581,6 +598,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
+              hasRetried: true,
+              isManualReviewRequested: false,
+              manualReviewError: null,
               isStale: false,
             }
           : d,
@@ -595,6 +615,58 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error('[retry] failed', err);
       this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, status: 'failed' } : d)));
+    }
+  }
+
+  async requestManualReview(docId: string): Promise<void> {
+    const doc = this.documents().find((d) => d.id === docId);
+    const accountId = this.annualAccountId();
+    if (!doc || !accountId) return;
+
+    const data: UlbFormsDialogData = {
+      title: 'Request manual review?',
+      icon: { name: 'support_agent', color: '#1976d2' },
+      description:
+        'This document has failed automated verification. Our team will manually review it instead — this can take longer than the automated checks. You will not be able to request this again for this document until you retry or re-upload it.',
+      buttons: [
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
+        { label: 'Request Manual Review', result: 'request', variant: 'flat' },
+      ],
+    };
+
+    const result = await firstValueFrom(
+      this.dialog
+        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
+          data,
+          disableClose: true,
+          width: '500px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
+        })
+        .afterClosed(),
+    );
+
+    if (result !== 'request') return;
+
+    const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
+    this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, manualReviewError: null } : d)));
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          `${API}xvi-fc/annual-account/${accountId}/documents/${docId}/manual-review?section=${section}`,
+          {},
+        ),
+      );
+      this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, isManualReviewRequested: true } : d)));
+    } catch (err) {
+      console.error('[manual-review] request failed', err);
+      this.documents.update((docs) =>
+        docs.map((d) =>
+          d.id === docId ? { ...d, manualReviewError: 'Failed to request manual review. Please try again.' } : d,
+        ),
+      );
     }
   }
 
@@ -813,6 +885,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationStatus: cu.ocrInfo.validationStatus ?? null,
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
+            isManualReviewRequested: cu.ocrInfo.isManualReviewRequested ?? false,
             isStale: saved.isStale,
             latestDecision,
           };
@@ -873,6 +946,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationStatus: remote.currentUpload.ocrInfo.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
+                isManualReviewRequested: remote.currentUpload.ocrInfo.isManualReviewRequested ?? false,
                 isStale: remote.isStale,
               };
             }),
@@ -929,7 +1003,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       if (!(h[0] === 0x25 && h[1] === 0x50 && h[2] === 0x44 && h[3] === 0x46 && h[4] === 0x2d)) {
         return 'Please upload a PDF file only.';
       }
-    } catch { /* ignore — pdf.js will reject a corrupt file */ }
+    } catch {
+      /* ignore — pdf.js will reject a corrupt file */
+    }
 
     // Render-based blank detection via pdf.js.
     // Rendering at low resolution and checking pixel brightness is the only reliable approach

@@ -104,6 +104,10 @@ export interface ClaimLetterClaimContext {
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
   remainingUlbCount: number;
+  /** DB-driven claimed-vs-allocated variance band (formJson.meta on the backend) — never hardcode
+   *  these; pass straight through to `isClaimWithinVariance`. */
+  varianceLowerPercent: number;
+  varianceUpperPercent: number;
 }
 
 /**
@@ -216,6 +220,10 @@ export interface ClaimLetterBatchSummary {
   /** Claim Letter's own `formjsons` field config (today: just `signedClaimFile`). Only present on
    *  `getDetail` responses. */
   questions?: ConditionalFieldConfig[];
+  /** Same DB-driven variance band as `ClaimLetterClaimContext` — only present on `getDetail`
+   *  responses, same convention as `questions`. */
+  varianceLowerPercent?: number;
+  varianceUpperPercent?: number;
 }
 
 /** One row of the covering letter's recommended-ULBs table. No per-ULB date exists on the batch
