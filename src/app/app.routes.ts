@@ -29,12 +29,9 @@ export const routes: Routes = [
   // },
   {
     path: '',
-    children: [
-      // {
-      //   // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
-      //   path: 'home', component: HomeComponent,
-      // },
-    ],
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/landing/landing.component').then((m) => m.LandingComponent),
   },
   // {
   //     path: '',

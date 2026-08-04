@@ -74,6 +74,24 @@
   background: #e6f6ec;
 }
 
+.manual-review-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: #1976d2;
+  background: #e8f1fb;
+
+  mat-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+  }
+}
+
 .body-sm {
   font-size: 0.82rem;
 }
@@ -272,8 +290,13 @@
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 // ── failed state ──────────────────────────────────────────────────────────────
@@ -331,6 +354,30 @@
       line-height: 1;
     }
   }
+}
+
+//TODO: move
+.manual-review-btn {
+  font-size: 0.78rem;
+  border-color: #1976d2;
+  color: #1976d2;
+  height: 32px;
+  line-height: 32px;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &:hover {
+    background: #e8f1fb;
+  }
+}
+
+.manual-review-error {
+  font-size: 0.72rem;
+  color: #c62828;
 }
 
 // ── validation results panel ──────────────────────────────────────────────────
@@ -482,7 +529,10 @@
       color: var(--mat-sys-primary);
     }
 
-    &:hover .chip-icon { color: var(--mat-sys-primary); opacity: 0.8; }
+    &:hover .chip-icon {
+      color: var(--mat-sys-primary);
+      opacity: 0.8;
+    }
   }
 }
 
@@ -494,8 +544,12 @@
 
 // ── skeleton ──────────────────────────────────────────────────────────────────
 @keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
 }
 
 .skeleton-line,
