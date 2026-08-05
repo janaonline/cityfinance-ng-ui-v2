@@ -47,7 +47,7 @@ export interface PtaxMetricValidation {
   min: number;
   max: number;
   decimalLimit: number;
-  /** true for the 4 currency metrics (always ₹ Lakhs); false for the 2 count metrics. */
+  /** true for currency metrics (always ₹ Lakhs); false for count metrics. */
   isRupee: boolean;
 }
 
