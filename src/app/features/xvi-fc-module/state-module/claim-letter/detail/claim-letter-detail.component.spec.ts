@@ -92,6 +92,8 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
       availableToClaim: 15,
     },
     remainingUlbCount: 0,
+    varianceLowerPercent: 90,
+    varianceUpperPercent: 110,
     ...overrides,
   };
 }

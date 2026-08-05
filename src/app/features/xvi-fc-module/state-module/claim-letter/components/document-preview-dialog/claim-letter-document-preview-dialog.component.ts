@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
 import { ClaimLetterDocumentData } from '../../claim-letter.models';
-import { formatCrore } from '../../claim-letter.utils';
+import { formatCrore, formatCroreFull } from '../../claim-letter.utils';
 
 export interface ClaimLetterDocumentPreviewDialogData {
   documentData: ClaimLetterDocumentData;
@@ -27,6 +27,7 @@ export class ClaimLetterDocumentPreviewDialogComponent {
   readonly data = inject<ClaimLetterDocumentPreviewDialogData>(MAT_DIALOG_DATA);
 
   readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
 
   /** "AFS = Audited Financial Statement · Provisional FS = ..." — dynamically generated from
    *  whichever criteria are actually enabled, so the legend always matches Annexure 2's columns

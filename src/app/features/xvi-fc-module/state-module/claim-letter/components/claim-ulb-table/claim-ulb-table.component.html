@@ -42,7 +42,10 @@
             <td class="small text-center text-secondary text-nowrap text-truncate">
               {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
             </td>
-            <td class="small text-end pe-3 text-secondary">
+            <td
+              class="small text-end pe-3 text-secondary"
+              [title]="formatCroreFull(rowViewModels()[i].allocationAmount)"
+            >
               {{ formatCrore(rowViewModels()[i].allocationAmount) }}
             </td>
             <td>
@@ -127,7 +130,9 @@
         <tfoot class="table-light border-top">
           <tr>
             <td colspan="3" class="ps-3 small fw-semibold text-secondary">Total</td>
-            <td class="small text-end pe-3 fw-semibold">{{ formatCrore(totalAllocation()) }}</td>
+            <td class="small text-end pe-3 fw-semibold" [title]="formatCroreFull(totalAllocation())">
+              {{ formatCrore(totalAllocation()) }}
+            </td>
             <td class="small text-end pe-3 fw-semibold" colspan="1">{{ formatCrore(totalClaim()) }}</td>
             <td colspan="2"></td>
           </tr>

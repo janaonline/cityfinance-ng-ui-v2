@@ -18,6 +18,7 @@ import { map, startWith, switchMap } from 'rxjs';
 import { MATERIAL_THEME_CLASS } from '../../../../../../core/theming/material-theme.providers';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
+import { formatCrore, formatCroreFull } from '../../fc-unspent-declaration.utils';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dialog/ulb-picker-dialog.component';
 
@@ -129,6 +130,9 @@ export function createFcUnspentUlbRowGroup(
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UnspentUlbTableComponent {
+  readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
+
   private readonly dynamicService = inject(DynamicFormService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
