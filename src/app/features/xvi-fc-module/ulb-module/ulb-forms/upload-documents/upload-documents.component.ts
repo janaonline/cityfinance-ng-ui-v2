@@ -92,6 +92,8 @@ export interface UploadDocument extends UploadDocumentDef {
   validationError: string | null;
   // Most recent state decision against this specific document — null if never decided.
   latestDecision: BackendDecision | null;
+  // ADMIN's verdict on a manual-review request for this document — null if never requested/decided.
+  manualReviewDecision: BackendDecision | null;
   // Client-side only — true once this doc's OCR has failed and the ULB has retried at least
   // once this session. Gates the "Request Manual Review" button; resets on reload.
   hasRetried: boolean;
@@ -143,6 +145,8 @@ interface BackendStatusDoc {
   } | null;
   // STATE's current decision on this document, or null if undecided/undone.
   stateDecision: BackendDecision | null;
+  // ADMIN's verdict on a manual-review request for this document, or null if never requested/decided.
+  manualReviewDecision: BackendDecision | null;
 }
 
 type AnnualAccountFormStatus =
@@ -233,6 +237,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    manualReviewDecision: null,
     hasRetried: false,
     isManualReviewRequested: false,
     manualReviewError: null,
@@ -341,6 +346,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       processingStatus: processingStatusMap[doc.status],
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
       isStale: doc.isStale,
+      manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
     };
   }
 
@@ -866,6 +872,14 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               ? null
               : rawLatestDecision;
 
+          // Same staleness convention for ADMIN's manual-review verdict — a re-upload after the
+          // decision supersedes it, even though the backend doesn't clear it on plain retry.
+          const manualReviewDecision =
+            saved.manualReviewDecision &&
+            new Date(cu.uploadedAt).getTime() > new Date(saved.manualReviewDecision.decidedAt).getTime()
+              ? null
+              : saved.manualReviewDecision;
+
           return {
             ...doc,
             status,
@@ -888,6 +902,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             isManualReviewRequested: cu.ocrInfo.isManualReviewRequested ?? false,
             isStale: saved.isStale,
             latestDecision,
+            manualReviewDecision,
           };
         }),
       );
