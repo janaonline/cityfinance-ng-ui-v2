@@ -91,6 +91,25 @@
   }
 }
 
+// Bootstrap's `.text-muted` sets color with `!important`, so it can't be darkened by a
+// same-or-lower-specificity override - these use dedicated classes instead of `.text-muted`.
+.card-head-meta {
+  color: #495057;
+  font-weight: 600;
+}
+
+.status-bar {
+  .status-text {
+    color: #495057;
+    font-weight: 500;
+  }
+
+  .status-label {
+    color: #495057;
+    font-weight: 600;
+  }
+}
+
 .review-table {
   font-size: 0.86rem;
 
@@ -104,11 +123,13 @@
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #757575;
+    color: #495057;
+    font-weight: 700;
   }
 
   td.code {
-    color: #757575;
+    color: #1a1d1f;
+    font-weight: 700;
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
   }
