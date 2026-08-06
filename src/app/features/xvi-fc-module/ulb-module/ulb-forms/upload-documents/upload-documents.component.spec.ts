@@ -35,6 +35,10 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    manualReviewDecision: null,
+    hasRetried: false,
+    isManualReviewRequested: false,
+    manualReviewError: null,
     isStale: false,
   };
 }
