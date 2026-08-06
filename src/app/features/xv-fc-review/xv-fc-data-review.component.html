@@ -72,13 +72,13 @@
 
         @if (service.fyDetail(); as detail) {
           <!-- Status bar -->
-          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-            <span class="text-muted small">
+          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap status-bar">
+            <span class="status-text small">
               <b class="text-body">{{ flagCount() }}</b> of <b class="text-body">{{ totalItems() }}</b> line items
               flagged
             </span>
             <div class="ms-auto d-flex align-items-center gap-2">
-              <label for="unit-select" class="text-muted small mb-0">Show as</label>
+              <label for="unit-select" class="status-label small mb-0">Show as</label>
               <select id="unit-select" #unitSelect class="unit-select" [value]="currentUnit()" (change)="switchUnit(unitSelect.value)">
                 @for (u of units; track u) {
                   <option [value]="u" [selected]="u === currentUnit()">{{ unitLabels[u] }}</option>
@@ -167,7 +167,7 @@
           <mat-card class="mb-4">
             <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
               <span class="fw-bold small">Standardised Financial Statement - NMAM format</span>
-              <span class="text-muted small">FY {{ currentFy() }} · {{ unitLabels[currentUnit()] }}</span>
+              <span class="card-head-meta small">FY {{ currentFy() }} · {{ unitLabels[currentUnit()] }}</span>
             </div>
             <mat-card-content class="p-0">
               <div class="table-responsive">

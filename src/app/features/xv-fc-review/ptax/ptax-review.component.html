@@ -50,7 +50,7 @@
       <mat-card>
         <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
           <span class="fw-bold small">Property Tax - all metrics</span>
-          <span class="text-muted small">FY {{ currentFy() }}</span>
+          <span class="card-head-meta small">FY {{ currentFy() }}</span>
         </div>
         <mat-card-content class="p-0">
           <div class="table-responsive">
@@ -206,15 +206,15 @@
         </div>
 
         @if (service.fyDetail(); as detail) {
-          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-            <span class="text-muted small">
+          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap status-bar">
+            <span class="status-text small">
               @if (detail.submittedAt) {
                 Last updated on {{ detail.submittedAt | date: 'd MMM y' }} ·
               }
               <b class="text-body">{{ flagCount() }}</b> row{{ flagCount() === 1 ? '' : 's' }} flagged
             </span>
             <div class="ms-auto d-flex align-items-center gap-2">
-              <label for="ptax-unit-select" class="text-muted small mb-0">Show as</label>
+              <label for="ptax-unit-select" class="status-label small mb-0">Show as</label>
               <select id="ptax-unit-select" #unitSelect class="unit-select" [value]="currentUnit()" (change)="switchUnit(unitSelect.value)">
                 @for (u of units; track u) {
                   <option [value]="u" [selected]="u === currentUnit()">{{ unitLabels[u] }}</option>
@@ -280,7 +280,7 @@
             <mat-card class="mb-4">
               <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
                 <span class="fw-bold small">Property Tax Details</span>
-                <span class="text-muted small">FY {{ currentFy() }} · {{ unitLabels[currentUnit()] }}</span>
+                <span class="card-head-meta small">FY {{ currentFy() }} · {{ unitLabels[currentUnit()] }}</span>
               </div>
               <mat-card-content class="p-0">
                 <div class="table-responsive">
