@@ -41,6 +41,7 @@ export interface EulbValidationSummary {
   matchedDbUlbCount: number;
   missingDbUlbCount: number;
   extraExcelRowCount: number;
+  duplicateUlbCount: number;
   errorRowCount: number;
   validationStatus: EulbValidationStatus;
   activeDatasetVersion: number;

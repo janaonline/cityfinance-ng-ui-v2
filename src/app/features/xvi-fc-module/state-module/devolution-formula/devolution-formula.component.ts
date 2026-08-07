@@ -43,7 +43,6 @@ import {
   DevolutionRowsDialogResult,
   DevolutionValidationSummary,
   DfInstallment,
-  DfRowValidationError,
   DfRowValidationStatus,
   FinalSubmitDevolutionPayload,
   SaveDraftDevolutionPayload,
@@ -353,22 +352,23 @@ export class DevolutionFormulaComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.lastPersistedExcelFile = fileValue;
-          const rowErrorCount = res.data.rowErrors?.length ?? 0;
           if (res.data.validationStatus === 'VALID') {
             this.utilityService.triggerSnackbar('Excel validated successfully.');
           } else {
             this.utilityService.triggerSnackbar(
-              `Excel validation completed with ${rowErrorCount} row error(s). Click "View Uploaded Data" to review.`,
+              getDuplicateUlbMessage(res.data.rowErrors) ??
+                'Excel validation completed with errors. Please review uploaded data.',
               'snackbar-danger',
             );
-            this.notifyDuplicateUlbError(res.data.rowErrors);
           }
           this.reloadForm();
         },
         error: (err: unknown) => {
           const response = extractApiErrorResponse(err);
           this.utilityService.triggerSnackbar(
-            response?.message ?? 'Excel validation failed. Please try again.',
+            getRegisterUlbErrorMessage(response?.errors) ??
+              response?.message ??
+              'Excel validation failed. Please try again.',
             'snackbar-danger',
           );
 
@@ -388,8 +388,6 @@ export class DevolutionFormulaComponent implements OnInit {
           } else if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
-
-          this.notifyRegisterUlbError(response?.errors);
         },
       });
   }
@@ -630,29 +628,32 @@ export class DevolutionFormulaComponent implements OnInit {
       .subscribe({
         next: (res) => {
           const status = res.data.validationSummary?.validationStatus;
-          const rowErrorCount = res.data.rowErrors?.length ?? 0;
           if (status === 'VALID') {
             this.utilityService.triggerSnackbar('Excel revalidated successfully.');
           } else {
+            // See triggerExcelValidation: prefer the specific duplicate-ULB message over firing
+            // it as a second, stacking snackbar call.
             this.utilityService.triggerSnackbar(
-              `Revalidation completed with ${rowErrorCount} row error(s). Click "View Uploaded Data" to review.`,
+              getDuplicateUlbMessage(res.data.rowErrors) ??
+                'Revalidation completed with errors. Please review uploaded data.',
               'snackbar-danger',
             );
-            this.notifyDuplicateUlbError(res.data.rowErrors);
           }
           this.reloadForm();
         },
         error: (err: unknown) => {
           const response = extractApiErrorResponse(err);
+          // See triggerExcelValidation: prefer the specific new-ULB message over the generic
+          // backend message rather than firing both as separate snackbar calls.
           this.utilityService.triggerSnackbar(
-            response?.message ?? 'Revalidation failed. Please try again.',
+            getRegisterUlbErrorMessage(response?.errors) ??
+              response?.message ??
+              'Revalidation failed. Please try again.',
             'snackbar-danger',
           );
           if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
-
-          this.notifyRegisterUlbError(response?.errors);
         },
       });
   }
@@ -663,10 +664,9 @@ export class DevolutionFormulaComponent implements OnInit {
    */
   onSubmit(action: SubmitType): void {
     if (action === 'finalSubmit' && this.installment() === 2 && this.isInstallment2Locked()) {
-      this.utilityService.triggerSnackbar(
-        'Final submit is not available for Installment 2 at this time.',
-        'snackbar-danger',
-      );
+      // Reuse the same reason already shown as the tab's tooltip/help text, instead of a
+      // separate, less specific hardcoded string.
+      this.utilityService.triggerSnackbar(this.installment2LockReason(), 'snackbar-danger');
       return;
     }
     if (!this.isValidForSubmitType(action)) {
@@ -803,7 +803,7 @@ export class DevolutionFormulaComponent implements OnInit {
     }
   }
 
-  /** Shows a cancel confirmation dialog. */
+  /** Shows a cancel confirmation dialog (default "Discard changes?" text). */
   onCancel(): void {
     const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
@@ -811,24 +811,8 @@ export class DevolutionFormulaComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
-        this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
+        this.utilityService.triggerSnackbar('Changes discarded.', 'snackbar-danger');
       });
-  }
-
-  /** Shows a snackbar with the backend message when a validate/revalidate error reports `newUlbsAdded`. */
-  private notifyRegisterUlbError(errors: ApiErrorMap | undefined): void {
-    const message = getRegisterUlbErrorMessage(errors);
-    if (message) {
-      this.utilityService.triggerSnackbar(message, 'snackbar-danger');
-    }
-  }
-
-  /** Shows the specific `duplicate` ULB message as a second snackbar, alongside the generic one. */
-  private notifyDuplicateUlbError(rowErrors: DfRowValidationError[] | undefined): void {
-    const message = getDuplicateUlbMessage(rowErrors);
-    if (message) {
-      this.utilityService.triggerSnackbar(message, 'snackbar-danger');
-    }
   }
 
   private applyApiErrors(errors: ApiErrorMap): void {

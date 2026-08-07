@@ -163,6 +163,7 @@ describe('EulbPostUpdateComponent', () => {
           matchedDbUlbCount: 1,
           missingDbUlbCount: 0,
           extraExcelRowCount: 0,
+          duplicateUlbCount: 0,
           errorRowCount: 0,
           validationStatus: 'VALID',
           activeDatasetVersion: 1,

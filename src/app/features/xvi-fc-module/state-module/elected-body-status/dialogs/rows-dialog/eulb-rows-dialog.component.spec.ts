@@ -499,6 +499,7 @@ describe('EulbRowsDialogComponent', () => {
       matchedDbUlbCount: 10,
       missingDbUlbCount: 0,
       extraExcelRowCount: 2,
+      duplicateUlbCount: 0,
       errorRowCount: 1,
       validationStatus: 'INVALID',
       activeDatasetVersion: 1,
