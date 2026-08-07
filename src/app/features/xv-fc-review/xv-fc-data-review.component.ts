@@ -72,6 +72,8 @@ export class XvFcDataReviewComponent {
   currentUnit = signal<XvFcCurrencyUnit>('whole');
   pendingAction = signal<XvFcFinalAction>('ACCEPT_NO_CHANGES');
   successFy = signal<string | null>(null);
+  /** Backend id for `successFy` — the success screen's PDF download needs this, not the label. */
+  successYearId = signal<string | null>(null);
 
   savingDraft = signal(false);
   submitting = signal(false);
@@ -173,9 +175,18 @@ export class XvFcDataReviewComponent {
   viewDocument(targetCode: string) {
     const yearId = this.currentYearId();
     if (!yearId) return;
+    // Open the tab synchronously, still inside the click's user-gesture context - browsers
+    // silently block window.open() called from an async callback (e.g. after this request
+    // resolves), so waiting for `next` would lose the popup permission with no error shown.
+    const tab = window.open('', '_blank', 'noopener');
     this.service.getDocumentSignedUrl(yearId, targetCode).subscribe({
-      next: (url) => window.open(url, '_blank', 'noopener'),
-      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.')),
+      next: (url) => {
+        if (tab) tab.location.href = url;
+      },
+      error: (err) => {
+        tab?.close();
+        this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.'));
+      },
     });
   }
 
@@ -344,6 +355,7 @@ export class XvFcDataReviewComponent {
           this.service.fyDetail.set(updatedDetail);
           this.submitting.set(false);
           this.successFy.set(fy);
+          this.successYearId.set(yearId);
           this.screen.set('success');
           this.toast('FY ' + fy + ' review submitted.');
           void this.service.loadSummary();
@@ -355,8 +367,9 @@ export class XvFcDataReviewComponent {
       });
   }
 
-  onViewSubmission(fy: string) {
+  onViewSubmission(fy: string, yearId: string) {
     this.successFy.set(fy);
+    this.successYearId.set(yearId);
     this.screen.set('success');
   }
 

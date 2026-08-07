@@ -10,7 +10,7 @@ import { MATERIAL_THEME_CLASS } from '../../../core/theming/material-theme.provi
 import { PtaxReviewService } from './ptax-review.service';
 import {
   isPtaxLockedStatus,
-  isPtaxSubmittedStatus,
+  isPtaxRejectedStatus,
   PtaxDraftMetricPayload,
   PtaxFinalAction,
   PtaxMetric,
@@ -62,10 +62,7 @@ export class PtaxReviewComponent {
   flaggedItems = computed(() => this.metrics().filter((m) => m.flagged));
   flagCount = computed(() => this.flaggedItems().length);
   isLocked = computed(() => isPtaxLockedStatus(this.service.fyDetail()?.status));
-  isRejected = computed(() => {
-    const detail = this.service.fyDetail();
-    return !!detail && isPtaxSubmittedStatus(detail.status) && !this.isLocked();
-  });
+  isRejected = computed(() => isPtaxRejectedStatus(this.service.fyDetail()?.status));
   /** One shared supporting document for the whole FY — always optional, never blocks submission. */
   commonSupportingDocument = computed(() => this.service.fyDetail()?.supportingDocument ?? null);
   /** Order rules (e.g. 1.10 must not exceed 1.9) currently broken by the metrics' effective values. */
@@ -267,9 +264,18 @@ export class PtaxReviewComponent {
   viewDeclaration() {
     const yearId = this.currentYearId();
     if (!yearId) return;
+    // Open the tab synchronously, still inside the click's user-gesture context - browsers
+    // silently block window.open() called from an async callback (e.g. after this request
+    // resolves), so waiting for `next` would lose the popup permission with no error shown.
+    const tab = window.open('', '_blank', 'noopener');
     this.service.getDocumentSignedUrl(yearId, PTAX_DECLARATION_TARGET_CODE).subscribe({
-      next: (url) => window.open(url, '_blank', 'noopener'),
-      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.')),
+      next: (url) => {
+        if (tab) tab.location.href = url;
+      },
+      error: (err) => {
+        tab?.close();
+        this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.'));
+      },
     });
   }
 
@@ -301,9 +307,18 @@ export class PtaxReviewComponent {
   viewSupportingDocument() {
     const yearId = this.currentYearId();
     if (!yearId) return;
+    // Open the tab synchronously, still inside the click's user-gesture context - browsers
+    // silently block window.open() called from an async callback (e.g. after this request
+    // resolves), so waiting for `next` would lose the popup permission with no error shown.
+    const tab = window.open('', '_blank', 'noopener');
     this.service.getDocumentSignedUrl(yearId, PTAX_SUPPORTING_DOCUMENT_TARGET_CODE).subscribe({
-      next: (url) => window.open(url, '_blank', 'noopener'),
-      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.')),
+      next: (url) => {
+        if (tab) tab.location.href = url;
+      },
+      error: (err) => {
+        tab?.close();
+        this.toast(extractApiErrorMessage(err, 'Failed to open this document. Please try again.'));
+      },
     });
   }
 

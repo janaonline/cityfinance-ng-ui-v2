@@ -14,6 +14,8 @@ export class XvFcReviewSuccessComponent {
   readonly service = inject(XvFcDataReviewService);
 
   @Input({ required: true }) fy!: string;
+  /** Backend id for `fy` — `downloadPdf` needs this, not the display label. */
+  @Input({ required: true }) yearId!: string;
   @Output() backToReview = new EventEmitter<void>();
 
   downloading = false;
@@ -28,7 +30,7 @@ export class XvFcReviewSuccessComponent {
 
   downloadAcknowledgement() {
     this.downloading = true;
-    this.service.downloadPdf(this.fy, 'whole').subscribe({
+    this.service.downloadPdf(this.yearId, 'whole').subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

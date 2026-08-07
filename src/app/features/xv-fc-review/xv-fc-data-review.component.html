@@ -35,7 +35,11 @@
   }
   @case ('success') {
     <div class="container py-4">
-      <app-xv-fc-review-success [fy]="successFy() ?? ''" (backToReview)="onBackToReview()"></app-xv-fc-review-success>
+      <app-xv-fc-review-success
+        [fy]="successFy() ?? ''"
+        [yearId]="successYearId() ?? ''"
+        (backToReview)="onBackToReview()"
+      ></app-xv-fc-review-success>
     </div>
   }
   @default {
@@ -137,7 +141,7 @@
                   You submitted this review on {{ detail.submittedAt | date: 'medium' }}
                 }
                 ({{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accepted - no changes' : 'Submitted with comments' }}).
-                <a href="javascript:void(0)" (click)="onViewSubmission(currentFy() ?? '')">View submission summary</a>
+                <a href="javascript:void(0)" (click)="onViewSubmission(currentFy() ?? '', currentYearId() ?? '')">View submission summary</a>
               </span>
             </div>
           }
@@ -278,9 +282,11 @@
                   <mat-icon>visibility</mat-icon>
                   Preview
                 </button>
-                <button class="btn-remove-file" type="button" (click)="removeDeclaration()" aria-label="Remove file">
-                  <mat-icon>close</mat-icon> Remove
-                </button>
+                @if (!isLocked()) {
+                  <button class="btn-remove-file" type="button" (click)="removeDeclaration()" aria-label="Remove file">
+                    <mat-icon>close</mat-icon> Remove
+                  </button>
+                }
               </div>
             }
 
@@ -364,7 +370,7 @@
               <div class="text-success small"><mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> No further changes can be made for this year.</div>
             </div>
             <div class="d-flex gap-2">
-              <button class="btn-outline-custom" type="button" (click)="onViewSubmission(currentFy() ?? '')">View submission summary</button>
+              <button class="btn-outline-custom" type="button" (click)="onViewSubmission(currentFy() ?? '', currentYearId() ?? '')">View submission summary</button>
             </div>
           } @else {
             <div>
