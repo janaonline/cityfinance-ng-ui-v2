@@ -241,7 +241,7 @@ const FC_UNSPENT_SCENARIO_DEVOLUTION_RETURNED: FcUnspentDeclarationData = {
     devolutionDatasetExists: true,
     editableDueToDevolutionReturn: true,
     blockingMessage:
-      'Devolution Formula was returned by MoHUA for correction. FC Unspent can be edited and saved as a draft, but final submission is blocked until Devolution is resubmitted and accepted.',
+      'ULB-wise Allocation was returned by MoHUA for correction. FC Unspent can be edited and saved as a draft, but final submission is blocked until ULB-wise Allocation is resubmitted and accepted.',
   },
   actors: [],
   questions: questionsForYesBranch(),

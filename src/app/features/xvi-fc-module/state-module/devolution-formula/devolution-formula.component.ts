@@ -208,7 +208,7 @@ export class DevolutionFormulaComponent implements OnInit {
 
     if (!stateId || !yearId) {
       this.utilityService.triggerSnackbar(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
       return;
@@ -241,7 +241,7 @@ export class DevolutionFormulaComponent implements OnInit {
         error: () => {
           this.isHydratingForm = false;
           this.utilityService.triggerSnackbar(
-            'Unable to load Devolution Formula form. Please try again.',
+            'Unable to load ULB-wise Allocation form. Please try again.',
             'snackbar-danger',
           );
           this.isLoading.set(false);
@@ -561,7 +561,7 @@ export class DevolutionFormulaComponent implements OnInit {
       });
   }
 
-  /** Downloads the Devolution Formula Excel template as a blob. */
+  /** Downloads the ULB-wise Allocation Excel template as a blob. */
   downloadTemplate(): void {
     if (this.isDownloadingTemplate()) return;
     this.isDownloadingTemplate.set(true);
@@ -571,7 +571,7 @@ export class DevolutionFormulaComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
-          FileSaver.saveAs(blob, 'devolution-formula-template.xlsx');
+          FileSaver.saveAs(blob, 'ulb-wise-allocation-template.xlsx');
           this.isDownloadingTemplate.set(false);
         },
         error: () => {
@@ -594,7 +594,7 @@ export class DevolutionFormulaComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
-          FileSaver.saveAs(blob, 'devolution-formula-error-sheet.xlsx');
+          FileSaver.saveAs(blob, 'ulb-wise-allocation-error-sheet.xlsx');
           this.isDownloadingErrorSheet.set(false);
           this.utilityService.triggerSnackbar('Error sheet downloaded successfully.');
         },

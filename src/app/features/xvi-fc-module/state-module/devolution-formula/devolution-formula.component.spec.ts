@@ -66,7 +66,7 @@ const lockedInstallmentAccess: DevolutionInstallmentAccess = {
 
 const minimalFormData: DevolutionFormResponseData = {
   _id: 'form-1',
-  formName: 'Devolution Formula',
+  formName: 'ULB-wise Allocation',
   stateId: 'state-1',
   yearId: 'year-1',
   installment: 1,
@@ -268,7 +268,7 @@ describe('DevolutionFormulaComponent', () => {
 
       expect(dfService.getForm).not.toHaveBeenCalled();
       expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
     });
@@ -283,7 +283,7 @@ describe('DevolutionFormulaComponent', () => {
 
       expect(dfService.getForm).not.toHaveBeenCalled();
       expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
     });
@@ -296,7 +296,7 @@ describe('DevolutionFormulaComponent', () => {
       fixture4.detectChanges();
 
       expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
       expect(fixture4.componentInstance.isLoading()).toBeFalse();
@@ -512,7 +512,7 @@ describe('DevolutionFormulaComponent', () => {
                 ulbName: 'Achalpur Muncipal Council',
                 field: 'devolutionFormula',
                 code: 'required',
-                message: 'Devolution Formula is required.',
+                message: 'Allocation Formula is required.',
               },
             ],
           },
@@ -534,8 +534,8 @@ describe('DevolutionFormulaComponent', () => {
             validationStatus: 'INVALID' as const,
             validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
             rowErrors: [
-              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
-              { rowNumber: 2, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
+              { rowNumber: 2, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
             ],
           },
           timestamp: '',
@@ -590,7 +590,7 @@ describe('DevolutionFormulaComponent', () => {
             data: {
               validationSummary: { ...mockValidationSummary, excelRowCount: 5 },
               rowErrors: [
-                { rowNumber: 3, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+                { rowNumber: 3, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
               ],
             },
           },
@@ -692,7 +692,7 @@ describe('DevolutionFormulaComponent', () => {
           data: {
             validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
             rowErrors: [
-              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
             ],
           },
           timestamp: '',
@@ -822,12 +822,12 @@ describe('DevolutionFormulaComponent', () => {
 
     it('saves downloaded template blob via FileSaver', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-template' });
-      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'devolution-formula-template.xlsx');
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'ulb-wise-allocation-template.xlsx');
     });
 
     it('saves downloaded error sheet blob via FileSaver', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-error-sheet' });
-      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'devolution-formula-error-sheet.xlsx');
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'ulb-wise-allocation-error-sheet.xlsx');
     });
   });
 
