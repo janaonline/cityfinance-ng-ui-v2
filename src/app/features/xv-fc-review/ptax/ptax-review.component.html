@@ -87,7 +87,7 @@
                         <div class="flag-note">
                           <mat-icon inline="true" class="fs-6">flag</mat-icon>
                           <div>
-                            @if (metric.proposedValue != null) {
+                            @if (metric.proposedValue !== null) {
                               <div><b>Correct value</b> - {{ metric.proposedValue | number: '1.2-2' }}</div>
                             }
                             <div><b>Additional Comment</b> - {{ metric.comment }}</div>
@@ -332,7 +332,7 @@
                               <div class="flag-note">
                                 <mat-icon inline="true" class="fs-6">flag</mat-icon>
                                 <div>
-                                  @if (metric.proposedValue != null) {
+                                  @if (metric.proposedValue !== null) {
                                     <div><b>Correct value</b> - {{ metric.proposedValue | number: '1.2-2' }}</div>
                                   }
                                   <div><b>Additional Comment</b> - {{ metric.comment }}</div>
