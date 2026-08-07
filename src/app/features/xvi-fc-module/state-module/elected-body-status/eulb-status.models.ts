@@ -27,7 +27,7 @@ export type EulbFileValue = UploadedFileMetadata;
 
 export type EulbValidationStatus = 'NOT_VALIDATED' | 'VALID' | 'INVALID';
 export type EulbRowValidationStatus = 'VALID' | 'INVALID';
-export type EulbBodyStatus = 'Constituted' | 'Not Constituted' | 'Exempt';
+export type EulbBodyStatus = 'Constituted' | 'Not Constituted' | '6th Schedule';
 export const EULB_EDITABLE_FIELDS = ['electedBodyStatus', 'dateOfConstitution', 'dateOfExpiry', 'remarks'] as const;
 export type EulbEditableFieldKey = (typeof EULB_EDITABLE_FIELDS)[number];
 // censusCode/ulbName are still rendered as read-only cells (via EulbFieldCellKey) but are never
@@ -232,7 +232,7 @@ export interface EulbPostSubmissionUpdateSummary {
   eligibleRowCount: number;
 }
 
-export type EulbPostSubmissionUpdateElectedBodyStatus = Exclude<EulbBodyStatus, 'Exempt'>;
+export type EulbPostSubmissionUpdateElectedBodyStatus = Exclude<EulbBodyStatus, '6th Schedule'>;
 
 export interface EulbPostSubmissionUpdateMetadata {
   stateId: string;

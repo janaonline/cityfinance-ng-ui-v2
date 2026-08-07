@@ -164,7 +164,7 @@ describe('EulbRowsDialogComponent', () => {
         {
           field: 'dateOfConstitution',
           code: 'required',
-          message: 'Date of Constitution is required.',
+          message: 'Date on which the elected body is in place is required.',
         },
       ],
     };
@@ -175,10 +175,12 @@ describe('EulbRowsDialogComponent', () => {
     const tooltips = getTooltipSources(cell);
 
     expect(tooltips).toHaveSize(1);
-    expect(tooltips[0].message).toBe('Date of Constitution is required.');
+    expect(tooltips[0].message).toBe('Date on which the elected body is in place is required.');
     expect(tooltips[0].disabled).toBeFalse();
     expect(cell.classes['eulb-cell-invalid']).toBeTrue();
-    expect(cell.query(By.css('button[aria-label="Date of constitution has a validation error"]'))).not.toBeNull();
+    expect(
+      cell.query(By.css('button[aria-label="Date on which the elected body is in place has a validation error"]')),
+    ).not.toBeNull();
   });
 
   it('clicking an errored dialog cell enters edit mode and preserves the focus selector', fakeAsync(() => {
@@ -509,9 +511,9 @@ describe('EulbRowsDialogComponent', () => {
         key: 'electedBodyStatus',
         label: 'Elected Body Status',
         formFieldType: 'select',
-        options: ['Constituted', 'Not Constituted', 'Exempt'],
+        options: ['Constituted', 'Not Constituted', '6th Schedule'],
       },
-      { key: 'dateOfConstitution', label: 'Date of Constitution', formFieldType: 'date' },
+      { key: 'dateOfConstitution', label: 'Date on which the elected body is in place.', formFieldType: 'date' },
       { key: 'dateOfExpiry', label: 'Date of Expiry', formFieldType: 'date' },
       { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
     ];
