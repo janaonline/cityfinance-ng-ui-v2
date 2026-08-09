@@ -57,9 +57,9 @@ describe('EulbPostUpdateComponent', () => {
           key: 'electedBodyStatus',
           label: 'Elected Body Status',
           formFieldType: 'select',
-          options: ['Constituted', 'Not Constituted', 'Exempt'],
+          options: ['Constituted', 'Not Constituted', '6th Schedule'],
         },
-        { key: 'dateOfConstitution', label: 'Date of Constitution', formFieldType: 'date' },
+        { key: 'dateOfConstitution', label: 'Date on which the elected body is in place.', formFieldType: 'date' },
         { key: 'dateOfExpiry', label: 'Date of Expiry', formFieldType: 'date' },
         { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
       ],
@@ -163,6 +163,7 @@ describe('EulbPostUpdateComponent', () => {
           matchedDbUlbCount: 1,
           missingDbUlbCount: 0,
           extraExcelRowCount: 0,
+          duplicateUlbCount: 0,
           errorRowCount: 0,
           validationStatus: 'VALID',
           activeDatasetVersion: 1,
@@ -337,11 +338,11 @@ describe('EulbPostUpdateComponent', () => {
     expect(vm.cellHasError['electedBodyStatus']).toBeUndefined();
   });
 
-  it('does not include Exempt as a selectable elected body status filter option on this page', () => {
+  it('does not include 6th Schedule as a selectable elected body status filter option on this page', () => {
     fixture.detectChanges();
 
     const optionValues: readonly string[] = component.electedBodyStatusOptions.map((o) => o.value);
-    expect(optionValues).not.toContain('Exempt');
+    expect(optionValues).not.toContain('6th Schedule');
   });
 
   it('starts editing a row and renders editable controls', () => {
@@ -352,7 +353,9 @@ describe('EulbPostUpdateComponent', () => {
 
     expect(component.editingRowId()).toBe('row-1');
     expect(fixture.debugElement.query(By.css('select[aria-label="Elected Body Status"]'))).not.toBeNull();
-    expect(fixture.debugElement.query(By.css('input[aria-label="Date of Constitution"]'))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.css('input[aria-label="Date on which the elected body is in place."]')),
+    ).not.toBeNull();
     expect(fixture.debugElement.query(By.css('input[aria-label="Remarks"]'))).not.toBeNull();
   });
 
@@ -456,7 +459,7 @@ describe('EulbPostUpdateComponent', () => {
     expect(dateOfExpiryInput.nativeElement.getAttribute('data-eulb-post-edit-field')).toBe('dateOfExpiry');
   }));
 
-  it('does not expose Exempt in the edit status dropdown', () => {
+  it('does not expose 6th Schedule in the edit status dropdown', () => {
     fixture.detectChanges();
 
     component.startEdit(component.rows()[0]);
@@ -465,7 +468,7 @@ describe('EulbPostUpdateComponent', () => {
     const options = fixture.debugElement
       .queryAll(By.css('select[aria-label="Elected Body Status"] option'))
       .map((option) => option.nativeElement.textContent.trim());
-    expect(options).not.toContain('Exempt');
+    expect(options).not.toContain('6th Schedule');
   });
 
   it('marks a row as modified when an editable value changes', () => {
@@ -581,7 +584,7 @@ describe('EulbPostUpdateComponent', () => {
                   {
                     field: 'dateOfConstitution',
                     code: 'required',
-                    message: 'Date of constitution is required.',
+                    message: 'Date on which the elected body is in place is required.',
                   },
                 ],
               },
@@ -602,7 +605,7 @@ describe('EulbPostUpdateComponent', () => {
     const vm = component.rowViewModels()[0];
     expect(vm.row.validationStatus).toBe('INVALID');
     expect(vm.cellHasError['dateOfConstitution']).toBeTrue();
-    expect(vm.cellErrorText['dateOfConstitution']).toBe('Date of constitution is required.');
+    expect(vm.cellErrorText['dateOfConstitution']).toBe('Date on which the elected body is in place is required.');
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
       'Validation complete. 1 of 1 row(s) have errors.',
       'snackbar-danger',
@@ -909,7 +912,7 @@ describe('EulbPostUpdateComponent', () => {
                 {
                   field: 'dateOfConstitution',
                   code: 'required',
-                  message: 'Date of Constitution is required for Constituted status.',
+                  message: 'Date on which the elected body is in place is required for Constituted status.',
                 },
               ],
             },
@@ -927,7 +930,9 @@ describe('EulbPostUpdateComponent', () => {
     const vm = component.rowViewModels()[0];
     expect(vm.row.validationStatus).toBe('INVALID');
     expect(vm.cellHasError['dateOfConstitution']).toBeTrue();
-    expect(vm.cellErrorText['dateOfConstitution']).toBe('Date of Constitution is required for Constituted status.');
+    expect(vm.cellErrorText['dateOfConstitution']).toBe(
+      'Date on which the elected body is in place is required for Constituted status.',
+    );
     expect(component.changedRowCount()).toBe(1);
     expect(component.updateDocument()).toEqual(createDocument());
   });

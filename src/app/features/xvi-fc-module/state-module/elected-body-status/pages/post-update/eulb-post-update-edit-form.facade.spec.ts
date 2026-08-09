@@ -86,11 +86,11 @@ describe('EulbPostUpdateEditFormFacade', () => {
         key: 'electedBodyStatus',
         label: 'Elected Body Status',
         formFieldType: 'select',
-        options: ['Constituted', 'Not Constituted', 'Exempt'],
+        options: ['Constituted', 'Not Constituted', '6th Schedule'],
       },
       {
         key: 'dateOfConstitution',
-        label: 'Date of Constitution',
+        label: 'Date on which the elected body is in place.',
         formFieldType: 'date',
         enabledWhen: enabledWhenConstituted,
         clearValueWhenDisabled: true,

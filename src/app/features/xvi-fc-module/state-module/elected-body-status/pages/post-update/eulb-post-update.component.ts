@@ -217,7 +217,7 @@ export class EulbPostUpdateComponent implements OnInit {
       },
       {
         count: summary.exemptCount,
-        label: 'Exempt (Cantonment / NAC)',
+        label: '6th Schedule (Cantonment / NAC)',
         borderClass: 'border-secondary',
         textClass: '',
       },

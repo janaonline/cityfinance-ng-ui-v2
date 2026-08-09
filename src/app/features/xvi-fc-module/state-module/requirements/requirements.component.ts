@@ -21,8 +21,8 @@ export class RequirementsComponent {
       desc: 'Confirmation that ULBs have elected councils in place - to be uploaded',
     },
     {
-      label: 'Devolution Formula',
-      desc: 'Upload the Excel file showing grant amounts and devolution formula for each ULB',
+      label: 'ULB-wise Allocation',
+      desc: 'Upload the Excel file showing grant amounts and allocation formula for each ULB',
     },
   ]);
 

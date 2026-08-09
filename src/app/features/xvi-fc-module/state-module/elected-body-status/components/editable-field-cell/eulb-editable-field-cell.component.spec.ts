@@ -163,17 +163,19 @@ describe('EulbEditableFieldCellComponent', () => {
     host.field = 'dateOfConstitution';
     host.isEditing = true;
     host.cellHasError = true;
-    host.cellErrorText = 'Date of Constitution is required.';
+    host.cellErrorText = 'Date on which the elected body is in place is required.';
     host.editControl = new FormControl<string | null>('');
     fixture.detectChanges();
 
     const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell]'));
-    const input = fixture.debugElement.query(By.css('input[aria-label="Date of Constitution"]'));
+    const input = fixture.debugElement.query(
+      By.css('input[aria-label="Date on which the elected body is in place."]'),
+    );
     const tooltips = getTooltipSources(cell);
 
     expect(input).not.toBeNull();
     expect(tooltips).toHaveSize(1);
-    expect(tooltips[0].message).toBe('Date of Constitution is required.');
+    expect(tooltips[0].message).toBe('Date on which the elected body is in place is required.');
     expect(tooltips[0].disabled).toBeFalse();
   });
 

@@ -51,7 +51,7 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
       ),
   },
   {
-    path: 'devolution-formula',
+    path: 'ulb-wise-allocation',
     loadComponent: () =>
       import('./devolution-formula/devolution-formula.component').then((m) => m.DevolutionFormulaComponent),
   },
