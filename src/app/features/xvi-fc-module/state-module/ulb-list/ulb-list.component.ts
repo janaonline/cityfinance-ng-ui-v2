@@ -40,7 +40,7 @@ export class UlbListComponent implements OnInit {
 
   search = '';
   stateFilter = '';
-  approvalStatusFilter: '' | 'PENDING' | 'APPROVED' | 'REJECTED' = '';
+  approvalStatusFilter: '' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXISTING' = '';
   pageIndex = 0;
   pageSize = 10;
   totalItems = 0;
