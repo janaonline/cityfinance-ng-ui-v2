@@ -54,7 +54,7 @@ type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks';
 
 const ERROR_FIELD_OPTIONS: ReadonlyArray<{ readonly value: EulbEditableFieldKey; readonly label: string }> = [
   { value: 'electedBodyStatus', label: 'Elected Body Status' },
-  { value: 'dateOfConstitution', label: 'Date of Constitution' },
+  { value: 'dateOfConstitution', label: 'Date on which the elected body is in place.' },
   { value: 'dateOfExpiry', label: 'Date of Expiry' },
   { value: 'remarks', label: 'Remarks' },
 ];
@@ -107,7 +107,7 @@ export class EulbRowsDialogComponent implements OnInit {
   readonly endIndex = computed(() => Math.min(this.page() * this.limit, this.total()));
   readonly rowViewModels = computed(() => this.rows().map(buildEulbRowViewModel));
 
-  readonly electedBodyStatusOptions: EulbBodyStatus[] = ['Constituted', 'Not Constituted', 'Exempt'];
+  readonly electedBodyStatusOptions: EulbBodyStatus[] = ['Constituted', 'Not Constituted', '6th Schedule'];
   readonly validationStatusOptions = EULB_ROW_VALIDATION_STATUS_OPTIONS;
   readonly errorFieldOptions = ERROR_FIELD_OPTIONS;
 

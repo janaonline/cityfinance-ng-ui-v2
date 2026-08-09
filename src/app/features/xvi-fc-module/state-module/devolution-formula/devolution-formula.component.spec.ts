@@ -66,7 +66,7 @@ const lockedInstallmentAccess: DevolutionInstallmentAccess = {
 
 const minimalFormData: DevolutionFormResponseData = {
   _id: 'form-1',
-  formName: 'Devolution Formula',
+  formName: 'ULB-wise Allocation',
   stateId: 'state-1',
   yearId: 'year-1',
   installment: 1,
@@ -268,7 +268,7 @@ describe('DevolutionFormulaComponent', () => {
 
       expect(dfService.getForm).not.toHaveBeenCalled();
       expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
     });
@@ -283,7 +283,7 @@ describe('DevolutionFormulaComponent', () => {
 
       expect(dfService.getForm).not.toHaveBeenCalled();
       expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
     });
@@ -296,7 +296,7 @@ describe('DevolutionFormulaComponent', () => {
       fixture4.detectChanges();
 
       expect(utilityService.triggerSnackbar).toHaveBeenCalledOnceWith(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
       expect(fixture4.componentInstance.isLoading()).toBeFalse();
@@ -512,7 +512,7 @@ describe('DevolutionFormulaComponent', () => {
                 ulbName: 'Achalpur Muncipal Council',
                 field: 'devolutionFormula',
                 code: 'required',
-                message: 'Devolution Formula is required.',
+                message: 'Allocation Formula is required.',
               },
             ],
           },
@@ -526,16 +526,19 @@ describe('DevolutionFormulaComponent', () => {
       expect(dialogOpenSpy).not.toHaveBeenCalled();
     });
 
-    it('shows a snackbar stating the actual row-error count instead of a generic message', () => {
+    // No count is shown any more (rowErrors is a flat per-field-error array, not per-row — the
+    // count previously shown here was wrong; see validationSummary.errorRowCount / the "N
+    // error(s)" badge for the correct, persistent count instead).
+    it('shows a generic message with no row-error count on an INVALID response', () => {
       dfService.validateExcel.and.returnValue(
         of({
           success: true,
           data: {
             validationStatus: 'INVALID' as const,
-            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
+            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const, errorRowCount: 2 },
             rowErrors: [
-              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
-              { rowNumber: 2, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
+              { rowNumber: 2, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
             ],
           },
           timestamp: '',
@@ -546,12 +549,15 @@ describe('DevolutionFormulaComponent', () => {
       (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
 
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
-        jasmine.stringContaining('2 row error(s)'),
+        'Excel validation completed with errors. Please review uploaded data.',
         'snackbar-danger',
       );
     });
 
-    it('shows the specific duplicate-ULB message as a second snackbar when a row error has code duplicate', () => {
+    // Regression: previously fired as a *second*, separate triggerSnackbar() call right after the
+    // generic message — but MatSnackBar only shows one at a time, so the generic one was dismissed
+    // before it was readable. Now only one call fires, carrying the specific message.
+    it('shows only the specific duplicate-ULB message (not a second, stacked generic snackbar) when a row error has code duplicate', () => {
       dfService.validateExcel.and.returnValue(
         of({
           success: true,
@@ -578,6 +584,9 @@ describe('DevolutionFormulaComponent', () => {
         'This ULB appears more than once in the uploaded Excel file.',
         'snackbar-danger',
       );
+      // 2, not 3: the unconditional 'Excel uploaded. Verifying data…' toast triggerExcelValidation
+      // fires before the API call, plus this one danger message — not a second, stacked danger call.
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledTimes(2);
     });
 
     it('does not open the rows dialog on a 400 error that carries persisted rowErrors (e.g. new-ULB rows alongside other invalid rows)', () => {
@@ -590,7 +599,7 @@ describe('DevolutionFormulaComponent', () => {
             data: {
               validationSummary: { ...mockValidationSummary, excelRowCount: 5 },
               rowErrors: [
-                { rowNumber: 3, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+                { rowNumber: 3, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
               ],
             },
           },
@@ -692,7 +701,7 @@ describe('DevolutionFormulaComponent', () => {
           data: {
             validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const },
             rowErrors: [
-              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Devolution Formula is required.' },
+              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
             ],
           },
           timestamp: '',
@@ -711,7 +720,35 @@ describe('DevolutionFormulaComponent', () => {
       expect(dialogOpenSpy).not.toHaveBeenCalled();
     });
 
-    it('revalidate-excel shows the specific duplicate-ULB message as a second snackbar when present', () => {
+    // No count is shown any more — see the equivalent validate-excel test for why.
+    it('revalidate-excel shows a generic message with no row-error count on an INVALID response', () => {
+      dfService.revalidateExcel.and.returnValue(
+        of({
+          success: true,
+          data: {
+            validationSummary: { ...mockValidationSummary, validationStatus: 'INVALID' as const, errorRowCount: 1 },
+            rowErrors: [
+              { rowNumber: 1, field: 'totalGrantAllocation', code: 'required', message: 'Total Grant Allocation is required.' },
+              { rowNumber: 1, field: 'installment1Amount', code: 'required', message: 'Installment 1 Amount is required.' },
+              { rowNumber: 1, field: 'installment2Amount', code: 'required', message: 'Installment 2 Amount is required.' },
+              { rowNumber: 1, field: 'devolutionFormula', code: 'required', message: 'Allocation Formula is required.' },
+            ],
+          },
+          timestamp: '',
+        }),
+      );
+      utilityService.triggerSnackbar.calls.reset();
+
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'revalidate-excel' });
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        'Revalidation completed with errors. Please review uploaded data.',
+        'snackbar-danger',
+      );
+    });
+
+    // Regression: same stacked-snackbar bug as validate-excel — see the equivalent test there.
+    it('revalidate-excel shows only the specific duplicate-ULB message (not a second, stacked generic snackbar) when present', () => {
       dfService.revalidateExcel.and.returnValue(
         of({
           success: true,
@@ -729,6 +766,7 @@ describe('DevolutionFormulaComponent', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'revalidate-excel' });
 
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Duplicate ULB in dataset.', 'snackbar-danger');
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledTimes(1);
     });
 
     it('view-uploaded-data opens the rows dialog with stateId, yearId, and installment', () => {
@@ -822,12 +860,12 @@ describe('DevolutionFormulaComponent', () => {
 
     it('saves downloaded template blob via FileSaver', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-template' });
-      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'devolution-formula-template.xlsx');
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'ulb-wise-allocation-template.xlsx');
     });
 
     it('saves downloaded error sheet blob via FileSaver', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-error-sheet' });
-      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'devolution-formula-error-sheet.xlsx');
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'ulb-wise-allocation-error-sheet.xlsx');
     });
   });
 
@@ -854,6 +892,31 @@ describe('DevolutionFormulaComponent', () => {
       (fixtureWithFile.componentInstance.form as UntypedFormGroup).get('excelFile')!.setValue(null);
 
       expect(dfService.deleteUploadedExcel).toHaveBeenCalledWith('state-1', 'year-1', 1);
+    });
+  });
+
+  // ─── onCancel ──────────────────────────────────────────────────────────────
+
+  describe('onCancel', () => {
+    // Regression: previously said 'Form submission cancelled.', mismatching the confirm dialog's
+    // own 'Discard changes?' framing (Cancel is a general-purpose button next to Save Draft, not
+    // gated to an in-progress submission).
+    it('shows "Changes discarded." on confirm, matching the dialog\'s own framing', () => {
+      confirmDialogService.confirm.and.returnValue(of(true));
+      utilityService.triggerSnackbar.calls.reset();
+
+      component.onCancel();
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Changes discarded.', 'snackbar-danger');
+    });
+
+    it('shows no snackbar when the user declines the confirm dialog', () => {
+      confirmDialogService.confirm.and.returnValue(of(false));
+      utilityService.triggerSnackbar.calls.reset();
+
+      component.onCancel();
+
+      expect(utilityService.triggerSnackbar).not.toHaveBeenCalled();
     });
   });
 
@@ -1162,8 +1225,31 @@ describe('DevolutionFormulaComponent', () => {
       component.onSubmit('finalSubmit');
 
       expect(dfService.finalSubmit).not.toHaveBeenCalled();
+      // Falls back to the same default reason installment2LockReason() uses when the backend
+      // sends no lockReason (lockedInstallmentAccess above has lockReason: null) — see the next
+      // test for proof the toast is actually sourced from that computed signal, not a
+      // separate hardcoded string that happens to read similarly.
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
-        'Final submit is not available for Installment 2 at this time.',
+        component.installment2LockReason(),
+        'snackbar-danger',
+      );
+    });
+
+    // Regression: previously a separate, less specific hardcoded string
+    // ('Final submit is not available for Installment 2 at this time.'), independent of the real
+    // reason already shown as the tab's tooltip/help text.
+    it('final submit block uses the backend-supplied installment2 lockReason, not a generic hardcoded string', () => {
+      component.installmentAccess.set({
+        ...lockedInstallmentAccess,
+        installment2: { ...lockedInstallmentAccess.installment2, lockReason: 'Custom backend reason for this test.' },
+      });
+      component.installment.set(2);
+      utilityService.triggerSnackbar.calls.reset();
+
+      component.onSubmit('finalSubmit');
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        'Custom backend reason for this test.',
         'snackbar-danger',
       );
     });
@@ -1176,7 +1262,7 @@ describe('DevolutionFormulaComponent', () => {
       component.onSubmit('finalSubmit');
 
       expect(utilityService.triggerSnackbar).not.toHaveBeenCalledWith(
-        'Final submit is not available for Installment 2 at this time.',
+        component.installment2LockReason(),
         'snackbar-danger',
       );
     });
@@ -1541,7 +1627,10 @@ describe('DevolutionFormulaComponent', () => {
       expect(component.form.get('excelFile')?.hasError('newUlbsAdded')).toBeTrue();
     });
 
-    it('shows a danger snackbar with the backend newUlbsAdded message on validate-excel error', () => {
+    // Regression: previously fired as a *second*, separate triggerSnackbar() call after the
+    // generic backend `message` ('Validation failed.') — stacked calls meant the generic one was
+    // dismissed before it was readable. Now only one call fires, carrying the specific message.
+    it('shows only the backend newUlbsAdded message (not a second, stacked generic snackbar) on validate-excel error', () => {
       utilityService.triggerSnackbar.calls.reset();
       (component.form as UntypedFormGroup).get('excelFile')!.setValue(mockFileValue);
 
@@ -1549,9 +1638,12 @@ describe('DevolutionFormulaComponent', () => {
         'You have added 3 ULB(s). Please register before proceeding.',
         'snackbar-danger',
       );
+      // 2, not 3: the unconditional 'Excel uploaded. Verifying data…' toast triggerExcelValidation
+      // fires before the API call, plus this one danger message — not a second, stacked danger call.
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledTimes(2);
     });
 
-    it('shows a danger snackbar with the backend newUlbsAdded message on revalidate-excel error', () => {
+    it('shows only the backend newUlbsAdded message (not a second, stacked generic snackbar) on revalidate-excel error', () => {
       utilityService.triggerSnackbar.calls.reset();
       dfService.revalidateExcel.and.returnValue(throwError(() => newUlbsAddedError));
 
@@ -1561,6 +1653,7 @@ describe('DevolutionFormulaComponent', () => {
         'You have added 3 ULB(s). Please register before proceeding.',
         'snackbar-danger',
       );
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledTimes(1);
     });
   });
 

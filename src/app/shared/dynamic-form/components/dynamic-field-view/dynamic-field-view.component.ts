@@ -56,7 +56,7 @@ type TableRowConfig = {
           </span>
         </div>
       } @else if (!field.hideLabel) {
-        <div class="row g-3 my-2 align-items-start">
+        <div class="row my-2 align-items-start">
           <div class="col-12 col-md-5">
             <p class="fw-semibold mb-0 custom-font-size-6">
               {{ field.position ? field.position + '. ' : '' }}{{ field.label }}

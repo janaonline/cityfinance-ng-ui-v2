@@ -45,6 +45,7 @@
           <option value="PENDING">Pending</option>
           <option value="APPROVED">Approved</option>
           <option value="REJECTED">Rejected</option>
+          <option value="EXISTING">Existing User</option>
         </select>
       </div>
       <div class="mb-2">
@@ -107,13 +108,14 @@
               <span
                 class="badge rounded-pill status-badge"
                 [class.text-bg-warning]="element.approval?.status === 'PENDING'"
-                [class.text-bg-success]="!element.approval || element.approval.status === 'APPROVED'"
+                [class.text-bg-success]="!element.isExistingUser && (!element.approval || element.approval.status === 'APPROVED')"
                 [class.text-bg-danger]="element.approval?.status === 'REJECTED'"
+                [class.text-bg-secondary]="element.isExistingUser"
                 [class.cursor-pointer]="element.approval?.status === 'REJECTED'"
                 [title]="element.approval?.status === 'REJECTED' ? 'Click to view reject reason' : ''"
                 (click)="showRejectReason(element)"
               >
-                {{ element.approval?.status ?? 'APPROVED' }}
+                {{ element.isExistingUser ? 'Existing User' : (element.approval?.status ?? 'APPROVED') }}
               </span>
             </td>
           </ng-container>

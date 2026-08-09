@@ -8,6 +8,13 @@
 .component-shell {
   position: relative;
   background-color: var(--color-primary-accent);
+
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
 }
 
 .component-menu-col {

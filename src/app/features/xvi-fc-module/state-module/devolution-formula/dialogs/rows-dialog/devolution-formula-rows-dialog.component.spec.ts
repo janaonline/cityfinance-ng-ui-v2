@@ -117,10 +117,10 @@ const mockRowEditFields: ConditionalFieldConfig[] = [
   {
     key: 'devolutionFormula',
     formFieldType: 'text',
-    label: 'Devolution Formula',
+    label: 'Allocation Formula',
     validations: [
-      { name: 'required', validator: null, message: 'Devolution Formula is required.' },
-      { name: 'maxLength', validator: 250, message: 'Devolution Formula cannot exceed 250 characters.' },
+      { name: 'required', validator: null, message: 'Allocation Formula is required.' },
+      { name: 'maxLength', validator: 250, message: 'Allocation Formula cannot exceed 250 characters.' },
     ],
   },
 ];
@@ -826,7 +826,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       const ctrl = component.getEditFormControl('devolutionFormula');
       ctrl?.markAsTouched();
       const errors = component.getEditFieldErrors('devolutionFormula');
-      expect(errors).toContain('Devolution Formula is required.');
+      expect(errors).toContain('Allocation Formula is required.');
     });
 
     it('getEditFieldErrors returns backend message for maxLength (case-insensitive name match)', () => {
@@ -837,7 +837,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       ctrl?.setValue(longFormula);
       ctrl?.markAsTouched();
       const errors = component.getEditFieldErrors('devolutionFormula');
-      expect(errors).toContain('Devolution Formula cannot exceed 250 characters.');
+      expect(errors).toContain('Allocation Formula cannot exceed 250 characters.');
     });
 
     it('blocks save when dynamic form has a required error', () => {

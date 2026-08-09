@@ -66,7 +66,7 @@ export class EulbPostUpdateEditFormFacade {
     this.fields = this.resolveFields(fields);
   }
 
-  /** Filters to editable fields only and strips the Exempt option from electedBodyStatus. */
+  /** Filters to editable fields only and strips the 6th Schedule option from electedBodyStatus. */
   resolveFields(fields: readonly ConditionalFieldConfig[]): ConditionalFieldConfig[] {
     return filterPostUpdateRowEditFields(fields);
   }
@@ -203,11 +203,11 @@ export class EulbPostUpdateEditFormFacade {
   }
 }
 
-/** Creates a pre-populated form from the row payload; maps Exempt → empty string since Exempt is not an editable choice. */
+/** Creates a pre-populated form from the row payload; maps 6th Schedule → empty string since 6th Schedule is not an editable choice. */
 export function createEulbPostUpdateEditForm(
   payload: EulbPostSubmissionUpdateValidateRowPayload,
 ): EulbPostUpdateEditForm {
-  const editableStatus = payload.electedBodyStatus === 'Exempt' ? '' : payload.electedBodyStatus;
+  const editableStatus = payload.electedBodyStatus === '6th Schedule' ? '' : payload.electedBodyStatus;
 
   return new FormGroup({
     electedBodyStatus: new FormControl<EulbBodyStatus | ''>(editableStatus, { nonNullable: true }),
@@ -259,11 +259,11 @@ function toDatePayloadValue(value: string): string | null {
 }
 
 function shouldFilterExemptOption(option: unknown): boolean {
-  if (option === 'Exempt') return true;
+  if (option === '6th Schedule') return true;
   if (!isOptionRecord(option)) return false;
 
   const possibleValues = [option['id'], option['value'], option['label'], option['name']];
-  return possibleValues.some((value) => value === 'Exempt');
+  return possibleValues.some((value) => value === '6th Schedule');
 }
 
 function filterExemptOptions(options: readonly unknown[] | undefined): unknown[] | undefined {

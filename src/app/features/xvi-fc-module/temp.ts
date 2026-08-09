@@ -79,9 +79,9 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
             buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'elected-body-status'),
           ),
           buildMenuItem(
-            'Devolution Formula',
+            'ULB-wise Allocation',
             'bi bi-calculator',
-            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'devolution-formula'),
+            buildXvifcFeatureLink('STATE', MOCK_ENTITY_ID, yearId, 'ulb-wise-allocation'),
           ),
         ],
       },

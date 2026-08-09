@@ -407,7 +407,7 @@ const dashboardData: StateDashboardData = {
     },
     {
       key: 'devolution-formula',
-      title: 'Fill in the devolution formula',
+      title: 'Fill in the ULB-wise allocation',
       subtitle: 'Allocation and instalment split for each ULB',
       status: 'PENDING',
       actionLabel: 'Continue',
