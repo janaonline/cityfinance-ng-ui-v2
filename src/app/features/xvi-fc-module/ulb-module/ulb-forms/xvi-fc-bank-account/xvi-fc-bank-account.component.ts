@@ -611,7 +611,12 @@ export class XviFcBankAccountComponent {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      // JBig2/OpenJPEG codecs live in a separate wasm/ folder as of pdfjs-dist v6; without wasmUrl
+      // it defaults to null and JBig2-encoded scans silently fail to decode (rendered blank).
+      const pdf = await pdfjsLib.getDocument({
+        data: await file.arrayBuffer(),
+        wasmUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/wasm/`,
+      }).promise;
       if (pdf.numPages < 1) {
         return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
       }

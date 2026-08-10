@@ -1030,7 +1030,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      // JBig2/OpenJPEG codecs live in a separate wasm/ folder as of pdfjs-dist v6; without wasmUrl
+      // it defaults to null and JBig2-encoded scans silently fail to decode (rendered blank).
+      const pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer,
+        wasmUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/wasm/`,
+      }).promise;
 
       if (pdf.numPages === 0) return 'This PDF has no pages. Please upload a valid document.';
 
