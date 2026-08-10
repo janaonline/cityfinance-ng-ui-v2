@@ -57,8 +57,8 @@
 
     <!-- Acknowledgement section: cancel, save, final submit -->
     @if (canEdit() || canFinalSubmit() || canShowPostSubmissionUpdate()) {
-      <div class="acknowledgement border-top p-3">
-        <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+      <div class="acknowledgement">
+        <div class="acknowledgement-inner">
           <!-- If canEdit(): Show Save, Cancel, Final Submit -->
           <!-- Show Post submit update only if form is approved/ submitted -->
           @if (canEdit()) {
