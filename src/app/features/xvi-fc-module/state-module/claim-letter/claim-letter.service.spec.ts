@@ -390,6 +390,23 @@ describe('ClaimLetterService', () => {
     });
   });
 
+  describe('downloadDocumentPdf', () => {
+    it('GETs the PDF endpoint as a blob', () => {
+      const url = `${BASE_URL}${claimLetterId}/document/pdf`;
+      const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+      let result: Blob | undefined;
+
+      service.downloadDocumentPdf(claimLetterId).subscribe((blob) => (result = blob));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.responseType).toBe('blob');
+      req.flush(sampleBlob);
+
+      expect(result).toBe(sampleBlob);
+    });
+  });
+
   describe('getUlbs', () => {
     const url = `${BASE_URL}${claimLetterId}/ulbs`;
 
