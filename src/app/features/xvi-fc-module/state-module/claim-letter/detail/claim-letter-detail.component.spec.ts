@@ -22,7 +22,7 @@ import {
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
 import { formatCrore } from '../claim-letter.utils';
-import { pdfMake } from '../pdfmake-setup';
+import FileSaver from 'file-saver';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
 
 const SIGNED_FILE_FIELD: ConditionalFieldConfig = {
@@ -664,20 +664,24 @@ describe('ClaimLetterDetailComponent', () => {
       it('onSupportingAction routes download-template to downloadTemplate()', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
         spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        const downloadSpy = jasmine.createSpy('download');
-        spyOn(pdfMake, 'createPdf').and.returnValue({ download: downloadSpy } as never);
+        const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(of(sampleBlob));
+        const saveAsSpy = spyOn(FileSaver, 'saveAs');
 
         component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
 
         expect(claimLetterService.getDocumentData).toHaveBeenCalledWith('claim-1');
-        expect(pdfMake.createPdf).toHaveBeenCalled();
-        expect(downloadSpy).toHaveBeenCalledWith('claim-letter-CL-AP-2026-27-1-1.pdf');
+        expect(claimLetterService.downloadDocumentPdf).toHaveBeenCalledWith('claim-1');
+        expect(saveAsSpy).toHaveBeenCalledWith(sampleBlob, 'claim-letter-CL-AP-2026-27-1-1.pdf');
       });
 
       it('shares one fetch between previewTemplate() and downloadTemplate() (single-flight cache)', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
         const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        spyOn(pdfMake, 'createPdf').and.returnValue({ download: jasmine.createSpy('download') } as never);
+        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(
+          of(new Blob(['pdf-bytes'], { type: 'application/pdf' })),
+        );
+        spyOn(FileSaver, 'saveAs');
 
         component.previewTemplate();
         component.downloadTemplate();

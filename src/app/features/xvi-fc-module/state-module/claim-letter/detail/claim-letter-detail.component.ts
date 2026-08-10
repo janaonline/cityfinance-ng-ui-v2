@@ -4,7 +4,8 @@ import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, forkJoin, map, of, startWith, tap } from 'rxjs';
+import { Observable, forkJoin, map, of, startWith, switchMap, tap } from 'rxjs';
+import FileSaver from 'file-saver';
 import { FieldSupportingActionEvent, FieldSupportingContent } from '../../../../../shared/dynamic-form/field.interface';
 import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { UtilityService } from '../../../../../core/services/utility.service';
@@ -48,8 +49,6 @@ import {
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
 import { buildBatchNarrative } from '../claim-letter.utils';
-import { buildClaimLetterPdfDocDefinition } from '../claim-letter-pdf.builder';
-import { pdfMake } from '../pdfmake-setup';
 import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
 import { MatCardModule } from '@angular/material/card';
 
@@ -564,21 +563,32 @@ export class ClaimLetterDetailComponent implements OnInit {
       });
   }
 
+  /** The PDF itself is rendered server-side (`ClaimLetterService.downloadDocumentPdf()`) — client-
+   *  side `pdfmake` generation needed `'unsafe-eval'` in `script-src`, which a strict CSP rejects.
+   *  Still goes through `loadDocumentData()` first, purely for the cached `refNo` the filename is
+   *  built from — the single-flight/revision-invalidation behavior it shares with Preview is
+   *  otherwise unaffected. */
   downloadTemplate(): void {
     if (this.isDownloadingDocument()) return;
     this.isDownloadingDocument.set(true);
 
+    const claimLetterId = this.claimLetterId();
+
     this.loadDocumentData()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (documentData) => {
-          const docDefinition = buildClaimLetterPdfDocDefinition(documentData);
+      .pipe(
+        switchMap((documentData) => {
+          if (!claimLetterId) throw new Error('Cannot download the claim letter before it has an id.');
           const fileNameSafeRefNo = documentData.refNo.replace(/[/\\]/g, '-');
-          pdfMake.createPdf(docDefinition).download(`claim-letter-${fileNameSafeRefNo}.pdf`);
-          this.isDownloadingDocument.set(false);
-        },
+          return this.claimLetterService
+            .downloadDocumentPdf(claimLetterId)
+            .pipe(tap((blob) => FileSaver.saveAs(blob, `claim-letter-${fileNameSafeRefNo}.pdf`)));
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => this.isDownloadingDocument.set(false),
         error: (err: unknown) => {
-          console.error('Failed to load the claim letter document', err);
+          console.error('Failed to download the claim letter document', err);
           this.isDownloadingDocument.set(false);
           this.utilityService.triggerSnackbar('Unable to download the claim letter. Please try again.', 'snackbar-danger');
         },
