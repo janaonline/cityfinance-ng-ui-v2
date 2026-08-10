@@ -1,0 +1,417 @@
+<div class="container pt-4">
+  <div class="text-uppercase small fw-bold text-primary mb-1" style="letter-spacing:.06em;">
+    15th Finance Commission
+  </div>
+  <h1 class="page-title">XV-FC Review</h1>
+  <p class="text-muted mb-3">
+    Standardised financial statements from the 15th Finance Commission cycle.
+  </p>
+
+  <div class="module-tabs d-inline-flex mb-3">
+    <button type="button" class="module-tab" [class.active]="activeTab() === 'afs'" (click)="activeTab.set('afs')">
+      Audited Financial Statement
+    </button>
+    <button type="button" class="module-tab" [class.active]="activeTab() === 'ptax'" (click)="activeTab.set('ptax')">
+      Property Tax
+    </button>
+  </div>
+</div>
+
+@if (activeTab() === 'ptax') {
+  <app-ptax-review></app-ptax-review>
+} @else if (activeTab() === 'afs') {
+@switch (screen()) {
+  @case ('preview') {
+    <div class="container py-4">
+      <app-xv-fc-review-preview
+        [fy]="currentFy() ?? ''"
+        [unit]="currentUnit()"
+        [action]="pendingAction()"
+        [submitting]="submitting()"
+        (back)="backToEdit()"
+        (confirmed)="onConfirmSubmit()"
+      ></app-xv-fc-review-preview>
+    </div>
+  }
+  @case ('success') {
+    <div class="container py-4">
+      <app-xv-fc-review-success
+        [fy]="successFy() ?? ''"
+        [yearId]="successYearId() ?? ''"
+        (backToReview)="onBackToReview()"
+      ></app-xv-fc-review-success>
+    </div>
+  }
+  @default {
+    <div class="container py-4">
+      @if (service.summaryError()) {
+        <app-page-error-state
+          title="Failed to load your review years"
+          message="We couldn't load the list of financial years available for review."
+          (retry)="service.loadSummary()"
+        />
+      } @else if (service.summaryLoading()) {
+        <div class="d-flex justify-content-center py-5">
+          <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+        </div>
+      } @else if (service.summaries().length === 0) {
+        <p class="text-muted">No digitised data is available yet for any financial year.</p>
+      } @else {
+        <!-- FY tabs -->
+        <div class="fy-tabs d-inline-flex mb-4">
+          @for (s of service.summaries(); track s.yearId) {
+            <button
+              type="button"
+              class="fy-tab"
+              [class.active]="s.yearId === currentYearId()"
+              (click)="switchYear(s.financialYear, s.yearId)"
+            >
+              FY {{ s.financialYear }}
+              @if (fyDotClass(s.yearId)) {
+                <span class="fy-dot" [ngClass]="fyDotClass(s.yearId)"></span>
+              }
+            </button>
+          }
+        </div>
+
+        @if (service.fyDetail(); as detail) {
+          <!-- Status bar -->
+          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap status-bar">
+            <span class="status-text small">
+              <b class="text-body">{{ flagCount() }}</b> of <b class="text-body">{{ totalItems() }}</b> line items
+              flagged
+            </span>
+            <div class="ms-auto d-flex align-items-center gap-2">
+              <label for="unit-select" class="status-label small mb-0">Show as</label>
+              <select id="unit-select" #unitSelect class="unit-select" [value]="currentUnit()" (change)="switchUnit(unitSelect.value)">
+                @for (u of units; track u) {
+                  <option [value]="u" [selected]="u === currentUnit()">{{ unitLabels[u] }}</option>
+                }
+              </select>
+              <button class="btn-outline-custom btn-sm" type="button" (click)="downloadPdf()">
+                <mat-icon>download</mat-icon>
+                Download PDF
+              </button>
+            </div>
+          </div>
+        }
+
+        <div class="info-note mb-4 p-3">
+          <div class="fw-bold mb-2">How to review this statement</div>
+          <p class="mb-2">
+            We've extracted and standardised the figures below from your original PDF submission into
+            NMAM-compliant format.
+          </p>
+          <p class="mb-2">
+            <b>If something looks wrong:</b> Click the flag icon on that row, enter the corrected value and attach a
+            supporting document. Your comments will be reviewed by the CityFinance team.
+          </p>
+          <p class="mb-2">
+            <b>If everything looks correct:</b> Complete the declaration below and click Accept - No Changes.
+          </p>
+          <p class="mb-0">
+            For any discrepancies, queries, or feedback regarding the data, please contact:
+            <a href="mailto:feedback@cityfinance.in">feedback&#64;cityfinance.in</a>
+          </p>
+        </div>
+
+        @if (service.fyDetail(); as detail) {
+          @if (totalItems() === 0) {
+            <div class="locked-banner d-flex align-items-center gap-2 mb-3 p-3">
+              <mat-icon class="flex-shrink-0">info</mat-icon>
+              <span>There is no standardised data for this year.</span>
+            </div>
+          } @else {
+          @if (!isLocked() && detail.status) {
+            <div class="draft-banner d-flex align-items-center gap-2 mb-3 p-3">
+              <mat-icon class="flex-shrink-0">schedule</mat-icon>
+              <span>
+                <b>Status: {{ detail.status }}</b> - your flags and comments for FY {{ currentFy() }} are kept
+                as you go. Continue anytime before you submit.
+              </span>
+            </div>
+          }
+
+          @if (isLocked()) {
+            <div class="locked-banner d-flex align-items-center gap-2 mb-3 p-3">
+              <mat-icon class="flex-shrink-0">lock</mat-icon>
+              <span>
+                <b>FY {{ currentFy() }} is locked.</b>
+                @if (detail.submittedAt) {
+                  You submitted this review on {{ detail.submittedAt | date: 'medium' }}
+                }
+                ({{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accepted - no changes' : 'Submitted with comments' }}).
+                <a href="javascript:void(0)" (click)="onViewSubmission(currentFy() ?? '', currentYearId() ?? '')">View submission summary</a>
+              </span>
+            </div>
+          }
+
+          <!-- Original submission docs -->
+          @if ((detail.sourceDocuments ?? []).length > 0) {
+            <mat-card class="mb-4">
+              @for (doc of detail.sourceDocuments ?? []; track doc.targetCode) {
+                <mat-card-content class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="doc-icon"><mat-icon>picture_as_pdf</mat-icon></div>
+                    <div>
+                      <div class="fw-bold small">{{ doc.name }}</div>
+                      <div class="text-muted small">Original ULB upload</div>
+                    </div>
+                  </div>
+                  <button class="btn-outline-custom" type="button" (click)="downloadSourceDocument(doc)">
+                    <mat-icon>visibility</mat-icon>
+                    Preview / download
+                  </button>
+                </mat-card-content>
+              }
+            </mat-card>
+          }
+
+          <!-- Line item table -->
+          <mat-card class="mb-4">
+            <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+              <span class="fw-bold small">Standardised Financial Statement - NMAM format</span>
+              <span class="card-head-meta small">FY {{ currentFy() }} · {{ unitLabels[currentUnit()] }}</span>
+            </div>
+            <mat-card-content class="p-0">
+              <div class="table-responsive">
+                <table class="table table-hover table-borderless review-table mb-0">
+                  <thead>
+                    <tr class="border-bottom">
+                      <th style="width:76px;">Code</th>
+                      <th>Line item</th>
+                      <th class="text-end" style="width:170px;">Amount ({{ unitLabels[currentUnit()] }})</th>
+                      <th class="text-center" style="width:56px;">Flag</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (group of lineItemGroups(); track group.section) {
+                      <tr class="section-row">
+                        <td colspan="4">{{ group.section }}</td>
+                      </tr>
+                      @for (subGroup of group.subGroups; track subGroup.subSection ?? '') {
+                        @if (subGroup.subSection) {
+                          <tr class="subsection-row">
+                            <td colspan="4">{{ subGroup.subSection }}</td>
+                          </tr>
+                        }
+                        @for (item of subGroup.items; track item.code) {
+                          <tr [class.is-flagged]="item.flagged">
+                            <td class="code">{{ item.code }}</td>
+                            <td>{{ item.name }}</td>
+                            <td class="text-end num" [class.neg]="(item.standardizedAmount ?? 0) < 0">
+                              {{ formatAmount(item.standardizedAmount) }}
+                            </td>
+                            <td class="text-center">
+                              @if (item.flagged) {
+                                <button
+                                  mat-icon-button
+                                  type="button"
+                                  class="flag-btn is-flagged"
+                                  [disabled]="isLocked()"
+                                  (click)="openFlagDialog(item)"
+                                  aria-label="Edit flag"
+                                >
+                                  <mat-icon>flag</mat-icon>
+                                </button>
+                              } @else if (isLocked()) {
+                                <span class="badge text-bg-light border">Accepted</span>
+                              } @else {
+                                <button
+                                  mat-icon-button
+                                  type="button"
+                                  class="flag-btn"
+                                  (click)="openFlagDialog(item)"
+                                  aria-label="Flag this value"
+                                >
+                                  <mat-icon>outlined_flag</mat-icon>
+                                </button>
+                              }
+                            </td>
+                          </tr>
+                          @if (item.flagged) {
+                            <tr class="flag-note-row">
+                              <td colspan="4">
+                                <div class="flag-note">
+                                  <mat-icon inline="true" class="fs-6">flag</mat-icon>
+                                  <div>
+                                    @if (item.proposedValue !== null) {
+                                      <div><b>Correct value</b> - {{ item.proposedValue | number: '1.2-2' }}</div>
+                                    }
+                                    <div><b>Additional Comment</b> - {{ item.comment }}</div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          }
+                        }
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Declaration & sign-off -->
+          <div class="decl-card p-4 mb-4">
+            <div class="decl-label mb-3">
+              Declaration &amp; sign-off <span class="text-danger">*</span> required for both actions below
+            </div>
+
+            <input #declInput type="file" class="d-none" (change)="onDeclarationChosen($event)" />
+            @if (!detail.declaration) {
+              <div
+                class="upload-zone border border-dashed rounded p-3 text-center"
+                role="button"
+                tabindex="0"
+                (click)="uploadingDeclaration() ? null : declInput.click()"
+                (keydown.enter)="declInput.click()"
+              >
+                <mat-icon class="d-block mx-auto mb-1">cloud_upload</mat-icon>
+                <div class="fw-bold small">
+                  {{ uploadingDeclaration() ? 'Uploading…' : 'Upload signed declaration (PDF)' }}
+                </div>
+                <div class="text-muted small">Click to browse · PDF only · max 5MB</div>
+              </div>
+            } @else {
+              <div class="file-row d-flex align-items-center gap-2">
+                <mat-icon>description</mat-icon>
+                <span class="flex-grow-1 text-truncate">{{ detail.declaration.file.name }}</span>
+                <button class="btn-outline-custom btn-sm" type="button" (click)="viewDeclaration()">
+                  <mat-icon>visibility</mat-icon>
+                  Preview
+                </button>
+                @if (!isLocked()) {
+                  <button class="btn-remove-file" type="button" (click)="removeDeclaration()" aria-label="Remove file">
+                    <mat-icon>close</mat-icon> Remove
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="mt-4 pt-4 support-docs">
+              <div class="fw-bold small mb-1">
+                Supporting documents
+                @if (flagCount() > 0) {
+                  <span class="text-danger">*</span> required - {{ flagCount() }} line item{{ flagCount() === 1 ? '' : 's' }} flagged
+                } @else {
+                  <span class="fw-normal text-muted">(only required if you flag a line item)</span>
+                }
+              </div>
+              <div class="text-muted small mb-2">Bank statements, working papers, or other evidence for the flagged values.</div>
+
+              <input #supportInput type="file" class="d-none" (change)="onCommonSupportFileChosen($event)" />
+              @if (commonSupportingDocument(); as doc) {
+                <div class="file-row d-flex align-items-center gap-2">
+                  <mat-icon>description</mat-icon>
+                  <span class="flex-grow-1 text-truncate">{{ doc.name }}</span>
+                  <button class="btn-outline-custom btn-sm" type="button" (click)="viewSupportingDocument()">
+                    <mat-icon>visibility</mat-icon>
+                    Preview
+                  </button>
+                  @if (!isLocked()) {
+                    <button
+                      class="btn-outline-custom btn-sm"
+                      type="button"
+                      [disabled]="uploadingSupportDoc() || flagCount() === 0"
+                      (click)="supportInput.click()"
+                    >
+                      {{ uploadingSupportDoc() ? 'Uploading…' : 'Replace' }}
+                    </button>
+                  }
+                </div>
+              } @else if (flagCount() > 0 && !isLocked()) {
+                <div
+                  class="upload-zone border border-dashed rounded p-3 text-center"
+                  role="button"
+                  tabindex="0"
+                  (click)="uploadingSupportDoc() ? null : supportInput.click()"
+                  (keydown.enter)="supportInput.click()"
+                >
+                  <mat-icon class="d-block mx-auto mb-1">attach_file</mat-icon>
+                  <div class="fw-bold small">
+                    {{ uploadingSupportDoc() ? 'Uploading…' : 'Click to attach a supporting document' }}
+                  </div>
+                  <div class="text-muted small">PDF, image, or spreadsheet</div>
+                </div>
+              } @else {
+                <div class="text-muted small">No line items are flagged, so no document is needed.</div>
+              }
+            </div>
+
+            <p class="text-muted small mt-3 mb-0">
+              By uploading the signed declaration, you confirm your comments are final for this year and agree the
+              finalised dataset may be used for official analysis and publication.
+            </p>
+          </div>
+          }
+        } @else if (service.detailError()) {
+          <app-page-error-state
+            title="Failed to load this year's review"
+            message="We couldn't load the line items for this financial year."
+            (retry)="switchYear(currentFy() ?? '', currentYearId() ?? '')"
+          />
+        } @else {
+          <div class="d-flex justify-content-center py-5">
+            <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- sticky footer -->
+    @if (service.fyDetail(); as detail) {
+      <div class="sticky-footer">
+        <div class="container d-flex align-items-center justify-content-between gap-3 flex-wrap">
+          @if (isLocked()) {
+            <div>
+              <div class="fw-bold">FY {{ currentFy() }} - submitted &amp; locked</div>
+              <div class="text-success small"><mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> No further changes can be made for this year.</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn-outline-custom" type="button" (click)="onViewSubmission(currentFy() ?? '', currentYearId() ?? '')">View submission summary</button>
+            </div>
+          } @else {
+            <div>
+              <div class="fw-bold">Submit review - FY {{ currentFy() }}</div>
+              <div class="small" [class.text-success]="canSubmit()" [class.decl-hint-pending]="!canSubmit()">
+                @if (canSubmit()) {
+                  <mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> Ready to submit.
+                } @else {
+                  <mat-icon inline="true" class="fs-6 align-middle">arrow_upward</mat-icon>
+                  {{ submitBlockedReason() }}
+                }
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn-outline-custom" type="button" [disabled]="savingDraft()" (click)="saveDraft()">
+                <mat-icon>save</mat-icon>
+                {{ savingDraft() ? 'Saving…' : 'Save as draft' }}
+              </button>
+              <button
+                class="btn-outline-custom"
+                type="button"
+                [disabled]="!canSubmit()"
+                [matTooltip]="canSubmit() ? '' : submitBlockedReason()"
+                (click)="openPreview('SUBMIT_WITH_COMMENTS')"
+              >
+                Submit with comments
+              </button>
+              <button
+                class="btn-primary-custom"
+                type="button"
+                [disabled]="!canSubmit()"
+                [matTooltip]="canSubmit() ? '' : submitBlockedReason()"
+                (click)="openPreview('ACCEPT_NO_CHANGES')"
+              >
+                Accept - no changes
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+}
+}

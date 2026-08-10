@@ -1,0 +1,124 @@
+// Shared button / control styling for the XV-FC Data Review feature.
+// Brand/interactive colors are wired to the XVI-FC theme tokens (--color-primary*,
+// defined in features/xvi-fc-module/styles/_xvi-fc-theme.scss and applied globally
+// wherever the `xvifc-theme` class appears — this feature is a standalone page
+// outside the XVI-FC module, so it applies that class to its own host — see
+// `XvFcDataReviewComponent`) so it stays visually consistent with the rest of the
+// XVI-FC module — pulled in via `@use` from each component stylesheet so review,
+// flag-dialog, preview and success screens match.
+
+.btn-primary-custom,
+.btn-outline-custom,
+.btn-outline-danger-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  white-space: nowrap;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+.btn-primary-custom {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--color-primary-shadow);
+  }
+}
+
+.btn-outline-custom {
+  background: #fff;
+  color: #1a1d1f;
+  border: 1.5px solid #c3d2d2;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-accent);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-outline-danger-custom {
+  background: #fff;
+  color: #c62828;
+  border: 1.5px solid #f0c6c6;
+  font-weight: 500;
+
+  &:hover:not(:disabled) {
+    background: #ffebee;
+    border-color: #c62828;
+  }
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+}
+
+.btn-remove-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #c62828;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 4px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.unit-select {
+  font-size: 0.82rem;
+  padding: 6px 30px 6px 12px;
+  border-radius: 7px;
+  border: 1.5px solid #c3d2d2;
+  background-color: #fff;
+  color: #222;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23757575'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+}

@@ -1,0 +1,50 @@
+@if (detail; as detail) {
+<div class="success-wrap mx-auto text-center py-5">
+  <div class="success-icon mx-auto mb-4 d-flex align-items-center justify-content-center">
+    <mat-icon>check</mat-icon>
+  </div>
+  <h2 class="fw-bold mb-2">Review submitted</h2>
+  <p class="text-muted mb-4">
+    Your review for FY {{ fy }} has been recorded and sent to the CityFinance team.
+  </p>
+
+  <mat-card class="text-start mb-4 mx-auto success-card">
+    <mat-card-content>
+      <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+        <span class="text-muted">Financial year</span><span class="fw-bold">FY {{ fy }}</span>
+      </div>
+      <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+        <span class="text-muted">Decision</span>
+        <span class="fw-bold">{{ detail.finalAction === 'ACCEPT_NO_CHANGES' ? 'Accept - no changes' : 'Submit with comments' }}</span>
+      </div>
+      <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+        <span class="text-muted">Line items flagged</span><span class="fw-bold">{{ flagCount }}</span>
+      </div>
+      @if (detail.submittedAt) {
+        <div class="summary-row d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Submitted on</span><span class="fw-bold">{{ detail.submittedAt | date: 'medium' }}</span>
+        </div>
+      }
+      <div class="summary-row d-flex justify-content-between py-2">
+        <span class="text-muted">Signed declaration</span>
+        <span class="fw-bold">{{ detail.declaration?.file?.name }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="d-flex gap-2 justify-content-center flex-wrap mb-4">
+    <button class="btn-outline-custom" type="button" [disabled]="downloading" (click)="downloadAcknowledgement()">
+      <mat-icon>download</mat-icon>
+      {{ downloading ? 'Downloading…' : 'Download acknowledgement (PDF)' }}
+    </button>
+    <button class="btn-primary-custom" type="button" (click)="onBack()">
+      Back to XV-FC Data Review
+    </button>
+  </div>
+
+  <div class="text-muted small d-flex align-items-center justify-content-center gap-1">
+    <mat-icon inline="true" class="fs-6">lock</mat-icon>
+    This is a one-time exercise. FY {{ fy }} is now locked - reach out to CityFinance support if you need it reopened.
+  </div>
+</div>
+}

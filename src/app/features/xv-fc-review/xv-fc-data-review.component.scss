@@ -1,0 +1,321 @@
+@use './shared-buttons';
+
+// Standalone page — no parent shell to provide full-viewport background/sizing.
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.module-tabs {
+  background: #f5f5f5;
+  border-radius: 0.6rem;
+  padding: 4px;
+  gap: 4px;
+}
+
+.module-tab {
+  background: none;
+  border: 1px solid transparent;
+  padding: 9px 20px;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #616161;
+  transition: background 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
+
+  &:hover {
+    color: #212121;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  &.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary, #fff);
+    font-weight: 700;
+    box-shadow: 0 3px 10px var(--color-primary-shadow, rgba(0, 0, 0, 0.18));
+
+    &:hover {
+      background: var(--color-primary-hover, var(--color-primary));
+    }
+  }
+}
+
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.decl-hint-pending {
+  color: #b8860b;
+  font-weight: 600;
+}
+
+.info-note {
+  background: var(--color-primary-accent);
+  border: 1px solid var(--color-primary);
+  border-radius: 0.5rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--color-primary);
+}
+
+.draft-banner {
+  background: #fdf6e3;
+  border: 1px solid #ecd9a0;
+  border-radius: 0.5rem;
+  font-size: 0.86rem;
+  color: #6b5410;
+}
+
+.locked-banner {
+  background: #f2f4f4;
+  border: 1px solid #dadfdf;
+  border-radius: 0.5rem;
+  font-size: 0.86rem;
+  color: #444;
+}
+
+.fy-tabs {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.6rem;
+  padding: 4px;
+  gap: 4px;
+}
+
+.fy-tab {
+  background: none;
+  border: 1px solid transparent;
+  padding: 7px 16px;
+  border-radius: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #757575;
+  transition: background 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
+
+  &:hover {
+    color: #212121;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  &.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary, #fff);
+    font-weight: 700;
+    box-shadow: 0 2px 8px var(--color-primary-shadow, rgba(0, 0, 0, 0.18));
+
+    &:hover {
+      background: var(--color-primary-hover, var(--color-primary));
+    }
+  }
+}
+
+.fy-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+
+  &.dot-done {
+    background: #198754;
+  }
+
+  &.dot-flag {
+    background: #e67e15;
+  }
+
+  .fy-tab.active & {
+    box-shadow: 0 0 0 1.5px #fff;
+  }
+}
+
+.doc-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #757575;
+  flex-shrink: 0;
+}
+
+// Bootstrap's `.text-muted` sets color with `!important`, so it can't be darkened by a
+// same-or-lower-specificity override - these use dedicated classes instead of `.text-muted`.
+.card-head-meta {
+  color: #495057;
+  font-weight: 600;
+}
+
+.status-bar {
+  .status-text {
+    color: #495057;
+    font-weight: 500;
+  }
+
+  .status-label {
+    color: #495057;
+    font-weight: 600;
+  }
+}
+
+.review-table {
+  font-size: 0.86rem;
+
+  th,
+  td {
+    padding: 10px 16px;
+    vertical-align: middle;
+  }
+
+  th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #495057;
+    font-weight: 700;
+  }
+
+  td.code {
+    color: #1a1d1f;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+  }
+
+  td.num {
+    font-variant-numeric: tabular-nums;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #1a1d1f;
+  }
+
+  td.num.neg {
+    color: #c62828;
+  }
+
+  .section-row td {
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #4e6a6a;
+    background: #f6fafa;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  .subsection-row td {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #4e6a6a;
+    background: #eef6f6;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  tbody tr:not(.section-row):not(.subsection-row):not(.flag-note-row) {
+    border-bottom: 1px solid #eef1f1;
+  }
+
+  tr.is-flagged {
+    background: #fff8ed;
+  }
+
+  .flag-note-row td {
+    background: #fff8ed;
+    padding-top: 0;
+  }
+
+  .flag-note {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 0.78rem;
+    color: #7a5a10;
+    background: #fff;
+    border: 1px solid #f0dda8;
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+}
+
+.flag-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  color: #757575;
+
+  &.is-flagged {
+    color: #e67e15;
+  }
+}
+
+.decl-card {
+  background: #f8fafa;
+  border: 1.5px solid #d8e8e8;
+  border-radius: 0.6rem;
+}
+
+.decl-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #757575;
+}
+
+.support-docs {
+  border-top: 1px dashed #c8d8d8;
+}
+
+.upload-zone {
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-accent);
+  }
+
+  mat-icon {
+    color: var(--color-primary);
+  }
+}
+
+.border-dashed {
+  border-style: dashed !important;
+}
+
+.file-row {
+  font-size: 0.85rem;
+  background: var(--color-primary-accent);
+  border: 1px solid var(--color-primary);
+  border-radius: 0.4rem;
+  padding: 9px 13px;
+  color: var(--color-primary);
+}
+
+.sticky-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+  padding: 16px 0;
+  margin-top: 24px;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
