@@ -681,40 +681,46 @@ export class FillDisclosureComponent {
 
     // Render-based blank detection via pdfjs.
     // Pixel brightness is the only reliable way to detect blank pages — byte heuristics
-    // cannot distinguish blank scanned pages from real ones. Worker is loaded from CDN
-    // to avoid MIME-type issues with the Angular dev-server SPA fallback.
+    // cannot distinguish blank scanned pages from real ones. Worker + wasm codecs are served
+    // from our own assets (see angular.json) rather than a CDN, so decoding doesn't depend on
+    // unpkg's reachability or a proxy that blocks .wasm.
     try {
       const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdfjs/pdf.worker.min.mjs';
 
-      // JBig2/OpenJPEG codecs live in a separate wasm/ folder as of pdfjs-dist v6; without wasmUrl
-      // it defaults to null and JBig2-encoded scans silently fail to decode (rendered blank).
       const pdf = await pdfjsLib.getDocument({
         data: await file.arrayBuffer(),
-        wasmUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/wasm/`,
+        wasmUrl: '/assets/pdfjs/wasm/',
       }).promise;
 
       if (pdf.numPages === 0) {
         return { valid: false, error: 'This PDF has no pages. Please upload a valid document.' };
       }
 
-      const page     = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 0.15 });
-      const canvas   = document.createElement('canvas');
-      canvas.width   = Math.ceil(viewport.width);
-      canvas.height  = Math.ceil(viewport.height);
-      const ctx      = canvas.getContext('2d')!;
-      ctx.fillStyle  = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+      // Check every page, not just page 1 — scanners often insert a blank cover/separator
+      // page, which would otherwise cause a document with real content to be rejected.
+      let hasContent = false;
+      for (let pageNumber = 1; pageNumber <= pdf.numPages && !hasContent; pageNumber++) {
+        const page     = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 0.15 });
+        const canvas   = document.createElement('canvas');
+        canvas.width   = Math.ceil(viewport.width);
+        canvas.height  = Math.ceil(viewport.height);
+        const ctx      = canvas.getContext('2d')!;
+        ctx.fillStyle  = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport, canvas }).promise;
 
-      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      let nonWhite = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i] < 240 || data[i + 1] < 240 || data[i + 2] < 240) nonWhite++;
+        const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let nonWhite = 0;
+        // 250 (not 240) and 0.1% (not 0.5%) so faint/faded scans and sparse marks
+        // (a signature, a stamp) aren't misread as blank.
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i] < 250 || data[i + 1] < 250 || data[i + 2] < 250) nonWhite++;
+        }
+        if (nonWhite / (canvas.width * canvas.height) >= 0.001) hasContent = true;
       }
-      if (nonWhite / (canvas.width * canvas.height) < 0.005) {
+      if (!hasContent) {
         return { valid: false, error: 'The PDF appears to be blank. Please upload a document with visible content.' };
       }
 

@@ -607,15 +607,14 @@ export class XviFcBankAccountComponent {
         return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
       }
 
+      // Worker + wasm codecs are served from our own assets (see angular.json) rather than a
+      // CDN, so decoding doesn't depend on unpkg's reachability or a proxy that blocks .wasm.
       const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdfjs/pdf.worker.min.mjs';
 
-      // JBig2/OpenJPEG codecs live in a separate wasm/ folder as of pdfjs-dist v6; without wasmUrl
-      // it defaults to null and JBig2-encoded scans silently fail to decode (rendered blank).
       const pdf = await pdfjsLib.getDocument({
         data: await file.arrayBuffer(),
-        wasmUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/wasm/`,
+        wasmUrl: '/assets/pdfjs/wasm/',
       }).promise;
       if (pdf.numPages < 1) {
         return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
