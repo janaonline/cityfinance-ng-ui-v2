@@ -76,7 +76,7 @@
         <div class="conditions-list d-flex flex-column gap-2 mb-2">
           @for (condition of group.conditions; track condition.id) {
             @let effectiveStatus = resolveStatus(condition);
-            @let submitted = isSubmitted(condition);
+            @let submitted = isSubmitted();
             @let display = conditionStatusDisplay(condition);
             <div class="condition-row d-flex align-items-center gap-3 px-3 py-2">
               @if (display) {
