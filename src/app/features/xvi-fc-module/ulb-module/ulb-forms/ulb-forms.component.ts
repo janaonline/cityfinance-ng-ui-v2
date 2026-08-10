@@ -111,6 +111,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         route: null,
       },
       {
+        id: 'unspent-balance',
+        title: '14th FC Unspent Balance',
+        subtitle: 'Status will be displayed once the State uploads this information',
+        status: 'Awaiting State Upload',
+        actionLabel: null,
+        route: null,
+      },
+      {
         id: 'audited-statement',
         title: 'Audited Financial Statement FY 2024–25',
         subtitle: 'Upload Audited Annual Financial Statements signed/stamped by the auditor (CA, LFAD, or CAG)',
@@ -128,11 +136,11 @@ const CONDITION_GROUPS: ConditionGroup[] = [
       },
       // {
       //   id: 'unspent-balance',
-      //   title: 'FC Unspent Balance Disclosure',
-      //   subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
-      //   status: 'pending',
-      //   actionLabel: 'Fill Disclosure',
-      //   route: 'fill-disclosure',
+      //   title: '14th FC Unspent Balance',
+      //   subtitle: 'Status will be displayed once the State uploads this information.',
+      //   status: 'Awaiting State Upload',
+      //   actionLabel: null,
+      //   route: null,
       // },
       {
         id: 'xvi-fc-bank-account',
@@ -247,9 +255,6 @@ export class UlbFormsComponent implements OnInit {
     if (status) {
       const display = this.conditionStatusDisplay(condition);
       if (display) return display.iconTier === 'success' ? 'complete' : 'pending';
-      if (condition.id === 'unspent-balance') {
-        return status.unspentBalanceDisclosure.form_status === 'SUBMITTED' ? 'complete' : 'pending';
-      }
     }
     return condition.status;
   }
@@ -268,10 +273,7 @@ export class UlbFormsComponent implements OnInit {
     return condition.actionLabel ?? '';
   }
 
-  isSubmitted(condition: Condition): boolean {
-    const status = this.sectionFormStatus();
-    if (!status) return false;
-    if (condition.id === 'unspent-balance') return status.unspentBalanceDisclosure.form_status === 'SUBMITTED';
+  isSubmitted(): boolean {
     return false;
   }
 
