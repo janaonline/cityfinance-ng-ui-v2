@@ -132,9 +132,9 @@ export function buildBatchNarrative(input: BatchNarrativeInput): string[] {
 
   return [
     `This batch includes ${input.rowCount} of ${input.expectedUlbCount} eligible ULBs (${ulbPercent}%).`,
-    `You're claiming ${formatCrore(input.liveClaimedTotal)} — ${claimPercent}% of the state's total ` +
+    `You're claiming ${formatCrore(input.liveClaimedTotal)} - ${claimPercent}% of the state's total ` +
       `Installment ${input.installment} allocation (${formatCrore(input.totalInstallmentAllocation)}).`,
-    `${formatCrore(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch — ` +
+    `${formatCrore(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch - ` +
       `enough for ${slotsRemaining} more ${batchWord}.`,
   ];
 }

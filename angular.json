@@ -57,8 +57,7 @@
               "sweetalert2",
               "file-saver",
               "@tweenjs/tween.js",
-              "leaflet",
-              "pdfmake"
+              "leaflet"
             ]
           },
           "configurations": {

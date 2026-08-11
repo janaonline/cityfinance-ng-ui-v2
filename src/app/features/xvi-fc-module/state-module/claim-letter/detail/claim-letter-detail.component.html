@@ -4,16 +4,20 @@
 
     <div class="content-wrap p-3 p-md-4">
       <div class="content-stack d-flex flex-column gap-4">
-        <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
-
         <div>
-          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">16th Finance Commission</div>
+          <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+          <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
+            <span class="text-secondary">16th Finance Commission</span>
+            @if (stateName()) {
+              &nbsp;&middot;&nbsp; {{ stateName() }}
+            }
+          </div>
 
           <h1 class="page-title mb-2">
             @if (isCreateMode) {
               New Claim Letter
             } @else {
-              Claim Letter{{ claim() ? ' — Batch #' + claim()!.batchNumber : '' }}
+              Claim Letter{{ claim() ? ' - Batch #' + claim()!.batchNumber : '' }}
             }
           </h1>
 
@@ -123,6 +127,14 @@
           </div>
         }
 
+        @if (finalBatchIncomplete()) {
+          <div class="alert alert-danger small mt-2" data-cy="claim-letter-final-batch-blocked">
+            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
+            {{ eligibilityOverview()?.remainingUlbCount }} ULB(s) are still unclaimed - every ULB must be included in
+            this final batch before it can be submitted.
+          </div>
+        }
+
         <div class="acknowledgement-inner">
           @if (isCreateMode) {
             <button
@@ -185,31 +197,27 @@
               }
             </button>
 
-            <button
-              type="button"
-              matButton="filled"
-              [disabled]="isSaving() || isAbandoning() || isSubmitting() || !claim()?.hasSignedFile || finalBatchIncomplete()"
-              (click)="submitToMohua()"
-              data-cy="claim-letter-detail-submit"
-            >
-              @if (isSubmitting()) {
-                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                <span class="d-none d-md-inline">Submitting...</span>
-              } @else {
-                <i class="bi bi-send-check-fill d-md-none"></i>
-                <span class="d-none d-md-inline">Submit to MoHUA</span>
-              }
-            </button>
+            @if (canFinalSubmit()) {
+              <button
+                type="button"
+                matButton="filled"
+                [disabled]="
+                  isSaving() || isAbandoning() || isSubmitting() || !claim()?.hasSignedFile || finalBatchIncomplete()
+                "
+                (click)="submitToMohua()"
+                data-cy="claim-letter-detail-submit"
+              >
+                @if (isSubmitting()) {
+                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  <span class="d-none d-md-inline">Submitting...</span>
+                } @else {
+                  <i class="bi bi-send-check-fill d-md-none"></i>
+                  <span class="d-none d-md-inline">Submit to MoHUA</span>
+                }
+              </button>
+            }
           }
         </div>
-
-        @if (finalBatchIncomplete()) {
-          <div class="text-danger small mt-2" data-cy="claim-letter-final-batch-blocked">
-            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
-            {{ eligibilityOverview()?.remainingUlbCount }} ULB(s) are still unclaimed — every ULB must be included in
-            this final batch before it can be submitted.
-          </div>
-        }
       </div>
     }
   </div>
