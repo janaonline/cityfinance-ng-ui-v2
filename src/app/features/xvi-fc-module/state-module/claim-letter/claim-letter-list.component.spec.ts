@@ -46,6 +46,7 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
   return {
     stateName: 'Test State',
     installment: 1,
+    priorFcCycleLabel: '14th FC',
     stateLevelGate: { passed: true, sources: [] },
     expectedUlbCount: 10,
     batchSlotsUsed: 1,
@@ -215,7 +216,7 @@ describe('ClaimLetterListComponent', () => {
     expect(component.eligibility()?.stateLevelGate.sources[0].result).toBe('FAILED');
 
     expect(component.newClaimDisabledReason()).toBe(
-      'Your state has not yet met all eligibility conditions — see the checklist below.',
+      'Your state has not yet met all eligibility conditions - see the checklist below.',
     );
     const alert = fixture.debugElement.query(By.css('[data-cy="claim-letter-new-disabled-reason"]'));
     expect(alert.nativeElement.textContent).toContain('Your state has not yet met all eligibility conditions');

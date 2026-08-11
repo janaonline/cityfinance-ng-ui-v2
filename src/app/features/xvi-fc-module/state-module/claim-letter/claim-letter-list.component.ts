@@ -109,7 +109,7 @@ export class ClaimLetterListComponent implements OnInit {
     if (!eligibility || this.canCreateNewClaim()) return null;
 
     if (!eligibility.stateLevelGate.passed) {
-      return 'Your state has not yet met all eligibility conditions — see the checklist below.';
+      return 'Your state has not yet met all eligibility conditions - see the checklist below.';
     }
     if (this.ulbReadinessBlocked()) {
       return 'No ULBs currently meet every eligibility criterion, so there is nothing to include in a new claim yet.';

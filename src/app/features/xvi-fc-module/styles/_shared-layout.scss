@@ -178,32 +178,6 @@
   }
 }
 
-@mixin status-indicator {
-  .deadline-chip {
-    background-color: var(--color-status-accent-background);
-    color: var(--clr-primary);
-  }
-
-  .status-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: 2px solid var(--clr-primary);
-    border-radius: 50%;
-    box-shadow: 0 0 0 3px var(--color-status-accent-shadow);
-
-    &::after {
-      content: '';
-      width: 0.65rem;
-      height: 0.65rem;
-      border-radius: 50%;
-      background-color: var(--clr-primary);
-    }
-  }
-}
-
 @mixin form-summary-layout {
   @include shared-content-stack;
   @include shared-page-header;

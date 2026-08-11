@@ -59,9 +59,16 @@ export interface ClaimLetterFinancialOverview {
   availableToClaim: number;
 }
 
+/** Which FC cycle "FC Unspent Balance" disclosures refer to for this design year — resolved
+ *  backend-side (`resolvePriorFcCycleLabel`) from the same table the actual signed Claim Letter
+ *  document's own Annexure 1 heading uses, so this and that document can never disagree. Never
+ *  hardcode "14th"/"15th" against a year on this side — always read this field. */
+export type ClaimLetterPriorFcCycleLabel = '14th FC' | '15th FC';
+
 export interface ClaimLetterEligibilitySummary {
   stateName: string;
   installment: ClaimLetterInstallment;
+  priorFcCycleLabel: ClaimLetterPriorFcCycleLabel;
   stateLevelGate: {
     passed: boolean;
     sources: ClaimLetterEligibilitySource[];
