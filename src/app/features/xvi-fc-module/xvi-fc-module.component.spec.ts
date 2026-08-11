@@ -109,11 +109,24 @@ describe('XviFcModuleComponent', () => {
     expect(component.model()).toEqual(sidebarModel);
   });
 
-  it('should sync the service context again on NavigationEnd', () => {
+  it('should not sync the service context again on the first NavigationEnd after init', () => {
+    // NavigationEnd fires for the very navigation that instantiated this component too (after
+    // ngOnInit runs) — that navigation was already primed by the direct syncMenuModel() call, so
+    // re-syncing it here would build a second context object and double-fire the side-menu API.
     fixture.detectChanges();
     mockXvifcService.syncContextFromRoute.calls.reset();
 
     routerEvent$.next(new NavigationEnd(1, '/from', '/to'));
+
+    expect(mockXvifcService.syncContextFromRoute).not.toHaveBeenCalled();
+  });
+
+  it('should sync the service context again on a subsequent NavigationEnd', () => {
+    fixture.detectChanges();
+    mockXvifcService.syncContextFromRoute.calls.reset();
+
+    routerEvent$.next(new NavigationEnd(1, '/from', '/to')); // skipped — already primed
+    routerEvent$.next(new NavigationEnd(2, '/to', '/next')); // a real subsequent navigation
 
     expect(mockXvifcService.syncContextFromRoute).toHaveBeenCalledTimes(1);
   });
