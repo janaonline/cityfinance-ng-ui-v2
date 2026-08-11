@@ -65,6 +65,15 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
+              <mat-label>Audit type</mat-label>
+              <mat-select formControlName="auditType">
+                @for (at of auditTypes; track at.value) {
+                  <mat-option [value]="at.value">{{ at.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Financial year</mat-label>
               <mat-select formControlName="financialYear">
                 @for (y of financialYears; track y.value) {
@@ -604,6 +613,13 @@
                                     <tr>
                                       <td class="text-secondary ps-0">Table Exists</td>
                                       <td class="fw-medium">{{ job.rawResult.expected.table_exists ? 'Yes' : 'No' }}</td>
+                                      <td class="text-center text-secondary"><i class="bi bi-dash-circle"></i></td>
+                                    </tr>
+                                  }
+                                  @if (job.rawResult.expected.audit_type) {
+                                    <tr>
+                                      <td class="text-secondary ps-0">Audit Type</td>
+                                      <td class="fw-medium">{{ job.rawResult.expected.audit_type }}</td>
                                       <td class="text-center text-secondary"><i class="bi bi-dash-circle"></i></td>
                                     </tr>
                                   }
