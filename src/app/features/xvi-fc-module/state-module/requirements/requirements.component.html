@@ -27,13 +27,18 @@
           </section>
         } @else {
           <section class="summary-banner">
-            <p class="custom-font-size-6 text-white-50 text-uppercase fw-semibold my-1">
-              Total State Allocation FY {{ financialYear() }}
-            </p>
-            <h1 class="fw-bold">{{ formattedAllocation() }}</h1>
-            <p class="custom-font-size-6 text-white-50 my-1">
-              For {{ eligibleUlbCount() ?? '—' }} ULBs in {{ stateName() }} Subject to eligibility conditions below
-            </p>
+            <span class="hero-deco hero-deco--1" aria-hidden="true"></span>
+            <span class="hero-deco hero-deco--2" aria-hidden="true"></span>
+
+            <div class="summary-banner__content">
+              <p class="custom-font-size-6 text-white-50 text-uppercase fw-semibold my-1">
+                Total State Allocation FY {{ financialYear() }}
+              </p>
+              <h1 class="fw-bold">{{ formattedAllocation() }}</h1>
+              <p class="custom-font-size-6 text-white-50 my-1">
+                For {{ eligibleUlbCount() ?? '—' }} ULBs in {{ stateName() }} Subject to eligibility conditions below
+              </p>
+            </div>
           </section>
 
           <section class="my-4">
