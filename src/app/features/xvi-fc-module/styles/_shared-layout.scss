@@ -33,7 +33,7 @@
   .form-container {
     scrollbar-width: thin;
     // max-height: 90vh;
-    max-height: calc(100vh - 91px);
+    max-height: calc(100vh - var(--app-header-height, 91px));
     overflow-y: scroll;
     border-radius: var(--radius-split-squared);
     background: var(--color-primary-accent);
