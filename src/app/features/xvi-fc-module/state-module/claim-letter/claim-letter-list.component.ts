@@ -100,6 +100,25 @@ export class ClaimLetterListComponent implements OnInit {
     return this.isEligible() && eligibility.batchSlotsUsed < eligibility.batchSlotsMax;
   });
 
+  /** Explains why "New Claim" is disabled — `null` once it's enabled (or before eligibility has
+   *  loaded). Checked in the same order `isEligible()`/`canCreateNewClaim()` compose their own
+   *  conditions, so this always names the actual reason those signals disabled the button for. */
+  readonly newClaimDisabledReason = computed<string | null>(() => {
+    const eligibility = this.eligibility();
+    if (!eligibility || this.canCreateNewClaim()) return null;
+
+    if (!eligibility.stateLevelGate.passed) {
+      return 'Your state has not yet met all eligibility conditions — see the checklist below.';
+    }
+    if (this.ulbReadinessBlocked()) {
+      return 'No ULBs currently meet every eligibility criterion, so there is nothing to include in a new claim yet.';
+    }
+    if (eligibility.batchSlotsUsed >= eligibility.batchSlotsMax) {
+      return `You've used all ${eligibility.batchSlotsMax} claim batch slots for this installment. Resolve or wait on an existing batch before starting another.`;
+    }
+    return 'New claims are currently unavailable.';
+  });
+
   /** Proactive "last call" warning — fires once exactly one batch slot remains (this state's
    *  penultimate batch already exists) and at least one expected ULB still has no home in any
    *  batch. Any ULB left out of the final batch becomes permanently unclaimable for this

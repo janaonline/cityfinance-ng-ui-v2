@@ -39,6 +39,7 @@ const sampleClaim: ClaimLetterBatchSummary = {
   supersedes: null,
   supersededBy: null,
   createdAt: '2026-07-01T00:00:00.000Z',
+  permissions: { canView: true, canEdit: true, canFinalSubmit: true },
 };
 
 function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}): ClaimLetterEligibilitySummary {
@@ -176,8 +177,10 @@ describe('ClaimLetterListComponent', () => {
     expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-warning"]'))).toBeNull();
   });
 
-  it('enables New Claim when the gate passes and slots remain', () => {
+  it('enables New Claim when the gate passes and slots remain, with no disabled-reason alert', () => {
     expect(component.canCreateNewClaim()).toBeTrue();
+    expect(component.newClaimDisabledReason()).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-new-disabled-reason"]'))).toBeNull();
   });
 
   it('disables New Claim and exposes the failing source when the gate fails', () => {
@@ -193,12 +196,19 @@ describe('ClaimLetterListComponent', () => {
     );
 
     component.loadAll();
+    fixture.detectChanges();
 
     expect(component.canCreateNewClaim()).toBeFalse();
     // The eligibility-checklist component (tested separately) derives tick/cross rendering from
     // this signal directly — the list component itself no longer filters failed sources.
     expect(component.eligibility()?.stateLevelGate.sources.length).toBe(1);
     expect(component.eligibility()?.stateLevelGate.sources[0].result).toBe('FAILED');
+
+    expect(component.newClaimDisabledReason()).toBe(
+      'Your state has not yet met all eligibility conditions — see the checklist below.',
+    );
+    const alert = fixture.debugElement.query(By.css('[data-cy="claim-letter-new-disabled-reason"]'));
+    expect(alert.nativeElement.textContent).toContain('Your state has not yet met all eligibility conditions');
   });
 
   it('disables New Claim and marks Not Eligible when ulbReadiness has 0 eligible ULBs, even though the state gate passes', () => {
@@ -219,6 +229,10 @@ describe('ClaimLetterListComponent', () => {
     expect(component.canCreateNewClaim()).toBeFalse();
     const badge = fixture.debugElement.query(By.css('.badge'));
     expect(badge.nativeElement.textContent).toContain('Not Eligible');
+
+    expect(component.newClaimDisabledReason()).toBe(
+      'No ULBs currently meet every eligibility criterion, so there is nothing to include in a new claim yet.',
+    );
   });
 
   it('does NOT disable New Claim when ulbReadiness has some (not zero) eligible ULBs', () => {
@@ -303,6 +317,14 @@ describe('ClaimLetterListComponent', () => {
     component.loadAll();
 
     expect(component.canCreateNewClaim()).toBeFalse();
+    expect(component.newClaimDisabledReason()).toBe(
+      "You've used all 3 claim batch slots for this installment. Resolve or wait on an existing batch before starting another.",
+    );
+  });
+
+  it('newClaimDisabledReason is null before eligibility has loaded', () => {
+    component.eligibility.set(null);
+    expect(component.newClaimDisabledReason()).toBeNull();
   });
 
   it('createNewClaim navigates to claim-letter/new when eligible', () => {

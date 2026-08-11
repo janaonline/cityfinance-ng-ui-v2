@@ -74,6 +74,10 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     supersedes: null,
     supersededBy: null,
     createdAt: '2026-07-01T00:00:00.000Z',
+    // Backend-driven gates — canEdit()/canFinalSubmit() read these directly now, not
+    // currentFormStatus/isAbandoned. Default to "fully editable" so existing tests that only care
+    // about other behavior don't also have to specify permissions explicitly.
+    permissions: { canView: true, canEdit: true, canFinalSubmit: true },
     ...overrides,
   };
 }
@@ -94,6 +98,8 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
     remainingUlbCount: 0,
     varianceLowerPercent: 90,
     varianceUpperPercent: 110,
+    // Create-mode's canEdit() reads this — default to creatable for the same reason as above.
+    canCreate: true,
     ...overrides,
   };
 }
@@ -173,6 +179,12 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.isCreateMode).toBe(true);
       expect(component.claimLetterId()).toBeNull();
       expect(component.canEdit()).toBe(true);
+    });
+
+    it('falls back to eligibilityOverview().canCreate — there is no claim yet to read permissions from', () => {
+      // Simulate a claim-context response that denies canCreate (e.g. a viewer-only user).
+      component.eligibilityOverview.set(buildClaimContext({ canCreate: false }));
+      expect(component.canEdit()).toBe(false);
     });
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
@@ -441,22 +453,31 @@ describe('ClaimLetterDetailComponent', () => {
     });
 
     it('narrative is empty (hidden) once the batch is no longer editable', async () => {
-      await setupEdit(buildClaim({ currentFormStatus: 5 })); // UNDER_REVIEW_BY_MOHUA, read-only
+      // UNDER_REVIEW_BY_MOHUA, read-only — canEdit() reads permissions.canEdit directly, not status.
+      await setupEdit(
+        buildClaim({ currentFormStatus: 5, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }),
+      );
       expect(component.batchNarrative()).toEqual([]);
     });
 
-    it('is editable while IN_PROGRESS and not abandoned', async () => {
-      await setupEdit(buildClaim({ currentFormStatus: 2, isAbandoned: false }));
+    it('is editable when the backend grants canEdit', async () => {
+      await setupEdit(
+        buildClaim({ currentFormStatus: 2, isAbandoned: false, permissions: { canView: true, canEdit: true, canFinalSubmit: true } }),
+      );
       expect(component.canEdit()).toBe(true);
     });
 
-    it('is read-only once no longer IN_PROGRESS', async () => {
-      await setupEdit(buildClaim({ currentFormStatus: 5 })); // UNDER_REVIEW_BY_MOHUA
+    it('is read-only once the backend denies canEdit (e.g. no longer IN_PROGRESS)', async () => {
+      await setupEdit(
+        buildClaim({ currentFormStatus: 5, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }), // UNDER_REVIEW_BY_MOHUA
+      );
       expect(component.canEdit()).toBe(false);
     });
 
-    it('is read-only once abandoned, even if still nominally IN_PROGRESS', async () => {
-      await setupEdit(buildClaim({ isAbandoned: true }));
+    it('is read-only once the backend denies canEdit for an abandoned draft, even if still nominally IN_PROGRESS', async () => {
+      await setupEdit(
+        buildClaim({ isAbandoned: true, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }),
+      );
       expect(component.canEdit()).toBe(false);
     });
 
@@ -509,7 +530,9 @@ describe('ClaimLetterDetailComponent', () => {
     });
 
     it('abandonDraft is a no-op when not editable', async () => {
-      await setupEdit(buildClaim({ isAbandoned: true }));
+      await setupEdit(
+        buildClaim({ isAbandoned: true, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }),
+      );
       const confirmSpy = spyOn(TestBed.inject(ConfirmDialogService), 'confirm');
 
       component.abandonDraft();

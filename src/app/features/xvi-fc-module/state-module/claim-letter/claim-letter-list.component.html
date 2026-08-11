@@ -18,15 +18,28 @@
           </div>
 
           @if (!isLoading() && !loadError()) {
-            <button
-              type="button"
-              matButton="filled"
-              [disabled]="!canCreateNewClaim()"
-              (click)="createNewClaim()"
-              data-cy="claim-letter-new-button"
-            >
-              <i class="bi bi-plus-lg me-1"></i>New Claim
-            </button>
+            <div class="">
+              <button
+                type="button"
+                matButton="filled"
+                [disabled]="!canCreateNewClaim()"
+                (click)="createNewClaim()"
+                data-cy="claim-letter-new-button"
+              >
+                <i class="bi bi-plus-lg me-1"></i>New Claim
+              </button>
+
+              @if (newClaimDisabledReason(); as reason) {
+                <div
+                  class="alert alert-danger py-1 px-2 mt-2 mb-0 small"
+                  role="alert"
+                  data-cy="claim-letter-new-disabled-reason"
+                >
+                  <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+                  <span class="px-1">{{ reason }}</span>
+                </div>
+              }
+            </div>
           }
         </div>
 
@@ -74,8 +87,8 @@
                   Batch slots used:
                   <b>{{ eligibilitySummary.batchSlotsUsed }}/ {{ eligibilitySummary.batchSlotsMax }}</b>
                 </span>
-                &middot;
                 @if (eligibilitySummary.nextBatchNumber !== null) {
+                  &middot;
                   <span class="small">
                     Preparing:
                     <b>Batch {{ eligibilitySummary.nextBatchNumber }}</b>

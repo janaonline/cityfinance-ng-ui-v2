@@ -108,6 +108,10 @@ export interface ClaimLetterClaimContext {
    *  these; pass straight through to `isClaimWithinVariance`. */
   varianceLowerPercent: number;
   varianceUpperPercent: number;
+  /** Whether the current user may start a new claim (PREPARE_GRANT_LETTERS) — the create-mode-only
+   *  equivalent of `ClaimLetterBatchSummary.permissions.canEdit`, since there's no batch document
+   *  yet to attach a full `ClaimLetterPermissions` to. */
+  canCreate: boolean;
 }
 
 /**
@@ -193,6 +197,15 @@ export interface ClaimLetterFinancialSummary {
   remainingIfAcknowledged: number;
 }
 
+/** Authoritative UI edit/submit gates, computed backend-side (same shape/convention as
+ *  `SfcStatusPermissions`) — never infer `canEdit`/`canFinalSubmit` from `currentFormStatus`/
+ *  `isAbandoned` locally. */
+export interface ClaimLetterPermissions {
+  canView: boolean;
+  canEdit: boolean;
+  canFinalSubmit: boolean;
+}
+
 /**
  * The one response shape every claim-letter read/mutating endpoint returns (`getDetail`,
  * `listHistory`, `createDraft`, `updateDraft`, `abandonDraft`, `uploadSignedFile`, `submit`).
@@ -224,6 +237,8 @@ export interface ClaimLetterBatchSummary {
    *  responses, same convention as `questions`. */
   varianceLowerPercent?: number;
   varianceUpperPercent?: number;
+  /** Authoritative edit/submit gates for this claim — always populated. */
+  permissions: ClaimLetterPermissions;
 }
 
 /** One row of the covering letter's recommended-ULBs table. No per-ULB date exists on the batch

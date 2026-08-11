@@ -230,11 +230,17 @@ export class ClaimLetterDetailComponent implements OnInit {
    *  there is no equivalent row-level error-application machinery here. */
   readonly formLevelErrors = signal<readonly string[]>([]);
 
+  /** Backend-computed gates — never inferred from `currentFormStatus`/`isAbandoned` locally, same
+   *  convention as `sfc-status`/`devolution-formula`/`fc-unspent-declaration`. Create mode has no
+   *  batch document yet to read `permissions` from, so it falls back to `eligibilityOverview()`'s
+   *  `canCreate` (populated by the same `getClaimContext` call that provides the rest of the
+   *  create-page context). */
   readonly canEdit = computed(() => {
-    if (this.isCreateMode) return true;
-    const claim = this.claim();
-    return !!claim && claim.currentFormStatus === FORM_STATUS.IN_PROGRESS && !claim.isAbandoned;
+    if (this.isCreateMode) return this.eligibilityOverview()?.canCreate ?? false;
+    return this.claim()?.permissions.canEdit ?? false;
   });
+
+  readonly canFinalSubmit = computed(() => this.claim()?.permissions.canFinalSubmit ?? false);
 
   /** FE's first line of defense for the final-batch completeness rule (BE is the actual authority,
    *  enforced in `submit()` — this just avoids a round-trip for the common case): once this is the
