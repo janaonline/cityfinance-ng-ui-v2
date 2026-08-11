@@ -6,7 +6,6 @@
       (retry)="loadMembers()"
     />
   } @else {
-
     <!-- ══ Page Header ═══════════════════════════════════════════════════════════════ -->
     <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-3">
       <div>
@@ -16,10 +15,12 @@
     </div>
 
     <!-- ══ Info Banner ════════════════════════════════════════════════════════════════ -->
-    <div class="info-banner d-flex align-items-start gap-2 rounded-3 px-3 py-3 mb-4 small">
-      <i class="bi bi-info-circle-fill info-banner__icon flex-shrink-0" aria-hidden="true"></i>
-      <span><strong>How access works:</strong> <span [innerHTML]="infoBannerText"></span></span>
-    </div>
+    @if (isSubmitter()) {
+      <div class="info-banner d-flex align-items-start gap-2 rounded-3 px-3 py-3 mb-4 small">
+        <i class="bi bi-info-circle-fill info-banner__icon flex-shrink-0" aria-hidden="true"></i>
+        <span><strong>How access works:</strong> <span [innerHTML]="infoBannerText"></span></span>
+      </div>
+    }
 
     <!-- ══ Action Bar ═════════════════════════════════════════════════════════════════ -->
     <div class="d-flex align-items-center justify-content-end gap-2 mb-3 flex-wrap">
@@ -50,10 +51,12 @@
             <i [class]="btn.iconClass" aria-hidden="true"></i>
             {{ btn.label }}
             @if (btn.showChevron) {
-              <i class="bi ms-1"
+              <i
+                class="bi ms-1"
                 [class.bi-chevron-up]="btn.isActive"
                 [class.bi-chevron-down]="!btn.isActive"
-                aria-hidden="true"></i>
+                aria-hidden="true"
+              ></i>
             }
           </button>
         }
@@ -94,19 +97,28 @@
                   <tr class="perm-table__row">
                     <td class="perm-table__cell-label small">{{ p.label }}</td>
                     <td class="text-center">
-                      <span class="perm-dot"
-                        [class.perm-dot--yes]="p.admin" [class.perm-dot--no]="!p.admin"
-                        [attr.aria-label]="p.admin ? 'Allowed' : 'Not allowed'"></span>
+                      <span
+                        class="perm-dot"
+                        [class.perm-dot--yes]="p.admin"
+                        [class.perm-dot--no]="!p.admin"
+                        [attr.aria-label]="p.admin ? 'Allowed' : 'Not allowed'"
+                      ></span>
                     </td>
                     <td class="text-center">
-                      <span class="perm-dot"
-                        [class.perm-dot--yes]="p.reviewer" [class.perm-dot--no]="!p.reviewer"
-                        [attr.aria-label]="p.reviewer ? 'Allowed' : 'Not allowed'"></span>
+                      <span
+                        class="perm-dot"
+                        [class.perm-dot--yes]="p.reviewer"
+                        [class.perm-dot--no]="!p.reviewer"
+                        [attr.aria-label]="p.reviewer ? 'Allowed' : 'Not allowed'"
+                      ></span>
                     </td>
                     <td class="text-center">
-                      <span class="perm-dot"
-                        [class.perm-dot--yes]="p.viewer" [class.perm-dot--no]="!p.viewer"
-                        [attr.aria-label]="p.viewer ? 'Allowed' : 'Not allowed'"></span>
+                      <span
+                        class="perm-dot"
+                        [class.perm-dot--yes]="p.viewer"
+                        [class.perm-dot--no]="!p.viewer"
+                        [attr.aria-label]="p.viewer ? 'Allowed' : 'Not allowed'"
+                      ></span>
                     </td>
                   </tr>
                 }
@@ -133,21 +145,24 @@
           <mat-divider></mat-divider>
 
           <div class="px-4 py-4">
-
             @if (addConflict(); as conflict) {
-
               <!-- ── Conflict: previously removed XVI-FC member ─────────────── -->
               <div aria-live="assertive" aria-atomic="true">
                 <div class="alert alert-warning d-flex gap-3 py-3 px-3 mb-4" role="alert">
-                  <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1 text-warning" aria-hidden="true"></i>
+                  <i
+                    class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1 text-warning"
+                    aria-hidden="true"
+                  ></i>
                   <div>
                     <p class="fw-semibold mb-1">Previously removed member</p>
                     <p class="mb-0 small">
                       This email belongs to
                       <strong>{{ conflict.name }}</strong>
-                      @if (conflict.designation) { <span class="text-muted">({{ conflict.designation }})</span> }
-                      who was previously removed from the team.
-                      Restoring will update their details and send a new invitation.
+                      @if (conflict.designation) {
+                        <span class="text-muted">({{ conflict.designation }})</span>
+                      }
+                      who was previously removed from the team. Restoring will update their details and send a new
+                      invitation.
                     </p>
                   </div>
                 </div>
@@ -155,10 +170,19 @@
                 <!-- Summary of what will be applied -->
                 <div class="rounded border bg-light px-3 py-2 mb-4 small">
                   <div class="row g-1 text-muted">
-                    <div class="col-6 col-md-3"><span class="fw-semibold d-block">Name</span>{{ addForm.get('name')?.value }}</div>
-                    <div class="col-6 col-md-3"><span class="fw-semibold d-block">Email</span>{{ addForm.get('email')?.value }}</div>
-                    <div class="col-6 col-md-3"><span class="fw-semibold d-block">Mobile</span>{{ addForm.get('mobile')?.value }}</div>
-                    <div class="col-6 col-md-3"><span class="fw-semibold d-block">Role</span>{{ getRoleLabel(addForm.get('subRole')?.value ?? '') }}</div>
+                    <div class="col-6 col-md-3">
+                      <span class="fw-semibold d-block">Name</span>{{ addForm.get('name')?.value }}
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="fw-semibold d-block">Email</span>{{ addForm.get('email')?.value }}
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="fw-semibold d-block">Mobile</span>{{ addForm.get('mobile')?.value }}
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="fw-semibold d-block">Role</span
+                      >{{ getRoleLabel(addForm.get('subRole')?.value ?? '') }}
+                    </div>
                   </div>
                 </div>
 
@@ -167,7 +191,13 @@
                     <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
                     Back
                   </button>
-                  <button mat-flat-button color="primary" type="button" [disabled]="isAdding()" (click)="restoreMember()">
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    [disabled]="isAdding()"
+                    (click)="restoreMember()"
+                  >
                     @if (isAdding()) {
                       <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                       Restoring…
@@ -178,13 +208,10 @@
                   </button>
                 </div>
               </div>
-
             } @else {
-
               <!-- ── Normal invite form ─────────────────────────────────────── -->
               <form [formGroup]="addForm" (ngSubmit)="submitAddMember()" novalidate>
                 <div class="row g-3">
-
                   @for (field of addFormFields; track field.controlName) {
                     <div class="col-12 col-md-6 col-xl-4">
                       <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
@@ -212,7 +239,6 @@
                             (input)="field.onInput && field.onInput($event)"
                           />
                         }
-
                       </mat-form-field>
 
                       <div [id]="'add-' + field.controlName + '-err'" aria-live="polite" aria-atomic="true">
@@ -222,13 +248,15 @@
                       </div>
                     </div>
                   }
-
                 </div>
 
                 <!-- API error (active email conflict or generic) -->
                 <div aria-live="assertive" aria-atomic="true">
                   @if (addError()) {
-                    <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small" role="alert">
+                    <div
+                      class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small"
+                      role="alert"
+                    >
                       <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
                       {{ addError() }}
                     </div>
@@ -250,9 +278,7 @@
                   </button>
                 </div>
               </form>
-
             }
-
           </div>
         </mat-card>
       </div>
@@ -260,39 +286,38 @@
 
     <!-- ══ Members Table ══════════════════════════════════════════════════════════════ -->
     <mat-card class="members-card mb-4">
-
       @if (isLoading()) {
         @for (i of [1, 2, 3]; track i) {
           <div class="d-flex align-items-center gap-3 px-4 py-3" [class.border-bottom]="i < 3">
             <span class="skeleton skeleton--circle flex-shrink-0"></span>
             <div class="flex-grow-1">
-              <span class="skeleton skeleton--line d-block mb-2" style="width:160px"></span>
-              <span class="skeleton skeleton--line d-block" style="width:110px;height:10px"></span>
+              <span class="skeleton skeleton--line d-block mb-2" style="width: 160px"></span>
+              <span class="skeleton skeleton--line d-block" style="width: 110px; height: 10px"></span>
             </div>
-            <span class="skeleton skeleton--line d-none d-md-block" style="width:120px"></span>
-            <span class="skeleton skeleton--line d-none d-lg-block" style="width:70px"></span>
+            <span class="skeleton skeleton--line d-none d-md-block" style="width: 120px"></span>
+            <span class="skeleton skeleton--line d-none d-lg-block" style="width: 70px"></span>
           </div>
         }
-
       } @else if (members().length === 0) {
         <div class="text-center py-5 px-4" role="status">
           <i class="bi bi-people-fill text-muted d-block mx-auto mb-2 empty-state-icon" aria-hidden="true"></i>
           <p class="fw-semibold text-muted mb-1">No team members yet</p>
           <p class="small text-muted mb-0">Use <strong>Add Member</strong> to invite your first team member.</p>
         </div>
-
       } @else {
         <div class="table-responsive">
-          <table mat-table [dataSource]="members()" [trackBy]="trackByMemberId"
-            class="w-100" aria-label="State team members">
-
+          <table
+            mat-table
+            [dataSource]="members()"
+            [trackBy]="trackByMemberId"
+            class="w-100"
+            aria-label="State team members"
+          >
             @for (col of tableColumns; track col.key) {
               <ng-container [matColumnDef]="col.key">
                 <th mat-header-cell *matHeaderCellDef [class]="col.thClass">{{ col.header }}</th>
                 <td mat-cell *matCellDef="let row" [class]="col.tdClass">
-
                   @switch (col.cellType) {
-
                     @case ('member') {
                       <div class="d-flex align-items-center gap-3">
                         <span class="member-avatar member-avatar--{{ row.subRole | lowercase }}" aria-hidden="true">
@@ -300,8 +325,12 @@
                         </span>
                         <div class="member-text-wrap">
                           <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="fw-semibold member-name-text"
-                              [matTooltip]="row.name" matTooltipShowDelay="400" matTooltipPosition="above">
+                            <span
+                              class="fw-semibold member-name-text"
+                              [matTooltip]="row.name"
+                              matTooltipShowDelay="400"
+                              matTooltipPosition="above"
+                            >
                               {{ row.name }}
                             </span>
                             @if (isCurrentUser(row._id)) {
@@ -310,17 +339,21 @@
                               </span>
                             }
                           </div>
-                          <span class="text-muted d-block" style="font-size:0.75rem">+91&nbsp;{{ row.mobile }}</span>
+                          <span class="text-muted d-block" style="font-size: 0.75rem">+91&nbsp;{{ row.mobile }}</span>
                           @if (row.email) {
-                            <span class="text-muted d-block" style="font-size:0.75rem">{{ row.email }}</span>
+                            <span class="text-muted d-block" style="font-size: 0.75rem">{{ row.email }}</span>
                           }
                         </div>
                       </div>
                     }
 
                     @case ('designation') {
-                      <span class="designation-text small text-muted"
-                        [matTooltip]="row.designation" matTooltipShowDelay="400" matTooltipPosition="above">
+                      <span
+                        class="designation-text small text-muted"
+                        [matTooltip]="row.designation"
+                        matTooltipShowDelay="400"
+                        matTooltipPosition="above"
+                      >
                         {{ row.designation || '—' }}
                       </span>
                     }
@@ -330,29 +363,42 @@
                         <span class="role-badge role-badge--submitter">Admin</span>
                       } @else if (roleChangingId() === row._id) {
                         <div class="d-flex align-items-center gap-2">
-                          <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{ getRoleLabel(row.subRole) }}</span>
-                          <span class="spinner-border spinner-border-sm text-primary flex-shrink-0"
-                            style="width:12px;height:12px"
-                            role="status" [attr.aria-label]="'Updating role for ' + row.name"></span>
+                          <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{
+                            getRoleLabel(row.subRole)
+                          }}</span>
+                          <span
+                            class="spinner-border spinner-border-sm text-primary flex-shrink-0"
+                            style="width: 12px; height: 12px"
+                            role="status"
+                            [attr.aria-label]="'Updating role for ' + row.name"
+                          ></span>
                         </div>
                       } @else if (editingRoleId() === row._id) {
                         <div class="role-select-enter">
-                          <mat-select [value]="row.subRole" class="role-select"
+                          <mat-select
+                            [value]="row.subRole"
+                            class="role-select"
                             panelClass="role-select-panel"
                             [attr.aria-label]="'Change role for ' + row.name"
                             (selectionChange)="changeRole(row, $event.value)"
-                            (openedChange)="onRoleSelectClose($event, row._id)">
+                            (openedChange)="onRoleSelectClose($event, row._id)"
+                          >
                             <mat-option value="EDITOR">Reviewer</mat-option>
                             <mat-option value="VIEWER">Viewer</mat-option>
                           </mat-select>
                         </div>
                       } @else {
                         <div class="d-flex align-items-center gap-2 role-label-view">
-                          <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{ getRoleLabel(row.subRole) }}</span>
+                          <span class="role-badge role-badge--{{ row.subRole | lowercase }}">{{
+                            getRoleLabel(row.subRole)
+                          }}</span>
                           @if (isSubmitter()) {
-                            <button type="button" class="role-edit-btn"
+                            <button
+                              type="button"
+                              class="role-edit-btn"
                               [attr.aria-label]="'Edit role for ' + row.name"
-                              (click)="editingRoleId.set(row._id)">
+                              (click)="editingRoleId.set(row._id)"
+                            >
                               <i class="bi bi-pencil-fill" aria-hidden="true"></i>
                             </button>
                           }
@@ -361,9 +407,11 @@
                     }
 
                     @case ('status') {
-                      <span class="badge rounded-pill status-badge"
+                      <span
+                        class="badge rounded-pill status-badge"
                         [class.text-bg-success]="row.isXVIFCProfileVerified"
-                        [class.text-bg-warning]="!row.isXVIFCProfileVerified">
+                        [class.text-bg-warning]="!row.isXVIFCProfileVerified"
+                      >
                         {{ row.isXVIFCProfileVerified ? 'ACTIVE' : 'PENDING' }}
                       </span>
                     }
@@ -378,43 +426,50 @@
                       } @else if (confirmDeleteId() === row._id) {
                         <div class="d-inline-flex align-items-center gap-1">
                           <span class="small text-danger fw-semibold me-1 d-none d-md-inline">Sure?</span>
-                          <button type="button" class="action-icon-btn action-icon-btn--warn"
+                          <button
+                            type="button"
+                            class="action-icon-btn action-icon-btn--warn"
                             [attr.aria-label]="'Confirm delete ' + row.name"
-                            (click)="confirmDelete(row)">
+                            (click)="confirmDelete(row)"
+                          >
                             <i class="bi bi-check-lg" aria-hidden="true"></i>
                           </button>
-                          <button type="button" class="action-icon-btn"
-                            aria-label="Cancel" (click)="cancelDelete()">
+                          <button type="button" class="action-icon-btn" aria-label="Cancel" (click)="cancelDelete()">
                             <i class="bi bi-x-lg" aria-hidden="true"></i>
                           </button>
                         </div>
                       } @else if (deletingId() === row._id) {
-                        <span class="spinner-border spinner-border-sm text-muted"
-                          style="width:16px;height:16px"
-                          role="status" [attr.aria-label]="'Removing ' + row.name"></span>
+                        <span
+                          class="spinner-border spinner-border-sm text-muted"
+                          style="width: 16px; height: 16px"
+                          role="status"
+                          [attr.aria-label]="'Removing ' + row.name"
+                        ></span>
                       } @else {
-                        <button type="button" class="action-icon-btn action-icon-btn--delete"
+                        <button
+                          type="button"
+                          class="action-icon-btn action-icon-btn--delete"
                           [disabled]="deletingId() !== null"
                           [attr.aria-label]="'Remove ' + row.name"
                           matTooltip="Remove member"
-                          (click)="requestDelete(row._id)">
+                          (click)="requestDelete(row._id)"
+                        >
                           <i class="bi bi-trash" aria-hidden="true"></i>
                         </button>
                       }
                     }
-
                   }
-
                 </td>
               </ng-container>
             }
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
               class="member-row"
-              [class.table-active]="isCurrentUser(row._id)">
-            </tr>
-
+              [class.table-active]="isCurrentUser(row._id)"
+            ></tr>
           </table>
         </div>
       }
@@ -550,6 +605,5 @@
       </mat-card>
     }
     -->
-
   }
 </main>
