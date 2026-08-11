@@ -46,6 +46,7 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
   return {
     stateName: 'Test State',
     installment: 1,
+    priorFcCycleLabel: '14th FC',
     stateLevelGate: { passed: true, sources: [] },
     expectedUlbCount: 10,
     batchSlotsUsed: 1,

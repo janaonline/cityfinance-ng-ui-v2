@@ -3,5 +3,15 @@
 :host {
   @include layout.form-layout;
   @include layout.form-summary-layout;
-  @include layout.status-indicator;
+
+  // Fixed width so every per-condition button.
+  .condition-action-btn {
+    min-width: 7rem;
+  }
+
+  @media (max-width: 767.98px) {
+    .condition-action-btn {
+      width: 100%;
+    }
+  }
 }
