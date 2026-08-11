@@ -78,12 +78,14 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     // currentFormStatus/isAbandoned. Default to "fully editable" so existing tests that only care
     // about other behavior don't also have to specify permissions explicitly.
     permissions: { canView: true, canEdit: true, canFinalSubmit: true },
+    stateName: 'Test State',
     ...overrides,
   };
 }
 
 function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): ClaimLetterClaimContext {
   return {
+    stateName: 'Test State',
     expectedUlbCount: 10,
     batchSlotsUsed: 0,
     batchSlotsMax: 3,
@@ -185,6 +187,10 @@ describe('ClaimLetterDetailComponent', () => {
       // Simulate a claim-context response that denies canCreate (e.g. a viewer-only user).
       component.eligibilityOverview.set(buildClaimContext({ canCreate: false }));
       expect(component.canEdit()).toBe(false);
+    });
+
+    it('stateName reads from eligibilityOverview() in create mode, for the page-header eyebrow', () => {
+      expect(component.stateName()).toBe('Test State');
     });
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
@@ -465,6 +471,11 @@ describe('ClaimLetterDetailComponent', () => {
         buildClaim({ currentFormStatus: 2, isAbandoned: false, permissions: { canView: true, canEdit: true, canFinalSubmit: true } }),
       );
       expect(component.canEdit()).toBe(true);
+    });
+
+    it('stateName reads from claim() in edit mode, for the page-header eyebrow', async () => {
+      await setupEdit(buildClaim({ stateName: 'Andhra Pradesh' }));
+      expect(component.stateName()).toBe('Andhra Pradesh');
     });
 
     it('is read-only once the backend denies canEdit (e.g. no longer IN_PROGRESS)', async () => {

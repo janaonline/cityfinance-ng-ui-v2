@@ -48,6 +48,7 @@ export class ClaimLetterListComponent implements OnInit {
   readonly isHistoryLoading = signal(false);
 
   readonly eligibility = signal<ClaimLetterEligibilitySummary | null>(null);
+  readonly stateName = computed(() => this.eligibility()?.stateName ?? '');
   readonly claims = signal<readonly ClaimLetterBatchSummary[]>([]);
   /** Collapsed by default — a returning user doesn't need the full walkthrough re-shown on every
    *  visit just to reach "New Claim"; one click away for anyone who does. */

@@ -6,7 +6,12 @@
       <div class="content-stack d-flex flex-column gap-4">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
           <div>
-            <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">16th Finance Commission</div>
+            <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+              <span class="text-secondary">16th Finance Commission</span>
+              @if (stateName()) {
+                &nbsp;&middot;&nbsp; {{ stateName() }}
+              }
+            </div>
 
             <h1 class="page-title mb-2">Generate Claim Letter</h1>
 

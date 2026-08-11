@@ -242,6 +242,13 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   readonly canFinalSubmit = computed(() => this.claim()?.permissions.canFinalSubmit ?? false);
 
+  /** Same create-mode/edit-mode split as `canEdit` — before a batch exists, only
+   *  `eligibilityOverview()` (from `getClaimContext`) has a `stateName` to read. */
+  readonly stateName = computed(() => {
+    if (this.isCreateMode) return this.eligibilityOverview()?.stateName ?? '';
+    return this.claim()?.stateName ?? '';
+  });
+
   /** FE's first line of defense for the final-batch completeness rule (BE is the actual authority,
    *  enforced in `submit()` — this just avoids a round-trip for the common case): once this is the
    *  state's last batch slot, submission is blocked here too while any expected ULB still has no

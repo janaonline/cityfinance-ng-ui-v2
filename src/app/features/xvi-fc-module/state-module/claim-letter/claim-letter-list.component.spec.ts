@@ -44,6 +44,7 @@ const sampleClaim: ClaimLetterBatchSummary = {
 
 function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}): ClaimLetterEligibilitySummary {
   return {
+    stateName: 'Test State',
     installment: 1,
     stateLevelGate: { passed: true, sources: [] },
     expectedUlbCount: 10,
@@ -175,6 +176,15 @@ describe('ClaimLetterListComponent', () => {
 
     expect(component.showFinalBatchWarning()).toBeFalse();
     expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-warning"]'))).toBeNull();
+  });
+
+  it('stateName reflects the eligibility summary, for the page-header eyebrow', () => {
+    expect(component.stateName()).toBe('Test State');
+  });
+
+  it('stateName is empty before eligibility has loaded', () => {
+    component.eligibility.set(null);
+    expect(component.stateName()).toBe('');
   });
 
   it('enables New Claim when the gate passes and slots remain, with no disabled-reason alert', () => {

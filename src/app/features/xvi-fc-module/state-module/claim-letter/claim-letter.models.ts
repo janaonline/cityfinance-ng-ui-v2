@@ -60,6 +60,7 @@ export interface ClaimLetterFinancialOverview {
 }
 
 export interface ClaimLetterEligibilitySummary {
+  stateName: string;
   installment: ClaimLetterInstallment;
   stateLevelGate: {
     passed: boolean;
@@ -98,6 +99,8 @@ export interface ClaimLetterEligibilitySummary {
  * `GET .../claim-context`, which skips the expensive eligibility-checklist evaluation entirely.
  */
 export interface ClaimLetterClaimContext {
+  /** Powers the page-header eyebrow — same convention as `ClaimLetterEligibilitySummary.stateName`. */
+  stateName: string;
   expectedUlbCount: number;
   batchSlotsUsed: number;
   batchSlotsMax: number;
@@ -233,6 +236,7 @@ export interface ClaimLetterBatchSummary {
   /** Claim Letter's own `formjsons` field config (today: just `signedClaimFile`). Only present on
    *  `getDetail` responses. */
   questions?: ConditionalFieldConfig[];
+  stateName?: string;
   /** Same DB-driven variance band as `ClaimLetterClaimContext` — only present on `getDetail`
    *  responses, same convention as `questions`. */
   varianceLowerPercent?: number;
