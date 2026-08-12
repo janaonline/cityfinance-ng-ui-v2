@@ -189,8 +189,7 @@ interface BackendStatusSection {
 
 interface BackendStatusResponse {
   annualAccountId: string;
-  auditedData: BackendStatusSection | null;
-  unauditedData: BackendStatusSection | null;
+  data: BackendStatusSection | null;
 }
 
 // Shape returned by POST /confirm-upload
@@ -821,8 +820,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
 
     try {
+      const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
       const result = await firstValueFrom(
-        this.http.get<unknown>(`${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}`),
+        this.http.get<unknown>(`${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}?section=${section}`),
       );
 
       const statusData = unwrap<BackendStatusResponse | null>(result);
@@ -835,26 +835,26 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
       this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
 
-      const section = this.config()!.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
-      this.sectionStatus.set(section?.form_status ?? null);
-      this.sectionStatusId.set(section?.form_status_id ?? null);
+      const sectionData = statusData.data;
+      this.sectionStatus.set(sectionData?.form_status ?? null);
+      this.sectionStatusId.set(sectionData?.form_status_id ?? null);
       this.sectionReturnNote.set(
-        (section?.form_status === 'RETURNED_BY_STATE'
-          ? section.stateDecision?.note
-          : section?.form_status === 'RETURNED_BY_MOHUA'
-            ? section.mohuaDecision?.note
+        (sectionData?.form_status === 'RETURNED_BY_STATE'
+          ? sectionData.stateDecision?.note
+          : sectionData?.form_status === 'RETURNED_BY_MOHUA'
+            ? sectionData.mohuaDecision?.note
             : null) ?? null,
       );
-      if (!section?.documents?.length) return;
+      if (!sectionData?.documents?.length) return;
 
       // Per-document decisions are provisional and undoable until STATE finalizes the whole
       // section (Approve Section/Return Section) — mask them from the ULB until then, so an
       // in-progress "Returned"/"Approved" verdict that might still get undone never leaks.
-      const decisionsVisible = section.form_status !== 'UNDER_REVIEW_BY_STATE';
+      const decisionsVisible = sectionData.form_status !== 'UNDER_REVIEW_BY_STATE';
 
       this.documents.update((docs) =>
         docs.map((doc) => {
-          const saved = section.documents.find((d) => d.docId === doc.id);
+          const saved = sectionData.documents.find((d) => d.docId === doc.id);
           if (!saved) return doc;
 
           const rawLatestDecision = decisionsVisible ? saved.stateDecision : null;
@@ -926,11 +926,13 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const accountId = this.annualAccountId();
     if (!accountId) return;
 
+    const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
+
     this.pollingSub = interval(POLL_INTERVAL_MS)
       .pipe(
         switchMap(() =>
           this.documents().some((d) => d.status === 'processing')
-            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status`)
+            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`)
             : EMPTY,
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -938,14 +940,14 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           const payload = unwrap<BackendStatusResponse>(result);
-          const section = this.config()!.type === 'audited' ? payload.auditedData : payload.unauditedData;
-          if (!section?.documents) return;
+          const sectionData = payload.data;
+          if (!sectionData?.documents) return;
 
           this.documents.update((docs) =>
             docs.map((doc) => {
               if (doc.status !== 'processing') return doc;
 
-              const remote = section.documents.find((d) => d.docId === doc.id);
+              const remote = sectionData.documents.find((d) => d.docId === doc.id);
               // Guard: must match the specific uploadId being tracked
               if (!remote?.currentUpload || remote.currentUpload.uploadId !== doc.uploadId) return doc;
 

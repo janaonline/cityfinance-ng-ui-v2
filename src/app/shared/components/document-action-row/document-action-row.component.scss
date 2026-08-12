@@ -53,3 +53,24 @@
     background: rgba(184, 134, 11, 0.08);
   }
 }
+
+.doc-action-btn--upload,
+.doc-action-btn--reupload,
+.doc-action-btn--retry {
+  // Deliberately --mat-sys-primary only (not --color-primary) — this component renders inside
+  // the xvifc-theme scope where --color-primary resolves to a darker custom tone; the
+  // confirm-dialog's "Stay and wait" button (the color being matched here) is CDK-portaled
+  // outside that scope, so it always falls through to --mat-sys-primary. Using it directly
+  // keeps this button the same shade regardless of where in the DOM it's rendered.
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-primary);
+  color: #fff;
+
+  // The base .doc-action-btn:hover rule sets a near-transparent background (meant for its
+  // white-fill outline style) — must override it explicitly here, otherwise it wins on the
+  // `background` property alone and leaves white text almost invisible on hover.
+  &:not(:disabled):hover {
+    background: var(--mat-sys-primary);
+    opacity: 0.9;
+  }
+}
