@@ -1149,4 +1149,25 @@ describe('FcUnspentDeclarationComponent', () => {
       expect(getFormSpy).toHaveBeenCalledTimes(1);
     });
   });
+
+  // ─── hasUnsavedChanges (read by unsavedChangesGuard / beforeunload) ────────
+
+  describe('hasUnsavedChanges', () => {
+    it('is false right after the form loads', () => {
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once the user edits a field', () => {
+      isFcUnspentControl(component).markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false when the form is dirty but the page is read-only (canEdit is false)', () => {
+      component.canEdit.set(false);
+      component.form.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+  });
 });

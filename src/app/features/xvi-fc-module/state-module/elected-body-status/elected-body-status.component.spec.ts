@@ -636,4 +636,25 @@ describe('ElectedBodyStatusComponent', () => {
       },
     ];
   }
+
+  // ─── hasUnsavedChanges (read by unsavedChangesGuard / beforeunload) ────────
+
+  describe('hasUnsavedChanges', () => {
+    it('is false right after the form loads', () => {
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once the user edits a field', () => {
+      getControl('ulbCount')?.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false when the form is dirty but the page is read-only (canEdit is false)', () => {
+      component.permissions.set({ canView: true, canEdit: false, canFinalSubmit: false });
+      component.form.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+  });
 });

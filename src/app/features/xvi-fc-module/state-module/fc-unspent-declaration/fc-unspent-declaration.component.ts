@@ -4,11 +4,15 @@ import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Subject, finalize, takeUntil } from 'rxjs';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../core/guards/unsaved-changes.guard';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
@@ -94,7 +98,7 @@ function sanitizeDeclarationTemplateFileName(fileName: string): string {
   // to `MatDialog.open`, so every picker opened from this page shares the one instance.
   providers: [FcUnspentUlbOptionsCacheService],
 })
-export class FcUnspentDeclarationComponent implements OnInit {
+export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeactivate {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utilityService = inject(UtilityService);
@@ -103,7 +107,8 @@ export class FcUnspentDeclarationComponent implements OnInit {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly fcUnspentService = inject(FcUnspentDeclarationService);
   private readonly moduleService = inject(XvifcModuleService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
   private readonly sanitizer = inject(DomSanitizer);
   private readonly ulbOptionsCache = inject(FcUnspentUlbOptionsCacheService);
 
@@ -178,8 +183,19 @@ export class FcUnspentDeclarationComponent implements OnInit {
     return this.moduleService.yearId() ?? '';
   }
 
+  constructor() {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. `unspentUlbData` is
+   *  attached to `form` (`form.addControl('unspentUlbData', this.unspentUlbData)`), so `form.dirty`
+   *  already covers ULB-row edits. A disabled (read-only) form is never dirty. */
+  hasUnsavedChanges(): boolean {
+    return this.canEdit() && this.form.dirty;
   }
 
   loadForm(): void {
@@ -375,10 +391,9 @@ export class FcUnspentDeclarationComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) this.submit(action);
@@ -645,9 +660,8 @@ export class FcUnspentDeclarationComponent implements OnInit {
   }
 
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;

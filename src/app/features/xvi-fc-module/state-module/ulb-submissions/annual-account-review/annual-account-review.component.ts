@@ -7,8 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
-import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { UtilityService } from '../../../../../core/services/utility.service';
+import { themedDialogConfig } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { NoteDialogService } from '../../../../../shared/components/note-dialog/note-dialog.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
@@ -213,7 +213,8 @@ export class AnnualAccountReviewComponent {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly noteDialogService = inject(NoteDialogService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
 
   private readonly ulbId = this.route.snapshot.paramMap.get('ulbId')!;
   private readonly ulbNameFallback = this.route.snapshot.queryParamMap.get('ulbName');
@@ -519,7 +520,6 @@ export class AnnualAccountReviewComponent {
     if (!id) return;
     let note: string | undefined;
 
-    const dialogConfig = this.themeClass ? { panelClass: this.themeClass } : undefined;
     // Optional documents (e.g. Notes to Accounts) are never individually decided and never
     // swept into a section decision — excluded from every count shown to the reviewer here.
     const total = this.rows().filter((r) => r.required !== false).length;
@@ -541,7 +541,7 @@ export class AnnualAccountReviewComponent {
               confirmButtonColor: 'warn',
               icon: 'bi-arrow-counterclockwise',
             },
-            dialogConfig,
+            this.dialogConfig,
           ),
         );
         if (!confirmed) return;
@@ -569,7 +569,7 @@ export class AnnualAccountReviewComponent {
               confirmText: 'Return section',
               required: true,
             },
-            dialogConfig,
+            this.dialogConfig,
           ),
         );
         if (note === undefined) return;
@@ -591,7 +591,7 @@ export class AnnualAccountReviewComponent {
             confirmButtonColor: 'primary',
             icon: 'bi-check-circle-fill',
           },
-          dialogConfig,
+          this.dialogConfig,
         ),
       );
       if (!confirmed) return;
@@ -631,7 +631,7 @@ export class AnnualAccountReviewComponent {
           confirmButtonColor: 'warn',
           icon: 'bi-arrow-counterclockwise',
         },
-        this.themeClass ? { panelClass: this.themeClass } : undefined,
+        this.dialogConfig,
       ),
     );
     if (!confirmed) return;
@@ -658,7 +658,7 @@ export class AnnualAccountReviewComponent {
           confirmButtonColor: 'primary',
           icon: 'bi-check-circle-fill',
         },
-        this.themeClass ? { panelClass: this.themeClass } : undefined,
+        this.dialogConfig,
       ),
     );
     if (!confirmed) return;
@@ -678,7 +678,7 @@ export class AnnualAccountReviewComponent {
           confirmButtonColor: 'warn',
           icon: 'bi-arrow-counterclockwise',
         },
-        this.themeClass ? { panelClass: this.themeClass } : undefined,
+        this.dialogConfig,
       ),
     );
     if (!confirmed) return;

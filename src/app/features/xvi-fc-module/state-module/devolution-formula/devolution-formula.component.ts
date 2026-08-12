@@ -9,11 +9,16 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import FileSaver from 'file-saver';
 import { filter, finalize, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../core/guards/unsaved-changes.guard';
 import {
   ConfirmDialogData,
+  resolveThemeClass,
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
@@ -87,7 +92,7 @@ const DF_SUPPORTING_ACTION = {
   templateUrl: './devolution-formula.component.html',
   styleUrl: './devolution-formula.component.scss',
 })
-export class DevolutionFormulaComponent implements OnInit {
+export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivate {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utilityService = inject(UtilityService);
@@ -95,7 +100,11 @@ export class DevolutionFormulaComponent implements OnInit {
   private readonly visibilityService = inject(DynamicFormVisibilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly dialog = inject(MatDialog);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
+  /** Raw theme class for the rows dialog opened directly via `MatDialog` (needs a custom
+   *  panelClass array alongside its own fixed class, not `dialogConfig`'s single panelClass). */
+  private readonly themeClass = resolveThemeClass();
   private readonly dfService = inject(DevolutionFormulaService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly router = inject(Router);
@@ -174,8 +183,18 @@ export class DevolutionFormulaComponent implements OnInit {
     return this.moduleService.yearId() ?? '';
   }
 
+  constructor() {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. A disabled (read-only)
+   *  form is never dirty, so this is automatically `false` when `canEdit` is `false`. */
+  hasUnsavedChanges(): boolean {
+    return this.canEdit() && this.form.dirty;
   }
 
   /**
@@ -421,7 +440,6 @@ export class DevolutionFormulaComponent implements OnInit {
   private confirmAndDeleteExcel(): void {
     this.isDeleteExcelDialogOpen = true;
 
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     const dialogData: ConfirmDialogData = {
       title: 'Remove uploaded Excel?',
       message:
@@ -433,7 +451,7 @@ export class DevolutionFormulaComponent implements OnInit {
     };
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -681,10 +699,9 @@ export class DevolutionFormulaComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -805,9 +822,8 @@ export class DevolutionFormulaComponent implements OnInit {
 
   /** Shows a cancel confirmation dialog (default "Discard changes?" text). */
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;

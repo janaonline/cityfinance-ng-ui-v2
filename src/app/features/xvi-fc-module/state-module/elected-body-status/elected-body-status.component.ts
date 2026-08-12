@@ -8,12 +8,17 @@ import { ActivatedRoute, Router } from '@angular/router';
 import FileSaver from 'file-saver';
 import { filter, finalize, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../core/guards/unsaved-changes.guard';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
 import {
   ConfirmDialogData,
+  resolveThemeClass,
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
@@ -90,14 +95,18 @@ export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
   templateUrl: './elected-body-status.component.html',
   styleUrl: './elected-body-status.component.scss',
 })
-export class ElectedBodyStatusComponent implements OnInit {
+export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivate {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utilityService = inject(UtilityService);
   private readonly dynamicService = inject(DynamicFormService);
   private readonly visibilityService = inject(DynamicFormVisibilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
+  /** Raw theme class for the one dialog opened directly via `MatDialog` (needs a custom
+   *  panelClass array alongside its own fixed class, not `dialogConfig`'s single panelClass). */
+  private readonly themeClass = resolveThemeClass();
   private readonly eulbService = inject(EulbStatusService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly dialog = inject(MatDialog);
@@ -171,8 +180,18 @@ export class ElectedBodyStatusComponent implements OnInit {
     return this.moduleService.yearId() ?? '';
   }
 
+  constructor() {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. A disabled (read-only)
+   *  form is never dirty, so this is automatically `false` when `canEdit` is `false`. */
+  hasUnsavedChanges(): boolean {
+    return this.canEdit() && this.form.dirty;
   }
 
   /**
@@ -542,10 +561,9 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -800,7 +818,6 @@ export class ElectedBodyStatusComponent implements OnInit {
   private confirmAndDeleteExcel(): void {
     this.isDeleteExcelDialogOpen = true;
 
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     const dialogData: ConfirmDialogData = {
       title: 'Remove uploaded Excel?',
       message:
@@ -812,7 +829,7 @@ export class ElectedBodyStatusComponent implements OnInit {
     };
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -887,9 +904,8 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /** Shows a cancel confirmation dialog; notifies the user if the action is confirmed. */
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
