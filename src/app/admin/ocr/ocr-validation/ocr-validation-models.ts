@@ -137,6 +137,7 @@ export interface OcrExpectedFields {
   financial_year: string | null;
   doc_type: string | null;
   table_exists: boolean | null;
+  audit_type: string | null;
 }
 
 export interface OcrFileInfo {

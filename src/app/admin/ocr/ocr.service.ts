@@ -263,6 +263,11 @@ export class OcrService {
     { value: 'UNKNOWN', label: 'Unknown' },
   ];
 
+  readonly auditTypes: SelectOption[] = [
+    { value: 'AUDITED', label: 'Audited' },
+    { value: 'UNAUDITED', label: 'Unaudited / Provisional' },
+  ];
+
   readonly financialYears: SelectOption[] = [
     { value: '2025-26', label: '2025-26' },
     { value: '2024-25', label: '2024-25' },
@@ -345,6 +350,7 @@ export class OcrService {
     enableOrientationCheck?: boolean,
     enableFinancialValidation?: boolean,
     enableQualityCheck?: boolean,
+    auditType?: string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -366,6 +372,7 @@ export class OcrService {
     if (enableQualityCheck !== undefined) {
       formData.append('enable_quality_check', String(enableQualityCheck));
     }
+    if (auditType) formData.append('audit_type', auditType);
     return this.http.post<OcrValidationJobSubmitResponse>(environment.api.url3 + 'ocr-validation/jobs', formData);
   }
 
@@ -378,6 +385,7 @@ export class OcrService {
     docType?: string | null,
     enableOrientationCheck?: boolean,
     enableFinancialValidation?: boolean,
+    auditType?: string | null,
   ) {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
@@ -393,6 +401,7 @@ export class OcrService {
     if (enableFinancialValidation !== undefined) {
       formData.append('enable_financial_validation', String(enableFinancialValidation));
     }
+    if (auditType) formData.append('audit_type', auditType);
     return this.http.post<OcrValidationBatchSubmitResponse>(
       environment.api.url3 + 'ocr-validation/jobs/batch',
       formData,
