@@ -32,7 +32,8 @@
 @mixin shared-panel-surface {
   .form-container {
     scrollbar-width: thin;
-    max-height: 90vh;
+    // max-height: 90vh;
+    max-height: calc(100vh - var(--app-header-height, 91px));
     overflow-y: scroll;
     border-radius: var(--radius-split-squared);
     background: var(--color-primary-accent);
@@ -49,7 +50,7 @@
 
   .form-container {
     min-width: 0;
-    width: 100%;
+    // width: 100%;
     padding: 0;
   }
 
@@ -94,12 +95,18 @@
     bottom: 0;
     z-index: 1;
     background-color: var(--color-primary-accent);
+    border-top: 1px solid var(--bs-border-color);
+    padding: 0.65rem;
   }
 
   .acknowledgement-inner {
     width: 100%;
     max-width: 1320px;
     margin-inline: auto;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .acknowledgement .btn {
@@ -167,32 +174,6 @@
 
     &:last-of-type .mat-mdc-cell {
       border-bottom: none;
-    }
-  }
-}
-
-@mixin status-indicator {
-  .deadline-chip {
-    background-color: var(--color-status-accent-background);
-    color: var(--clr-primary);
-  }
-
-  .status-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: 2px solid var(--clr-primary);
-    border-radius: 50%;
-    box-shadow: 0 0 0 3px var(--color-status-accent-shadow);
-
-    &::after {
-      content: '';
-      width: 0.65rem;
-      height: 0.65rem;
-      border-radius: 50%;
-      background-color: var(--clr-primary);
     }
   }
 }

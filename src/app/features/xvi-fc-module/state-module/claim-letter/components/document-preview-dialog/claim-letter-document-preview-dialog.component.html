@@ -1,5 +1,5 @@
 <h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-2 d-flex align-items-center justify-content-between">
-  <span><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Claim Letter — Preview</span>
+  <span><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Claim Letter - Preview</span>
   <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="close()">
     <i class="bi bi-x-circle-fill fs-5"></i>
   </button>
@@ -9,7 +9,7 @@
   <mat-tab-group animationDuration="0ms" mat-stretch-tabs="false">
     <mat-tab label="Covering Letter">
       <div class="claim-letter-document-preview-body p-4">
-        <h3 class="fs-5 fw-bold mb-0">{{ data.documentData.stateName }} — {{ data.documentData.departmentName }}</h3>
+        <h3 class="fs-5 fw-bold mb-0">{{ data.documentData.stateName }} - {{ data.documentData.departmentName }}</h3>
         <p class="text-secondary small mb-3">Government of {{ data.documentData.stateName }}</p>
         <hr class="border-2 border-dark opacity-75" />
 
@@ -60,9 +60,9 @@
       </div>
     </mat-tab>
 
-    <mat-tab label="Annexure 1 — FC Disclosures">
+    <mat-tab label="Annexure 1 - FC Disclosures">
       <div class="claim-letter-document-preview-body p-4">
-        <h3 class="fs-6 fw-bold">Annexure 1 — FC Unspent Balance Disclosures</h3>
+        <h3 class="fs-6 fw-bold">Annexure 1 - FC Unspent Balance Disclosures</h3>
         <p class="small text-secondary">
           Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}
         </p>
@@ -106,9 +106,9 @@
       </div>
     </mat-tab>
 
-    <mat-tab label="Annexure 2 — City Conditions">
+    <mat-tab label="Annexure 2 - City Conditions">
       <div class="claim-letter-document-preview-body p-4">
-        <h3 class="fs-6 fw-bold">Annexure 2 — City-wise Eligibility Conditions</h3>
+        <h3 class="fs-6 fw-bold">Annexure 2 - City-wise Eligibility Conditions</h3>
         <p class="small text-secondary">
           Ref: {{ data.documentData.refNo }} · {{ data.documentData.letterDate | date: 'dd MMMM yyyy' }}
         </p>

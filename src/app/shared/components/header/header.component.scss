@@ -2,6 +2,13 @@
 @import '../../../../../node_modules/bootstrap/scss/variables';
 @import '../../../../../node_modules/bootstrap/scss/mixins';
 
+:host {
+  // Custom-element hosts default to display:inline, which doesn't reliably report height via
+  // getBoundingClientRect() for the block-level children stacked inside (govt strip + navbar) —
+  // needed for LayoutMetricsService to measure this element correctly.
+  display: block;
+}
+
 * {
   font-family: var(--ff-base);
 }
@@ -19,7 +26,7 @@ $text-sizes: (
   'sm': $font-size-base * 0.75,
   'rg': $font-size-base,
   'lg': $font-size-base * 1.25,
-  ) !default;
+) !default;
 
 @each $size, $value in $text-sizes {
   body.#{$size} {

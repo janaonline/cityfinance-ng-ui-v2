@@ -52,6 +52,7 @@ const sampleSummary: ClaimLetterBatchSummary = {
   supersedes: null,
   supersededBy: null,
   createdAt: '2026-07-01T00:00:00.000Z',
+  permissions: { canView: true, canEdit: true, canFinalSubmit: true },
 };
 
 describe('ClaimLetterService', () => {
@@ -387,6 +388,23 @@ describe('ClaimLetterService', () => {
       httpMock.expectOne(url).flush(errorBody);
 
       expect(caughtError).toBe(errorBody);
+    });
+  });
+
+  describe('downloadDocumentPdf', () => {
+    it('GETs the PDF endpoint as a blob', () => {
+      const url = `${BASE_URL}${claimLetterId}/document/pdf`;
+      const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+      let result: Blob | undefined;
+
+      service.downloadDocumentPdf(claimLetterId).subscribe((blob) => (result = blob));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.responseType).toBe('blob');
+      req.flush(sampleBlob);
+
+      expect(result).toBe(sampleBlob);
     });
   });
 
