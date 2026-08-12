@@ -9,35 +9,8 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { StateDashboardService } from '../state-dashboard/state-dashboard.service';
 import { ClaimLetterService } from '../claim-letter/claim-letter.service';
-import {
-  CLAIM_LETTER_INSTALLMENT,
-  ClaimLetterEligibilitySource,
-  ClaimLetterPriorFcCycleLabel,
-} from '../claim-letter/claim-letter.models';
+import { CLAIM_LETTER_INSTALLMENT, ClaimLetterEligibilitySource } from '../claim-letter/claim-letter.models';
 import { describeEligibilitySourceDescription, describeEligibilitySourceLabel } from '../claim-letter/claim-letter.utils';
-
-/** Sibling route (relative to this page) for each STATE-level `claimEligibility` source. */
-const CONDITION_ROUTE_BY_FORM_TYPE: Record<string, string> = {
-  SFC: '../sfc-status',
-  ELECTED_BODY: '../elected-body-status',
-  DEVOLUTION_FORMULA: '../ulb-wise-allocation',
-  FC_UNSPENT_STATE: '../fc-unspent-declaration',
-};
-
-/** Curated, plain-language requirement copy for the primary checklist line — deliberately not the
- *  backend's own `displayDescription` (that's still shown, verbatim, via the info tooltip). A
- *  future STATE-level source with no entry here falls back to `describeEligibilitySourceDescription`
- *  so it still renders sensible text without a frontend code change. `FC_UNSPENT_STATE`'s copy takes
- *  the backend-resolved `priorFcCycleLabel` ("14th FC"/"15th FC") so that text is never a hardcoded
- *  literal here — it comes straight off `ClaimLetterEligibilitySummary`, the same value the actual
- *  Claim Letter document itself uses, so the two can never disagree. */
-const CONDITION_DESC_BY_FORM_TYPE: Record<string, (priorFcCycleLabel: ClaimLetterPriorFcCycleLabel) => string> = {
-  SFC: () => 'Confirm that the State Finance Commission has been constituted',
-  ELECTED_BODY: () => 'Upload confirmation that ULBs have duly-elected bodies in place',
-  DEVOLUTION_FORMULA: () => 'Upload the Excel file showing grant amounts and devolution formula for each ULB',
-  FC_UNSPENT_STATE: (priorFcCycleLabel) =>
-    `Confirm that all ULBs in the state have submitted their ${priorFcCycleLabel} unspent balance disclosures`,
-};
 
 interface RequirementCondition {
   label: string;
@@ -114,9 +87,7 @@ export class RequirementsComponent implements OnInit {
           this.totalAllocation.set(dashboard.data.metrics.allocatedAmount);
           this.stateName.set(eligibility.stateName);
           this.eligibleUlbCount.set(eligibility.expectedUlbCount);
-          this.conditionsToBeMet.set(
-            this.buildConditions(eligibility.stateLevelGate.sources, eligibility.priorFcCycleLabel),
-          );
+          this.conditionsToBeMet.set(this.buildConditions(eligibility.stateLevelGate.sources));
           this.isLoading.set(false);
         },
         error: (error: unknown) => {
@@ -127,20 +98,20 @@ export class RequirementsComponent implements OnInit {
       });
   }
 
-  private buildConditions(
-    sources: ClaimLetterEligibilitySource[],
-    priorFcCycleLabel: ClaimLetterPriorFcCycleLabel,
-  ): RequirementCondition[] {
+  /** Route and primary-line copy are both DB-driven (`source.checklistRoute`/`checklistSummary`,
+   *  from `formjsons.claimEligibility` — see claim-letter.models.ts) with generic fallbacks, so a
+   *  new STATE-level claim-eligibility source added next year renders here with zero frontend
+   *  changes, same as `label`/`info` below already do. */
+  private buildConditions(sources: ClaimLetterEligibilitySource[]): RequirementCondition[] {
     return sources.map((source) => {
       const passed = source.result === 'PASSED' || source.result === 'EXEMPTED';
-      const descBuilder = CONDITION_DESC_BY_FORM_TYPE[source.formType];
       return {
         label: describeEligibilitySourceLabel(source),
-        desc: descBuilder ? descBuilder(priorFcCycleLabel) : describeEligibilitySourceDescription(source),
+        desc: source.checklistSummary ?? describeEligibilitySourceDescription(source),
         info: describeEligibilitySourceDescription(source),
         iconClass: passed ? 'bi bi-check-circle text-success' : 'bi bi-record-circle text-cfPrimary',
         buttonLabel: 'View',
-        routerLink: CONDITION_ROUTE_BY_FORM_TYPE[source.formType] ?? '../requirements',
+        routerLink: source.checklistRoute ?? '../requirements',
         passed,
       };
     });

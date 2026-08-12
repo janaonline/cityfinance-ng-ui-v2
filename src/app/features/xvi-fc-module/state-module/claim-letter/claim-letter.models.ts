@@ -39,6 +39,13 @@ export interface ClaimLetterEligibilitySource {
   /** One-line requirement statement, same wording regardless of pass/fail — only the tick/cross
    *  indicator changes. Falls back to a generated sentence when absent. */
   displayDescription?: string;
+  /** Relative frontend route for this criterion's "View" action (e.g. '../sfc-status').
+   *  Frontend falls back to '../requirements' (self-link) when unset. */
+  checklistRoute?: string;
+  /** Plain-language checklist line for /requirements.
+   * Supports {{priorFcCycleLabel}}; substituted by ClaimLetterService.getEligibilitySummary().
+   * Falls back to displayDescription when unset. */
+  checklistSummary?: string;
   /** Per-ULB tally behind this requirement — populated for Elected Body/FC Unspent (state forms
    *  representing ULB-level data) and for the 3 ULB-only criteria merged in from `ulbLevelCriteria`.
    *  Absent for pure state-form checks (SFC, Devolution), which have no per-ULB meaning. */
