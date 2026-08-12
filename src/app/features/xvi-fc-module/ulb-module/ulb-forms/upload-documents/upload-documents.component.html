@@ -126,6 +126,22 @@
                         @if (doc.ocrProgressStep) {
                           <p class="uploader-meta body-xs text-muted mt-1 mb-0">{{ doc.ocrProgressStep }}</p>
                         }
+                        @if (doc.isStale) {
+                          <div class="manual-review-note mt-2">
+                            <mat-icon class="align-middle">schedule</mat-icon>
+                            This is taking longer than expected. You can retry verification or re-upload the file.
+                          </div>
+                          <div class="d-flex gap-2 mt-2">
+                            <app-document-action-row
+                              role="ULB"
+                              [sectionStatusId]="sectionStatusId() ?? 1"
+                              [gates]="actionGates()"
+                              [doc]="toRuntimeState(doc)"
+                              [readOnly]="!canUpload()"
+                              (actionClicked)="onDocAction($event)"
+                            />
+                          </div>
+                        }
                       </div>
                     }
 
