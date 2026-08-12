@@ -68,6 +68,16 @@ interface StatusSection {
   documents: StatusDoc[];
 }
 
+/** Raw shape of GET annual-account/by-ulb/:ulbId/:designYearId?section=... — one section per call. */
+interface SectionStatusResponse {
+  annualAccountId: string | null;
+  ulbName: string | null;
+  ulbCode: string | null;
+  data: StatusSection | null;
+}
+
+/** Component-local combined shape — populated from two SectionStatusResponse calls (one per
+ *  section), since the tab UI keeps both sections cached client-side. */
 interface StatusResponse {
   annualAccountId: string | null;
   ulbName: string | null;
@@ -803,17 +813,20 @@ export class AnnualAccountReviewComponent {
     if (!id) return;
     this.isDeciding.set(true);
     this.decidingDocId.set(docId);
+    const section = this.activeSection() as 'auditedData' | 'unauditedData';
     try {
-      // decideDocument's response is the same full StatusResponse shape as loadStatus()'s GET —
-      // consume it directly instead of immediately re-fetching the same data over a second round trip.
+      // decideDocument's response is the single-section SectionStatusResponse shape (same as
+      // loadStatus()'s GET) — consume it directly, merged into just this tab's slot, instead of
+      // immediately re-fetching the same data over a second round trip.
       const result = await firstValueFrom(
         this.http.post<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision`, {
-          section: this.activeSection(),
+          section,
           decision,
           note,
         }),
       );
-      this.statusData.set(unwrap<StatusResponse>(result));
+      const response = unwrap<SectionStatusResponse>(result);
+      this.statusData.update((s) => (s ? { ...s, [section]: response.data } : s));
     } catch {
       this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
     } finally {
@@ -829,11 +842,13 @@ export class AnnualAccountReviewComponent {
     if (!id) return;
     this.isDeciding.set(true);
     this.decidingDocId.set(docId);
+    const section = this.activeSection() as 'auditedData' | 'unauditedData';
     try {
       const result = await firstValueFrom(
-        this.http.delete<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision?section=${this.activeSection()}`),
+        this.http.delete<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision?section=${section}`),
       );
-      this.statusData.set(unwrap<StatusResponse>(result));
+      const response = unwrap<SectionStatusResponse>(result);
+      this.statusData.update((s) => (s ? { ...s, [section]: response.data } : s));
     } catch {
       this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
     } finally {
@@ -850,18 +865,33 @@ export class AnnualAccountReviewComponent {
       const designYearId = this.resolveDesignYearId();
       if (!designYearId) throw new Error('Missing designYearId');
 
-      const result = await firstValueFrom(
-        this.http.get<unknown>(`${API_ANNUAL}by-ulb/${this.ulbId}/${designYearId}`),
-      );
-      const data = unwrap<StatusResponse | null>(result);
+      const [auditedResult, unauditedResult] = await Promise.all([
+        firstValueFrom(
+          this.http.get<unknown>(`${API_ANNUAL}by-ulb/${this.ulbId}/${designYearId}?section=auditedData`),
+        ),
+        firstValueFrom(
+          this.http.get<unknown>(`${API_ANNUAL}by-ulb/${this.ulbId}/${designYearId}?section=unauditedData`),
+        ),
+      ]);
+      const audited = unwrap<SectionStatusResponse | null>(auditedResult);
+      const unaudited = unwrap<SectionStatusResponse | null>(unauditedResult);
+
       this.statusData.set(
-        data ?? {
-          annualAccountId: null,
-          ulbName: this.ulbNameFallback,
-          ulbCode: null,
-          auditedData: NOT_STARTED_SECTION,
-          unauditedData: NOT_STARTED_SECTION,
-        },
+        audited || unaudited
+          ? {
+              annualAccountId: audited?.annualAccountId ?? unaudited?.annualAccountId ?? null,
+              ulbName: audited?.ulbName ?? unaudited?.ulbName ?? this.ulbNameFallback,
+              ulbCode: audited?.ulbCode ?? unaudited?.ulbCode ?? null,
+              auditedData: audited?.data ?? NOT_STARTED_SECTION,
+              unauditedData: unaudited?.data ?? NOT_STARTED_SECTION,
+            }
+          : {
+              annualAccountId: null,
+              ulbName: this.ulbNameFallback,
+              ulbCode: null,
+              auditedData: NOT_STARTED_SECTION,
+              unauditedData: NOT_STARTED_SECTION,
+            },
       );
 
       const key = this.activeSection();

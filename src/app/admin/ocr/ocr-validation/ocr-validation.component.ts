@@ -74,6 +74,7 @@ export class OcrValidationComponent implements OnInit {
   readonly models = this.ocrService.models;
 
   readonly documentTypes = this.ocrService.documentTypes;
+  readonly auditTypes = this.ocrService.auditTypes;
   readonly financialYears = this.ocrService.financialYears;
 
   readonly orientationCheckOptions: SelectOption<boolean>[] = [
@@ -93,6 +94,7 @@ export class OcrValidationComponent implements OnInit {
     extractionModel: this.fb.nonNullable.control('gemini-3.1-flash-lite', Validators.required),
     validationModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
     docType: this.fb.control<string | null>(null),
+    auditType: this.fb.control<string | null>(null),
     financialYear: this.fb.control<string | null>(null),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
     enableOrientationCheck: this.fb.control<boolean | null>(null),
@@ -179,6 +181,7 @@ export class OcrValidationComponent implements OnInit {
       extractionModel,
       validationModel,
       docType,
+      auditType,
       financialYear,
       ulb,
       enableOrientationCheck,
@@ -200,6 +203,7 @@ export class OcrValidationComponent implements OnInit {
           enableOrientationCheck ?? undefined,
           enableFinancialValidation ?? undefined,
           enableQualityCheck ?? undefined,
+          auditType,
         )
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({
@@ -234,6 +238,7 @@ export class OcrValidationComponent implements OnInit {
           docType,
           enableOrientationCheck ?? undefined,
           enableFinancialValidation ?? undefined,
+          auditType,
         )
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({
