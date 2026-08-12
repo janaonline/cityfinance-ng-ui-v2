@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UploadedFileMetadata } from '../../../../../shared/dynamic-form/components/file/file-metadata.types';
@@ -785,6 +785,67 @@ describe('ClaimLetterDetailComponent', () => {
           (component.signedClaimFileField()?.supportingContent?.[0] as { actions: { disabled?: boolean }[] })
             .actions[0].disabled,
         ).toBeFalsy();
+      });
+
+      function findAction(actionId: string) {
+        const block = component
+          .effectiveSignedClaimFileField()
+          ?.supportingContent?.find(
+            (b): b is Extract<FieldSupportingContent, { type: 'actions' }> => b.type === 'actions',
+          );
+        return block?.actions.find((a) => a.id === actionId);
+      }
+
+      it('previewTemplate() shows loading only on preview-template while in flight, then clears it', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
+        const pending = new Subject<ClaimLetterDocumentData>();
+        spyOn(claimLetterService, 'getDocumentData').and.returnValue(pending);
+
+        component.previewTemplate();
+
+        expect(findAction('preview-template')?.loading).toBeTrue();
+        expect(findAction('preview-template')?.loadingLabel).toBe('Loading preview…');
+        expect(findAction('download-template')?.loading).toBeFalsy();
+
+        pending.next(sampleDocumentData);
+        pending.complete();
+
+        expect(findAction('preview-template')?.loading).toBeFalsy();
+        expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
+          ClaimLetterDocumentPreviewDialogComponent,
+          jasmine.objectContaining({ data: { documentData: sampleDocumentData } }),
+        );
+      });
+
+      it('downloadTemplate() shows loading only on download-template while in flight, then clears it', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
+        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
+        const pending = new Subject<Blob>();
+        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(pending);
+        spyOn(FileSaver, 'saveAs');
+
+        component.downloadTemplate();
+
+        expect(findAction('download-template')?.loading).toBeTrue();
+        expect(findAction('download-template')?.loadingLabel).toBe('Preparing download…');
+        expect(findAction('preview-template')?.loading).toBeFalsy();
+
+        pending.next(new Blob(['pdf-bytes'], { type: 'application/pdf' }));
+        pending.complete();
+
+        expect(findAction('download-template')?.loading).toBeFalsy();
+        expect(FileSaver.saveAs).toHaveBeenCalled();
+      });
+
+      it('never shows loading on either action while there are unsaved changes (both are disabled instead)', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
+
+        component.rows.at(0).controls.claimedAmount.setValue(99);
+
+        expect(findAction('preview-template')?.disabled).toBeTrue();
+        expect(findAction('download-template')?.disabled).toBeTrue();
+        expect(findAction('preview-template')?.loading).toBeFalsy();
+        expect(findAction('download-template')?.loading).toBeFalsy();
       });
 
       it('onSupportingAction is a no-op for preview-template/download-template while there are unsaved edits', async () => {

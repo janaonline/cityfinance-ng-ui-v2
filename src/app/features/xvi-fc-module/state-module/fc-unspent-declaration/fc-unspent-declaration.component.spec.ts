@@ -1014,6 +1014,31 @@ describe('FcUnspentDeclarationComponent', () => {
       pending.complete();
     });
 
+    it('shows loading on the download-template action while the request is in flight, then clears it', () => {
+      // fcDeclaration is only visible (and so only appears in effectiveVisibleFields()) when
+      // isFcUnspent is 'no' — the spec-wide mock default is 'yes' (see "shows the table when
+      // isFcUnspent is yes (mock default)").
+      isFcUnspentControl(component).setValue('no');
+      const pending = new Subject<FcUnspentDeclarationTemplate>();
+      getDeclarationTemplateSpy.and.returnValue(pending);
+
+      function findAction() {
+        const field = component.effectiveVisibleFields().find((f) => f.key === 'fcDeclaration');
+        const block = field?.supportingContent?.find((b) => b.type === 'actions');
+        return block && block.type === 'actions' ? block.actions.find((a) => a.id === 'download-template') : undefined;
+      }
+
+      triggerDownload();
+
+      expect(findAction()?.loading).toBeTrue();
+      expect(findAction()?.loadingLabel).toBe('Downloading template…');
+
+      pending.next(template);
+      pending.complete();
+
+      expect(findAction()?.loading).toBeFalsy();
+    });
+
     it('triggers a temporary-anchor download using the backend filename, with rel=noopener', () => {
       const captured = captureCreatedAnchor();
 

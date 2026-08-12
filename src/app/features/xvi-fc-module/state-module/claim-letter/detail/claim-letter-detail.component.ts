@@ -7,6 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, forkJoin, map, of, startWith, switchMap, tap } from 'rxjs';
 import FileSaver from 'file-saver';
 import { FieldSupportingActionEvent, FieldSupportingContent } from '../../../../../shared/dynamic-form/field.interface';
+import { withSupportingActionState } from '../../../../../shared/dynamic-form/supporting-action-state';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import {
   CANCEL_CONFIRM_DIALOG_DEFAULTS,
@@ -184,28 +185,47 @@ export class ClaimLetterDetailComponent implements OnInit {
     return liveRows.some((row) => savedAmountByUlbId.get(row.ulbId) !== row.claimedAmount);
   });
 
-  /** `signedClaimFileField()` with the Preview/Download Template actions disabled — and their
-   *  description swapped to explain why — while `hasUnsavedRowChanges()` is true. Overridden purely
-   *  client-side, on top of the backend-supplied field config, since only this component knows about
-   *  in-progress, unsaved form edits; the backend has no way to compute this. */
+  /** `signedClaimFileField()` with the Preview/Download Template actions overridden for two
+   *  independent, client-only conditions the backend has no way to compute:
+   *  - disabled (+ description swapped to explain why) while `hasUnsavedRowChanges()` is true.
+   *  - loading (spinner + label swap) while `isLoadingDocument()`/`isDownloadingDocument()` is
+   *    true. In practice these never overlap — `onSupportingAction()` already refuses to start
+   *    either request while there are unsaved changes — but each action tracks its own signal so
+   *    triggering one never shows a spinner on the other. */
   readonly effectiveSignedClaimFileField = computed<ConditionalFieldConfig | null>(() => {
     const field = this.signedClaimFileField();
-    if (!field || !this.hasUnsavedRowChanges()) return field;
+    if (!field) return field;
+
+    const unsaved = this.hasUnsavedRowChanges();
+    const isPreviewLoading = this.isLoadingDocument();
+    const isDownloadLoading = this.isDownloadingDocument();
+    if (!unsaved && !isPreviewLoading && !isDownloadLoading) return field;
+
+    const withActionState = withSupportingActionState(field, [
+      {
+        actionId: CLAIM_LETTER_ACTION.PREVIEW_TEMPLATE,
+        disabled: unsaved || undefined,
+        loading: isPreviewLoading,
+        loadingLabel: 'Loading preview…',
+      },
+      {
+        actionId: CLAIM_LETTER_ACTION.DOWNLOAD_TEMPLATE,
+        disabled: unsaved || undefined,
+        loading: isDownloadLoading,
+        loadingLabel: 'Preparing download…',
+      },
+    ]);
+
+    if (!unsaved) return withActionState;
 
     return {
-      ...field,
-      supportingContent: field.supportingContent?.map((block): FieldSupportingContent =>
+      ...withActionState,
+      supportingContent: withActionState.supportingContent?.map((block): FieldSupportingContent =>
         block.type === 'actions'
           ? {
               ...block,
               description: 'Save your changes to update the claim letter preview and download.',
               descriptionTone: 'danger',
-              actions: block.actions.map((action) =>
-                action.id === CLAIM_LETTER_ACTION.PREVIEW_TEMPLATE ||
-                action.id === CLAIM_LETTER_ACTION.DOWNLOAD_TEMPLATE
-                  ? { ...action, disabled: true }
-                  : action,
-              ),
             }
           : block,
       ),

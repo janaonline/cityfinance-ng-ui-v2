@@ -13,6 +13,7 @@ import {
   warnBeforeUnloadWhenDirty,
 } from '../../../../core/guards/unsaved-changes.guard';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { withSupportingActionState } from '../../../../shared/dynamic-form/supporting-action-state';
 import {
   ConfirmDialogData,
   resolveThemeClass,
@@ -53,6 +54,7 @@ import {
   hasEulbFileValue,
   hasPersistedValidationData,
   isValidEulbFileValue,
+  parseBlobErrorResponse,
 } from './eulb-status.utils';
 import { EulbStatusService } from './eulb-status.service';
 import { EulbRowsDialogComponent } from './dialogs/rows-dialog/eulb-rows-dialog.component';
@@ -70,6 +72,7 @@ const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
   REGISTER_ULB: 'register-ulb',
+  DOWNLOAD_ELECTED_BODIES_LIST: 'download-elected-bodies-list',
 } as const;
 
 export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
@@ -124,6 +127,40 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
   readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
+  /**
+   * `visibleFields()` with each download action's `loading`/`loadingLabel` overridden from this
+   * component's own `isDownloading*` signals, so the supporting-content button shows a spinner
+   * while its request is in flight. Bound in the template in place of `visibleFields()`.
+   */
+  readonly effectiveVisibleFields = computed<ConditionalFieldConfig[]>(() =>
+    this.visibleFields().map((field) => {
+      if (field.key === 'electedBodyExcelFile') {
+        return withSupportingActionState(field, [
+          {
+            actionId: EULB_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
+            loading: this.isDownloadingTemplate(),
+            loadingLabel: 'Downloading template…',
+          },
+          {
+            actionId: EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET,
+            loading: this.isDownloadingErrorSheet(),
+            loadingLabel: 'Downloading error sheet…',
+          },
+        ]);
+      }
+      if (field.key === 'signedElectedbodyFile') {
+        return withSupportingActionState(field, [
+          {
+            actionId: EULB_SUPPORTING_ACTION.DOWNLOAD_ELECTED_BODIES_LIST,
+            loading: this.isDownloadingElectedBodiesList(),
+            loadingLabel: 'Downloading list…',
+          },
+        ]);
+      }
+      return field;
+    }),
+  );
+
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
@@ -131,6 +168,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
   readonly isDeleting = signal(false);
   readonly isDownloadingTemplate = signal(false);
   readonly isDownloadingErrorSheet = signal(false);
+  readonly isDownloadingElectedBodiesList = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
 
   readonly permissions = signal<EulbPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
@@ -485,10 +523,16 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
 
   /**
    * Routes action events emitted by `FieldSupportingContentComponent` for the
-   * `electedBodyExcelFile` field to the appropriate handler method.
+   * `electedBodyExcelFile` and `signedElectedbodyFile` fields to the appropriate handler method.
    * @param event - Action event containing `fieldKey` and `actionId`.
    */
   onSupportingAction(event: FieldSupportingActionEvent): void {
+    if (event.fieldKey === 'signedElectedbodyFile') {
+      if (event.actionId === EULB_SUPPORTING_ACTION.DOWNLOAD_ELECTED_BODIES_LIST) {
+        this.downloadElectedBodiesListDocument();
+      }
+      return;
+    }
     if (event.fieldKey !== 'electedBodyExcelFile') return;
     switch (event.actionId) {
       case EULB_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE:
@@ -539,6 +583,43 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
               ? 'No uploaded data found to generate error sheet.'
               : 'Failed to download error sheet. Please try again.';
           this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+        },
+      });
+  }
+
+  /**
+   * Fetches the "Elected Bodies List" declaration letter (Word doc) on demand from the backend
+   * and saves it as a blob. The backend rejects with a 400 when there are no active rows, or when
+   * any active row has not passed validation — that message is both shown as a snackbar and
+   * stamped onto the `signedElectedbodyFile` control (via `applyApiErrors`), which renders it
+   * inline through `FileComponent`'s own error text, mirroring `electedBodyExcelFile`'s existing
+   * inline-error convention.
+   */
+  downloadElectedBodiesListDocument(): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId || this.isDownloadingElectedBodiesList()) return;
+
+    this.isDownloadingElectedBodiesList.set(true);
+
+    this.eulbService
+      .downloadElectedBodiesListDocument(stateId, yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          FileSaver.saveAs(blob, 'elected-bodies-list.docx');
+          this.isDownloadingElectedBodiesList.set(false);
+          this.utilityService.triggerSnackbar('Elected bodies list downloaded successfully.');
+        },
+        error: (err: unknown) => {
+          this.isDownloadingElectedBodiesList.set(false);
+          void parseBlobErrorResponse(err).then((response) => {
+            const message = response?.message ?? 'Failed to download the elected bodies list. Please try again.';
+            this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+            if (response?.errors) {
+              this.applyApiErrors(response.errors);
+            }
+          });
         },
       });
   }
@@ -690,6 +771,16 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
    * Stamps API-returned field errors onto both the `fields` signal (for message display)
    * and the corresponding `FormControl` (for invalid state). Skips hidden fields.
    * Records each error key in `serverErrorKeys` so it can be cleared before re-submission.
+   *
+   * New server-driven validation entries are unshifted to the *front* of `field.validations`,
+   * not pushed to the end. `FileComponent.errorMessage()` displays the message of the first
+   * validation whose name is a key in `control.errors` — for most callers of this method the
+   * control already has a value when the server error arrives, so `required` never co-occurs
+   * and ordering is moot. `signedElectedbodyFile`'s `download-elected-bodies-list` gate error is
+   * the first case where the control is still empty (state hasn't uploaded yet) when the error
+   * lands, so `required` and the server code (e.g. `noRows`) both sit in `control.errors` at
+   * once — unshifting ensures the more specific, actionable server message wins over the generic
+   * "This field is required." placeholder.
    * @param errors - Map of field key → array of API error descriptors.
    */
   private applyApiErrors(errors: ApiErrorMap): void {
@@ -705,7 +796,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
           if (existingIdx >= 0) {
             validations[existingIdx] = { ...validations[existingIdx], message: error.message };
           } else {
-            validations.push({ name: error.code, validator: null, message: error.message });
+            validations.unshift({ name: error.code, validator: null, message: error.message });
           }
         }
 

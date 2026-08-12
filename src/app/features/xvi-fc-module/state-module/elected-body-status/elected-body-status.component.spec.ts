@@ -4,7 +4,8 @@ import { AbstractControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
+import FileSaver from 'file-saver';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
@@ -76,6 +77,7 @@ describe('ElectedBodyStatusComponent', () => {
       'revalidateUploadedExcel',
       'downloadTemplate',
       'downloadErrorSheet',
+      'downloadElectedBodiesListDocument',
       'deleteUploadedExcel',
     ]);
     eulbService.getFormData.and.returnValue(of(createFormResponse()));
@@ -133,9 +135,15 @@ describe('ElectedBodyStatusComponent', () => {
     expect(component.fields().map((field) => field.key)).toEqual([
       'ulbCount',
       'electedBodyExcelFile',
+      'signedElectedbodyFile',
       'checkboxConfirmation',
     ]);
-    expect(Object.keys(component.form.controls)).toEqual(['ulbCount', 'electedBodyExcelFile', 'checkboxConfirmation']);
+    expect(Object.keys(component.form.controls)).toEqual([
+      'ulbCount',
+      'electedBodyExcelFile',
+      'signedElectedbodyFile',
+      'checkboxConfirmation',
+    ]);
   });
 
   it('uses the current data-cy selectors for footer actions', () => {
@@ -203,6 +211,7 @@ describe('ElectedBodyStatusComponent', () => {
       data: {
         ulbCount: undefined,
         electedBodyExcelFile: undefined,
+        signedElectedbodyFile: undefined,
         checkboxConfirmation: true,
       },
     });
@@ -254,6 +263,7 @@ describe('ElectedBodyStatusComponent', () => {
       yearId,
       data: {
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
         checkboxConfirmation: true,
       },
     });
@@ -303,6 +313,7 @@ describe('ElectedBodyStatusComponent', () => {
   it('does not call final-submit API when electedBodyExcelFile fails the validity check', () => {
     // Partial file object: passes Angular required validator (non-null object) but fails isValidEulbFileValue
     setControlValue('electedBodyExcelFile', { originalName: '', path: '', sizeKb: 0 });
+    setControlValue('signedElectedbodyFile', fileValue);
     setControlValue('checkboxConfirmation', true);
     confirmDialogService.confirm.and.returnValue(of(true));
 
@@ -561,8 +572,185 @@ describe('ElectedBodyStatusComponent', () => {
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
+  // ─── downloadElectedBodiesListDocument (signedElectedbodyFile field) ──────
+
+  describe('download-elected-bodies-list supporting action', () => {
+    it('routes download-elected-bodies-list actions on signedElectedbodyFile to the download service call', () => {
+      eulbService.downloadElectedBodiesListDocument.and.returnValue(of(new Blob(['docx'])));
+
+      component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
+
+      expect(eulbService.downloadElectedBodiesListDocument).toHaveBeenCalledOnceWith(stateId, yearId);
+    });
+
+    it('does not dispatch when the action id is for a different field', () => {
+      component.onSupportingAction({ fieldKey: 'electedBodyExcelFile', actionId: 'download-elected-bodies-list' });
+
+      expect(eulbService.downloadElectedBodiesListDocument).not.toHaveBeenCalled();
+    });
+
+    it('saves the returned blob via FileSaver and shows a success snackbar', () => {
+      const blob = new Blob(['docx content']);
+      eulbService.downloadElectedBodiesListDocument.and.returnValue(of(blob));
+      spyOn(FileSaver, 'saveAs');
+      utilityService.triggerSnackbar.calls.reset();
+
+      component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
+
+      expect(FileSaver.saveAs).toHaveBeenCalledOnceWith(blob, 'elected-bodies-list.docx');
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Elected bodies list downloaded successfully.');
+      expect(component.isDownloadingElectedBodiesList()).toBeFalse();
+    });
+
+    it('on a 400 gate failure, shows the backend message and stamps it onto the signedElectedbodyFile control', async () => {
+      const body = {
+        message: 'No elected-body rows found for this state and year.',
+        statusCode: 400,
+        errors: {
+          signedElectedbodyFile: [
+            {
+              field: 'signedElectedbodyFile',
+              code: 'noRows',
+              message: 'No elected-body rows found for this state and year.',
+            },
+          ],
+        },
+      };
+      eulbService.downloadElectedBodiesListDocument.and.returnValue(
+        throwError(() => ({ error: new Blob([JSON.stringify(body)], { type: 'application/json' }) })),
+      );
+      utilityService.triggerSnackbar.calls.reset();
+
+      component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
+      // Blob.text() (used by parseBlobErrorResponse) resolves via the browser's real async I/O,
+      // not zone.js-tracked microtasks alone — fixture.whenStable() doesn't reliably wait for it.
+      // A fixed delay is flaky under a heavier test-suite load (observed failing at 50ms when run
+      // alongside ~1400 other specs), so poll for the actual outcome instead of guessing a duration.
+      await waitUntil(() => utilityService.triggerSnackbar.calls.count() > 0);
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        'No elected-body rows found for this state and year.',
+        'snackbar-danger',
+      );
+      const control = getControl('signedElectedbodyFile');
+      expect(control?.errors?.['noRows']).toBeTruthy();
+      // The control is untouched/empty at this point (state hasn't uploaded yet — that's the
+      // whole point of clicking "download" first), so Angular's own `required` validator is also
+      // tripped at the same time as the stamped `noRows` error. FileComponent.errorMessage()
+      // displays whichever validation entry comes FIRST in the field's `validations` array among
+      // those present in control.errors — regression guard for the bug where `noRows` landed
+      // after `required` (via .push()) and got shadowed by the generic "This field is required."
+      // message. `noRows` must be unshifted to the front so it wins display priority.
+      expect(control?.errors?.['required']).toBeTruthy();
+      const signedField = component.fields().find((f) => f.key === 'signedElectedbodyFile');
+      expect(signedField?.validations?.[0]?.name).toBe('noRows');
+      expect(signedField?.validations?.[0]?.message).toBe('No elected-body rows found for this state and year.');
+      expect(component.isDownloadingElectedBodiesList()).toBeFalse();
+    });
+  });
+
+  // ─── action loading state (effectiveVisibleFields) ─────────────────────────
+
+  describe('effectiveVisibleFields — download button loading state', () => {
+    beforeEach(() => {
+      // The default fixture's electedBodyExcelFile/signedElectedbodyFile questions carry no
+      // supportingContent (it's backend-injected in production) — add realistic action configs so
+      // effectiveVisibleFields() has something to patch.
+      component.fields.update((fields) =>
+        fields.map((field) => {
+          if (field.key === 'electedBodyExcelFile') {
+            return {
+              ...field,
+              supportingContent: [
+                {
+                  type: 'actions' as const,
+                  actions: [
+                    { id: 'download-template', label: 'Download the template' },
+                    { id: 'download-error-sheet', label: 'Download error sheet' },
+                  ],
+                },
+              ],
+            };
+          }
+          if (field.key === 'signedElectedbodyFile') {
+            return {
+              ...field,
+              supportingContent: [
+                {
+                  type: 'actions' as const,
+                  actions: [{ id: 'download-elected-bodies-list', label: 'Download elected bodies list' }],
+                },
+              ],
+            };
+          }
+          return field;
+        }),
+      );
+    });
+
+    function findAction(fieldKey: string, actionId: string) {
+      const field = component.effectiveVisibleFields().find((f) => f.key === fieldKey);
+      const block = field?.supportingContent?.find((b) => b.type === 'actions');
+      return block && block.type === 'actions' ? block.actions.find((a) => a.id === actionId) : undefined;
+    }
+
+    it('passes an unrelated field through by reference', () => {
+      const confirmationField = component.fields().find((f) => f.key === 'checkboxConfirmation');
+      expect(component.effectiveVisibleFields().find((f) => f.key === 'checkboxConfirmation')).toBe(confirmationField);
+    });
+
+    it('shows loading on download-template while downloadTemplate() is in flight, independent of download-error-sheet', () => {
+      const subject = new Subject<Blob>();
+      eulbService.downloadTemplate.and.returnValue(subject);
+
+      component.downloadTemplate();
+
+      expect(findAction('electedBodyExcelFile', 'download-template')?.loading).toBeTrue();
+      expect(findAction('electedBodyExcelFile', 'download-template')?.loadingLabel).toBe('Downloading template…');
+      expect(findAction('electedBodyExcelFile', 'download-error-sheet')?.loading).toBeFalsy();
+
+      subject.next(new Blob(['x']));
+      subject.complete();
+
+      expect(findAction('electedBodyExcelFile', 'download-template')?.loading).toBeFalsy();
+    });
+
+    it('shows loading on download-error-sheet while downloadErrorSheet() is in flight', () => {
+      const subject = new Subject<Blob>();
+      eulbService.downloadErrorSheet.and.returnValue(subject);
+
+      component.downloadErrorSheet();
+
+      expect(findAction('electedBodyExcelFile', 'download-error-sheet')?.loading).toBeTrue();
+      expect(findAction('electedBodyExcelFile', 'download-template')?.loading).toBeFalsy();
+
+      subject.next(new Blob(['x']));
+      subject.complete();
+
+      expect(findAction('electedBodyExcelFile', 'download-error-sheet')?.loading).toBeFalsy();
+    });
+
+    it('shows loading on download-elected-bodies-list while downloadElectedBodiesListDocument() is in flight', () => {
+      const subject = new Subject<Blob>();
+      eulbService.downloadElectedBodiesListDocument.and.returnValue(subject);
+
+      component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
+
+      expect(findAction('signedElectedbodyFile', 'download-elected-bodies-list')?.loading).toBeTrue();
+      expect(findAction('signedElectedbodyFile', 'download-elected-bodies-list')?.loadingLabel).toBe(
+        'Downloading list…',
+      );
+
+      subject.next(new Blob(['docx']));
+      subject.complete();
+
+      expect(findAction('signedElectedbodyFile', 'download-elected-bodies-list')?.loading).toBeFalsy();
+    });
+  });
+
   function setValidFinalSubmitValues(): void {
     setControlValue('electedBodyExcelFile', fileValue);
+    setControlValue('signedElectedbodyFile', fileValue);
     setControlValue('checkboxConfirmation', true);
   }
 
@@ -576,6 +764,17 @@ describe('ElectedBodyStatusComponent', () => {
 
   function getControl(key: string): AbstractControl<unknown, unknown> | null {
     return component.form.get(key);
+  }
+
+  /** Polls `predicate` until it's true, instead of guessing a fixed delay — needed for assertions
+   *  that depend on `Blob.text()`'s real async I/O, which isn't tracked by zone.js/`fixture.whenStable()`
+   *  and so can't be reliably awaited with a single fixed-duration `setTimeout`. */
+  async function waitUntil(predicate: () => boolean, timeoutMs = 2000, intervalMs = 10): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (!predicate()) {
+      if (Date.now() > deadline) throw new Error('waitUntil: timed out waiting for condition');
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
   }
 
   function createApiFailure(
@@ -626,6 +825,13 @@ describe('ElectedBodyStatusComponent', () => {
         formFieldType: 'file',
         value: restoredFileValue,
         validations: [{ name: 'required', validator: true, message: 'Excel file is required.' }],
+      },
+      {
+        label: 'Upload Signed elected bodies list',
+        key: 'signedElectedbodyFile',
+        formFieldType: 'file',
+        value: null,
+        validations: [{ name: 'required', validator: true, message: 'This field is required.' }],
       },
       {
         label: 'Confirmation',

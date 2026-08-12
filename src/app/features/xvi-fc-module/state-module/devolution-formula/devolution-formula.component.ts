@@ -25,6 +25,7 @@ import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { withSupportingActionState } from '../../../../shared/dynamic-form/supporting-action-state';
 import { normalizeUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   ConditionalFieldConfig,
@@ -149,6 +150,30 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
+
+  /**
+   * `visibleFields()` with the excelFile download actions' `loading`/`loadingLabel` overridden
+   * from this component's own `isDownloading*` signals, so the supporting-content button shows a
+   * spinner while its request is in flight. Bound in the template in place of `visibleFields()`.
+   */
+  readonly effectiveVisibleFields = computed<ConditionalFieldConfig[]>(() =>
+    this.visibleFields().map((field) =>
+      field.key === 'excelFile'
+        ? withSupportingActionState(field, [
+            {
+              actionId: DF_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
+              loading: this.isDownloadingTemplate(),
+              loadingLabel: 'Downloading template…',
+            },
+            {
+              actionId: DF_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET,
+              loading: this.isDownloadingErrorSheet(),
+              loadingLabel: 'Downloading error sheet…',
+            },
+          ])
+        : field,
+    ),
+  );
 
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
   /** Tracks error codes injected per field by the most recent failed API response. */

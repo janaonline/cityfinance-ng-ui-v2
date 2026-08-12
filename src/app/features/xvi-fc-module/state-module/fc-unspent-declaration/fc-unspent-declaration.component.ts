@@ -19,6 +19,7 @@ import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { withSupportingActionState } from '../../../../shared/dynamic-form/supporting-action-state';
 import {
   ConditionalFieldConfig,
   DependencyIndex,
@@ -130,6 +131,25 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
    *  row's validators from the backend config instead of a hardcoded literal. */
   readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
+
+  /**
+   * `visibleFields()` with the fcDeclaration download action's `loading`/`loadingLabel` overridden
+   * from `isDownloadingTemplate()`, so the supporting-content button shows a spinner while its
+   * request is in flight. Bound in the template in place of `visibleFields()`.
+   */
+  readonly effectiveVisibleFields = computed<ConditionalFieldConfig[]>(() =>
+    this.visibleFields().map((field) =>
+      field.key === 'fcDeclaration'
+        ? withSupportingActionState(field, [
+            {
+              actionId: FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
+              loading: this.isDownloadingTemplate(),
+              loadingLabel: 'Downloading template…',
+            },
+          ])
+        : field,
+    ),
+  );
 
   readonly unspentUlbData = new FormArray<FcUnspentUlbRowGroup>([]);
   /** `UnspentUlbTableComponent` is `OnPush` and only rendered while the Yes branch is shown, so its
