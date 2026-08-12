@@ -22,7 +22,7 @@ import {
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
 import { formatCrore } from '../claim-letter.utils';
-import { pdfMake } from '../pdfmake-setup';
+import FileSaver from 'file-saver';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
 
 const SIGNED_FILE_FIELD: ConditionalFieldConfig = {
@@ -74,12 +74,18 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     supersedes: null,
     supersededBy: null,
     createdAt: '2026-07-01T00:00:00.000Z',
+    // Backend-driven gates — canEdit()/canFinalSubmit() read these directly now, not
+    // currentFormStatus/isAbandoned. Default to "fully editable" so existing tests that only care
+    // about other behavior don't also have to specify permissions explicitly.
+    permissions: { canView: true, canEdit: true, canFinalSubmit: true },
+    stateName: 'Test State',
     ...overrides,
   };
 }
 
 function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): ClaimLetterClaimContext {
   return {
+    stateName: 'Test State',
     expectedUlbCount: 10,
     batchSlotsUsed: 0,
     batchSlotsMax: 3,
@@ -94,6 +100,8 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
     remainingUlbCount: 0,
     varianceLowerPercent: 90,
     varianceUpperPercent: 110,
+    // Create-mode's canEdit() reads this — default to creatable for the same reason as above.
+    canCreate: true,
     ...overrides,
   };
 }
@@ -173,6 +181,16 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.isCreateMode).toBe(true);
       expect(component.claimLetterId()).toBeNull();
       expect(component.canEdit()).toBe(true);
+    });
+
+    it('falls back to eligibilityOverview().canCreate — there is no claim yet to read permissions from', () => {
+      // Simulate a claim-context response that denies canCreate (e.g. a viewer-only user).
+      component.eligibilityOverview.set(buildClaimContext({ canCreate: false }));
+      expect(component.canEdit()).toBe(false);
+    });
+
+    it('stateName reads from eligibilityOverview() in create mode, for the page-header eyebrow', () => {
+      expect(component.stateName()).toBe('Test State');
     });
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
@@ -441,22 +459,36 @@ describe('ClaimLetterDetailComponent', () => {
     });
 
     it('narrative is empty (hidden) once the batch is no longer editable', async () => {
-      await setupEdit(buildClaim({ currentFormStatus: 5 })); // UNDER_REVIEW_BY_MOHUA, read-only
+      // UNDER_REVIEW_BY_MOHUA, read-only — canEdit() reads permissions.canEdit directly, not status.
+      await setupEdit(
+        buildClaim({ currentFormStatus: 5, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }),
+      );
       expect(component.batchNarrative()).toEqual([]);
     });
 
-    it('is editable while IN_PROGRESS and not abandoned', async () => {
-      await setupEdit(buildClaim({ currentFormStatus: 2, isAbandoned: false }));
+    it('is editable when the backend grants canEdit', async () => {
+      await setupEdit(
+        buildClaim({ currentFormStatus: 2, isAbandoned: false, permissions: { canView: true, canEdit: true, canFinalSubmit: true } }),
+      );
       expect(component.canEdit()).toBe(true);
     });
 
-    it('is read-only once no longer IN_PROGRESS', async () => {
-      await setupEdit(buildClaim({ currentFormStatus: 5 })); // UNDER_REVIEW_BY_MOHUA
+    it('stateName reads from claim() in edit mode, for the page-header eyebrow', async () => {
+      await setupEdit(buildClaim({ stateName: 'Andhra Pradesh' }));
+      expect(component.stateName()).toBe('Andhra Pradesh');
+    });
+
+    it('is read-only once the backend denies canEdit (e.g. no longer IN_PROGRESS)', async () => {
+      await setupEdit(
+        buildClaim({ currentFormStatus: 5, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }), // UNDER_REVIEW_BY_MOHUA
+      );
       expect(component.canEdit()).toBe(false);
     });
 
-    it('is read-only once abandoned, even if still nominally IN_PROGRESS', async () => {
-      await setupEdit(buildClaim({ isAbandoned: true }));
+    it('is read-only once the backend denies canEdit for an abandoned draft, even if still nominally IN_PROGRESS', async () => {
+      await setupEdit(
+        buildClaim({ isAbandoned: true, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }),
+      );
       expect(component.canEdit()).toBe(false);
     });
 
@@ -509,7 +541,9 @@ describe('ClaimLetterDetailComponent', () => {
     });
 
     it('abandonDraft is a no-op when not editable', async () => {
-      await setupEdit(buildClaim({ isAbandoned: true }));
+      await setupEdit(
+        buildClaim({ isAbandoned: true, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }),
+      );
       const confirmSpy = spyOn(TestBed.inject(ConfirmDialogService), 'confirm');
 
       component.abandonDraft();
@@ -664,20 +698,24 @@ describe('ClaimLetterDetailComponent', () => {
       it('onSupportingAction routes download-template to downloadTemplate()', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
         spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        const downloadSpy = jasmine.createSpy('download');
-        spyOn(pdfMake, 'createPdf').and.returnValue({ download: downloadSpy } as never);
+        const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(of(sampleBlob));
+        const saveAsSpy = spyOn(FileSaver, 'saveAs');
 
         component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
 
         expect(claimLetterService.getDocumentData).toHaveBeenCalledWith('claim-1');
-        expect(pdfMake.createPdf).toHaveBeenCalled();
-        expect(downloadSpy).toHaveBeenCalledWith('claim-letter-CL-AP-2026-27-1-1.pdf');
+        expect(claimLetterService.downloadDocumentPdf).toHaveBeenCalledWith('claim-1');
+        expect(saveAsSpy).toHaveBeenCalledWith(sampleBlob, 'claim-letter-CL-AP-2026-27-1-1.pdf');
       });
 
       it('shares one fetch between previewTemplate() and downloadTemplate() (single-flight cache)', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
         const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        spyOn(pdfMake, 'createPdf').and.returnValue({ download: jasmine.createSpy('download') } as never);
+        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(
+          of(new Blob(['pdf-bytes'], { type: 'application/pdf' })),
+        );
+        spyOn(FileSaver, 'saveAs');
 
         component.previewTemplate();
         component.downloadTemplate();

@@ -39,6 +39,13 @@ export interface ClaimLetterEligibilitySource {
   /** One-line requirement statement, same wording regardless of pass/fail — only the tick/cross
    *  indicator changes. Falls back to a generated sentence when absent. */
   displayDescription?: string;
+  /** Relative frontend route for this criterion's "View" action (e.g. '../sfc-status').
+   *  Frontend falls back to '../requirements' (self-link) when unset. */
+  checklistRoute?: string;
+  /** Plain-language checklist line for /requirements.
+   * Supports {{priorFcCycleLabel}}; substituted by ClaimLetterService.getEligibilitySummary().
+   * Falls back to displayDescription when unset. */
+  checklistSummary?: string;
   /** Per-ULB tally behind this requirement — populated for Elected Body/FC Unspent (state forms
    *  representing ULB-level data) and for the 3 ULB-only criteria merged in from `ulbLevelCriteria`.
    *  Absent for pure state-form checks (SFC, Devolution), which have no per-ULB meaning. */
@@ -59,8 +66,16 @@ export interface ClaimLetterFinancialOverview {
   availableToClaim: number;
 }
 
+/** Which FC cycle "FC Unspent Balance" disclosures refer to for this design year — resolved
+ *  backend-side (`resolvePriorFcCycleLabel`) from the same table the actual signed Claim Letter
+ *  document's own Annexure 1 heading uses, so this and that document can never disagree. Never
+ *  hardcode "14th"/"15th" against a year on this side — always read this field. */
+export type ClaimLetterPriorFcCycleLabel = '14th FC' | '15th FC';
+
 export interface ClaimLetterEligibilitySummary {
+  stateName: string;
   installment: ClaimLetterInstallment;
+  priorFcCycleLabel: ClaimLetterPriorFcCycleLabel;
   stateLevelGate: {
     passed: boolean;
     sources: ClaimLetterEligibilitySource[];
@@ -98,6 +113,8 @@ export interface ClaimLetterEligibilitySummary {
  * `GET .../claim-context`, which skips the expensive eligibility-checklist evaluation entirely.
  */
 export interface ClaimLetterClaimContext {
+  /** Powers the page-header eyebrow — same convention as `ClaimLetterEligibilitySummary.stateName`. */
+  stateName: string;
   expectedUlbCount: number;
   batchSlotsUsed: number;
   batchSlotsMax: number;
@@ -108,6 +125,10 @@ export interface ClaimLetterClaimContext {
    *  these; pass straight through to `isClaimWithinVariance`. */
   varianceLowerPercent: number;
   varianceUpperPercent: number;
+  /** Whether the current user may start a new claim (PREPARE_GRANT_LETTERS) — the create-mode-only
+   *  equivalent of `ClaimLetterBatchSummary.permissions.canEdit`, since there's no batch document
+   *  yet to attach a full `ClaimLetterPermissions` to. */
+  canCreate: boolean;
 }
 
 /**
@@ -193,6 +214,15 @@ export interface ClaimLetterFinancialSummary {
   remainingIfAcknowledged: number;
 }
 
+/** Authoritative UI edit/submit gates, computed backend-side (same shape/convention as
+ *  `SfcStatusPermissions`) — never infer `canEdit`/`canFinalSubmit` from `currentFormStatus`/
+ *  `isAbandoned` locally. */
+export interface ClaimLetterPermissions {
+  canView: boolean;
+  canEdit: boolean;
+  canFinalSubmit: boolean;
+}
+
 /**
  * The one response shape every claim-letter read/mutating endpoint returns (`getDetail`,
  * `listHistory`, `createDraft`, `updateDraft`, `abandonDraft`, `uploadSignedFile`, `submit`).
@@ -220,10 +250,13 @@ export interface ClaimLetterBatchSummary {
   /** Claim Letter's own `formjsons` field config (today: just `signedClaimFile`). Only present on
    *  `getDetail` responses. */
   questions?: ConditionalFieldConfig[];
+  stateName?: string;
   /** Same DB-driven variance band as `ClaimLetterClaimContext` — only present on `getDetail`
    *  responses, same convention as `questions`. */
   varianceLowerPercent?: number;
   varianceUpperPercent?: number;
+  /** Authoritative edit/submit gates for this claim — always populated. */
+  permissions: ClaimLetterPermissions;
 }
 
 /** One row of the covering letter's recommended-ULBs table. No per-ULB date exists on the batch

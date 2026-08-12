@@ -6,7 +6,12 @@
       <div class="content-stack d-flex flex-column gap-4">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
           <div>
-            <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">16th Finance Commission</div>
+            <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+              <span class="text-secondary">16th Finance Commission</span>
+              @if (stateName()) {
+                &nbsp;&middot;&nbsp; {{ stateName() }}
+              }
+            </div>
 
             <h1 class="page-title mb-2">Generate Claim Letter</h1>
 
@@ -18,15 +23,28 @@
           </div>
 
           @if (!isLoading() && !loadError()) {
-            <button
-              type="button"
-              matButton="filled"
-              [disabled]="!canCreateNewClaim()"
-              (click)="createNewClaim()"
-              data-cy="claim-letter-new-button"
-            >
-              <i class="bi bi-plus-lg me-1"></i>New Claim
-            </button>
+            <div class="">
+              <button
+                type="button"
+                matButton="filled"
+                [disabled]="!canCreateNewClaim()"
+                (click)="createNewClaim()"
+                data-cy="claim-letter-new-button"
+              >
+                <i class="bi bi-plus-lg me-1"></i>New Claim
+              </button>
+
+              @if (newClaimDisabledReason(); as reason) {
+                <div
+                  class="alert alert-danger py-1 px-2 mt-2 mb-0 small"
+                  role="alert"
+                  data-cy="claim-letter-new-disabled-reason"
+                >
+                  <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+                  <span class="px-1">{{ reason }}</span>
+                </div>
+              }
+            </div>
           }
         </div>
 
@@ -74,8 +92,8 @@
                   Batch slots used:
                   <b>{{ eligibilitySummary.batchSlotsUsed }}/ {{ eligibilitySummary.batchSlotsMax }}</b>
                 </span>
-                &middot;
                 @if (eligibilitySummary.nextBatchNumber !== null) {
+                  &middot;
                   <span class="small">
                     Preparing:
                     <b>Batch {{ eligibilitySummary.nextBatchNumber }}</b>
@@ -102,7 +120,7 @@
                     <b>{{ eligibilitySummary.expectedUlbCount - eligibilitySummary.remainingUlbCount }}</b> of
                     <b>{{ eligibilitySummary.expectedUlbCount }}</b> ULBs claimed so far. The remaining
                     <b>{{ eligibilitySummary.remainingUlbCount }}</b> ULB(s) must all be included in your final batch
-                    (Batch {{ eligibilitySummary.batchSlotsMax }}) — any ULB left out cannot be claimed after that.
+                    (Batch {{ eligibilitySummary.batchSlotsMax }}) - any ULB left out cannot be claimed after that.
                   </span>
                 </div>
               }
