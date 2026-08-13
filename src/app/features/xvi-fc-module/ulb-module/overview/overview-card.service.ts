@@ -73,7 +73,7 @@ export class UlbOverviewService {
       name: response.ulbName,
       financialYear: 'FY 2026-27',
       subHeader1: 'ESTIMATED GRANT',
-      subHeader2: 'Based on SFC data, population figures, and CF calculations',
+      // subHeader2: 'Based on SFC data, population figures, and CF calculations',
       totalAllocation: 'Allocation will be displayed once the State submits the ULB-wise allocation',
       totalAllocationNote: `For ${response.ulbName}, ${response.stateName}`,
       grantSections: [

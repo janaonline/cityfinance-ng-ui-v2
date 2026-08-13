@@ -1,3 +1,5 @@
+import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
+
 export interface XviFcBankDetails {
   name: string;
   branch: string;
@@ -81,5 +83,10 @@ export interface ApiResponse<T> {
   message?: string;
   data: T;
   timestamp?: string;
+}
+
+export interface XviFcBankAccountFormConfig {
+  meta: Record<string, unknown>;
+  data: FieldConfig[];
 }
 
