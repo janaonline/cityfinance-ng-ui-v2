@@ -8,7 +8,7 @@ const BASE_URL = `${environment.api.url2}xvi-fc/state/devolution-formula/`;
 
 const minimalFormData: DevolutionFormResponseData = {
   _id: 'form-1',
-  formName: 'Devolution Formula',
+  formName: 'ULB-wise Allocation',
   stateId: 'state-1',
   yearId: 'year-1',
   installment: 1,

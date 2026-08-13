@@ -17,7 +17,8 @@ hr {
   position: relative;
   display: block; // NOT flex — toggle must not add layout width
   width: var(--nav-width);
-  height: 100%;
+  // height: 100%;
+  height: calc(100vh - var(--app-header-height, 91px));
   flex-shrink: 0;
   overflow: visible; // edge-toggle tab overflows right edge intentionally
   transition: width 0.3s ease;

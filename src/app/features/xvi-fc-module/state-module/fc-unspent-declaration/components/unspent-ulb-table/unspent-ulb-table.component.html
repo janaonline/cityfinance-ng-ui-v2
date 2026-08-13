@@ -39,16 +39,6 @@
                   <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
                     {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
                   </span>
-                  <button
-                    type="button"
-                    matButton="outlined"
-                    class="unspent-row-btn flex-shrink-0"
-                    [disabled]="!canEdit()"
-                    (click)="openPickerForRow(i)"
-                    aria-label="Change selected ULB"
-                  >
-                    <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
-                  </button>
                 </div>
                 @if (ulbIdErrorText) {
                   <button
@@ -68,7 +58,12 @@
             <td class="small text-center text-secondary text-nowrap text-truncate">
               {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
             </td>
-            <td class="small text-end pe-3 text-secondary">{{ rowViewModels()[i].allocationAmount ?? '—' }}</td>
+            <td
+              class="small text-end pe-3 text-secondary"
+              [title]="formatCroreFull(rowViewModels()[i].allocationAmount)"
+            >
+              {{ formatCrore(rowViewModels()[i].allocationAmount) }}
+            </td>
             <td>
               @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
               <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>

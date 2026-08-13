@@ -15,6 +15,7 @@ describe('XvifcModuleService', () => {
   let service: XvifcModuleService;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockAuthService: { logout: jasmine.Spy; loginLogoutCheck: Subject<boolean> };
+  let getSideMenuSpy: jasmine.Spy;
 
   beforeEach(() => {
     mockRouter = jasmine.createSpyObj<Router>('Router', ['navigate']);
@@ -22,6 +23,15 @@ describe('XvifcModuleService', () => {
       logout: jasmine.createSpy('logout'),
       loginLogoutCheck: new Subject<boolean>(),
     };
+    // Default behavior matches the pre-existing tests below (resolves immediately); individual
+    // tests may override with `.and.returnValue(...)` to control response timing (see the
+    // "exactly once" regression test, which needs a genuinely pending response to reproduce the
+    // race a synchronous `of(...)` response can't).
+    getSideMenuSpy = jasmine
+      .createSpy('getSideMenu')
+      .and.callFake(({ role, yearId }: { role: keyof typeof SIDE_MENU_ITEMS; yearId: string }) =>
+        of(SIDE_MENU_ITEMS[role](yearId as any)),
+      );
 
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, RouterTestingModule],
@@ -31,13 +41,7 @@ describe('XvifcModuleService', () => {
         XvifcModuleService,
         { provide: Router, useValue: mockRouter },
         { provide: AuthService, useValue: mockAuthService },
-        {
-          provide: XviFcSideMenuApiService,
-          useValue: {
-            getSideMenu: ({ role, yearId }: { role: keyof typeof SIDE_MENU_ITEMS; yearId: string }) =>
-              of(SIDE_MENU_ITEMS[role](yearId as any)),
-          },
-        },
+        { provide: XviFcSideMenuApiService, useValue: { getSideMenu: getSideMenuSpy } },
       ],
     });
 
@@ -85,6 +89,32 @@ describe('XvifcModuleService', () => {
     // Service currently overrides bottomModel to [] — check topModel directly.
     expect(service.sideMenuModel().topModel).toEqual(SIDE_MENU_ITEMS.STATE('69de2593f75f68f3bda51421').topModel);
     expect(service.sideMenuModel().bottomModel).toEqual([]);
+  });
+
+  it('should call the side-menu API exactly once per context, even while the response is still pending', async () => {
+    // A synchronous `of(...)` response (the default mock, and the other tests below) can't
+    // reproduce this race: `loadSideMenu`'s dedupe guard only blocks a repeat call once
+    // `sideMenuModel().topModel.length > 0`, which is only true after this response resolves. A
+    // pending Subject keeps that window open long enough to catch a regression of the effect
+    // re-triggering itself before the first response lands (see xvi-fc-module.service.ts's
+    // `untracked(...)` call and its doc comment for the mechanism this guards against).
+    const response$ = new Subject<ReturnType<(typeof SIDE_MENU_ITEMS)['STATE']>>();
+    getSideMenuSpy.and.returnValue(response$);
+
+    service.syncContextFromRoute(createRouteSnapshot({ role: 'STATE', yearId: '69de2593f75f68f3bda51421' }));
+    (TestBed as any).flushEffects();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(getSideMenuSpy).toHaveBeenCalledTimes(1);
+
+    response$.next(SIDE_MENU_ITEMS.STATE('69de2593f75f68f3bda51421'));
+    response$.complete();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(getSideMenuSpy).toHaveBeenCalledTimes(1);
+    expect(service.sideMenuModel().topModel).toEqual(SIDE_MENU_ITEMS.STATE('69de2593f75f68f3bda51421').topModel);
   });
 
   it('should keep DOE as a supported role for future routes', async () => {

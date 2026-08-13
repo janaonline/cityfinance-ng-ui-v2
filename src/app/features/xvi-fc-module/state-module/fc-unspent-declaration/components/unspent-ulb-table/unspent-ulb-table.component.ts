@@ -15,9 +15,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
-import { MATERIAL_THEME_CLASS } from '../../../../../../core/theming/material-theme.providers';
+import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
+import { formatCrore, formatCroreFull } from '../../fc-unspent-declaration.utils';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dialog/ulb-picker-dialog.component';
 
@@ -129,10 +130,13 @@ export function createFcUnspentUlbRowGroup(
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UnspentUlbTableComponent {
+  readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
+
   private readonly dynamicService = inject(DynamicFormService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly themeClass = resolveThemeClass();
   /** Passed through to `MatDialog.open` so the picker resolves the same feature-scoped
    *  `FcUnspentUlbOptionsCacheService` instance provided on `FcUnspentDeclarationComponent` — by
    *  default a dialog is created against the root injector, not this component's own. */
@@ -153,6 +157,10 @@ export class UnspentUlbTableComponent {
    *  component builds itself (picker-driven add/replace flows). Required, not defaulted — this
    *  component never falls back to a hardcoded field config of its own. */
   readonly rowEditFields = input.required<readonly ConditionalFieldConfig[]>();
+  /** Backend-composed explanation of why the Devolution dependency is currently blocking something
+   *  (see `FcUnspentDevolutionDependency.blockingMessage`) — passed through to the ULB picker so its
+   *  empty state can explain *why* no ULBs are available, instead of implying a search issue. */
+  readonly blockingMessage = input<string | null>(null);
 
   /** Display data (name/codes/allocation) for ULBs actually picked via the dialog this session —
    *  the only ULB-options data ever cached locally, and only for rows a user chose. A fetched
@@ -216,36 +224,6 @@ export class UnspentUlbTableComponent {
     });
   });
 
-  /**
-   * Opens the picker to change the ULB already selected for an existing row. If the State selects
-   * more than one ULB in that session, the first replaces this row's own selection and every
-   * additional one is appended as a brand-new row — no selected ULB is ever silently dropped.
-   */
-  openPickerForRow(index: number): void {
-    if (!this.canEdit()) return;
-    const row = this.rows().at(index);
-    if (!row) return;
-
-    const currentUlbId = row.controls.ulbId.value;
-    const excludeUlbIds = this.currentUlbIds().filter((ulbId) => ulbId !== currentUlbId);
-
-    this.openPicker(excludeUlbIds, (options) => {
-      const [first, ...rest] = options;
-      row.controls.ulbId.setValue(first.ulbId);
-      row.controls.ulbId.markAsDirty();
-      row.controls.ulbId.markAsTouched();
-
-      for (const option of rest) {
-        this.rows().push(
-          createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), {
-            ulbId: option.ulbId,
-            unspentAmount: null,
-          }),
-        );
-      }
-    });
-  }
-
   /** Opens the picker to add one or more brand-new rows, in the order they were selected. */
   addRow(): void {
     if (!this.canEdit()) return;
@@ -291,7 +269,12 @@ export class UnspentUlbTableComponent {
 
   private openPicker(excludeUlbIds: string[], applySelections: (options: FcUnspentUlbOption[]) => void): void {
     const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'ulb-picker-dialog-panel'];
-    const data: UlbPickerDialogData = { stateId: this.stateId(), yearId: this.yearId(), excludeUlbIds };
+    const data: UlbPickerDialogData = {
+      stateId: this.stateId(),
+      yearId: this.yearId(),
+      excludeUlbIds,
+      blockingMessage: this.blockingMessage(),
+    };
 
     const dialogRef = this.dialog.open(UlbPickerDialogComponent, {
       panelClass,

@@ -31,7 +31,12 @@
           (click)="onLinkActivated()"
         >
           @if (item().icon) {
-            <i [class]="item().icon" aria-hidden="true"></i>
+            <span class="menu-icon-wrap">
+              <i [class]="item().icon" aria-hidden="true"></i>
+              @if (badgeSeverity(); as severity) {
+                <span class="menu-item-badge" [class]="'menu-item-badge--' + severity"></span>
+              }
+            </span>
           }
           @if (!collapsed()) {
             <span class="menu-label">{{ item().label }}</span>
@@ -40,7 +45,7 @@
       }
 
       <!-- External Link -->
-      @if (isExternalLink()) {
+@if (isExternalLink()) {
         <a
           class="menu-item"
           [class.icon-only]="collapsed()"

@@ -8,7 +8,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { AnnualAccountStateService } from '../annual-account-state.service';
-import { FORM_STATUS, FormStatusType } from './xvi-fc-bank-account/xvi-fc-bank-account.models';
 
 interface UlbDetails {
   ulbName: string;
@@ -38,6 +37,28 @@ interface ConditionGroup {
   deadline: string;
   conditions: Condition[];
 }
+
+/** Condition ids whose display is driven live by the numeric form_status_id (1–7) rather than the static config above. */
+const NUMERIC_STATUS_CONDITION_IDS = new Set(['audited-statement', 'provisional-statement', 'xvi-fc-bank-account']);
+
+type ConditionIconTier = 'pending-neutral' | 'pending-active' | 'success' | 'warning';
+
+interface ConditionStatusDisplay {
+  iconTier: ConditionIconTier;
+  buttonLabel: string;
+  showPreview: boolean;
+}
+
+/** form_status_id (1–7, shared across Audited/Provisional/PFMS) → how the condition row should look. */
+const CONDITION_STATUS_DISPLAY: Readonly<Record<number, ConditionStatusDisplay>> = {
+  1: { iconTier: 'pending-neutral', buttonLabel: 'Start Upload', showPreview: false },
+  2: { iconTier: 'pending-active', buttonLabel: 'Continue Uploading', showPreview: true },
+  3: { iconTier: 'success', buttonLabel: 'Submitted', showPreview: true },
+  4: { iconTier: 'warning', buttonLabel: 'Reupload', showPreview: true },
+  5: { iconTier: 'success', buttonLabel: 'Approved by State', showPreview: true },
+  6: { iconTier: 'warning', buttonLabel: 'Reupload', showPreview: true },
+  7: { iconTier: 'success', buttonLabel: 'Approved by MoHUA', showPreview: true },
+};
 
 const SCENARIOS: WhatIfScenario[] = [
   {
@@ -90,6 +111,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         route: null,
       },
       {
+        id: 'unspent-balance',
+        title: '14th FC Unspent Balance',
+        subtitle: 'Status will be displayed once the State uploads this information',
+        status: 'Awaiting State Upload',
+        actionLabel: null,
+        route: null,
+      },
+      {
         id: 'audited-statement',
         title: 'Audited Financial Statement FY 2024–25',
         subtitle: 'Upload Audited Annual Financial Statements signed/stamped by the auditor (CA, LFAD, or CAG)',
@@ -107,11 +136,11 @@ const CONDITION_GROUPS: ConditionGroup[] = [
       },
       // {
       //   id: 'unspent-balance',
-      //   title: 'FC Unspent Balance Disclosure',
-      //   subtitle: 'Declare unspent grant balances from 14th and 15th Finance Commission periods',
-      //   status: 'pending',
-      //   actionLabel: 'Fill Disclosure',
-      //   route: 'fill-disclosure',
+      //   title: '14th FC Unspent Balance',
+      //   subtitle: 'Status will be displayed once the State uploads this information.',
+      //   status: 'Awaiting State Upload',
+      //   actionLabel: null,
+      //   route: null,
       // },
       {
         id: 'xvi-fc-bank-account',
@@ -224,32 +253,37 @@ export class UlbFormsComponent implements OnInit {
   resolveStatus(condition: Condition): 'complete' | 'pending' | 'locked' | 'Awaiting State Upload' {
     const status = this.sectionFormStatus();
     if (status) {
-      if (condition.id === 'audited-statement') {
-        return status.auditedData.form_status === 'UNDER_REVIEW_BY_STATE' ? 'complete' : 'pending';
-      }
-      if (condition.id === 'provisional-statement') {
-        return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE' ? 'complete' : 'pending';
-      }
-      if (condition.id === 'unspent-balance') {
-        return status.unspentBalanceDisclosure.form_status === 'SUBMITTED' ? 'complete' : 'pending';
-      }
-      if (condition.id === 'xvi-fc-bank-account') {
-        return this.isPfmsSubmittedStatus(status.xviFcBankAccount?.form_status) ? 'complete' : 'pending';
-      }
+      const display = this.conditionStatusDisplay(condition);
+      if (display) return display.iconTier === 'success' ? 'complete' : 'pending';
     }
     return condition.status;
   }
 
-  isSubmitted(condition: Condition): boolean {
-    const status = this.sectionFormStatus();
-    if (!status) return false;
-    if (condition.id === 'audited-statement') return status.auditedData.form_status === 'UNDER_REVIEW_BY_STATE';
-    if (condition.id === 'provisional-statement') return status.unauditedData.form_status === 'UNDER_REVIEW_BY_STATE';
-    if (condition.id === 'unspent-balance') return status.unspentBalanceDisclosure.form_status === 'SUBMITTED';
-    if (condition.id === 'xvi-fc-bank-account') {
-      return this.isPfmsSubmittedStatus(status.xviFcBankAccount?.form_status);
-    }
+  isNumericStatusCondition(condition: Condition): boolean {
+    return NUMERIC_STATUS_CONDITION_IDS.has(condition.id);
+  }
+
+  /** Live form_status_id-driven icon/label/preview for Audited, Provisional, and PFMS — null until data loads. */
+  conditionStatusDisplay(condition: Condition): ConditionStatusDisplay | null {
+    const id = this.formStatusIdFor(condition);
+    return id === null ? null : (CONDITION_STATUS_DISPLAY[id] ?? null);
+  }
+
+  actionLabelFor(condition: Condition): string {
+    return condition.actionLabel ?? '';
+  }
+
+  isSubmitted(): boolean {
     return false;
+  }
+
+  private formStatusIdFor(condition: Condition): number | null {
+    const status = this.sectionFormStatus();
+    if (!status) return null;
+    if (condition.id === 'audited-statement') return status.auditedData.form_status_id;
+    if (condition.id === 'provisional-statement') return status.unauditedData.form_status_id;
+    if (condition.id === 'xvi-fc-bank-account') return status.xviFcBankAccount?.form_status_id ?? null;
+    return null;
   }
 
   severityColor(scenario: WhatIfScenario): string {
@@ -266,10 +300,6 @@ export class UlbFormsComponent implements OnInit {
 
   navigateTo(route: string): void {
     this.router.navigate([route], { relativeTo: this.activatedRoute.parent });
-  }
-
-  private isPfmsSubmittedStatus(status: FormStatusType | null | undefined): boolean {
-    return status != null && status !== FORM_STATUS.NO_STATUS && status !== FORM_STATUS.NOT_STARTED;
   }
 
   private resolveUlbId(): string | null {

@@ -1299,4 +1299,39 @@ describe('SfcStatusComponent', () => {
     expect(ctrl.hasError('serverCode')).toBeFalse();
     expect(ctrl.hasError('clientError')).toBeTrue();
   }));
+
+  // ─── hasUnsavedChanges (read by unsavedChangesGuard / beforeunload) ────────
+
+  describe('hasUnsavedChanges', () => {
+    it('is false right after the form loads', fakeAsync(() => {
+      createComponent();
+      completeInitialLoad();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    }));
+
+    it('is true once the user edits a field', fakeAsync(() => {
+      createComponent();
+      completeInitialLoad();
+
+      getControl('isActiveSfc')!.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    }));
+
+    it('is false when the form is dirty but the page is read-only (canEdit is false)', fakeAsync(() => {
+      getSfcStatusFormSpy.and.returnValue(
+        of({
+          ...createSfcFormResponse(),
+          permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+        }),
+      );
+      createComponent();
+      completeInitialLoad();
+
+      component.form.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    }));
+  });
 });

@@ -7,12 +7,17 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { FcUnspentDeclarationService } from '../../fc-unspent-declaration.service';
 import { FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { buildUlbOptionsCacheKey, FcUnspentUlbOptionsCacheService } from '../../fc-unspent-ulb-options-cache.service';
+import { formatCrore, formatCroreFull } from '../../fc-unspent-declaration.utils';
 
 export interface UlbPickerDialogData {
   stateId: string;
   yearId: string;
   /** ulbIds already selected by other rows in the current session — disabled in the results list. */
   excludeUlbIds: string[];
+  /** Backend-composed explanation of why the Devolution dependency is currently blocking something
+   *  (`FcUnspentDevolutionDependency.blockingMessage`). Shown in place of the generic empty-state
+   *  text whenever non-null — the same condition the parent page's own banner uses. */
+  blockingMessage: string | null;
 }
 
 const ULB_PICKER_PAGE_SIZE = 20;
@@ -35,6 +40,9 @@ const ULB_PICKER_PAGE_SIZE = 20;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UlbPickerDialogComponent implements OnInit {
+  readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
+
   private readonly service = inject(FcUnspentDeclarationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialogRef = inject(MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption[]>);

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { unsavedChangesGuard } from '../../../core/guards/unsaved-changes.guard';
 
 type DeferredStateRoute = Readonly<{
   path: string;
@@ -13,12 +14,18 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   },
   {
     path: 'dashboard',
-    loadComponent: () =>
-      import('./state-dashboard/state-dashboard.component').then((m) => m.StateDashboardComponent),
+    loadComponent: () => import('./state-dashboard/state-dashboard.component').then((m) => m.StateDashboardComponent),
   },
   {
     path: 'ulb-submissions',
     loadComponent: () => import('./ulb-submissions/ulb-submissions.component').then((m) => m.UlbSubmissionsComponent),
+  },
+  {
+    path: 'ulb-submissions/:ulbId/review',
+    loadComponent: () =>
+      import('./ulb-submissions/annual-account-review/annual-account-review.component').then(
+        (m) => m.AnnualAccountReviewComponent,
+      ),
   },
   {
     path: 'insights',
@@ -31,11 +38,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'sfc-status',
     loadComponent: () => import('./sfc-status/sfc-status.component').then((m) => m.SfcStatusComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-status',
     loadComponent: () =>
       import('./elected-body-status/elected-body-status.component').then((m) => m.ElectedBodyStatusComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-post-update',
@@ -43,11 +52,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
       import('./elected-body-status/pages/post-update/eulb-post-update.component').then(
         (m) => m.EulbPostUpdateComponent,
       ),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
-    path: 'devolution-formula',
+    path: 'ulb-wise-allocation',
     loadComponent: () =>
       import('./devolution-formula/devolution-formula.component').then((m) => m.DevolutionFormulaComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'special-infrastructure',
@@ -75,6 +86,7 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'register-ulb',
     loadComponent: () => import('./ulb-list/register-ulb/register-ulb.component').then((m) => m.RegisterUlbComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'ulb-list',
@@ -83,9 +95,24 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'fc-unspent-declaration',
     loadComponent: () =>
-      import('./fc-unspent-declaration/fc-unspent-declaration.component').then(
-        (m) => m.FcUnspentDeclarationComponent,
-      ),
+      import('./fc-unspent-declaration/fc-unspent-declaration.component').then((m) => m.FcUnspentDeclarationComponent),
+    canDeactivate: [unsavedChangesGuard],
+  },
+  {
+    path: 'claim-letter',
+    loadComponent: () => import('./claim-letter/claim-letter-list.component').then((m) => m.ClaimLetterListComponent),
+  },
+  // 'new' must be declared before the ':claimLetterId' param route below — Angular matches routes in
+  // declaration order, and a param segment would otherwise swallow the literal 'new' path first.
+  {
+    path: 'claim-letter/new',
+    loadComponent: () =>
+      import('./claim-letter/detail/claim-letter-detail.component').then((m) => m.ClaimLetterDetailComponent),
+  },
+  {
+    path: 'claim-letter/:claimLetterId',
+    loadComponent: () =>
+      import('./claim-letter/detail/claim-letter-detail.component').then((m) => m.ClaimLetterDetailComponent),
   },
 ];
 

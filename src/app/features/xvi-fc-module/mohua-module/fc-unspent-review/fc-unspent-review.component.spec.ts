@@ -11,7 +11,12 @@ import { UtilityService } from '../../../../core/services/utility.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { FcUnspentMohuaReviewComponent } from './fc-unspent-review.component';
 import { FcUnspentMohuaReviewService } from './fc-unspent-review.service';
-import { FcUnspentMohuaReviewData, FcUnspentMohuaRow, FcUnspentMohuaRowsResult } from './fc-unspent-review.models';
+import {
+  FcUnspentMohuaReviewData,
+  FcUnspentMohuaRow,
+  FcUnspentMohuaRowsResult,
+  ROW_STATUS,
+} from './fc-unspent-review.models';
 
 function makeReview(overrides: Partial<FcUnspentMohuaReviewData> = {}): FcUnspentMohuaReviewData {
   return {
@@ -46,7 +51,7 @@ function makeRow(overrides: Partial<FcUnspentMohuaRow> = {}): FcUnspentMohuaRow 
     unspentAmount: 1.5,
     allocationPerc: 7.5,
     eligibility: true,
-    rowStatus: 'update_pending',
+    rowStatus: ROW_STATUS.UPDATE_PENDING,
     rejectionRemark: null,
     permissions: { canApprove: true, canReject: true },
     ...overrides,
@@ -175,7 +180,7 @@ describe('FcUnspentMohuaReviewComponent', () => {
 
   it('keeps eligibility and row status visually distinct badges', () => {
     configure('state-1');
-    getRowsSpy.and.returnValue(of(rowsResult([makeRow({ eligibility: true, rowStatus: 'rejected' })])));
+    getRowsSpy.and.returnValue(of(rowsResult([makeRow({ eligibility: true, rowStatus: ROW_STATUS.REJECTED })])));
     fixture.detectChanges();
 
     const badges = fixture.debugElement.queryAll(By.css('tbody .badge'));
@@ -205,7 +210,9 @@ describe('FcUnspentMohuaReviewComponent', () => {
     component.rowsPage.set(3);
     component.toggleRow(makeRow());
 
-    component.filterForm.controls.rowStatus.setValue('rejected');
+    // Native <select> FormControls always carry a string value, even though ROW_STATUS is
+    // numeric — String(...) documents that intentionally rather than hardcoding the magic string.
+    component.filterForm.controls.rowStatus.setValue(String(ROW_STATUS.REJECTED));
 
     expect(component.rowsPage()).toBe(1);
     expect(component.selectedCount()).toBe(0);

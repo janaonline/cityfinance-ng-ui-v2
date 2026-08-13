@@ -28,11 +28,6 @@ interface OcrMethodOption {
   label: string;
 }
 
-interface GeminiModelOption {
-  value: string;
-  label: string;
-}
-
 interface BooleanOption {
   value: boolean;
   label: string;
@@ -71,13 +66,7 @@ export class UploadFileOcrComponent implements OnInit {
     { value: 'tesseract', label: 'Tesseract' },
     { value: 'gemini_vision', label: 'Gemini Vision' },
   ];
-  readonly geminiModels: GeminiModelOption[] = [
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite Preview' },
-    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
-    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
-  ];
+  readonly geminiModels: SelectOption[] = this.ocrService.models.map(({ value, label }) => ({ value, label }));
   readonly orientationCheckOptions: BooleanOption[] = [
     { value: false, label: 'False' },
     { value: true, label: 'True' },

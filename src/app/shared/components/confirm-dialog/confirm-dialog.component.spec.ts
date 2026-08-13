@@ -1,7 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
-import { CANCEL_CONFIRM_DIALOG_DEFAULTS, ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog.component';
+import { MATERIAL_THEME_CLASS } from '../../../core/theming/material-theme.providers';
+import {
+  CANCEL_CONFIRM_DIALOG_DEFAULTS,
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+  resolveThemeClass,
+  themedDialogConfig,
+} from './confirm-dialog.component';
 
 function setup(data: ConfirmDialogData): {
   fixture: ComponentFixture<ConfirmDialogComponent>;
@@ -185,6 +192,50 @@ describe('ConfirmDialogComponent', () => {
       cancelBtn.triggerEventHandler('click', null);
 
       expect(dialogRef.close).toHaveBeenCalledOnceWith(false);
+    });
+  });
+});
+
+describe('resolveThemeClass / themedDialogConfig', () => {
+  function withThemeClass(themeClass: string | null): void {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MATERIAL_THEME_CLASS, useValue: themeClass }],
+    });
+  }
+
+  describe('resolveThemeClass', () => {
+    it('returns the ambient theme class when one is provided', () => {
+      withThemeClass('xvifc-theme');
+
+      const result = TestBed.runInInjectionContext(() => resolveThemeClass());
+
+      expect(result).toBe('xvifc-theme');
+    });
+
+    it('returns null outside a themed scope', () => {
+      withThemeClass(null);
+
+      const result = TestBed.runInInjectionContext(() => resolveThemeClass());
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('themedDialogConfig', () => {
+    it('returns a MatDialogConfig with panelClass set to the ambient theme class', () => {
+      withThemeClass('xvifc-theme');
+
+      const result = TestBed.runInInjectionContext(() => themedDialogConfig());
+
+      expect(result).toEqual({ panelClass: 'xvifc-theme' });
+    });
+
+    it('returns undefined outside a themed scope', () => {
+      withThemeClass(null);
+
+      const result = TestBed.runInInjectionContext(() => themedDialogConfig());
+
+      expect(result).toBeUndefined();
     });
   });
 });

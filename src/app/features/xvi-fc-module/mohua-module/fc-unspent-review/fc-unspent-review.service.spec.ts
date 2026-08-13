@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from '../../../../../environments/environment';
 import { FcUnspentMohuaReviewService } from './fc-unspent-review.service';
-import { FcUnspentApiResponse, FcUnspentMohuaReviewData, FcUnspentMohuaRow } from './fc-unspent-review.models';
+import { FcUnspentApiResponse, FcUnspentMohuaReviewData, FcUnspentMohuaRow, ROW_STATUS } from './fc-unspent-review.models';
 
 const BASE_URL = `${environment.api.url2}xvi-fc/mohua/fc-unspent-declaration/`;
 
@@ -35,7 +35,7 @@ const sampleRow: FcUnspentMohuaRow = {
   unspentAmount: 1.5,
   allocationPerc: 7.5,
   eligibility: true,
-  rowStatus: 'update_pending',
+  rowStatus: ROW_STATUS.UPDATE_PENDING,
   rejectionRemark: null,
   permissions: { canApprove: true, canReject: true },
 };
@@ -94,14 +94,20 @@ describe('FcUnspentMohuaReviewService', () => {
 
     it('sends search/page/limit/rowStatus/eligibility as query params', () => {
       service
-        .getRows('state-1', 'year-1', { search: 'nagar', page: 2, limit: 50, rowStatus: 'rejected', eligibility: true })
+        .getRows('state-1', 'year-1', {
+          search: 'nagar',
+          page: 2,
+          limit: 50,
+          rowStatus: ROW_STATUS.REJECTED,
+          eligibility: true,
+        })
         .subscribe();
 
       const req = httpMock.expectOne((r) => r.url === url);
       expect(req.request.params.get('search')).toBe('nagar');
       expect(req.request.params.get('page')).toBe('2');
       expect(req.request.params.get('limit')).toBe('50');
-      expect(req.request.params.get('rowStatus')).toBe('rejected');
+      expect(req.request.params.get('rowStatus')).toBe(String(ROW_STATUS.REJECTED));
       expect(req.request.params.get('eligibility')).toBe('true');
       req.flush({ success: true, message: 'OK', data: { rows: [] }, meta: { page: 2, limit: 50, total: 0 } });
     });

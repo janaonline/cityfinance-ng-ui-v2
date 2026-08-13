@@ -16,7 +16,7 @@ describe('EULB row edit helpers', () => {
   it('narrows known elected body status values', () => {
     expect(isEulbBodyStatus('Constituted')).toBeTrue();
     expect(isEulbBodyStatus('Not Constituted')).toBeTrue();
-    expect(isEulbBodyStatus('Exempt')).toBeTrue();
+    expect(isEulbBodyStatus('6th Schedule')).toBeTrue();
     expect(isEulbBodyStatus('Pending')).toBeFalse();
     expect(isEulbBodyStatus(null)).toBeFalse();
   });
@@ -50,7 +50,7 @@ describe('EULB row edit helpers', () => {
   it('resolves edit date constraints from direct field config before validation config', () => {
     const field: ConditionalFieldConfig = {
       key: 'dateOfConstitution',
-      label: 'Date of Constitution',
+      label: 'Date on which the elected body is in place.',
       formFieldType: 'date',
       minDate: '2026-01-05',
       maxDate: '2026-12-31',

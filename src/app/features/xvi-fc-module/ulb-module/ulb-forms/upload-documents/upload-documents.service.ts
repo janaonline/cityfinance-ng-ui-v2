@@ -2,12 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import type { ActionGate } from '../../../../../shared/components/document-action-row/document-action-row.types';
 import type { UploadDocumentDef, UploadPageConfig } from './upload-documents.component';
 
 interface ApiFieldConfig {
   key: string;
   label: string;
   placeholder?: string;
+  required?: boolean;
   allowedFileTypes?: string[];
   maxFileSize?: number;
   validations?: Array<{ name: string; validator: unknown; message: string }>;
@@ -22,6 +24,7 @@ interface UploadConfigApiData {
     documentYear: string;
   };
   data: ApiFieldConfig[];
+  actionGates?: ActionGate[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -50,11 +53,13 @@ export class UploadDocumentsService {
       confirmLabel: apiData.meta.confirmLabel,
       documentYearId: apiData.meta.documentYearId,
       documentYear: apiData.meta.documentYear,
+      actionGates: apiData.actionGates ?? [],
       documents: apiData.data.map(
         (field): UploadDocumentDef => ({
           id: field.key,
           title: field.label,
           subtitle: field.placeholder ?? '',
+          required: field.required !== false,
           allowedFileTypes: field.allowedFileTypes ?? ['pdf'],
           maxFileSize: field.maxFileSize ?? 50,
           minPages: field.validations?.find((v) => v.name === 'minPages')?.validator as number | undefined,

@@ -64,6 +64,9 @@ export interface BenchmarkFieldValue {
   seal_present?: boolean | null;
   signature_present?: boolean | null;
   table_present?: boolean | null;
+  audit_date_present?: boolean | null;
+  doc_quality_good?: boolean | null;
+  final_status?: string | null;
 }
 
 export interface BenchmarkRow {
@@ -122,6 +125,9 @@ export interface EvalExtractedValue {
   seal_present?: boolean | null;
   signature_present?: boolean | null;
   table_present?: boolean | null;
+  audited_date?: string | null;
+  pdf_quality_status?: string | null;
+  document_status?: string | null;
 }
 
 export interface EvalFieldMatch {
@@ -132,6 +138,9 @@ export interface EvalFieldMatch {
   seal_present: boolean | null;
   signature_present: boolean | null;
   table_present: boolean | null;
+  audit_date_present: boolean | null;
+  doc_quality_good: boolean | null;
+  final_status: boolean | null;
   overall: boolean;
 }
 
@@ -186,9 +195,19 @@ export class OcrService {
 
   readonly models: ModelOption[] = [
     {
+      value: 'gemini-3.6-flash',
+      label: 'Gemini 3.6 Flash',
+      pricing: { inputPerM: 1.5, outputPerM: 7.5, thinkingPerM: 7.5 },
+    },
+    {
       value: 'gemini-3.5-flash',
       label: 'Gemini 3.5 Flash',
       pricing: { inputPerM: 1.5, outputPerM: 9.0, thinkingPerM: 9.0 },
+    },
+    {
+      value: 'gemini-3.5-flash-lite',
+      label: 'Gemini 3.5 Flash-Lite',
+      pricing: { inputPerM: 0.3, outputPerM: 2.5, thinkingPerM: 2.5 },
     },
     {
       value: 'gemini-3.1-flash-lite',
@@ -242,6 +261,11 @@ export class OcrService {
     { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
     { value: 'RECEIPTS_AND_PAYMENTS', label: 'Receipts and Payments' },
     { value: 'UNKNOWN', label: 'Unknown' },
+  ];
+
+  readonly auditTypes: SelectOption[] = [
+    { value: 'AUDITED', label: 'Audited' },
+    { value: 'UNAUDITED', label: 'Unaudited / Provisional' },
   ];
 
   readonly financialYears: SelectOption[] = [
@@ -326,6 +350,7 @@ export class OcrService {
     enableOrientationCheck?: boolean,
     enableFinancialValidation?: boolean,
     enableQualityCheck?: boolean,
+    auditType?: string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -347,6 +372,7 @@ export class OcrService {
     if (enableQualityCheck !== undefined) {
       formData.append('enable_quality_check', String(enableQualityCheck));
     }
+    if (auditType) formData.append('audit_type', auditType);
     return this.http.post<OcrValidationJobSubmitResponse>(environment.api.url3 + 'ocr-validation/jobs', formData);
   }
 
@@ -359,6 +385,7 @@ export class OcrService {
     docType?: string | null,
     enableOrientationCheck?: boolean,
     enableFinancialValidation?: boolean,
+    auditType?: string | null,
   ) {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
@@ -374,6 +401,7 @@ export class OcrService {
     if (enableFinancialValidation !== undefined) {
       formData.append('enable_financial_validation', String(enableFinancialValidation));
     }
+    if (auditType) formData.append('audit_type', auditType);
     return this.http.post<OcrValidationBatchSubmitResponse>(
       environment.api.url3 + 'ocr-validation/jobs/batch',
       formData,

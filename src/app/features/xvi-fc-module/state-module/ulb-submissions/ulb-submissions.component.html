@@ -1,1 +1,152 @@
-<p>ulb-submissions works!</p>
+<main class="container-fluid px-3 px-md-4 px-xl-5 py-4 py-lg-5">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+        <h1 class="page-title mb-0">Review ULB Submissions</h1>
+        <span class="badge rounded-pill fy-badge">{{ yearLabel() }}</span>
+        <span class="badge rounded-pill form-wise-badge ms-auto ms-md-0">Form-wise Review</span>
+    </div>
+
+    <p class="page-subtitle text-secondary mb-4">
+        {{ stateName() || '—' }} &middot; {{ grandTotal() }} ULBs total &middot; Basic Grants
+    </p>
+
+    <form [formGroup]="filterForm" class="d-flex flex-nowrap align-items-center gap-3 mb-4">
+        @for (item of filterSelects; track item.key) {
+        <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+            <mat-label>{{ item.label }}</mat-label>
+            <mat-select [id]="item.id" [formControlName]="item.key" [attr.aria-label]="item.ariaLabel">
+                @for (opt of item.options; track opt.value) {
+                <mat-option [value]="opt.value" [disabled]="opt.live === false">{{ opt.label }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+            <i matPrefix class="bi bi-search mx-2 text-secondary"></i>
+            <input matInput formControlName="search" placeholder="Search ULB name..."
+                aria-label="Search ULB name" />
+        </mat-form-field>
+    </form>
+
+    @if (isSelectedFormLive()) {
+    <div class="stat-cards mb-4">
+        @for (card of statCards(); track card.key) {
+        <button type="button" class="stat-card" [class]="'stat-card--' + card.key"
+            [class.stat-card--active]="selectedBucketKey() === card.key" (click)="selectBucket(card.key)">
+            <span class="stat-card__icon"><i [class]="'bi bi-' + card.icon"></i></span>
+            <span class="stat-card__count">{{ card.count }}</span>
+            <span class="stat-card__label">{{ card.label }}</span>
+            <span class="stat-card__percent">{{ card.percent }}% &middot; of {{ grandTotal() }}</span>
+        </button>
+        }
+    </div>
+    }
+
+    <div class="card border-0 shadow-sm" [@bucketSlide]="selectedBucketIndex()">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                <div>
+                    <h2 class="h6 fw-bold mb-1">{{ selectedFormLabel() }} &mdash; All ULBs</h2>
+                    <p class="text-secondary small mb-0">Select ULBs and use bulk actions, or click Review on
+                        individual rows.</p>
+                </div>
+
+                @if (isSelectedFormLive() && !hasNothingToReviewYet()) {
+                <div class="d-flex flex-wrap gap-2 bulk-actions">
+                    <button type="button" matButton="outlined" class="text-success"
+                        [disabled]="!selection.hasValue() || isBulkActionPending()" (click)="approveSelected()">
+                        <i class="bi bi-check2-circle me-1"></i>Approve all remaining
+                    </button>
+                </div>
+                }
+            </div>
+
+            @if (!isSelectedFormLive()) {
+            <p class="text-center text-secondary py-5 mb-0">Review for {{ selectedFormLabel() }} isn't available yet.
+            </p>
+            } @else {
+
+            <div class="table-top-accent"></div>
+            <div class="table-responsive">
+                <table mat-table [dataSource]="rows()" matSort [matSortActive]="sortField()"
+                    [matSortDirection]="sortDirection()" (matSortChange)="onSortChange($event)" class="w-100">
+                    <ng-container matColumnDef="select">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <mat-checkbox (change)="$event ? masterToggle() : null" [checked]="isAllSelected()"
+                                [indeterminate]="selection.hasValue() && !isAllSelected()"
+                                [disabled]="!reviewableRows().length"
+                                aria-label="Select all reviewable ULBs"></mat-checkbox>
+                        </th>
+                        <td mat-cell *matCellDef="let row">
+                            <mat-checkbox (click)="$event.stopPropagation()"
+                                (change)="$event ? selection.toggle(row) : null" [checked]="selection.isSelected(row)"
+                                [disabled]="!isRowReviewable(row)"
+                                [attr.aria-label]="'Select ' + row.ulbName"></mat-checkbox>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="ulbName">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header="ulbName">ULB Name</th>
+                        <td mat-cell *matCellDef="let row"><span class="fw-semibold">{{ row.ulbName }}</span></td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="censusCode">
+                        <th mat-header-cell *matHeaderCellDef>Census Code</th>
+                        <td mat-cell *matCellDef="let row">{{ row.censusCode }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="daysPending">
+                        <th mat-header-cell *matHeaderCellDef>Days Pending</th>
+                        <td mat-cell *matCellDef="let row">
+                            @if (daysPending(row.lastUpdatedAt); as days) {
+                            <span class="badge rounded-pill days-pending-badge">{{ days }} days</span>
+                            } @else {
+                            <span class="text-secondary">&mdash;</span>
+                            }
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="formStatus">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header="formStatus">Form Status</th>
+                        <td mat-cell *matCellDef="let row">
+                            <span [class]="'badge rounded-pill status-badge ' + getStatusBadgeClass(row.formStatus)">
+                                {{ getStatusLabel(row.formStatus) }}
+                            </span>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="action">
+                        <th mat-header-cell *matHeaderCellDef>Action</th>
+                        <td mat-cell *matCellDef="let row">
+                            @if (getRowActionLabel(row); as label) {
+                            <button type="button" [matButton]="label === 'Review' ? 'filled' : 'outlined'"
+                                class="row-action-btn" (click)="onRowAction(row)">
+                                {{ label }}<i class="bi bi-chevron-right ms-1"></i>
+                            </button>
+                            } @else {
+                            <span class="text-secondary">&mdash;</span>
+                            }
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+                </table>
+
+                @if (isLoading()) {
+                <div class="d-flex justify-content-center py-5">
+                    <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                </div>
+                } @else if (!rows().length) {
+                <p class="text-center text-secondary py-5 mb-0">No ULBs found for the selected filters.</p>
+                }
+            </div>
+
+            <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="page() - 1"
+                [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)"
+                aria-label="Select page of ULB submissions"></mat-paginator>
+
+            }
+        </div>
+    </div>
+</main>

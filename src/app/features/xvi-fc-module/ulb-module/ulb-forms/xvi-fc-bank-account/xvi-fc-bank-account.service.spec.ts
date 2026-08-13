@@ -91,6 +91,7 @@ describe('XviFcBankAccountService', () => {
   it('submitBankAccount calls POST /xvi-fc/bank-account with proofFile only', () => {
     const payload: SubmitXviFcBankAccountPayload = {
       ulbId: 'ulb-id',
+      stateId: 'state-id',
       designYearId: 'year-id',
       ifscCode: 'SBIN0123456',
       accountNumber: '123456789012',
@@ -111,7 +112,7 @@ describe('XviFcBankAccountService', () => {
     req.flush({ success: true, data: responseRecord });
   });
 
-  it('getSignedUrls calls shared POST /s3/signed-url with an array payload', () => {
+  it('getSignedUrls calls shared POST /file/signed-url with an array payload', () => {
     const payload = [{
       fileName: 'cancelled-cheque.pdf',
       folder: 'xvi-fc/bank-account/ulb-id/year-id/proof',
@@ -126,7 +127,7 @@ describe('XviFcBankAccountService', () => {
 
     service.getSignedUrls(payload).subscribe((value) => (result = value));
 
-    const req = httpMock.expectOne(`${BASE_URL}s3/signed-url`);
+    const req = httpMock.expectOne(`${BASE_URL}file/signed-url`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
     req.flush({

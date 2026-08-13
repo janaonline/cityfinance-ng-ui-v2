@@ -1,4 +1,5 @@
 import { isUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
+import { getXviFcFieldErrorMessage, getXviFcRowErrorMessage } from '../../common/utils/xvi-fc-error-lookup.utils';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -6,6 +7,7 @@ import {
   DevolutionFileValue,
   DevolutionValidationSummary,
   DfRowUpdateApiError,
+  DfRowValidationError,
   DfRowValidationStatus,
   DfValidationStatus,
   UpdateDevolutionRowPayload,
@@ -93,6 +95,36 @@ export function extractValidationSummaryFromError(err: unknown): DevolutionValid
   return isDevolutionValidationSummary(summary) ? summary : null;
 }
 
+function isDfRowValidationErrorArray(value: unknown): value is DfRowValidationError[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item['rowNumber'] === 'number' &&
+        typeof item['field'] === 'string' &&
+        typeof item['code'] === 'string' &&
+        typeof item['message'] === 'string',
+    )
+  );
+}
+
+/**
+ * Safely extracts the typed per-row `rowErrors` array from the nested
+ * `err.error.data.rowErrors` path, as returned by a validate-excel/revalidate-excel 400 error
+ * (e.g. the new/unregistered-ULB or allocation-mismatch case, which can carry row errors
+ * alongside the file-level error). Returns null when the shape doesn't match.
+ */
+export function extractRowErrorsFromError(err: unknown): DfRowValidationError[] | null {
+  if (!isRecord(err)) return null;
+  const body = err['error'];
+  if (!isRecord(body)) return null;
+  const data = body['data'];
+  if (!isRecord(data)) return null;
+  const rowErrors = data['rowErrors'];
+  return isDfRowValidationErrorArray(rowErrors) ? rowErrors : null;
+}
+
 /** Returns true when a validate-excel HTTP error also carries previously saved row data. */
 export function hasPersistedValidationData(err: unknown): boolean {
   if (!isRecord(err)) return false;
@@ -134,9 +166,12 @@ export function buildDevolutionFinalSubmitPayloadData(
 
 /** Returns the backend message for a `newUlbsAdded` error on `excelFile`, or null when absent. */
 export function getRegisterUlbErrorMessage(errors: ApiErrorMap | undefined): string | null {
-  const excelErrors = errors?.['excelFile'] ?? [];
-  const registerError = excelErrors.find((error) => error.code === 'newUlbsAdded');
-  return registerError?.message ?? null;
+  return getXviFcFieldErrorMessage(errors, 'excelFile', 'newUlbsAdded');
+}
+
+/** Returns the message of the first row-level `duplicate` ULB error, or null when absent. */
+export function getDuplicateUlbMessage(rowErrors: DfRowValidationError[] | undefined): string | null {
+  return getXviFcRowErrorMessage(rowErrors, 'duplicate');
 }
 
 export function getDfValidationStatusLabel(status: DfValidationStatus): string {

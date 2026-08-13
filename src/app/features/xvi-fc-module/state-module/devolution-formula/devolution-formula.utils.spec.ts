@@ -7,6 +7,7 @@ import {
   extractValidationSummaryFromError,
   formatRupees,
   getDfValidationStatusLabel,
+  getDuplicateUlbMessage,
   getRegisterUlbErrorMessage,
   hasPersistedValidationData,
   isDfRowValidationStatus,
@@ -332,6 +333,31 @@ describe('getRegisterUlbErrorMessage', () => {
 
   it('returns null when errors is undefined', () => {
     expect(getRegisterUlbErrorMessage(undefined)).toBeNull();
+  });
+});
+
+// ─── getDuplicateUlbMessage ────────────────────────────────────────────────────
+
+describe('getDuplicateUlbMessage', () => {
+  it('returns the message of the first row error with code duplicate', () => {
+    const rowErrors = [
+      {
+        rowNumber: 2,
+        field: 'censusCode',
+        code: 'duplicate',
+        message: 'This ULB appears more than once in the uploaded Excel file.',
+      },
+    ];
+    expect(getDuplicateUlbMessage(rowErrors)).toBe('This ULB appears more than once in the uploaded Excel file.');
+  });
+
+  it('returns null when no row error has code duplicate', () => {
+    const rowErrors = [{ rowNumber: 1, field: 'censusCode', code: 'unknownUlb', message: 'ULB not found in registry.' }];
+    expect(getDuplicateUlbMessage(rowErrors)).toBeNull();
+  });
+
+  it('returns null when rowErrors is undefined', () => {
+    expect(getDuplicateUlbMessage(undefined)).toBeNull();
   });
 });
 

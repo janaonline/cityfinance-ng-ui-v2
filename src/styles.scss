@@ -87,6 +87,10 @@ $xvifc-theme-selector: xvifc_theme.$xvifc_theme_class;
   --fs-5: 1.125rem;
   --fs-6: 0.8125rem;
   --fs-7: 0.75rem;
+
+  // Real value is kept in sync at runtime by LayoutMetricsService (measures <app-header>'s
+  // rendered height via ResizeObserver). This is only the pre-measurement/no-JS fallback.
+  --app-header-height: 91px;
 }
 
 html,

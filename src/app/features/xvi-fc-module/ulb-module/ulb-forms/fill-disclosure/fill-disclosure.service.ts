@@ -71,7 +71,7 @@ export class FillDisclosureService {
   getSignedUrls(items: S3UrlItemDto[]): Observable<S3UrlResult[]> {
     return this.http
       .post<{ success: boolean; data: S3UrlResult[] } | S3UrlResult[]>(
-        `${this.baseUrl}s3/signed-url`,
+        `${this.baseUrl}file/signed-url`,
         items,
       )
       .pipe(map((res) => this.unwrap(res)));

@@ -82,6 +82,19 @@ export class EulbStatusService {
   }
 
   /**
+   * Fetches the "Elected Bodies List" declaration letter (Word doc) as a blob, generated on demand
+   * from the state's active elected-body row dataset. Returns HTTP 400 if there are no active rows,
+   * or if any active row has not passed validation.
+   * @param stateId - The state identifier.
+   * @param yearId - The finance commission year identifier.
+   */
+  downloadElectedBodiesListDocument(stateId: string, yearId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}${stateId}/${yearId}/elected-bodies-list-document`, {
+      responseType: 'blob',
+    });
+  }
+
+  /**
    * Saves the form data as a draft without final validation constraints.
    * @param payload - Draft payload including `stateId`, `yearId`, and partial form data.
    */
@@ -117,7 +130,7 @@ export class EulbStatusService {
    * Fetches a paginated, filterable list of uploaded EULB rows.
    * @param stateId - The state identifier.
    * @param yearId - The finance commission year identifier.
-   * @param query - Optional filters: `page`, `limit`, `search`, `validationStatus`, `rowType`, `errorField`.
+   * @param query - Optional filters: `page`, `limit`, `search`, `validationStatus`, `errorField`.
    */
   getRows(stateId: string, yearId: string, query: EulbRowsQuery = {}): Observable<EulbRowsApiResponse> {
     let params = new HttpParams();
@@ -125,7 +138,6 @@ export class EulbStatusService {
     if (query.limit !== undefined) params = params.set('limit', String(query.limit));
     if (query.search) params = params.set('search', query.search);
     if (query.validationStatus) params = params.set('validationStatus', query.validationStatus);
-    if (query.rowType) params = params.set('rowType', query.rowType);
     if (query.errorField) params = params.set('errorField', query.errorField);
 
     return this.http

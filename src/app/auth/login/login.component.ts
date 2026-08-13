@@ -468,7 +468,13 @@ export class LoginComponent implements OnInit, OnDestroy {
           void this.loginService.navigateAfterLogin(user, this.typeKey());
         },
         error: (err: { error?: { message?: string } }) => {
-          this.errorMessage.set(err?.error?.message ?? 'Invalid credentials. Please try again.');
+          const message = err?.error?.message;
+          // Cantonment-Board ULBs get sent straight to the dedicated not-eligible page instead of an inline error.
+          if (message === 'Cantonment boards are not eligible for XVIFC') {
+            void this.router.navigate(['/xvifc-not-eligible']);
+            return;
+          }
+          this.errorMessage.set(message ?? 'Invalid credentials. Please try again.');
         },
       });
   }

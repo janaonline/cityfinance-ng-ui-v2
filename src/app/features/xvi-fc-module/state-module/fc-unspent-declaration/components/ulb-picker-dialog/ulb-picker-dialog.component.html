@@ -31,7 +31,9 @@
         </button>
       </div>
     } @else if (!options().length) {
-      <div class="text-center py-5 text-secondary small">No ULBs found for the current search.</div>
+      <div class="text-center py-5 text-secondary small">
+        {{ data.blockingMessage || 'No ULBs found for the current search.' }}
+      </div>
     } @else {
       <table class="table table-sm table-hover align-middle mb-0 ulb-picker-table">
         <thead class="table-light border-bottom">
@@ -52,7 +54,9 @@
             >
               <td class="ps-3 small">{{ option.ulbName }}</td>
               <td class="small">{{ option.censusCode ?? option.sbCode ?? '—' }}</td>
-              <td class="small text-end">{{ option.allocationAmount }}</td>
+              <td class="small text-end" [title]="formatCroreFull(option.allocationAmount)">
+                {{ formatCrore(option.allocationAmount) }}
+              </td>
               <td class="text-end pe-3">
                 <div class="d-inline-flex align-items-center justify-content-end gap-2">
                   @if (isExcluded(option.ulbId)) {

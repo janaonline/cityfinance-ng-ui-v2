@@ -155,7 +155,7 @@ export class StateDashboardComponent implements OnInit {
     if (this.navigateToApiRoute(task.route)) return;
 
     if (task.key === 'devolution-formula') {
-      void this.router.navigate(['../devolution-formula'], { relativeTo: this.route });
+      void this.router.navigate(['../ulb-wise-allocation'], { relativeTo: this.route });
       return;
     }
 

@@ -9,17 +9,23 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import FileSaver from 'file-saver';
 import { filter, finalize, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../core/guards/unsaved-changes.guard';
 import {
   ConfirmDialogData,
+  resolveThemeClass,
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { withSupportingActionState } from '../../../../shared/dynamic-form/supporting-action-state';
 import { normalizeUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   ConditionalFieldConfig,
@@ -43,6 +49,7 @@ import {
   DevolutionRowsDialogResult,
   DevolutionValidationSummary,
   DfInstallment,
+  DfRowValidationStatus,
   FinalSubmitDevolutionPayload,
   SaveDraftDevolutionPayload,
   SubmitType,
@@ -54,6 +61,7 @@ import {
   buildDevolutionFinalSubmitPayloadData,
   extractApiErrorResponse,
   extractValidationSummaryFromError,
+  getDuplicateUlbMessage,
   getHttpStatus,
   getRegisterUlbErrorMessage,
   hasDevolutionFileRef,
@@ -85,7 +93,7 @@ const DF_SUPPORTING_ACTION = {
   templateUrl: './devolution-formula.component.html',
   styleUrl: './devolution-formula.component.scss',
 })
-export class DevolutionFormulaComponent implements OnInit {
+export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivate {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utilityService = inject(UtilityService);
@@ -93,7 +101,11 @@ export class DevolutionFormulaComponent implements OnInit {
   private readonly visibilityService = inject(DynamicFormVisibilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly dialog = inject(MatDialog);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
+  /** Raw theme class for the rows dialog opened directly via `MatDialog` (needs a custom
+   *  panelClass array alongside its own fixed class, not `dialogConfig`'s single panelClass). */
+  private readonly themeClass = resolveThemeClass();
   private readonly dfService = inject(DevolutionFormulaService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly router = inject(Router);
@@ -139,6 +151,30 @@ export class DevolutionFormulaComponent implements OnInit {
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
+  /**
+   * `visibleFields()` with the excelFile download actions' `loading`/`loadingLabel` overridden
+   * from this component's own `isDownloading*` signals, so the supporting-content button shows a
+   * spinner while its request is in flight. Bound in the template in place of `visibleFields()`.
+   */
+  readonly effectiveVisibleFields = computed<ConditionalFieldConfig[]>(() =>
+    this.visibleFields().map((field) =>
+      field.key === 'excelFile'
+        ? withSupportingActionState(field, [
+            {
+              actionId: DF_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
+              loading: this.isDownloadingTemplate(),
+              loadingLabel: 'Downloading template…',
+            },
+            {
+              actionId: DF_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET,
+              loading: this.isDownloadingErrorSheet(),
+              loadingLabel: 'Downloading error sheet…',
+            },
+          ])
+        : field,
+    ),
+  );
+
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
   /** Tracks error codes injected per field by the most recent failed API response. */
   private readonly serverErrorKeys = new Map<string, string[]>();
@@ -172,8 +208,18 @@ export class DevolutionFormulaComponent implements OnInit {
     return this.moduleService.yearId() ?? '';
   }
 
+  constructor() {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. A disabled (read-only)
+   *  form is never dirty, so this is automatically `false` when `canEdit` is `false`. */
+  hasUnsavedChanges(): boolean {
+    return this.canEdit() && this.form.dirty;
   }
 
   /**
@@ -205,7 +251,7 @@ export class DevolutionFormulaComponent implements OnInit {
 
     if (!stateId || !yearId) {
       this.utilityService.triggerSnackbar(
-        'Unable to load Devolution Formula form. Please try again.',
+        'Unable to load ULB-wise Allocation form. Please try again.',
         'snackbar-danger',
       );
       return;
@@ -238,7 +284,7 @@ export class DevolutionFormulaComponent implements OnInit {
         error: () => {
           this.isHydratingForm = false;
           this.utilityService.triggerSnackbar(
-            'Unable to load Devolution Formula form. Please try again.',
+            'Unable to load ULB-wise Allocation form. Please try again.',
             'snackbar-danger',
           );
           this.isLoading.set(false);
@@ -354,7 +400,8 @@ export class DevolutionFormulaComponent implements OnInit {
             this.utilityService.triggerSnackbar('Excel validated successfully.');
           } else {
             this.utilityService.triggerSnackbar(
-              'Excel validation completed with errors. Please review uploaded data.',
+              getDuplicateUlbMessage(res.data.rowErrors) ??
+                'Excel validation completed with errors. Please review uploaded data.',
               'snackbar-danger',
             );
           }
@@ -363,7 +410,9 @@ export class DevolutionFormulaComponent implements OnInit {
         error: (err: unknown) => {
           const response = extractApiErrorResponse(err);
           this.utilityService.triggerSnackbar(
-            response?.message ?? 'Excel validation failed. Please try again.',
+            getRegisterUlbErrorMessage(response?.errors) ??
+              response?.message ??
+              'Excel validation failed. Please try again.',
             'snackbar-danger',
           );
 
@@ -373,7 +422,8 @@ export class DevolutionFormulaComponent implements OnInit {
             this.validationSummary.set(summary);
           }
 
-          if (hasPersistedValidationData(err)) {
+          const persisted = hasPersistedValidationData(err);
+          if (persisted) {
             if (response?.errors) {
               this.applyApiErrors(response.errors);
               this.pendingPostReloadErrors = response.errors;
@@ -382,8 +432,6 @@ export class DevolutionFormulaComponent implements OnInit {
           } else if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
-
-          this.notifyRegisterUlbError(response?.errors);
         },
       });
   }
@@ -417,7 +465,6 @@ export class DevolutionFormulaComponent implements OnInit {
   private confirmAndDeleteExcel(): void {
     this.isDeleteExcelDialogOpen = true;
 
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     const dialogData: ConfirmDialogData = {
       title: 'Remove uploaded Excel?',
       message:
@@ -429,7 +476,7 @@ export class DevolutionFormulaComponent implements OnInit {
     };
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -503,7 +550,9 @@ export class DevolutionFormulaComponent implements OnInit {
         this.downloadTemplate();
         return;
       case DF_SUPPORTING_ACTION.VIEW_UPLOADED_DATA:
-        this.openRowsDialog();
+        // If the last known validation had row errors, land the user directly on the Invalid
+        // filter instead of "All" — still fully user-initiated, no dialog opens without a click.
+        this.openRowsDialog(this.validationSummary()?.errorRowCount ? 'INVALID' : undefined);
         return;
       case DF_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET:
         this.downloadErrorSheet();
@@ -519,14 +568,19 @@ export class DevolutionFormulaComponent implements OnInit {
     }
   }
 
-  /** Opens the uploaded rows viewer dialog. Reloads form if any rows were saved. */
-  openRowsDialog(): void {
+  /**
+   * Opens the uploaded rows viewer dialog. Reloads form if any rows were saved.
+   * @param initialFilter Pre-sets the dialog's validation-status filter (e.g. 'INVALID' to jump
+   * straight to a failed validation's affected rows) instead of the default "All" filter.
+   */
+  openRowsDialog(initialFilter?: DfRowValidationStatus): void {
     const data: DevolutionRowsDialogData = {
       stateId: this.stateId,
       yearId: this.yearId,
       installment: this.installment(),
       canEdit: this.canEdit(),
       rowEditFields: this.rowEditFields(),
+      initialValidationStatusFilter: initialFilter,
     };
     const panelClasses = this.themeClass ? [this.themeClass, 'df-rows-dialog-panel'] : ['df-rows-dialog-panel'];
     const ref = this.dialog.open(DevolutionFormulaRowsDialogComponent, {
@@ -548,7 +602,7 @@ export class DevolutionFormulaComponent implements OnInit {
       });
   }
 
-  /** Downloads the Devolution Formula Excel template as a blob. */
+  /** Downloads the ULB-wise Allocation Excel template as a blob. */
   downloadTemplate(): void {
     if (this.isDownloadingTemplate()) return;
     this.isDownloadingTemplate.set(true);
@@ -558,7 +612,7 @@ export class DevolutionFormulaComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
-          FileSaver.saveAs(blob, 'devolution-formula-template.xlsx');
+          FileSaver.saveAs(blob, 'ulb-wise-allocation-template.xlsx');
           this.isDownloadingTemplate.set(false);
         },
         error: () => {
@@ -581,7 +635,7 @@ export class DevolutionFormulaComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
-          FileSaver.saveAs(blob, 'devolution-formula-error-sheet.xlsx');
+          FileSaver.saveAs(blob, 'ulb-wise-allocation-error-sheet.xlsx');
           this.isDownloadingErrorSheet.set(false);
           this.utilityService.triggerSnackbar('Error sheet downloaded successfully.');
         },
@@ -620,8 +674,11 @@ export class DevolutionFormulaComponent implements OnInit {
           if (status === 'VALID') {
             this.utilityService.triggerSnackbar('Excel revalidated successfully.');
           } else {
+            // See triggerExcelValidation: prefer the specific duplicate-ULB message over firing
+            // it as a second, stacking snackbar call.
             this.utilityService.triggerSnackbar(
-              'Revalidation completed with errors. Please review uploaded data.',
+              getDuplicateUlbMessage(res.data.rowErrors) ??
+                'Revalidation completed with errors. Please review uploaded data.',
               'snackbar-danger',
             );
           }
@@ -629,15 +686,17 @@ export class DevolutionFormulaComponent implements OnInit {
         },
         error: (err: unknown) => {
           const response = extractApiErrorResponse(err);
+          // See triggerExcelValidation: prefer the specific new-ULB message over the generic
+          // backend message rather than firing both as separate snackbar calls.
           this.utilityService.triggerSnackbar(
-            response?.message ?? 'Revalidation failed. Please try again.',
+            getRegisterUlbErrorMessage(response?.errors) ??
+              response?.message ??
+              'Revalidation failed. Please try again.',
             'snackbar-danger',
           );
           if (response?.errors) {
             this.applyApiErrors(response.errors);
           }
-
-          this.notifyRegisterUlbError(response?.errors);
         },
       });
   }
@@ -648,10 +707,9 @@ export class DevolutionFormulaComponent implements OnInit {
    */
   onSubmit(action: SubmitType): void {
     if (action === 'finalSubmit' && this.installment() === 2 && this.isInstallment2Locked()) {
-      this.utilityService.triggerSnackbar(
-        'Final submit is not available for Installment 2 at this time.',
-        'snackbar-danger',
-      );
+      // Reuse the same reason already shown as the tab's tooltip/help text, instead of a
+      // separate, less specific hardcoded string.
+      this.utilityService.triggerSnackbar(this.installment2LockReason(), 'snackbar-danger');
       return;
     }
     if (!this.isValidForSubmitType(action)) {
@@ -666,10 +724,9 @@ export class DevolutionFormulaComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -788,24 +845,15 @@ export class DevolutionFormulaComponent implements OnInit {
     }
   }
 
-  /** Shows a cancel confirmation dialog. */
+  /** Shows a cancel confirmation dialog (default "Discard changes?" text). */
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
-        this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
+        this.utilityService.triggerSnackbar('Changes discarded.', 'snackbar-danger');
       });
-  }
-
-  /** Shows a snackbar with the backend message when a validate/revalidate error reports `newUlbsAdded`. */
-  private notifyRegisterUlbError(errors: ApiErrorMap | undefined): void {
-    const message = getRegisterUlbErrorMessage(errors);
-    if (message) {
-      this.utilityService.triggerSnackbar(message, 'snackbar-danger');
-    }
   }
 
   private applyApiErrors(errors: ApiErrorMap): void {

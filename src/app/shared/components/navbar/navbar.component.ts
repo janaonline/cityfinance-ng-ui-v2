@@ -14,6 +14,8 @@ import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
 import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
+import { XVIFC_LS_KEYS } from '../../../features/xvi-fc-module/shared/years-selection/years-selection.component';
+import { UlbNotificationService } from '../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
 
 @Component({
   selector: 'app-navbar',
@@ -25,6 +27,7 @@ import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 export class NavbarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly accessChecker = new AccessChecker();
+  readonly ulbNotifications = inject(UlbNotificationService);
 
   readonly ocrMenu = {
     name: 'OCR',
@@ -180,6 +183,21 @@ export class NavbarComponent implements OnInit {
 
     this.initializeAccessChecking();
     this.setLoggedInUserMenu();
+
+    if (this.showNotificationBell && this.user?.ulb) {
+      void this.ulbNotifications.ensureLoadedForUlb(String(this.user.ulb));
+    }
+  }
+
+  /** Bell + badge are ULB-only for now — no notification source exists yet for other roles. */
+  get showNotificationBell(): boolean {
+    return this.isLoggedIn && this.inRole([USER_TYPE.ULB]);
+  }
+
+  navigateToNotification(route: string): void {
+    const yearId = localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
+    if (!yearId) return;
+    this._router.navigate(['/xvifc', yearId, route]);
   }
 
   private setLoggedInUserMenu() {

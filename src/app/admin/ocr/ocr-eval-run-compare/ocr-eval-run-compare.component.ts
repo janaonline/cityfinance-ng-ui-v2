@@ -21,10 +21,12 @@ interface CompareRow {
   bmkUlb: string;
   bmkFy: string;
   bmkDocType: string;
-  bmkLanguage: string;
   bmkSeal: string;
   bmkSignature: string;
   bmkTable: string;
+  bmkAuditDate: string;
+  bmkDocQuality: string;
+  bmkFinalStatus: string;
   fields: FieldCompareCell[];
   overallChange: string;
   runAError: string | null;
@@ -35,10 +37,12 @@ const FIELD_DEFS: { label: string; key: string }[] = [
   { label: 'ULB', key: 'ulb_name' },
   { label: 'FY', key: 'financial_year' },
   { label: 'Doc Type', key: 'doc_type' },
-  { label: 'Language', key: 'language' },
   { label: 'Seal', key: 'seal_present' },
   { label: 'Signature', key: 'signature_present' },
   { label: 'Table', key: 'table_present' },
+  { label: 'Audit Date', key: 'audit_date_present' },
+  { label: 'Doc Quality', key: 'doc_quality_good' },
+  { label: 'Final Status', key: 'final_status' },
 ];
 
 const METRIC_LABELS: Record<string, string> = {
@@ -48,12 +52,15 @@ const METRIC_LABELS: Record<string, string> = {
   ulb_name_accuracy: 'ULB Accuracy',
   financial_year_accuracy: 'FY Accuracy',
   doc_type_accuracy: 'Doc Type Accuracy',
-  language_accuracy: 'Language Accuracy',
   seal_present_accuracy: 'Seal Accuracy',
   signature_present_accuracy: 'Signature Accuracy',
   table_present_accuracy: 'Table Accuracy',
-  overall_accuracy: 'Overall Accuracy',
+  audit_date_present_accuracy: 'Audit Date Accuracy',
+  doc_quality_good_accuracy: 'Doc Quality Accuracy',
+  final_status_accuracy: 'Final Status Accuracy',
 };
+
+const HIDDEN_METRIC_KEYS = new Set(['language_accuracy', 'overall_accuracy']);
 
 @Component({
   standalone: true,
@@ -107,11 +114,13 @@ export class OcrEvalRunCompareComponent implements OnInit {
           this.comparison.set(res);
           this.dataSource.data = res.rows.map((r) => this.mapRow(r));
           this.metricEntries.set(
-            Object.entries(res.metrics_delta).map(([key, delta]) => ({
-              key,
-              label: METRIC_LABELS[key] || key,
-              delta,
-            })),
+            Object.entries(res.metrics_delta)
+              .filter(([key]) => !HIDDEN_METRIC_KEYS.has(key))
+              .map(([key, delta]) => ({
+                key,
+                label: METRIC_LABELS[key] || key,
+                delta,
+              })),
           );
         },
         error: (err) =>
@@ -206,14 +215,18 @@ export class OcrEvalRunCompareComponent implements OnInit {
         return ext.financial_year || '—';
       case 'Doc Type':
         return ext.document_type || '—';
-      case 'Language':
-        return ext.language_detected || '—';
       case 'Seal':
         return this.boolText(ext.seal_present);
       case 'Signature':
         return this.boolText(ext.signature_present);
       case 'Table':
         return this.boolText(ext.table_present);
+      case 'Audit Date':
+        return ext.audited_date || '—';
+      case 'Doc Quality':
+        return ext.pdf_quality_status || '—';
+      case 'Final Status':
+        return ext.document_status || '—';
       default:
         return '—';
     }
@@ -234,10 +247,12 @@ export class OcrEvalRunCompareComponent implements OnInit {
       bmkUlb: bmk.ulb_name || '—',
       bmkFy: bmk.financial_year || '—',
       bmkDocType: bmk.doc_type || '—',
-      bmkLanguage: bmk.language || '—',
       bmkSeal: this.boolText(bmk.seal_present),
       bmkSignature: this.boolText(bmk.signature_present),
       bmkTable: this.boolText(bmk.table_present),
+      bmkAuditDate: this.boolText(bmk.audit_date_present),
+      bmkDocQuality: this.boolText(bmk.doc_quality_good),
+      bmkFinalStatus: bmk.final_status || '—',
       fields,
       overallChange: r.overall_change,
       runAError: r.run_a?.error ?? null,

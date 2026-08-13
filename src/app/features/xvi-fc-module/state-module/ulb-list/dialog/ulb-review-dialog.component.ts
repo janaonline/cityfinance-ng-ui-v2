@@ -52,7 +52,7 @@ export class UlbReviewDialogComponent {
     return [
       { label: 'ULB Type', value: ulb.ulbTypeName || ulb.ulbType || '—' },
       { label: 'District', value: ulb.district || '—' },
-      { label: 'Census Code', value: ulb.censusCode || '—' },
+      { label: 'Census Code / Sb Code', value: ulb.censusCode || ulb.sbCode || '—' },
       { label: 'Date of Constitution', value: this.formatDate(ulb.dateOfConstitution) },
       { label: 'Gazette Notification Number', value: ulb.gazetteNotificationNumber || '—' },
     ];

@@ -30,16 +30,6 @@
         </select>
       </div>
 
-      <div class="eulb-filter-row-type">
-        <label class="form-label small fw-semibold mb-1" for="eulb-rtype">Row type</label>
-        <select id="eulb-rtype" class="form-select form-select-sm" formControlName="rowType">
-          <option value="">All</option>
-          @for (opt of rowTypeOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-      </div>
-
       <div class="eulb-filter-error-field">
         <label class="form-label small fw-semibold mb-1" for="eulb-efield">Error field</label>
         <select id="eulb-efield" class="form-select form-select-sm" formControlName="errorField">
@@ -65,7 +55,6 @@
       <table class="table table-sm table-hover align-middle mb-0 eulb-rows-table">
         <colgroup>
           <col class="eulb-col-row-number" />
-          <col class="eulb-col-type" />
           <col class="eulb-col-census" />
           <col class="eulb-col-ulb-name" />
           <col class="eulb-col-status" />
@@ -80,11 +69,10 @@
         <thead class="table-light border-bottom">
           <tr>
             <th class="ps-3 text-nowrap small fw-semibold">#</th>
-            <th class="text-nowrap small fw-semibold">Type</th>
             <th class="text-nowrap small fw-semibold">Census Code</th>
             <th class="text-nowrap small fw-semibold">ULB Name</th>
             <th class="text-nowrap small fw-semibold">Elected Body Status</th>
-            <th class="text-nowrap small fw-semibold">Date of Constitution</th>
+            <th class="small fw-semibold">Date on which the elected body is in place</th>
             <th class="text-nowrap small fw-semibold">Date of Expiry</th>
             <th class="text-nowrap small fw-semibold">Remarks</th>
             <th class="text-nowrap small fw-semibold">Status</th>
@@ -100,33 +88,22 @@
               @if (editingRowId() === row._id) {
                 <!-- Edit mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
-                <td class="small">{{ getRowTypeLabel(row.rowType) }}</td>
-                @let censusCodeCtrl = getEditFormControl('censusCode');
                 <td
                   app-eulb-editable-field-cell
                   class="small text-secondary text-nowrap"
                   field="censusCode"
                   [value]="row.censusCode ?? null"
                   [isEditing]="true"
-                  [fieldEditable]="row.rowType === 'EXTRA_ULB'"
-                  [cellHasError]="hasEditFieldError('censusCode')"
-                  [cellErrorText]="getEditFieldErrorText('censusCode')"
-                  [editControl]="censusCodeCtrl"
-                  editControlExtraClass="eulb-edit-control"
+                  [fieldEditable]="false"
                   editFieldDataAttribute="data-eulb-edit-field"
                 ></td>
-                @let ulbNameCtrl = getEditFormControl('ulbName');
                 <td
                   app-eulb-editable-field-cell
                   class="small fw-medium text-nowrap"
                   field="ulbName"
                   [value]="row.ulbName"
                   [isEditing]="true"
-                  [fieldEditable]="row.rowType === 'EXTRA_ULB'"
-                  [cellHasError]="hasEditFieldError('ulbName')"
-                  [cellErrorText]="getEditFieldErrorText('ulbName')"
-                  [editControl]="ulbNameCtrl"
-                  editControlExtraClass="eulb-edit-control"
+                  [fieldEditable]="false"
                   editFieldDataAttribute="data-eulb-edit-field"
                 ></td>
                 @let electedBodyStatusCtrl = getEditFormControl('electedBodyStatus');
@@ -224,30 +201,25 @@
               } @else {
                 <!-- Read mode -->
                 <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
-                <td class="small">{{ getRowTypeLabel(row.rowType) }}</td>
                 <td
                   app-eulb-editable-field-cell
                   class="small text-secondary text-nowrap"
                   field="censusCode"
                   [value]="row.censusCode ?? null"
-                  [canEdit]="canEditRows && row.rowType === 'EXTRA_ULB'"
                   [cellHasError]="!!vm.cellHasError['censusCode']"
                   [cellErrorText]="vm.cellErrorText['censusCode']"
                   errorIconExtraClass="eulb-error-icon"
                   [showInvalidCellClass]="true"
-                  (editRequested)="startEditAtField(row, $event)"
                 ></td>
                 <td
                   app-eulb-editable-field-cell
                   class="small fw-medium"
                   field="ulbName"
                   [value]="row.ulbName"
-                  [canEdit]="canEditRows && row.rowType === 'EXTRA_ULB'"
                   [cellHasError]="!!vm.cellHasError['ulbName']"
                   [cellErrorText]="vm.cellErrorText['ulbName']"
                   errorIconExtraClass="eulb-error-icon"
                   [showInvalidCellClass]="true"
-                  (editRequested)="startEditAtField(row, $event)"
                 ></td>
                 <td
                   app-eulb-editable-field-cell

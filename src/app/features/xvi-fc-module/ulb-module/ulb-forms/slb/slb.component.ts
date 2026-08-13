@@ -17,8 +17,8 @@ import { ConfirmDialogService } from '../../../../../shared/components/confirm-d
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { environment } from '../../../../../../environments/environment';
 import { SlbService } from './slb.service';
 import {
@@ -65,7 +65,8 @@ export class SlbComponent implements OnInit {
   private dynamicService = inject(DynamicFormService);
   private visibilityService = inject(DynamicFormVisibilityService);
   private confirmDialogService = inject(ConfirmDialogService);
-  private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
   private slbService = inject(SlbService);
   private moduleService = inject(XvifcModuleService);
   public ulbName = signal('');
@@ -247,10 +248,9 @@ export class SlbComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -543,9 +543,8 @@ export class SlbComponent implements OnInit {
   }
 
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;

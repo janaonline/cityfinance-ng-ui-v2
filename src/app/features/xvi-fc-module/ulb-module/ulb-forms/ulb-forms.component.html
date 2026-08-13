@@ -73,12 +73,27 @@
           <span class="conditions-deadline-badge">{{ group.deadline }}</span>
         </div>
 
-        <div class="conditions-card rounded-3 overflow-hidden mb-2 mat-elevation-z2">
-          @for (condition of group.conditions; track condition.id; let last = $last) {
+        <div class="conditions-list d-flex flex-column gap-2 mb-2">
+          @for (condition of group.conditions; track condition.id) {
             @let effectiveStatus = resolveStatus(condition);
-            @let submitted = isSubmitted(condition);
-            <div class="condition-row d-flex align-items-center gap-3 px-3 py-2" [class.border-bottom]="!last">
-              @if (effectiveStatus === 'complete') {
+            @let submitted = isSubmitted();
+            @let display = conditionStatusDisplay(condition);
+            <div class="condition-row d-flex align-items-center gap-3 px-3 py-2">
+              @if (display) {
+                @if (display.iconTier === 'success') {
+                  <span class="condition-icon condition-icon--complete flex-shrink-0">
+                    <mat-icon>check</mat-icon>
+                  </span>
+                } @else if (display.iconTier === 'warning') {
+                  <span class="condition-icon condition-icon--warning flex-shrink-0">
+                    <mat-icon>priority_high</mat-icon>
+                  </span>
+                } @else if (display.iconTier === 'pending-active') {
+                  <span class="condition-icon condition-icon--pending-active flex-shrink-0" aria-hidden="true"></span>
+                } @else {
+                  <span class="condition-icon condition-icon--pending-neutral flex-shrink-0" aria-hidden="true"></span>
+                }
+              } @else if (effectiveStatus === 'complete') {
                 <span class="condition-icon condition-icon--complete flex-shrink-0">
                   <mat-icon>check</mat-icon>
                 </span>
@@ -93,7 +108,34 @@
                 <p class="condition-subtitle text-muted mb-0">{{ condition.subtitle }}</p>
               </div>
 
-              @if (submitted) {
+              @if (display) {
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <button
+                    mat-flat-button
+                    class="condition-action-btn flex-shrink-0"
+                    [class.condition-action-btn--warning]="display.iconTier === 'warning'"
+                    [class.condition-action-btn--pending-active]="display.iconTier === 'pending-active'"
+                    [class.condition-action-btn--pending-neutral]="display.iconTier === 'pending-neutral'"
+                    type="button"
+                    (click)="navigateTo(condition.route!)"
+                  >
+                    {{ display.buttonLabel }}
+                  </button>
+                  @if (display.showPreview) {
+                    <button
+                      mat-icon-button
+                      class="preview-icon-btn"
+                      type="button"
+                      [matTooltip]="
+                        condition.id === 'xvi-fc-bank-account' ? 'View Bank Account Details' : 'View uploaded documents'
+                      "
+                      (click)="navigateTo(condition.route!)"
+                    >
+                      <mat-icon class="preview-icon">visibility</mat-icon>
+                    </button>
+                  }
+                </div>
+              } @else if (submitted) {
                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
                   <span class="submitted-badge">
                     <mat-icon class="submitted-badge__icon">check_circle</mat-icon>
@@ -123,7 +165,7 @@
                   type="button"
                   (click)="navigateTo(condition.route!)"
                 >
-                  {{ condition.actionLabel }}
+                  {{ actionLabelFor(condition) }}
                 </button>
               } @else if (effectiveStatus === 'Awaiting State Upload') {
                 <span class="awaiting-state-badge flex-shrink-0">
