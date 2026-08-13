@@ -69,7 +69,11 @@ export class SlbComponent implements OnInit {
   private slbService = inject(SlbService);
   private moduleService = inject(XvifcModuleService);
   public ulbName = signal('');
+  /** Target FY label (e.g. "2026-27") — heads the Target Indicator column. */
   readonly yearLabel = signal('');
+  /** Prior FY label (e.g. "2025-26") — heads the Actual Indicator column; actuals are always
+   *  reported for the completed year before the target being set. */
+  readonly actualYearLabel = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -167,6 +171,7 @@ export class SlbComponent implements OnInit {
           this.fields.set(data.questions);
           this.ulbName.set(data.ulbName);
           this.yearLabel.set(data.designYear);
+          this.actualYearLabel.set(data.actualYearLabel);
           this.createFormControls();
           this.isLoading.set(false);
         },

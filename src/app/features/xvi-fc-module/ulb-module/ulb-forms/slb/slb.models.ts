@@ -28,6 +28,10 @@ export interface SlbFormData {
   ulbId: string;
   yearId: string;
   designYear: string;
+  /** FY immediately before `designYear` (e.g. "2025-26" when designYear is "2026-27") — the
+   *  authoritative source for the "Actual Indicator" column header. Null if `designYear` is
+   *  the earliest known year. */
+  actualYearLabel: string | null;
   ulbName: string;
   actors: FormActor[];
   currentFormStatus: number;

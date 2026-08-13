@@ -32,7 +32,8 @@ function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormDat
     formId: 32,
     ulbId: 'ulb-test-id',
     yearId: 'year-test-id',
-    designYear: 'FY 2026-27',
+    designYear: '2026-27',
+    actualYearLabel: '2025-26',
     ulbName: 'Test ULB',
     currentFormStatus: 1,
     currentFormStatusLabel: 'Not Started',
@@ -180,6 +181,18 @@ describe('SlbComponent', () => {
     expect(indicatorRow!.textContent).toContain('lpcd');
     expect(indicatorRow!.querySelector('[data-cy="ind1_actual-test"]')).toBeTruthy();
     expect(indicatorRow!.querySelector('[data-cy="ind1_target-test"]')).toBeTruthy();
+  }));
+
+  it('labels the actual column with the prior FY and the target column with the design FY', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    const headerCells = (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table thead th');
+    expect(headerCells[2].textContent).toContain('Actuals');
+    expect(headerCells[2].textContent).toContain('for FY 2025-26');
+    expect(headerCells[3].textContent).toContain('Targets');
+    expect(headerCells[3].textContent).toContain('for FY 2026-27');
   }));
 
   it('disables the form when the form is not editable', fakeAsync(() => {

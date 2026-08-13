@@ -38,7 +38,6 @@
             (retry)="retryLoadForm()"
           />
         } @else {
-
           @if (!isProduction && canEdit()) {
             <div class="d-flex justify-content-end">
               <button
@@ -63,8 +62,8 @@
                       <th scope="col">Sections/Indicators</th>
                       <th scope="col" class="text-nowrap">
                         <div>Actual Indicator</div>
-                        @if (yearLabel()) {
-                          <div>{{ yearLabel() }}</div>
+                        @if (actualYearLabel()) {
+                          <div>{{ actualYearLabel() }}</div>
                         }
                       </th>
                       <th scope="col" class="text-nowrap">
