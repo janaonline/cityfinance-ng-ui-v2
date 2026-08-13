@@ -46,11 +46,13 @@ function normalizeUlbCount(value: unknown): number | undefined {
 export function buildEulbFormPayloadData(visiblePayload: Record<string, unknown>): EulbFormPayloadData {
   const ulbCount = visiblePayload['ulbCount'];
   const electedBodyExcelFile = visiblePayload['electedBodyExcelFile'];
+  const signedElectedbodyFile = visiblePayload['signedElectedbodyFile'];
   const checkboxConfirmation = visiblePayload['checkboxConfirmation'];
 
   return {
     ulbCount: normalizeUlbCount(ulbCount),
     electedBodyExcelFile: isValidEulbFileValue(electedBodyExcelFile) ? electedBodyExcelFile : undefined,
+    signedElectedbodyFile: isValidEulbFileValue(signedElectedbodyFile) ? signedElectedbodyFile : undefined,
     checkboxConfirmation: typeof checkboxConfirmation === 'boolean' ? checkboxConfirmation : undefined,
   };
 }
@@ -59,13 +61,18 @@ export function buildEulbFinalSubmitPayloadData(
   visiblePayload: Record<string, unknown>,
 ): EulbFinalSubmitPayloadData | null {
   const electedBodyExcelFile = visiblePayload['electedBodyExcelFile'];
+  const signedElectedbodyFile = visiblePayload['signedElectedbodyFile'];
   const checkboxConfirmation = visiblePayload['checkboxConfirmation'];
 
-  if (!isValidEulbFileValue(electedBodyExcelFile) || typeof checkboxConfirmation !== 'boolean') {
+  if (
+    !isValidEulbFileValue(electedBodyExcelFile) ||
+    !isValidEulbFileValue(signedElectedbodyFile) ||
+    typeof checkboxConfirmation !== 'boolean'
+  ) {
     return null;
   }
 
-  return { electedBodyExcelFile, checkboxConfirmation };
+  return { electedBodyExcelFile, signedElectedbodyFile, checkboxConfirmation };
 }
 
 function errorsMapToRowErrors(errorsMap: unknown): EulbRowUpdateApiError[] {
@@ -156,6 +163,29 @@ export function hasPersistedValidationData(err: unknown): boolean {
 
 export function getHttpStatus(err: unknown): number | undefined {
   return isRecord(err) && typeof err['status'] === 'number' ? err['status'] : undefined;
+}
+
+/**
+ * Parses the error body of a `responseType: 'blob'` HTTP request into an `ApiErrorResponse`.
+ * Angular's `HttpClient` does not JSON-parse error bodies for blob requests — `err.error` arrives
+ * as a raw `Blob`, not a parsed object, so `extractApiErrorResponse` can't read it directly (it
+ * expects `err.error` to already be a record). Falls back to `extractApiErrorResponse(err)` when
+ * `err.error` isn't a `Blob` (e.g. a network-level error), and resolves to `null` on any
+ * read/parse failure.
+ */
+export async function parseBlobErrorResponse(err: unknown): Promise<ApiErrorResponse | null> {
+  const errorBody = isRecord(err) ? err['error'] : undefined;
+  if (!(errorBody instanceof Blob)) {
+    return extractApiErrorResponse(err);
+  }
+
+  try {
+    const text = await errorBody.text();
+    const parsed: unknown = JSON.parse(text);
+    return extractApiErrorResponse({ error: parsed });
+  } catch {
+    return null;
+  }
 }
 
 /** Returns the backend message for a `newUlbsAdded` error on `electedBodyExcelFile`, or null when absent. */

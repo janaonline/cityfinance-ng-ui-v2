@@ -187,12 +187,14 @@ export interface EulbFinalSubmitPayload {
 export interface EulbFormPayloadData {
   ulbCount?: number;
   electedBodyExcelFile?: EulbFileValue;
+  signedElectedbodyFile?: EulbFileValue;
   checkboxConfirmation?: boolean;
 }
 
 export interface EulbFinalSubmitPayloadData {
   ulbCount?: number;
   electedBodyExcelFile: EulbFileValue;
+  signedElectedbodyFile: EulbFileValue;
   checkboxConfirmation: boolean;
 }
 

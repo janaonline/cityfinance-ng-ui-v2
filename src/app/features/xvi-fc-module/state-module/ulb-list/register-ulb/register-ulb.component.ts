@@ -5,6 +5,10 @@ import { environment } from '../../../../../../environments/environment';
 import { GlobalLoaderService } from '../../../../../core/services/loaders/global-loader.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { UserUtility } from '../../../../../core/util/user/user';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../../core/guards/unsaved-changes.guard';
 import { FormSectionGridComponent } from '../../../../../shared/dynamic-form/components/form-section-grid/form-section-grid.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import { FieldConfig, FormSectionConfig } from '../../../../../shared/dynamic-form/field.interface';
@@ -19,7 +23,7 @@ const errMsg = 'An unexpected error occurred. Please try again later.';
   templateUrl: './register-ulb.component.html',
   styleUrl: './register-ulb.component.scss',
 })
-export class RegisterUlbComponent implements OnInit {
+export class RegisterUlbComponent implements OnInit, CanComponentDeactivate {
   private readonly loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   readonly isState = this.loggedInUserDetails?.role === 'STATE';
   private readonly ownStateId: string | null = this.loggedInUserDetails?.state ?? null;
@@ -41,7 +45,15 @@ export class RegisterUlbComponent implements OnInit {
     private readonly ulbMasterService: UlbMasterService,
     private readonly utilityService: UtilityService,
     readonly globalLoader: GlobalLoaderService,
-  ) {}
+  ) {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. `form` isn't built until
+   *  register sections finish loading, hence the optional chain. */
+  hasUnsavedChanges(): boolean {
+    return !!this.form?.dirty;
+  }
 
   ngOnInit(): void {
     // ADMIN accounts have no home state to default to, so ULB creation is STATE-only for now.
@@ -105,6 +117,9 @@ export class RegisterUlbComponent implements OnInit {
       next: () => {
         this.globalLoader.stopLoader();
         this.utilityService.swalPopup('Success!', 'ULB has been submitted for approval.');
+        // Mark pristine before navigating away: the form was just successfully submitted, so this
+        // isn't a real "unsaved changes" case, and unsavedChangesGuard reads form.dirty.
+        this.form.markAsPristine();
         this.goBack();
       },
       error: (error: { error?: { message?: string | string[] } }) => {

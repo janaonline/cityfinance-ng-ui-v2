@@ -76,7 +76,7 @@
           }
 
           <form class="content-body" [formGroup]="form">
-            @for (item of visibleFields(); track item.key; let isLast = $last) {
+            @for (item of effectiveVisibleFields(); track item.key; let isLast = $last) {
               <div
                 class="my-2"
                 [class.border-bottom]="!isLast"

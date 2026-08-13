@@ -4,7 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 import FileSaver from 'file-saver';
@@ -866,6 +866,71 @@ describe('DevolutionFormulaComponent', () => {
     it('saves downloaded error sheet blob via FileSaver', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-error-sheet' });
       expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'ulb-wise-allocation-error-sheet.xlsx');
+    });
+  });
+
+  // ─── effectiveVisibleFields — download button loading state ────────────────
+
+  describe('effectiveVisibleFields — download button loading state', () => {
+    beforeEach(() => {
+      // minimalFormData's excelFile question carries no supportingContent (it's backend-injected
+      // in production) — add realistic action configs so effectiveVisibleFields() has something
+      // to patch.
+      component.fields.update((fields) =>
+        fields.map((field) =>
+          field.key === 'excelFile'
+            ? {
+                ...field,
+                supportingContent: [
+                  {
+                    type: 'actions' as const,
+                    actions: [
+                      { id: 'download-template', label: 'Download Template' },
+                      { id: 'download-error-sheet', label: 'Download Error Sheet' },
+                    ],
+                  },
+                ],
+              }
+            : field,
+        ),
+      );
+    });
+
+    function findAction(actionId: string) {
+      const field = component.effectiveVisibleFields().find((f) => f.key === 'excelFile');
+      const block = field?.supportingContent?.find((b) => b.type === 'actions');
+      return block && block.type === 'actions' ? block.actions.find((a) => a.id === actionId) : undefined;
+    }
+
+    it('shows loading on download-template while in flight, independent of download-error-sheet', () => {
+      const subject = new Subject<Blob>();
+      dfService.downloadTemplate.and.returnValue(subject);
+
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-template' });
+
+      expect(findAction('download-template')?.loading).toBeTrue();
+      expect(findAction('download-template')?.loadingLabel).toBe('Downloading template…');
+      expect(findAction('download-error-sheet')?.loading).toBeFalsy();
+
+      subject.next(new Blob(['x']));
+      subject.complete();
+
+      expect(findAction('download-template')?.loading).toBeFalsy();
+    });
+
+    it('shows loading on download-error-sheet while in flight, independent of download-template', () => {
+      const subject = new Subject<Blob>();
+      dfService.downloadErrorSheet.and.returnValue(subject);
+
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-error-sheet' });
+
+      expect(findAction('download-error-sheet')?.loading).toBeTrue();
+      expect(findAction('download-template')?.loading).toBeFalsy();
+
+      subject.next(new Blob(['x']));
+      subject.complete();
+
+      expect(findAction('download-error-sheet')?.loading).toBeFalsy();
     });
   });
 
@@ -1867,6 +1932,27 @@ describe('DevolutionFormulaComponent', () => {
       component.onSubmit('finalSubmit');
 
       expect(component.form.get('excelFile')?.hasError('excelInvalid')).toBeTrue();
+    });
+  });
+
+  // ─── hasUnsavedChanges (read by unsavedChangesGuard / beforeunload) ────────
+
+  describe('hasUnsavedChanges', () => {
+    it('is false right after the form loads', () => {
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once the user edits a field', () => {
+      component.form.get('checkboxConfirmation')?.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false when the form is dirty but the page is read-only (canEdit is false)', () => {
+      component.permissions.set({ canView: true, canEdit: false, canFinalSubmit: false });
+      component.form.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
     });
   });
 });
