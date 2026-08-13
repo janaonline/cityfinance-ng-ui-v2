@@ -48,7 +48,10 @@ function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormDat
         formFieldType: 'actualTarget',
         value: null,
         inputCardConfig: { suffixText: 'lpcd' },
-        validations: [{ name: 'required', validator: true, message: 'This field is required.' }],
+        validations: [
+          { name: 'required', validator: true, message: 'This field is required.' },
+          { name: 'targetLessThanActual', validator: null, message: 'Target must be lower than the actual value.' },
+        ],
         meta: { section: 'Water Supply' },
       },
       {
@@ -183,6 +186,34 @@ describe('SlbComponent', () => {
     expect(indicatorRow!.querySelector('[data-cy="ind1_target-test"]')).toBeTruthy();
   }));
 
+  it('flags target when it is not strictly lower than actual, and clears once corrected', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    const actualControl = getControl('ind1.actual');
+    const targetControl = getControl('ind1.target');
+    actualControl?.setValue(100);
+    targetControl?.setValue(120);
+    targetControl?.markAsTouched();
+    fixture.detectChanges();
+
+    expect(component.hasIndicatorError('ind1', 'target', 'targetLessThanActual')).toBeTrue();
+    let indicatorRow = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr'),
+    ).find((row) => row.textContent?.includes('Per capita supply of water'));
+    expect(indicatorRow!.textContent).toContain('Target must be lower than the actual value.');
+
+    targetControl?.setValue(80);
+    fixture.detectChanges();
+
+    expect(component.hasIndicatorError('ind1', 'target', 'targetLessThanActual')).toBeFalse();
+    indicatorRow = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr'),
+    ).find((row) => row.textContent?.includes('Per capita supply of water'));
+    expect(indicatorRow!.textContent).not.toContain('Target must be lower than the actual value.');
+  }));
+
   it('labels the actual column with the prior FY and the target column with the design FY', fakeAsync(() => {
     createComponent();
     fixture.detectChanges();
@@ -241,8 +272,8 @@ describe('SlbComponent', () => {
     fixture.detectChanges();
     tick(1);
 
-    getControl('ind1.actual')?.setValue(150);
-    getControl('ind1.target')?.setValue(180);
+    getControl('ind1.actual')?.setValue(180);
+    getControl('ind1.target')?.setValue(150);
     getControl('checkboxConfirmation')?.setValue(true);
     component.onSubmit('saveAsDraft');
     tick(1);

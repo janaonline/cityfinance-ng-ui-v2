@@ -510,10 +510,13 @@ export class SlbComponent implements OnInit {
 
       switch (field.formFieldType) {
         case 'actualTarget': {
+          // Actual/target must satisfy targetLessThanActual (see comparison.validator.ts), so
+          // pick two distinct points within range rather than the same midpoint for both.
           const min = Number(field.validations?.find((v) => v.name === 'min')?.validator ?? 0);
           const max = Number(field.validations?.find((v) => v.name === 'max')?.validator ?? 100);
-          const value = Math.round((min + max) / 2);
-          control.setValue({ actual: value, target: value });
+          const actualValue = Math.round(min + (max - min) * 0.6);
+          const targetValue = Math.max(min, Math.min(actualValue - 1, Math.round(min + (max - min) * 0.4)));
+          control.setValue({ actual: actualValue, target: targetValue });
           break;
         }
         case 'text':

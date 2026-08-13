@@ -8,7 +8,11 @@ import {
   AbstractControl,
   ValidatorFn,
 } from '@angular/forms';
-import { compareArrFieldsValidator, compareFieldsValidator } from '../../core/validators/comparison.validator';
+import {
+  compareArrFieldsValidator,
+  compareFieldsValidator,
+  targetLessThanActualValidator,
+} from '../../core/validators/comparison.validator';
 import { FieldConfig } from './field.interface';
 import { isUploadedFileMetadata, normalizeUploadedFileMetadata } from './components/file/file-metadata.types';
 import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
@@ -286,12 +290,17 @@ export class DynamicFormService {
   private createActualTargetGroup(field: any, validationsData: any, readonly: boolean): FormGroup {
     const pairValue = (field.value ?? {}) as { actual?: unknown; target?: unknown };
     const disabled = field.disabled === true ? true : readonly;
+    const validationList: Array<{ name?: string }> = validationsData || [];
     const validators = this.bindValidations(validationsData, field);
+    const hasTargetLessThanActualRule = validationList.some((v) => v.name === 'targetLessThanActual');
 
-    return new FormGroup({
-      actual: new FormControl({ value: pairValue.actual ?? null, disabled }, validators),
-      target: new FormControl({ value: pairValue.target ?? null, disabled }, validators),
-    });
+    return new FormGroup(
+      {
+        actual: new FormControl({ value: pairValue.actual ?? null, disabled }, validators),
+        target: new FormControl({ value: pairValue.target ?? null, disabled }, validators),
+      },
+      hasTargetLessThanActualRule ? { validators: targetLessThanActualValidator } : undefined,
+    );
   }
   tabControl(fields: any[]) {
     // const form = this.fb.group({});
