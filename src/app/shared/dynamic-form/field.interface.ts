@@ -186,6 +186,8 @@ export interface FieldConfig {
   disabledReason?: string;
   /** Bootstrap column class controlling this field's width within a `FormSectionGridComponent` row, e.g. 'col-12', 'col-md-6'. */
   grid?: string;
+  /** Free-form, non-functional annotations (e.g. grouping/reporting metadata) — never read by validation or rendering logic. */
+  meta?: Record<string, unknown>;
   /** Muted text rendered inline next to the field label, e.g. "(if available)". */
   labelHint?: string;
   /** Muted helper text rendered below the field control. */

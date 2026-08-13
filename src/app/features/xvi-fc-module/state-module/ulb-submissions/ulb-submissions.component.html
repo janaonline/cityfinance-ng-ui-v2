@@ -51,7 +51,7 @@
                         individual rows.</p>
                 </div>
 
-                @if (isSelectedFormLive() && !hasNothingToReviewYet()) {
+                @if (isSelectedFormLive() && isBulkReviewable() && !hasNothingToReviewYet()) {
                 <div class="d-flex flex-wrap gap-2 bulk-actions">
                     <button type="button" matButton="outlined" class="text-success"
                         [disabled]="!selection.hasValue() || isBulkActionPending()" (click)="approveSelected()">

@@ -116,6 +116,9 @@ export class UlbSubmissionsComponent {
   readonly isSelectedFormLive = computed(
     () => FORM_OPTIONS.find((opt) => opt.value === this.selectedFormId())?.live ?? false,
   );
+  /** SLB is deemed approved on submission — no approve/return workflow, so bulk actions and
+   *  row-selection checkboxes don't apply to it, unlike the other three live forms. */
+  readonly isBulkReviewable = computed(() => this.selectedFormId() !== 'SERVICE_LEVEL_BENCHMARKS');
 
   readonly selection = new SelectionModel<UlbSubmissionRow>(true, []);
 
@@ -157,11 +160,12 @@ export class UlbSubmissionsComponent {
     ['NOT_STARTED', 'IN_PROGRESS'].includes(this.selectedBucketKey()),
   );
 
-  readonly displayedColumns = computed(() =>
-    this.hasNothingToReviewYet()
+  readonly displayedColumns = computed(() => {
+    const base = this.hasNothingToReviewYet()
       ? ['select', 'ulbName', 'censusCode', 'formStatus']
-      : ['select', 'ulbName', 'censusCode', 'daysPending', 'formStatus', 'action'],
-  );
+      : ['select', 'ulbName', 'censusCode', 'daysPending', 'formStatus', 'action'];
+    return this.isBulkReviewable() ? base : base.filter((column) => column !== 'select');
+  });
 
   readonly reviewableRows = computed(() => this.rows().filter(isRowReviewable));
 
