@@ -8,12 +8,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 import FileSaver from 'file-saver';
 import { filter, finalize, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../core/guards/unsaved-changes.guard';
 import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { withSupportingActionState } from '../../../../shared/dynamic-form/supporting-action-state';
 import {
   ConfirmDialogData,
+  resolveThemeClass,
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
@@ -48,6 +54,7 @@ import {
   hasEulbFileValue,
   hasPersistedValidationData,
   isValidEulbFileValue,
+  parseBlobErrorResponse,
 } from './eulb-status.utils';
 import { EulbStatusService } from './eulb-status.service';
 import { EulbRowsDialogComponent } from './dialogs/rows-dialog/eulb-rows-dialog.component';
@@ -65,6 +72,7 @@ const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_ERROR_SHEET: 'download-error-sheet',
   REVALIDATE_EXCEL: 'revalidate-excel',
   REGISTER_ULB: 'register-ulb',
+  DOWNLOAD_ELECTED_BODIES_LIST: 'download-elected-bodies-list',
 } as const;
 
 export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
@@ -90,14 +98,18 @@ export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
   templateUrl: './elected-body-status.component.html',
   styleUrl: './elected-body-status.component.scss',
 })
-export class ElectedBodyStatusComponent implements OnInit {
+export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivate {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utilityService = inject(UtilityService);
   private readonly dynamicService = inject(DynamicFormService);
   private readonly visibilityService = inject(DynamicFormVisibilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
+  /** Raw theme class for the one dialog opened directly via `MatDialog` (needs a custom
+   *  panelClass array alongside its own fixed class, not `dialogConfig`'s single panelClass). */
+  private readonly themeClass = resolveThemeClass();
   private readonly eulbService = inject(EulbStatusService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly dialog = inject(MatDialog);
@@ -115,6 +127,40 @@ export class ElectedBodyStatusComponent implements OnInit {
   readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
+  /**
+   * `visibleFields()` with each download action's `loading`/`loadingLabel` overridden from this
+   * component's own `isDownloading*` signals, so the supporting-content button shows a spinner
+   * while its request is in flight. Bound in the template in place of `visibleFields()`.
+   */
+  readonly effectiveVisibleFields = computed<ConditionalFieldConfig[]>(() =>
+    this.visibleFields().map((field) => {
+      if (field.key === 'electedBodyExcelFile') {
+        return withSupportingActionState(field, [
+          {
+            actionId: EULB_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
+            loading: this.isDownloadingTemplate(),
+            loadingLabel: 'Downloading template…',
+          },
+          {
+            actionId: EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET,
+            loading: this.isDownloadingErrorSheet(),
+            loadingLabel: 'Downloading error sheet…',
+          },
+        ]);
+      }
+      if (field.key === 'signedElectedbodyFile') {
+        return withSupportingActionState(field, [
+          {
+            actionId: EULB_SUPPORTING_ACTION.DOWNLOAD_ELECTED_BODIES_LIST,
+            loading: this.isDownloadingElectedBodiesList(),
+            loadingLabel: 'Downloading list…',
+          },
+        ]);
+      }
+      return field;
+    }),
+  );
+
   readonly isLoading = signal(false);
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
@@ -122,6 +168,7 @@ export class ElectedBodyStatusComponent implements OnInit {
   readonly isDeleting = signal(false);
   readonly isDownloadingTemplate = signal(false);
   readonly isDownloadingErrorSheet = signal(false);
+  readonly isDownloadingElectedBodiesList = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
 
   readonly permissions = signal<EulbPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
@@ -171,8 +218,18 @@ export class ElectedBodyStatusComponent implements OnInit {
     return this.moduleService.yearId() ?? '';
   }
 
+  constructor() {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. A disabled (read-only)
+   *  form is never dirty, so this is automatically `false` when `canEdit` is `false`. */
+  hasUnsavedChanges(): boolean {
+    return this.canEdit() && this.form.dirty;
   }
 
   /**
@@ -466,10 +523,16 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /**
    * Routes action events emitted by `FieldSupportingContentComponent` for the
-   * `electedBodyExcelFile` field to the appropriate handler method.
+   * `electedBodyExcelFile` and `signedElectedbodyFile` fields to the appropriate handler method.
    * @param event - Action event containing `fieldKey` and `actionId`.
    */
   onSupportingAction(event: FieldSupportingActionEvent): void {
+    if (event.fieldKey === 'signedElectedbodyFile') {
+      if (event.actionId === EULB_SUPPORTING_ACTION.DOWNLOAD_ELECTED_BODIES_LIST) {
+        this.downloadElectedBodiesListDocument();
+      }
+      return;
+    }
     if (event.fieldKey !== 'electedBodyExcelFile') return;
     switch (event.actionId) {
       case EULB_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE:
@@ -525,6 +588,43 @@ export class ElectedBodyStatusComponent implements OnInit {
   }
 
   /**
+   * Fetches the "Elected Bodies List" declaration letter (Word doc) on demand from the backend
+   * and saves it as a blob. The backend rejects with a 400 when there are no active rows, or when
+   * any active row has not passed validation — that message is both shown as a snackbar and
+   * stamped onto the `signedElectedbodyFile` control (via `applyApiErrors`), which renders it
+   * inline through `FileComponent`'s own error text, mirroring `electedBodyExcelFile`'s existing
+   * inline-error convention.
+   */
+  downloadElectedBodiesListDocument(): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId || this.isDownloadingElectedBodiesList()) return;
+
+    this.isDownloadingElectedBodiesList.set(true);
+
+    this.eulbService
+      .downloadElectedBodiesListDocument(stateId, yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          FileSaver.saveAs(blob, 'elected-bodies-list.docx');
+          this.isDownloadingElectedBodiesList.set(false);
+          this.utilityService.triggerSnackbar('Elected bodies list downloaded successfully.');
+        },
+        error: (err: unknown) => {
+          this.isDownloadingElectedBodiesList.set(false);
+          void parseBlobErrorResponse(err).then((response) => {
+            const message = response?.message ?? 'Failed to download the elected bodies list. Please try again.';
+            this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+            if (response?.errors) {
+              this.applyApiErrors(response.errors);
+            }
+          });
+        },
+      });
+  }
+
+  /**
    * Validates the form for the given submit type, then shows a confirm dialog
    * before delegating to `executeSaveDraft` or `executeFinalSubmit`.
    * @param action - `'saveAsDraft'` or `'finalSubmit'`.
@@ -542,10 +642,9 @@ export class ElectedBodyStatusComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -672,6 +771,16 @@ export class ElectedBodyStatusComponent implements OnInit {
    * Stamps API-returned field errors onto both the `fields` signal (for message display)
    * and the corresponding `FormControl` (for invalid state). Skips hidden fields.
    * Records each error key in `serverErrorKeys` so it can be cleared before re-submission.
+   *
+   * New server-driven validation entries are unshifted to the *front* of `field.validations`,
+   * not pushed to the end. `FileComponent.errorMessage()` displays the message of the first
+   * validation whose name is a key in `control.errors` — for most callers of this method the
+   * control already has a value when the server error arrives, so `required` never co-occurs
+   * and ordering is moot. `signedElectedbodyFile`'s `download-elected-bodies-list` gate error is
+   * the first case where the control is still empty (state hasn't uploaded yet) when the error
+   * lands, so `required` and the server code (e.g. `noRows`) both sit in `control.errors` at
+   * once — unshifting ensures the more specific, actionable server message wins over the generic
+   * "This field is required." placeholder.
    * @param errors - Map of field key → array of API error descriptors.
    */
   private applyApiErrors(errors: ApiErrorMap): void {
@@ -687,7 +796,7 @@ export class ElectedBodyStatusComponent implements OnInit {
           if (existingIdx >= 0) {
             validations[existingIdx] = { ...validations[existingIdx], message: error.message };
           } else {
-            validations.push({ name: error.code, validator: null, message: error.message });
+            validations.unshift({ name: error.code, validator: null, message: error.message });
           }
         }
 
@@ -800,7 +909,6 @@ export class ElectedBodyStatusComponent implements OnInit {
   private confirmAndDeleteExcel(): void {
     this.isDeleteExcelDialogOpen = true;
 
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     const dialogData: ConfirmDialogData = {
       title: 'Remove uploaded Excel?',
       message:
@@ -812,7 +920,7 @@ export class ElectedBodyStatusComponent implements OnInit {
     };
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -887,9 +995,8 @@ export class ElectedBodyStatusComponent implements OnInit {
 
   /** Shows a cancel confirmation dialog; notifies the user if the action is confirmed. */
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;

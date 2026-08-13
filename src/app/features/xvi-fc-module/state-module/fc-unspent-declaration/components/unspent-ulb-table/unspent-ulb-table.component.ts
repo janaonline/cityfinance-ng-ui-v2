@@ -15,7 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
-import { MATERIAL_THEME_CLASS } from '../../../../../../core/theming/material-theme.providers';
+import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
 import { formatCrore, formatCroreFull } from '../../fc-unspent-declaration.utils';
@@ -136,7 +136,7 @@ export class UnspentUlbTableComponent {
   private readonly dynamicService = inject(DynamicFormService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly themeClass = resolveThemeClass();
   /** Passed through to `MatDialog.open` so the picker resolves the same feature-scoped
    *  `FcUnspentUlbOptionsCacheService` instance provided on `FcUnspentDeclarationComponent` — by
    *  default a dialog is created against the root injector, not this component's own. */

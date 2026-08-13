@@ -1,4 +1,6 @@
 import { CanMatchFn, Routes } from '@angular/router';
+import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
+import { XVIFC_THEME_CLASS } from './xvi-fc-module.constants';
 
 function readUserRole(): string {
   try {
@@ -42,6 +44,12 @@ export const XVIFC_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./xvi-fc-module.component').then((m) => m.XviFcModuleComponent),
+    /**
+     * XviFcModuleComponent scopes MATERIAL_THEME_CLASS via @Component({ providers }), but that only covers the component tree.
+     * Route guards like unsavedChangesGuard.canDeactivate use the router’s environment injector, which only sees route-level providers.
+     * Declaring it here lets the guard’s inject() resolve the xvifc theme for its dialogs.
+     **/
+    providers: [...provideMaterialThemeScope(XVIFC_THEME_CLASS)],
     children: [
       {
         path: ':yearId',

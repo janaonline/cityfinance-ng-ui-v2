@@ -11,8 +11,10 @@ import { MatTableModule } from '@angular/material/table';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
-import { ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  ConfirmDialogData,
+  themedDialogConfig,
+} from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
@@ -92,7 +94,8 @@ export class UlbSubmissionsComponent {
   private readonly utilityService = inject(UtilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly ulbSubmissionsService = inject(UlbSubmissionsService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
   private readonly http = inject(HttpClient);
 
   readonly filterSelects = FILTER_SELECTS;
@@ -244,7 +247,7 @@ export class UlbSubmissionsComponent {
     }
 
     this.confirmDialogService
-      .confirm(BULK_APPROVE_CONFIRM, this.themeClass ? { panelClass: this.themeClass } : undefined)
+      .confirm(BULK_APPROVE_CONFIRM, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) this.submitBulkReview('APPROVE');
