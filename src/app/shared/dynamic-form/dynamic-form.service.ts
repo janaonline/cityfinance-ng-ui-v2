@@ -8,7 +8,12 @@ import {
   AbstractControl,
   ValidatorFn,
 } from '@angular/forms';
-import { compareArrFieldsValidator, compareFieldsValidator } from '../../core/validators/comparison.validator';
+import {
+  compareArrFieldsValidator,
+  compareFieldsValidator,
+  digitsOnlyValidator,
+  matchesFieldValidator,
+} from '../../core/validators/comparison.validator';
 import { FieldConfig } from './field.interface';
 import { isUploadedFileMetadata, normalizeUploadedFileMetadata } from './components/file/file-metadata.types';
 import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
@@ -335,13 +340,35 @@ export class DynamicFormService {
 
   toFormGroup(questions: FieldConfig[]): FormGroup {
     const group: any = {};
+    const groupValidators: ValidatorFn[] = [];
+
     questions.forEach((question: FieldConfig) => {
+      const baseValidator = this.bindValidations(question.validations, question);
+      const controlValidator = question.digitsOnly
+        ? Validators.compose(
+            [baseValidator, this.digitsOnlyValidatorFor(question)].filter((v): v is ValidatorFn => v !== null),
+          )
+        : baseValidator;
+
       group[question.key] = new FormControl(
-        this.resolveInitialControlValue(question, true),
-        this.bindValidations(question.validations, question),
+        { value: this.resolveInitialControlValue(question, true), disabled: question.disabled === true },
+        controlValidator,
       );
+
+      if (question.matchesField) {
+        groupValidators.push(matchesFieldValidator(question.key, question.matchesField));
+      }
     });
-    return new FormGroup(group);
+
+    return new FormGroup(group, { validators: groupValidators });
+  }
+
+  /** Reads `minlength`/`maxlength` off the field's own `validations[]` so digit-count bounds
+   *  aren't declared twice — same source `bindValidations` already reads for `Validators.minLength`/`maxLength`. */
+  private digitsOnlyValidatorFor(question: FieldConfig): ValidatorFn {
+    const minLength = question.validations?.find((v) => v.name === 'minlength')?.validator;
+    const maxLength = question.validations?.find((v) => v.name === 'maxlength')?.validator;
+    return digitsOnlyValidator(minLength, maxLength);
   }
 
   /**

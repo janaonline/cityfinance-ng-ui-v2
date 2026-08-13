@@ -14,6 +14,9 @@ import { NoteDialogService } from '../../../../../shared/components/note-dialog/
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import type { UploadPageConfig } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.component';
 import { UploadDocumentsService } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.service';
+import { SlbService } from '../../../ulb-module/ulb-forms/slb/slb.service';
+import type { SlbFormData } from '../../../ulb-module/ulb-forms/slb/slb.models';
+import { SlbReviewComponent } from '../slb-review/slb-review.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import type {
@@ -23,7 +26,7 @@ import type {
 } from '../../../../../shared/components/document-action-row/document-action-row.types';
 
 type SectionKey = 'auditedData' | 'unauditedData';
-type TabKey = SectionKey | 'PFMS';
+type TabKey = SectionKey | 'PFMS' | 'SLB';
 type Decision = 'APPROVED' | 'RETURNED';
 
 interface DecisionEntry {
@@ -210,7 +213,14 @@ const RETURN_NOTE_MAX_LENGTH = 200;
 @Component({
   selector: 'app-annual-account-review',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatTooltipModule, DocumentActionRowComponent, PageErrorStateComponent],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatTooltipModule,
+    DocumentActionRowComponent,
+    PageErrorStateComponent,
+    SlbReviewComponent,
+  ],
   templateUrl: './annual-account-review.component.html',
   styleUrl: './annual-account-review.component.scss',
   animations: [TAB_SLIDE],
@@ -223,6 +233,7 @@ export class AnnualAccountReviewComponent {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly noteDialogService = inject(NoteDialogService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
+  private readonly slbService = inject(SlbService);
   /** Applies the feature's current theme to all confirm dialogs opened by this component. */
   private readonly dialogConfig = themedDialogConfig();
 
@@ -233,7 +244,7 @@ export class AnnualAccountReviewComponent {
     { key: 'auditedData', label: 'Audited', icon: 'file-earmark-text' },
     { key: 'unauditedData', label: 'Provisional', icon: 'file-earmark-spreadsheet' },
     { key: 'PFMS', label: 'PFMS', icon: 'bank' },
-    { key: null, label: 'Service Level Benchmarks', icon: 'speedometer2', disabled: true },
+    { key: 'SLB', label: 'Service Level Benchmarks', icon: 'speedometer2' },
   ];
 
   readonly activeSection = signal<TabKey>(this.resolveInitialSection());
@@ -242,6 +253,9 @@ export class AnnualAccountReviewComponent {
 
   readonly bankAccountData = signal<BankAccountData | null>(null);
   readonly bankAccountLoaded = signal(false);
+
+  readonly slbData = signal<SlbFormData | null>(null);
+  readonly slbDataLoaded = signal(false);
 
   readonly pfmsLogs = signal<PfmsLogEntry[]>([]);
   readonly pfmsLogsLoaded = signal(false);
@@ -268,7 +282,7 @@ export class AnnualAccountReviewComponent {
 
   readonly currentAnnualLogsState = computed<SectionLogsState>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return EMPTY_SECTION_LOGS_STATE;
+    if (key === 'PFMS' || key === 'SLB') return EMPTY_SECTION_LOGS_STATE;
     return this.annualLogsBySection()[key] ?? EMPTY_SECTION_LOGS_STATE;
   });
 
@@ -297,7 +311,7 @@ export class AnnualAccountReviewComponent {
 
   readonly currentSection = computed(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return null;
+    if (key === 'PFMS' || key === 'SLB') return null;
     return this.statusData()?.[key] ?? null;
   });
   readonly ulbName = computed(() => this.statusData()?.ulbName ?? this.ulbNameFallback ?? '');
@@ -305,7 +319,7 @@ export class AnnualAccountReviewComponent {
 
   readonly rows = computed<ReviewDocRow[]>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return [];
+    if (key === 'PFMS' || key === 'SLB') return [];
 
     const section = this.currentSection();
     const config = this.configBySection()[key];
@@ -375,7 +389,7 @@ export class AnnualAccountReviewComponent {
   readonly sectionStatusId = computed(() => this.currentSection()?.form_status_id ?? 0);
   readonly actionGates = computed<readonly ActionGate[]>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return [];
+    if (key === 'PFMS' || key === 'SLB') return [];
     return this.configBySection()[key]?.actionGates ?? [];
   });
 
@@ -431,6 +445,10 @@ export class AnnualAccountReviewComponent {
     this.activeSection.set(tab);
     if (tab === 'PFMS') {
       if (!this.bankAccountLoaded()) await this.loadBankAccount();
+      return;
+    }
+    if (tab === 'SLB') {
+      if (!this.slbDataLoaded()) await this.loadSlbData();
       return;
     }
     if (!this.configBySection()[tab]) {
@@ -768,7 +786,7 @@ export class AnnualAccountReviewComponent {
 
   async toggleAnnualHistory(): Promise<void> {
     const key = this.activeSection();
-    if (key === 'PFMS') return;
+    if (key === 'PFMS' || key === 'SLB') return;
 
     const current = this.annualLogsBySection()[key] ?? EMPTY_SECTION_LOGS_STATE;
     const expanded = !current.expanded;
@@ -896,6 +914,7 @@ export class AnnualAccountReviewComponent {
 
       const key = this.activeSection();
       if (key === 'PFMS') await this.loadBankAccount();
+      else if (key === 'SLB') await this.loadSlbData();
       else await this.loadConfigForSection(key);
     } catch {
       this.loadError.set(true);
@@ -918,6 +937,20 @@ export class AnnualAccountReviewComponent {
       this.utilityService.triggerSnackbar('Failed to load PFMS bank account details.', 'snackbar-danger');
     } finally {
       this.bankAccountLoaded.set(true);
+    }
+  }
+
+  private async loadSlbData(): Promise<void> {
+    const designYearId = this.resolveDesignYearId();
+    if (!designYearId) return;
+
+    try {
+      const data = await firstValueFrom(this.slbService.getSlbForm(this.ulbId, designYearId));
+      this.slbData.set(data);
+    } catch {
+      this.utilityService.triggerSnackbar('Failed to load Service Level Benchmarks.', 'snackbar-danger');
+    } finally {
+      this.slbDataLoaded.set(true);
     }
   }
 
@@ -950,7 +983,7 @@ export class AnnualAccountReviewComponent {
 
   private resolveInitialSection(): TabKey {
     const requested = this.route.snapshot.queryParamMap.get('section');
-    if (requested === 'unauditedData' || requested === 'PFMS') return requested;
+    if (requested === 'unauditedData' || requested === 'PFMS' || requested === 'SLB') return requested;
     return 'auditedData';
   }
 }

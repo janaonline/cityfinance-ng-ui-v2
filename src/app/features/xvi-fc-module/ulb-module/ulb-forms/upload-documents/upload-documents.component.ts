@@ -515,6 +515,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const yearId = cfg.documentYearId;
       const year = cfg.documentYear;
       const section = cfg.type === 'audited' ? 'auditedData' : 'unauditedData';
+      const auditType = cfg.type === 'audited' ? 'AUDITED' : 'UNAUDITED';
 
       // Step 1 — Get presigned PUT URL from generic S3 endpoint
       const uploadId = crypto.randomUUID();
@@ -544,6 +545,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
           stateId,
           designYearId,
           section,
+          auditType,
           docId,
           yearId,
           year,
