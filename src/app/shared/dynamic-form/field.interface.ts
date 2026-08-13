@@ -124,6 +124,13 @@ export type FieldSupportingContent =
 
 export type { UploadedFileMetadata } from './components/file/file-metadata.types';
 
+export interface FieldLookupConfig {
+  /** Relative API path; `:value` is replaced with this field's current (validated) value. */
+  endpoint: string;
+  /** Maps response keys (dot-path into the JSON body) to the target field `key` they populate. */
+  populates: Record<string, string>;
+}
+
 export interface LegacyFileValue {
   name: string;
   size: string | number | null;
@@ -184,6 +191,13 @@ export interface FieldConfig {
   /** Muted helper text rendered below the field control. */
   hintText?: string;
   displayInlineLabel?: boolean;
+  /** On a valid value, calls `endpoint` and patches sibling fields from the response per `populates`. */
+  lookup?: FieldLookupConfig;
+  /** This field's value must equal the named sibling field's value (e.g. confirm-account-number). */
+  matchesField?: string;
+  /** Strips non-digit characters live as the user types; pairs with named `validations` entries
+   *  (`hasSpaces`/`hasAlphabets`/`hasSpecialChars`/`tooShort`/`tooLong`) for granular messages. */
+  digitsOnly?: boolean;
 }
 
 /** One card-sectioned group of fields, rendered by `FormSectionGridComponent`. */
