@@ -1,7 +1,97 @@
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
-import { compareArrFieldsValidator, compareFieldsValidator, targetLessThanActualValidator } from './comparison.validator';
+import {
+  compareArrFieldsValidator,
+  compareFieldsValidator,
+  targetLessThanActualValidator,
+  digitsOnlyValidator,
+  matchesFieldValidator,
+} from './comparison.validator';
 
 describe('comparison validators', () => {
+  describe('matchesFieldValidator', () => {
+    function buildFlatGroup(fieldValue: string, targetValue: string) {
+      return new FormGroup({
+        confirmAccountNumber: new FormControl(fieldValue),
+        accountNumber: new FormControl(targetValue),
+      });
+    }
+
+    it('sets matchesField error on the declaring field when values differ', () => {
+      const group = buildFlatGroup('123', '456');
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ matchesField: true });
+    });
+
+    it('clears the error once values match', () => {
+      const group = buildFlatGroup('123', '456');
+      group.controls['confirmAccountNumber'].setErrors({ matchesField: true });
+      group.controls['confirmAccountNumber'].setValue('456');
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toBeNull();
+    });
+
+    it('does not touch the target field itself', () => {
+      const group = buildFlatGroup('123', '456');
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['accountNumber'].errors).toBeNull();
+    });
+
+    it('returns null when either configured field is missing', () => {
+      const group = new FormGroup({});
+
+      expect(matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group)).toBeNull();
+    });
+
+    it('resolves dotted keys as literal flat control names, not nested paths', () => {
+      // toFormGroup() builds flat controls keyed by the literal string 'bankDetails.name' —
+      // AbstractControl.get() would misinterpret the dot as a nested path and find nothing.
+      const group = new FormGroup({
+        'confirm.value': new FormControl('123'),
+        'target.value': new FormControl('456'),
+      });
+
+      matchesFieldValidator('confirm.value', 'target.value')(group);
+
+      expect(group.controls['confirm.value'].errors).toEqual({ matchesField: true });
+    });
+  });
+
+  describe('digitsOnlyValidator', () => {
+    it('returns null for an empty value', () => {
+      expect(digitsOnlyValidator()(new FormControl(''))).toBeNull();
+    });
+
+    it('flags spaces', () => {
+      expect(digitsOnlyValidator()(new FormControl('123 456'))).toEqual({ hasSpaces: true });
+    });
+
+    it('flags alphabets', () => {
+      expect(digitsOnlyValidator()(new FormControl('123abc'))).toEqual({ hasAlphabets: true });
+    });
+
+    it('flags special characters', () => {
+      expect(digitsOnlyValidator()(new FormControl('123-456'))).toEqual({ hasSpecialChars: true });
+    });
+
+    it('flags too-short values against minLength', () => {
+      expect(digitsOnlyValidator(9, 18)(new FormControl('12345'))).toEqual({ tooShort: true });
+    });
+
+    it('flags too-long values against maxLength', () => {
+      expect(digitsOnlyValidator(9, 18)(new FormControl('1234567890123456789'))).toEqual({ tooLong: true });
+    });
+
+    it('returns null for a valid digit string within bounds', () => {
+      expect(digitsOnlyValidator(9, 18)(new FormControl('123456789'))).toBeNull();
+    });
+  });
+
   describe('compareFieldsValidator', () => {
     function buildGroup(firstValue: number, secondValue: number) {
       return new FormGroup({

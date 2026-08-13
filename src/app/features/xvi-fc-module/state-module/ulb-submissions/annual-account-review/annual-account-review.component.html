@@ -186,6 +186,8 @@
               </div>
             </div>
           }
+        } @else if (activeSection() === 'SLB') {
+          <app-slb-review [data]="slbData()" />
         } @else {
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
             <div class="d-flex flex-wrap align-items-center gap-2">
@@ -380,6 +382,7 @@
       </div>
     </div>
 
+    @if (activeSection() !== 'SLB') {
     @if (activeSection() === 'PFMS') {
       @if (bankAccountData() && canApprovePfms() && !pfmsReturning()) {
         <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
@@ -458,6 +461,7 @@
           </button>
         </div>
       }
+    }
     }
   }
 </main>

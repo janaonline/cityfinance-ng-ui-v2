@@ -1,18 +1,13 @@
 /** One of the XVI-FC forms a state reviews, one at a time, across all its ULBs. */
-export type ReviewFormId =
-  | 'AUDITED_STATEMENTS'
-  | 'PROVISIONAL_STATEMENTS'
-  | 'PFMS_BANK_ACCOUNT'
-  | 'SERVICE_LEVEL_BENCHMARKS'
-  | 'FORM_5_TBD';
+export type ReviewFormId = 'AUDITED_STATEMENTS' | 'PROVISIONAL_STATEMENTS' | 'PFMS_BANK_ACCOUNT' | 'SERVICE_LEVEL_BENCHMARKS';
 
-/** "Select Form" dropdown options. Annual Accounts and PFMS Bank Account map to a real backend today. */
+/** "Select Form" dropdown options. Every option maps to a real backend today — SLB is read-only
+ *  (deemed approved on submission, no STATE approve/return workflow), unlike the other three. */
 export const FORM_OPTIONS: ReadonlyArray<{ readonly value: ReviewFormId; readonly label: string; readonly live: boolean }> = [
   { value: 'AUDITED_STATEMENTS', label: 'Audited Statements', live: true },
   { value: 'PROVISIONAL_STATEMENTS', label: 'Provisional Statements', live: true },
   { value: 'PFMS_BANK_ACCOUNT', label: 'PFMS Bank Account', live: true },
-  { value: 'SERVICE_LEVEL_BENCHMARKS', label: 'Service Level Benchmarks (coming soon)', live: false },
-  { value: 'FORM_5_TBD', label: 'Form 5 (coming soon)', live: false },
+  { value: 'SERVICE_LEVEL_BENCHMARKS', label: 'Service Level Benchmarks', live: true },
 ];
 
 /** Maps a live `ReviewFormId` to the Annual Account section the backend understands. */
@@ -26,6 +21,7 @@ export const FORM_TO_TAB: Partial<Record<ReviewFormId, string>> = {
   AUDITED_STATEMENTS: 'auditedData',
   PROVISIONAL_STATEMENTS: 'unauditedData',
   PFMS_BANK_ACCOUNT: 'PFMS',
+  SERVICE_LEVEL_BENCHMARKS: 'SLB',
 };
 
 /** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum. */
