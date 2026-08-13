@@ -81,7 +81,7 @@ export class SlbComponent implements OnInit {
 
   /** The 28 SLB indicator questions, rendered as table rows. */
   readonly indicatorFields = computed(() => this.visibleFields().filter((f) => f.formFieldType === 'actualTarget'));
-  /** Indicator fields bucketed by `meta.section` (Water Supply, Sanitation, Solid Waste, Storm Water),
+  /** Indicator fields bucketed by `meta.section` (Water Supply, Sewerage Management, Solid Waste Management, Storm Water Drainage),
    *  preserving indicator order within each section and section order of first appearance. */
   readonly groupedIndicatorFields = computed<SlbIndicatorGroup[]>(() => {
     const groups: SlbIndicatorGroup[] = [];

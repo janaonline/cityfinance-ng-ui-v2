@@ -59,7 +59,7 @@ function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormDat
         value: null,
         inputCardConfig: { suffixText: '%' },
         validations: [{ name: 'required', validator: true, message: 'This field is required.' }],
-        meta: { section: 'Sanitation' },
+        meta: { section: 'Sewerage Management' },
       },
       {
         key: 'checkboxConfirmation',
@@ -157,7 +157,7 @@ describe('SlbComponent', () => {
     fixture.detectChanges();
     tick(1);
 
-    expect(component.groupedIndicatorFields().map((g) => g.section)).toEqual(['Water Supply', 'Sanitation']);
+    expect(component.groupedIndicatorFields().map((g) => g.section)).toEqual(['Water Supply', 'Sewerage Management']);
     expect(component.groupedIndicatorFields()[0].fields.map((f) => f.key)).toEqual(['ind1']);
     expect(component.groupedIndicatorFields()[1].fields.map((f) => f.key)).toEqual(['ind10']);
   }));
@@ -174,7 +174,7 @@ describe('SlbComponent', () => {
     expect(allRows.length).toBe(4);
     expect(sectionRows.length).toBe(2);
     expect(sectionRows[0].textContent).toContain('Water Supply');
-    expect(sectionRows[1].textContent).toContain('Sanitation');
+    expect(sectionRows[1].textContent).toContain('Sewerage Management');
 
     const indicatorRow = Array.from(allRows).find((row) => row.textContent?.includes('Per capita supply of water'));
     expect(indicatorRow).toBeTruthy();
@@ -189,10 +189,10 @@ describe('SlbComponent', () => {
     tick(1);
 
     const headerCells = (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table thead th');
-    expect(headerCells[2].textContent).toContain('Actuals');
-    expect(headerCells[2].textContent).toContain('for FY 2025-26');
-    expect(headerCells[3].textContent).toContain('Targets');
-    expect(headerCells[3].textContent).toContain('for FY 2026-27');
+    expect(headerCells[2].textContent).toContain('Actual Indicator');
+    expect(headerCells[2].textContent).toContain('2025-26');
+    expect(headerCells[3].textContent).toContain('Target Indicator');
+    expect(headerCells[3].textContent).toContain('2026-27');
   }));
 
   it('disables the form when the form is not editable', fakeAsync(() => {
