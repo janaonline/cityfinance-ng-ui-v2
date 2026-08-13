@@ -13,7 +13,6 @@ import { ConfirmDialogService } from '../../../../../shared/components/confirm-d
 import { SlbComponent } from './slb.component';
 import { SlbService } from './slb.service';
 import { SlbFormData } from './slb.models';
-import { FormProgressComponent } from '../../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 
 @Component({ selector: 'app-dynamic-form', standalone: true, template: '' })
@@ -25,13 +24,6 @@ class MockDynamicFormComponent {
 
 @Component({ selector: 'app-pre-loader', standalone: true, template: '' })
 class MockPreLoaderComponent {}
-
-@Component({ selector: 'app-form-progress', standalone: true, template: '' })
-class MockFormProgressComponent {
-  @Input() formType: unknown;
-  @Input() formStatus: unknown;
-  @Input() actors: unknown;
-}
 
 function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormData {
   return {
@@ -56,6 +48,17 @@ function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormDat
         value: null,
         inputCardConfig: { suffixText: 'lpcd' },
         validations: [{ name: 'required', validator: true, message: 'This field is required.' }],
+        meta: { section: 'Water Supply' },
+      },
+      {
+        key: 'ind10',
+        label: 'Adequacy of waste water treatment capacity',
+        position: 10,
+        formFieldType: 'actualTarget',
+        value: null,
+        inputCardConfig: { suffixText: '%' },
+        validations: [{ name: 'required', validator: true, message: 'This field is required.' }],
+        meta: { section: 'Sanitation' },
       },
       {
         key: 'checkboxConfirmation',
@@ -100,8 +103,8 @@ describe('SlbComponent', () => {
       ],
     })
       .overrideComponent(SlbComponent, {
-        remove: { imports: [HttpClientTestingModule, RouterTestingModule, DynamicFormComponent, FormProgressComponent] },
-        add: { imports: [HttpClientTestingModule, RouterTestingModule, MockDynamicFormComponent, MockPreLoaderComponent, MockFormProgressComponent] },
+        remove: { imports: [HttpClientTestingModule, RouterTestingModule, DynamicFormComponent] },
+        add: { imports: [HttpClientTestingModule, RouterTestingModule, MockDynamicFormComponent, MockPreLoaderComponent] },
       })
       .compileComponents();
 
@@ -133,21 +136,50 @@ describe('SlbComponent', () => {
     expect(getControl('ind1.actual')).toBeTruthy();
     expect(getControl('ind1.target')).toBeTruthy();
     expect(getControl('checkboxConfirmation')).toBeTruthy();
-    expect(component.indicatorFields().map((f) => f.key)).toEqual(['ind1']);
+    expect(component.indicatorFields().map((f) => f.key)).toEqual(['ind1', 'ind10']);
     expect(component.declarationFields().map((f) => f.key)).toEqual(['checkboxConfirmation']);
   }));
 
-  it('renders the indicator table with actual/target inputs and the unit suffix', fakeAsync(() => {
+  it('shows the current status as a plain pill, not a multi-actor review stepper', fakeAsync(() => {
     createComponent();
     fixture.detectChanges();
     tick(1);
 
-    const rows = (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr');
-    expect(rows.length).toBe(1);
-    expect(rows[0].textContent).toContain('Per capita supply of water');
-    expect(rows[0].textContent).toContain('lpcd');
-    expect(rows[0].querySelector('[data-cy="ind1_actual-test"]')).toBeTruthy();
-    expect(rows[0].querySelector('[data-cy="ind1_target-test"]')).toBeTruthy();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(component.currentFormStatusLabel()).toBe('Not Started');
+    expect(element.querySelector('.status-pill')?.textContent?.trim()).toBe('Not Started');
+    expect(element.querySelector('app-form-progress')).toBeNull();
+  }));
+
+  it('groups indicator fields by meta.section, preserving section order of first appearance', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    expect(component.groupedIndicatorFields().map((g) => g.section)).toEqual(['Water Supply', 'Sanitation']);
+    expect(component.groupedIndicatorFields()[0].fields.map((f) => f.key)).toEqual(['ind1']);
+    expect(component.groupedIndicatorFields()[1].fields.map((f) => f.key)).toEqual(['ind10']);
+  }));
+
+  it('renders the indicator table with actual/target inputs, unit suffix, and section header rows', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    const allRows = (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr');
+    const sectionRows = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '.slb-indicator-table tbody tr.slb-section-row',
+    );
+    expect(allRows.length).toBe(4);
+    expect(sectionRows.length).toBe(2);
+    expect(sectionRows[0].textContent).toContain('Water Supply');
+    expect(sectionRows[1].textContent).toContain('Sanitation');
+
+    const indicatorRow = Array.from(allRows).find((row) => row.textContent?.includes('Per capita supply of water'));
+    expect(indicatorRow).toBeTruthy();
+    expect(indicatorRow!.textContent).toContain('lpcd');
+    expect(indicatorRow!.querySelector('[data-cy="ind1_actual-test"]')).toBeTruthy();
+    expect(indicatorRow!.querySelector('[data-cy="ind1_target-test"]')).toBeTruthy();
   }));
 
   it('disables the form when the form is not editable', fakeAsync(() => {
@@ -163,7 +195,7 @@ describe('SlbComponent', () => {
     expect(component.form.disabled).toBeTrue();
   }));
 
-  it('shows a snackbar and stops loading when the initial fetch fails', fakeAsync(() => {
+  it('shows the error state and stops loading when the initial fetch fails', fakeAsync(() => {
     getSlbFormSpy.and.returnValue(throwError(() => new Error('network error')));
 
     createComponent();
@@ -171,10 +203,24 @@ describe('SlbComponent', () => {
     tick(1);
 
     expect(component.isLoading()).toBeFalse();
-    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
-      'Unable to load SLB form. Please try again.',
-      'snackbar-danger',
-    );
+    expect(component.hasLoadError()).toBeTrue();
+  }));
+
+  it('clears the error state and refetches on retry', fakeAsync(() => {
+    getSlbFormSpy.and.returnValue(throwError(() => new Error('network error')));
+
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    expect(component.hasLoadError()).toBeTrue();
+
+    getSlbFormSpy.and.returnValue(of(createSlbFormResponse()));
+    component.retryLoadForm();
+    tick(1);
+
+    expect(component.hasLoadError()).toBeFalse();
+    expect(component.isLoading()).toBeFalse();
   }));
 
   it('saves a draft and reloads the form on success', fakeAsync(() => {
