@@ -220,9 +220,9 @@
                   <option [value]="u" [selected]="u === currentUnit()">{{ unitLabels[u] }}</option>
                 }
               </select>
-              <button class="btn-outline-custom btn-sm" type="button" (click)="downloadTable()">
+              <button class="btn-outline-custom btn-sm" type="button" (click)="downloadPdf()">
                 <mat-icon>download</mat-icon>
-                Download
+                Download PDF
               </button>
             </div>
           </div>
@@ -350,11 +350,19 @@
 
             <!-- Declaration & sign-off -->
             <div class="decl-card p-4 mb-4">
-              <div class="decl-label mb-3">
-                Declaration &amp; sign-off <span class="text-danger">*</span> required for both actions below
+              <div class="decl-label d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <span>Declaration &amp; sign-off <span class="text-danger">*</span> required for both actions below</span>
+                <button class="btn-outline-custom btn-sm" type="button" (click)="downloadDeclarationTemplate()">
+                  <mat-icon>description</mat-icon>
+                  Download Template
+                </button>
               </div>
+              <p class="text-muted small mb-3">
+                Download the template, fill in the details, add your seal and signature, then upload the signed copy
+                below as a PDF.
+              </p>
 
-              <input #declInput type="file" class="d-none" (change)="onDeclarationChosen($event)" />
+              <input #declInput type="file" class="d-none" accept=".pdf,application/pdf" (change)="onDeclarationChosen($event)" />
               @if (!detail.declaration) {
                 <div
                   class="upload-zone border border-dashed rounded p-3 text-center"

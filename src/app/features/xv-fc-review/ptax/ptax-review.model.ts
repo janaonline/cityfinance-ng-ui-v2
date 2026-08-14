@@ -96,6 +96,8 @@ export interface PtaxMetricOrderRule {
 export interface PtaxFyDetail {
   financialYear: string;
   status: PtaxReviewStatus;
+  /** Not yet confirmed on Ptax's API (AFS's equivalent endpoint already returns this) - used to pre-fill the Declaration template's ULB name field once the backend adds it here too. */
+  ulbName?: string;
   metrics: PtaxMetric[];
   /** Pairwise ordering constraints across metrics, e.g. 1.10 (lesser) must not exceed 1.9 (greater). */
   metricOrderRules?: PtaxMetricOrderRule[];

@@ -24,6 +24,7 @@ import { formatXvFcAmount, groupXvFcLineItems } from './xv-fc-review-format.util
 import { extractApiErrorMessage } from './xv-fc-review-error.util';
 import { PageErrorStateComponent } from '../xvi-fc-module/shared/page-error-state/page-error-state.component';
 import { PtaxReviewComponent } from './ptax/ptax-review.component';
+import { DeclarationTemplateService } from './declaration-template.service';
 
 type Screen = 'review' | 'preview' | 'success';
 type ModuleTab = 'afs' | 'ptax';
@@ -59,6 +60,7 @@ export class XvFcDataReviewComponent {
   readonly service = inject(XvFcDataReviewService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly declarationTemplateService = inject(DeclarationTemplateService);
   /** Lets the flag dialog (opened via the root MatDialog) inherit the xvifc-theme CSS vars. */
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
 
@@ -273,12 +275,24 @@ export class XvFcDataReviewComponent {
   }
 
   // ── Declaration ──────────────────────────────────────────────────────
+  downloadDeclarationTemplate() {
+    void this.declarationTemplateService.downloadDeclarationTemplate(
+      this.service.fyDetail()?.ulbName,
+    );
+  }
+
   onDeclarationChosen(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     const yearId = this.currentYearId();
     if (!file || !yearId) return;
     input.value = '';
+    // The signed declaration must be a PDF — `accept` on the input is only a picker hint and
+    // doesn't stop drag-and-drop or "All files", so enforce it here too.
+    if (file.type !== 'application/pdf') {
+      this.toast('Please upload the signed declaration as a PDF file.');
+      return;
+    }
     this.uploadingDeclaration.set(true);
     this.service.uploadDocument(yearId, XV_FC_DECLARATION_TARGET_CODE, file).subscribe({
       next: async () => {
