@@ -247,6 +247,14 @@
                         @if (commissionerForm.controls.commissionerEmail.touched) {
                           @if (commissionerForm.controls.commissionerEmail.hasError('email')) {
                             <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
+                          } @else if (commissionerForm.controls.commissionerEmail.hasError('emailDomainTypo')) {
+                            <p class="text-danger small mt-1 mb-0">
+                              This looks like it might be a typo (e.g. gmial.com instead of gmail.com) — please double-check the domain.
+                            </p>
+                          } @else if (commissionerForm.controls.commissionerEmail.hasError('governmentDomainTypo')) {
+                            <p class="text-danger small mt-1 mb-0">
+                              This looks like it might be a typo of an official .gov.in or .nic.in address — please double-check the domain.
+                            </p>
                           } @else if (commissionerForm.controls.commissionerEmail.hasError('unsafeInput')) {
                             <p class="text-danger small mt-1 mb-0">Email contains invalid characters</p>
                           }
@@ -357,7 +365,9 @@
                       } @else if (
                         accountantForm.controls.accountantEmail.hasError('email') ||
                         accountantForm.controls.accountantEmail.hasError('maxlength') ||
-                        accountantForm.controls.accountantEmail.hasError('unsafeInput')
+                        accountantForm.controls.accountantEmail.hasError('unsafeInput') ||
+                        accountantForm.controls.accountantEmail.hasError('emailDomainTypo') ||
+                        accountantForm.controls.accountantEmail.hasError('governmentDomainTypo')
                       ) {
                         <span
                           class="badge rounded-pill text-bg-warning"
@@ -459,6 +469,14 @@
                             <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
                           } @else if (accountantForm.controls.accountantEmail.hasError('maxlength')) {
                             <p class="text-danger small mt-1 mb-0">Email address is too long</p>
+                          } @else if (accountantForm.controls.accountantEmail.hasError('emailDomainTypo')) {
+                            <p class="text-danger small mt-1 mb-0">
+                              This looks like it might be a typo (e.g. gmial.com instead of gmail.com) — please double-check the domain.
+                            </p>
+                          } @else if (accountantForm.controls.accountantEmail.hasError('governmentDomainTypo')) {
+                            <p class="text-danger small mt-1 mb-0">
+                              This looks like it might be a typo of an official .gov.in or .nic.in address — please double-check the domain.
+                            </p>
                           } @else if (accountantForm.controls.accountantEmail.hasError('unsafeInput')) {
                             <p class="text-danger small mt-1 mb-0">Email contains invalid characters</p>
                           }
