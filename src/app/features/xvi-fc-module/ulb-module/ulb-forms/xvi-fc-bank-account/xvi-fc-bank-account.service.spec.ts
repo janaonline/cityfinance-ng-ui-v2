@@ -59,6 +59,18 @@ describe('XviFcBankAccountService', () => {
     httpMock.verify();
   });
 
+  it('getFormConfig calls GET /xvi-fc/bank-account/form-config with yearId', () => {
+    let result: unknown;
+
+    service.getFormConfig('year-id').subscribe((value) => (result = value));
+
+    const req = httpMock.expectOne(`${BASE_URL}xvi-fc/bank-account/form-config?yearId=year-id`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ success: true, data: { meta: {}, data: [{ key: 'ifscCode', label: 'IFSC Code', formFieldType: 'text' }] } });
+
+    expect(result).toEqual({ meta: {}, data: [{ key: 'ifscCode', label: 'IFSC Code', formFieldType: 'text' }] });
+  });
+
   it('getBankAccount calls GET /xvi-fc/bank-account with yearId and ulbId', () => {
     let result: XviFcBankAccountResponse | null | undefined;
 

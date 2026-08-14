@@ -213,7 +213,7 @@ export class UlbFormsComponent implements OnInit {
     return {
       eyebrow: 'ESTIMATED GRANT',
       amount: 'Allocation will be displayed once the State submits the ULB-wise allocation',
-      tag: `${year} · Based on SFC data, population figures, and CF calculations`,
+      tag: `${year}`,
       note: details ? `For ${details.ulbName}, ${details.stateName}` : '',
     };
   });

@@ -17,7 +17,7 @@
   @for (validation of validations; track validation) {
   <ng-container ngProjectAs="mat-error">
     @if (hasError(field.key, validation.name)) {
-    <mat-error>{{ validation.message }}</mat-error>
+    <mat-error>{{ errorMessage(field.key, validation) }}</mat-error>
     }
   </ng-container>
   }
@@ -44,14 +44,15 @@
   } @else {
   <input [placeholder]="field.placeholder || ''" onwheel="this.blur()" matInput [formControlName]="field.key"
     [id]="field.key" [type]="field.formFieldType" [readonly]="readonly" appTrimOnBlur
-    [attr.maxlength]="maxLength" [attr.data-cy]="field.key ? field.key + '-test' : null" />
+    [attr.maxlength]="maxLength" [attr.data-cy]="field.key ? field.key + '-test' : null"
+    (input)="onDigitsOnlyInput($event)" />
   }
 
   <!-- <mat-icon matSuffix>warning</mat-icon> -->
   @for (validation of validations; track validation) {
   <ng-container ngProjectAs="mat-error">
     @if (hasError(field.key, validation.name)) {
-    <mat-error>{{ validation.message }}</mat-error>
+    <mat-error>{{ errorMessage(field.key, validation) }}</mat-error>
     }
   </ng-container>
   }

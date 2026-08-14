@@ -15,6 +15,8 @@ interface ApiMenuItem {
   expanded?: boolean;
   featureKey?: string;
   routerLink?: string[];
+  url?: string;
+  target?: '_blank' | '_self';
   items?: ApiMenuItem[];
 }
 

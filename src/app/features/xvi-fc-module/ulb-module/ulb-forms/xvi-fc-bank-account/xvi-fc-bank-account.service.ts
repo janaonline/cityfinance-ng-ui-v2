@@ -6,6 +6,7 @@ import { FileService, S3SignedUrlRequestItem, S3UrlResult } from '../../../../..
 import {
   ApiResponse,
   SubmitXviFcBankAccountPayload,
+  XviFcBankAccountFormConfig,
   XviFcBankAccountResponse,
   XviFcIfscLookupResponse,
 } from './xvi-fc-bank-account.models';
@@ -25,6 +26,14 @@ export class XviFcBankAccountService {
         `${this.baseUrl}xvi-fc/bank-account?${query.toString()}`,
       )
       .pipe(map((res) => (res === null ? null : this.unwrap(res))));
+  }
+
+  getFormConfig(yearId: string): Observable<XviFcBankAccountFormConfig> {
+    return this.http
+      .get<ApiResponse<XviFcBankAccountFormConfig> | XviFcBankAccountFormConfig>(
+        `${this.baseUrl}xvi-fc/bank-account/form-config?yearId=${encodeURIComponent(yearId)}`,
+      )
+      .pipe(map((res) => this.unwrap(res)));
   }
 
   lookupIfsc(ifscCode: string): Observable<XviFcIfscLookupResponse> {
