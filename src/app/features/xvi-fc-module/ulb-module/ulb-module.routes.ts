@@ -20,6 +20,10 @@ export const ULB_ROUTES: Routes = [
         loadComponent: () => import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
       },
       {
+        path: 'faq',
+        loadComponent: () => import('../shared/faq/faq.component').then((m) => m.FaqComponent),
+      },
+      {
         path: 'ulb-forms',
         loadComponent: () => import('./ulb-forms/ulb-forms.component').then((m) => m.UlbFormsComponent),
       },

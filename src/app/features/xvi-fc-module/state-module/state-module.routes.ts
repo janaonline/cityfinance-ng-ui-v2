@@ -79,6 +79,10 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
   },
   {
+    path: 'faq',
+    loadComponent: () => import('../shared/faq/faq.component').then((m) => m.FaqComponent),
+  },
+  {
     path: 'roles-teams-unified-view',
     loadComponent: () =>
       import('./roles-teams-overview/roles-teams-overview.component').then((m) => m.RolesTeamsOverviewComponent),
