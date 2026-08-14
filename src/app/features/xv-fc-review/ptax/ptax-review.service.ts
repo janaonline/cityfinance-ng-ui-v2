@@ -12,6 +12,7 @@ import {
   PtaxPresignRequest,
   PtaxPresignResponse,
 } from './ptax-review.model';
+import { XvFcCurrencyUnit, XV_FC_CURRENCY_UNIT_TO_API } from '../models/xv-fc-review.model';
 
 function unwrap<T>(response: unknown): T {
   const r = response as Record<string, unknown>;
@@ -59,8 +60,11 @@ export class PtaxReviewService {
   readonly fyDetail = signal<PtaxFyDetail | null>(null);
   readonly detailLoading = signal(false);
   readonly detailError = signal(false);
+  /** Tracks the most recently requested year so a slow, superseded response can't clobber a faster later one. */
+  private latestYearId: string | null = null;
 
   async loadFyDetail(yearId: string): Promise<void> {
+    this.latestYearId = yearId;
     this.detailLoading.set(true);
     this.detailError.set(false);
     this.fyDetail.set(null);
@@ -68,12 +72,16 @@ export class PtaxReviewService {
       const res = await firstValueFrom(
         this.http.get<unknown>(`${this.baseUrl}${this.ulbId}/${yearId}`),
       );
+      if (this.latestYearId !== yearId) return; // a newer switchYear() has since superseded this request
       this.fyDetail.set(unwrap<PtaxFyDetail>(res));
     } catch (err) {
+      if (this.latestYearId !== yearId) return;
       console.error('Failed to load Ptax review detail for year ' + yearId, err);
       this.detailError.set(true);
     } finally {
-      this.detailLoading.set(false);
+      if (this.latestYearId === yearId) {
+        this.detailLoading.set(false);
+      }
     }
   }
 
@@ -161,5 +169,13 @@ export class PtaxReviewService {
     return this.http
       .post<unknown>(`${this.baseUrl}${this.ulbId}/${yearId}/submit`, { finalAction })
       .pipe(map((res) => unwrap<PtaxFyDetail>(res)));
+  }
+
+  // ── PDF export ───────────────────────────────────────────────────────────
+  downloadPdf(yearId: string, unit: XvFcCurrencyUnit): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}${this.ulbId}/${yearId}/pdf`, {
+      params: { currency: XV_FC_CURRENCY_UNIT_TO_API[unit] },
+      responseType: 'blob',
+    });
   }
 }

@@ -123,7 +123,7 @@
                       <div class="flag-note">
                         <mat-icon inline="true" class="fs-6">flag</mat-icon>
                         <div>
-                          @if (item.proposedValue != null) {
+                          @if (item.proposedValue !== null) {
                             <div><b>Correct value</b> - {{ item.proposedValue | number: '1.2-2' }}</div>
                           }
                           <div><b>Additional Comment</b> - {{ item.comment }}</div>
