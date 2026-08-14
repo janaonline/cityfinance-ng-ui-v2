@@ -12,7 +12,12 @@
             }
           </div>
 
-          <h1 class="page-title mb-2">Service Level Benchmarks</h1>
+          <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
+            <h1 class="page-title mb-2">Service Level Benchmarks</h1>
+            @if (currentFormStatusLabel()) {
+              <span class="status-pill small fw-semibold">{{ currentFormStatusLabel() }}</span>
+            }
+          </div>
 
           <p class="page-subtitle text-secondary mb-0">
             Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid waste,
@@ -26,12 +31,13 @@
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>
+        } @else if (hasLoadError()) {
+          <app-page-error-state
+            title="Failed to load SLB form"
+            message="We couldn't reach the server. Please check your connection and try again."
+            (retry)="retryLoadForm()"
+          />
         } @else {
-          @if (actors().length) {
-            <app-form-progress formType="ulb" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
-            <hr class="my-0 text-body-tertiary" />
-          }
-
           @if (!isProduction && canEdit()) {
             <div class="d-flex justify-content-end">
               <button
@@ -56,8 +62,8 @@
                       <th scope="col">Sections/Indicators</th>
                       <th scope="col" class="text-nowrap">
                         <div>Actual Indicator</div>
-                        @if (yearLabel()) {
-                          <div>{{ yearLabel() }}</div>
+                        @if (actualYearLabel()) {
+                          <div>{{ actualYearLabel() }}</div>
                         }
                       </th>
                       <th scope="col" class="text-nowrap">
@@ -69,51 +75,58 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (item of indicatorFields(); track item.key; let i = $index) {
-                      <tr [formGroupName]="item.key">
-                        <td class="slb-col-num text-secondary">{{ item.position ?? i + 1 }}</td>
-                        <td class="fw-semibold">{{ item.label }}</td>
-                        <td>
-                          <div class="input-group input-group-sm slb-indicator-input">
-                            <input
-                              type="number"
-                              class="form-control"
-                              onwheel="this.blur()"
-                              formControlName="actual"
-                              [placeholder]="item.placeholder || ''"
-                              [attr.data-cy]="item.key + '_actual-test'"
-                            />
-                            @if (item.inputCardConfig?.suffixText) {
-                              <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
+                    @for (group of groupedIndicatorFields(); track group.section) {
+                      @if (group.section) {
+                        <tr class="slb-section-row">
+                          <td colspan="4">{{ group.section }}</td>
+                        </tr>
+                      }
+                      @for (item of group.fields; track item.key; let i = $index) {
+                        <tr [formGroupName]="item.key">
+                          <td class="slb-col-num text-secondary">{{ item.position ?? i + 1 }}</td>
+                          <td class="fw-semibold">{{ item.label }}</td>
+                          <td>
+                            <div class="input-group input-group-sm slb-indicator-input">
+                              <input
+                                type="number"
+                                class="form-control"
+                                onwheel="this.blur()"
+                                formControlName="actual"
+                                [placeholder]="item.placeholder || ''"
+                                [attr.data-cy]="item.key + '_actual-test'"
+                              />
+                              @if (item.inputCardConfig?.suffixText) {
+                                <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
+                              }
+                            </div>
+                            @for (validation of item.validations; track validation.name) {
+                              @if (hasIndicatorError(item.key, 'actual', validation.name)) {
+                                <div class="text-danger small mt-1">{{ validation.message }}</div>
+                              }
                             }
-                          </div>
-                          @for (validation of item.validations; track validation.name) {
-                            @if (hasIndicatorError(item.key, 'actual', validation.name)) {
-                              <div class="text-danger small mt-1">{{ validation.message }}</div>
+                          </td>
+                          <td>
+                            <div class="input-group input-group-sm slb-indicator-input">
+                              <input
+                                type="number"
+                                class="form-control"
+                                onwheel="this.blur()"
+                                formControlName="target"
+                                [placeholder]="item.placeholder || ''"
+                                [attr.data-cy]="item.key + '_target-test'"
+                              />
+                              @if (item.inputCardConfig?.suffixText) {
+                                <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
+                              }
+                            </div>
+                            @for (validation of item.validations; track validation.name) {
+                              @if (hasIndicatorError(item.key, 'target', validation.name)) {
+                                <div class="text-danger small mt-1">{{ validation.message }}</div>
+                              }
                             }
-                          }
-                        </td>
-                        <td>
-                          <div class="input-group input-group-sm slb-indicator-input">
-                            <input
-                              type="number"
-                              class="form-control"
-                              onwheel="this.blur()"
-                              formControlName="target"
-                              [placeholder]="item.placeholder || ''"
-                              [attr.data-cy]="item.key + '_target-test'"
-                            />
-                            @if (item.inputCardConfig?.suffixText) {
-                              <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
-                            }
-                          </div>
-                          @for (validation of item.validations; track validation.name) {
-                            @if (hasIndicatorError(item.key, 'target', validation.name)) {
-                              <div class="text-danger small mt-1">{{ validation.message }}</div>
-                            }
-                          }
-                        </td>
-                      </tr>
+                          </td>
+                        </tr>
+                      }
                     }
                   </tbody>
                 </table>

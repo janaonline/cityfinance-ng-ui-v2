@@ -76,6 +76,31 @@ describe('DynamicFormService', () => {
       expect(control.get('actual')?.disabled).toBeTrue();
       expect(control.get('target')?.disabled).toBeTrue();
     });
+
+    it('does not attach the targetLessThanActual group validator when the rule is absent from validations', () => {
+      const control = service.createContorl(field, false) as FormGroup;
+
+      control.get('actual')?.setValue(100);
+      control.get('target')?.setValue(150);
+
+      expect(control.get('target')?.hasError('targetLessThanActual')).toBeFalse();
+    });
+
+    it('attaches the targetLessThanActual group validator when declared in validations', () => {
+      const fieldWithRule = {
+        ...field,
+        validations: [...field.validations!, { name: 'targetLessThanActual', validator: null, message: 'Target must be lower than actual.' }],
+      } as FieldConfig;
+      const control = service.createContorl(fieldWithRule, false) as FormGroup;
+
+      control.get('actual')?.setValue(100);
+      control.get('target')?.setValue(150);
+
+      expect(control.get('target')?.hasError('targetLessThanActual')).toBeTrue();
+
+      control.get('target')?.setValue(80);
+      expect(control.get('target')?.hasError('targetLessThanActual')).toBeFalse();
+    });
   });
 
   it('normalizes an empty standalone file value to null so required validation starts invalid', () => {
