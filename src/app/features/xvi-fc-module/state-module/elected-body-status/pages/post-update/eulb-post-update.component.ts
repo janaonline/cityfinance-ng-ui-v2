@@ -20,6 +20,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, merge } from 'rxjs';
 import { UtilityService } from '../../../../../../core/services/utility.service';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../../../core/guards/unsaved-changes.guard';
 import { PreLoaderComponent } from '../../../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../../../shared/dynamic-form/dynamic-form.component';
 import { isUploadedFileMetadata } from '../../../../../../shared/dynamic-form/components/file/file-metadata.types';
@@ -118,7 +122,7 @@ function isPostUpdateElectedBodyStatus(value: unknown): value is EulbPostSubmiss
   styleUrl: './eulb-post-update.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EulbPostUpdateComponent implements OnInit {
+export class EulbPostUpdateComponent implements OnInit, CanComponentDeactivate {
   private readonly service = inject(EulbStatusService);
   private readonly utilityService = inject(UtilityService);
   private readonly moduleService = inject(XvifcModuleService);
@@ -258,6 +262,16 @@ export class EulbPostUpdateComponent implements OnInit {
     this.destroyRef.onDestroy(() => {
       clearTimeout(this.redirectTimeout ?? undefined);
     });
+
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. This page tracks edits
+   *  via `changedRows`/`changedRowCount` rather than a single reactive `FormGroup`, and
+   *  `clearPostSubmitState()` resets `changedRows` synchronously before a successful submit's
+   *  own auto-redirect fires, so that redirect is never blocked by this guard. */
+  hasUnsavedChanges(): boolean {
+    return this.canEditRows() && this.changedRowCount() > 0;
   }
 
   private readonly rowState = new EulbPostUpdateStateAdapter();

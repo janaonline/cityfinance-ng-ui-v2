@@ -162,6 +162,15 @@ describe('EulbStatusService', () => {
       .expectOne((r) => r.method === 'GET' && r.url.includes('/error-sheet') && r.responseType === 'blob')
       .flush(blobContent);
     expect(errorSheetResult).toBe(blobContent);
+
+    let electedBodiesListResult: Blob | undefined;
+    service.downloadElectedBodiesListDocument(stateId, yearId).subscribe((blob) => (electedBodiesListResult = blob));
+    httpMock
+      .expectOne(
+        (r) => r.method === 'GET' && r.url.includes('/elected-bodies-list-document') && r.responseType === 'blob',
+      )
+      .flush(blobContent);
+    expect(electedBodiesListResult).toBe(blobContent);
   });
 
   it('keeps successful save draft responses on the success path', () => {
@@ -337,6 +346,7 @@ describe('EulbStatusService', () => {
       yearId,
       data: {
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
         checkboxConfirmation: true,
       },
     };

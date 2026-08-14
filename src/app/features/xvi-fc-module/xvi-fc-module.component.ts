@@ -4,9 +4,9 @@ import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/ro
 import { filter, skip } from 'rxjs';
 import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
 import { AppMenuComponent } from '../../shared/components/side-menu';
+import { XVIFC_THEME_CLASS } from './xvi-fc-module.constants';
 import { XvifcModuleService } from './xvi-fc-module.service';
 
-const XVIFC_THEME_CLASS = 'xvifc-theme';
 @Component({
   selector: 'app-xvi-fc-module',
   imports: [AppMenuComponent, RouterModule],

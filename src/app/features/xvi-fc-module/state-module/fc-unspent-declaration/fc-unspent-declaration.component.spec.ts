@@ -4,6 +4,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import FileSaver from 'file-saver';
 import { Subject, of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
@@ -16,7 +17,6 @@ import { FcUnspentDeclarationService } from './fc-unspent-declaration.service';
 import { FcUnspentUlbOptionsCacheService } from './fc-unspent-ulb-options-cache.service';
 import {
   FcUnspentDeclarationData,
-  FcUnspentDeclarationTemplate,
   FcUnspentSavePayload,
   FcUnspentUlbData,
 } from './fc-unspent-declaration.models';
@@ -33,6 +33,31 @@ function getFormControl<T>(component: FcUnspentDeclarationComponent, key: string
 
 function apiErrorResponse(errors: Record<string, { field?: string; message: string; code?: string }[]>) {
   return { success: false as const, message: 'Validation failed.', errors };
+}
+
+/** Real `responseType: 'blob'` download requests report their error body as an actual `Blob`, not a
+ *  parsed object — see `handleDownloadApiError`'s doc comment on the component. Builds a
+ *  `throwError`-able value shaped exactly like Angular's real `HttpErrorResponse` for the download
+ *  endpoint, so tests using this actually exercise `parseBlobErrorResponse`'s `Blob.text()`/
+ *  `JSON.parse` path instead of the synchronous plain-object shape `saveDraft`/`finalSubmit` use. */
+function blobApiErrorResponse(
+  message: string,
+  errors: Record<string, { field?: string; message: string; code?: string }[]> = {},
+) {
+  const body = { statusCode: 400, message, errors };
+  return { error: new Blob([JSON.stringify(body)], { type: 'application/json' }) };
+}
+
+/** Polls `predicate` until it's true, instead of guessing a fixed delay — needed for assertions that
+ *  depend on `Blob.text()`'s real async I/O, which isn't tracked by zone.js/`fixture.whenStable()`
+ *  and so can't be reliably awaited with a single fixed-duration `setTimeout`. Mirrors
+ *  `elected-body-status.component.spec.ts`'s identical helper, added for the identical reason. */
+async function waitUntil(predicate: () => boolean, timeoutMs = 2000, intervalMs = 10): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() > deadline) throw new Error('waitUntil: timed out waiting for condition');
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
 }
 
 // ─── Test fixtures ────────────────────────────────────────────────────────────
@@ -129,6 +154,61 @@ const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
     ],
   },
   {
+    formFieldType: 'file',
+    label: 'State-Level Declaration - 14th Finance Commission (ULB-wise)',
+    key: 'fcUnspentDeclaration',
+    value: null,
+    validations: [
+      {
+        name: 'required',
+        validator: null,
+        message: 'This field is required.',
+      },
+    ],
+    folderPath: 'fc-unspent/fc-unspent-declaration',
+    maxFileSize: 5,
+    allowedFileTypes: ['pdf'],
+    appearance: {
+      color: 'success',
+      variant: 'soft',
+    },
+    visibleWhen: {
+      mode: 'all',
+      conditions: [
+        {
+          key: 'isFcUnspent',
+          operator: 'equals',
+          value: 'yes',
+        },
+      ],
+    },
+    clearValueWhenDisabled: true,
+    layout: {
+      variant: 'inline',
+      labelWidth: 'lg',
+    },
+    supportingContent: [
+      {
+        type: 'actions',
+        position: 'before',
+        layout: 'inline',
+        separator: 'dot',
+        description:
+          'Download the declaration (with the ULB-wise table filled in), have it signed by the authorized State DMA officer, and upload the signed copy below.',
+        actions: [
+          {
+            id: 'download-declaration',
+            label: 'Download the declaration',
+            icon: 'bi bi-file-earmark-word',
+            tone: 'primary',
+            visible: true,
+          },
+        ],
+        badges: [],
+      },
+    ],
+  },
+  {
     formFieldType: 'checkbox',
     key: 'checkboxConfirmation',
     label:
@@ -159,7 +239,19 @@ function questionsForYesBranch(): FcUnspentDeclarationData['questions'] {
   return [
     { ...FC_UNSPENT_DECLARATION_FIELDS[0], value: 'yes' },
     { ...FC_UNSPENT_DECLARATION_FIELDS[1], value: null },
-    { ...FC_UNSPENT_DECLARATION_FIELDS[2], value: true },
+    { ...FC_UNSPENT_DECLARATION_FIELDS[2], value: null },
+    { ...FC_UNSPENT_DECLARATION_FIELDS[3], value: true },
+  ];
+}
+
+/** Same shape as `questionsForYesBranch`, but loaded as No — used where a test needs the No branch
+ *  already *saved* (not just switched to locally), so `hasUnsavedBranchChange()` starts false. */
+function questionsForNoBranch(): FcUnspentDeclarationData['questions'] {
+  return [
+    { ...FC_UNSPENT_DECLARATION_FIELDS[0], value: 'no' },
+    { ...FC_UNSPENT_DECLARATION_FIELDS[1], value: null },
+    { ...FC_UNSPENT_DECLARATION_FIELDS[2], value: null },
+    { ...FC_UNSPENT_DECLARATION_FIELDS[3], value: false },
   ];
 }
 
@@ -309,6 +401,16 @@ const DEFAULT_PREVIEW_DATA: FcUnspentDeclarationData = {
 function previewData(): FcUnspentDeclarationData {
   return DEFAULT_PREVIEW_DATA;
 }
+
+/** Same as `DEFAULT_PREVIEW_DATA` but loaded as the No branch (no rows) — for tests that need a
+ *  component whose saved and live isFcUnspent already agree on 'no' (no unsaved branch change),
+ *  rather than one that loads as Yes and then switches locally (which is itself now a real
+ *  "unsaved change" the download actions must gate on — see the "unsaved-state gating" describe). */
+const NO_BRANCH_PREVIEW_DATA: FcUnspentDeclarationData = {
+  ...DEFAULT_PREVIEW_DATA,
+  questions: questionsForNoBranch(),
+  unspentUlbData: [],
+};
 
 describe('FcUnspentDeclarationComponent', () => {
   let component: FcUnspentDeclarationComponent;
@@ -588,6 +690,7 @@ describe('FcUnspentDeclarationComponent', () => {
     expect(payload.data.isFcUnspent).toBe(false);
     expect(payload.data.unspentUlbData).toBeUndefined();
     expect(payload.data.checkboxConfirmation).toBeUndefined();
+    expect(payload.data.fcUnspentDeclaration).toBeUndefined();
   });
 
   it('blocks final submit for an unrecognized isFcUnspent value even though required validation passes', () => {
@@ -639,7 +742,7 @@ describe('FcUnspentDeclarationComponent', () => {
 
     const payload = saveDraftSpy.calls.mostRecent().args[0] as FcUnspentSavePayload;
     const dataKeys = Object.keys(payload.data).sort();
-    expect(dataKeys).toEqual(['checkboxConfirmation', 'isFcUnspent', 'unspentUlbData']);
+    expect(dataKeys).toEqual(['checkboxConfirmation', 'fcUnspentDeclaration', 'isFcUnspent', 'unspentUlbData']);
     for (const row of payload.data.unspentUlbData ?? []) {
       expect(Object.keys(row).sort()).toEqual(['ulbId', 'unspentAmount']);
     }
@@ -681,6 +784,12 @@ describe('FcUnspentDeclarationComponent', () => {
     spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
     const submitSubject = new Subject<void>();
     spyOn(fcUnspentService, 'finalSubmit').and.returnValue(submitSubject);
+    getFormControl<unknown>(component, 'fcUnspentDeclaration').setValue({
+      originalName: 'unspent-declaration.pdf',
+      path: 'https://example.test/unspent-declaration.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 1,
+    });
 
     expect(component.isFinalSubmitting()).toBe(false);
     component.onSubmit('finalSubmit');
@@ -706,6 +815,12 @@ describe('FcUnspentDeclarationComponent', () => {
   it('reloads the real GET response after a successful final submit', () => {
     spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
     spyOn(fcUnspentService, 'finalSubmit').and.returnValue(of(undefined));
+    getFormControl<unknown>(component, 'fcUnspentDeclaration').setValue({
+      originalName: 'unspent-declaration.pdf',
+      path: 'https://example.test/unspent-declaration.pdf',
+      mimeType: 'application/pdf',
+      sizeKb: 1,
+    });
 
     component.onSubmit('finalSubmit');
 
@@ -947,206 +1062,424 @@ describe('FcUnspentDeclarationComponent', () => {
 
   // ─── Declaration-template download ─────────────────────────────────────────
 
-  describe('declaration-template download', () => {
-    const template: FcUnspentDeclarationTemplate = {
-      fileName: 'FC-Unspent-Declaration.docx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      url: '/file/download?signature=abc123',
-    };
+  describe('declaration document download', () => {
+    const blob = new Blob(['docx content']);
 
-    let getDeclarationTemplateSpy: jasmine.Spy;
-    let clickSpy: jasmine.Spy;
-    let removeSpy: jasmine.Spy;
+    let downloadSpy: jasmine.Spy;
+    let saveAsSpy: jasmine.Spy;
 
-    function triggerDownload(): void {
-      component.onSupportingAction({ fieldKey: 'fcDeclaration', actionId: 'download-template' });
-    }
-
-    /** Spies on `document.createElement` just for this call, returning the real anchor it created
-     *  so its `href`/`download`/`rel` can be asserted without letting the click navigate anywhere. */
-    function captureCreatedAnchor(): { anchor: HTMLAnchorElement | undefined } {
-      const captured: { anchor: HTMLAnchorElement | undefined } = { anchor: undefined };
-      const original = document.createElement.bind(document);
-      spyOn(document, 'createElement').and.callFake((tagName: string) => {
-        const el = original(tagName);
-        if (tagName === 'a') captured.anchor = el as HTMLAnchorElement;
-        return el;
-      });
-      return captured;
+    function triggerYesBranchDownload(): void {
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
     }
 
     beforeEach(() => {
-      getDeclarationTemplateSpy = spyOn(fcUnspentService, 'getDeclarationTemplate').and.returnValue(of(template));
-      clickSpy = spyOn(HTMLAnchorElement.prototype, 'click');
-      removeSpy = spyOn(HTMLAnchorElement.prototype, 'remove');
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of(blob));
+      saveAsSpy = spyOn(FileSaver, 'saveAs');
     });
 
-    it('invokes the service only for the exact fcDeclaration / download-template action', () => {
-      triggerDownload();
-      expect(getDeclarationTemplateSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id');
+    it('invokes the service for the exact fcDeclaration / download-template action (No branch)', () => {
+      // Loaded already-saved as No (not switched to locally) so hasUnsavedBranchChange() is false
+      // and the belt-and-suspenders guard in onSupportingAction() doesn't block this.
+      const scenarioComponent = createComponentForScenario(NO_BRANCH_PREVIEW_DATA).componentInstance;
+      scenarioComponent.onSupportingAction({ fieldKey: 'fcDeclaration', actionId: 'download-template' });
+      expect(downloadSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id');
+    });
+
+    it('invokes the service for the exact fcUnspentDeclaration / download-declaration action (Yes branch, mock default)', () => {
+      triggerYesBranchDownload();
+      expect(downloadSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id');
     });
 
     it('ignores an unrelated action id, and ignores the action id on an unrelated field', () => {
       component.onSupportingAction({ fieldKey: 'fcDeclaration', actionId: 'some-other-action' });
       component.onSupportingAction({ fieldKey: 'isFcUnspent', actionId: 'download-template' });
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'some-other-action' });
 
-      expect(getDeclarationTemplateSpy).not.toHaveBeenCalled();
+      expect(downloadSpy).not.toHaveBeenCalled();
+    });
+
+    it("does not cross-wire the two branches' field/action pairs", () => {
+      component.onSupportingAction({ fieldKey: 'fcDeclaration', actionId: 'download-declaration' });
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-template' });
+
+      expect(downloadSpy).not.toHaveBeenCalled();
     });
 
     it('blocks the request when stateId is missing', () => {
       localStorage.removeItem('userData');
 
-      triggerDownload();
+      triggerYesBranchDownload();
 
-      expect(getDeclarationTemplateSpy).not.toHaveBeenCalled();
+      expect(downloadSpy).not.toHaveBeenCalled();
     });
 
     it('ignores duplicate clicks while a download is already in flight', () => {
-      const pending = new Subject<FcUnspentDeclarationTemplate>();
-      getDeclarationTemplateSpy.and.returnValue(pending);
+      const pending = new Subject<Blob>();
+      downloadSpy.and.returnValue(pending);
 
-      triggerDownload();
-      triggerDownload();
-      triggerDownload();
+      triggerYesBranchDownload();
+      triggerYesBranchDownload();
+      triggerYesBranchDownload();
 
-      expect(getDeclarationTemplateSpy).toHaveBeenCalledTimes(1);
-      pending.next(template);
+      expect(downloadSpy).toHaveBeenCalledTimes(1);
+      pending.next(blob);
       pending.complete();
     });
 
-    it('triggers a temporary-anchor download using the backend filename, with rel=noopener', () => {
-      const captured = captureCreatedAnchor();
-
-      triggerDownload();
-
-      expect(captured.anchor?.download).toBe(template.fileName);
-      expect(captured.anchor?.rel).toBe('noopener');
-      expect(captured.anchor?.href).toContain('/file/download?signature=abc123');
-      expect(clickSpy).toHaveBeenCalledTimes(1);
-      expect(removeSpy).toHaveBeenCalledTimes(1);
+    it('saves the returned blob via FileSaver under a fixed filename', () => {
+      triggerYesBranchDownload();
+      expect(saveAsSpy).toHaveBeenCalledOnceWith(blob, 'fc-unspent-declaration.docx');
     });
 
-    it('accepts a same-origin URL whose path ends with /file/download behind a versioned API prefix', () => {
-      getDeclarationTemplateSpy.and.returnValue(
-        of({ ...template, url: `${window.location.origin}/api/v2/file/download?signature=xyz` }),
-      );
+    it('shows loading on the download-declaration action (Yes branch) while the request is in flight, then clears it', () => {
+      const pending = new Subject<Blob>();
+      downloadSpy.and.returnValue(pending);
 
-      triggerDownload();
+      function findAction() {
+        const field = component.effectiveVisibleFields().find((f) => f.key === 'fcUnspentDeclaration');
+        const block = field?.supportingContent?.find((b) => b.type === 'actions');
+        return block && block.type === 'actions'
+          ? block.actions.find((a) => a.id === 'download-declaration')
+          : undefined;
+      }
 
-      expect(clickSpy).toHaveBeenCalledTimes(1);
+      triggerYesBranchDownload();
+
+      expect(findAction()?.loading).toBeTrue();
+      expect(findAction()?.loadingLabel).toBe('Downloading declaration…');
+
+      pending.next(blob);
+      pending.complete();
+
+      expect(findAction()?.loading).toBeFalsy();
     });
 
-    it('accepts the real backend shape: a different-origin URL with a versioned API prefix', () => {
-      getDeclarationTemplateSpy.and.returnValue(
-        of({ ...template, url: 'http://localhost:3000/api/v2/file/download?signature=K6VpsJ-K8-q9_oqSvZgpn' }),
-      );
+    it('shows loading on the download-template action (No branch) while the request is in flight, then clears it', () => {
+      // fcDeclaration is only visible when isFcUnspent is 'no' — loaded already-saved as No (not
+      // switched to locally) so hasUnsavedBranchChange() is false and the action isn't disabled.
+      const scenarioComponent = createComponentForScenario(NO_BRANCH_PREVIEW_DATA).componentInstance;
+      const pending = new Subject<Blob>();
+      downloadSpy.and.returnValue(pending);
 
-      triggerDownload();
+      function findAction() {
+        const field = scenarioComponent.effectiveVisibleFields().find((f) => f.key === 'fcDeclaration');
+        const block = field?.supportingContent?.find((b) => b.type === 'actions');
+        return block && block.type === 'actions'
+          ? block.actions.find((a) => a.id === 'download-template')
+          : undefined;
+      }
 
-      expect(clickSpy).toHaveBeenCalledTimes(1);
+      scenarioComponent.onSupportingAction({ fieldKey: 'fcDeclaration', actionId: 'download-template' });
+
+      expect(findAction()?.loading).toBeTrue();
+
+      pending.next(blob);
+      pending.complete();
+
+      expect(findAction()?.loading).toBeFalsy();
     });
 
-    it('sanitizes path separators and control characters out of an unsafe filename', () => {
-      const captured = captureCreatedAnchor();
-      getDeclarationTemplateSpy.and.returnValue(of({ ...template, fileName: '../../evilname.docx' }));
+    // These three go through `handleDownloadApiError`, which is `async` (it awaits
+    // `parseBlobErrorResponse`, needed so real `Blob`-bodied download errors can be read via
+    // `Blob.text()` — see that method's doc comment) even when, as here, `err.error` isn't a `Blob`
+    // and the fallback path resolves with no real I/O — the `await` still defers to a microtask, so
+    // these must poll rather than assert synchronously right after triggering the download.
 
-      triggerDownload();
-
-      expect(captured.anchor?.download).toBe('....evilname.docx');
-    });
-
-    it('falls back to the default filename when the backend name is empty', () => {
-      const captured = captureCreatedAnchor();
-      getDeclarationTemplateSpy.and.returnValue(of({ ...template, fileName: '   ' }));
-
-      triggerDownload();
-
-      expect(captured.anchor?.download).toBe('FC-Unspent-Declaration.docx');
-    });
-
-    it('does not change a normal filename, including its extension', () => {
-      const captured = captureCreatedAnchor();
-
-      triggerDownload();
-
-      expect(captured.anchor?.download).toBe('FC-Unspent-Declaration.docx');
-    });
-
-    it('shows the generic fallback message and does not download when the URL is unsafe', () => {
+    it('shows the backend error message on a service-thrown success:false failure', async () => {
       const snackbarSpy = spyOn(utilityService, 'triggerSnackbar');
-      getDeclarationTemplateSpy.and.returnValue(of({ ...template, url: 'https://evil.example.com/file' }));
+      downloadSpy.and.returnValue(throwError(() => ({ success: false, message: 'Nothing to certify yet.' })));
 
-      triggerDownload();
+      triggerYesBranchDownload();
+      await waitUntil(() => snackbarSpy.calls.count() > 0);
 
-      expect(clickSpy).not.toHaveBeenCalled();
-      expect(snackbarSpy).toHaveBeenCalledWith('Failed to download the declaration template.', 'snackbar-danger');
+      expect(snackbarSpy).toHaveBeenCalledWith('Nothing to certify yet.', 'snackbar-danger');
     });
 
-    it('shows the generic fallback message and does not download when the URL is empty', () => {
+    it('shows the backend error message on an HttpErrorResponse-shaped failure', async () => {
       const snackbarSpy = spyOn(utilityService, 'triggerSnackbar');
-      getDeclarationTemplateSpy.and.returnValue(of({ ...template, url: '' }));
+      downloadSpy.and.returnValue(throwError(() => ({ error: { statusCode: 500, message: 'Server error.' } })));
 
-      triggerDownload();
-
-      expect(clickSpy).not.toHaveBeenCalled();
-      expect(snackbarSpy).toHaveBeenCalledWith('Failed to download the declaration template.', 'snackbar-danger');
-    });
-
-    it('shows the backend error message on a service-thrown success:false failure', () => {
-      const snackbarSpy = spyOn(utilityService, 'triggerSnackbar');
-      getDeclarationTemplateSpy.and.returnValue(
-        throwError(() => ({ success: false, message: 'Template not configured.' })),
-      );
-
-      triggerDownload();
-
-      expect(snackbarSpy).toHaveBeenCalledWith('Template not configured.', 'snackbar-danger');
-    });
-
-    it('shows the backend error message on an HttpErrorResponse-shaped failure', () => {
-      const snackbarSpy = spyOn(utilityService, 'triggerSnackbar');
-      getDeclarationTemplateSpy.and.returnValue(
-        throwError(() => ({ error: { statusCode: 500, message: 'Server error.' } })),
-      );
-
-      triggerDownload();
+      triggerYesBranchDownload();
+      await waitUntil(() => snackbarSpy.calls.count() > 0);
 
       expect(snackbarSpy).toHaveBeenCalledWith('Server error.', 'snackbar-danger');
     });
 
-    it('shows the generic fallback message when no backend message is available', () => {
+    it('shows the generic fallback message when no backend message is available', async () => {
       const snackbarSpy = spyOn(utilityService, 'triggerSnackbar');
-      getDeclarationTemplateSpy.and.returnValue(throwError(() => new Error('network error')));
+      downloadSpy.and.returnValue(throwError(() => new Error('network error')));
 
-      triggerDownload();
+      triggerYesBranchDownload();
+      await waitUntil(() => snackbarSpy.calls.count() > 0);
 
-      expect(snackbarSpy).toHaveBeenCalledWith('Failed to download the declaration template.', 'snackbar-danger');
+      expect(snackbarSpy).toHaveBeenCalledWith('Failed to download the declaration document.', 'snackbar-danger');
     });
 
-    it('resets isDownloadingTemplate after a successful download', () => {
-      triggerDownload();
-      expect(component.isDownloadingTemplate()).toBe(false);
+    it('never calls FileSaver.saveAs on a failed download', () => {
+      downloadSpy.and.returnValue(throwError(() => new Error('network error')));
+      triggerYesBranchDownload();
+      expect(saveAsSpy).not.toHaveBeenCalled();
     });
 
-    it('resets isDownloadingTemplate after a failed download', () => {
-      getDeclarationTemplateSpy.and.returnValue(throwError(() => new Error('network error')));
-      triggerDownload();
-      expect(component.isDownloadingTemplate()).toBe(false);
+    it('resets isDownloadingDeclaration after a successful download', () => {
+      triggerYesBranchDownload();
+      expect(component.isDownloadingDeclaration()).toBe(false);
+    });
+
+    it('resets isDownloadingDeclaration after a failed download', () => {
+      downloadSpy.and.returnValue(throwError(() => new Error('network error')));
+      triggerYesBranchDownload();
+      expect(component.isDownloadingDeclaration()).toBe(false);
     });
 
     it('leaves form values unchanged and never reloads the form after a download (success or failure)', () => {
+      const fcUnspentDeclarationBefore = getFormControl<unknown>(component, 'fcUnspentDeclaration').value;
+
+      triggerYesBranchDownload();
+      expect(getFormControl<unknown>(component, 'fcUnspentDeclaration').value).toEqual(fcUnspentDeclarationBefore);
+      expect(getFormSpy).toHaveBeenCalledTimes(1);
+
+      downloadSpy.and.returnValue(throwError(() => new Error('network error')));
+      triggerYesBranchDownload();
+      expect(getFormControl<unknown>(component, 'fcUnspentDeclaration').value).toEqual(fcUnspentDeclarationBefore);
+      expect(getFormSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ─── Unsaved-state gating — GET .../fc-unspent-declaration-document only reflects saved data ──
+
+  describe('hasUnsavedBranchChange / hasUnsavedRowChanges', () => {
+    it('are both false right after load', () => {
+      expect(component.hasUnsavedBranchChange()).toBeFalse();
+      expect(component.hasUnsavedRowChanges()).toBeFalse();
+    });
+
+    it('hasUnsavedBranchChange becomes true after changing the radio, and false again once changed back', () => {
       isFcUnspentControl(component).setValue('no');
-      fixture.detectChanges();
-      const fcDeclarationBefore = getFormControl<unknown>(component, 'fcDeclaration').value;
+      expect(component.hasUnsavedBranchChange()).toBeTrue();
 
-      triggerDownload();
-      expect(getFormControl<unknown>(component, 'fcDeclaration').value).toEqual(fcDeclarationBefore);
-      expect(getFormSpy).toHaveBeenCalledTimes(1);
+      isFcUnspentControl(component).setValue('yes');
+      expect(component.hasUnsavedBranchChange()).toBeFalse();
+    });
 
-      getDeclarationTemplateSpy.and.returnValue(throwError(() => new Error('network error')));
-      triggerDownload();
-      expect(getFormControl<unknown>(component, 'fcDeclaration').value).toEqual(fcDeclarationBefore);
-      expect(getFormSpy).toHaveBeenCalledTimes(1);
+    it('hasUnsavedRowChanges becomes true after editing a row amount, and false again once changed back', () => {
+      const amountControl = component.unspentUlbData.controls[0].controls.unspentAmount;
+      const original = amountControl.value;
+
+      amountControl.setValue((original ?? 0) + 1);
+      expect(component.hasUnsavedRowChanges()).toBeTrue();
+
+      amountControl.setValue(original);
+      expect(component.hasUnsavedRowChanges()).toBeFalse();
+    });
+
+    it('hasUnsavedRowChanges becomes true after removing a row', () => {
+      component.unspentUlbData.removeAt(0);
+      expect(component.hasUnsavedRowChanges()).toBeTrue();
+    });
+  });
+
+  describe('download actions disabled while unsaved', () => {
+    function findAction(comp: FcUnspentDeclarationComponent, fieldKey: string, actionId: string) {
+      const field = comp.effectiveVisibleFields().find((f) => f.key === fieldKey);
+      const block = field?.supportingContent?.find((b) => b.type === 'actions');
+      return block && block.type === 'actions' ? block.actions.find((a) => a.id === actionId) : undefined;
+    }
+
+    it('is not disabled when saved/clean (mock default)', () => {
+      const action = findAction(component, 'fcUnspentDeclaration', 'download-declaration');
+      expect(action?.disabled).toBeFalsy();
+    });
+
+    it("disables fcDeclaration's action and swaps its description when the branch was switched without saving", () => {
+      isFcUnspentControl(component).setValue('no');
+
+      const action = findAction(component, 'fcDeclaration', 'download-template');
+      expect(action?.disabled).toBeTrue();
+
+      const field = component.effectiveVisibleFields().find((f) => f.key === 'fcDeclaration');
+      const block = field?.supportingContent?.find((b) => b.type === 'actions');
+      expect(block && block.type === 'actions' ? block.description : undefined).toBe(
+        'Save your changes as a draft before downloading the declaration.',
+      );
+    });
+
+    it("disables fcUnspentDeclaration's action when the branch was switched to yes without saving", () => {
+      const scenarioComponent = createComponentForScenario(NO_BRANCH_PREVIEW_DATA).componentInstance;
+      isFcUnspentControl(scenarioComponent).setValue('yes');
+
+      const action = findAction(scenarioComponent, 'fcUnspentDeclaration', 'download-declaration');
+      expect(action?.disabled).toBeTrue();
+    });
+
+    it('disables fcUnspentDeclaration\'s action when only a row amount changed (branch unchanged)', () => {
+      component.unspentUlbData.controls[0].controls.unspentAmount.setValue(999);
+
+      const action = findAction(component, 'fcUnspentDeclaration', 'download-declaration');
+      expect(action?.disabled).toBeTrue();
+      // fcDeclaration is hidden on the Yes branch regardless, but confirms row changes don't
+      // spuriously gate the *other* branch's action.
+    });
+
+    it('re-enables once the row amount is changed back to the saved value', () => {
+      const amountControl = component.unspentUlbData.controls[0].controls.unspentAmount;
+      const original = amountControl.value;
+      amountControl.setValue((original ?? 0) + 1);
+      expect(findAction(component, 'fcUnspentDeclaration', 'download-declaration')?.disabled).toBeTrue();
+
+      amountControl.setValue(original);
+      expect(findAction(component, 'fcUnspentDeclaration', 'download-declaration')?.disabled).toBeFalsy();
+    });
+  });
+
+  describe('belt-and-suspenders guard in onSupportingAction while unsaved', () => {
+    let downloadSpy: jasmine.Spy;
+
+    beforeEach(() => {
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of(new Blob()));
+    });
+
+    it('does not call the service for fcDeclaration while the branch is unsaved', () => {
+      isFcUnspentControl(component).setValue('no');
+      component.onSupportingAction({ fieldKey: 'fcDeclaration', actionId: 'download-template' });
+      expect(downloadSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not call the service for fcUnspentDeclaration while a row is unsaved', () => {
+      component.unspentUlbData.controls[0].controls.unspentAmount.setValue(999);
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      expect(downloadSpy).not.toHaveBeenCalled();
+    });
+
+    it('still calls the service normally once saved/clean', () => {
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      expect(downloadSpy).toHaveBeenCalledOnceWith('state-test-id', 'year-test-id');
+    });
+  });
+
+  describe('download error display (routes through the same applyApiErrors path as submit)', () => {
+    let downloadSpy: jasmine.Spy;
+
+    beforeEach(() => {
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument');
+    });
+
+    it('shows a _form (branchNotChosen) error in formLevelErrors, not just a snackbar', async () => {
+      downloadSpy.and.returnValue(
+        throwError(() =>
+          blobApiErrorResponse('Validation failed.', {
+            _form: [{ message: 'Answer whether any ULBs have unspent balance...', code: 'branchNotChosen' }],
+          }),
+        ),
+      );
+
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      await waitUntil(() => component.formLevelErrors().length > 0);
+
+      expect(component.formLevelErrors()).toEqual(['Answer whether any ULBs have unspent balance...']);
+    });
+
+    it('shows a field-keyed (noRows) error below the fcUnspentDeclaration field, not just a snackbar', async () => {
+      downloadSpy.and.returnValue(
+        throwError(() =>
+          blobApiErrorResponse('Validation failed.', {
+            fcUnspentDeclaration: [
+              { field: 'fcUnspentDeclaration', code: 'noRows', message: 'No ULB rows found...' },
+            ],
+          }),
+        ),
+      );
+
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      const control = getFormControl<unknown>(component, 'fcUnspentDeclaration');
+      await waitUntil(() => !!control.errors?.['noRows']);
+
+      expect(control.errors?.['noRows']).toBeTrue();
+      const field = component.fields().find((f) => f.key === 'fcUnspentDeclaration');
+      expect(field?.validations?.some((v) => v.name === 'noRows' && v.message === 'No ULB rows found...')).toBeTrue();
+    });
+
+    it('the noRows message wins over the pre-existing required validation when both are present (ordering fix)', async () => {
+      // fcUnspentDeclaration has no file set in this fixture, so `required` is already in
+      // control.errors before the download is even attempted — the exact scenario from the bug
+      // report (Yes branch, zero rows, file not yet uploaded).
+      const control = getFormControl<unknown>(component, 'fcUnspentDeclaration');
+      expect(control.errors?.['required']).toBeTrue();
+
+      downloadSpy.and.returnValue(
+        throwError(() =>
+          blobApiErrorResponse('Validation failed.', {
+            fcUnspentDeclaration: [
+              { field: 'fcUnspentDeclaration', code: 'noRows', message: 'No ULB rows found...' },
+            ],
+          }),
+        ),
+      );
+
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      await waitUntil(() => !!control.errors?.['noRows']);
+
+      expect(control.errors?.['required']).toBeTrue();
+      expect(control.errors?.['noRows']).toBeTrue();
+      const field = component.fields().find((f) => f.key === 'fcUnspentDeclaration')!;
+      const noRowsIdx = field.validations!.findIndex((v) => v.name === 'noRows');
+      const requiredIdx = field.validations!.findIndex((v) => v.name === 'required');
+      expect(noRowsIdx).toBeGreaterThanOrEqual(0);
+      expect(requiredIdx).toBeGreaterThanOrEqual(0);
+      expect(noRowsIdx).toBeLessThan(requiredIdx);
+    });
+
+    it('clears a stale error from a previous failed download once a new download attempt starts', async () => {
+      downloadSpy.and.returnValue(
+        throwError(() => blobApiErrorResponse('Validation failed.', { _form: [{ message: 'stale error', code: 'branchNotChosen' }] })),
+      );
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      await waitUntil(() => component.formLevelErrors().length > 0);
+      expect(component.formLevelErrors()).toEqual(['stale error']);
+
+      downloadSpy.and.returnValue(of(new Blob()));
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      await waitUntil(() => component.formLevelErrors().length === 0);
+      expect(component.formLevelErrors()).toEqual([]);
+    });
+  });
+
+  describe('download error display — non-Blob error shape (network-level failure fallback)', () => {
+    // `parseBlobErrorResponse` falls back to `extractApiErrorResponse(err)` when `err.error` isn't a
+    // `Blob` at all (e.g. a genuine network-level failure where no response body was ever received) —
+    // covers that branch explicitly, distinct from the real-transport Blob-body tests above.
+    it('still shows the fallback message when err.error is not a Blob', async () => {
+      const downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(
+        throwError(() => new Error('Network failure')),
+      );
+      const snackbarSpy = spyOn(utilityService, 'triggerSnackbar');
+
+      component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
+      await waitUntil(() => snackbarSpy.calls.count() > 0);
+
+      expect(downloadSpy).toHaveBeenCalled();
+      expect(snackbarSpy).toHaveBeenCalledWith('Failed to download the declaration document.', 'snackbar-danger');
+    });
+  });
+
+  // ─── hasUnsavedChanges (read by unsavedChangesGuard / beforeunload) ────────
+
+  describe('hasUnsavedChanges', () => {
+    it('is false right after the form loads', () => {
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once the user edits a field', () => {
+      isFcUnspentControl(component).markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false when the form is dirty but the page is read-only (canEdit is false)', () => {
+      component.canEdit.set(false);
+      component.form.markAsDirty();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
     });
   });
 });

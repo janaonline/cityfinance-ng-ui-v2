@@ -15,7 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
-import { MATERIAL_THEME_CLASS } from '../../../../../../core/theming/material-theme.providers';
+import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
 import {
   computeClaimDifferencePercentage,
@@ -93,7 +93,7 @@ function claimedAmountErrorText(control: AbstractControl): string | null {
 export class ClaimUlbTableComponent {
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly themeClass = resolveThemeClass();
   /** Passed through to `MatDialog.open` so the picker resolves against this component's own
    *  injector rather than the root one — kept for parity with FC Unspent's table even though the
    *  claim-letter picker has no feature-scoped cache service to resolve today. */

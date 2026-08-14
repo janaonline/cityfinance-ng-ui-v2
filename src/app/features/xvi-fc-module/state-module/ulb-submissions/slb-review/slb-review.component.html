@@ -1,0 +1,79 @@
+@if (data(); as form) {
+<div class="slb-approved-banner d-flex align-items-start gap-2 mb-3" role="status">
+  <i class="bi bi-check-circle-fill flex-shrink-0" aria-hidden="true"></i>
+  <span>Service Level Benchmarks are deemed approved on submission. No State review or action is required for this form.</span>
+</div>
+
+<div class="card border-0 shadow-sm slb-indicators-card mb-3">
+  <div class="card-body">
+    <h2 class="h6 fw-bold text-uppercase mb-1">Service Level Benchmarks</h2>
+    <p class="text-secondary small mb-3">
+      All 28 indicators as submitted by the ULB. <strong>Actual</strong> is last year's performance;
+      <strong>Target</strong> is the ULB's commitment for next year &mdash; not a pass mark.
+    </p>
+
+    <div class="table-responsive">
+      <table class="table align-middle mb-0 slb-review-table">
+        <thead>
+          <tr>
+            <th scope="col" class="slb-col-num">#</th>
+            <th scope="col">Indicator</th>
+            <th scope="col" class="text-end text-nowrap">Actual (FY {{ priorYearLabel() }})</th>
+            <th scope="col" class="text-end text-nowrap">Target (FY {{ yearLabel() }})</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (group of sectorGroups(); track group.sector) {
+          <tr class="slb-sector-row">
+            <td colspan="4">{{ group.sector }}</td>
+          </tr>
+          @for (row of group.rows; track row.key) {
+          <tr>
+            <td class="slb-col-num text-secondary">{{ row.position }}</td>
+            <td>{{ row.label }}</td>
+            <td class="text-end">
+              <span class="fw-semibold">{{ row.actual ?? '&mdash;' }}</span>
+              @if (row.unit) {
+              <span class="text-secondary small ms-1">{{ row.unit }}</span>
+              }
+            </td>
+            <td class="text-end">
+              <span class="fw-semibold">{{ row.target ?? '&mdash;' }}</span>
+              @if (row.unit) {
+              <span class="text-secondary small ms-1">{{ row.unit }}</span>
+              }
+            </td>
+          </tr>
+          }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm slb-declaration-card">
+  <div class="card-body">
+    <h2 class="h6 fw-bold text-uppercase mb-3">Self Declaration</h2>
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <p class="text-secondary small mb-1">Name</p>
+        <p class="fw-semibold mb-0">{{ declarantName() || '&mdash;' }}</p>
+      </div>
+      <div class="col-12 col-md-6">
+        <p class="text-secondary small mb-1">Designation</p>
+        <p class="fw-semibold mb-0">{{ declarantDesignation() || '&mdash;' }}</p>
+      </div>
+    </div>
+
+    @if (supportingDocument(); as doc) {
+    <div class="mt-3">
+      <p class="text-secondary small mb-1">Supporting Document</p>
+      <button type="button" matButton="outlined" class="slb-doc-chip" (click)="openSupportingDocument()">
+        <i class="bi bi-file-earmark-pdf-fill me-1" aria-hidden="true"></i>{{ doc.name }}
+      </button>
+    </div>
+    }
+  </div>
+</div>
+}

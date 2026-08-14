@@ -1097,4 +1097,42 @@ describe('EulbPostUpdateComponent', () => {
     }
     return [...sources];
   }
+
+  // ─── hasUnsavedChanges (read by unsavedChangesGuard / beforeunload) ────────
+
+  describe('hasUnsavedChanges', () => {
+    it('is false right after metadata/rows load', () => {
+      fixture.detectChanges();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once a row has a local edit', () => {
+      fixture.detectChanges();
+
+      makeChangedRow();
+
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false once a changed row is reset back to its loaded value', () => {
+      fixture.detectChanges();
+
+      makeChangedRow();
+      component.resetRow('row-1');
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is false when rows are changed but the user cannot submit updates (read-only)', () => {
+      service.getPostSubmissionUpdateMetadata.and.returnValue(
+        of(createMetadata({ permissions: { canView: true, canSubmitUpdate: false } })),
+      );
+      fixture.detectChanges();
+
+      makeChangedRow();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+  });
 });

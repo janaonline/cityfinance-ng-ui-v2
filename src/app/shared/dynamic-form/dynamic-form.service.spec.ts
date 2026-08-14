@@ -394,6 +394,112 @@ describe('DynamicFormService', () => {
     expect(form.get('email')?.hasError('pattern')).toBeTrue();
   });
 
+  describe('toFormGroup — matchesField / digitsOnly', () => {
+    it('sets matchesField error on the declaring control when values differ', () => {
+      const form = service.toFormGroup([
+        { key: 'accountNumber', label: 'Account Number', formFieldType: 'text' } as FieldConfig,
+        {
+          key: 'confirmAccountNumber',
+          label: 'Confirm',
+          formFieldType: 'text',
+          matchesField: 'accountNumber',
+        } as FieldConfig,
+      ]);
+
+      form.controls['accountNumber'].setValue('123');
+      form.controls['confirmAccountNumber'].setValue('456');
+
+      expect(form.controls['confirmAccountNumber'].hasError('matchesField')).toBeTrue();
+    });
+
+    it('clears matchesField error once values match', () => {
+      const form = service.toFormGroup([
+        { key: 'accountNumber', label: 'Account Number', formFieldType: 'text' } as FieldConfig,
+        {
+          key: 'confirmAccountNumber',
+          label: 'Confirm',
+          formFieldType: 'text',
+          matchesField: 'accountNumber',
+        } as FieldConfig,
+      ]);
+
+      form.controls['accountNumber'].setValue('123');
+      form.controls['confirmAccountNumber'].setValue('123');
+
+      expect(form.controls['confirmAccountNumber'].hasError('matchesField')).toBeFalse();
+    });
+
+    it('is inert for fields that do not set matchesField', () => {
+      const form = service.toFormGroup([
+        { key: 'a', label: 'A', formFieldType: 'text' } as FieldConfig,
+        { key: 'b', label: 'B', formFieldType: 'text' } as FieldConfig,
+      ]);
+
+      form.controls['a'].setValue('one');
+      form.controls['b'].setValue('two');
+
+      expect(form.controls['a'].errors).toBeNull();
+      expect(form.controls['b'].errors).toBeNull();
+    });
+
+    it('resolves matchesField against dotted flat keys, not nested paths', () => {
+      const form = service.toFormGroup([
+        { key: 'bankDetails.accountNumber', label: 'Account', formFieldType: 'text' } as FieldConfig,
+        {
+          key: 'bankDetails.confirmAccountNumber',
+          label: 'Confirm',
+          formFieldType: 'text',
+          matchesField: 'bankDetails.accountNumber',
+        } as FieldConfig,
+      ]);
+
+      form.controls['bankDetails.accountNumber'].setValue('123');
+      form.controls['bankDetails.confirmAccountNumber'].setValue('456');
+
+      expect(form.controls['bankDetails.confirmAccountNumber'].hasError('matchesField')).toBeTrue();
+    });
+
+    it('applies digitsOnly named errors sourced from validations[] min/maxlength', () => {
+      const form = service.toFormGroup([
+        {
+          key: 'accountNumber',
+          label: 'Account Number',
+          formFieldType: 'text',
+          digitsOnly: true,
+          validations: [
+            { name: 'minlength', validator: 9, message: 'Too short' },
+            { name: 'maxlength', validator: 18, message: 'Too long' },
+          ],
+        } as FieldConfig,
+      ]);
+
+      form.controls['accountNumber'].setValue('12abc');
+      expect(form.controls['accountNumber'].hasError('hasAlphabets')).toBeTrue();
+
+      form.controls['accountNumber'].setValue('123');
+      expect(form.controls['accountNumber'].hasError('tooShort')).toBeTrue();
+
+      form.controls['accountNumber'].setValue('123456789');
+      expect(form.controls['accountNumber'].errors).toBeNull();
+    });
+
+    it('is inert for fields that do not set digitsOnly', () => {
+      const form = service.toFormGroup([{ key: 'name', label: 'Name', formFieldType: 'text' } as FieldConfig]);
+
+      form.controls['name'].setValue('abc 123!');
+
+      expect(form.controls['name'].errors).toBeNull();
+    });
+
+    it('creates a permanently-disabled control when the field declares disabled: true', () => {
+      const form = service.toFormGroup([
+        { key: 'bankDetails.name', label: 'Bank Name', formFieldType: 'text', disabled: true } as FieldConfig,
+      ]);
+
+      expect(form.controls['bankDetails.name'].disabled).toBeTrue();
+    });
+  });
+
   it('normalizes standalone file values from alternate property names and URL filenames', () => {
     const withName = service.createContorl({
       key: 'file',

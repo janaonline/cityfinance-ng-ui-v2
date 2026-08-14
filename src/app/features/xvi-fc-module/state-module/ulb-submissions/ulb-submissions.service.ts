@@ -14,6 +14,7 @@ import {
 
 const ANNUAL_ACCOUNT_API = `${environment.api.url2}xvi-fc/annual-account/`;
 const BANK_ACCOUNT_API = `${environment.api.url2}xvi-fc/bank-account/`;
+const SLB_API = `${environment.api.url2}xvi-fc/ulb/slb/`;
 
 // The bank-account module's FORM_STATUS constant uses this exact 1-7 numbering,
 // matching the Annual Account module's form_status_id — one shared status vocabulary.
@@ -84,12 +85,31 @@ interface BankAccountListResponse {
   counts: Record<number, number>;
 }
 
+interface SlbSubmissionRow {
+  ulbId: string;
+  ulbCode: string;
+  censusCode: string;
+  ulbName: string;
+  formStatus: number;
+  lastUpdatedAt: string | null;
+  slbFormId: string | null;
+}
+
+interface SlbListResponse {
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: SlbSubmissionRow[];
+  counts: Record<number, number>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UlbSubmissionsService {
   private readonly http = inject(HttpClient);
 
   list(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
     if (query.form === 'PFMS_BANK_ACCOUNT') return this.listBankAccounts(query);
+    if (query.form === 'SERVICE_LEVEL_BENCHMARKS') return this.listSlb(query);
     return this.listAnnualAccounts(query);
   }
 
@@ -158,6 +178,42 @@ export class UlbSubmissionsService {
           formStatusId: row.formStatus,
           lastUpdatedAt: row.lastUpdatedAt,
           recordId: row.bankAccountId,
+        }));
+        const counts = Object.fromEntries(
+          Object.entries(raw.counts).map(([numeric, count]) => [NUMERIC_TO_REVIEW_STATUS[Number(numeric)], count]),
+        ) as Record<ReviewStatus, number>;
+
+        return { total: raw.total, page: raw.page, pageSize: raw.pageSize, rows, counts };
+      }),
+    );
+  }
+
+  private listSlb(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
+    let params = new HttpParams()
+      .set('designYearId', query.designYearId)
+      .set('page', query.page)
+      .set('pageSize', query.pageSize)
+      .set('sortField', query.sortField)
+      .set('sortDirection', query.sortDirection);
+
+    if (query.search.trim()) params = params.set('search', query.search.trim());
+    if (query.status?.length) {
+      const numericStatuses = query.status.map((status) => REVIEW_STATUS_TO_NUMERIC[status]);
+      params = params.set('status', numericStatuses.join(','));
+    }
+
+    return this.http.get<unknown>(`${SLB_API}state/ulb-submissions`, { params }).pipe(
+      map((res) => {
+        const raw = unwrap<SlbListResponse>(res);
+        const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
+          ulbId: row.ulbId,
+          ulbCode: row.ulbCode,
+          censusCode: row.censusCode,
+          ulbName: row.ulbName,
+          formStatus: NUMERIC_TO_REVIEW_STATUS[row.formStatus] ?? 'NOT_STARTED',
+          formStatusId: row.formStatus,
+          lastUpdatedAt: row.lastUpdatedAt,
+          recordId: row.slbFormId,
         }));
         const counts = Object.fromEntries(
           Object.entries(raw.counts).map(([numeric, count]) => [NUMERIC_TO_REVIEW_STATUS[Number(numeric)], count]),
