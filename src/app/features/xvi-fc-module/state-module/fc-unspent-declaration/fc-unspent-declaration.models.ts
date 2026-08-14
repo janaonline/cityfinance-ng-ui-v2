@@ -73,17 +73,6 @@ export interface FcUnspentUlbOptionsResult {
 }
 
 /**
- * Declaration-template file metadata, sourced from a dedicated lazy endpoint — never bundled into
- * the main GET preview response. `url` is always the application's own private signed download link
- * (`/file/download?signature=...`); the UI never receives or constructs a raw S3 path.
- */
-export interface FcUnspentDeclarationTemplate {
-  fileName: string;
-  mimeType: string;
-  url: string;
-}
-
-/**
  * One row of the unspent-ULB table. Only `ulbId` and `unspentAmount` are State-editable — the
  * rest, including `allocationPerc`/`eligibility`, are backend-owned. The frontend recomputes
  * `allocationPerc`/`eligibility` for preview only; the backend calculation remains authoritative.
@@ -143,6 +132,9 @@ export interface FcUnspentSaveData {
   isFcUnspent: boolean | null;
   /** No-branch only. Shape owned by the shared dynamic-form file control (`UploadedFileMetadata`). */
   fcDeclaration?: unknown;
+  /** Yes-branch only. Same shape/ownership as `fcDeclaration`, for the signed ULB-wise
+   *  certification document instead of the nil-balance declaration. */
+  fcUnspentDeclaration?: unknown;
   /** Yes-branch only. Rows with an incomplete selection (no `ulbId` or no `unspentAmount`) are
    *  dropped before sending — see buildPayload(). */
   unspentUlbData?: { ulbId: string; unspentAmount: number }[];
