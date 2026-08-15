@@ -26,6 +26,7 @@ import {
   noHtmlOrScript,
   noMongoOperators,
 } from '../../../../auth/validators/auth-security.validators';
+import { noEmailDomainTypo, noGovDomainTypo } from '../../../../auth/validators/email-domain.validators';
 import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
 import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
 
@@ -102,7 +103,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       noHtmlOrScript,
       noMongoOperators,
     ]],
-    commissionerEmail: ['', [Validators.email, ...IDENTIFIER_SECURITY_VALIDATORS]],
+    commissionerEmail: ['', [Validators.email, noEmailDomainTypo, noGovDomainTypo, ...IDENTIFIER_SECURITY_VALIDATORS]],
     commissionerConatactNumber: ['', Validators.pattern(/^[6-9]\d{9}$/)],
   });
 
@@ -118,6 +119,8 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     accountantEmail: ['', [
       Validators.required,
       Validators.email,
+      noEmailDomainTypo,
+      noGovDomainTypo,
       Validators.maxLength(254),
       ...IDENTIFIER_SECURITY_VALIDATORS,
     ]],
@@ -127,8 +130,16 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   private readonly _accountantStatus = toSignal(this.accountantForm.statusChanges, {
     initialValue: this.accountantForm.status as FormControlStatus,
   });
+  private readonly _commissionerStatus = toSignal(this.commissionerForm.statusChanges, {
+    initialValue: this.commissionerForm.status as FormControlStatus,
+  });
 
-  readonly canProceed = computed(() => this._accountantStatus() === 'VALID' && !this.isSaving());
+  readonly canProceed = computed(
+    () =>
+      this._commissionerStatus() === 'VALID' &&
+      this._accountantStatus() === 'VALID' &&
+      !this.isSaving(),
+  );
 
   // ── State / MoHUA flow ───────────────────────────────────────
   readonly stateProfile = signal<StateProfile | null>(null);
@@ -307,6 +318,10 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   }
 
   onSaveAndContinue(): void {
+    if (this.commissionerForm.invalid) {
+      this.openEditCommissioner();
+      return;
+    }
     if (this.accountantForm.invalid) {
       this.openEditAccountant();
       return;
