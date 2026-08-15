@@ -186,5 +186,73 @@
         <p class="body-xs mb-0">{{ conditionsFooterNote }}</p>
       </div> -->
     </div>
+
+    <div class="mb-3">
+      <p class="conditions-meta-label text-uppercase fw-bold mb-2">ADDITIONAL DOCUMENTS</p>
+
+      <div class="condition-row d-flex align-items-center gap-3 px-3 py-2">
+        @if (isBudgetDocLoading()) {
+          <span class="condition-icon condition-icon--pending-neutral flex-shrink-0" aria-hidden="true"></span>
+          <div class="flex-grow-1 min-w-0">
+            <p class="condition-title fw-semibold mb-0">Annual Budget Document</p>
+            <p class="condition-subtitle text-muted mb-0">Loading…</p>
+          </div>
+        } @else {
+          @let doc = budgetDocument();
+          @if (doc?.file) {
+            <span class="condition-icon condition-icon--complete flex-shrink-0">
+              <mat-icon>check</mat-icon>
+            </span>
+          } @else {
+            <span class="condition-icon condition-icon--pending-neutral flex-shrink-0" aria-hidden="true"></span>
+          }
+
+          <div class="flex-grow-1 min-w-0">
+            <p class="condition-title fw-semibold mb-0">Annual Budget Document</p>
+            @if (doc?.file; as file) {
+              <p class="condition-subtitle text-muted mb-0">Uploaded: {{ file.name }}</p>
+            } @else {
+              <p class="condition-subtitle text-muted mb-0">
+                Upload your {{ details.selectedYear }} annual budget document for greater transparency.
+              </p>
+            }
+            @if (budgetDocError(); as err) {
+              <p class="body-xs text-danger mb-0">{{ err }}</p>
+            }
+          </div>
+
+          <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            @if (doc?.file?.url; as fileUrl) {
+              <a
+                mat-icon-button
+                class="preview-icon-btn"
+                [href]="fileUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                matTooltip="View uploaded document"
+              >
+                <mat-icon class="preview-icon">visibility</mat-icon>
+              </a>
+            }
+            <button
+              mat-flat-button
+              class="condition-action-btn flex-shrink-0"
+              type="button"
+              [disabled]="isBudgetDocUploading()"
+              (click)="triggerBudgetDocUpload()"
+            >
+              {{ isBudgetDocUploading() ? 'Uploading…' : doc?.file ? 'Re-upload' : 'Upload' }}
+            </button>
+            <input
+              #budgetDocInput
+              type="file"
+              accept="application/pdf"
+              class="d-none"
+              (change)="onBudgetDocSelected($event)"
+            />
+          </div>
+        }
+      </div>
+    </div>
   }
 </div>
