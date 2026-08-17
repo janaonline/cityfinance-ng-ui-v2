@@ -1,11 +1,6 @@
 <input #fileInput type="file" accept=".pdf" class="d-none" (change)="onFileSelected($event)" />
 
 <div class="upload-documents-page container py-3">
-  <button mat-button class="back-btn mb-3 ps-0" type="button" (click)="goBack()">
-    <mat-icon>arrow_back</mat-icon>
-    Back to Conditions
-  </button>
-
   <h1 class="page-heading fw-bold mb-1">Upload Documents</h1>
 
   @if (ulbDetails(); as details) {

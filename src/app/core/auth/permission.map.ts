@@ -37,6 +37,7 @@ export const STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> =
     Permission.APPROVE_ULB_SUBMISSIONS,
     Permission.PREPARE_GRANT_LETTERS,
     Permission.RECOMMEND_EXEMPTIONS,
+    Permission.FINAL_SUBMIT_TO_MOHUA,
     Permission.VIEW_STATE_FORMS,
     Permission.EDIT_STATE_FORMS,
   ],
