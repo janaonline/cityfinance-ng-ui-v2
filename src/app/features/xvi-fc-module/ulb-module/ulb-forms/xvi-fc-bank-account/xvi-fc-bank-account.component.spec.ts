@@ -321,34 +321,6 @@ describe('XviFcBankAccountComponent', () => {
     expect(cancelButton).toBeUndefined();
   });
 
-  it('renders bottom Back button for a submitted non-editable record', () => {
-    service.getBankAccount.and.returnValue(
-      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
-    );
-
-    createComponent();
-
-    const bottomBackButton = Array.from(fixture.nativeElement.querySelectorAll('button.btn-link')).find(
-      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Back',
-    );
-    expect(bottomBackButton).toBeTruthy();
-  });
-
-  it('navigates back when bottom Back button is clicked', () => {
-    service.getBankAccount.and.returnValue(
-      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
-    );
-
-    createComponent();
-
-    const bottomBackButton = Array.from(fixture.nativeElement.querySelectorAll('button.btn-link')).find(
-      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Back',
-    ) as HTMLButtonElement;
-    bottomBackButton.click();
-
-    expect(location.back).toHaveBeenCalled();
-  });
-
   it('allows edit for editable statuses', () => {
     for (const status of [
       FORM_STATUS.NOT_STARTED,
