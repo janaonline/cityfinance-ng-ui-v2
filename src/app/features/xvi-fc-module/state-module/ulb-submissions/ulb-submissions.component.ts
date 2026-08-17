@@ -1,6 +1,6 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
@@ -24,6 +24,7 @@ import {
   FORM_TO_TAB,
   ReviewFormId,
   ReviewStatus,
+  SLB_UNAVAILABLE_BUCKET_KEYS,
   STATUS_BUCKETS,
   UlbSubmissionRow,
   UlbSubmissionSortField,
@@ -119,6 +120,7 @@ export class UlbSubmissionsComponent {
   /** SLB is deemed approved on submission — no approve/return workflow, so bulk actions and
    *  row-selection checkboxes don't apply to it, unlike the other three live forms. */
   readonly isBulkReviewable = computed(() => this.selectedFormId() !== 'SERVICE_LEVEL_BENCHMARKS');
+  private readonly isSlbSelected = computed(() => this.selectedFormId() === 'SERVICE_LEVEL_BENCHMARKS');
 
   readonly selection = new SelectionModel<UlbSubmissionRow>(true, []);
 
@@ -208,15 +210,28 @@ export class UlbSubmissionsComponent {
         if (this.isSelectedFormLive()) this.loadRows();
         else this.rows.set([]);
       });
+
+    // Switching to SLB can leave the currently-selected bucket (e.g. the default "Under Review
+    // by State") pointing at one of the three buckets SLB doesn't have — fall back to a bucket
+    // that's always valid, synchronously (not debounced like the reload above) so the stat cards
+    // never show a disabled bucket as still "active" even briefly.
+    effect(() => {
+      if (this.isBucketDisabled(this.selectedBucketKey())) this.selectedBucketKey.set('NOT_STARTED');
+    });
   }
 
   /** Exactly one bucket is always selected — there's no "show all statuses" state. */
   selectBucket(key: string): void {
-    if (this.selectedBucketKey() === key) return;
+    if (this.selectedBucketKey() === key || this.isBucketDisabled(key)) return;
     this.selectedBucketKey.set(key);
     this.page.set(1);
     this.selection.clear();
     if (this.isSelectedFormLive()) this.loadRows();
+  }
+
+  /** SLB has no STATE approve/return workflow — the review/returned/MoHUA buckets never apply. */
+  isBucketDisabled(key: string): boolean {
+    return this.isSlbSelected() && SLB_UNAVAILABLE_BUCKET_KEYS.has(key);
   }
 
   isAllSelected(): boolean {
