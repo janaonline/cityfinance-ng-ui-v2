@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
 import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
+import { checkPdfHasContent } from '../../../../../shared/dynamic-form/utils/pdf-blank-check.util';
 import {
   FORM_STATUS,
   FormStatusType,
@@ -169,7 +170,7 @@ export class XviFcBankAccountComponent {
     if (this.isFormLoading()) return 'Form is still loading.';
     if (this.isProofUploading()) return 'Proof file is still uploading.';
     if (this.isSubmitting()) return 'Submitting…';
-    if (!this.form.valid) return `Please fix the errors above before submitting. (${this.describeInvalidControls()})`;
+    if (!this.form.valid) return null;
     if (!this.controlValue('bankDetails.name')) return 'Enter a valid IFSC code to resolve bank details first.';
     if (!this.selectedProof()) return 'Upload a proof document.';
     if (this.proofError()) return this.proofError();
@@ -349,10 +350,6 @@ export class XviFcBankAccountComponent {
       .add(() => this.isSubmitting.set(false));
   }
 
-  goBack(): void {
-    this.location.back();
-  }
-
   formatFileSize(sizeKb: number | null): string {
     if (sizeKb === null || sizeKb === undefined) return 'Size unavailable';
     return `${sizeKb.toFixed(2)} KB`;
@@ -379,16 +376,6 @@ export class XviFcBankAccountComponent {
 
   private controlValue(key: string): string | undefined {
     return this.form.controls[key]?.value;
-  }
-
-  /** Lists every currently-invalid enabled control and its error keys, e.g.
-   *  "accountNumber (hasAlphabets), confirmAccountNumber (matchesField)" — used by
-   *  submitBlockedReason() so a blocked submit names the actual offending field. */
-  private describeInvalidControls(): string {
-    const parts = Object.entries(this.form.controls)
-      .filter(([, control]) => control.enabled && control.invalid)
-      .map(([key, control]) => `${key} (${Object.keys(control.errors ?? {}).join(', ')})`);
-    return parts.length ? parts.join(', ') : 'form-level error';
   }
 
   private loadFormAndRecord(): void {
@@ -514,59 +501,32 @@ export class XviFcBankAccountComponent {
   }
 
   private async validatePdfProofNotBlank(file: File): Promise<{ valid: boolean; error?: string; pages: number | null }> {
-    try {
-      const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
-      const hasPdfHeader =
-        header[0] === 0x25 &&
-        header[1] === 0x50 &&
-        header[2] === 0x44 &&
-        header[3] === 0x46 &&
-        header[4] === 0x2d;
-      if (!hasPdfHeader) {
-        return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
-      }
-
-      // Worker + wasm codecs are served from our own assets (see angular.json) rather than a
-      // CDN, so decoding doesn't depend on unpkg's reachability or a proxy that blocks .wasm.
-      const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdfjs/pdf.worker.min.mjs';
-
-      const pdf = await pdfjsLib.getDocument({
-        data: await file.arrayBuffer(),
-        wasmUrl: '/assets/pdfjs/wasm/',
-      }).promise;
-      if (pdf.numPages < 1) {
-        return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
-      }
-
-      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-        const page = await pdf.getPage(pageNumber);
-        const viewport = page.getViewport({ scale: 0.15 });
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.ceil(viewport.width));
-        canvas.height = Math.max(1, Math.ceil(viewport.height));
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
-        }
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-
-        if (!this.isCanvasBlank(ctx, canvas.width, canvas.height)) {
-          return { valid: true, pages: pdf.numPages };
-        }
-      }
-
-      return { valid: false, error: BLANK_PROOF_DOCUMENT_ERROR, pages: null };
-    } catch (error: unknown) {
-      const name = (error as { name?: string })?.name;
-      if (name === 'PasswordException' || name === 'InvalidPDFException') {
-        return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
-      }
+    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const hasPdfHeader =
+      header[0] === 0x25 &&
+      header[1] === 0x50 &&
+      header[2] === 0x44 &&
+      header[3] === 0x46 &&
+      header[4] === 0x2d;
+    if (!hasPdfHeader) {
       return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
     }
+
+    // Same render-based blank-check used for the Audited/Provisional financial statement
+    // uploads — see checkPdfHasContent for why unexpected failures fail open instead of
+    // rejecting every file.
+    const result = await checkPdfHasContent(file);
+    if (result.fatalError === 'password' || result.fatalError === 'invalid') {
+      return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+    }
+    if (result.pageCount === 0) {
+      return { valid: false, error: UNREADABLE_PROOF_DOCUMENT_ERROR, pages: null };
+    }
+    if (!result.hasContent) {
+      return { valid: false, error: BLANK_PROOF_DOCUMENT_ERROR, pages: null };
+    }
+
+    return { valid: true, pages: result.pageCount };
   }
 
   private async validateImageProofNotBlank(file: File): Promise<{ valid: boolean; error?: string; pages: number | null }> {

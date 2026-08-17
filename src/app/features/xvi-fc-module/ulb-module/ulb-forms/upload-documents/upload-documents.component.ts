@@ -14,7 +14,6 @@ import { AuthPermissionService } from '../../../../../core/auth/auth-permission.
 import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,6 +36,7 @@ import {
   ULB_FORMS_DIALOG_PANEL_CLASS,
   type UlbFormsDialogData,
 } from './ulb-forms-dialog.component';
+import { checkPdfHasContent } from '../../../../../shared/dynamic-form/utils/pdf-blank-check.util';
 
 // ─── Public model types (used in template + guard) ───────────────────────────
 
@@ -260,7 +260,6 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
   styleUrl: './upload-documents.component.scss',
 })
 export class UploadDocumentsComponent implements OnInit, OnDestroy {
-  private readonly location = inject(Location);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
@@ -437,10 +436,6 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents().forEach((d) => {
       if (d.localPreviewUrl) URL.revokeObjectURL(d.localPreviewUrl);
     });
-  }
-
-  goBack(): void {
-    this.location.back();
   }
 
   async retryLoadConfig(): Promise<void> {
@@ -1026,63 +1021,24 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       /* ignore — pdf.js will reject a corrupt file */
     }
 
-    // Render-based blank detection via pdf.js.
-    // Rendering at low resolution and checking pixel brightness is the only reliable approach
-    // for detecting blank scanned pages (raw byte heuristics cannot distinguish them).
-    try {
-      // Worker + wasm codecs are served from our own assets (see angular.json) rather than a
-      // CDN, so decoding doesn't depend on unpkg's reachability or a proxy that blocks .wasm.
-      const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdfjs/pdf.worker.min.mjs';
+    // Render-based blank detection via pdf.js — see checkPdfHasContent for why failures fail open.
+    const result = await checkPdfHasContent(file);
+    if (result.fatalError === 'password') {
+      return 'This PDF is password-protected. Please remove the password and try again.';
+    }
+    if (result.fatalError === 'invalid') {
+      return 'This PDF is corrupted or unreadable. Please upload a valid PDF file.';
+    }
+    if (result.pageCount === 0) {
+      return 'This PDF has no pages. Please upload a valid document.';
+    }
+    if (!result.hasContent) {
+      return 'This PDF appears to be blank. Please upload a document with content.';
+    }
 
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({
-        data: arrayBuffer,
-        wasmUrl: '/assets/pdfjs/wasm/',
-      }).promise;
-
-      if (pdf.numPages === 0) return 'This PDF has no pages. Please upload a valid document.';
-
-      // Check every page, not just page 1 — scanners often insert a blank cover/separator
-      // page, which would otherwise cause a document with real content to be rejected.
-      let hasContent = false;
-      for (let pageNumber = 1; pageNumber <= pdf.numPages && !hasContent; pageNumber++) {
-        const page = await pdf.getPage(pageNumber);
-        const viewport = page.getViewport({ scale: 0.15 });
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.ceil(viewport.width);
-        canvas.height = Math.ceil(viewport.height);
-        const ctx = canvas.getContext('2d')!;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-
-        const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        let nonWhite = 0;
-        // 250 (not 240) and 0.1% (not 0.5%) so faint/faded scans and sparse marks
-        // (a signature, a stamp) aren't misread as blank.
-        for (let i = 0; i < data.length; i += 4) {
-          if (data[i] < 250 || data[i + 1] < 250 || data[i + 2] < 250) nonWhite++;
-        }
-        if (nonWhite / (canvas.width * canvas.height) >= 0.001) hasContent = true;
-      }
-      if (!hasContent) {
-        return 'This PDF appears to be blank. Please upload a document with content.';
-      }
-
-      // Min page count — driven by API config (e.g. Auditor's Report requires >= 2 pages)
-      if (doc.minPages && pdf.numPages < doc.minPages) {
-        return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
-      }
-    } catch (err: unknown) {
-      const name = (err as { name?: string })?.name;
-      if (name === 'PasswordException') {
-        return 'This PDF is password-protected. Please remove the password and try again.';
-      }
-      if (name === 'InvalidPDFException') {
-        return 'This PDF is corrupted or unreadable. Please upload a valid PDF file.';
-      }
-      console.warn('[pdf-check] render check skipped:', err);
+    // Min page count — driven by API config (e.g. Auditor's Report requires >= 2 pages)
+    if (doc.minPages && result.pageCount !== null && result.pageCount < doc.minPages) {
+      return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
     }
 
     return null;

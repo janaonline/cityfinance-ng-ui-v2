@@ -54,6 +54,24 @@
     border-color: var(--stat-accent);
     box-shadow: 0 0 0 1px var(--stat-accent);
   }
+
+  &:disabled {
+    // Genuinely recolor to neutral grey (not just a dimmed version of the blue) so a disabled
+    // card reads as "doesn't apply" at a glance, not as a loading/transitional state.
+    --stat-bg: #f1f2f4;
+    --stat-border: #dde0e5;
+    --stat-accent: #9aa1ac;
+    cursor: not-allowed;
+
+    .stat-card__count,
+    .stat-card__label {
+      color: #9aa1ac;
+    }
+
+    &:hover {
+      border-color: var(--stat-border);
+    }
+  }
 }
 
 .stat-card__count {

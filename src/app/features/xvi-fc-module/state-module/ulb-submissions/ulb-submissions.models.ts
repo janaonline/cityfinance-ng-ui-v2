@@ -74,6 +74,14 @@ export const STATUS_BUCKETS: readonly StatusBucket[] = [
   },
 ];
 
+/** SLB is deemed approved on submission — no STATE approve/return workflow (same rationale as
+ *  `isBulkReviewable` on the component) — so these three stat-card buckets never apply to it. */
+export const SLB_UNAVAILABLE_BUCKET_KEYS: ReadonlySet<string> = new Set([
+  'UNDER_STATE_REVIEW',
+  'RETURNED_BY_STATE',
+  'UNDER_REVIEW_BY_MOHUA',
+]);
+
 export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   NOT_STARTED: 'Not Started',
   IN_PROGRESS: 'In Progress',

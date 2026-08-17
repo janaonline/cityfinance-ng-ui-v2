@@ -32,7 +32,8 @@
     <div class="stat-cards mb-4">
         @for (card of statCards(); track card.key) {
         <button type="button" class="stat-card" [class]="'stat-card--' + card.key"
-            [class.stat-card--active]="selectedBucketKey() === card.key" (click)="selectBucket(card.key)">
+            [class.stat-card--active]="selectedBucketKey() === card.key"
+            [disabled]="isBucketDisabled(card.key)" (click)="selectBucket(card.key)">
             <span class="stat-card__icon"><i [class]="'bi bi-' + card.icon"></i></span>
             <span class="stat-card__count">{{ card.count }}</span>
             <span class="stat-card__label">{{ card.label }}</span>
