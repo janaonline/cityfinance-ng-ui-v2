@@ -2,7 +2,7 @@ import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import {
   compareArrFieldsValidator,
   compareFieldsValidator,
-  targetLessThanActualValidator,
+  actualLessThanOrEqualToTargetValidator,
   digitsOnlyValidator,
   matchesFieldValidator,
 } from './comparison.validator';
@@ -186,7 +186,7 @@ describe('comparison validators', () => {
     });
   });
 
-  describe('targetLessThanActualValidator', () => {
+  describe('actualLessThanOrEqualToTargetValidator', () => {
     function buildGroup(actual: number | null, target: number | null) {
       return new FormGroup({
         actual: new FormControl(actual),
@@ -194,45 +194,45 @@ describe('comparison validators', () => {
       });
     }
 
-    it('sets targetLessThanActual on target when target equals actual', () => {
+    it('does not set an error when target equals actual', () => {
       const group = buildGroup(100, 100);
 
-      targetLessThanActualValidator(group);
+      actualLessThanOrEqualToTargetValidator(group);
 
-      expect(group.get('target')?.errors).toEqual({ targetLessThanActual: true });
+      expect(group.get('target')?.errors).toBeNull();
     });
 
-    it('sets targetLessThanActual on target when target is greater than actual', () => {
-      const group = buildGroup(100, 120);
+    it('sets actualLessThanOrEqualToTarget on target when actual is greater than target', () => {
+      const group = buildGroup(120, 100);
 
-      targetLessThanActualValidator(group);
+      actualLessThanOrEqualToTargetValidator(group);
 
-      expect(group.get('target')?.errors).toEqual({ targetLessThanActual: true });
+      expect(group.get('target')?.errors).toEqual({ actualLessThanOrEqualToTarget: true });
     });
 
-    it('clears the error when target is strictly lower than actual', () => {
-      const group = buildGroup(100, 80);
-      group.get('target')?.setErrors({ targetLessThanActual: true });
+    it('clears the error when actual is strictly lower than target', () => {
+      const group = buildGroup(80, 100);
+      group.get('target')?.setErrors({ actualLessThanOrEqualToTarget: true });
 
-      targetLessThanActualValidator(group);
+      actualLessThanOrEqualToTargetValidator(group);
 
       expect(group.get('target')?.errors).toBeNull();
     });
 
     it('does not overwrite unrelated errors already on the target control', () => {
-      const group = buildGroup(100, 120);
+      const group = buildGroup(120, 100);
       group.get('target')?.setErrors({ max: true });
 
-      targetLessThanActualValidator(group);
+      actualLessThanOrEqualToTargetValidator(group);
 
-      expect(group.get('target')?.errors).toEqual({ max: true, targetLessThanActual: true });
+      expect(group.get('target')?.errors).toEqual({ max: true, actualLessThanOrEqualToTarget: true });
     });
 
-    it('preserves unrelated errors when clearing targetLessThanActual', () => {
-      const group = buildGroup(100, 80);
-      group.get('target')?.setErrors({ max: true, targetLessThanActual: true });
+    it('preserves unrelated errors when clearing actualLessThanOrEqualToTarget', () => {
+      const group = buildGroup(80, 100);
+      group.get('target')?.setErrors({ max: true, actualLessThanOrEqualToTarget: true });
 
-      targetLessThanActualValidator(group);
+      actualLessThanOrEqualToTargetValidator(group);
 
       expect(group.get('target')?.errors).toEqual({ max: true });
     });
@@ -240,7 +240,7 @@ describe('comparison validators', () => {
     it('does nothing when actual or target is not yet a number', () => {
       const group = buildGroup(null, null);
 
-      targetLessThanActualValidator(group);
+      actualLessThanOrEqualToTargetValidator(group);
 
       expect(group.get('target')?.errors).toBeNull();
     });
@@ -248,7 +248,7 @@ describe('comparison validators', () => {
     it('returns null when either control is missing', () => {
       const group = new FormGroup({ actual: new FormControl(100) });
 
-      expect(targetLessThanActualValidator(group)).toBeNull();
+      expect(actualLessThanOrEqualToTargetValidator(group)).toBeNull();
     });
   });
 });

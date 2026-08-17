@@ -2,24 +2,25 @@ import { AbstractControl, FormArray, FormGroup, ValidationErrors, ValidatorFn } 
 
 /**
  * Group-level validator for an `{ actual, target }` FormGroup (see `createActualTargetGroup`
- * in dynamic-form.service.ts): sets a `targetLessThanActual` error on the `target` control
- * whenever both values are present numbers and `target >= actual`. Preserves any other errors
- * already set on `target` (e.g. min/max) rather than clobbering them, unlike `compareFieldsValidator`.
+ * in dynamic-form.service.ts): sets an `actualLessThanOrEqualToTarget` error on the `target`
+ * control whenever both values are present numbers and `actual > target`. Preserves any other
+ * errors already set on `target` (e.g. min/max) rather than clobbering them, unlike
+ * `compareFieldsValidator`.
  */
-export function targetLessThanActualValidator(group: AbstractControl): null {
+export function actualLessThanOrEqualToTargetValidator(group: AbstractControl): null {
   const actualControl = group.get('actual');
   const targetControl = group.get('target');
   if (!actualControl || !targetControl) return null;
 
   const actual = actualControl.value;
   const target = targetControl.value;
-  const fails = typeof actual === 'number' && typeof target === 'number' && target >= actual;
+  const fails = typeof actual === 'number' && typeof target === 'number' && actual > target;
 
   const existingErrors = targetControl.errors;
   if (fails) {
-    targetControl.setErrors({ ...existingErrors, targetLessThanActual: true });
-  } else if (existingErrors?.['targetLessThanActual']) {
-    const { targetLessThanActual: _removed, ...rest } = existingErrors;
+    targetControl.setErrors({ ...existingErrors, actualLessThanOrEqualToTarget: true });
+  } else if (existingErrors?.['actualLessThanOrEqualToTarget']) {
+    const { actualLessThanOrEqualToTarget: _removed, ...rest } = existingErrors;
     targetControl.setErrors(Object.keys(rest).length ? rest : null);
   }
   return null;
