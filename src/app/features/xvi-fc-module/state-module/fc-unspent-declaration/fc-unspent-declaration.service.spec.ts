@@ -5,7 +5,6 @@ import { FcUnspentDeclarationService } from './fc-unspent-declaration.service';
 import {
   FcUnspentApiResponse,
   FcUnspentDeclarationData,
-  FcUnspentDeclarationTemplate,
   FcUnspentUlbOption,
 } from './fc-unspent-declaration.models';
 
@@ -134,63 +133,35 @@ describe('FcUnspentDeclarationService', () => {
     });
   });
 
-  // ─── getDeclarationTemplate ─────────────────────────────────────────────────
+  // ─── downloadDeclarationDocument ────────────────────────────────────────────
 
-  describe('getDeclarationTemplate', () => {
+  describe('downloadDeclarationDocument', () => {
     const stateId = 'state-1';
     const yearId = 'year-1';
-    const url = `${BASE_URL}${stateId}/${yearId}/declaration-template`;
+    const url = `${BASE_URL}${stateId}/${yearId}/fc-unspent-declaration-document`;
 
-    it('calls the exact GET URL and unwraps the response envelope on success', () => {
-      const template: FcUnspentDeclarationTemplate = {
-        fileName: 'FC-Unspent-Declaration.docx',
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        url: '/file/download?signature=abc123',
-      };
-      const successBody: FcUnspentApiResponse<FcUnspentDeclarationTemplate> = {
-        success: true,
-        message: 'OK',
-        data: template,
-      };
+    it('calls the exact GET URL and emits the raw blob on success', () => {
+      const blob = new Blob(['docx content']);
 
-      let result: FcUnspentDeclarationTemplate | undefined;
-      service.getDeclarationTemplate(stateId, yearId).subscribe((data) => (result = data));
+      let result: Blob | undefined;
+      service.downloadDeclarationDocument(stateId, yearId).subscribe((data) => (result = data));
 
       const req = httpMock.expectOne(url);
       expect(req.request.method).toBe('GET');
-      expect(req.request.responseType).toBe('json');
-      req.flush(successBody);
+      expect(req.request.responseType).toBe('blob');
+      req.flush(blob);
 
-      expect(result).toEqual(template);
+      expect(result).toEqual(blob);
     });
 
-    it('throws the original response object (not a synthetic Error) when success:false', () => {
-      const errorBody: FcUnspentApiResponse<FcUnspentDeclarationTemplate> = {
-        success: false,
-        message: 'Unable to generate the declaration template.',
-      };
-
-      let caughtError: unknown;
-      service.getDeclarationTemplate(stateId, yearId).subscribe({ error: (err: unknown) => (caughtError = err) });
-
-      httpMock.expectOne(url).flush(errorBody);
-
-      expect(caughtError).toBe(errorBody);
-    });
-
-    it('never requests a Blob response and never calls S3 directly', () => {
-      service.getDeclarationTemplate(stateId, yearId).subscribe();
+    it('requests a Blob response, not the JSON envelope the old static-template endpoint used', () => {
+      service.downloadDeclarationDocument(stateId, yearId).subscribe();
 
       const requests = httpMock.match(() => true);
       expect(requests.length).toBe(1);
       expect(requests[0].request.url).toBe(url);
-      expect(requests[0].request.responseType).toBe('json');
-      expect(requests[0].request.url).not.toContain('s3');
-      requests[0].flush({
-        success: true,
-        message: 'OK',
-        data: { fileName: 'x', mimeType: 'x', url: '/file/download' },
-      });
+      expect(requests[0].request.responseType).toBe('blob');
+      requests[0].flush(new Blob());
     });
   });
 

@@ -15,3 +15,20 @@ export interface UlbDialogResponse {
   ulbId: string | null;
   payload: Record<string, unknown>;
 }
+
+export interface ApiFieldError {
+  field?: string;
+  message: string;
+  code?: string;
+}
+
+export type ApiErrorMap = Record<string, ApiFieldError[]>;
+
+export interface ApiErrorResponse {
+  success?: false;
+  statusCode?: number;
+  message?: string;
+  errors?: ApiErrorMap;
+  timestamp?: string;
+  path?: string;
+}

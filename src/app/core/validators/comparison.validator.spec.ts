@@ -2,6 +2,7 @@ import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import {
   compareArrFieldsValidator,
   compareFieldsValidator,
+  targetLessThanActualValidator,
   digitsOnlyValidator,
   matchesFieldValidator,
 } from './comparison.validator';
@@ -182,6 +183,72 @@ describe('comparison validators', () => {
       const formArray = new FormArray([new FormGroup({ other: new FormControl('10') })]);
 
       expect(compareArrFieldsValidator('first', 'second', 'lessThan')(formArray)).toBeNull();
+    });
+  });
+
+  describe('targetLessThanActualValidator', () => {
+    function buildGroup(actual: number | null, target: number | null) {
+      return new FormGroup({
+        actual: new FormControl(actual),
+        target: new FormControl(target),
+      });
+    }
+
+    it('sets targetLessThanActual on target when target equals actual', () => {
+      const group = buildGroup(100, 100);
+
+      targetLessThanActualValidator(group);
+
+      expect(group.get('target')?.errors).toEqual({ targetLessThanActual: true });
+    });
+
+    it('sets targetLessThanActual on target when target is greater than actual', () => {
+      const group = buildGroup(100, 120);
+
+      targetLessThanActualValidator(group);
+
+      expect(group.get('target')?.errors).toEqual({ targetLessThanActual: true });
+    });
+
+    it('clears the error when target is strictly lower than actual', () => {
+      const group = buildGroup(100, 80);
+      group.get('target')?.setErrors({ targetLessThanActual: true });
+
+      targetLessThanActualValidator(group);
+
+      expect(group.get('target')?.errors).toBeNull();
+    });
+
+    it('does not overwrite unrelated errors already on the target control', () => {
+      const group = buildGroup(100, 120);
+      group.get('target')?.setErrors({ max: true });
+
+      targetLessThanActualValidator(group);
+
+      expect(group.get('target')?.errors).toEqual({ max: true, targetLessThanActual: true });
+    });
+
+    it('preserves unrelated errors when clearing targetLessThanActual', () => {
+      const group = buildGroup(100, 80);
+      group.get('target')?.setErrors({ max: true, targetLessThanActual: true });
+
+      targetLessThanActualValidator(group);
+
+      expect(group.get('target')?.errors).toEqual({ max: true });
+    });
+
+    it('does nothing when actual or target is not yet a number', () => {
+      const group = buildGroup(null, null);
+
+      targetLessThanActualValidator(group);
+
+      expect(group.get('target')?.errors).toBeNull();
+    });
+
+    it('returns null when either control is missing', () => {
+      const group = new FormGroup({ actual: new FormControl(100) });
+
+      expect(targetLessThanActualValidator(group)).toBeNull();
     });
   });
 });
