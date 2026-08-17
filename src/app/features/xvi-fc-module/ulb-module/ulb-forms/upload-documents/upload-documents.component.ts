@@ -14,7 +14,6 @@ import { AuthPermissionService } from '../../../../../core/auth/auth-permission.
 import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -260,7 +259,6 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
   styleUrl: './upload-documents.component.scss',
 })
 export class UploadDocumentsComponent implements OnInit, OnDestroy {
-  private readonly location = inject(Location);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
@@ -437,10 +435,6 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents().forEach((d) => {
       if (d.localPreviewUrl) URL.revokeObjectURL(d.localPreviewUrl);
     });
-  }
-
-  goBack(): void {
-    this.location.back();
   }
 
   async retryLoadConfig(): Promise<void> {

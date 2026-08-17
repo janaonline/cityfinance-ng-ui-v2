@@ -349,10 +349,6 @@ export class XviFcBankAccountComponent {
       .add(() => this.isSubmitting.set(false));
   }
 
-  goBack(): void {
-    this.location.back();
-  }
-
   formatFileSize(sizeKb: number | null): string {
     if (sizeKb === null || sizeKb === undefined) return 'Size unavailable';
     return `${sizeKb.toFixed(2)} KB`;

@@ -2,13 +2,6 @@
   (change)="onProofSelected($event)" />
 
 <div class="container py-3 xvifc-theme">
-  <button
-    class="btn btn-link text-secondary text-decoration-none ps-0 mb-3 d-inline-flex align-items-center gap-1 small"
-    type="button" (click)="goBack()">
-    <i class="bi bi-arrow-left" aria-hidden="true"></i>
-    Back to Conditions
-  </button>
-
   <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
     <h1 class="fs-4 fw-bold mb-0">{{ pageTitle }}</h1>
     @if (existingRecord(); as record) {
@@ -149,10 +142,6 @@
         }
       </button>
       }
-      <button class="btn btn-link text-secondary text-decoration-none" type="button" [disabled]="isSubmitting()"
-        (click)="goBack()">
-        {{ isEditable() ? 'Cancel' : 'Back' }}
-      </button>
     </div>
     @if (isEditable() && submitBlockedReason(); as reason) {
     <p class="text-danger small mt-2 mb-0" role="status">{{ reason }}</p>
