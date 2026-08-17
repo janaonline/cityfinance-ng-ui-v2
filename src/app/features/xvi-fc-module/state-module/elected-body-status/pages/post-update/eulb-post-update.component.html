@@ -19,7 +19,7 @@
     </div>
   </div>
 } @else {
-  <div class="component-shell w-100 h-100 overflow-x-hidden d-flex align-items-start gap-2 my-2">
+  <div class="component-shell">
     <div class="form-container">
       <div class="top-accent"></div>
 
@@ -234,7 +234,7 @@
                             <th scope="col" class="small text-nowrap fw-semibold">Census Code</th>
                             <th scope="col" class="small text-nowrap fw-semibold">ULB Name</th>
                             <th scope="col" class="small text-nowrap fw-semibold">Elected Body Status</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">Date of Constitution</th>
+                            <th scope="col" class="small text-nowrap fw-semibold">Date on which the elected body is in place.</th>
                             <th scope="col" class="small text-nowrap fw-semibold">Date of Expiry</th>
                             <th scope="col" class="small text-nowrap fw-semibold">Remarks</th>
                             <th scope="col" class="small text-nowrap fw-semibold">Validation</th>
@@ -451,8 +451,8 @@
       <!-- Acknowledgement section: cancel, save, final submit -->
       <!-- Show only if ineligle rows/ ULBs are available -->
       @if (rowViewModels().length) {
-        <div class="acknowledgement border-top p-3">
-          <div class="acknowledgement-inner d-flex flex-wrap justify-content-end gap-2">
+        <div class="acknowledgement">
+          <div class="acknowledgement-inner">
             @if (canView()) {
               <button
                 type="button"

@@ -38,7 +38,8 @@ export class UlbDialogComponent implements OnInit {
       next: (res) => {
         const ulbRecord = (this.data.ulb ?? {}) as Record<string, unknown>;
         // Sections come back as generic field definitions (no values) — hydrate each with the
-        // ULB row being edited, and hide the built-in label since the grid renders its own.
+        // ULB row being edited. Label rendering (own vs. inline) is left to
+        // FormSectionGridComponent.showOwnLabel(), driven by each field's displayInlineLabel/hideLabel.
         this.sections = (res.data ?? [])
           .map((section) => ({
             ...section,
@@ -49,7 +50,6 @@ export class UlbDialogComponent implements OnInit {
               .filter((field) => this.data.action !== 'Resubmit' || !field.key.startsWith('primaryContact'))
               .map((field) => ({
                 ...field,
-                hideLabel: true,
                 value: ulbRecord[field.key] ?? field.value,
               })),
           }))

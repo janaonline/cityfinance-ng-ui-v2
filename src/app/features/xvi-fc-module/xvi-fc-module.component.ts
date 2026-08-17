@@ -1,12 +1,12 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, skip } from 'rxjs';
 import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
 import { AppMenuComponent } from '../../shared/components/side-menu';
+import { XVIFC_THEME_CLASS } from './xvi-fc-module.constants';
 import { XvifcModuleService } from './xvi-fc-module.service';
 
-const XVIFC_THEME_CLASS = 'xvifc-theme';
 @Component({
   selector: 'app-xvi-fc-module',
   imports: [AppMenuComponent, RouterModule],
@@ -45,9 +45,13 @@ export class XviFcModuleComponent implements OnInit {
     this.syncMenuModel();
 
     // Re-read the route tree only after navigation completes so child snapshots are stable.
+    // `skip(1)`: the first NavigationEnd is the navigation that created this component.
+    // It was already synced above, so handling it again would create a new context and
+    // duplicate the side-menu API call.
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        skip(1),
         // Router events outlive the component; bind cleanup to the shell instance.
         takeUntilDestroyed(this.destroyRef),
       )

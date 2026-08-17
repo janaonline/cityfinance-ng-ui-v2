@@ -1,44 +1,7 @@
-.mat-mdc-table {
-  width: 100%;
-  background: transparent;
-  border-collapse: collapse;
-}
+@use '../../styles/shared-layout' as layout;
 
-.mat-mdc-header-row {
-  background: #ffffff;
-  border-bottom: 1px solid #e9eef2;
-}
-
-.mat-mdc-header-cell {
-  padding: 14px 16px;
-  color: #647085;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-bottom: none;
-  white-space: nowrap;
-}
-
-.mat-mdc-cell {
-  padding: 14px 16px;
-  color: #243047;
-  font-size: 0.875rem;
-  vertical-align: middle;
-  border-bottom: 1px solid #edf2f3;
-}
-
-.mat-mdc-row {
-  background: #ffffff;
-  transition: background-color 120ms ease;
-
-  &:hover {
-    background: #f8f9fa;
-  }
-
-  &:last-of-type .mat-mdc-cell {
-    border-bottom: none;
-  }
+:host {
+  @include layout.shared-mat-table;
 }
 
 // .table-container {

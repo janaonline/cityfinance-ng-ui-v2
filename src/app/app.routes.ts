@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, xvifcAuthGuard } from './core/guards/auth.guard';
+import { authGuard, xvifcAuthGuard, xvifcEligibilityGuard } from './core/guards/auth.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
@@ -41,12 +41,9 @@ export const routes: Routes = [
   // },
   {
     path: '',
-    children: [
-      // {
-      //   // path: 'home', loadComponent: () => import('./features/pages/home/home.component').then((m) => m.HomeComponent),
-      //   path: 'home', component: HomeComponent,
-      // },
-    ],
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/landing/landing.component').then((m) => m.LandingComponent),
   },
   // {
   //     path: '',
@@ -85,9 +82,21 @@ export const routes: Routes = [
   },
   {
     path: 'xvifc',
-    canActivate: [xvifcAuthGuard],
+    canActivate: [xvifcAuthGuard, xvifcEligibilityGuard],
     loadChildren: () =>
       import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
+  },
+  {
+    // Keep this route outside /xvifc to avoid a redirect loop with xvifcEligibilityGuard.
+    //
+    // No authGuard: this page must be accessible both after a login rejection (before a session
+    // exists) and when redirected by xvifcEligibilityGuard. It only shows a static message and a
+    // "Log out" button, which is a safe no-op without a session.
+    path: 'xvifc-not-eligible',
+    loadComponent: () =>
+      import('./features/xvi-fc-module/shared/not-eligible/not-eligible.component').then(
+        (m) => m.NotEligibleComponent,
+      ),
   },
   {
     path: 'auth',

@@ -1,10 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { AnnualAccountReviewComponent } from './annual-account-review.component';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { NoteDialogService } from '../../../../../shared/components/note-dialog/note-dialog.service';
+import { SlbService } from '../../../ulb-module/ulb-forms/slb/slb.service';
+import type { SlbFormData } from '../../../ulb-module/ulb-forms/slb/slb.models';
+import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import type { UploadPageConfig } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.component';
 
 describe('AnnualAccountReviewComponent — optional document gating', () => {
@@ -163,26 +167,30 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
     );
     expect(req.request.urlWithParams).toContain('section=auditedData');
     req.flush({
-      annualAccountId: 'account-1',
-      auditedData: {
-        form_status: 'UNDER_REVIEW_BY_STATE',
-        form_status_id: 3,
-        yearId: 'year-1',
-        year: '2024-25',
-        permissions: component.statusData()!.auditedData!.permissions,
-        stateDecision: null,
-        mohuaDecision: null,
-        documents: [
-          {
-            docId: 'auditors-report',
-            uploadStatus: 'UPLOADED',
-            processingStatus: 'PASSED',
-            currentUpload: null,
-            stateDecision: null,
-          },
-        ],
+      success: true,
+      data: {
+        annualAccountId: 'account-1',
+        ulbName: 'Test ULB',
+        ulbCode: 'T1',
+        data: {
+          form_status: 'UNDER_REVIEW_BY_STATE',
+          form_status_id: 3,
+          yearId: 'year-1',
+          year: '2024-25',
+          permissions: component.statusData()!.auditedData!.permissions,
+          stateDecision: null,
+          mohuaDecision: null,
+          documents: [
+            {
+              docId: 'auditors-report',
+              uploadStatus: 'UPLOADED',
+              processingStatus: 'PASSED',
+              currentUpload: null,
+              stateDecision: null,
+            },
+          ],
+        },
       },
-      unauditedData: null,
     });
 
     await pending;
@@ -293,6 +301,51 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
         latestDecision: { status: 'RETURNED' },
         isStale: false,
       });
+    });
+  });
+
+  describe('SLB tab', () => {
+    const slbFormData: SlbFormData = {
+      _id: 'slb-1',
+      formName: 'SLB',
+      formId: 32,
+      ulbId: 'ulb-1',
+      yearId: 'year-1',
+      designYear: '2026-27',
+      actualYearLabel: '2025-26',
+      ulbName: 'Test ULB',
+      actors: [],
+      currentFormStatus: 3,
+      currentFormStatusLabel: 'Under Review by State',
+      questions: [],
+      permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+      meta: { version: 1 },
+    };
+
+    afterEach(() => localStorage.removeItem(XVIFC_LS_KEYS.selectedYearId));
+
+    it('switchTab(\'SLB\') lazy-loads via SlbService and only once', async () => {
+      localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, 'year-1');
+      const slbService = TestBed.inject(SlbService);
+      const getSlbFormSpy = spyOn(slbService, 'getSlbForm').and.returnValue(of(slbFormData));
+
+      await component.switchTab('SLB');
+
+      expect(getSlbFormSpy).toHaveBeenCalledWith('ulb-1', 'year-1');
+      expect(component.slbData()).toEqual(slbFormData);
+      expect(component.activeSection()).toBe('SLB');
+
+      await component.switchTab('SLB');
+      expect(getSlbFormSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('currentSection/rows/actionGates return safe empty defaults while SLB is active', () => {
+      component.activeSection.set('SLB');
+
+      expect(component.currentSection()).toBeNull();
+      expect(component.rows()).toEqual([]);
+      expect(component.actionGates()).toEqual([]);
+      expect(component.currentAnnualLogsState()).toEqual(jasmine.objectContaining({ logs: [] }));
     });
   });
 });

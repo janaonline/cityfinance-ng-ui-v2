@@ -40,7 +40,7 @@ export class UlbListComponent implements OnInit {
 
   search = '';
   stateFilter = '';
-  approvalStatusFilter: '' | 'PENDING' | 'APPROVED' | 'REJECTED' = '';
+  approvalStatusFilter: '' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXISTING' = '';
   pageIndex = 0;
   pageSize = 10;
   totalItems = 0;
@@ -213,8 +213,22 @@ export class UlbListComponent implements OnInit {
     });
   }
 
-  private extractErrorMessage(error: { error?: { message?: string | string[] } }): string {
-    const message = error?.error?.message;
+  /**
+   * The dialog (Resubmit/Edit) already closes before this subscription runs, so — unlike the
+   * Register ULB page — there's no form left on screen to attach inline field errors to. This at
+   * least surfaces the real field-level reason (e.g. an MX-record failure) in the popup instead
+   * of the opaque top-level "Validation failed" the backend sends alongside it.
+   */
+  private extractErrorMessage(error: {
+    error?: { message?: string | string[]; errors?: Record<string, { message: string }[]> };
+  }): string {
+    const body = error?.error;
+    const fieldMessages = body?.errors
+      ? Object.values(body.errors).flatMap((fieldErrors) => fieldErrors.map((fieldError) => fieldError.message))
+      : [];
+    if (fieldMessages.length) return fieldMessages.join(' ');
+
+    const message = body?.message;
     if (Array.isArray(message)) return message.join(', ');
     return message || errMsg;
   }

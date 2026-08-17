@@ -278,13 +278,13 @@ describe('UnspentUlbTableComponent', () => {
   });
 
   it('passes the blockingMessage input through to the picker dialog data', () => {
-    setupWithRows([], { blockingMessage: 'Devolution Formula must be submitted first.' });
+    setupWithRows([], { blockingMessage: 'ULB-wise Allocation must be submitted first.' });
     dialog.open.and.returnValue(dialogRefReturning(undefined));
 
     fixture.debugElement.query(By.css('button[aria-label="Add ULB"]')).nativeElement.click();
 
     const [, config] = dialog.open.calls.mostRecent().args as [unknown, { data: { blockingMessage: string | null } }];
-    expect(config.data.blockingMessage).toBe('Devolution Formula must be submitted first.');
+    expect(config.data.blockingMessage).toBe('ULB-wise Allocation must be submitted first.');
   });
 
   it('passes its own injector into the dialog config, so the picker can resolve the shared ULB-options cache', () => {

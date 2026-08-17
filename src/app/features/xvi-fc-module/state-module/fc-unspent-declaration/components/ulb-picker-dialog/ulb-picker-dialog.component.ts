@@ -7,6 +7,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { FcUnspentDeclarationService } from '../../fc-unspent-declaration.service';
 import { FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { buildUlbOptionsCacheKey, FcUnspentUlbOptionsCacheService } from '../../fc-unspent-ulb-options-cache.service';
+import { formatCrore, formatCroreFull } from '../../fc-unspent-declaration.utils';
 
 export interface UlbPickerDialogData {
   stateId: string;
@@ -39,6 +40,9 @@ const ULB_PICKER_PAGE_SIZE = 20;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UlbPickerDialogComponent implements OnInit {
+  readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
+
   private readonly service = inject(FcUnspentDeclarationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialogRef = inject(MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption[]>);

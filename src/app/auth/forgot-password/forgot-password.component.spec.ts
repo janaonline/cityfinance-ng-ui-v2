@@ -2,7 +2,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { OtpAuthService } from '../../core/auth/auth.service';
@@ -33,7 +33,10 @@ describe('ForgotPasswordComponent', () => {
         { provide: MAT_DIALOG_DATA, useValue: {} },
         { provide: OtpAuthService, useValue: authSpy },
         { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParams: of({}), paramMap: of(convertToParamMap({})) },
+        },
       ],
     }).compileComponents();
 
@@ -91,7 +94,10 @@ describe('ForgotPasswordComponent', () => {
           { provide: MAT_DIALOG_DATA, useValue: {} },
           { provide: OtpAuthService, useValue: authSpy },
           { provide: Router, useValue: routerSpy },
-          { provide: ActivatedRoute, useValue: { queryParams: of({ type: '16thFC' }) } },
+          {
+            provide: ActivatedRoute,
+            useValue: { queryParams: of({ type: '16thFC' }), paramMap: of(convertToParamMap({})) },
+          },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -108,7 +114,10 @@ describe('ForgotPasswordComponent', () => {
           { provide: MAT_DIALOG_DATA, useValue: {} },
           { provide: OtpAuthService, useValue: authSpy },
           { provide: Router, useValue: routerSpy },
-          { provide: ActivatedRoute, useValue: { queryParams: of({ type: '15thFC' }) } },
+          {
+            provide: ActivatedRoute,
+            useValue: { queryParams: of({ type: '15thFC' }), paramMap: of(convertToParamMap({})) },
+          },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -125,7 +134,52 @@ describe('ForgotPasswordComponent', () => {
           { provide: MAT_DIALOG_DATA, useValue: {} },
           { provide: OtpAuthService, useValue: authSpy },
           { provide: Router, useValue: routerSpy },
-          { provide: ActivatedRoute, useValue: { queryParams: of({ type: 'unknown' }) } },
+          {
+            provide: ActivatedRoute,
+            useValue: { queryParams: of({ type: 'unknown' }), paramMap: of(convertToParamMap({})) },
+          },
+        ],
+      }).compileComponents();
+      const fix = TestBed.createComponent(ForgotPasswordComponent);
+      fix.detectChanges();
+      expect(fix.componentInstance.typeKey()).toBeNull();
+    });
+  });
+
+  describe('ngOnInit – path param (:type)', () => {
+    it('should set typeKey to "XVIFC" when the route path param is XVIFC', async () => {
+      await TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent],
+        providers: [
+          { provide: MatDialogRef, useValue: { close: () => undefined } },
+          { provide: MAT_DIALOG_DATA, useValue: {} },
+          { provide: OtpAuthService, useValue: authSpy },
+          { provide: Router, useValue: routerSpy },
+          {
+            provide: ActivatedRoute,
+            useValue: { queryParams: of({}), paramMap: of(convertToParamMap({ type: 'XVIFC' })) },
+          },
+        ],
+      }).compileComponents();
+      const fix = TestBed.createComponent(ForgotPasswordComponent);
+      fix.detectChanges();
+      expect(fix.componentInstance.typeKey()).toBe('XVIFC');
+    });
+
+    it('should ignore an unknown path param value', async () => {
+      await TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent],
+        providers: [
+          { provide: MatDialogRef, useValue: { close: () => undefined } },
+          { provide: MAT_DIALOG_DATA, useValue: {} },
+          { provide: OtpAuthService, useValue: authSpy },
+          { provide: Router, useValue: routerSpy },
+          {
+            provide: ActivatedRoute,
+            useValue: { queryParams: of({}), paramMap: of(convertToParamMap({ type: 'unknown' })) },
+          },
         ],
       }).compileComponents();
       const fix = TestBed.createComponent(ForgotPasswordComponent);
@@ -157,16 +211,16 @@ describe('ForgotPasswordComponent', () => {
   });
 
   describe('onBackToLogin', () => {
-    it('should navigate to /auth/login with empty queryParams when no typeKey', () => {
+    it('should navigate to /auth/login with no type segment when no typeKey', () => {
       component.typeKey.set(null);
       component.onBackToLogin();
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login'], { queryParams: {} });
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
     });
 
-    it('should navigate to /auth/login with type queryParam when typeKey is set', () => {
+    it('should navigate to /auth/login/{type} when typeKey is set', () => {
       component.typeKey.set('16thFC');
       component.onBackToLogin();
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login'], { queryParams: { type: '16thFC' } });
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login', '16thFC']);
     });
   });
 

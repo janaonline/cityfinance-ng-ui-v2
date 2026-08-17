@@ -100,7 +100,14 @@ export class ForgotPasswordComponent implements OnInit {
     this.route.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ type }) => {
-        this.typeKey.set(LOGIN_TYPES.includes(type) ? (type as LoginType) : null);
+        if (LOGIN_TYPES.includes(type)) this.typeKey.set(type as LoginType);
+      });
+
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const type = params.get('type') as LoginType;
+        if (LOGIN_TYPES.includes(type)) this.typeKey.set(type);
       });
   }
 
@@ -115,7 +122,7 @@ export class ForgotPasswordComponent implements OnInit {
   onBackToLogin(): void {
     this.clearCountdown();
     const type = this.typeKey();
-    void this.router.navigate(['/auth/login'], { queryParams: type ? { type } : {} });
+    void this.router.navigate(type ? ['/auth/login', type] : ['/auth/login']);
   }
 
   onContinue(): void {

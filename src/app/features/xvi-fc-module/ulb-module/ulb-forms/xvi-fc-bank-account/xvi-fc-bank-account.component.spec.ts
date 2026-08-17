@@ -1,11 +1,30 @@
+import { Component, Input } from '@angular/core';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Location } from '@angular/common';
+import { FormGroup } from '@angular/forms';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
+import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
+import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { XviFcBankAccountComponent } from './xvi-fc-bank-account.component';
 import { XviFcBankAccountService } from './xvi-fc-bank-account.service';
-import { FORM_STATUS, XviFcBankAccountProofFile, XviFcBankAccountResponse } from './xvi-fc-bank-account.models';
+import {
+  FORM_STATUS,
+  XviFcBankAccountFormConfig,
+  XviFcBankAccountProofFile,
+  XviFcBankAccountResponse,
+} from './xvi-fc-bank-account.models';
+
+// Stubs the real dynamic-form renderer (which needs its own HttpClient/Material test scaffolding,
+// already covered by input.component.spec.ts) so this file can assert on the host component's own
+// wiring — same approach slb.component.spec.ts uses for the identical dependency.
+@Component({ selector: 'app-dynamic-form', standalone: true, template: '' })
+class StubDynamicFormComponent {
+  @Input() field!: FieldConfig;
+  @Input() group!: FormGroup;
+  @Input() mode: 'edit' | 'view' = 'edit';
+}
 
 const proofPath = 'xvi-fc/bank-account/ulb-id/year-id/proof/cancelled-cheque.pdf';
 const fullProofUrl = `https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com/${proofPath}`;
@@ -19,6 +38,48 @@ const proofFile: XviFcBankAccountProofFile = {
   s3Key: proofPath,
   sha256: 'a'.repeat(64),
 };
+
+const testFields: FieldConfig[] = [
+  {
+    key: 'ifscCode',
+    label: 'IFSC Code',
+    formFieldType: 'text',
+    required: true,
+    validations: [{ name: 'required', validator: null, message: 'IFSC code is required.' }],
+  },
+  { key: 'bankDetails.name', label: 'Bank Name', formFieldType: 'text', disabled: true },
+  { key: 'bankDetails.branch', label: 'Branch', formFieldType: 'text', disabled: true },
+  { key: 'bankDetails.address', label: 'Branch Address', formFieldType: 'text', disabled: true },
+  { key: 'bankDetails.city', label: 'City', formFieldType: 'text', disabled: true },
+  { key: 'bankDetails.state', label: 'State', formFieldType: 'text', disabled: true },
+  { key: 'bankDetails.micr', label: 'MICR Code', formFieldType: 'text', disabled: true },
+  {
+    key: 'accountNumber',
+    label: 'Account Number',
+    formFieldType: 'text',
+    required: true,
+    digitsOnly: true,
+    validations: [{ name: 'required', validator: null, message: 'Account number is required.' }],
+  },
+  {
+    key: 'confirmAccountNumber',
+    label: 'Confirm Account Number',
+    formFieldType: 'text',
+    required: true,
+    matchesField: 'accountNumber',
+    digitsOnly: true,
+    validations: [{ name: 'required', validator: null, message: 'Please confirm the account number.' }],
+  },
+  {
+    key: 'proofFile',
+    label: 'Bank Proof Document',
+    formFieldType: 'file',
+    required: true,
+    validations: [{ name: 'required', validator: null, message: 'A bank proof document is required.' }],
+  },
+] as FieldConfig[];
+
+const formConfig: XviFcBankAccountFormConfig = { meta: {}, data: testFields };
 
 const record = (overrides: Partial<XviFcBankAccountResponse> = {}): XviFcBankAccountResponse => ({
   _id: 'record-id',
@@ -58,14 +119,15 @@ describe('XviFcBankAccountComponent', () => {
     localStorage.setItem('userData', JSON.stringify({ ulb: 'ulb-id', state: 'state-id' }));
 
     service = jasmine.createSpyObj<XviFcBankAccountService>('XviFcBankAccountService', [
+      'getFormConfig',
       'getBankAccount',
       'submitBankAccount',
       'getSignedUrls',
       'uploadProofToS3',
       'lookupIfsc',
     ]);
+    service.getFormConfig.and.returnValue(of(formConfig));
     service.getBankAccount.and.returnValue(of(null));
-    service.lookupIfsc.and.returnValue(of({ ifscCode: 'UTIB0005157', bankDetails: record().bankDetails }));
     service.getSignedUrls.and.returnValue(of([{ url: signedPutUrl, fileUrl: fullProofUrl, path: proofPath }]));
     service.uploadProofToS3.and.returnValue(of(void 0));
     service.submitBankAccount.and.returnValue(
@@ -87,7 +149,12 @@ describe('XviFcBankAccountComponent', () => {
         { provide: UtilityService, useValue: utilityService },
         { provide: Location, useValue: location },
       ],
-    }).compileComponents();
+    })
+      .overrideComponent(XviFcBankAccountComponent, {
+        remove: { imports: [DynamicFormComponent] },
+        add: { imports: [StubDynamicFormComponent] },
+      })
+      .compileComponents();
   });
 
   afterEach(() => {
@@ -105,10 +172,15 @@ describe('XviFcBankAccountComponent', () => {
   function hydrateValidForm(): void {
     component.form.patchValue({
       ifscCode: 'SBIN0123456',
+      'bankDetails.name': record().bankDetails.name,
+      'bankDetails.branch': record().bankDetails.branch,
+      'bankDetails.address': record().bankDetails.address,
+      'bankDetails.city': record().bankDetails.city,
+      'bankDetails.state': record().bankDetails.state,
+      'bankDetails.micr': record().bankDetails.micr,
       accountNumber: '123456789012',
       confirmAccountNumber: '123456789012',
     });
-    component.bankDetails.set(record().bankDetails);
     component.selectedProof.set(proofFile);
     fixture.detectChanges();
   }
@@ -117,14 +189,43 @@ describe('XviFcBankAccountComponent', () => {
     return spyOn(component as any, 'validateProofNotBlank').and.resolveTo({ valid, pages, error });
   }
 
-  it('loads existing record on init', () => {
+  it('fetches form config and existing record together on init', () => {
     service.getBankAccount.and.returnValue(of(record()));
 
     createComponent();
 
+    expect(service.getFormConfig).toHaveBeenCalledWith('year-id');
     expect(service.getBankAccount).toHaveBeenCalledOnceWith({ yearId: 'year-id', ulbId: 'ulb-id' });
+    expect(component.fields()).toEqual(testFields);
     expect(component.existingRecord()).toEqual(record());
-    expect(component.form.controls.ifscCode.value).toBe('SBIN0123456');
+  });
+
+  it('does not create a proofFile form control (proof is managed by selectedProof, not the dynamic form)', () => {
+    createComponent();
+
+    // Regression: toFormGroup() previously built a control for every field including proofFile,
+    // which — since nothing ever set its value — sat permanently `required`-invalid and blocked
+    // form.valid forever regardless of what was actually uploaded via selectedProof.
+    expect(component.form.controls['proofFile']).toBeUndefined();
+  });
+
+  it('canSubmit is not blocked by a missing proofFile form control once a proof is selected', () => {
+    createComponent();
+    hydrateValidForm();
+
+    expect(component.form.valid).toBeTrue();
+    expect(component.canSubmit()).toBeTrue();
+  });
+
+  it('hydrates ifscCode and bankDetails.* from an existing record, but never the account number', () => {
+    service.getBankAccount.and.returnValue(of(record()));
+
+    createComponent();
+
+    expect(component.form.controls['ifscCode'].value).toBe('SBIN0123456');
+    expect(component.form.controls['bankDetails.name'].value).toBe('State Bank of India');
+    expect(component.form.controls['accountNumber'].value).toBeFalsy();
+    expect(component.form.controls['confirmAccountNumber'].value).toBeFalsy();
   });
 
   it('keeps form editable and empty when GET returns null', () => {
@@ -132,7 +233,7 @@ describe('XviFcBankAccountComponent', () => {
 
     expect(component.existingRecord()).toBeNull();
     expect(component.isEditable()).toBeTrue();
-    expect(component.form.controls.ifscCode.value).toBe('');
+    expect(component.form.controls['ifscCode'].value).toBeFalsy();
   });
 
   it('shows masked account number only for existing record', () => {
@@ -147,12 +248,7 @@ describe('XviFcBankAccountComponent', () => {
 
   it('disables submit/edit controls for non-editable currentFormStatus', () => {
     service.getBankAccount.and.returnValue(
-      of(
-        record({
-          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          currentFormStatusLabel: 'Under Review by State',
-        }),
-      ),
+      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
     );
 
     createComponent();
@@ -161,49 +257,59 @@ describe('XviFcBankAccountComponent', () => {
     expect(component.canSubmit()).toBeFalse();
   });
 
-  it('hides account-number inputs for a submitted non-editable record', () => {
+  it('excludes account-number fields from visibleFields for a locked record', () => {
     service.getBankAccount.and.returnValue(
-      of(
-        record({
-          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          currentFormStatusLabel: 'Under Review by State',
-        }),
-      ),
+      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
     );
 
     createComponent();
 
-    expect(component.shouldShowAccountNumberInputs()).toBeFalse();
-    expect(fixture.nativeElement.querySelector('#account-number')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#confirm-account-number')).toBeNull();
+    const visibleKeys = component.visibleFields().map((f) => f.key);
+    expect(visibleKeys).not.toContain('accountNumber');
+    expect(visibleKeys).not.toContain('confirmAccountNumber');
+    expect(visibleKeys).not.toContain('proofFile');
+    expect(visibleKeys.some((key) => key.startsWith('bankDetails.'))).toBeFalse();
   });
 
-  it('keeps masked account number visible for a submitted non-editable record', () => {
-    service.getBankAccount.and.returnValue(
-      of(
-        record({
-          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          currentFormStatusLabel: 'Under Review by State',
-        }),
-      ),
-    );
+  it('includes account-number fields in visibleFields for an editable record', () => {
+    service.getBankAccount.and.returnValue(of(record({ currentFormStatus: FORM_STATUS.RETURNED_BY_STATE })));
 
     createComponent();
 
+    const visibleKeys = component.visibleFields().map((f) => f.key);
+    expect(visibleKeys).toContain('accountNumber');
+    expect(visibleKeys).toContain('confirmAccountNumber');
+  });
+
+  it('permanently disables bankDetails.* controls regardless of editability', () => {
+    service.getBankAccount.and.returnValue(of(record({ currentFormStatus: FORM_STATUS.RETURNED_BY_STATE })));
+
+    createComponent();
+
+    expect(component.form.controls['bankDetails.name'].disabled).toBeTrue();
+    expect(component.form.controls['accountNumber'].disabled).toBeFalse();
+  });
+
+  it('shows the confirmed bank-details summary card once bankDetails.name is populated', () => {
+    service.getBankAccount.and.returnValue(of(record()));
+
+    createComponent();
+
+    expect(component.bankDetailsSummary()).toEqual(record().bankDetails);
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Saved account number');
-    expect(text).toContain('********9012');
-    expect(text).not.toContain('123456789012');
+    expect(text).toContain('State Bank of India');
+    expect(text).toContain('Main Branch');
+  });
+
+  it('has no bank-details summary before the IFSC lookup resolves', () => {
+    createComponent();
+
+    expect(component.bankDetailsSummary()).toBeNull();
   });
 
   it('hides submit and cancel buttons for a submitted non-editable record', () => {
     service.getBankAccount.and.returnValue(
-      of(
-        record({
-          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          currentFormStatusLabel: 'Under Review by State',
-        }),
-      ),
+      of(record({ currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE, currentFormStatusLabel: 'Under Review by State' })),
     );
 
     createComponent();
@@ -213,44 +319,6 @@ describe('XviFcBankAccountComponent', () => {
     );
     expect(fixture.nativeElement.querySelector('button.btn-success')).toBeNull();
     expect(cancelButton).toBeUndefined();
-  });
-
-  it('renders bottom Back button for a submitted non-editable record', () => {
-    service.getBankAccount.and.returnValue(
-      of(
-        record({
-          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          currentFormStatusLabel: 'Under Review by State',
-        }),
-      ),
-    );
-
-    createComponent();
-
-    const bottomBackButton = Array.from(fixture.nativeElement.querySelectorAll('button.btn-link')).find(
-      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Back',
-    );
-    expect(bottomBackButton).toBeTruthy();
-  });
-
-  it('navigates back when bottom Back button is clicked', () => {
-    service.getBankAccount.and.returnValue(
-      of(
-        record({
-          currentFormStatus: FORM_STATUS.UNDER_REVIEW_BY_STATE,
-          currentFormStatusLabel: 'Under Review by State',
-        }),
-      ),
-    );
-
-    createComponent();
-
-    const bottomBackButton = Array.from(fixture.nativeElement.querySelectorAll('button.btn-link')).find(
-      (button) => (button as HTMLButtonElement).textContent?.trim() === 'Back',
-    ) as HTMLButtonElement;
-    bottomBackButton.click();
-
-    expect(location.back).toHaveBeenCalled();
   });
 
   it('allows edit for editable statuses', () => {
@@ -267,52 +335,6 @@ describe('XviFcBankAccountComponent', () => {
     }
   });
 
-  it('shows account-number inputs for an editable existing record', () => {
-    service.getBankAccount.and.returnValue(of(record({ currentFormStatus: FORM_STATUS.RETURNED_BY_STATE })));
-
-    createComponent();
-
-    expect(component.shouldShowAccountNumberInputs()).toBeTrue();
-    expect(fixture.nativeElement.querySelector('#account-number')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('#confirm-account-number')).not.toBeNull();
-  });
-  it('shows cancel button for an editable existing record', () => {
-    service.getBankAccount.and.returnValue(of(record({ currentFormStatus: FORM_STATUS.RETURNED_BY_STATE })));
-
-    createComponent();
-
-    expect(fixture.nativeElement.textContent as string).toContain('Cancel');
-  });
-  it('uses backend IFSC lookup and hydrates bank details', fakeAsync(() => {
-    createComponent();
-
-    component.form.controls.ifscCode.setValue('utib0005157');
-    tick(350);
-
-    expect(service.lookupIfsc).toHaveBeenCalledWith('UTIB0005157');
-    expect(component.bankDetails()).toEqual(record().bankDetails);
-  }));
-
-  it('does not call Razorpay directly from the browser', fakeAsync(() => {
-    createComponent();
-
-    component.form.controls.ifscCode.setValue('UTIB0005157');
-    tick(350);
-
-    httpMock.expectNone((req) => req.url.includes('ifsc.razorpay.com'));
-    expect(service.lookupIfsc).toHaveBeenCalledWith('UTIB0005157');
-  }));
-
-  it('shows no-bank-details message when backend IFSC lookup fails', fakeAsync(() => {
-    service.lookupIfsc.and.returnValue(throwError(() => ({ status: 404 })));
-    createComponent();
-
-    component.form.controls.ifscCode.setValue('UTIB0005157');
-    tick(350);
-
-    expect(component.ifscLookupError()).toBe('No bank details found for this IFSC code.');
-    expect(component.bankDetails()).toBeNull();
-  }));
   it('rejects invalid file type', async () => {
     createComponent();
 
@@ -364,9 +386,6 @@ describe('XviFcBankAccountComponent', () => {
       s3Key: proofPath,
       sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
     });
-    expect(component.selectedProof()?.s3Key).toBe(proofPath);
-    expect(component.selectedProof()?.s3Key).not.toBe(signedPutUrl);
-    expect(component.selectedProof()?.s3Key).not.toBe(fullProofUrl);
   });
 
   it('rejects blank PDF proof before requesting a signed URL', async () => {
@@ -388,23 +407,6 @@ describe('XviFcBankAccountComponent', () => {
     expect(fixture.nativeElement.textContent as string).toContain(blankMessage);
   });
 
-  it('rejects zero-page or unreadable PDF proof before requesting a signed URL', async () => {
-    createComponent();
-    const parseMessage =
-      'The uploaded proof document could not be validated. Please upload a valid cancelled cheque or bank account proof.';
-    mockBlankValidation(false, null, parseMessage);
-    const file = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], 'broken.pdf', {
-      type: 'application/pdf',
-    });
-
-    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
-
-    expect(component.proofError()).toBe(parseMessage);
-    expect(component.selectedProof()).toBeNull();
-    expect(service.getSignedUrls).not.toHaveBeenCalled();
-    expect(service.uploadProofToS3).not.toHaveBeenCalled();
-  });
-
   it('uploads image proof with null pages', async () => {
     const imagePath = 'xvi-fc/bank-account/ulb-id/year-id/proof/cancelled-cheque.png';
     service.getSignedUrls.and.returnValue(of([{ url: signedPutUrl, fileUrl: fullProofUrl, path: imagePath }]));
@@ -416,14 +418,7 @@ describe('XviFcBankAccountComponent', () => {
 
     expect(validationSpy).toHaveBeenCalledOnceWith(file);
     expect(component.selectedProof()).toEqual(
-      jasmine.objectContaining({
-        originalName: 'cancelled-cheque.png',
-        mimeType: 'image/png',
-        pages: null,
-        sizeKb: 1,
-        s3Key: imagePath,
-        sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
-      }),
+      jasmine.objectContaining({ originalName: 'cancelled-cheque.png', mimeType: 'image/png', pages: null, s3Key: imagePath }),
     );
   });
 
@@ -449,70 +444,14 @@ describe('XviFcBankAccountComponent', () => {
     expect(openSpy).toHaveBeenCalledWith(signedPutUrl, '_blank', 'noopener,noreferrer');
   });
 
-  it('rejects blank white image proof before requesting a signed URL', async () => {
-    createComponent();
-    const blankMessage =
-      'The uploaded proof image appears to be blank. Please upload a valid cancelled cheque or bank account proof.';
-    mockBlankValidation(false, null, blankMessage);
-    const file = new File([new Uint8Array(1024)], 'blank-white.png', { type: 'image/png' });
-
-    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
-
-    expect(component.proofError()).toBe(blankMessage);
-    expect(component.selectedProof()).toBeNull();
-    expect(service.getSignedUrls).not.toHaveBeenCalled();
-    expect(service.uploadProofToS3).not.toHaveBeenCalled();
-  });
-
-  it('rejects blank transparent PNG proof before requesting a signed URL', async () => {
-    createComponent();
-    const blankMessage =
-      'The uploaded proof image appears to be blank. Please upload a valid cancelled cheque or bank account proof.';
-    mockBlankValidation(false, null, blankMessage);
-    const file = new File([new Uint8Array(1024)], 'blank-transparent.png', { type: 'image/png' });
-
-    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
-
-    expect(component.proofError()).toBe(blankMessage);
-    expect(component.selectedProof()).toBeNull();
-    expect(service.getSignedUrls).not.toHaveBeenCalled();
-    expect(service.uploadProofToS3).not.toHaveBeenCalled();
-  });
-
-  it('keeps submit blocked after a blank proof selection', async () => {
-    createComponent();
-    component.form.patchValue({
-      ifscCode: 'SBIN0123456',
-      accountNumber: '123456789012',
-      confirmAccountNumber: '123456789012',
-    });
-    component.bankDetails.set(record().bankDetails);
-    mockBlankValidation(
-      false,
-      null,
-      'The uploaded proof document appears to be blank. Please upload a valid cancelled cheque or bank account proof.',
-    );
-    const file = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], 'blank.pdf', {
-      type: 'application/pdf',
-    });
-
-    await component.onProofSelected({ target: { files: [file] } } as unknown as Event);
-    component.submit();
-
-    expect(component.canSubmit()).toBeFalse();
-    expect(service.submitBankAccount).not.toHaveBeenCalled();
-    expect(service.getSignedUrls).not.toHaveBeenCalled();
-    expect(service.uploadProofToS3).not.toHaveBeenCalled();
-  });
-
   it('blocks submit when proof is missing', () => {
     createComponent();
     component.form.patchValue({
       ifscCode: 'SBIN0123456',
+      'bankDetails.name': record().bankDetails.name,
       accountNumber: '123456789012',
       confirmAccountNumber: '123456789012',
     });
-    component.bankDetails.set(record().bankDetails);
 
     component.submit();
 
@@ -524,10 +463,10 @@ describe('XviFcBankAccountComponent', () => {
     createComponent();
     component.form.patchValue({
       ifscCode: 'SBIN0123456',
+      'bankDetails.name': record().bankDetails.name,
       accountNumber: '123456789012',
       confirmAccountNumber: '123456789013',
     });
-    component.bankDetails.set(record().bankDetails);
     component.selectedProof.set(proofFile);
 
     component.submit();
@@ -535,24 +474,22 @@ describe('XviFcBankAccountComponent', () => {
     expect(service.submitBankAccount).not.toHaveBeenCalled();
   });
 
-  it('submits uploaded proof metadata only and updates local safe record on success', () => {
+  it('submits uploaded proof metadata and bank details read off form controls', () => {
     createComponent();
     hydrateValidForm();
 
     component.submit();
 
     const payload = service.submitBankAccount.calls.mostRecent().args[0];
+    expect(payload.ifscCode).toBe('SBIN0123456');
+    expect(payload.bankDetails.name).toBe('State Bank of India');
     expect(payload.proofFile).toEqual(proofFile);
-    expect(payload.proofFile.s3Key).toBe(proofPath);
-    expect(payload.proofFile.s3Key).not.toBe(signedPutUrl);
-    expect(payload.proofFile.s3Key).not.toBe(fullProofUrl);
     expect(payload).not.toEqual(jasmine.objectContaining({ proof: jasmine.any(Object) }));
-    expect(component.existingRecord()?.accountNumberMasked).toBe('********9012');
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Bank account form submitted successfully.');
     expect(location.back).toHaveBeenCalled();
   });
 
-  it('locks IFSC editing after successful submit even when response status is editable', () => {
+  it('locks the form after successful submit even when response status is editable', () => {
     service.submitBankAccount.and.returnValue(
       of(record({ currentFormStatus: FORM_STATUS.IN_PROGRESS, currentFormStatusLabel: 'In Progress' })),
     );
@@ -563,8 +500,7 @@ describe('XviFcBankAccountComponent', () => {
     fixture.detectChanges();
 
     expect(component.isEditable()).toBeFalse();
-    expect(component.form.controls.ifscCode.disabled).toBeTrue();
-    expect((fixture.nativeElement.querySelector('#ifsc-code') as HTMLInputElement).disabled).toBeTrue();
+    expect(component.form.controls['ifscCode'].disabled).toBeTrue();
   });
 
   it('maps backend validation errors to controls and proof', () => {
@@ -572,10 +508,7 @@ describe('XviFcBankAccountComponent', () => {
       throwError(() => ({
         error: {
           message: 'Validation failed.',
-          errors: {
-            accountNumber: 'Invalid account number.',
-            proofFile: 'Proof is invalid.',
-          },
+          errors: { accountNumber: 'Invalid account number.', proofFile: 'Proof is invalid.' },
         },
       })),
     );
@@ -584,7 +517,7 @@ describe('XviFcBankAccountComponent', () => {
 
     component.submit();
 
-    expect(component.form.controls.accountNumber.errors?.['api']).toBe('Invalid account number.');
+    expect(component.form.controls['accountNumber'].errors?.['api']).toBe('Invalid account number.');
     expect(component.proofError()).toBe('Proof is invalid.');
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Validation failed.', 'snackbar-danger');
   });

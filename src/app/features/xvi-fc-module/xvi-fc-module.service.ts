@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -57,7 +57,9 @@ export class XvifcModuleService {
         return;
       }
 
-      void this.loadSideMenu(context);
+      // untracked(): loadSideMenu reads/writes the dedupe signals synchronously,
+      // so tracking them here would reschedule this effect and fire the API twice.
+      untracked(() => void this.loadSideMenu(context));
     });
   }
 

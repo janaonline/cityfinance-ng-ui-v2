@@ -5,7 +5,6 @@ import { environment } from '../../../../../environments/environment';
 import {
   FcUnspentApiResponse,
   FcUnspentDeclarationData,
-  FcUnspentDeclarationTemplate,
   FcUnspentSavePayload,
   FcUnspentUlbOption,
   FcUnspentUlbOptionsQuery,
@@ -64,17 +63,17 @@ export class FcUnspentDeclarationService {
   }
 
   /**
-   * Declaration-template file metadata for the No-branch "Download template" action. `url` is
-   * always a private signed download link (`/file/download?signature=...`) — never a raw S3 path —
-   * so this method just unwraps the same envelope as every other GET here; it never uses
-   * `responseType: 'blob'` and never talks to S3 directly.
+   * Downloads the generated FC Unspent Declaration document (Word doc) — the nil-balance
+   * declaration for the No branch, or the ULB-wise unspent-balance certification for the Yes
+   * branch, chosen server-side by the form's stored `isFcUnspent`. Fetched as a raw `Blob`
+   * (mirrors `EulbStatusService.downloadElectedBodiesListDocument`), not the signed-URL envelope
+   * the old static-template endpoint used — the document is generated fresh per request now, so
+   * there's no separate static asset to link to.
    */
-  getDeclarationTemplate(stateId: string, yearId: string): Observable<FcUnspentDeclarationTemplate> {
-    return this.http
-      .get<
-        FcUnspentApiResponse<FcUnspentDeclarationTemplate>
-      >(`${this.baseUrl}${stateId}/${yearId}/declaration-template`)
-      .pipe(map((response) => ensureSuccessfulResponse(response).data as FcUnspentDeclarationTemplate));
+  downloadDeclarationDocument(stateId: string, yearId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}${stateId}/${yearId}/fc-unspent-declaration-document`, {
+      responseType: 'blob',
+    });
   }
 
   saveDraft(payload: FcUnspentSavePayload): Observable<void> {

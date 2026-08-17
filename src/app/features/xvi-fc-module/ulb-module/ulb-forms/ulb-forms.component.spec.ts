@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { convertToParamMap, ActivatedRoute, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { AnnualAccountStateService, FormStatusData } from '../annual-account-state.service';
@@ -43,7 +44,7 @@ describe('UlbFormsComponent', () => {
     } as ActivatedRoute;
 
     await TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, UlbFormsComponent],
+      imports: [NoopAnimationsModule, HttpClientTestingModule, UlbFormsComponent],
       providers: [
         { provide: Router, useValue: router },
         {

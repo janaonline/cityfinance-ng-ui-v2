@@ -12,6 +12,14 @@ export function formatCrore(value: number | null | undefined): string {
   return `${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr.`;
 }
 
+/** Full-precision sibling of `formatCrore`, for hover/title text — never rounds. */
+export function formatCroreFull(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—';
+  const n = Number(value);
+  if (isNaN(n)) return '—';
+  return `${n.toLocaleString('en-IN', { maximumFractionDigits: 20 })} Cr.`;
+}
+
 /**
  * Client-side preview of the backend's ±10% claimed-vs-allocated variance check
  * (`isClaimedAmountWithinVariance`/`computeDifferencePercentageBasisPoints` in
@@ -23,10 +31,19 @@ export function computeClaimDifferencePercentage(allocationAmount: number, claim
   return ((claimedAmount - allocationAmount) / allocationAmount) * 100;
 }
 
-/** Mirrors `isClaimedAmountWithinVariance`'s ±10% band (90%–110% of allocation), scaled the same
- *  way to avoid the boundary case dividing before comparing. */
-export function isClaimWithinVariance(allocationAmount: number, claimedAmount: number): boolean {
-  return claimedAmount * 100 >= allocationAmount * 90 && claimedAmount * 100 <= allocationAmount * 110;
+/** Mirrors `isClaimedAmountWithinVariance`'s claimed-vs-allocated band, scaled the same way to
+ *  avoid the boundary case dividing before comparing. `lowerPercent`/`upperPercent` come from the
+ *  backend (`ClaimLetterClaimContext`/`ClaimLetterBatchSummary`'s `varianceLowerPercent`/
+ *  `varianceUpperPercent`) — never hardcoded here. */
+export function isClaimWithinVariance(
+  allocationAmount: number,
+  claimedAmount: number,
+  lowerPercent: number,
+  upperPercent: number,
+): boolean {
+  return (
+    claimedAmount * 100 >= allocationAmount * lowerPercent && claimedAmount * 100 <= allocationAmount * upperPercent
+  );
 }
 
 /**
@@ -115,9 +132,9 @@ export function buildBatchNarrative(input: BatchNarrativeInput): string[] {
 
   return [
     `This batch includes ${input.rowCount} of ${input.expectedUlbCount} eligible ULBs (${ulbPercent}%).`,
-    `You're claiming ${formatCrore(input.liveClaimedTotal)} — ${claimPercent}% of the state's total ` +
+    `You're claiming ${formatCrore(input.liveClaimedTotal)} - ${claimPercent}% of the state's total ` +
       `Installment ${input.installment} allocation (${formatCrore(input.totalInstallmentAllocation)}).`,
-    `${formatCrore(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch — ` +
+    `${formatCrore(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch - ` +
       `enough for ${slotsRemaining} more ${batchWord}.`,
   ];
 }

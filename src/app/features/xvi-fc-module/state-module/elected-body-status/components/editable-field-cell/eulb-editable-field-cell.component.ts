@@ -57,7 +57,7 @@ export type EulbEditableFieldCellControl =
               [class.is-invalid]="cellHasError"
               [attr.min]="dateMin"
               [attr.max]="dateMax"
-              aria-label="Date of Constitution"
+              aria-label="Date on which the elected body is in place."
               [attr.aria-invalid]="cellHasError || null"
               [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
               [attr.data-eulb-post-edit-field]="editFieldDataAttribute === 'data-eulb-post-edit-field' ? field : null"
@@ -198,7 +198,7 @@ export class EulbEditableFieldCellComponent implements OnChanges {
       case 'electedBodyStatus':
         return 'Elected body status has a validation error';
       case 'dateOfConstitution':
-        return 'Date of constitution has a validation error';
+        return 'Date on which the elected body is in place has a validation error';
       case 'dateOfExpiry':
         return 'Date of expiry has a validation error';
       case 'remarks':

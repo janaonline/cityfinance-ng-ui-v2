@@ -14,7 +14,6 @@ import { AuthPermissionService } from '../../../../../core/auth/auth-permission.
 import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,6 +36,7 @@ import {
   ULB_FORMS_DIALOG_PANEL_CLASS,
   type UlbFormsDialogData,
 } from './ulb-forms-dialog.component';
+import { checkPdfHasContent } from '../../../../../shared/dynamic-form/utils/pdf-blank-check.util';
 
 // ─── Public model types (used in template + guard) ───────────────────────────
 
@@ -47,7 +47,7 @@ export interface UploadDocumentDef {
   /** false → optional document; does not block submission and shows no required asterisk. */
   required: boolean;
   allowedFileTypes: string[];
-  maxFileSize: number;  // MB
+  maxFileSize: number; // MB
   minPages?: number;
 }
 
@@ -92,6 +92,13 @@ export interface UploadDocument extends UploadDocumentDef {
   validationError: string | null;
   // Most recent state decision against this specific document — null if never decided.
   latestDecision: BackendDecision | null;
+  // ADMIN's verdict on a manual-review request for this document — null if never requested/decided.
+  manualReviewDecision: BackendDecision | null;
+  // Client-side only — true once this doc's OCR has failed and the ULB has retried at least
+  // once this session. Gates the "Request Manual Review" button; resets on reload.
+  hasRetried: boolean;
+  isManualReviewRequested: boolean;
+  manualReviewError: string | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
   isStale: boolean;
 }
@@ -110,6 +117,7 @@ interface BackendOcrInfo {
   validationStatus: string | null;
   validationDetails: string | null;
   failedChecks: string[];
+  isManualReviewRequested: boolean;
 }
 
 // A state/MoHUA approve-or-return call, as recorded on the backend.
@@ -137,6 +145,8 @@ interface BackendStatusDoc {
   } | null;
   // STATE's current decision on this document, or null if undecided/undone.
   stateDecision: BackendDecision | null;
+  // ADMIN's verdict on a manual-review request for this document, or null if never requested/decided.
+  manualReviewDecision: BackendDecision | null;
 }
 
 type AnnualAccountFormStatus =
@@ -179,8 +189,7 @@ interface BackendStatusSection {
 
 interface BackendStatusResponse {
   annualAccountId: string;
-  auditedData: BackendStatusSection | null;
-  unauditedData: BackendStatusSection | null;
+  data: BackendStatusSection | null;
 }
 
 // Shape returned by POST /confirm-upload
@@ -227,6 +236,10 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    manualReviewDecision: null,
+    hasRetried: false,
+    isManualReviewRequested: false,
+    manualReviewError: null,
     isStale: false,
   };
 }
@@ -247,7 +260,6 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
   styleUrl: './upload-documents.component.scss',
 })
 export class UploadDocumentsComponent implements OnInit, OnDestroy {
-  private readonly location = inject(Location);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
@@ -332,6 +344,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       processingStatus: processingStatusMap[doc.status],
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
       isStale: doc.isStale,
+      manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
     };
   }
 
@@ -425,10 +438,6 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     });
   }
 
-  goBack(): void {
-    this.location.back();
-  }
-
   async retryLoadConfig(): Promise<void> {
     this.configError.set(false);
     this.isLoadingConfig.set(true);
@@ -501,6 +510,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const yearId = cfg.documentYearId;
       const year = cfg.documentYear;
       const section = cfg.type === 'audited' ? 'auditedData' : 'unauditedData';
+      const auditType = cfg.type === 'audited' ? 'AUDITED' : 'UNAUDITED';
 
       // Step 1 — Get presigned PUT URL from generic S3 endpoint
       const uploadId = crypto.randomUUID();
@@ -524,7 +534,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       // Step 3 — Confirm upload to NestJS (saves metadata + triggers OCR)
       const confirmResult = await firstValueFrom(
         this.http.post<unknown>(`${API}xvi-fc/annual-account/confirm-upload`, {
-          uploadId, s3Key, ulbId, stateId, designYearId, section, docId, yearId, year,
+          uploadId,
+          s3Key,
+          ulbId,
+          stateId,
+          designYearId,
+          section,
+          auditType,
+          docId,
+          yearId,
+          year,
           originalName: file.name,
           fileSize: file.size,
         }),
@@ -581,6 +600,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
+              hasRetried: true,
+              isManualReviewRequested: false,
+              manualReviewError: null,
               isStale: false,
             }
           : d,
@@ -595,6 +617,58 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error('[retry] failed', err);
       this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, status: 'failed' } : d)));
+    }
+  }
+
+  async requestManualReview(docId: string): Promise<void> {
+    const doc = this.documents().find((d) => d.id === docId);
+    const accountId = this.annualAccountId();
+    if (!doc || !accountId) return;
+
+    const data: UlbFormsDialogData = {
+      title: 'Request manual review?',
+      icon: { name: 'support_agent', color: '#1976d2' },
+      description:
+        'This document has failed automated verification. Our team will manually review it instead — this can take longer than the automated checks. You will not be able to request this again for this document until you retry or re-upload it.',
+      buttons: [
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
+        { label: 'Request Manual Review', result: 'request', variant: 'flat' },
+      ],
+    };
+
+    const result = await firstValueFrom(
+      this.dialog
+        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
+          data,
+          disableClose: true,
+          width: '500px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
+        })
+        .afterClosed(),
+    );
+
+    if (result !== 'request') return;
+
+    const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
+    this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, manualReviewError: null } : d)));
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          `${API}xvi-fc/annual-account/${accountId}/documents/${docId}/manual-review?section=${section}`,
+          {},
+        ),
+      );
+      this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, isManualReviewRequested: true } : d)));
+    } catch (err) {
+      console.error('[manual-review] request failed', err);
+      this.documents.update((docs) =>
+        docs.map((d) =>
+          d.id === docId ? { ...d, manualReviewError: 'Failed to request manual review. Please try again.' } : d,
+        ),
+      );
     }
   }
 
@@ -743,8 +817,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
 
     try {
+      const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
       const result = await firstValueFrom(
-        this.http.get<unknown>(`${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}`),
+        this.http.get<unknown>(`${API}xvi-fc/annual-account/by-ulb/${ulbId}/${designYearId}?section=${section}`),
       );
 
       const statusData = unwrap<BackendStatusResponse | null>(result);
@@ -757,26 +832,26 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
       this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
 
-      const section = this.config()!.type === 'audited' ? statusData.auditedData : statusData.unauditedData;
-      this.sectionStatus.set(section?.form_status ?? null);
-      this.sectionStatusId.set(section?.form_status_id ?? null);
+      const sectionData = statusData.data;
+      this.sectionStatus.set(sectionData?.form_status ?? null);
+      this.sectionStatusId.set(sectionData?.form_status_id ?? null);
       this.sectionReturnNote.set(
-        (section?.form_status === 'RETURNED_BY_STATE'
-          ? section.stateDecision?.note
-          : section?.form_status === 'RETURNED_BY_MOHUA'
-            ? section.mohuaDecision?.note
+        (sectionData?.form_status === 'RETURNED_BY_STATE'
+          ? sectionData.stateDecision?.note
+          : sectionData?.form_status === 'RETURNED_BY_MOHUA'
+            ? sectionData.mohuaDecision?.note
             : null) ?? null,
       );
-      if (!section?.documents?.length) return;
+      if (!sectionData?.documents?.length) return;
 
       // Per-document decisions are provisional and undoable until STATE finalizes the whole
       // section (Approve Section/Return Section) — mask them from the ULB until then, so an
       // in-progress "Returned"/"Approved" verdict that might still get undone never leaks.
-      const decisionsVisible = section.form_status !== 'UNDER_REVIEW_BY_STATE';
+      const decisionsVisible = sectionData.form_status !== 'UNDER_REVIEW_BY_STATE';
 
       this.documents.update((docs) =>
         docs.map((doc) => {
-          const saved = section.documents.find((d) => d.docId === doc.id);
+          const saved = sectionData.documents.find((d) => d.docId === doc.id);
           if (!saved) return doc;
 
           const rawLatestDecision = decisionsVisible ? saved.stateDecision : null;
@@ -793,6 +868,14 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             rawLatestDecision && new Date(cu.uploadedAt).getTime() > new Date(rawLatestDecision.decidedAt).getTime()
               ? null
               : rawLatestDecision;
+
+          // Same staleness convention for ADMIN's manual-review verdict — a re-upload after the
+          // decision supersedes it, even though the backend doesn't clear it on plain retry.
+          const manualReviewDecision =
+            saved.manualReviewDecision &&
+            new Date(cu.uploadedAt).getTime() > new Date(saved.manualReviewDecision.decidedAt).getTime()
+              ? null
+              : saved.manualReviewDecision;
 
           return {
             ...doc,
@@ -813,8 +896,10 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationStatus: cu.ocrInfo.validationStatus ?? null,
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
+            isManualReviewRequested: cu.ocrInfo.isManualReviewRequested ?? false,
             isStale: saved.isStale,
             latestDecision,
+            manualReviewDecision,
           };
         }),
       );
@@ -838,11 +923,13 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const accountId = this.annualAccountId();
     if (!accountId) return;
 
+    const section = this.config()!.type === 'audited' ? 'auditedData' : 'unauditedData';
+
     this.pollingSub = interval(POLL_INTERVAL_MS)
       .pipe(
         switchMap(() =>
           this.documents().some((d) => d.status === 'processing')
-            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status`)
+            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`)
             : EMPTY,
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -850,14 +937,14 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           const payload = unwrap<BackendStatusResponse>(result);
-          const section = this.config()!.type === 'audited' ? payload.auditedData : payload.unauditedData;
-          if (!section?.documents) return;
+          const sectionData = payload.data;
+          if (!sectionData?.documents) return;
 
           this.documents.update((docs) =>
             docs.map((doc) => {
               if (doc.status !== 'processing') return doc;
 
-              const remote = section.documents.find((d) => d.docId === doc.id);
+              const remote = sectionData.documents.find((d) => d.docId === doc.id);
               // Guard: must match the specific uploadId being tracked
               if (!remote?.currentUpload || remote.currentUpload.uploadId !== doc.uploadId) return doc;
 
@@ -873,6 +960,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationStatus: remote.currentUpload.ocrInfo.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
+                isManualReviewRequested: remote.currentUpload.ocrInfo.isManualReviewRequested ?? false,
                 isStale: remote.isStale,
               };
             }),
@@ -929,52 +1017,28 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       if (!(h[0] === 0x25 && h[1] === 0x50 && h[2] === 0x44 && h[3] === 0x46 && h[4] === 0x2d)) {
         return 'Please upload a PDF file only.';
       }
-    } catch { /* ignore — pdf.js will reject a corrupt file */ }
+    } catch {
+      /* ignore — pdf.js will reject a corrupt file */
+    }
 
-    // Render-based blank detection via pdf.js.
-    // Rendering at low resolution and checking pixel brightness is the only reliable approach
-    // for detecting blank scanned pages (raw byte heuristics cannot distinguish them).
-    try {
-      const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    // Render-based blank detection via pdf.js — see checkPdfHasContent for why failures fail open.
+    const result = await checkPdfHasContent(file);
+    if (result.fatalError === 'password') {
+      return 'This PDF is password-protected. Please remove the password and try again.';
+    }
+    if (result.fatalError === 'invalid') {
+      return 'This PDF is corrupted or unreadable. Please upload a valid PDF file.';
+    }
+    if (result.pageCount === 0) {
+      return 'This PDF has no pages. Please upload a valid document.';
+    }
+    if (!result.hasContent) {
+      return 'This PDF appears to be blank. Please upload a document with content.';
+    }
 
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-      if (pdf.numPages === 0) return 'This PDF has no pages. Please upload a valid document.';
-
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 0.15 });
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-
-      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      let nonWhite = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i] < 240 || data[i + 1] < 240 || data[i + 2] < 240) nonWhite++;
-      }
-      if (nonWhite / (canvas.width * canvas.height) < 0.005) {
-        return 'This PDF appears to be blank. Please upload a document with content.';
-      }
-
-      // Min page count — driven by API config (e.g. Auditor's Report requires >= 2 pages)
-      if (doc.minPages && pdf.numPages < doc.minPages) {
-        return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
-      }
-    } catch (err: unknown) {
-      const name = (err as { name?: string })?.name;
-      if (name === 'PasswordException') {
-        return 'This PDF is password-protected. Please remove the password and try again.';
-      }
-      if (name === 'InvalidPDFException') {
-        return 'This PDF is corrupted or unreadable. Please upload a valid PDF file.';
-      }
-      console.warn('[pdf-check] render check skipped:', err);
+    // Min page count — driven by API config (e.g. Auditor's Report requires >= 2 pages)
+    if (doc.minPages && result.pageCount !== null && result.pageCount < doc.minPages) {
+      return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
     }
 
     return null;

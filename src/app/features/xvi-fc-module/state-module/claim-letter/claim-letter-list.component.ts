@@ -48,6 +48,7 @@ export class ClaimLetterListComponent implements OnInit {
   readonly isHistoryLoading = signal(false);
 
   readonly eligibility = signal<ClaimLetterEligibilitySummary | null>(null);
+  readonly stateName = computed(() => this.eligibility()?.stateName ?? '');
   readonly claims = signal<readonly ClaimLetterBatchSummary[]>([]);
   /** Collapsed by default — a returning user doesn't need the full walkthrough re-shown on every
    *  visit just to reach "New Claim"; one click away for anyone who does. */
@@ -98,6 +99,25 @@ export class ClaimLetterListComponent implements OnInit {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
     return this.isEligible() && eligibility.batchSlotsUsed < eligibility.batchSlotsMax;
+  });
+
+  /** Explains why "New Claim" is disabled — `null` once it's enabled (or before eligibility has
+   *  loaded). Checked in the same order `isEligible()`/`canCreateNewClaim()` compose their own
+   *  conditions, so this always names the actual reason those signals disabled the button for. */
+  readonly newClaimDisabledReason = computed<string | null>(() => {
+    const eligibility = this.eligibility();
+    if (!eligibility || this.canCreateNewClaim()) return null;
+
+    if (!eligibility.stateLevelGate.passed) {
+      return 'Your state has not yet met all eligibility conditions - see the checklist below.';
+    }
+    if (this.ulbReadinessBlocked()) {
+      return 'No ULBs currently meet every eligibility criterion, so there is nothing to include in a new claim yet.';
+    }
+    if (eligibility.batchSlotsUsed >= eligibility.batchSlotsMax) {
+      return `You've used all ${eligibility.batchSlotsMax} claim batch slots for this installment. Resolve or wait on an existing batch before starting another.`;
+    }
+    return 'New claims are currently unavailable.';
   });
 
   /** Proactive "last call" warning — fires once exactly one batch slot remains (this state's

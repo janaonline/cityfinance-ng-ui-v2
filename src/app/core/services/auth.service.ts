@@ -22,6 +22,7 @@ export class AuthService {
   private readonly loginUrl = `${environment.api.url2}auth/login`;
   private readonly logoutUrl = `${environment.api.url2}auth/logout`;
   private readonly refreshTokenUrl = `${environment.api.url2}auth/refresh`;
+  private readonly meUrl = `${environment.api.url2}auth/me`;
   private readonly jwtHelper = new JwtHelperService();
 
   private accessToken: string | null = this.readStoredAccessToken();
@@ -83,6 +84,21 @@ export class AuthService {
 
   signin(user: any) {
     return this.login(user);
+  }
+
+  /**
+   * Live eligibility check for an already-authenticated session (e.g. a ULB user holding a valid
+   * token from before this check existed, navigating straight to a deep link). `/auth/me` isn't
+   * one of the flattened auth endpoints, so its payload sits under `data`, not top-level — see
+   * `ResponseTransformInterceptor`'s `AUTH_FLATTEN_PATHS`.
+   */
+  getMe(): Observable<{ user: any; isEligibleForXviFc: boolean | null }> {
+    return this.http.get<any>(this.meUrl, { withCredentials: true }).pipe(
+      map((res: any) => ({
+        user: res?.data?.user ?? res?.user ?? null,
+        isEligibleForXviFc: res?.data?.isEligibleForXviFc ?? res?.isEligibleForXviFc ?? null,
+      })),
+    );
   }
 
   refreshToken() {

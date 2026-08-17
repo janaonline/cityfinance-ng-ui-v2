@@ -39,6 +39,13 @@ export interface ClaimLetterEligibilitySource {
   /** One-line requirement statement, same wording regardless of pass/fail — only the tick/cross
    *  indicator changes. Falls back to a generated sentence when absent. */
   displayDescription?: string;
+  /** Relative frontend route for this criterion's "View" action (e.g. '../sfc-status').
+   *  Frontend falls back to '../requirements' (self-link) when unset. */
+  checklistRoute?: string;
+  /** Plain-language checklist line for /requirements.
+   * Supports {{priorFcCycleLabel}}; substituted by ClaimLetterService.getEligibilitySummary().
+   * Falls back to displayDescription when unset. */
+  checklistSummary?: string;
   /** Per-ULB tally behind this requirement — populated for Elected Body/FC Unspent (state forms
    *  representing ULB-level data) and for the 3 ULB-only criteria merged in from `ulbLevelCriteria`.
    *  Absent for pure state-form checks (SFC, Devolution), which have no per-ULB meaning. */
@@ -59,8 +66,16 @@ export interface ClaimLetterFinancialOverview {
   availableToClaim: number;
 }
 
+/** Which FC cycle "FC Unspent Balance" disclosures refer to for this design year — resolved
+ *  backend-side (`resolvePriorFcCycleLabel`) from the same table the actual signed Claim Letter
+ *  document's own Annexure 1 heading uses, so this and that document can never disagree. Never
+ *  hardcode "14th"/"15th" against a year on this side — always read this field. */
+export type ClaimLetterPriorFcCycleLabel = '14th FC' | '15th FC';
+
 export interface ClaimLetterEligibilitySummary {
+  stateName: string;
   installment: ClaimLetterInstallment;
+  priorFcCycleLabel: ClaimLetterPriorFcCycleLabel;
   stateLevelGate: {
     passed: boolean;
     sources: ClaimLetterEligibilitySource[];
@@ -98,12 +113,22 @@ export interface ClaimLetterEligibilitySummary {
  * `GET .../claim-context`, which skips the expensive eligibility-checklist evaluation entirely.
  */
 export interface ClaimLetterClaimContext {
+  /** Powers the page-header eyebrow — same convention as `ClaimLetterEligibilitySummary.stateName`. */
+  stateName: string;
   expectedUlbCount: number;
   batchSlotsUsed: number;
   batchSlotsMax: number;
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
   remainingUlbCount: number;
+  /** DB-driven claimed-vs-allocated variance band (formJson.meta on the backend) — never hardcode
+   *  these; pass straight through to `isClaimWithinVariance`. */
+  varianceLowerPercent: number;
+  varianceUpperPercent: number;
+  /** Whether the current user may start a new claim (PREPARE_GRANT_LETTERS) — the create-mode-only
+   *  equivalent of `ClaimLetterBatchSummary.permissions.canEdit`, since there's no batch document
+   *  yet to attach a full `ClaimLetterPermissions` to. */
+  canCreate: boolean;
 }
 
 /**
@@ -189,6 +214,15 @@ export interface ClaimLetterFinancialSummary {
   remainingIfAcknowledged: number;
 }
 
+/** Authoritative UI edit/submit gates, computed backend-side (same shape/convention as
+ *  `SfcStatusPermissions`) — never infer `canEdit`/`canFinalSubmit` from `currentFormStatus`/
+ *  `isAbandoned` locally. */
+export interface ClaimLetterPermissions {
+  canView: boolean;
+  canEdit: boolean;
+  canFinalSubmit: boolean;
+}
+
 /**
  * The one response shape every claim-letter read/mutating endpoint returns (`getDetail`,
  * `listHistory`, `createDraft`, `updateDraft`, `abandonDraft`, `uploadSignedFile`, `submit`).
@@ -216,6 +250,91 @@ export interface ClaimLetterBatchSummary {
   /** Claim Letter's own `formjsons` field config (today: just `signedClaimFile`). Only present on
    *  `getDetail` responses. */
   questions?: ConditionalFieldConfig[];
+  stateName?: string;
+  /** Same DB-driven variance band as `ClaimLetterClaimContext` — only present on `getDetail`
+   *  responses, same convention as `questions`. */
+  varianceLowerPercent?: number;
+  varianceUpperPercent?: number;
+  /** Authoritative edit/submit gates for this claim — always populated. */
+  permissions: ClaimLetterPermissions;
+}
+
+/** One row of the covering letter's recommended-ULBs table. No per-ULB date exists on the batch
+ *  (only a shared batch creation timestamp), so this row intentionally carries no date. */
+export interface ClaimLetterDocumentCoveringLetterRow {
+  slNo: number;
+  ulbId: string;
+  ulbName: string;
+  /** Crore-denominated. */
+  claimAmount: number;
+}
+
+/** One row of Annexure 1 (FC Unspent Balance Disclosures). `priorFcUnspentAmount` is the ULB's
+ *  unspent balance from the FC cycle named by `ClaimLetterDocumentData.priorFcCycleLabel`; `0` when
+ *  no FC-Unspent declaration is on file. `claimedAmount` mirrors the covering letter's claim amount
+ *  for the same ULB (labelled "16th FC Allocation" on this annexure — not a separate figure). */
+export interface ClaimLetterDocumentAnnexure1Row {
+  slNo: number;
+  ulbId: string;
+  ulbName: string;
+  priorFcUnspentAmount: number;
+  claimedAmount: number;
+  eligible: boolean;
+}
+
+/** One column header for Annexure 2's dynamic criteria table — one per currently-enabled ULB-bulk
+ *  eligibility criterion (never a fixed set — a new/removed enabled criterion changes this list
+ *  with no frontend code change). `shortLabel` is what's rendered as the header text; `label` is
+ *  the full description, shown as a hover tooltip. */
+export interface ClaimLetterDocumentAnnexure2Column {
+  type: string;
+  label: string;
+  shortLabel: string;
+}
+
+/** One ULB's pass/fail against a single Annexure 2 column, paired by `type` with the matching
+ *  entry in `ClaimLetterDocumentData.annexure2Columns`. */
+export interface ClaimLetterDocumentAnnexure2CriterionResult {
+  type: string;
+  met: boolean;
+}
+
+/** One row of Annexure 2 (City-wise Eligibility Conditions) — `criteria` has exactly one entry per
+ *  `ClaimLetterDocumentData.annexure2Columns`, in the same order, for every row. */
+export interface ClaimLetterDocumentAnnexure2Row {
+  slNo: number;
+  ulbId: string;
+  ulbName: string;
+  criteria: ClaimLetterDocumentAnnexure2CriterionResult[];
+}
+
+/**
+ * Full content for the claim letter document — the live, batch-specific letter a State prints,
+ * signs, and re-uploads via `signedClaimFile`. Fetched once via `GET :claimLetterId/document` and
+ * shared by both the Preview Template dialog and the Download Template PDF builder (one fetch, two
+ * renderers — see `claim-letter-detail.component.ts`).
+ */
+export interface ClaimLetterDocumentData {
+  refNo: string;
+  letterDate: string;
+  stateName: string;
+  departmentName: string;
+  designYearLabel: string;
+  installment: ClaimLetterInstallment;
+  batchNumber: ClaimLetterBatchNumber;
+  /** "14th FC" or "15th FC" — see `ClaimLetterDocumentAnnexure1Row.priorFcUnspentAmount`. */
+  priorFcCycleLabel: string;
+  subjectLine: string;
+  introParagraph: string;
+  closingParagraph: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  coveringLetterRows: ClaimLetterDocumentCoveringLetterRow[];
+  /** Crore-denominated sum of every `coveringLetterRows[].claimAmount`. */
+  totalClaimAmount: number;
+  annexure1Rows: ClaimLetterDocumentAnnexure1Row[];
+  annexure2Columns: ClaimLetterDocumentAnnexure2Column[];
+  annexure2Rows: ClaimLetterDocumentAnnexure2Row[];
 }
 
 export interface ClaimLetterHistoryQuery {

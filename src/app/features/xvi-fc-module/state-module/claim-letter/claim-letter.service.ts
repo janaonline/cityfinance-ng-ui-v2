@@ -8,6 +8,7 @@ import {
   ClaimLetterApiResponse,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
+  ClaimLetterDocumentData,
   ClaimLetterEligibilitySummary,
   ClaimLetterHistoryQuery,
   ClaimLetterHistoryResult,
@@ -186,6 +187,22 @@ export class ClaimLetterService {
           };
         }),
       );
+  }
+
+  /** Covering letter + Annexure 1 + Annexure 2 content for Preview Template — fetch once, also used
+   *  by Download Template just to derive the filename (see `claim-letter-detail.component.ts`). The
+   *  PDF itself comes from `downloadDocumentPdf()` below, not from this data. */
+  getDocumentData(claimLetterId: string): Observable<ClaimLetterDocumentData> {
+    return this.http
+      .get<ClaimLetterApiResponse<ClaimLetterDocumentData>>(`${this.baseUrl}${claimLetterId}/document`)
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterDocumentData));
+  }
+
+  /** Server-rendered PDF of the same document `getDocumentData()` returns as JSON — rendered
+   *  backend-side (not client-side `pdfmake`, which needs `'unsafe-eval'` in `script-src` and
+   *  breaks under a strict CSP) — mirrors Devolution Formula's `downloadTemplate()` blob pattern. */
+  downloadDocumentPdf(claimLetterId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}${claimLetterId}/document/pdf`, { responseType: 'blob' });
   }
 
   /**

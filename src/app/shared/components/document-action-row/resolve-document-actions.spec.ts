@@ -68,6 +68,16 @@ describe('resolveDocumentActions', () => {
       expect(result.every((a) => !a.disabled)).toBe(true);
     });
 
+    it('hides Retry (shows only Re-upload) once ADMIN has returned a manual-review request', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'FAILED', manualReviewReturned: true }),
+      );
+      expect(result).toEqual([{ action: 'reupload', label: 'Re-upload', icon: 'bi-upload', disabled: false }]);
+    });
+
     it('shows nothing once a document is APPROVED — locked', () => {
       const result = resolveDocumentActions(
         'ULB',

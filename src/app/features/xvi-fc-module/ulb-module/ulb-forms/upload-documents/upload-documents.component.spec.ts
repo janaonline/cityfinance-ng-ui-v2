@@ -35,6 +35,10 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     failedChecks: [],
     validationError: null,
     latestDecision: null,
+    manualReviewDecision: null,
+    hasRetried: false,
+    isManualReviewRequested: false,
+    manualReviewError: null,
     isStale: false,
   };
 }
@@ -152,8 +156,13 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
 
   const backendDoc = (formStatus: string) => ({
     annualAccountId: 'account-1',
-    auditedData: {
+    data: {
       form_status: formStatus,
+      form_status_id: 3,
+      yearId: 'year-1',
+      year: '2024-25',
+      stateDecision: null,
+      mohuaDecision: null,
       documents: [
         {
           docId: 'auditors-report',
@@ -173,7 +182,6 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
         },
       ],
     },
-    unauditedData: null,
   });
 
   beforeEach(async () => {

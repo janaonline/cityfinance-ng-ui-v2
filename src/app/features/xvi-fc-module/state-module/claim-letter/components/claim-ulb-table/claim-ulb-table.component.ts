@@ -15,9 +15,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
-import { MATERIAL_THEME_CLASS } from '../../../../../../core/theming/material-theme.providers';
+import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
-import { computeClaimDifferencePercentage, formatCrore, isClaimWithinVariance } from '../../claim-letter.utils';
+import {
+  computeClaimDifferencePercentage,
+  formatCrore,
+  formatCroreFull,
+  isClaimWithinVariance,
+} from '../../claim-letter.utils';
 import {
   ClaimLetterUlbPickerDialogComponent,
   ClaimLetterUlbPickerDialogData,
@@ -88,7 +93,7 @@ function claimedAmountErrorText(control: AbstractControl): string | null {
 export class ClaimUlbTableComponent {
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly themeClass = resolveThemeClass();
   /** Passed through to `MatDialog.open` so the picker resolves against this component's own
    *  injector rather than the root one — kept for parity with FC Unspent's table even though the
    *  claim-letter picker has no feature-scoped cache service to resolve today. */
@@ -105,6 +110,10 @@ export class ClaimUlbTableComponent {
   /** Forwarded to the picker so a draft's own already-locked ULBs show as selectable. `undefined` in
    *  create mode (no id yet). */
   readonly claimLetterId = input<string | undefined>(undefined);
+  /** Claimed-vs-allocated variance band, sourced from the backend (`ClaimLetterClaimContext`/
+   *  `ClaimLetterBatchSummary`'s `varianceLowerPercent`/`varianceUpperPercent`) — never hardcoded here. */
+  readonly varianceLowerPercent = input.required<number>();
+  readonly varianceUpperPercent = input.required<number>();
 
   /** Display data for ULBs picked via the dialog this session — the only ULB-options data ever kept
    *  locally, and only for rows a user actually chose. */
@@ -153,7 +162,12 @@ export class ClaimUlbTableComponent {
           ? computeClaimDifferencePercentage(allocationAmount as number, value.claimedAmount as number)
           : null,
         liveWithinVariance: hasLiveInputs
-          ? isClaimWithinVariance(allocationAmount as number, value.claimedAmount as number)
+          ? isClaimWithinVariance(
+              allocationAmount as number,
+              value.claimedAmount as number,
+              this.varianceLowerPercent(),
+              this.varianceUpperPercent(),
+            )
           : null,
       };
     });
@@ -176,6 +190,7 @@ export class ClaimUlbTableComponent {
   readonly totalClaim = computed(() => this.rowValues().reduce((sum, row) => sum + (row.claimedAmount ?? 0), 0));
 
   readonly formatCrore = formatCrore;
+  readonly formatCroreFull = formatCroreFull;
   readonly claimedAmountErrorText = claimedAmountErrorText;
 
   /** Opens the picker to add one or more brand-new rows, in the order they were selected. */

@@ -99,6 +99,7 @@ export interface DevolutionValidationSummary {
   allocationBalanced: boolean;
   activeDatasetVersion: number;
   newUlbCount?: number;
+  duplicateUlbCount?: number;
 }
 
 // ─── Field / form types ───────────────────────────────────────────────────────

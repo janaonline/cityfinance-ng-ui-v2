@@ -52,6 +52,7 @@ const sampleSummary: ClaimLetterBatchSummary = {
   supersedes: null,
   supersededBy: null,
   createdAt: '2026-07-01T00:00:00.000Z',
+  permissions: { canView: true, canEdit: true, canFinalSubmit: true },
 };
 
 describe('ClaimLetterService', () => {
@@ -343,6 +344,67 @@ describe('ClaimLetterService', () => {
       httpMock.expectOne(url).flush(errorBody);
 
       expect(caughtError).toBe(errorBody);
+    });
+  });
+
+  describe('getDocumentData', () => {
+    const url = `${BASE_URL}${claimLetterId}/document`;
+
+    it('calls the exact GET URL and emits the response data on success', () => {
+      const document = {
+        refNo: 'CL/AP/2026-27/1-1',
+        letterDate: '2026-07-01T00:00:00.000Z',
+        stateName: 'Andhra Pradesh',
+        departmentName: 'Directorate of Municipal Administration',
+        designYearLabel: '2026-27',
+        installment: 1,
+        batchNumber: 1,
+        priorFcCycleLabel: '14th FC',
+        subjectLine: 'Claim Letter',
+        introParagraph: 'Intro',
+        closingParagraph: 'Closing',
+        signatoryName: 'Vikram Rao',
+        signatoryDesignation: 'Finance Analyst',
+        coveringLetterRows: [],
+        totalClaimAmount: 0,
+        annexure1Rows: [],
+        annexure2Rows: [],
+      };
+      let result: unknown;
+      service.getDocumentData(claimLetterId).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      req.flush({ success: true, message: 'OK', data: document });
+
+      expect(result).toEqual(document);
+    });
+
+    it('throws the original response object when success:false', () => {
+      const errorBody: ClaimLetterApiResponse = { success: false, message: 'Not found.' };
+      let caughtError: unknown;
+      service.getDocumentData(claimLetterId).subscribe({ error: (err: unknown) => (caughtError = err) });
+
+      httpMock.expectOne(url).flush(errorBody);
+
+      expect(caughtError).toBe(errorBody);
+    });
+  });
+
+  describe('downloadDocumentPdf', () => {
+    it('GETs the PDF endpoint as a blob', () => {
+      const url = `${BASE_URL}${claimLetterId}/document/pdf`;
+      const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+      let result: Blob | undefined;
+
+      service.downloadDocumentPdf(claimLetterId).subscribe((blob) => (result = blob));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.responseType).toBe('blob');
+      req.flush(sampleBlob);
+
+      expect(result).toBe(sampleBlob);
     });
   });
 

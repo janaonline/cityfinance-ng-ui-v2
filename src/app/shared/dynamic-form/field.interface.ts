@@ -116,11 +116,20 @@ export type FieldSupportingContent =
       layout?: FieldSupportingActionLayout;
       separator?: FieldSupportingActionSeparator;
       description?: string;
+      /** Text color for `description`. Defaults to the muted `text-body-secondary` when unset. */
+      descriptionTone?: FieldSupportingActionTone;
       actions: FieldSupportingAction[];
       badges?: FieldSupportingBadge[];
     };
 
 export type { UploadedFileMetadata } from './components/file/file-metadata.types';
+
+export interface FieldLookupConfig {
+  /** Relative API path; `:value` is replaced with this field's current (validated) value. */
+  endpoint: string;
+  /** Maps response keys (dot-path into the JSON body) to the target field `key` they populate. */
+  populates: Record<string, string>;
+}
 
 export interface LegacyFileValue {
   name: string;
@@ -177,11 +186,20 @@ export interface FieldConfig {
   disabledReason?: string;
   /** Bootstrap column class controlling this field's width within a `FormSectionGridComponent` row, e.g. 'col-12', 'col-md-6'. */
   grid?: string;
+  /** Free-form, non-functional annotations (e.g. grouping/reporting metadata) — never read by validation or rendering logic. */
+  meta?: Record<string, unknown>;
   /** Muted text rendered inline next to the field label, e.g. "(if available)". */
   labelHint?: string;
   /** Muted helper text rendered below the field control. */
   hintText?: string;
   displayInlineLabel?: boolean;
+  /** On a valid value, calls `endpoint` and patches sibling fields from the response per `populates`. */
+  lookup?: FieldLookupConfig;
+  /** This field's value must equal the named sibling field's value (e.g. confirm-account-number). */
+  matchesField?: string;
+  /** Strips non-digit characters live as the user types; pairs with named `validations` entries
+   *  (`hasSpaces`/`hasAlphabets`/`hasSpecialChars`/`tooShort`/`tooLong`) for granular messages. */
+  digitsOnly?: boolean;
 }
 
 /** One card-sectioned group of fields, rendered by `FormSectionGridComponent`. */

@@ -47,6 +47,8 @@ interface SetupOptions {
   canEdit?: boolean;
   savedRows?: readonly ClaimLetterUlbRow[];
   claimLetterId?: string;
+  varianceLowerPercent?: number;
+  varianceUpperPercent?: number;
 }
 
 describe('ClaimUlbTableComponent', () => {
@@ -74,6 +76,8 @@ describe('ClaimUlbTableComponent', () => {
     fixture.componentRef.setInput('stateId', 'state-1');
     fixture.componentRef.setInput('yearId', 'year-1');
     fixture.componentRef.setInput('claimLetterId', options.claimLetterId);
+    fixture.componentRef.setInput('varianceLowerPercent', options.varianceLowerPercent ?? 90);
+    fixture.componentRef.setInput('varianceUpperPercent', options.varianceUpperPercent ?? 110);
     fixture.detectChanges();
   }
 

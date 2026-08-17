@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { unsavedChangesGuard } from '../../../core/guards/unsaved-changes.guard';
 
 type DeferredStateRoute = Readonly<{
   path: string;
@@ -37,11 +38,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'sfc-status',
     loadComponent: () => import('./sfc-status/sfc-status.component').then((m) => m.SfcStatusComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-status',
     loadComponent: () =>
       import('./elected-body-status/elected-body-status.component').then((m) => m.ElectedBodyStatusComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-post-update',
@@ -49,11 +52,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
       import('./elected-body-status/pages/post-update/eulb-post-update.component').then(
         (m) => m.EulbPostUpdateComponent,
       ),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
-    path: 'devolution-formula',
+    path: 'ulb-wise-allocation',
     loadComponent: () =>
       import('./devolution-formula/devolution-formula.component').then((m) => m.DevolutionFormulaComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'special-infrastructure',
@@ -74,6 +79,10 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
   },
   {
+    path: 'faq',
+    loadComponent: () => import('../shared/faq/faq.component').then((m) => m.FaqComponent),
+  },
+  {
     path: 'roles-teams-unified-view',
     loadComponent: () =>
       import('./roles-teams-overview/roles-teams-overview.component').then((m) => m.RolesTeamsOverviewComponent),
@@ -81,6 +90,7 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'register-ulb',
     loadComponent: () => import('./ulb-list/register-ulb/register-ulb.component').then((m) => m.RegisterUlbComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'ulb-list',
@@ -90,6 +100,7 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     path: 'fc-unspent-declaration',
     loadComponent: () =>
       import('./fc-unspent-declaration/fc-unspent-declaration.component').then((m) => m.FcUnspentDeclarationComponent),
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'claim-letter',

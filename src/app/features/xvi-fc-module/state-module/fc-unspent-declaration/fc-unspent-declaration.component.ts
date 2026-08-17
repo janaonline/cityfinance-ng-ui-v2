@@ -1,20 +1,25 @@
-import { Component, DestroyRef, OnInit, SecurityContext, computed, inject, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { DomSanitizer } from '@angular/platform-browser';
-import { Subject, finalize, takeUntil } from 'rxjs';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
+import FileSaver from 'file-saver';
+import { Subject, finalize, from, map, startWith, takeUntil } from 'rxjs';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../core/guards/unsaved-changes.guard';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
-import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
+import { FieldSupportingActionEvent, FieldSupportingContent } from '../../../../shared/dynamic-form/field.interface';
+import { withSupportingActionState } from '../../../../shared/dynamic-form/supporting-action-state';
 import {
   ConditionalFieldConfig,
   DependencyIndex,
@@ -39,7 +44,6 @@ import {
   ApiErrorResponse,
   ApiFieldError,
   FcUnspentApplicableFc,
-  FcUnspentDeclarationTemplate,
   FcUnspentDevolutionDependency,
   FcUnspentSaveData,
   FcUnspentSavePayload,
@@ -55,26 +59,14 @@ const DEFAULT_DEPENDENCY: FcUnspentDevolutionDependency = {
 
 type SubmitType = 'saveAsDraft' | 'finalSubmit';
 
-/** Action IDs emitted by the dynamic form's `supportingContent` action buttons. */
+/** Action IDs emitted by the dynamic form's `supportingContent` action buttons — one per branch's
+ *  file field, mutually exclusive since only one of the two fields is ever visible at a time. */
 const FC_UNSPENT_SUPPORTING_ACTION = {
   DOWNLOAD_TEMPLATE: 'download-template',
+  DOWNLOAD_DECLARATION: 'download-declaration',
 } as const;
 
 const ROW_ERROR_KEY_PATTERN = /^unspentUlbData\.(\d+)\.(ulbId|unspentAmount)$/;
-
-const FALLBACK_DECLARATION_TEMPLATE_FILENAME = 'FC-Unspent-Declaration.docx';
-
-/** Strips path separators and control characters from a backend-supplied filename before it is
- *  used as an anchor's `download` attribute — a normal filename passes through untouched (including
- *  its extension); only a missing/unsafe one falls back to a fixed default. */
-function sanitizeDeclarationTemplateFileName(fileName: string): string {
-  const cleaned = fileName
-    .replace(/[/\\]/g, '')
-    // eslint-disable-next-line no-control-regex -- intentionally stripping control characters
-    .replace(/[\x00-\x1f\x7f]/g, '')
-    .trim();
-  return cleaned || FALLBACK_DECLARATION_TEMPLATE_FILENAME;
-}
 
 @Component({
   selector: 'app-fc-unspent-declaration',
@@ -94,7 +86,7 @@ function sanitizeDeclarationTemplateFileName(fileName: string): string {
   // to `MatDialog.open`, so every picker opened from this page shares the one instance.
   providers: [FcUnspentUlbOptionsCacheService],
 })
-export class FcUnspentDeclarationComponent implements OnInit {
+export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeactivate {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utilityService = inject(UtilityService);
@@ -103,8 +95,8 @@ export class FcUnspentDeclarationComponent implements OnInit {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly fcUnspentService = inject(FcUnspentDeclarationService);
   private readonly moduleService = inject(XvifcModuleService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
-  private readonly sanitizer = inject(DomSanitizer);
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
   private readonly ulbOptionsCache = inject(FcUnspentUlbOptionsCacheService);
 
   readonly threshold = signal(10);
@@ -126,6 +118,64 @@ export class FcUnspentDeclarationComponent implements OnInit {
   readonly rowEditFields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
+  /**
+   * `visibleFields()` with the branch-appropriate download action's `loading`/`loadingLabel`
+   * overridden from `isDownloadingDeclaration()` (spinner while a request is in flight — one shared
+   * signal suffices since `fcDeclaration`/`fcUnspentDeclaration` are mutually exclusive by branch,
+   * no need for EULB's per-action split), and `disabled` (+ description swapped to explain why, via
+   * `withDownloadActionState`) while the relevant unsaved-state signal above is true — the document
+   * endpoint only ever reflects saved data. Bound in the template in place of `visibleFields()`.
+   */
+  readonly effectiveVisibleFields = computed<ConditionalFieldConfig[]>(() =>
+    this.visibleFields().map((field) => {
+      if (field.key === 'fcDeclaration') {
+        return this.withDownloadActionState(
+          field,
+          FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
+          this.hasUnsavedBranchChange(),
+        );
+      }
+      if (field.key === 'fcUnspentDeclaration') {
+        return this.withDownloadActionState(
+          field,
+          FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_DECLARATION,
+          this.hasUnsavedBranchChange() || this.hasUnsavedRowChanges(),
+        );
+      }
+      return field;
+    }),
+  );
+
+  private withDownloadActionState(
+    field: ConditionalFieldConfig,
+    actionId: string,
+    disabledDueToUnsavedChanges: boolean,
+  ): ConditionalFieldConfig {
+    const withActionState = withSupportingActionState(field, [
+      {
+        actionId,
+        disabled: disabledDueToUnsavedChanges || undefined,
+        loading: this.isDownloadingDeclaration(),
+        loadingLabel: 'Downloading declaration…',
+      },
+    ]);
+
+    if (!disabledDueToUnsavedChanges) return withActionState;
+
+    return {
+      ...withActionState,
+      supportingContent: withActionState.supportingContent?.map((block): FieldSupportingContent =>
+        block.type === 'actions'
+          ? {
+              ...block,
+              description: 'Save your changes as a draft before downloading the declaration.',
+              descriptionTone: 'danger',
+            }
+          : block,
+      ),
+    };
+  }
+
   readonly unspentUlbData = new FormArray<FcUnspentUlbRowGroup>([]);
   /** `UnspentUlbTableComponent` is `OnPush` and only rendered while the Yes branch is shown, so its
    *  view can go stale after this component touches/sets errors on a row control from outside the
@@ -135,12 +185,52 @@ export class FcUnspentDeclarationComponent implements OnInit {
   private readonly isYesBranchSignal = signal(false);
   readonly isYesBranch = computed(() => this.isYesBranchSignal());
 
+  // ─── Unsaved-state tracking for the download actions ────────────────────────
+  // `GET .../fc-unspent-declaration-document` only ever reflects the last-*saved* isFcUnspent/
+  // unspentUlbData — never the current in-browser form state, which is only persisted on Save
+  // Draft/Final Submit. Downloading while either has changed since load would silently generate
+  // the wrong (stale) document, so both download actions are disabled via `effectiveVisibleFields`
+  // while either signal below is true — mirrors `claim-letter-detail.component.ts`'s
+  // `hasUnsavedRowChanges`/`effectiveSignedClaimFileField` pattern exactly, including *why* these
+  // are plain signals bridged from `valueChanges` rather than a `computed()` reading `.dirty`:
+  // Angular's `dirty` getter isn't itself signal-reactive, so a `computed()` referencing it would
+  // never re-run when it changes.
+  /** The radio's live value, updated on every `valueChanges` emission. */
+  private readonly liveIsFcUnspent = signal<string | null>(null);
+  /** The radio's value as of the last successful load/save (`reloadForm()` re-runs `loadForm()`,
+   *  which recreates the control and resets both this and `liveIsFcUnspent` to the same value). */
+  private readonly savedIsFcUnspent = signal<string | null>(null);
+  readonly hasUnsavedBranchChange = computed(() => this.liveIsFcUnspent() !== this.savedIsFcUnspent());
+
+  /** Live `{ulbId, unspentAmount}` per row, bridged from `unspentUlbData.valueChanges` — direct copy
+   *  of `claim-letter-detail.component.ts`'s `rowValues` bridge, including the `?? null`
+   *  normalization (typed reactive forms report a group's value fields as possibly `undefined`). */
+  private readonly liveUnspentRows = toSignal(
+    this.unspentUlbData.valueChanges.pipe(
+      startWith(this.unspentUlbData.getRawValue()),
+      map((values) => values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null }))),
+    ),
+    { initialValue: [] as { ulbId: string | null; unspentAmount: number | null }[] },
+  );
+  /** True once any row's amount (or the row set itself) diverges from `savedUnspentUlbData()` —
+   *  same shape as `claim-letter-detail.component.ts`'s `hasUnsavedRowChanges`. Only meaningful on
+   *  the Yes branch, but harmless to compute regardless — nothing reads it while on the No branch
+   *  except `effectiveVisibleFields()`'s `fcUnspentDeclaration` case, which is itself hidden there. */
+  readonly hasUnsavedRowChanges = computed(() => {
+    const savedAmountByUlbId = new Map(this.savedUnspentUlbData().map((row) => [row.ulbId, row.unspentAmount]));
+    const liveRows = this.liveUnspentRows().filter(
+      (row): row is { ulbId: string; unspentAmount: number } => row.ulbId !== null && row.unspentAmount !== null,
+    );
+    if (liveRows.length !== savedAmountByUlbId.size) return true;
+    return liveRows.some((row) => savedAmountByUlbId.get(row.ulbId) !== row.unspentAmount);
+  });
+
   readonly isLoading = signal(false);
   readonly loadError = signal(false);
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
-  readonly isDownloadingTemplate = signal(false);
+  readonly isDownloadingDeclaration = signal(false);
 
   readonly canEdit = signal(false);
   readonly canSaveDraft = signal(false);
@@ -178,8 +268,19 @@ export class FcUnspentDeclarationComponent implements OnInit {
     return this.moduleService.yearId() ?? '';
   }
 
+  constructor() {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. `unspentUlbData` is
+   *  attached to `form` (`form.addControl('unspentUlbData', this.unspentUlbData)`), so `form.dirty`
+   *  already covers ULB-row edits. A disabled (read-only) form is never dirty. */
+  hasUnsavedChanges(): boolean {
+    return this.canEdit() && this.form.dirty;
   }
 
   loadForm(): void {
@@ -247,14 +348,21 @@ export class FcUnspentDeclarationComponent implements OnInit {
     this.hydrateUnspentUlbData(savedRows);
 
     const isFcUnspentControl = this.form.get('isFcUnspent');
-    this.isYesBranchSignal.set(isFcUnspentControl?.value === 'yes');
+    const initialIsFcUnspentRaw: unknown = isFcUnspentControl?.value;
+    const initialIsFcUnspent = typeof initialIsFcUnspentRaw === 'string' ? initialIsFcUnspentRaw : null;
+    this.isYesBranchSignal.set(initialIsFcUnspent === 'yes');
+    // Freshly loaded — live and saved start equal, so hasUnsavedBranchChange() is false until the
+    // user actually touches the radio.
+    this.liveIsFcUnspent.set(initialIsFcUnspent);
+    this.savedIsFcUnspent.set(initialIsFcUnspent);
     isFcUnspentControl?.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef), takeUntil(this.formSubscriptionsTeardown$))
-      .subscribe((value) => {
+      .subscribe((value: string | null) => {
         // Switching to No intentionally leaves unspentUlbData untouched — rows are just not
         // rendered while hidden, mirroring the preserveHiddenValue behavior used for the other
         // conditional fields on this page.
         this.isYesBranchSignal.set(value === 'yes');
+        this.liveIsFcUnspent.set(value);
       });
 
     this.dependencyIndex = this.visibilityService.createDependencyIndex(this.fields());
@@ -283,75 +391,52 @@ export class FcUnspentDeclarationComponent implements OnInit {
 
   onSupportingAction(event: FieldSupportingActionEvent): void {
     if (event.fieldKey === 'fcDeclaration' && event.actionId === FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE) {
-      this.downloadDeclarationTemplate();
+      // Belt-and-suspenders alongside the UI-level `disabled` on the rendered button (see
+      // `effectiveVisibleFields`/`withDownloadActionState`) — the document endpoint only ever
+      // reflects saved data.
+      if (this.hasUnsavedBranchChange()) return;
+      this.downloadDeclarationDocument();
+    } else if (
+      event.fieldKey === 'fcUnspentDeclaration' &&
+      event.actionId === FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_DECLARATION
+    ) {
+      if (this.hasUnsavedBranchChange() || this.hasUnsavedRowChanges()) return;
+      this.downloadDeclarationDocument();
     }
   }
 
   /**
-   * Fetches the declaration-template's private signed download URL and triggers the download via a
-   * temporary anchor. Never reads `currentFormStatus` to decide whether this is allowed — the
-   * backend already controls whether the action is even rendered; this only guards against a
-   * missing stateId/yearId and duplicate concurrent clicks.
+   * Downloads the generated declaration document as a blob and saves it via FileSaver — mirrors
+   * `EulbStatusComponent.downloadElectedBodiesListDocument`. One method serves both branches: the
+   * backend picks the right variant (nil-balance vs ULB-wise) from the form's stored `isFcUnspent`,
+   * and the two fields' download actions are mutually exclusive (only one is ever visible), so
+   * there's no ambiguity about which branch triggered the click. Never reads `currentFormStatus` to
+   * decide whether this is allowed — the backend already controls whether the action is even
+   * rendered; this only guards against a missing stateId/yearId and duplicate concurrent clicks.
    */
-  private downloadDeclarationTemplate(): void {
-    if (this.isDownloadingTemplate()) return;
+  private downloadDeclarationDocument(): void {
+    if (this.isDownloadingDeclaration()) return;
 
     const stateId = this.stateId;
     const yearId = this.yearId;
     if (!stateId || !yearId) return;
 
-    this.isDownloadingTemplate.set(true);
+    this.clearAllApiErrors();
+    this.isDownloadingDeclaration.set(true);
 
     this.fcUnspentService
-      .getDeclarationTemplate(stateId, yearId)
+      .downloadDeclarationDocument(stateId, yearId)
       .pipe(
-        finalize(() => this.isDownloadingTemplate.set(false)),
+        finalize(() => this.isDownloadingDeclaration.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (template) => this.triggerDeclarationTemplateDownload(template),
+        next: (blob) => FileSaver.saveAs(blob, 'fc-unspent-declaration.docx'),
         error: (err: unknown) => {
-          console.error('Failed to download the FC Unspent declaration template', err);
-          const response = this.extractApiErrorResponse(err);
-          this.utilityService.triggerSnackbar(
-            response?.message ?? 'Failed to download the declaration template.',
-            'snackbar-danger',
-          );
+          console.error('Failed to download the FC Unspent declaration document', err);
+          this.handleDownloadApiError(err, 'Failed to download the declaration document.');
         },
       });
-  }
-
-  /**
-   * Downloads via a temporary anchor rather than `window.open` (popup-blocker risk) or FileSaver
-   * (would require re-fetching the URL as a Blob). `url` is validated as the app's own signed
-   * `/file/download` route before use — this UI never receives or constructs a raw S3 path, so any
-   * other shape is treated as a failed download rather than navigated to.
-   */
-  private triggerDeclarationTemplateDownload(template: FcUnspentDeclarationTemplate): void {
-    if (!template.url.trim() || !this.isSafeDeclarationTemplateUrl(template.url)) {
-      this.utilityService.triggerSnackbar('Failed to download the declaration template.', 'snackbar-danger');
-      return;
-    }
-
-    const anchor = document.createElement('a');
-    anchor.href = template.url;
-    anchor.download = sanitizeDeclarationTemplateFileName(template.fileName);
-    anchor.rel = 'noopener';
-    anchor.click();
-    anchor.remove();
-  }
-
-  /** True only for a same-origin URL whose path is the application's known signed-download route. */
-  private isSafeDeclarationTemplateUrl(url: string): boolean {
-    const sanitized = this.sanitizer.sanitize(SecurityContext.URL, url);
-    if (!sanitized) return false;
-
-    try {
-      const parsed = new URL(sanitized, window.location.origin);
-      return parsed.pathname.endsWith('/file/download');
-    } catch {
-      return false;
-    }
   }
 
   onSubmit(action: SubmitType): void {
@@ -375,10 +460,9 @@ export class FcUnspentDeclarationComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) this.submit(action);
@@ -411,7 +495,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
           err,
         );
         submittingFlag.set(false);
-        this.handleSubmitError(
+        this.handleApiError(
           err,
           action === 'finalSubmit'
             ? 'Unable to submit the declaration. Please try again.'
@@ -448,6 +532,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
     if (isFcUnspent === false) {
       data.fcDeclaration = rawData['fcDeclaration'];
     } else if (isFcUnspent === true) {
+      data.fcUnspentDeclaration = rawData['fcUnspentDeclaration'];
       data.checkboxConfirmation = rawData['checkboxConfirmation'] === true;
       data.unspentUlbData = this.unspentUlbData.controls
         .filter((row) => row.controls.ulbId.value !== null && row.controls.unspentAmount.value !== null)
@@ -466,9 +551,50 @@ export class FcUnspentDeclarationComponent implements OnInit {
 
   // ─── API error mapping ──────────────────────────────────────────────────────
 
-  private handleSubmitError(err: unknown, fallbackMessage: string): void {
-    const response = this.extractApiErrorResponse(err);
+  /** Used by `submit()` — its `saveDraft`/`finalSubmit` POST requests get a normal JSON error body
+   *  directly on `err.error`, which `extractApiErrorResponse` reads as-is. */
+  private handleApiError(err: unknown, fallbackMessage: string): void {
+    this.applyExtractedApiError(this.extractApiErrorResponse(err), fallbackMessage);
+  }
 
+  /**
+   * Used by `downloadDeclarationDocument()` only. That request is sent with `responseType: 'blob'`
+   * (see `FcUnspentDeclarationService.downloadDeclarationDocument`) — Angular's `HttpClient` does
+   * NOT JSON-parse error bodies for blob requests, so on a 400 `err.error` arrives as a raw `Blob`,
+   * not the parsed `{statusCode, message, errors}` object `extractApiErrorResponse` expects. Left
+   * unhandled, this silently swallows every download error's message/errors: a real bug found via
+   * manual testing where the backend's correct `noRows`/`branchNotChosen` responses never reached
+   * the UI, only the generic fallback snackbar. Mirrors the exact same gap already found and fixed
+   * in `elected-body-status.component.ts`'s `downloadElectedBodiesListDocument` (via
+   * `eulb-status.utils.ts`'s `parseBlobErrorResponse`) — replicated locally below rather than
+   * imported, since that helper is coupled to eulb-status's own (structurally identical but
+   * separately declared) `ApiErrorResponse`/`ApiErrorMap` types, consistent with how this file
+   * already duplicates `extractApiErrorResponse`/`isApiErrorMap` rather than importing them.
+   *
+   * Component-level spec tests that mock `FcUnspentDeclarationService.downloadDeclarationDocument`
+   * with a spy (rather than going through `HttpClientTestingModule`) can't catch this class of bug
+   * on their own — a spy bypasses the real transport layer that produces the `Blob` body, so its
+   * error mocks must deliberately shape their thrown value as `{ error: new Blob([...]) }` to
+   * exercise this path at all.
+   *
+   * Routed through `from(...).pipe(takeUntilDestroyed(...))` rather than a bare `async`/`await` —
+   * `Blob.text()` is real async I/O that can still be pending if the component is destroyed first
+   * (navigated away mid-download-error), and every other subscription in this file already guards
+   * against exactly that with the same operator. Without it, the continuation below would still run
+   * against a torn-down component and throw `NG0205: Injector has already been destroyed` reaching
+   * for `utilityService`/`unspentUlbTable()` — caught via a real `NG0205` surfaced by the app-wide
+   * spec suite (not the targeted one, which never straddles component destruction this way).
+   */
+  private handleDownloadApiError(err: unknown, fallbackMessage: string): void {
+    from(this.parseBlobErrorResponse(err))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => this.applyExtractedApiError(response, fallbackMessage));
+  }
+
+  /** Shared tail of both error handlers above: shows the backend message as a snackbar, then routes
+   *  any `errors` map through `applyApiErrors()` so field-keyed errors land below the matching field
+   *  and `_form`/whole-array errors land in the `formLevelErrors` banner. */
+  private applyExtractedApiError(response: ApiErrorResponse | null, fallbackMessage: string): void {
     this.utilityService.triggerSnackbar(response?.message ?? fallbackMessage, 'snackbar-danger');
 
     if (response?.errors) {
@@ -478,6 +604,28 @@ export class FcUnspentDeclarationComponent implements OnInit {
     // A row's `apiErrors` are set (and touched) asynchronously here, off the HTTP error callback —
     // not a native event inside the table's own template — so its OnPush view needs an explicit nudge.
     this.unspentUlbTable()?.refreshValidationDisplay();
+  }
+
+  /**
+   * Parses the error body of the `responseType: 'blob'` download request into an `ApiErrorResponse`.
+   * Falls back to `extractApiErrorResponse(err)` when `err.error` isn't a `Blob` (e.g. a
+   * network-level error where no body was ever received), and resolves to `null` on any read/parse
+   * failure. Mirrors `eulb-status.utils.ts`'s `parseBlobErrorResponse` — see
+   * `handleDownloadApiError`'s doc comment for why it's replicated here rather than imported.
+   */
+  private async parseBlobErrorResponse(err: unknown): Promise<ApiErrorResponse | null> {
+    const errorBody = this.isObject(err) ? err['error'] : undefined;
+    if (!(errorBody instanceof Blob)) {
+      return this.extractApiErrorResponse(err);
+    }
+
+    try {
+      const text = await errorBody.text();
+      const parsed: unknown = JSON.parse(text);
+      return this.extractApiErrorResponse({ error: parsed });
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -569,6 +717,15 @@ export class FcUnspentDeclarationComponent implements OnInit {
    * `SfcStatusComponent.applyApiErrors`): the `fields` signal gets a matching `validations` entry
    * (so the field's own template rendering shows the message), and the same error code is set on
    * the control (so `hasError()` reports it). Errors are skipped for currently-hidden fields.
+   *
+   * New server-driven validation entries are unshifted to the *front* of `field.validations`, not
+   * pushed to the end. `FileComponent.errorMessage()` displays the message of the first validation
+   * whose name is a key in `control.errors` — `fcUnspentDeclaration`'s `download-declaration`
+   * `noRows` gate error is exactly the case where the control is still empty (no file uploaded yet)
+   * when the error lands, so `required` and the server code (`noRows`) both sit in `control.errors`
+   * at once — unshifting ensures the more specific, actionable server message wins over the generic
+   * "This field is required." placeholder. Same fix already applied to
+   * `elected-body-status.component.ts`'s identical method for the same reason.
    */
   private applyDynamicFieldApiError(fieldKey: string, fieldErrors: ApiFieldError[]): void {
     this.fields.update((fields) =>
@@ -582,7 +739,7 @@ export class FcUnspentDeclarationComponent implements OnInit {
           if (existingIdx >= 0) {
             validations[existingIdx] = { ...validations[existingIdx], message: error.message };
           } else {
-            validations.push({ name: error.code, validator: null, message: error.message });
+            validations.unshift({ name: error.code, validator: null, message: error.message });
           }
         }
 
@@ -645,9 +802,8 @@ export class FcUnspentDeclarationComponent implements OnInit {
   }
 
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;

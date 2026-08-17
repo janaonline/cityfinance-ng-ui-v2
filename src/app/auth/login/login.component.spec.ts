@@ -195,11 +195,27 @@ describe('LoginComponent', () => {
     expect(component['isSubmitting']()).toBeFalse();
   }));
 
+  it('should redirect to the not-eligible page instead of showing an inline error for Cantonment Board ULBs', fakeAsync(() => {
+    authSpy.login.and.returnValue(
+      throwError(() => ({ error: { message: 'Cantonment boards are not eligible for XVIFC' } })),
+    );
+    component['loginForm'].setValue({
+      role: 'ULB',
+      identifier: '123456',
+      password: 'secret1',
+    });
+
+    component['onSubmit']();
+    tick();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/xvifc-not-eligible']);
+    expect(component['errorMessage']()).toBe('');
+    expect(component['isSubmitting']()).toBeFalse();
+  }));
+
   it('should navigate to forgot password with the current type', () => {
     component['onForgotPassword']();
 
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/forgot-password'], {
-      queryParams: { type: '16thFC' },
-    });
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/forgot-password', '16thFC']);
   });
 });

@@ -1,6 +1,7 @@
 import { ComponentRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { FormSectionGridComponent } from './form-section-grid.component';
 import { FormSectionConfig } from '../../field.interface';
@@ -29,7 +30,7 @@ describe('FormSectionGridComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FormSectionGridComponent],
+      imports: [FormSectionGridComponent, HttpClientTestingModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FormSectionGridComponent);

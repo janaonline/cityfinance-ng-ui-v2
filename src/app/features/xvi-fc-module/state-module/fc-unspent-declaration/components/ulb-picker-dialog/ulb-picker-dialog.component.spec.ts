@@ -115,7 +115,7 @@ describe('UlbPickerDialogComponent', () => {
         { provide: MatDialogRef, useValue: dialogRef },
         {
           provide: MAT_DIALOG_DATA,
-          useValue: { ...data, blockingMessage: 'Devolution Formula must be submitted first.' },
+          useValue: { ...data, blockingMessage: 'ULB-wise Allocation must be submitted first.' },
         },
         FcUnspentUlbOptionsCacheService,
       ],
@@ -126,7 +126,7 @@ describe('UlbPickerDialogComponent', () => {
     spyOn(blockedService, 'getUlbOptions').and.returnValue(of(makeResult([])));
     blockedFixture.detectChanges();
 
-    expect(blockedFixture.nativeElement.textContent).toContain('Devolution Formula must be submitted first.');
+    expect(blockedFixture.nativeElement.textContent).toContain('ULB-wise Allocation must be submitted first.');
     expect(blockedFixture.nativeElement.textContent).not.toContain('No ULBs found');
   });
 

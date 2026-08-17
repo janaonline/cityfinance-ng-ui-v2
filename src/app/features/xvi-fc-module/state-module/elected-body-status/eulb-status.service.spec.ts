@@ -162,6 +162,15 @@ describe('EulbStatusService', () => {
       .expectOne((r) => r.method === 'GET' && r.url.includes('/error-sheet') && r.responseType === 'blob')
       .flush(blobContent);
     expect(errorSheetResult).toBe(blobContent);
+
+    let electedBodiesListResult: Blob | undefined;
+    service.downloadElectedBodiesListDocument(stateId, yearId).subscribe((blob) => (electedBodiesListResult = blob));
+    httpMock
+      .expectOne(
+        (r) => r.method === 'GET' && r.url.includes('/elected-bodies-list-document') && r.responseType === 'blob',
+      )
+      .flush(blobContent);
+    expect(electedBodiesListResult).toBe(blobContent);
   });
 
   it('keeps successful save draft responses on the success path', () => {
@@ -217,7 +226,6 @@ describe('EulbStatusService', () => {
             dateOfConstitution: '2020-01-01',
             dateOfExpiry: '2030-01-01',
             remarks: null,
-            rowType: 'DB_ULB',
             validationStatus: 'INVALID',
             errors: [],
           },
@@ -308,6 +316,7 @@ describe('EulbStatusService', () => {
           matchedDbUlbCount: 1,
           missingDbUlbCount: 0,
           extraExcelRowCount: 0,
+          duplicateUlbCount: 0,
           errorRowCount: 0,
           validationStatus: 'VALID',
           activeDatasetVersion: 1,
@@ -337,6 +346,7 @@ describe('EulbStatusService', () => {
       yearId,
       data: {
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
         checkboxConfirmation: true,
       },
     };

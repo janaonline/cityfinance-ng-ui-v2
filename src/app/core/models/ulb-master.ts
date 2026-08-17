@@ -39,6 +39,10 @@ export interface IUlbMaster {
   isActive: boolean;
   isPublish: boolean;
   approval: IUlbApproval;
+  /** True for a legacy ULB that predates the approval workflow (no `approval` ever stored) —
+   *  the backend backfills a synthetic 'APPROVED' `approval` for these on read, but this flag
+   *  is what actually distinguishes them from an ADMIN-reviewed approval. */
+  isExistingUser?: boolean;
   createdAt?: string;
   modifiedAt?: string;
 }
@@ -68,7 +72,7 @@ export interface IUlbMasterListQuery {
   state?: string;
   ulbType?: string;
   isActive?: boolean;
-  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXISTING';
   sortBy?: 'name' | 'code' | 'createdAt';
   sortDir?: 1 | -1;
   page?: number;

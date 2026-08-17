@@ -36,6 +36,9 @@ export interface DocumentRuntimeState {
   latestDecision: { status: 'APPROVED' | 'RETURNED' } | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload instead of just spinning. */
   isStale: boolean;
+  /** True once ADMIN has rejected a ULB's manual-review request for this failed document — re-running
+   *  OCR on the same file would fail the same way, so Retry is hidden until a fresh file is uploaded. */
+  manualReviewReturned?: boolean;
 }
 
 export interface ResolvedDocumentAction {

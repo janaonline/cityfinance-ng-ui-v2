@@ -66,7 +66,10 @@ export function resolveDocumentActions(
       return (['retry', 'reupload'] as const).filter(gated).map((a) => build(a, false));
     }
     if (doc.processingStatus === 'FAILED') {
-      return (['retry', 'reupload'] as const).filter(gated).map((a) => build(a, false));
+      // Once ADMIN has declined a manual-review request, retrying OCR on the same file would
+      // just fail the same way again — only Re-upload makes sense at that point.
+      const availableActions = doc.manualReviewReturned === true ? (['reupload'] as const) : (['retry', 'reupload'] as const);
+      return availableActions.filter(gated).map((a) => build(a, false));
     }
     if (doc.processingStatus === 'PASSED') {
       if (doc.latestDecision?.status === 'APPROVED') return [];

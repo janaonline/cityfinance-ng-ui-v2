@@ -2,13 +2,6 @@
   (change)="onProofSelected($event)" />
 
 <div class="container py-3 xvifc-theme">
-  <button
-    class="btn btn-link text-secondary text-decoration-none ps-0 mb-3 d-inline-flex align-items-center gap-1 small"
-    type="button" (click)="goBack()">
-    <i class="bi bi-arrow-left" aria-hidden="true"></i>
-    Back to Conditions
-  </button>
-
   <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
     <h1 class="fs-4 fw-bold mb-0">{{ pageTitle }}</h1>
     @if (existingRecord(); as record) {
@@ -35,14 +28,14 @@
   </div>
   }
 
-  @if (isRecordLoading()) {
+  @if (isFormLoading()) {
   <div class="d-flex align-items-center gap-2 text-muted small py-2 mb-3" role="status" aria-live="polite">
     <span class="spinner-border spinner-border-sm flex-shrink-0" aria-hidden="true"></span>
     Loading bank account details...
   </div>
   }
 
-  @if (!isEditable()) {
+  @if (!isFormLoading() && !isEditable()) {
   <div class="alert alert-info py-2 px-3 small mb-3" role="status">
     <i class="bi bi-lock-fill me-1" aria-hidden="true"></i>{{ lockedBannerMessage() }}
   </div>
@@ -63,28 +56,12 @@
     </div>
     }
 
-    <form [formGroup]="form" novalidate>
-      <div class="mb-3">
-        <label for="ifsc-code" class="form-label fw-semibold small text-secondary">
-          {{ fields.ifscCode.label }}
-          <span class="text-danger" aria-hidden="true">*</span>
-        </label>
-        <input id="ifsc-code" type="text" class="form-control form-control-sm" formControlName="ifscCode"
-          [placeholder]="fields.ifscCode.placeholder" [class.is-invalid]="isInvalid('ifscCode')"
-          [disabled]="!isEditable() || isSubmitting()" aria-required="true" />
-        @if (isInvalid('ifscCode')) {
-        <div class="invalid-feedback">{{ getError('ifscCode') }}</div>
-        }
-      </div>
-
-      @if (isIfscLoading()) {
-      <div class="d-flex align-items-center gap-2 text-muted small py-2 mb-3" role="status" aria-live="polite">
-        <span class="spinner-border spinner-border-sm flex-shrink-0" aria-hidden="true"></span>
-        Searching IFSC details...
-      </div>
-      }
-
-      @if (bankDetails(); as bank) {
+    <form novalidate>
+      @for (item of visibleFields(); track item.key) {
+      <app-dynamic-form class="d-block mb-3" [field]="item" [group]="form"
+        [mode]="isEditable() ? 'edit' : 'view'"></app-dynamic-form>
+      @if (item.key === 'ifscCode') {
+      @if (bankDetailsSummary(); as bank) {
       <div class="bank-details rounded-2 p-3 mb-3" role="status" aria-live="polite">
         <div class="bank-details__name d-flex align-items-center gap-2 mb-2">
           <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
@@ -99,54 +76,12 @@
         <p class="small mb-0"><strong>MICR:</strong> {{ bank.micr || 'Not available' }}</p>
       </div>
       }
-
-      @if (ifscLookupError()) {
-      <div class="alert alert-warning py-2 px-3 small mb-3" role="alert">
-        {{ ifscLookupError() }}
-      </div>
       }
-
-      @if (shouldShowAccountNumberInputs()) {
-      <div class="mb-3">
-        <label for="account-number" class="form-label fw-semibold small text-secondary">
-          {{ fields.accountNumber.label }}
-          <span class="text-danger" aria-hidden="true">*</span>
-        </label>
-        <input id="account-number" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="18"
-          class="form-control form-control-sm" formControlName="accountNumber"
-          [placeholder]="fields.accountNumber.placeholder" [class.is-invalid]="isInvalid('accountNumber')"
-          [disabled]="!isEditable() || isSubmitting()" aria-required="true"
-          (input)="onAccountNumberInput('accountNumber', $event)" />
-        @if (isInvalid('accountNumber')) {
-        <div class="invalid-feedback">{{ getError('accountNumber') }}</div>
-        }
-        @if (accountInputWarning('accountNumber'); as warning) {
-        <div class="text-warning small mt-1" role="alert">{{ warning }}</div>
-        }
-      </div>
-
-      <div class="mb-3">
-        <label for="confirm-account-number" class="form-label fw-semibold small text-secondary">
-          {{ fields.confirmAccountNumber.label }}
-          <span class="text-danger" aria-hidden="true">*</span>
-        </label>
-        <input id="confirm-account-number" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
-          maxlength="18" class="form-control form-control-sm" formControlName="confirmAccountNumber"
-          [placeholder]="fields.confirmAccountNumber.placeholder" [class.is-invalid]="isInvalid('confirmAccountNumber')"
-          [disabled]="!isEditable() || isSubmitting()" aria-required="true"
-          (input)="onAccountNumberInput('confirmAccountNumber', $event)" />
-        @if (isInvalid('confirmAccountNumber')) {
-        <div class="invalid-feedback">{{ getError('confirmAccountNumber') }}</div>
-        }
-        @if (accountInputWarning('confirmAccountNumber'); as warning) {
-        <div class="text-warning small mt-1" role="alert">{{ warning }}</div>
-        }
-      </div>
       }
 
       <div class="mb-0">
         <p class="form-label fw-semibold small text-secondary mb-0">
-          {{ fields.proof.label }}
+          {{ proofField.label }}
           <span class="text-danger" aria-hidden="true">*</span>
         </p>
 
@@ -184,7 +119,7 @@
         </button>
 
         <p class="small text-muted mt-1 mb-2">
-          {{ fields.proof.acceptedFormatsText }} &nbsp;·&nbsp; max {{ fields.proof.maxSizeMb }} MB
+          {{ proofField.acceptedFormatsText }} &nbsp;·&nbsp; max {{ proofField.maxSizeMb }} MB
         </p>
 
         @if (proofError()) {
@@ -207,10 +142,9 @@
         }
       </button>
       }
-      <button class="btn btn-link text-secondary text-decoration-none" type="button" [disabled]="isSubmitting()"
-        (click)="goBack()">
-        {{ isEditable() ? 'Cancel' : 'Back' }}
-      </button>
     </div>
+    @if (isEditable() && submitBlockedReason(); as reason) {
+    <p class="text-danger small mt-2 mb-0" role="status">{{ reason }}</p>
+    }
   </div>
 </div>

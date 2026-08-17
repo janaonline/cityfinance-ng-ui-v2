@@ -273,7 +273,9 @@
                     <td class="small text-secondary">{{ row.rowNumber }}</td>
                     <td class="small text-secondary text-nowrap">{{ row.censusCode ?? row.sbCode ?? '—' }}</td>
                     <td class="small">{{ row.ulbName }}</td>
-                    <td class="small text-end text-secondary">{{ row.allocationAmount }}</td>
+                    <td class="small text-end text-secondary" [title]="formatCroreFull(row.allocationAmount)">
+                      {{ formatCrore(row.allocationAmount) }}
+                    </td>
                     <td class="small text-end">{{ row.unspentAmount }}</td>
                     <td class="small text-end">{{ row.allocationPerc | number: '1.0-2' }}%</td>
                     <td class="small">

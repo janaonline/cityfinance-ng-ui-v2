@@ -38,6 +38,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { checkPdfHasContent } from '../../../../../shared/dynamic-form/utils/pdf-blank-check.util';
 
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -679,52 +680,23 @@ export class FillDisclosureComponent {
       return { valid: false, error: 'Could not read the file. Please try again.' };
     }
 
-    // Render-based blank detection via pdfjs.
-    // Pixel brightness is the only reliable way to detect blank pages — byte heuristics
-    // cannot distinguish blank scanned pages from real ones. Worker is loaded from CDN
-    // to avoid MIME-type issues with the Angular dev-server SPA fallback.
-    try {
-      const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-
-      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-
-      if (pdf.numPages === 0) {
-        return { valid: false, error: 'This PDF has no pages. Please upload a valid document.' };
-      }
-
-      const page     = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 0.15 });
-      const canvas   = document.createElement('canvas');
-      canvas.width   = Math.ceil(viewport.width);
-      canvas.height  = Math.ceil(viewport.height);
-      const ctx      = canvas.getContext('2d')!;
-      ctx.fillStyle  = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-
-      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      let nonWhite = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i] < 240 || data[i + 1] < 240 || data[i + 2] < 240) nonWhite++;
-      }
-      if (nonWhite / (canvas.width * canvas.height) < 0.005) {
-        return { valid: false, error: 'The PDF appears to be blank. Please upload a document with visible content.' };
-      }
-
-      return { valid: true, pageCount: pdf.numPages };
-    } catch (err: unknown) {
-      const name = (err as { name?: string })?.name;
-      if (name === 'PasswordException') {
-        return { valid: false, error: 'Password-protected files are not allowed. Please upload an unlocked file.' };
-      }
-      if (name === 'InvalidPDFException') {
-        return { valid: false, error: 'This PDF is corrupted or unreadable. Please upload a valid file.' };
-      }
-      // Worker load failure (e.g. offline) — allow the file through rather than blocking the user.
-      return { valid: true };
+    // Render-based blank detection via pdf.js — see checkPdfHasContent for why unexpected
+    // failures (e.g. offline) fail open instead of blocking the user.
+    const result = await checkPdfHasContent(file);
+    if (result.fatalError === 'password') {
+      return { valid: false, error: 'Password-protected files are not allowed. Please upload an unlocked file.' };
     }
+    if (result.fatalError === 'invalid') {
+      return { valid: false, error: 'This PDF is corrupted or unreadable. Please upload a valid file.' };
+    }
+    if (result.pageCount === 0) {
+      return { valid: false, error: 'This PDF has no pages. Please upload a valid document.' };
+    }
+    if (!result.hasContent) {
+      return { valid: false, error: 'The PDF appears to be blank. Please upload a document with visible content.' };
+    }
+
+    return { valid: true, pageCount: result.pageCount ?? undefined };
   }
 
   // ── Private: data loading ─────────────────────────────────────────────────────

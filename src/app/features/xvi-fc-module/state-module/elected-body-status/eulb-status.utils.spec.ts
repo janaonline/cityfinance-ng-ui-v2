@@ -3,6 +3,9 @@ import {
   buildEulbFinalSubmitPayloadData,
   buildEulbFormPayloadData,
   buildEulbRowUpdatePayload,
+  getDuplicateCensusCodeMessage,
+  getRegisterUlbErrorMessage,
+  parseBlobErrorResponse,
   parseEulbRowUpdateErrors,
 } from './eulb-status.utils';
 
@@ -24,25 +27,37 @@ describe('EULB status payload builders', () => {
     expect(payload).toEqual({
       ulbCount: undefined,
       electedBodyExcelFile: undefined,
+      signedElectedbodyFile: undefined,
       checkboxConfirmation: undefined,
     });
   });
 
-  it('builds final-submit payload data when file and confirmation are present (ulbCount is backend-computed and excluded)', () => {
+  it('builds final-submit payload data when both files and confirmation are present (ulbCount is backend-computed and excluded)', () => {
     // ulbCount is excluded by includeInPayload:false — builder must succeed without it
     expect(
       buildEulbFinalSubmitPayloadData({
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
         checkboxConfirmation: true,
       }),
     ).toEqual({
       electedBodyExcelFile: fileValue,
+      signedElectedbodyFile: fileValue,
       checkboxConfirmation: true,
     });
 
-    // missing file → null
+    // missing electedBodyExcelFile → null
     expect(
       buildEulbFinalSubmitPayloadData({
+        signedElectedbodyFile: fileValue,
+        checkboxConfirmation: true,
+      }),
+    ).toBeNull();
+
+    // missing signedElectedbodyFile → null
+    expect(
+      buildEulbFinalSubmitPayloadData({
+        electedBodyExcelFile: fileValue,
         checkboxConfirmation: true,
       }),
     ).toBeNull();
@@ -51,6 +66,7 @@ describe('EULB status payload builders', () => {
     expect(
       buildEulbFinalSubmitPayloadData({
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
       }),
     ).toBeNull();
   });
@@ -59,10 +75,12 @@ describe('EULB status payload builders', () => {
     expect(
       buildEulbFinalSubmitPayloadData({
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
         checkboxConfirmation: true,
       }),
     ).toEqual({
       electedBodyExcelFile: fileValue,
+      signedElectedbodyFile: fileValue,
       checkboxConfirmation: true,
     });
   });
@@ -72,6 +90,7 @@ describe('EULB status payload builders', () => {
       buildEulbFormPayloadData({
         ulbCount: '42',
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
         checkboxConfirmation: true,
       }).ulbCount,
     ).toBe(42);
@@ -80,15 +99,17 @@ describe('EULB status payload builders', () => {
     expect(
       buildEulbFinalSubmitPayloadData({
         electedBodyExcelFile: fileValue,
+        signedElectedbodyFile: fileValue,
         checkboxConfirmation: true,
       }),
     ).toEqual({
       electedBodyExcelFile: fileValue,
+      signedElectedbodyFile: fileValue,
       checkboxConfirmation: true,
     });
   });
 
-  it('final-submit returns null when file or confirmation is missing', () => {
+  it('final-submit returns null when a file or confirmation is missing', () => {
     const payloadWithFile = {
       ulbCount: 12,
       checkboxConfirmation: true,
@@ -98,9 +119,10 @@ describe('EULB status payload builders', () => {
     expect(buildEulbFormPayloadData(payloadWithFile)).toEqual({
       ulbCount: 12,
       electedBodyExcelFile: undefined,
+      signedElectedbodyFile: undefined,
       checkboxConfirmation: true,
     });
-    // Final-submit builder returns null when file is missing
+    // Final-submit builder returns null when both files are missing
     expect(buildEulbFinalSubmitPayloadData(payloadWithFile)).toBeNull();
   });
 
@@ -120,21 +142,7 @@ describe('EULB status payload builders', () => {
     });
   });
 
-  it('includes censusCode and ulbName in the payload when present in the form value', () => {
-    const payload = buildEulbRowUpdatePayload({
-      electedBodyStatus: undefined,
-      dateOfConstitution: '',
-      dateOfExpiry: '',
-      remarks: '',
-      censusCode: 'NEW001',
-      ulbName: 'New ULB Name',
-    });
-
-    expect(payload.censusCode).toBe('NEW001');
-    expect(payload.ulbName).toBe('New ULB Name');
-  });
-
-  it('omits censusCode and ulbName from the payload when absent from the form value', () => {
+  it('never includes censusCode or ulbName in the payload — identity fields are not portal-editable', () => {
     const payload = buildEulbRowUpdatePayload({
       electedBodyStatus: 'Constituted',
       dateOfConstitution: '',
@@ -198,5 +206,101 @@ describe('EULB status payload builders', () => {
     // Old format: errors was a flat array; new backend always sends a field-keyed map
     expect(parseEulbRowUpdateErrors({ error: { errors: [{ field: 'remarks', message: 'Required.' }] } })).toEqual([]);
     expect(parseEulbRowUpdateErrors({ errors: [{ field: 'dateOfExpiry', message: 'Invalid.' }] })).toEqual([]);
+  });
+});
+
+// ─── getRegisterUlbErrorMessage ───────────────────────────────────────────────
+
+describe('getRegisterUlbErrorMessage', () => {
+  it('returns the backend message when electedBodyExcelFile has a newUlbsAdded error', () => {
+    const errors = {
+      electedBodyExcelFile: [
+        {
+          field: 'electedBodyExcelFile',
+          code: 'newUlbsAdded',
+          message: 'You have added 1 ULB(s) not registered in City Finance. Please register before proceeding.',
+        },
+      ],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBe(
+      'You have added 1 ULB(s) not registered in City Finance. Please register before proceeding.',
+    );
+  });
+
+  it('returns null when electedBodyExcelFile errors do not include newUlbsAdded', () => {
+    const errors = {
+      electedBodyExcelFile: [{ field: 'electedBodyExcelFile', code: 'conflict', message: 'Please refresh.' }],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBeNull();
+  });
+
+  it('returns null when electedBodyExcelFile key is absent', () => {
+    expect(getRegisterUlbErrorMessage({ ulbCount: [{ message: 'Required.' }] })).toBeNull();
+  });
+
+  it('returns null when errors is undefined', () => {
+    expect(getRegisterUlbErrorMessage(undefined)).toBeNull();
+  });
+});
+
+// ─── getDuplicateCensusCodeMessage ─────────────────────────────────────────────
+
+describe('getDuplicateCensusCodeMessage', () => {
+  it('returns the message of the first duplicate row error', () => {
+    const errors = [
+      {
+        field: 'censusCode',
+        code: 'duplicate',
+        message: 'A ULB with this census code already exists for the selected design year.',
+      },
+    ];
+    expect(getDuplicateCensusCodeMessage(errors)).toBe(
+      'A ULB with this census code already exists for the selected design year.',
+    );
+  });
+
+  it('returns null when no row error has code duplicate', () => {
+    const errors = [{ field: 'censusCode', code: 'unknownUlb', message: 'Unknown ULB.' }];
+    expect(getDuplicateCensusCodeMessage(errors)).toBeNull();
+  });
+
+  it('returns null when errors is undefined', () => {
+    expect(getDuplicateCensusCodeMessage(undefined)).toBeNull();
+  });
+});
+
+// ─── parseBlobErrorResponse ─────────────────────────────────────────────────
+
+describe('parseBlobErrorResponse', () => {
+  it('parses a Blob-typed error body (as returned for responseType: "blob" requests) into an ApiErrorResponse', async () => {
+    const body = {
+      message: 'Validation failed.',
+      statusCode: 400,
+      errors: {
+        signedElectedbodyFile: [
+          { field: 'signedElectedbodyFile', code: 'noRows', message: 'No elected-body rows found.' },
+        ],
+      },
+    };
+    const err = { error: new Blob([JSON.stringify(body)], { type: 'application/json' }) };
+
+    const response = await parseBlobErrorResponse(err);
+
+    expect(response?.message).toBe('Validation failed.');
+    expect(response?.errors?.['signedElectedbodyFile']).toEqual([
+      { field: 'signedElectedbodyFile', code: 'noRows', message: 'No elected-body rows found.' },
+    ]);
+  });
+
+  it('falls back to extractApiErrorResponse when err.error is not a Blob', async () => {
+    const err = { error: { message: 'Network-level failure.' } };
+    const response = await parseBlobErrorResponse(err);
+    expect(response?.message).toBe('Network-level failure.');
+  });
+
+  it('resolves to null when the blob body is not valid JSON', async () => {
+    const err = { error: new Blob(['not json'], { type: 'application/json' }) };
+    const response = await parseBlobErrorResponse(err);
+    expect(response).toBeNull();
   });
 });

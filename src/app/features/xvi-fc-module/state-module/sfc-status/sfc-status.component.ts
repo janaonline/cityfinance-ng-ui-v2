@@ -18,8 +18,12 @@ import { ConfirmDialogService } from '../../../../shared/components/confirm-dial
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
+import {
+  CanComponentDeactivate,
+  warnBeforeUnloadWhenDirty,
+} from '../../../../core/guards/unsaved-changes.guard';
 import { SfcStatusService } from './sfc-status.service';
 import {
   ApiErrorMap,
@@ -45,14 +49,15 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
 })
-export class SfcStatusComponent implements OnInit {
+export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
   private utilityService = inject(UtilityService);
   private dynamicService = inject(DynamicFormService);
   private visibilityService = inject(DynamicFormVisibilityService);
   private confirmDialogService = inject(ConfirmDialogService);
-  private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
   private sfcStatusService = inject(SfcStatusService);
   private moduleService = inject(XvifcModuleService);
   public stateName = signal('');
@@ -98,8 +103,18 @@ export class SfcStatusComponent implements OnInit {
     return this.moduleService.yearId() ?? '';
   }
 
+  constructor() {
+    warnBeforeUnloadWhenDirty(() => this.hasUnsavedChanges());
+  }
+
   ngOnInit(): void {
     this.loadForm();
+  }
+
+  /** Read by {@link unsavedChangesGuard} and the `beforeunload` listener. A disabled (read-only)
+   *  form is never dirty, so this is automatically `false` when `canEdit` is `false`. */
+  hasUnsavedChanges(): boolean {
+    return this.canEdit() && this.form.dirty;
   }
 
   private loadForm(): void {
@@ -212,10 +227,9 @@ export class SfcStatusComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -458,9 +472,8 @@ export class SfcStatusComponent implements OnInit {
   }
 
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;

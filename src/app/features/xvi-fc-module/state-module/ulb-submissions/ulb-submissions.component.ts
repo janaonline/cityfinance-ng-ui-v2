@@ -1,6 +1,6 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
@@ -11,8 +11,10 @@ import { MatTableModule } from '@angular/material/table';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
-import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
-import { ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  ConfirmDialogData,
+  themedDialogConfig,
+} from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
@@ -22,6 +24,7 @@ import {
   FORM_TO_TAB,
   ReviewFormId,
   ReviewStatus,
+  SLB_UNAVAILABLE_BUCKET_KEYS,
   STATUS_BUCKETS,
   UlbSubmissionRow,
   UlbSubmissionSortField,
@@ -92,7 +95,8 @@ export class UlbSubmissionsComponent {
   private readonly utilityService = inject(UtilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly ulbSubmissionsService = inject(UlbSubmissionsService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
   private readonly http = inject(HttpClient);
 
   readonly filterSelects = FILTER_SELECTS;
@@ -113,6 +117,10 @@ export class UlbSubmissionsComponent {
   readonly isSelectedFormLive = computed(
     () => FORM_OPTIONS.find((opt) => opt.value === this.selectedFormId())?.live ?? false,
   );
+  /** SLB is deemed approved on submission — no approve/return workflow, so bulk actions and
+   *  row-selection checkboxes don't apply to it, unlike the other three live forms. */
+  readonly isBulkReviewable = computed(() => this.selectedFormId() !== 'SERVICE_LEVEL_BENCHMARKS');
+  private readonly isSlbSelected = computed(() => this.selectedFormId() === 'SERVICE_LEVEL_BENCHMARKS');
 
   readonly selection = new SelectionModel<UlbSubmissionRow>(true, []);
 
@@ -154,11 +162,12 @@ export class UlbSubmissionsComponent {
     ['NOT_STARTED', 'IN_PROGRESS'].includes(this.selectedBucketKey()),
   );
 
-  readonly displayedColumns = computed(() =>
-    this.hasNothingToReviewYet()
+  readonly displayedColumns = computed(() => {
+    const base = this.hasNothingToReviewYet()
       ? ['select', 'ulbName', 'censusCode', 'formStatus']
-      : ['select', 'ulbName', 'censusCode', 'daysPending', 'formStatus', 'action'],
-  );
+      : ['select', 'ulbName', 'censusCode', 'daysPending', 'formStatus', 'action'];
+    return this.isBulkReviewable() ? base : base.filter((column) => column !== 'select');
+  });
 
   readonly reviewableRows = computed(() => this.rows().filter(isRowReviewable));
 
@@ -201,15 +210,28 @@ export class UlbSubmissionsComponent {
         if (this.isSelectedFormLive()) this.loadRows();
         else this.rows.set([]);
       });
+
+    // Switching to SLB can leave the currently-selected bucket (e.g. the default "Under Review
+    // by State") pointing at one of the three buckets SLB doesn't have — fall back to a bucket
+    // that's always valid, synchronously (not debounced like the reload above) so the stat cards
+    // never show a disabled bucket as still "active" even briefly.
+    effect(() => {
+      if (this.isBucketDisabled(this.selectedBucketKey())) this.selectedBucketKey.set('NOT_STARTED');
+    });
   }
 
   /** Exactly one bucket is always selected — there's no "show all statuses" state. */
   selectBucket(key: string): void {
-    if (this.selectedBucketKey() === key) return;
+    if (this.selectedBucketKey() === key || this.isBucketDisabled(key)) return;
     this.selectedBucketKey.set(key);
     this.page.set(1);
     this.selection.clear();
     if (this.isSelectedFormLive()) this.loadRows();
+  }
+
+  /** SLB has no STATE approve/return workflow — the review/returned/MoHUA buckets never apply. */
+  isBucketDisabled(key: string): boolean {
+    return this.isSlbSelected() && SLB_UNAVAILABLE_BUCKET_KEYS.has(key);
   }
 
   isAllSelected(): boolean {
@@ -244,7 +266,7 @@ export class UlbSubmissionsComponent {
     }
 
     this.confirmDialogService
-      .confirm(BULK_APPROVE_CONFIRM, this.themeClass ? { panelClass: this.themeClass } : undefined)
+      .confirm(BULK_APPROVE_CONFIRM, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) this.submitBulkReview('APPROVE');

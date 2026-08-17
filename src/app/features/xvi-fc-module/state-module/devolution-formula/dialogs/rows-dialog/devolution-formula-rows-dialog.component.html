@@ -3,7 +3,7 @@
   class="fs-6 fw-semibold border-bottom mb-0 py-1 d-flex align-items-center justify-content-between"
   data-cy="df-rows-dialog-title"
 >
-  <span>Uploaded Data — Devolution Formula</span>
+  <span>Uploaded Data — ULB-wise Allocation</span>
   <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="close()">
     <i class="bi bi-x-circle-fill fs-5"></i>
   </button>
@@ -75,7 +75,7 @@
             <th class="text-nowrap small fw-semibold">Total Allocation</th>
             <th class="text-nowrap small fw-semibold">Installment 1</th>
             <th class="text-nowrap small fw-semibold">Installment 2</th>
-            <th class="text-nowrap small fw-semibold">Devolution Formula</th>
+            <th class="text-nowrap small fw-semibold">Allocation Formula</th>
             <th class="text-nowrap small fw-semibold">Status</th>
             @if (canEdit) {
               <th class="text-nowrap small fw-semibold pe-3 df-actions-col">Actions</th>
@@ -150,7 +150,7 @@
                     <input
                       type="text"
                       class="form-control form-control-sm df-edit-control"
-                      aria-label="Devolution Formula"
+                      aria-label="Allocation Formula"
                       placeholder="Formula"
                       [class.is-invalid]="hasEditFieldError('devolutionFormula')"
                       [matTooltip]="getEditFieldErrorText('devolutionFormula')"

@@ -39,7 +39,7 @@ export const EULB_ROW_VALIDATION_STATUS_OPTIONS: ReadonlyArray<{
 ];
 
 export function isEulbBodyStatus(value: unknown): value is EulbBodyStatus {
-  return value === 'Constituted' || value === 'Not Constituted' || value === 'Exempt';
+  return value === 'Constituted' || value === 'Not Constituted' || value === '6th Schedule';
 }
 
 export function isEulbRowValidationStatus(value: unknown): value is EulbRowValidationStatus {

@@ -7,13 +7,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
-import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { UtilityService } from '../../../../../core/services/utility.service';
+import { themedDialogConfig } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { NoteDialogService } from '../../../../../shared/components/note-dialog/note-dialog.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import type { UploadPageConfig } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.component';
 import { UploadDocumentsService } from '../../../ulb-module/ulb-forms/upload-documents/upload-documents.service';
+import { SlbService } from '../../../ulb-module/ulb-forms/slb/slb.service';
+import type { SlbFormData } from '../../../ulb-module/ulb-forms/slb/slb.models';
+import { SlbReviewComponent } from '../slb-review/slb-review.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import type {
@@ -23,7 +26,7 @@ import type {
 } from '../../../../../shared/components/document-action-row/document-action-row.types';
 
 type SectionKey = 'auditedData' | 'unauditedData';
-type TabKey = SectionKey | 'PFMS';
+type TabKey = SectionKey | 'PFMS' | 'SLB';
 type Decision = 'APPROVED' | 'RETURNED';
 
 interface DecisionEntry {
@@ -68,6 +71,16 @@ interface StatusSection {
   documents: StatusDoc[];
 }
 
+/** Raw shape of GET annual-account/by-ulb/:ulbId/:designYearId?section=... — one section per call. */
+interface SectionStatusResponse {
+  annualAccountId: string | null;
+  ulbName: string | null;
+  ulbCode: string | null;
+  data: StatusSection | null;
+}
+
+/** Component-local combined shape — populated from two SectionStatusResponse calls (one per
+ *  section), since the tab UI keeps both sections cached client-side. */
 interface StatusResponse {
   annualAccountId: string | null;
   ulbName: string | null;
@@ -200,7 +213,14 @@ const RETURN_NOTE_MAX_LENGTH = 200;
 @Component({
   selector: 'app-annual-account-review',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatTooltipModule, DocumentActionRowComponent, PageErrorStateComponent],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatTooltipModule,
+    DocumentActionRowComponent,
+    PageErrorStateComponent,
+    SlbReviewComponent,
+  ],
   templateUrl: './annual-account-review.component.html',
   styleUrl: './annual-account-review.component.scss',
   animations: [TAB_SLIDE],
@@ -213,7 +233,9 @@ export class AnnualAccountReviewComponent {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly noteDialogService = inject(NoteDialogService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
-  private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  private readonly slbService = inject(SlbService);
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
 
   private readonly ulbId = this.route.snapshot.paramMap.get('ulbId')!;
   private readonly ulbNameFallback = this.route.snapshot.queryParamMap.get('ulbName');
@@ -222,7 +244,7 @@ export class AnnualAccountReviewComponent {
     { key: 'auditedData', label: 'Audited', icon: 'file-earmark-text' },
     { key: 'unauditedData', label: 'Provisional', icon: 'file-earmark-spreadsheet' },
     { key: 'PFMS', label: 'PFMS', icon: 'bank' },
-    { key: null, label: 'Service Level Benchmarks', icon: 'speedometer2', disabled: true },
+    { key: 'SLB', label: 'Service Level Benchmarks', icon: 'speedometer2' },
   ];
 
   readonly activeSection = signal<TabKey>(this.resolveInitialSection());
@@ -231,6 +253,9 @@ export class AnnualAccountReviewComponent {
 
   readonly bankAccountData = signal<BankAccountData | null>(null);
   readonly bankAccountLoaded = signal(false);
+
+  readonly slbData = signal<SlbFormData | null>(null);
+  readonly slbDataLoaded = signal(false);
 
   readonly pfmsLogs = signal<PfmsLogEntry[]>([]);
   readonly pfmsLogsLoaded = signal(false);
@@ -257,7 +282,7 @@ export class AnnualAccountReviewComponent {
 
   readonly currentAnnualLogsState = computed<SectionLogsState>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return EMPTY_SECTION_LOGS_STATE;
+    if (key === 'PFMS' || key === 'SLB') return EMPTY_SECTION_LOGS_STATE;
     return this.annualLogsBySection()[key] ?? EMPTY_SECTION_LOGS_STATE;
   });
 
@@ -286,7 +311,7 @@ export class AnnualAccountReviewComponent {
 
   readonly currentSection = computed(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return null;
+    if (key === 'PFMS' || key === 'SLB') return null;
     return this.statusData()?.[key] ?? null;
   });
   readonly ulbName = computed(() => this.statusData()?.ulbName ?? this.ulbNameFallback ?? '');
@@ -294,7 +319,7 @@ export class AnnualAccountReviewComponent {
 
   readonly rows = computed<ReviewDocRow[]>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return [];
+    if (key === 'PFMS' || key === 'SLB') return [];
 
     const section = this.currentSection();
     const config = this.configBySection()[key];
@@ -364,7 +389,7 @@ export class AnnualAccountReviewComponent {
   readonly sectionStatusId = computed(() => this.currentSection()?.form_status_id ?? 0);
   readonly actionGates = computed<readonly ActionGate[]>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS') return [];
+    if (key === 'PFMS' || key === 'SLB') return [];
     return this.configBySection()[key]?.actionGates ?? [];
   });
 
@@ -420,6 +445,10 @@ export class AnnualAccountReviewComponent {
     this.activeSection.set(tab);
     if (tab === 'PFMS') {
       if (!this.bankAccountLoaded()) await this.loadBankAccount();
+      return;
+    }
+    if (tab === 'SLB') {
+      if (!this.slbDataLoaded()) await this.loadSlbData();
       return;
     }
     if (!this.configBySection()[tab]) {
@@ -519,7 +548,6 @@ export class AnnualAccountReviewComponent {
     if (!id) return;
     let note: string | undefined;
 
-    const dialogConfig = this.themeClass ? { panelClass: this.themeClass } : undefined;
     // Optional documents (e.g. Notes to Accounts) are never individually decided and never
     // swept into a section decision — excluded from every count shown to the reviewer here.
     const total = this.rows().filter((r) => r.required !== false).length;
@@ -541,7 +569,7 @@ export class AnnualAccountReviewComponent {
               confirmButtonColor: 'warn',
               icon: 'bi-arrow-counterclockwise',
             },
-            dialogConfig,
+            this.dialogConfig,
           ),
         );
         if (!confirmed) return;
@@ -569,7 +597,7 @@ export class AnnualAccountReviewComponent {
               confirmText: 'Return section',
               required: true,
             },
-            dialogConfig,
+            this.dialogConfig,
           ),
         );
         if (note === undefined) return;
@@ -591,7 +619,7 @@ export class AnnualAccountReviewComponent {
             confirmButtonColor: 'primary',
             icon: 'bi-check-circle-fill',
           },
-          dialogConfig,
+          this.dialogConfig,
         ),
       );
       if (!confirmed) return;
@@ -631,7 +659,7 @@ export class AnnualAccountReviewComponent {
           confirmButtonColor: 'warn',
           icon: 'bi-arrow-counterclockwise',
         },
-        this.themeClass ? { panelClass: this.themeClass } : undefined,
+        this.dialogConfig,
       ),
     );
     if (!confirmed) return;
@@ -658,7 +686,7 @@ export class AnnualAccountReviewComponent {
           confirmButtonColor: 'primary',
           icon: 'bi-check-circle-fill',
         },
-        this.themeClass ? { panelClass: this.themeClass } : undefined,
+        this.dialogConfig,
       ),
     );
     if (!confirmed) return;
@@ -678,7 +706,7 @@ export class AnnualAccountReviewComponent {
           confirmButtonColor: 'warn',
           icon: 'bi-arrow-counterclockwise',
         },
-        this.themeClass ? { panelClass: this.themeClass } : undefined,
+        this.dialogConfig,
       ),
     );
     if (!confirmed) return;
@@ -758,7 +786,7 @@ export class AnnualAccountReviewComponent {
 
   async toggleAnnualHistory(): Promise<void> {
     const key = this.activeSection();
-    if (key === 'PFMS') return;
+    if (key === 'PFMS' || key === 'SLB') return;
 
     const current = this.annualLogsBySection()[key] ?? EMPTY_SECTION_LOGS_STATE;
     const expanded = !current.expanded;
@@ -803,17 +831,20 @@ export class AnnualAccountReviewComponent {
     if (!id) return;
     this.isDeciding.set(true);
     this.decidingDocId.set(docId);
+    const section = this.activeSection() as 'auditedData' | 'unauditedData';
     try {
-      // decideDocument's response is the same full StatusResponse shape as loadStatus()'s GET —
-      // consume it directly instead of immediately re-fetching the same data over a second round trip.
+      // decideDocument's response is the single-section SectionStatusResponse shape (same as
+      // loadStatus()'s GET) — consume it directly, merged into just this tab's slot, instead of
+      // immediately re-fetching the same data over a second round trip.
       const result = await firstValueFrom(
         this.http.post<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision`, {
-          section: this.activeSection(),
+          section,
           decision,
           note,
         }),
       );
-      this.statusData.set(unwrap<StatusResponse>(result));
+      const response = unwrap<SectionStatusResponse>(result);
+      this.statusData.update((s) => (s ? { ...s, [section]: response.data } : s));
     } catch {
       this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
     } finally {
@@ -829,11 +860,13 @@ export class AnnualAccountReviewComponent {
     if (!id) return;
     this.isDeciding.set(true);
     this.decidingDocId.set(docId);
+    const section = this.activeSection() as 'auditedData' | 'unauditedData';
     try {
       const result = await firstValueFrom(
-        this.http.delete<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision?section=${this.activeSection()}`),
+        this.http.delete<unknown>(`${API_ANNUAL}${id}/documents/${docId}/decision?section=${section}`),
       );
-      this.statusData.set(unwrap<StatusResponse>(result));
+      const response = unwrap<SectionStatusResponse>(result);
+      this.statusData.update((s) => (s ? { ...s, [section]: response.data } : s));
     } catch {
       this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
     } finally {
@@ -850,22 +883,38 @@ export class AnnualAccountReviewComponent {
       const designYearId = this.resolveDesignYearId();
       if (!designYearId) throw new Error('Missing designYearId');
 
-      const result = await firstValueFrom(
-        this.http.get<unknown>(`${API_ANNUAL}by-ulb/${this.ulbId}/${designYearId}`),
-      );
-      const data = unwrap<StatusResponse | null>(result);
+      const [auditedResult, unauditedResult] = await Promise.all([
+        firstValueFrom(
+          this.http.get<unknown>(`${API_ANNUAL}by-ulb/${this.ulbId}/${designYearId}?section=auditedData`),
+        ),
+        firstValueFrom(
+          this.http.get<unknown>(`${API_ANNUAL}by-ulb/${this.ulbId}/${designYearId}?section=unauditedData`),
+        ),
+      ]);
+      const audited = unwrap<SectionStatusResponse | null>(auditedResult);
+      const unaudited = unwrap<SectionStatusResponse | null>(unauditedResult);
+
       this.statusData.set(
-        data ?? {
-          annualAccountId: null,
-          ulbName: this.ulbNameFallback,
-          ulbCode: null,
-          auditedData: NOT_STARTED_SECTION,
-          unauditedData: NOT_STARTED_SECTION,
-        },
+        audited || unaudited
+          ? {
+              annualAccountId: audited?.annualAccountId ?? unaudited?.annualAccountId ?? null,
+              ulbName: audited?.ulbName ?? unaudited?.ulbName ?? this.ulbNameFallback,
+              ulbCode: audited?.ulbCode ?? unaudited?.ulbCode ?? null,
+              auditedData: audited?.data ?? NOT_STARTED_SECTION,
+              unauditedData: unaudited?.data ?? NOT_STARTED_SECTION,
+            }
+          : {
+              annualAccountId: null,
+              ulbName: this.ulbNameFallback,
+              ulbCode: null,
+              auditedData: NOT_STARTED_SECTION,
+              unauditedData: NOT_STARTED_SECTION,
+            },
       );
 
       const key = this.activeSection();
       if (key === 'PFMS') await this.loadBankAccount();
+      else if (key === 'SLB') await this.loadSlbData();
       else await this.loadConfigForSection(key);
     } catch {
       this.loadError.set(true);
@@ -888,6 +937,20 @@ export class AnnualAccountReviewComponent {
       this.utilityService.triggerSnackbar('Failed to load PFMS bank account details.', 'snackbar-danger');
     } finally {
       this.bankAccountLoaded.set(true);
+    }
+  }
+
+  private async loadSlbData(): Promise<void> {
+    const designYearId = this.resolveDesignYearId();
+    if (!designYearId) return;
+
+    try {
+      const data = await firstValueFrom(this.slbService.getSlbForm(this.ulbId, designYearId));
+      this.slbData.set(data);
+    } catch {
+      this.utilityService.triggerSnackbar('Failed to load Service Level Benchmarks.', 'snackbar-danger');
+    } finally {
+      this.slbDataLoaded.set(true);
     }
   }
 
@@ -920,7 +983,7 @@ export class AnnualAccountReviewComponent {
 
   private resolveInitialSection(): TabKey {
     const requested = this.route.snapshot.queryParamMap.get('section');
-    if (requested === 'unauditedData' || requested === 'PFMS') return requested;
+    if (requested === 'unauditedData' || requested === 'PFMS' || requested === 'SLB') return requested;
     return 'auditedData';
   }
 }

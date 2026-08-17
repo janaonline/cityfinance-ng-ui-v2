@@ -1,0 +1,18 @@
+@use '../../styles/xvi-fc-theme' as theme;
+
+// This page is a top-level route (like /auth/login), not nested inside XviFcModuleComponent's DOM
+// tree, so it can't inherit the module's `.xvifc-theme` class/tokens from an ancestor the way pages
+// under /xvifc/** do.
+:host {
+  @include theme.xvifc-theme-tokens;
+  display: block;
+}
+
+.not-eligible-icon-ring {
+  background: var(--mat-sys-error-container);
+  border: 1.5px solid var(--mat-sys-error);
+
+  .material-icons {
+    color: var(--mat-sys-on-error-container);
+  }
+}

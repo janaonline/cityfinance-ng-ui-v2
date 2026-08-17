@@ -17,8 +17,8 @@ import { ConfirmDialogService } from '../../../../../shared/components/confirm-d
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
+  themedDialogConfig,
 } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { MATERIAL_THEME_CLASS } from '../../../../../core/theming/material-theme.providers';
 import { environment } from '../../../../../../environments/environment';
 import { SlbService } from './slb.service';
 import {
@@ -29,12 +29,21 @@ import {
   SlbPermissions,
   SubmitType,
 } from './slb.models';
-import {
-  FormActor,
-  FormProgressComponent,
-  FormStatusValue,
-} from '../../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
+import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
+
+export interface SlbIndicatorGroup {
+  section: string;
+  fields: ConditionalFieldConfig[];
+}
+
+/**
+ * The backend's SLB field config carries a `meta.section` grouping key that isn't part of the
+ * shared `FieldConfig` interface. Widening that shared interface previously caused spurious
+ * whole-program compile errors elsewhere (see slb `actualTarget` changelog) — so this narrow,
+ * locally-scoped type is used only for reading `meta` off an already-fetched field instead.
+ */
+type FieldWithMeta = ConditionalFieldConfig & { meta?: Record<string, unknown> };
 
 @Component({
   selector: 'app-slb',
@@ -44,7 +53,7 @@ import { XvifcModuleService } from '../../../xvi-fc-module.service';
     DynamicFormComponent,
     PreLoaderComponent,
     MatButtonModule,
-    FormProgressComponent,
+    PageErrorStateComponent,
   ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
@@ -56,12 +65,16 @@ export class SlbComponent implements OnInit {
   private dynamicService = inject(DynamicFormService);
   private visibilityService = inject(DynamicFormVisibilityService);
   private confirmDialogService = inject(ConfirmDialogService);
-  private themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
+  /** Applies the feature's current theme to all confirm dialogs opened by this component. */
+  private readonly dialogConfig = themedDialogConfig();
   private slbService = inject(SlbService);
   private moduleService = inject(XvifcModuleService);
   public ulbName = signal('');
-  public actors = signal<FormActor[]>([]);
+  /** Target FY label (e.g. "2026-27") — heads the Target Indicator column. */
   readonly yearLabel = signal('');
+  /** Prior FY label (e.g. "2025-26") — heads the Actual Indicator column; actuals are always
+   *  reported for the completed year before the target being set. */
+  readonly actualYearLabel = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -69,6 +82,25 @@ export class SlbComponent implements OnInit {
 
   /** The 28 SLB indicator questions, rendered as table rows. */
   readonly indicatorFields = computed(() => this.visibleFields().filter((f) => f.formFieldType === 'actualTarget'));
+  /** Indicator fields bucketed by `meta.section` (Water Supply, Sewerage Management, Solid Waste Management, Storm Water Drainage),
+   *  preserving indicator order within each section and section order of first appearance. */
+  readonly groupedIndicatorFields = computed<SlbIndicatorGroup[]>(() => {
+    const groups: SlbIndicatorGroup[] = [];
+    const bySection = new Map<string, SlbIndicatorGroup>();
+
+    for (const field of this.indicatorFields()) {
+      const section = ((field as FieldWithMeta).meta?.['section'] as string | undefined) ?? '';
+      let group = bySection.get(section);
+      if (!group) {
+        group = { section, fields: [] };
+        bySection.set(section, group);
+        groups.push(group);
+      }
+      group.fields.push(field);
+    }
+
+    return groups;
+  });
   /** Self-declaration fields (name, designation, supporting document, confirmation) — rendered via the generic form renderer. */
   readonly declarationFields = computed(() => this.visibleFields().filter((f) => f.formFieldType !== 'actualTarget'));
   /** Text inputs (name, designation) within the declaration — laid out two-per-row. */
@@ -77,6 +109,7 @@ export class SlbComponent implements OnInit {
   readonly declarationOtherFields = computed(() => this.declarationFields().filter((f) => f.formFieldType !== 'text'));
 
   readonly isLoading = signal(false);
+  readonly hasLoadError = signal(false);
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
@@ -86,9 +119,7 @@ export class SlbComponent implements OnInit {
     canEdit: true,
     canFinalSubmit: false,
   });
-  readonly currentFormStatus = signal<number>(0);
   readonly currentFormStatusLabel = signal('');
-  readonly formStatus = computed<FormStatusValue>(() => this.currentFormStatus() as FormStatusValue);
 
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
@@ -124,11 +155,12 @@ export class SlbComponent implements OnInit {
     const yearId = this.yearId;
 
     if (!ulbId || !yearId) {
-      this.utilityService.triggerSnackbar('Unable to load SLB form. Please try again.', 'snackbar-danger');
+      this.hasLoadError.set(true);
       return;
     }
 
     this.isLoading.set(true);
+    this.hasLoadError.set(false);
 
     this.slbService
       .getSlbForm(ulbId, yearId)
@@ -136,21 +168,24 @@ export class SlbComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.permissions.set(data.permissions);
-          this.currentFormStatus.set(data.currentFormStatus);
           this.currentFormStatusLabel.set(data.currentFormStatusLabel);
           this.fields.set(data.questions);
           this.ulbName.set(data.ulbName);
-          this.actors.set(data.actors);
           this.yearLabel.set(data.designYear);
+          this.actualYearLabel.set(data.actualYearLabel);
           this.createFormControls();
           this.isLoading.set(false);
         },
         error: (err: unknown) => {
           console.error('Failed to load SLB form', err);
-          this.utilityService.triggerSnackbar('Unable to load SLB form. Please try again.', 'snackbar-danger');
+          this.hasLoadError.set(true);
           this.isLoading.set(false);
         },
       });
+  }
+
+  retryLoadForm(): void {
+    this.loadForm();
   }
 
   /**
@@ -213,10 +248,9 @@ export class SlbComponent implements OnInit {
     }
 
     const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
 
     this.confirmDialogService
-      .confirm(dialogData, config)
+      .confirm(dialogData, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) {
@@ -476,10 +510,13 @@ export class SlbComponent implements OnInit {
 
       switch (field.formFieldType) {
         case 'actualTarget': {
+          // Actual/target must satisfy actualLessThanOrEqualToTarget (see comparison.validator.ts),
+          // so pick two distinct points within range rather than the same midpoint for both.
           const min = Number(field.validations?.find((v) => v.name === 'min')?.validator ?? 0);
           const max = Number(field.validations?.find((v) => v.name === 'max')?.validator ?? 100);
-          const value = Math.round((min + max) / 2);
-          control.setValue({ actual: value, target: value });
+          const actualValue = Math.round(min + (max - min) * 0.4);
+          const targetValue = Math.min(max, Math.max(actualValue + 1, Math.round(min + (max - min) * 0.6)));
+          control.setValue({ actual: actualValue, target: targetValue });
           break;
         }
         case 'text':
@@ -506,9 +543,8 @@ export class SlbComponent implements OnInit {
   }
 
   onCancel(): void {
-    const config = this.themeClass ? { panelClass: this.themeClass } : undefined;
     this.confirmDialogService
-      .confirm(undefined, config)
+      .confirm(undefined, this.dialogConfig)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
