@@ -279,7 +279,11 @@ export class PtaxReviewComponent {
     // Open the tab synchronously, still inside the click's user-gesture context - browsers
     // silently block window.open() called from an async callback (e.g. after this request
     // resolves), so waiting for `next` would lose the popup permission with no error shown.
-    const tab = window.open('', '_blank', 'noopener');
+    // Passing 'noopener' here would make window.open() return null (there'd be nothing to
+    // navigate once the URL arrives, leaving a permanently blank tab) - clear `opener` on the
+    // handle we get back instead, which gets the same reverse-tabnabbing protection.
+    const tab = window.open('', '_blank');
+    if (tab) tab.opener = null;
     this.service.getDocumentSignedUrl(yearId, PTAX_DECLARATION_TARGET_CODE).subscribe({
       next: (url) => {
         if (tab) tab.location.href = url;
@@ -322,7 +326,11 @@ export class PtaxReviewComponent {
     // Open the tab synchronously, still inside the click's user-gesture context - browsers
     // silently block window.open() called from an async callback (e.g. after this request
     // resolves), so waiting for `next` would lose the popup permission with no error shown.
-    const tab = window.open('', '_blank', 'noopener');
+    // Passing 'noopener' here would make window.open() return null (there'd be nothing to
+    // navigate once the URL arrives, leaving a permanently blank tab) - clear `opener` on the
+    // handle we get back instead, which gets the same reverse-tabnabbing protection.
+    const tab = window.open('', '_blank');
+    if (tab) tab.opener = null;
     this.service.getDocumentSignedUrl(yearId, PTAX_SUPPORTING_DOCUMENT_TARGET_CODE).subscribe({
       next: (url) => {
         if (tab) tab.location.href = url;
