@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ElementRef, ViewChild } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -8,6 +9,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { AnnualAccountStateService } from '../annual-account-state.service';
+import { UtilityService } from '../../../../core/services/utility.service';
+import { XviFcBudgetDocumentService } from './budget-document/xvi-fc-budget-document.service';
+import { BudgetDocumentResponse } from './budget-document/xvi-fc-budget-document.models';
+
+const BUDGET_DOC_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const BUDGET_DOC_UPLOAD_URL_EXPIRES_IN_SECONDS = 300;
 
 interface UlbDetails {
   ulbName: string;
@@ -203,9 +210,18 @@ export class UlbFormsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly state = inject(AnnualAccountStateService);
+  private readonly budgetDocumentService = inject(XviFcBudgetDocumentService);
+  private readonly utilityService = inject(UtilityService);
+
+  @ViewChild('budgetDocInput') private readonly budgetDocInputRef!: ElementRef<HTMLInputElement>;
 
   readonly ulbDetails = signal<UlbDetails | null>(this.loadUlbDetails());
   readonly sectionFormStatus = this.state.formStatus;
+
+  readonly budgetDocument = signal<BudgetDocumentResponse | null>(null);
+  readonly isBudgetDocLoading = signal(true);
+  readonly isBudgetDocUploading = signal(false);
+  readonly budgetDocError = signal<string | null>(null);
 
   readonly grantBand = computed(() => {
     const details = this.ulbDetails();
@@ -246,6 +262,108 @@ export class UlbFormsComponent implements OnInit {
     const designYearId = this.resolveDesignYearId();
     if (!ulbId || !designYearId) return;
     await this.state.loadFormStatus(ulbId, designYearId);
+    await this.loadBudgetDocument(designYearId);
+  }
+
+  private async loadBudgetDocument(designYearId: string): Promise<void> {
+    this.isBudgetDocLoading.set(true);
+    try {
+      const response = await firstValueFrom(this.budgetDocumentService.getBudgetDocument(designYearId));
+      this.budgetDocument.set(response);
+    } catch {
+      this.budgetDocError.set('Unable to load the budget document status. Please refresh the page.');
+    } finally {
+      this.isBudgetDocLoading.set(false);
+    }
+  }
+
+  triggerBudgetDocUpload(): void {
+    if (this.isBudgetDocUploading()) return;
+    this.budgetDocInputRef.nativeElement.value = '';
+    this.budgetDocInputRef.nativeElement.click();
+  }
+
+  async onBudgetDocSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.budgetDocError.set(null);
+
+    if (!file) return;
+
+    const doc = this.budgetDocument();
+    if (!doc) {
+      this.budgetDocError.set('Year context is missing. Please refresh the page.');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      this.budgetDocError.set('Only PDF files are allowed.');
+      return;
+    }
+
+    if (file.size > BUDGET_DOC_MAX_FILE_SIZE_BYTES) {
+      this.budgetDocError.set('File size must not exceed 20 MB.');
+      return;
+    }
+
+    this.isBudgetDocUploading.set(true);
+
+    const validation = await this.validateBudgetDocPdf(file);
+    if (!validation.valid) {
+      this.budgetDocError.set(validation.error ?? 'This PDF could not be validated. Please try a different file.');
+      this.isBudgetDocUploading.set(false);
+      return;
+    }
+
+    try {
+      const folder = `budgets/${doc.designYear}`;
+      const [signedUrl] = await firstValueFrom(
+        this.budgetDocumentService.getSignedUrls([
+          {
+            fileName: file.name,
+            folder,
+            mimeType: file.type,
+            fileSize: file.size,
+            expiresIn: BUDGET_DOC_UPLOAD_URL_EXPIRES_IN_SECONDS,
+          },
+        ]),
+      );
+      if (!signedUrl?.url || !signedUrl.path) {
+        throw new Error('Signed URL response is missing upload details.');
+      }
+
+      await firstValueFrom(this.budgetDocumentService.uploadToS3(signedUrl.url, file));
+
+      const response = await firstValueFrom(
+        this.budgetDocumentService.uploadBudgetDocument({
+          designYearId: doc.designYearId,
+          originalName: file.name,
+          sizeKb: Number((file.size / 1024).toFixed(2)),
+          s3Key: signedUrl.path,
+        }),
+      );
+
+      this.budgetDocument.set(response);
+      this.utilityService.triggerSnackbar('Budget document uploaded successfully.');
+    } catch {
+      this.budgetDocError.set('Budget document upload failed. Please try again.');
+      this.utilityService.triggerSnackbar('Budget document upload failed. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isBudgetDocUploading.set(false);
+    }
+  }
+
+  // TODO: wire in the render-based blank/encrypted-PDF check (checkPdfHasContent) once the
+  // shared util lands from its own change — currently only a fast header check runs here.
+  private async validateBudgetDocPdf(file: File): Promise<{ valid: boolean; error?: string }> {
+    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const hasPdfHeader =
+      header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46 && header[4] === 0x2d;
+    if (!hasPdfHeader) {
+      return { valid: false, error: 'Please upload a valid PDF file.' };
+    }
+
+    return { valid: true };
   }
 
   // Returns the effective display status for a condition, overriding the static
