@@ -50,7 +50,7 @@ function createSlbFormResponse(overrides: Partial<SlbFormData> = {}): SlbFormDat
         inputCardConfig: { suffixText: 'lpcd' },
         validations: [
           { name: 'required', validator: true, message: 'This field is required.' },
-          { name: 'targetLessThanActual', validator: null, message: 'Target must be lower than the actual value.' },
+          { name: 'actualLessThanOrEqualToTarget', validator: null, message: 'Actual value cannot exceed the target value.' },
         ],
         meta: { section: 'Water Supply' },
       },
@@ -186,32 +186,32 @@ describe('SlbComponent', () => {
     expect(indicatorRow!.querySelector('[data-cy="ind1_target-test"]')).toBeTruthy();
   }));
 
-  it('flags target when it is not strictly lower than actual, and clears once corrected', fakeAsync(() => {
+  it('flags target when actual exceeds target, and clears once corrected', fakeAsync(() => {
     createComponent();
     fixture.detectChanges();
     tick(1);
 
     const actualControl = getControl('ind1.actual');
     const targetControl = getControl('ind1.target');
-    actualControl?.setValue(100);
-    targetControl?.setValue(120);
+    actualControl?.setValue(120);
+    targetControl?.setValue(100);
     targetControl?.markAsTouched();
     fixture.detectChanges();
 
-    expect(component.hasIndicatorError('ind1', 'target', 'targetLessThanActual')).toBeTrue();
+    expect(component.hasIndicatorError('ind1', 'target', 'actualLessThanOrEqualToTarget')).toBeTrue();
     let indicatorRow = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr'),
     ).find((row) => row.textContent?.includes('Per capita supply of water'));
-    expect(indicatorRow!.textContent).toContain('Target must be lower than the actual value.');
+    expect(indicatorRow!.textContent).toContain('Actual value cannot exceed the target value.');
 
-    targetControl?.setValue(80);
+    actualControl?.setValue(80);
     fixture.detectChanges();
 
-    expect(component.hasIndicatorError('ind1', 'target', 'targetLessThanActual')).toBeFalse();
+    expect(component.hasIndicatorError('ind1', 'target', 'actualLessThanOrEqualToTarget')).toBeFalse();
     indicatorRow = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr'),
     ).find((row) => row.textContent?.includes('Per capita supply of water'));
-    expect(indicatorRow!.textContent).not.toContain('Target must be lower than the actual value.');
+    expect(indicatorRow!.textContent).not.toContain('Actual value cannot exceed the target value.');
   }));
 
   it('labels the actual column with the prior FY and the target column with the design FY', fakeAsync(() => {
@@ -272,8 +272,8 @@ describe('SlbComponent', () => {
     fixture.detectChanges();
     tick(1);
 
-    getControl('ind1.actual')?.setValue(180);
-    getControl('ind1.target')?.setValue(150);
+    getControl('ind1.actual')?.setValue(150);
+    getControl('ind1.target')?.setValue(180);
     getControl('checkboxConfirmation')?.setValue(true);
     component.onSubmit('saveAsDraft');
     tick(1);
