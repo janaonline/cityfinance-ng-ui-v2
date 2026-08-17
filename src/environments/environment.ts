@@ -34,4 +34,5 @@ export const environment = {
   storageType: 'S3Url', // 'S3Url' for S3 storage type, for azure change this to 'BlobUrl'
   recaptchaSiteKey: '6LcT9_gUAAAAANrZM5TNnE4OEEC46iFDfcAHZ8lD',
   captchaEnabled: false,
+  pdfContentValidationEnabled: true,
 };
