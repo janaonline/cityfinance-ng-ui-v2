@@ -10,8 +10,12 @@ export interface PdfBlankCheckResult {
   fatalError: 'password' | 'invalid' | null;
 }
 
-const WORKER_SRC = '/assets/pdfjs/pdf.worker.min.mjs';
-const WASM_URL = '/assets/pdfjs/wasm/';
+// Resolved against document.baseURI (the <base href> Angular sets in index.html), not as
+// root-absolute paths — this app deploys under a subpath (--base-href /fc/), so a hardcoded
+// '/assets/...' 404s there (falls through to the SPA's server-side catch-all) even though it
+// works locally where the base href is '/'.
+const WORKER_SRC = new URL('assets/pdfjs/pdf.worker.min.mjs', document.baseURI).href;
+const WASM_URL = new URL('assets/pdfjs/wasm/', document.baseURI).href;
 const RENDER_SCALE = 0.15;
 // 250 (not 240) and 0.1% (not 0.5%) so faint/faded scans and sparse marks (a signature, a
 // stamp) aren't misread as blank.
