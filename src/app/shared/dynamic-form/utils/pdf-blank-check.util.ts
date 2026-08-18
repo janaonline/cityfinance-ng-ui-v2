@@ -14,7 +14,10 @@ export interface PdfBlankCheckResult {
 // root-absolute paths — this app deploys under a subpath (--base-href /fc/), so a hardcoded
 // '/assets/...' 404s there (falls through to the SPA's server-side catch-all) even though it
 // works locally where the base href is '/'.
-const WORKER_SRC = new URL('assets/pdfjs/pdf.worker.min.mjs', document.baseURI).href;
+// .js, not the pdf.js package's native .mjs — nginx on dev has no MIME-type mapping for .mjs
+// and serves it as application/octet-stream, which browsers reject for module scripts
+// regardless of content; .js is universally mapped correctly without needing server config.
+const WORKER_SRC = new URL('assets/pdfjs/pdf.worker.min.js', document.baseURI).href;
 const WASM_URL = new URL('assets/pdfjs/wasm/', document.baseURI).href;
 const RENDER_SCALE = 0.15;
 // 250 (not 240) and 0.1% (not 0.5%) so faint/faded scans and sparse marks (a signature, a
