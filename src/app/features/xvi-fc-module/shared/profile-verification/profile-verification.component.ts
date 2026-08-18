@@ -225,7 +225,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   );
   readonly stateFormHasErrors = computed(() => this._stateFormStatus() === 'INVALID');
   // H3 — enforce 6 numeric digits
-  readonly canConfirmOtp = computed(() => /^\d{6}$/.test(this.otpValue()) && !this.isSaving());
+  readonly canConfirmOtp = computed(() => /^\d{4}$/.test(this.otpValue()) && !this.isSaving());
   // C2 — resend allowed only after cooldown expires
   readonly canResend = computed(() => this.resendCooldown() === 0 && !this.sendingOtp());
 
@@ -430,7 +430,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
 
   onConfirmOtp(): void {
     const otp = this.otpValue();
-    if (!/^\d{6}$/.test(otp)) return; // H3
+    if (!/^\d{4}$/.test(otp)) return; // H3
 
     const email = this.stateProfile()?.email ?? '';
     if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
@@ -593,7 +593,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
   // L4 — typed event handler (no $any); H3 — strip non-digits
   onOtpInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const digits = input.value.replace(/\D/g, '').slice(0, 6);
+    const digits = input.value.replace(/\D/g, '').slice(0, 4);
     input.value = digits;
     this.otpValue.set(digits);
   }

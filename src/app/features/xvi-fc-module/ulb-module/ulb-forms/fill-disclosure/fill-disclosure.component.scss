@@ -1,4 +1,9 @@
-:host { display: block; }
+@use '../../../styles/shared-layout' as layout;
+
+:host {
+  display: block;
+  @include layout.form-layout;
+}
 
 // ── Bootstrap primary components — wire them to the XVI-FC theme palette tokens
 // so they automatically match the theme instead of Bootstrap's default blue.
