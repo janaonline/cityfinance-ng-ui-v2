@@ -1,3 +1,9 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+}
+
 // ── Font size fix for long placeholder amount text ────────────────────────────
 ::ng-deep app-overview-card .grant-content__amount {
   font-size: 1rem !important;
@@ -47,7 +53,7 @@
 
 // ── Mobile (≤ 575px) ─────────────────────────────────────────────────────────
 @media (max-width: 575.98px) {
-  main {
+  .content-wrap {
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
     padding-top: 1rem !important;

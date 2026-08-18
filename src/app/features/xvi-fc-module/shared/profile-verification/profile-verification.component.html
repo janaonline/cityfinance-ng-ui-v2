@@ -91,9 +91,17 @@
             }
 
             <!-- ── Municipal Commissioner card ─────────────────────── -->
-            <mat-card appearance="outlined" class="mb-3">
+            <mat-card
+              appearance="outlined"
+              class="mb-3 pv-contact-card"
+              [class.pv-error-card]="commissionerForm.invalid"
+            >
               <mat-card-header class="pv-card-header">
-                <mat-card-title class="pv-card-title">Municipal Commissioner / Executive Officer</mat-card-title>
+                <span class="pv-card-icon"><i class="bi bi-person-vcard-fill"></i></span>
+                <mat-card-title class="pv-card-title">
+                  Municipal Commissioner / Executive Officer
+                  <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
+                </mat-card-title>
                 @if (!editingCommissioner()) {
                   <button
                     mat-stroked-button
@@ -122,13 +130,21 @@
               </mat-card-header>
               <mat-divider />
 
+              @if (commissionerForm.controls.commissionerEmail.hasError('domainMx')) {
+                <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mx-3 mt-3 mb-0 small">
+                  <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                  <span>
+                    <strong>Commissioner's email</strong> domain doesn't appear to accept mail. Check for a typo in
+                    the email address.
+                  </span>
+                </div>
+              }
+
               @if (!editingCommissioner()) {
                 @if (
-                  !commissionerForm.value.commissionerName ||
                   commissionerForm.controls.commissionerName.invalid ||
-                  !commissionerForm.value.commissionerConatactNumber ||
                   commissionerForm.controls.commissionerConatactNumber.invalid ||
-                  (commissionerForm.controls.commissionerEmail.invalid && commissionerForm.value.commissionerEmail)
+                  commissionerForm.controls.commissionerEmail.invalid
                 ) {
                   <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
                     <i
@@ -153,9 +169,13 @@
                           >Name invalid</span
                         >
                       }
-                      @if (
-                        commissionerForm.controls.commissionerEmail.invalid && commissionerForm.value.commissionerEmail
-                      ) {
+                      @if (!commissionerForm.value.commissionerEmail) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Email missing</span
+                        >
+                      } @else if (commissionerForm.controls.commissionerEmail.invalid) {
                         <span
                           class="badge rounded-pill text-bg-warning"
                           style="font-size: 10px; padding: 3px 8px; font-weight: 500"
@@ -179,24 +199,33 @@
                   </div>
                 }
                 <mat-card-content class="p-0">
-                  <div class="row g-0">
+                  <div class="row g-0 pv-field-row">
                     <div class="col-sm-4 pv-field">
-                      <span class="pv-field-label">Name</span>
+                      <span class="pv-field-label"><i class="bi bi-person"></i>Name</span>
                       <span class="pv-field-value" [class.text-muted]="!commissionerForm.value.commissionerName">
                         {{ commissionerForm.value.commissionerName || '—' }}
                       </span>
                     </div>
                     <div class="col-sm-4 pv-field pv-field-bordered">
-                      <span class="pv-field-label">Email ID</span>
+                      <span class="pv-field-label"><i class="bi bi-envelope"></i>Email ID</span>
                       <span
                         class="pv-field-value text-truncate d-block"
                         [class.text-muted]="!commissionerForm.value.commissionerEmail"
                       >
                         {{ commissionerForm.value.commissionerEmail || '—' }}
                       </span>
+                      @if (commissionerForm.controls.commissionerEmail.hasError('required')) {
+                        <p class="text-danger small mt-1 mb-0">Email address is required</p>
+                      } @else if (commissionerForm.controls.commissionerEmail.hasError('domainMx')) {
+                        <p class="text-danger small mt-1 mb-0">
+                          This email domain doesn't appear to accept mail. Check for a typo in the email address.
+                        </p>
+                      } @else if (commissionerForm.controls.commissionerEmail.invalid) {
+                        <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
+                      }
                     </div>
                     <div class="col-sm-4 pv-field pv-field-bordered">
-                      <span class="pv-field-label">Contact No</span>
+                      <span class="pv-field-label"><i class="bi bi-telephone"></i>Contact No</span>
                       <span
                         class="pv-field-value"
                         [class.text-muted]="!commissionerForm.value.commissionerConatactNumber"
@@ -223,7 +252,9 @@
                           />
                         </mat-form-field>
                         @if (commissionerForm.controls.commissionerName.touched) {
-                          @if (commissionerForm.controls.commissionerName.hasError('maxlength')) {
+                          @if (commissionerForm.controls.commissionerName.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Name is required</p>
+                          } @else if (commissionerForm.controls.commissionerName.hasError('maxlength')) {
                             <p class="text-danger small mt-1 mb-0">Name cannot exceed 100 characters</p>
                           } @else if (commissionerForm.controls.commissionerName.hasError('pattern')) {
                             <p class="text-danger small mt-1 mb-0">Only letters, spaces and hyphens are allowed</p>
@@ -245,15 +276,13 @@
                           />
                         </mat-form-field>
                         @if (commissionerForm.controls.commissionerEmail.touched) {
-                          @if (commissionerForm.controls.commissionerEmail.hasError('email')) {
+                          @if (commissionerForm.controls.commissionerEmail.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Email address is required</p>
+                          } @else if (commissionerForm.controls.commissionerEmail.hasError('email')) {
                             <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
-                          } @else if (commissionerForm.controls.commissionerEmail.hasError('emailDomainTypo')) {
+                          } @else if (commissionerForm.controls.commissionerEmail.hasError('domainMx')) {
                             <p class="text-danger small mt-1 mb-0">
-                              This looks like it might be a typo (e.g. gmial.com instead of gmail.com) — please double-check the domain.
-                            </p>
-                          } @else if (commissionerForm.controls.commissionerEmail.hasError('governmentDomainTypo')) {
-                            <p class="text-danger small mt-1 mb-0">
-                              This looks like it might be a typo of an official .gov.in or .nic.in address — please double-check the domain.
+                              This email domain doesn't appear to accept mail. Check for a typo in the email address.
                             </p>
                           } @else if (commissionerForm.controls.commissionerEmail.hasError('unsafeInput')) {
                             <p class="text-danger small mt-1 mb-0">Email contains invalid characters</p>
@@ -274,11 +303,12 @@
                             autocomplete="tel"
                           />
                         </mat-form-field>
-                        @if (
-                          commissionerForm.controls.commissionerConatactNumber.touched &&
-                          commissionerForm.controls.commissionerConatactNumber.hasError('pattern')
-                        ) {
-                          <p class="text-danger small mt-1 mb-0">Enter a valid 10-digit number starting with 6–9</p>
+                        @if (commissionerForm.controls.commissionerConatactNumber.touched) {
+                          @if (commissionerForm.controls.commissionerConatactNumber.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Contact number is required</p>
+                          } @else if (commissionerForm.controls.commissionerConatactNumber.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Enter a valid 10-digit number starting with 6–9</p>
+                          }
                         }
                       </div>
                     </div>
@@ -288,10 +318,16 @@
             </mat-card>
 
             <!-- ── ULB Nodal Officer card ──────────────────────────── -->
-            <mat-card appearance="outlined" class="mb-3 pv-required-card">
+            <mat-card
+              appearance="outlined"
+              class="mb-3 pv-contact-card"
+              [class.pv-error-card]="accountantForm.invalid"
+            >
               <mat-card-header class="pv-card-header">
+                <span class="pv-card-icon"><i class="bi bi-patch-check-fill"></i></span>
                 <mat-card-title class="pv-card-title">
-                  ULB Nodal Officer <span class="text-danger ms-1">*</span>
+                  ULB Nodal Officer
+                  <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
                 </mat-card-title>
                 @if (!editingAccountant()) {
                   <button
@@ -320,6 +356,16 @@
                 }
               </mat-card-header>
               <mat-divider />
+
+              @if (accountantForm.controls.accountantEmail.hasError('domainMx')) {
+                <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mx-3 mt-3 mb-0 small">
+                  <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                  <span>
+                    <strong>Nodal Officer's email</strong> domain doesn't appear to accept mail. Check for a typo in
+                    the email address.
+                  </span>
+                </div>
+              }
 
               @if (!editingAccountant()) {
                 @if (accountantForm.invalid) {
@@ -366,8 +412,7 @@
                         accountantForm.controls.accountantEmail.hasError('email') ||
                         accountantForm.controls.accountantEmail.hasError('maxlength') ||
                         accountantForm.controls.accountantEmail.hasError('unsafeInput') ||
-                        accountantForm.controls.accountantEmail.hasError('emailDomainTypo') ||
-                        accountantForm.controls.accountantEmail.hasError('governmentDomainTypo')
+                        accountantForm.controls.accountantEmail.hasError('domainMx')
                       ) {
                         <span
                           class="badge rounded-pill text-bg-warning"
@@ -395,24 +440,33 @@
                   </div>
                 }
                 <mat-card-content class="p-0">
-                  <div class="row g-0">
+                  <div class="row g-0 pv-field-row">
                     <div class="col-sm-4 pv-field">
-                      <span class="pv-field-label">Name</span>
+                      <span class="pv-field-label"><i class="bi bi-person"></i>Name</span>
                       <span class="pv-field-value" [class.text-muted]="!accountantForm.value.accountantName">
                         {{ accountantForm.value.accountantName || 'Not provided' }}
                       </span>
                     </div>
                     <div class="col-sm-4 pv-field pv-field-bordered">
-                      <span class="pv-field-label">Email ID</span>
+                      <span class="pv-field-label"><i class="bi bi-envelope"></i>Email ID</span>
                       <span
                         class="pv-field-value text-truncate d-block"
                         [class.text-muted]="!accountantForm.value.accountantEmail"
                       >
                         {{ accountantForm.value.accountantEmail || 'Not provided' }}
                       </span>
+                      @if (accountantForm.controls.accountantEmail.hasError('domainMx')) {
+                        <p class="text-danger small mt-1 mb-0">
+                          This email domain doesn't appear to accept mail. Check for a typo in the email address.
+                        </p>
+                      } @else if (
+                        accountantForm.controls.accountantEmail.invalid && accountantForm.value.accountantEmail
+                      ) {
+                        <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
+                      }
                     </div>
                     <div class="col-sm-4 pv-field pv-field-bordered">
-                      <span class="pv-field-label">Contact No</span>
+                      <span class="pv-field-label"><i class="bi bi-telephone"></i>Contact No</span>
                       <span class="pv-field-value" [class.text-muted]="!accountantForm.value.accountantConatactNumber">
                         {{ accountantForm.value.accountantConatactNumber || 'Not provided' }}
                       </span>
@@ -469,13 +523,9 @@
                             <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
                           } @else if (accountantForm.controls.accountantEmail.hasError('maxlength')) {
                             <p class="text-danger small mt-1 mb-0">Email address is too long</p>
-                          } @else if (accountantForm.controls.accountantEmail.hasError('emailDomainTypo')) {
+                          } @else if (accountantForm.controls.accountantEmail.hasError('domainMx')) {
                             <p class="text-danger small mt-1 mb-0">
-                              This looks like it might be a typo (e.g. gmial.com instead of gmail.com) — please double-check the domain.
-                            </p>
-                          } @else if (accountantForm.controls.accountantEmail.hasError('governmentDomainTypo')) {
-                            <p class="text-danger small mt-1 mb-0">
-                              This looks like it might be a typo of an official .gov.in or .nic.in address — please double-check the domain.
+                              This email domain doesn't appear to accept mail. Check for a typo in the email address.
                             </p>
                           } @else if (accountantForm.controls.accountantEmail.hasError('unsafeInput')) {
                             <p class="text-danger small mt-1 mb-0">Email contains invalid characters</p>
@@ -511,18 +561,7 @@
             </mat-card>
 
             <!-- Footer -->
-            <div class="d-flex align-items-center justify-content-between gap-3 mt-2">
-              @if (!canProceed()) {
-                <p class="text-danger small fw-semibold mb-0">
-                  <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                  ULB Nodal Officer fields are required to proceed.
-                </p>
-              } @else {
-                <p class="text-success small fw-semibold mb-0">
-                  <i class="bi bi-check-circle-fill me-1"></i>
-                  All required fields are filled.
-                </p>
-              }
+            <div class="d-flex align-items-center justify-content-end gap-3 mt-2">
               <button mat-flat-button color="primary" [disabled]="!canProceed()" (click)="onSaveAndContinue()">
                 @if (isSaving()) {
                   <span class="pv-spin pv-spin--light me-1"></span> Saving…
@@ -883,8 +922,8 @@
                       matInput
                       type="tel"
                       inputmode="numeric"
-                      maxlength="6"
-                      placeholder="6-digit OTP"
+                      maxlength="4"
+                      placeholder="4-digit OTP"
                       [value]="otpValue()"
                       (input)="onOtpInput($event)"
                       aria-label="One-time password"

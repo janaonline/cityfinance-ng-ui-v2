@@ -306,7 +306,9 @@ export class RolesTeamsOverviewComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.isSaving.set(false);
-          this.saveError.set(err.error?.message ?? 'Failed to save. Please try again.');
+          const errors = err.error?.errors as Record<string, { message: string }[]> | undefined;
+          const fieldMessage = errors && Object.values(errors)[0]?.[0]?.message;
+          this.saveError.set(fieldMessage ?? err.error?.message ?? 'Failed to save. Please try again.');
         },
       });
   }
