@@ -24,6 +24,7 @@ function formData(overrides: Partial<SlbFormData> = {}): SlbFormData {
     ulbId: 'ulb-1',
     yearId: 'year-1',
     designYear: '2026-27',
+    actualYearLabel: '2025-26',
     ulbName: 'Test ULB',
     actors: [],
     currentFormStatus: 3,

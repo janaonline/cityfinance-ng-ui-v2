@@ -1,3 +1,9 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+}
+
 .yearwise-placeholder__title {
   height: 16px;
 }

@@ -167,26 +167,30 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
     );
     expect(req.request.urlWithParams).toContain('section=auditedData');
     req.flush({
-      annualAccountId: 'account-1',
-      auditedData: {
-        form_status: 'UNDER_REVIEW_BY_STATE',
-        form_status_id: 3,
-        yearId: 'year-1',
-        year: '2024-25',
-        permissions: component.statusData()!.auditedData!.permissions,
-        stateDecision: null,
-        mohuaDecision: null,
-        documents: [
-          {
-            docId: 'auditors-report',
-            uploadStatus: 'UPLOADED',
-            processingStatus: 'PASSED',
-            currentUpload: null,
-            stateDecision: null,
-          },
-        ],
+      success: true,
+      data: {
+        annualAccountId: 'account-1',
+        ulbName: 'Test ULB',
+        ulbCode: 'T1',
+        data: {
+          form_status: 'UNDER_REVIEW_BY_STATE',
+          form_status_id: 3,
+          yearId: 'year-1',
+          year: '2024-25',
+          permissions: component.statusData()!.auditedData!.permissions,
+          stateDecision: null,
+          mohuaDecision: null,
+          documents: [
+            {
+              docId: 'auditors-report',
+              uploadStatus: 'UPLOADED',
+              processingStatus: 'PASSED',
+              currentUpload: null,
+              stateDecision: null,
+            },
+          ],
+        },
       },
-      unauditedData: null,
     });
 
     await pending;
@@ -308,6 +312,7 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
       ulbId: 'ulb-1',
       yearId: 'year-1',
       designYear: '2026-27',
+      actualYearLabel: '2025-26',
       ulbName: 'Test ULB',
       actors: [],
       currentFormStatus: 3,

@@ -1,6 +1,10 @@
 @use '../../styles/xvi-fc-theme' as theme;
+@use '../../styles/shared-layout' as layout;
 
-:host { display: block; }
+:host {
+  display: block;
+  @include layout.form-layout;
+}
 
 .ulb-forms-page {
   max-width: 1120px;

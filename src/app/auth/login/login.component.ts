@@ -423,7 +423,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   protected onForgotPassword(): void {
-    void this.router.navigate(['/auth/forgot-password'], { queryParams: { type: this.typeKey() } });
+    const type = this.typeKey();
+    void this.router.navigate(type ? ['/auth/forgot-password', type] : ['/auth/forgot-password']);
   }
 
   protected onBackToRole(): void {
