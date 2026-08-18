@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { switchMap } from 'rxjs/operators';
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
 import { MaterialModule } from '../../../material.module';
 import { MATERIAL_THEME_CLASS } from '../../../core/theming/material-theme.providers';
 import { PtaxReviewService } from './ptax-review.service';
@@ -26,6 +24,7 @@ import { XvFcCurrencyUnit, XV_FC_CURRENCY_UNIT_LABELS } from '../models/xv-fc-re
 import { formatXvFcAmount } from '../xv-fc-review-format.util';
 import { extractApiErrorMessage } from '../xv-fc-review-error.util';
 import { PageErrorStateComponent } from '../../xvi-fc-module/shared/page-error-state/page-error-state.component';
+import { DeclarationTemplateService } from '../declaration-template.service';
 
 type Screen = 'review' | 'preview' | 'success';
 
@@ -40,6 +39,7 @@ export class PtaxReviewComponent {
   readonly service = inject(PtaxReviewService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly declarationTemplateService = inject(DeclarationTemplateService);
   /** Lets the flag dialog (opened via the root MatDialog) inherit the xvifc-theme CSS vars. */
   private readonly themeClass = inject(MATERIAL_THEME_CLASS, { optional: true });
 
@@ -166,22 +166,22 @@ export class PtaxReviewComponent {
     return formatXvFcAmount(value, this.currentUnit());
   }
 
-  downloadTable() {
-    const fy = this.currentFy() ?? '';
-    const rows = this.metrics().map((m) => ({
-      Code: m.code,
-      'Line Item': m.label,
-      [`Amount (${this.unitLabels[this.currentUnit()]})`]: this.formatValue(m),
-      Flag: m.flagged ? 'Flagged' : 'Accepted',
-      'Proposed value': m.proposedValue ?? '',
-      Comment: m.comment || '',
-    }));
-    const sheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, 'Property Tax');
-    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const file = new Blob([buffer], { type: 'application/octet-stream' });
-    saveAs(file, `Property-Tax-FY${fy}.xlsx`);
+  downloadPdf() {
+    const fy = this.currentFy();
+    const yearId = this.currentYearId();
+    if (!fy || !yearId) return;
+    this.service.downloadPdf(yearId, this.currentUnit()).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Property-Tax-FY${fy}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.toast('Downloaded Property-Tax-FY' + fy + '.pdf');
+      },
+      error: (err) => this.toast(extractApiErrorMessage(err, 'Failed to download the PDF. Please try again.')),
+    });
   }
 
   // ── Flagging ──────────────────────────────────────────────────────────
@@ -237,12 +237,24 @@ export class PtaxReviewComponent {
   }
 
   // ── Declaration ─────────────────────────────────────────────────────────
+  downloadDeclarationTemplate() {
+    void this.declarationTemplateService.downloadDeclarationTemplate(
+      this.service.fyDetail()?.ulbName,
+    );
+  }
+
   onDeclarationChosen(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     const yearId = this.currentYearId();
     if (!file || !yearId) return;
     input.value = '';
+    // The signed declaration must be a PDF — `accept` on the input is only a picker hint and
+    // doesn't stop drag-and-drop or "All files", so enforce it here too.
+    if (file.type !== 'application/pdf') {
+      this.toast('Please upload the signed declaration as a PDF file.');
+      return;
+    }
     this.uploadingDeclaration.set(true);
     this.service.uploadDocument(yearId, PTAX_DECLARATION_TARGET_CODE, file).subscribe({
       next: async () => {
@@ -267,7 +279,11 @@ export class PtaxReviewComponent {
     // Open the tab synchronously, still inside the click's user-gesture context - browsers
     // silently block window.open() called from an async callback (e.g. after this request
     // resolves), so waiting for `next` would lose the popup permission with no error shown.
-    const tab = window.open('', '_blank', 'noopener');
+    // Passing 'noopener' here would make window.open() return null (there'd be nothing to
+    // navigate once the URL arrives, leaving a permanently blank tab) - clear `opener` on the
+    // handle we get back instead, which gets the same reverse-tabnabbing protection.
+    const tab = window.open('', '_blank');
+    if (tab) tab.opener = null;
     this.service.getDocumentSignedUrl(yearId, PTAX_DECLARATION_TARGET_CODE).subscribe({
       next: (url) => {
         if (tab) tab.location.href = url;
@@ -310,7 +326,11 @@ export class PtaxReviewComponent {
     // Open the tab synchronously, still inside the click's user-gesture context - browsers
     // silently block window.open() called from an async callback (e.g. after this request
     // resolves), so waiting for `next` would lose the popup permission with no error shown.
-    const tab = window.open('', '_blank', 'noopener');
+    // Passing 'noopener' here would make window.open() return null (there'd be nothing to
+    // navigate once the URL arrives, leaving a permanently blank tab) - clear `opener` on the
+    // handle we get back instead, which gets the same reverse-tabnabbing protection.
+    const tab = window.open('', '_blank');
+    if (tab) tab.opener = null;
     this.service.getDocumentSignedUrl(yearId, PTAX_SUPPORTING_DOCUMENT_TARGET_CODE).subscribe({
       next: (url) => {
         if (tab) tab.location.href = url;

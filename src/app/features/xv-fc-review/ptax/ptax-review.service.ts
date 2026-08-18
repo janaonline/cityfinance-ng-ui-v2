@@ -12,6 +12,7 @@ import {
   PtaxPresignRequest,
   PtaxPresignResponse,
 } from './ptax-review.model';
+import { XvFcCurrencyUnit, XV_FC_CURRENCY_UNIT_TO_API } from '../models/xv-fc-review.model';
 
 function unwrap<T>(response: unknown): T {
   const r = response as Record<string, unknown>;
@@ -168,5 +169,13 @@ export class PtaxReviewService {
     return this.http
       .post<unknown>(`${this.baseUrl}${this.ulbId}/${yearId}/submit`, { finalAction })
       .pipe(map((res) => unwrap<PtaxFyDetail>(res)));
+  }
+
+  // ── PDF export ───────────────────────────────────────────────────────────
+  downloadPdf(yearId: string, unit: XvFcCurrencyUnit): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}${this.ulbId}/${yearId}/pdf`, {
+      params: { currency: XV_FC_CURRENCY_UNIT_TO_API[unit] },
+      responseType: 'blob',
+    });
   }
 }
