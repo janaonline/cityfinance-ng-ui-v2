@@ -16,6 +16,12 @@
   max-width: 760px;
 }
 
+// Shadow/border/radius come from the shared "card border-0 shadow-sm rounded-3"
+// utility classes (same box design used by the document upload cards).
+.faq-section-card {
+  padding: 1.25rem 1.5rem;
+}
+
 .faq-section-title {
   font-size: 1.1rem;
   font-weight: 700;
@@ -32,6 +38,12 @@
   &::before {
     display: none;
   }
+
+  // Accordion headers should blend into the white section card instead of
+  // using Material's default surface color.
+  ::ng-deep .mat-expansion-panel-header {
+    background-color: #ffffff;
+  }
 }
 
 .faq-panel-title {
@@ -45,6 +57,21 @@
 .faq-number {
   color: #667085;
   font-weight: 600;
+}
+
+.faq-question {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.faq-toggle-icon {
+  margin-left: auto;
+  padding-left: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #667085;
 }
 
 // Content is injected via [innerHTML] from JSON, so nested rules must pierce
