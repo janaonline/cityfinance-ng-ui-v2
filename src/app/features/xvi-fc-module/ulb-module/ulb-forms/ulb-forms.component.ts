@@ -65,6 +65,9 @@ const CONDITION_STATUS_DISPLAY: Readonly<Record<number, ConditionStatusDisplay>>
   5: { iconTier: 'success', buttonLabel: 'Approved by State', showPreview: true },
   6: { iconTier: 'warning', buttonLabel: 'Reupload', showPreview: true },
   7: { iconTier: 'success', buttonLabel: 'Approved by MoHUA', showPreview: true },
+  // SLB is auto-approved by State on submission (no review workflow) — form_status_id 8 is
+  // FORM_STATUS.APPROVED_BY_STATE in the shared enum (src/common/constants/form-status.constants.ts).
+  8: { iconTier: 'success', buttonLabel: 'Submitted', showPreview: true },
 };
 
 const SCENARIOS: WhatIfScenario[] = [
