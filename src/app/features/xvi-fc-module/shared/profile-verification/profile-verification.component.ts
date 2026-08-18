@@ -26,7 +26,6 @@ import {
   noHtmlOrScript,
   noMongoOperators,
 } from '../../../../auth/validators/auth-security.validators';
-import { noEmailDomainTypo, noGovDomainTypo } from '../../../../auth/validators/email-domain.validators';
 import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
 import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
 
@@ -98,13 +97,14 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
 
   readonly commissionerForm = this.fb.nonNullable.group({
     commissionerName: ['', [
+      Validators.required,
       Validators.maxLength(100),
       Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
       noHtmlOrScript,
       noMongoOperators,
     ]],
-    commissionerEmail: ['', [Validators.email, noEmailDomainTypo, noGovDomainTypo, ...IDENTIFIER_SECURITY_VALIDATORS]],
-    commissionerConatactNumber: ['', Validators.pattern(/^[6-9]\d{9}$/)],
+    commissionerEmail: ['', [Validators.required, Validators.email, ...IDENTIFIER_SECURITY_VALIDATORS]],
+    commissionerConatactNumber: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
   });
 
   readonly accountantForm = this.fb.nonNullable.group({
@@ -119,8 +119,6 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     accountantEmail: ['', [
       Validators.required,
       Validators.email,
-      noEmailDomainTypo,
-      noGovDomainTypo,
       Validators.maxLength(254),
       ...IDENTIFIER_SECURITY_VALIDATORS,
     ]],
@@ -350,10 +348,26 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ ok }) => {
+        next: ({ ok, fieldErrors }) => {
           if (!ok) {
             this.isSaving.set(false);
-            this.errorMsg.set('Failed to save contacts. Please try again.');
+            if (fieldErrors?.['commissionerEmail']) {
+              this.openEditCommissioner();
+              const control = this.commissionerForm.controls.commissionerEmail;
+              control.setErrors({ domainMx: true });
+              control.markAsTouched();
+            }
+            if (fieldErrors?.['accountantEmail']) {
+              this.openEditAccountant();
+              const control = this.accountantForm.controls.accountantEmail;
+              control.setErrors({ domainMx: true });
+              control.markAsTouched();
+            }
+            // Field-specific errors already show inline on the relevant card — no need to
+            // repeat them in the generic top banner too.
+            if (!fieldErrors) {
+              this.errorMsg.set('Failed to save contacts. Please try again.');
+            }
             return;
           }
           this.markVerifiedInStorage();

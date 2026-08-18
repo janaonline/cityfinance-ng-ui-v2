@@ -114,17 +114,6 @@
 
               @if (display) {
                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                  <button
-                    mat-flat-button
-                    class="condition-action-btn flex-shrink-0"
-                    [class.condition-action-btn--warning]="display.iconTier === 'warning'"
-                    [class.condition-action-btn--pending-active]="display.iconTier === 'pending-active'"
-                    [class.condition-action-btn--pending-neutral]="display.iconTier === 'pending-neutral'"
-                    type="button"
-                    (click)="navigateTo(condition.route!)"
-                  >
-                    {{ display.buttonLabel }}
-                  </button>
                   @if (display.showPreview) {
                     <button
                       mat-icon-button
@@ -138,13 +127,20 @@
                       <mat-icon class="preview-icon">visibility</mat-icon>
                     </button>
                   }
+                  <button
+                    mat-flat-button
+                    class="condition-action-btn flex-shrink-0"
+                    [class.condition-action-btn--warning]="display.iconTier === 'warning'"
+                    [class.condition-action-btn--pending-active]="display.iconTier === 'pending-active'"
+                    [class.condition-action-btn--pending-neutral]="display.iconTier === 'pending-neutral'"
+                    type="button"
+                    (click)="navigateTo(condition.route!)"
+                  >
+                    {{ display.buttonLabel }}
+                  </button>
                 </div>
               } @else if (submitted) {
                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                  <span class="submitted-badge">
-                    <mat-icon class="submitted-badge__icon">check_circle</mat-icon>
-                    SUBMITTED
-                  </span>
                   <button
                     mat-icon-button
                     class="preview-icon-btn"
@@ -156,6 +152,10 @@
                   >
                     <mat-icon class="preview-icon">visibility</mat-icon>
                   </button>
+                  <span class="submitted-badge">
+                    <mat-icon class="submitted-badge__icon">check_circle</mat-icon>
+                    SUBMITTED
+                  </span>
                 </div>
               } @else if (effectiveStatus === 'complete') {
                 <span class="no-action-badge flex-shrink-0">
