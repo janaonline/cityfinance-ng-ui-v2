@@ -1,6 +1,10 @@
 @use '../../styles/xvi-fc-theme' as theme;
+@use '../../styles/shared-layout' as layout;
 
-:host { display: block; }
+:host {
+  display: block;
+  @include layout.form-layout;
+}
 
 .team-page {
   max-width: 1160px;

@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
@@ -31,7 +31,10 @@ export class ProfileVerificationService {
       .pipe(map((resp) => resp?.data ?? (resp as unknown as UlbContacts)));
   }
 
-  saveUlbContacts(userId: string, contacts: UlbContacts): Observable<{ ok: boolean }> {
+  saveUlbContacts(
+    userId: string,
+    contacts: UlbContacts,
+  ): Observable<{ ok: boolean; fieldErrors?: Record<string, string> }> {
     return this.http
       .patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
         ...contacts,
@@ -39,7 +42,18 @@ export class ProfileVerificationService {
       })
       .pipe(
         map(() => ({ ok: true })),
-        catchError(() => of({ ok: false })),
+        catchError((err: unknown) => {
+          const fieldErrors: Record<string, string> = {};
+          if (err instanceof HttpErrorResponse) {
+            const errors = err.error?.errors as Record<string, { message: string }[]> | undefined;
+            if (errors) {
+              for (const [field, entries] of Object.entries(errors)) {
+                if (entries?.[0]?.message) fieldErrors[field] = entries[0].message;
+              }
+            }
+          }
+          return of({ ok: false, fieldErrors: Object.keys(fieldErrors).length ? fieldErrors : undefined });
+        }),
       );
   }
 
