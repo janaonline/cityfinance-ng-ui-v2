@@ -1,12 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormBuilder } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../../shared/components/pre-loader/pre-loader.component';
-import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import {
   ConditionalFieldConfig,
@@ -31,30 +29,11 @@ import {
 } from './slb.models';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
-
-export interface SlbIndicatorGroup {
-  section: string;
-  fields: ConditionalFieldConfig[];
-}
-
-/**
- * The backend's SLB field config carries a `meta.section` grouping key that isn't part of the
- * shared `FieldConfig` interface. Widening that shared interface previously caused spurious
- * whole-program compile errors elsewhere (see slb `actualTarget` changelog) — so this narrow,
- * locally-scoped type is used only for reading `meta` off an already-fetched field instead.
- */
-type FieldWithMeta = ConditionalFieldConfig & { meta?: Record<string, unknown> };
+import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-body.component';
 
 @Component({
   selector: 'app-slb',
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    DynamicFormComponent,
-    PreLoaderComponent,
-    MatButtonModule,
-    PageErrorStateComponent,
-  ],
+  imports: [SlbFormBodyComponent, PreLoaderComponent, MatButtonModule, PageErrorStateComponent],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
 })
@@ -79,34 +58,6 @@ export class SlbComponent implements OnInit {
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
-
-  /** The 28 SLB indicator questions, rendered as table rows. */
-  readonly indicatorFields = computed(() => this.visibleFields().filter((f) => f.formFieldType === 'actualTarget'));
-  /** Indicator fields bucketed by `meta.section` (Water Supply, Sewerage Management, Solid Waste Management, Storm Water Drainage),
-   *  preserving indicator order within each section and section order of first appearance. */
-  readonly groupedIndicatorFields = computed<SlbIndicatorGroup[]>(() => {
-    const groups: SlbIndicatorGroup[] = [];
-    const bySection = new Map<string, SlbIndicatorGroup>();
-
-    for (const field of this.indicatorFields()) {
-      const section = ((field as FieldWithMeta).meta?.['section'] as string | undefined) ?? '';
-      let group = bySection.get(section);
-      if (!group) {
-        group = { section, fields: [] };
-        bySection.set(section, group);
-        groups.push(group);
-      }
-      group.fields.push(field);
-    }
-
-    return groups;
-  });
-  /** Self-declaration fields (name, designation, supporting document, confirmation) — rendered via the generic form renderer. */
-  readonly declarationFields = computed(() => this.visibleFields().filter((f) => f.formFieldType !== 'actualTarget'));
-  /** Text inputs (name, designation) within the declaration — laid out two-per-row. */
-  readonly declarationTextFields = computed(() => this.declarationFields().filter((f) => f.formFieldType === 'text'));
-  /** Non-text declaration fields (supporting document, confirmation checkbox) — laid out full-width. */
-  readonly declarationOtherFields = computed(() => this.declarationFields().filter((f) => f.formFieldType !== 'text'));
 
   readonly isLoading = signal(false);
   readonly hasLoadError = signal(false);
@@ -227,12 +178,6 @@ export class SlbComponent implements OnInit {
     }
 
     this.isLoading.set(false);
-  }
-
-  /** Checks a named validation error on an indicator's `actual`/`target` sub-control, only after it's been touched. */
-  hasIndicatorError(key: string, sub: 'actual' | 'target', name: string): boolean {
-    const control = this.form.get(`${key}.${sub}`);
-    return !!control?.hasError(name) && (control.touched || control.dirty);
   }
 
   onSubmit(action: SubmitType): void {

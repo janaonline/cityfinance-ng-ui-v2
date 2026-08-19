@@ -5,7 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { RolesTeamsOverviewComponent } from './roles-teams-overview.component';
 import { STATE_ROLES_CONFIG, MOHUA_ROLES_CONFIG } from './roles-teams-overview.models';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 
 describe('RolesTeamsOverviewComponent', () => {
   let component: RolesTeamsOverviewComponent;
