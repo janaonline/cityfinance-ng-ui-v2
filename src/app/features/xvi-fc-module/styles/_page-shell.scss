@@ -1,0 +1,51 @@
+// Shared page-shell styling for XVI-FC static content pages (FAQ, Document Upload
+// Guide, ...). Centralizing these here so pages that want "the FAQ look" include
+// the same mixins instead of copy-pasting the rule bodies.
+
+@mixin xvifc-page-title-typography {
+  font-size: clamp(1.35rem, 1.8vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+@mixin xvifc-page-subtitle-typography {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #667085;
+  max-width: 760px;
+}
+
+// Shadow/border/radius are expected to come from the shared Bootstrap
+// "card border-0 shadow-sm rounded-3" utility classes — this only supplies
+// the inner padding.
+@mixin xvifc-section-card-padding {
+  padding: 1.25rem 1.5rem;
+}
+
+@mixin xvifc-section-title-typography {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+@mixin xvifc-help-box {
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  color: #667085;
+  font-size: 0.92rem;
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+  }
+}
+
+@mixin xvifc-help-title-typography {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
