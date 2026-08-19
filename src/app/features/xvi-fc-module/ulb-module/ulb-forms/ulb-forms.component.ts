@@ -46,7 +46,7 @@ interface ConditionGroup {
 }
 
 /** Condition ids whose display is driven live by the numeric form_status_id (1–7) rather than the static config above. */
-const NUMERIC_STATUS_CONDITION_IDS = new Set(['audited-statement', 'provisional-statement', 'xvi-fc-bank-account']);
+const NUMERIC_STATUS_CONDITION_IDS = new Set(['audited-statement', 'provisional-statement', 'xvi-fc-bank-account', 'slb']);
 
 type ConditionIconTier = 'pending-neutral' | 'pending-active' | 'success' | 'warning';
 
@@ -65,6 +65,9 @@ const CONDITION_STATUS_DISPLAY: Readonly<Record<number, ConditionStatusDisplay>>
   5: { iconTier: 'success', buttonLabel: 'Approved by State', showPreview: true },
   6: { iconTier: 'warning', buttonLabel: 'Reupload', showPreview: true },
   7: { iconTier: 'success', buttonLabel: 'Approved by MoHUA', showPreview: true },
+  // SLB is auto-approved by State on submission (no review workflow) — form_status_id 8 is
+  // FORM_STATUS.APPROVED_BY_STATE in the shared enum (src/common/constants/form-status.constants.ts).
+  8: { iconTier: 'success', buttonLabel: 'Submitted', showPreview: true },
 };
 
 const SCENARIOS: WhatIfScenario[] = [
@@ -401,6 +404,7 @@ export class UlbFormsComponent implements OnInit {
     if (condition.id === 'audited-statement') return status.auditedData.form_status_id;
     if (condition.id === 'provisional-statement') return status.unauditedData.form_status_id;
     if (condition.id === 'xvi-fc-bank-account') return status.xviFcBankAccount?.form_status_id ?? null;
+    if (condition.id === 'slb') return status.serviceLevelBenchmarks?.form_status_id ?? null;
     return null;
   }
 

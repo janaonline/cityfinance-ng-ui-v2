@@ -15,6 +15,10 @@ export interface FormStatusData {
     form_status: string;
     form_status_id: number;
   };
+  serviceLevelBenchmarks?: {
+    form_status: string;
+    form_status_id: number;
+  };
 }
 
 const API = `${environment.api.url2}`;
