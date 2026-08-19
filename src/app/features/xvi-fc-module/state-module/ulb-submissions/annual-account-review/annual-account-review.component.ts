@@ -207,7 +207,7 @@ const TAB_SLIDE = trigger('tabSlide', [
   ]),
 ]);
 
-const RETURN_NOTE_MIN_LENGTH = 50;
+const RETURN_NOTE_MIN_LENGTH = 10;
 const RETURN_NOTE_MAX_LENGTH = 200;
 
 @Component({
