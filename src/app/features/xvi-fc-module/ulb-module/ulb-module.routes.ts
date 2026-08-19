@@ -24,6 +24,13 @@ export const ULB_ROUTES: Routes = [
         loadComponent: () => import('../shared/faq/faq.component').then((m) => m.FaqComponent),
       },
       {
+        path: 'document-upload-guide',
+        loadComponent: () =>
+          import('./document-upload-guide/document-upload-guide.component').then(
+            (m) => m.DocumentUploadGuideComponent,
+          ),
+      },
+      {
         path: 'ulb-forms',
         loadComponent: () => import('./ulb-forms/ulb-forms.component').then((m) => m.UlbFormsComponent),
       },
