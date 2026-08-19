@@ -541,6 +541,35 @@ describe('ClaimLetterDetailComponent', () => {
       expect(claimLetterService.getDetail).not.toHaveBeenCalled();
     });
 
+    it('maps a bare class-validator message array (no errors map) to the matching row control', async () => {
+      await setupEdit(buildClaim({ revision: 4 }));
+      spyOn(claimLetterService, 'updateDraft').and.returnValue(
+        throwError(() => ({
+          success: false,
+          message: ['ulbSelections.0.claimedAmount must be an integer number'],
+        })),
+      );
+
+      component.saveChanges();
+
+      const control = component.rows.at(0).controls.claimedAmount;
+      expect(control.errors?.['apiErrors']).toEqual(['ulbSelections.0.claimedAmount must be an integer number']);
+    });
+
+    it('surfaces an unmatched bare message via the generic banner instead of dropping it', async () => {
+      await setupEdit(buildClaim({ revision: 4 }));
+      spyOn(claimLetterService, 'updateDraft').and.returnValue(
+        throwError(() => ({
+          success: false,
+          message: ['expectedRevision must be an integer number'],
+        })),
+      );
+
+      component.saveChanges();
+
+      expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
+    });
+
     it('abandonDraft is a no-op when not editable', async () => {
       await setupEdit(
         buildClaim({ isAbandoned: true, permissions: { canView: true, canEdit: false, canFinalSubmit: false } }),

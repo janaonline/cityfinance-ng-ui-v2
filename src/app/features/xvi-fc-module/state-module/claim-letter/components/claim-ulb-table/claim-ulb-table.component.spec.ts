@@ -369,6 +369,28 @@ describe('ClaimUlbTableComponent', () => {
     expect(fixture.debugElement.query(By.css('[data-cy="claim-ulb-table-amount-error-icon"]'))).toBeFalsy();
   });
 
+  it('marks the claim amount control invalid for a non-integer value (no decimals allowed)', () => {
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[0].ulbId, claimedAmount: 100 })]);
+    const claimedAmount = rows.at(0).controls.claimedAmount;
+
+    claimedAmount.setValue(100.5);
+    expect(claimedAmount.hasError('decimal')).toBeTrue();
+
+    claimedAmount.setValue(100);
+    expect(claimedAmount.hasError('decimal')).toBeFalse();
+  });
+
+  it('clears a server-set apiErrors entry as soon as the claim amount control is edited', () => {
+    setupWithRows([createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[0].ulbId, claimedAmount: 100 })]);
+    const claimedAmount = rows.at(0).controls.claimedAmount;
+
+    claimedAmount.setErrors({ apiErrors: ['claimedAmount must be an integer number'] });
+    expect(claimedAmount.hasError('apiErrors')).toBeTrue();
+
+    claimedAmount.setValue(101);
+    expect(claimedAmount.hasError('apiErrors')).toBeFalse();
+  });
+
   // ─── Totals ────────────────────────────────────────────────────────────────────
 
   it('computes running totals from the live FormArray', () => {

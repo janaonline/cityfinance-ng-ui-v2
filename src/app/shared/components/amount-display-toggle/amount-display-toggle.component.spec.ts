@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import {
   AMOUNT_DISPLAY_OVERRIDE_STORAGE_KEY,
   AmountDisplayModeService,
@@ -26,9 +27,9 @@ describe('AmountDisplayToggleComponent', () => {
     localStorage.removeItem(AMOUNT_DISPLAY_OVERRIDE_STORAGE_KEY);
   });
 
-  it('exposes 5 options, starting with Default (null)', () => {
-    expect(component.options.length).toBe(5);
-    expect(component.options[0]).toEqual({ value: null, label: 'Default' });
+  it('exposes 4 options, starting with Crore', () => {
+    expect(component.options.length).toBe(4);
+    expect(component.options[0]).toEqual({ value: 'cr', label: 'Crore', shortKey: 'Cr' });
   });
 
   it('reflects the service\'s current override', () => {
@@ -41,9 +42,37 @@ describe('AmountDisplayToggleComponent', () => {
     expect(service.override()).toBe('k');
   });
 
-  it('onChange(null) resets to Default', () => {
+  it('onChange(null) clears the override', () => {
     service.setOverride('k');
     component.onChange(null);
+    expect(service.override()).toBeNull();
+  });
+
+  it("clicking a pill calls setOverride with that option's value", () => {
+    const lPill: HTMLButtonElement = fixture.debugElement.query(
+      By.css('[data-cy="amount-display-toggle-option-lakh"]'),
+    ).nativeElement;
+    lPill.click();
+    expect(service.override()).toBe('lakh');
+  });
+
+  it('the reset button is disabled while there is no override', () => {
+    const resetButton: HTMLButtonElement = fixture.debugElement.query(
+      By.css('[data-cy="amount-display-toggle-reset"]'),
+    ).nativeElement;
+    expect(resetButton.disabled).toBe(true);
+  });
+
+  it('clicking the reset button clears the override back to null', () => {
+    service.setOverride('lakh');
+    fixture.detectChanges();
+
+    const resetButton: HTMLButtonElement = fixture.debugElement.query(
+      By.css('[data-cy="amount-display-toggle-reset"]'),
+    ).nativeElement;
+    expect(resetButton.disabled).toBe(false);
+
+    resetButton.click();
     expect(service.override()).toBeNull();
   });
 });

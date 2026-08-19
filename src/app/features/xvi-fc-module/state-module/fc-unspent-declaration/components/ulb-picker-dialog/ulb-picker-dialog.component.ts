@@ -51,6 +51,7 @@ export class UlbPickerDialogComponent implements OnInit {
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
+  readonly allocationUnitSuffix = () => this.amountDisplay.unitSuffix('inr');
 
   readonly search = new FormControl('', { nonNullable: true });
 

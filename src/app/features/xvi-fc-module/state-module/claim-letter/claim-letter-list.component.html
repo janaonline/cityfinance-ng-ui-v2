@@ -169,8 +169,10 @@
           }
 
           @if (summaryTiles().length) {
-            <app-amount-display-toggle />
-            <app-claim-letter-summary-tiles [tiles]="summaryTiles()" />
+            <div>
+              <app-amount-display-toggle class="mb-2 text-end" />
+              <app-claim-letter-summary-tiles [tiles]="summaryTiles()" />
+            </div>
           }
 
           <mat-card appearance="outlined">

@@ -16,7 +16,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
 import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
+import { DecimalLimitDirective } from '../../../../../../core/directives/decimal-limit.directive';
+import { ZeroOnStepChangeDirective } from '../../../../../../core/directives/zero-on-step-change.directive';
 import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
@@ -124,7 +127,15 @@ export function createFcUnspentUlbRowGroup(
 
 @Component({
   selector: 'app-unspent-ulb-table',
-  imports: [ReactiveFormsModule, DecimalPipe, MatButtonModule, MatTooltipModule],
+  imports: [
+    ReactiveFormsModule,
+    DecimalPipe,
+    MatButtonModule,
+    MatTooltipModule,
+    InfoIconComponent,
+    DecimalLimitDirective,
+    ZeroOnStepChangeDirective,
+  ],
   templateUrl: './unspent-ulb-table.component.html',
   styleUrl: './unspent-ulb-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -138,6 +149,12 @@ export class UnspentUlbTableComponent {
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
+  /** Unit label for a column whose display follows the global override — both Allocation (always)
+   *  and Unspent (once it's no longer an editable input) use this, since both are `'inr'` pageDefault. */
+  readonly unitSuffix = () => this.amountDisplay.unitSuffix('inr');
+  /** Info-icon tooltip for the editable unspent-amount input — the whole-number instruction plus
+   *  the currently-typed value spelled out in words. */
+  readonly wholeNumberInfoText = (value: number | null | undefined) => this.amountDisplay.wholeNumberInfoText(value);
   /** Passed through to `MatDialog.open` so the picker resolves the same feature-scoped
    *  `FcUnspentUlbOptionsCacheService` instance provided on `FcUnspentDeclarationComponent` — by
    *  default a dialog is created against the root injector, not this component's own. */

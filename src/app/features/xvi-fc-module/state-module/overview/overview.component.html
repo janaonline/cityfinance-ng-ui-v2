@@ -95,7 +95,7 @@
 
                     @for (column of disbursementColumns; track column.key) {
                       <td class="text-center" [class.yearwise-table__highlight]="column.highlight">
-                        {{ row.values[column.key] }}
+                        {{ formatAmount(row.values[column.key]) }}
                       </td>
                     }
                   </tr>

@@ -77,4 +77,46 @@ describe('AmountDisplayModeService', () => {
     expect(service.format(null, 'auto')).toBe('-');
     expect(service.format(undefined, 'inr')).toBe('-');
   });
+
+  it('unitSuffix() reflects the page default when no override is active', () => {
+    expect(service.unitSuffix('inr')).toBe('₹');
+  });
+
+  it('unitSuffix() reflects an active override over the page default', () => {
+    service.setOverride('cr');
+    expect(service.unitSuffix('inr')).toBe('Cr.');
+    service.setOverride('lakh');
+    expect(service.unitSuffix('inr')).toBe('Lakh');
+    service.setOverride('k');
+    expect(service.unitSuffix('inr')).toBe('K');
+  });
+
+  it('unitSuffix() with ignoreOverride always uses the page default', () => {
+    service.setOverride('cr');
+    expect(service.unitSuffix('inr', { ignoreOverride: true })).toBe('₹');
+  });
+
+  it('formatInWords() spells out a whole-Rupee amount using the Indian numbering system', () => {
+    expect(service.formatInWords(129300000)).toBe('Twelve Crore Ninety Three Lakh Rupees');
+  });
+
+  it('formatInWords() returns an empty string for null/undefined/zero', () => {
+    expect(service.formatInWords(null)).toBe('');
+    expect(service.formatInWords(undefined)).toBe('');
+    expect(service.formatInWords(0)).toBe('');
+  });
+
+  it('formatInWords() ignores the override — always the exact raw value, never scaled', () => {
+    service.setOverride('cr');
+    expect(service.formatInWords(129300000)).toBe('Twelve Crore Ninety Three Lakh Rupees');
+  });
+
+  it('wholeNumberInfoText() is empty when there is no value yet', () => {
+    expect(service.wholeNumberInfoText(null)).toBe('');
+    expect(service.wholeNumberInfoText(undefined)).toBe('');
+  });
+
+  it('wholeNumberInfoText() is just the spelled-out value, once one is entered', () => {
+    expect(service.wholeNumberInfoText(100)).toBe('One Hundred Rupees');
+  });
 });

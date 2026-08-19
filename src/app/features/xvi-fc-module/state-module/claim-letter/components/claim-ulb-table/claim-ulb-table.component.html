@@ -15,10 +15,10 @@
           <th scope="col" class="ps-3 text-center small fw-semibold">#</th>
           <th scope="col" class="text-center small fw-semibold">ULB</th>
           <th scope="col" class="text-center small fw-semibold">Census Code</th>
-          <th scope="col" class="text-center small fw-semibold">Allocation (Cr.)</th>
-          <th scope="col" class="text-center small fw-semibold">Claim Amount (Cr.)</th>
+          <th scope="col" class="text-center small fw-semibold">Allocation ({{ unitSuffix() }})</th>
+          <th scope="col" class="text-center small fw-semibold">Claim Amount ({{ canEdit() ? '₹' : unitSuffix() }})</th>
           <th scope="col" class="text-center small fw-semibold">Difference (%)</th>
-          <th scope="col" class="text-center text-nowrap small fw-semibold text-end pe-3">Remove</th>
+          <th scope="col" class="text-center text-nowrap small fw-semibold">Remove</th>
         </tr>
       </thead>
       <tbody>
@@ -48,18 +48,34 @@
             >
               {{ formatAmount(rowViewModels()[i].allocationAmount) }}
             </td>
-            <td>
-              <label class="visually-hidden" [attr.for]="'claim-amount-' + i">Claim amount</label>
-              <input
-                [id]="'claim-amount-' + i"
-                type="number"
-                min="1"
-                class="form-control form-control-sm"
-                [class.is-invalid]="!!claimErrorText"
-                formControlName="claimedAmount"
-                aria-label="Claim amount"
-                data-cy="claim-ulb-table-claim-amount"
-              />
+            <td class="text-end pe-3">
+              @if (canEdit()) {
+                <label class="visually-hidden" [attr.for]="'claim-amount-' + i">Claim amount</label>
+                <div class="d-flex align-items-center gap-2">
+                  <input
+                    [id]="'claim-amount-' + i"
+                    type="number"
+                    min="1"
+                    step="1"
+                    [appDecimalLimit]="0"
+                    appZeroOnStepChange
+                    class="form-control form-control-sm"
+                    [class.is-invalid]="!!claimErrorText"
+                    [title]="formatAmountExact(row.controls.claimedAmount.value)"
+                    formControlName="claimedAmount"
+                    aria-label="Claim amount"
+                    data-cy="claim-ulb-table-claim-amount"
+                  />
+                  <app-info-icon [text]="wholeNumberInfoText(row.controls.claimedAmount.value)" />
+                </div>
+              } @else {
+                <span
+                  class="small text-secondary"
+                  [title]="formatAmountExact(row.controls.claimedAmount.value)"
+                >
+                  {{ formatAmount(row.controls.claimedAmount.value) }}
+                </span>
+              }
             </td>
             <td class="text-center">
               <div class="d-flex align-items-center justify-content-center gap-1">

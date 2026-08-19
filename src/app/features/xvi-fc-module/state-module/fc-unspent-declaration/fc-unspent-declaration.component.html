@@ -84,6 +84,9 @@
                 ></app-dynamic-form>
 
                 @if (item.key === 'isFcUnspent' && isYesBranch()) {
+                  <div class="d-flex justify-content-end mb-2">
+                    <app-amount-display-toggle />
+                  </div>
                   <app-unspent-ulb-table
                     class="p-2 d-block"
                     [rows]="unspentUlbData"

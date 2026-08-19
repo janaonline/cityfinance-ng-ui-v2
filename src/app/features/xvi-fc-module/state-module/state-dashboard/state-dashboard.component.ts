@@ -12,6 +12,7 @@ import { ActivatedRoute, ActivatedRouteSnapshot, ParamMap, Router } from '@angul
 import { catchError, combineLatest, distinctUntilChanged, map, of, Subject, switchMap } from 'rxjs';
 
 import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
+import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import {
   StateDashboardApiResponse,
@@ -46,6 +47,7 @@ interface DashboardLoadResult {
     MatDividerModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './state-dashboard.component.html',
   styleUrl: './state-dashboard.component.scss',

@@ -16,8 +16,10 @@
           <th scope="col" class="ps-3 text-center small fw-semibold">#</th>
           <th scope="col" class="text-center small fw-semibold">ULB</th>
           <th scope="col" class="text-center small fw-semibold">Census Code</th>
-          <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in Cr.)</th>
-          <th scope="col" class="text-center small fw-semibold">{{ applicableFcLabel() }} FC Unspent (in Cr.)</th>
+          <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in {{ unitSuffix() }})</th>
+          <th scope="col" class="text-center small fw-semibold">
+            {{ applicableFcLabel() }} FC Unspent (in {{ canEdit() ? '₹' : unitSuffix() }})
+          </th>
           <th scope="col" class="text-center small fw-semibold">% of Alloc.</th>
           <th scope="col" class="text-center small fw-semibold">Eligible?</th>
           <th scope="col" class="text-center text-nowrap small fw-semibold text-end pe-3">Remove</th>
@@ -64,34 +66,47 @@
             >
               {{ formatAmount(rowViewModels()[i].allocationAmount) }}
             </td>
-            <td>
-              @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
-              <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>
-              <div class="d-flex align-items-center gap-2">
-                <input
-                  [id]="'fc-unspent-amount-' + i"
-                  type="number"
-                  min="0"
-                  step="any"
-                  class="form-control form-control-sm"
-                  [class.is-invalid]="!!unspentAmountErrorText"
-                  formControlName="unspentAmount"
-                  aria-label="Unspent amount"
-                />
-                @if (unspentAmountErrorText) {
-                  <button
-                    type="button"
-                    class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
-                    [matTooltip]="unspentAmountErrorText"
-                    matTooltipPosition="above"
-                    aria-label="Unspent amount has a validation error"
-                    data-cy="fc-unspent-row-unspentamount-error-icon"
-                    (click)="$event.stopPropagation()"
-                  >
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                  </button>
-                }
-              </div>
+            <td class="text-end pe-3">
+              @if (canEdit()) {
+                @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
+                <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>
+                <div class="d-flex align-items-center gap-2">
+                  <input
+                    [id]="'fc-unspent-amount-' + i"
+                    type="number"
+                    min="0"
+                    step="1"
+                    [appDecimalLimit]="0"
+                    appZeroOnStepChange
+                    class="form-control form-control-sm"
+                    [class.is-invalid]="!!unspentAmountErrorText"
+                    [title]="formatAmountExact(row.controls.unspentAmount.value)"
+                    formControlName="unspentAmount"
+                    aria-label="Unspent amount"
+                  />
+                  <app-info-icon [text]="wholeNumberInfoText(row.controls.unspentAmount.value)" />
+                  @if (unspentAmountErrorText) {
+                    <button
+                      type="button"
+                      class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                      [matTooltip]="unspentAmountErrorText"
+                      matTooltipPosition="above"
+                      aria-label="Unspent amount has a validation error"
+                      data-cy="fc-unspent-row-unspentamount-error-icon"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                    </button>
+                  }
+                </div>
+              } @else {
+                <span
+                  class="small text-end pe-3 text-secondary"
+                  [title]="formatAmountExact(row.controls.unspentAmount.value)"
+                >
+                  {{ formatAmount(row.controls.unspentAmount.value) }}
+                </span>
+              }
             </td>
             <td class="small text-end pe-3">
               @if (rowViewModels()[i].allocationPerc !== null) {

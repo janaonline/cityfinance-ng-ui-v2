@@ -919,6 +919,36 @@ describe('FcUnspentDeclarationComponent', () => {
     expect(control.errors?.['apiErrors']).toBeUndefined();
   });
 
+  it('maps a bare class-validator message array (no errors map) to the matching row control', () => {
+    spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
+    spyOn(fcUnspentService, 'saveDraft').and.returnValue(
+      throwError(() => ({
+        success: false as const,
+        message: ['unspentUlbData.0.unspentAmount must be an integer number'],
+      })),
+    );
+
+    component.onSubmit('saveAsDraft');
+
+    const control = component.unspentUlbData.controls[0].controls.unspentAmount;
+    expect(control.errors?.['apiErrors']).toEqual(['unspentUlbData.0.unspentAmount must be an integer number']);
+  });
+
+  it('surfaces an unmatched bare message via the compact alert instead of dropping it', () => {
+    spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
+    spyOn(fcUnspentService, 'saveDraft').and.returnValue(
+      throwError(() => ({
+        success: false as const,
+        message: ['expectedRevision must be an integer number'],
+      })),
+    );
+
+    component.onSubmit('saveAsDraft');
+    fixture.detectChanges();
+
+    expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
+  });
+
   it('shows a _form error in the compact alert', () => {
     spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
     spyOn(fcUnspentService, 'saveDraft').and.returnValue(

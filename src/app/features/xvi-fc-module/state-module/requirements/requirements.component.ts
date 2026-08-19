@@ -7,11 +7,13 @@ import { forkJoin } from 'rxjs';
 
 import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { StateDashboardService } from '../state-dashboard/state-dashboard.service';
 import { ClaimLetterService } from '../claim-letter/claim-letter.service';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterEligibilitySource } from '../claim-letter/claim-letter.models';
 import { describeEligibilitySourceDescription, describeEligibilitySourceLabel } from '../claim-letter/claim-letter.utils';
+import { PreLoaderComponent } from "../../../../shared/components/pre-loader/pre-loader.component";
 
 interface RequirementCondition {
   label: string;
@@ -26,7 +28,7 @@ interface RequirementCondition {
 
 @Component({
   selector: 'app-requirements',
-  imports: [MatButtonModule, MatTooltipModule, RouterLink],
+  imports: [MatButtonModule, MatTooltipModule, RouterLink, AmountDisplayToggleComponent, PreLoaderComponent],
   templateUrl: './requirements.component.html',
   styleUrl: './requirements.component.scss',
 })

@@ -16,7 +16,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
 import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
+import { DecimalLimitDirective } from '../../../../../../core/directives/decimal-limit.directive';
+import { ZeroOnStepChangeDirective } from '../../../../../../core/directives/zero-on-step-change.directive';
+import { decimalPlacesValidator } from '../../../../../../core/validators/decimal-places.validator';
 import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
 import { computeClaimDifferencePercentage, isClaimWithinVariance } from '../../claim-letter.utils';
 import {
@@ -63,25 +67,50 @@ export function createClaimUlbRowGroup(
   const group = new FormGroup<ClaimUlbRowForm>({
     ulbId: new FormControl<string | null>(existingRow?.ulbId ?? null, { validators: [Validators.required] }),
     claimedAmount: new FormControl<number | null>(existingRow?.claimedAmount ?? null, {
-      validators: [Validators.required, Validators.min(1)],
+      validators: [Validators.required, Validators.min(1), decimalPlacesValidator(0)],
     }),
   });
 
   if (!canEdit) group.disable({ emitEvent: false });
 
+  // Clear a server-injected `apiErrors` entry as soon as the user edits that control — mirrors
+  // FC Unspent's createFcUnspentUlbRowGroup, applied per-row here since each row is its own
+  // short-lived FormGroup rather than one shared edit-session form.
+  for (const control of Object.values(group.controls)) {
+    control.valueChanges.subscribe(() => {
+      if (!control.errors?.['apiErrors']) return;
+      const remaining = { ...control.errors };
+      delete remaining['apiErrors'];
+      control.setErrors(Object.keys(remaining).length > 0 ? remaining : null);
+    });
+  }
+
   return group;
 }
 
+/** A backend `apiErrors` entry always wins (most specific/authoritative), matching FC Unspent's
+ *  `firstControlErrorText`. */
 function claimedAmountErrorText(control: AbstractControl): string | null {
   if (!control.touched || !control.errors) return null;
+  const apiErrors = control.errors['apiErrors'];
+  if (Array.isArray(apiErrors) && apiErrors.length > 0) return (apiErrors as string[]).join(' ');
   if (control.errors['required']) return 'Claim amount is required.';
+  if (control.errors['decimal']) return 'Claim amount must be a whole number (no decimals).';
   if (control.errors['min']) return 'Claim amount must be at least ₹1.';
   return null;
 }
 
 @Component({
   selector: 'app-claim-ulb-table',
-  imports: [ReactiveFormsModule, DecimalPipe, MatButtonModule, MatTooltipModule],
+  imports: [
+    ReactiveFormsModule,
+    DecimalPipe,
+    MatButtonModule,
+    MatTooltipModule,
+    InfoIconComponent,
+    DecimalLimitDirective,
+    ZeroOnStepChangeDirective,
+  ],
   templateUrl: './claim-ulb-table.component.html',
   styleUrl: './claim-ulb-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -188,6 +217,13 @@ export class ClaimUlbTableComponent {
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
+  /** Unit label for a column whose display follows the global override — both Allocation (always)
+   *  and Claim Amount (once it's no longer an editable input) use this, since both are `'inr'`
+   *  pageDefault. */
+  readonly unitSuffix = () => this.amountDisplay.unitSuffix('inr');
+  /** Info-icon tooltip for the editable claim-amount input — the whole-number instruction plus the
+   *  currently-typed value spelled out in words. */
+  readonly wholeNumberInfoText = (value: number | null | undefined) => this.amountDisplay.wholeNumberInfoText(value);
   readonly claimedAmountErrorText = claimedAmountErrorText;
 
   /** Opens the picker to add one or more brand-new rows, in the order they were selected. */

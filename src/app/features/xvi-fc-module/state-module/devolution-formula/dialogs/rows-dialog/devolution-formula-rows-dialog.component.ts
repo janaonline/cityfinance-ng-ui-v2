@@ -17,6 +17,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged, merge, Subject, takeUntil } from 'rxjs';
 import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 import { UtilityService } from '../../../../../../core/services/utility.service';
+import { DecimalLimitDirective } from '../../../../../../core/directives/decimal-limit.directive';
+import { ZeroOnStepChangeDirective } from '../../../../../../core/directives/zero-on-step-change.directive';
+import { AmountDisplayToggleComponent } from '../../../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
+import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
 import { DevolutionValidationBadgeComponent } from '../../components/validation-badge/devolution-validation-badge.component';
@@ -55,6 +59,10 @@ function toStringArray(value: unknown): string[] {
     MatButtonModule,
     MatTooltipModule,
     DevolutionValidationBadgeComponent,
+    AmountDisplayToggleComponent,
+    InfoIconComponent,
+    DecimalLimitDirective,
+    ZeroOnStepChangeDirective,
   ],
   templateUrl: './devolution-formula-rows-dialog.component.html',
   styleUrl: './devolution-formula-rows-dialog.component.scss',
@@ -97,6 +105,11 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
   readonly validationStatusOptions = DF_ROW_VALIDATION_STATUS_OPTIONS;
 
   protected readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
+  protected readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
+  /** Info-icon tooltip for a row's editable amount inputs — the whole-number instruction plus the
+   *  currently-typed value spelled out in words. */
+  protected readonly wholeNumberInfoText = (value: number | null | undefined) =>
+    this.amountDisplay.wholeNumberInfoText(value);
 
   private loadRequestId = 0;
   private hasSavedRowChanges = false;

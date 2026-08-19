@@ -11,6 +11,7 @@ import { AmountDisplayModeService } from '../../../../core/services/amount-displ
 import { StateService } from '../../../../core/services/state/state.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { IState } from '../../../../core/models/state/state';
+import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import {
@@ -48,6 +49,7 @@ const ROWS_PAGE_SIZE = 20;
     SignedUrlDirective,
     DatePipe,
     DecimalPipe,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './fc-unspent-review.component.html',
   styleUrl: './fc-unspent-review.component.scss',
