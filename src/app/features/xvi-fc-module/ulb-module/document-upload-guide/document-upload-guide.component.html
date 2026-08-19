@@ -1,0 +1,102 @@
+<div class="container-fluid px-3 px-md-4 px-xl-5 py-4 dug-page">
+  <div class="dug-page-header mb-3">
+    <h2 class="dug-page-title mb-1">Document Upload Guide</h2>
+    <p class="dug-page-subtitle mb-0">
+      This section tells you how to upload documents correctly. Upload only documents in PDF. The maximum file size
+      is 50 MB.
+    </p>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3 dug-section-card mb-4">
+    <h3 class="dug-section-kicker">1. Rules for a correct document</h3>
+    <p class="dug-lead">Follow these rules when you upload a document:</p>
+    <ul class="dug-dash-list mb-3">
+      <li>Upload the correct document type for the slot.</li>
+      <li>The system can validate digital PDFs as well as scanned PDFs.</li>
+      <li>Make sure the text is clear and the page orientation is upright.</li>
+      <li>Make sure the correct financial year and the ULB name are visible on the document.</li>
+      <li>
+        The following financial documents are not accepted: (i) Trial Balance instead of a Balance Sheet, (ii)
+        Compilation Report, Significant Accounting Policies and Notes on Accounts, Audit Certificate,
+        Audit-in-progress Letter, Cover Letter, Annual Report instead of Audit Reports.
+      </li>
+    </ul>
+
+    <figure class="dug-figure">
+      <button type="button" class="dug-figure-trigger" (click)="openLightbox(correctExample)">
+        <img class="dug-figure-image" [src]="correctExample.src" [alt]="correctExample.alt" />
+      </button>
+      <figcaption class="dug-caption">{{ correctExample.caption }}</figcaption>
+    </figure>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3 dug-section-card mb-4">
+    <h3 class="dug-section-kicker">2. Conditions that cause a rejection</h3>
+    <p class="dug-lead">The system will reject the document if:</p>
+    <ul class="dug-dash-list mb-3">
+      <li>You upload the wrong document type for the slot.</li>
+      <li>The image quality is too low. The text is not readable.</li>
+      <li>The scan is dark, blurred, or shows only part of the page.</li>
+      <li>The financial year or the ULB name is missing.</li>
+      <li>A page is rotated, cropped, or partly visible.</li>
+      <li>It is one of the invalid document types.</li>
+    </ul>
+
+    <div class="dug-figure-row">
+      <figure class="dug-figure">
+        <button type="button" class="dug-figure-trigger" (click)="openLightbox(fadedScanExample)">
+          <img class="dug-figure-image" [src]="fadedScanExample.src" [alt]="fadedScanExample.alt" />
+        </button>
+        <figcaption class="dug-caption">{{ fadedScanExample.caption }}</figcaption>
+      </figure>
+
+      <figure class="dug-figure">
+        <button type="button" class="dug-figure-trigger" (click)="openLightbox(blurredScanExample)">
+          <img class="dug-figure-image" [src]="blurredScanExample.src" [alt]="blurredScanExample.alt" />
+        </button>
+        <figcaption class="dug-caption">{{ blurredScanExample.caption }}</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3 dug-section-card mb-4">
+    <h3 class="dug-section-kicker">3. Scanned documents and CamScanner PDFs</h3>
+    <p class="dug-lead"><strong>Question:</strong> Will a scanned document or a CamScanner PDF cause a problem?</p>
+    <p>No. The system accepts digital PDFs. The system also accepts scanned PDFs. This includes PDFs from scanner apps, for example CamScanner.</p>
+    <p>In most cases, the system will process the scanned document with no problem. The system will flag the document only if:</p>
+    <ul class="dug-dash-list mb-3">
+      <li>The scan quality is very poor.</li>
+      <li>The text is not readable.</li>
+      <li>Pages are missing.</li>
+    </ul>
+    <p class="mb-0">Do not avoid scanned PDFs. Make sure the scan is readable.</p>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3 dug-section-card mb-4">
+    <h3 class="dug-section-kicker">4. Procedure: a document is rejected</h3>
+    <p class="dug-lead"><strong>Question:</strong> The system rejects my document. What do I do?</p>
+    <ol class="dug-steps mb-0">
+      <li>Go to the upload screen.</li>
+      <li>Upload the flagged document again.</li>
+      <li>If the system rejects the document again, and you believe the document is correct, select <strong>Send for manual review</strong>.</li>
+      <li>Wait for the review. A reviewer will check the document and respond within 48 hours.</li>
+    </ol>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3 dug-section-card mb-4">
+    <h3 class="dug-section-kicker">5. Contact for help</h3>
+    <p class="mb-0">
+      If you have a problem with a document, send an email to
+      <a href="mailto:16fcgrant@cityfinance.in">16fcgrant&#64;cityfinance.in</a>.
+    </p>
+  </div>
+
+  <div class="dug-help-box">
+    <h3 class="dug-help-title">Still need help?</h3>
+    <p class="mb-0">
+      Write to <a href="mailto:updates@cityfinance.in"><strong>updates&#64;cityfinance.in</strong></a> and we will
+      respond within 24 hours, or join a <a routerLink="../support-hours"><strong>Support Hour</strong></a> to ask
+      the CityFinance Product &amp; PMU team directly.
+    </p>
+  </div>
+</div>

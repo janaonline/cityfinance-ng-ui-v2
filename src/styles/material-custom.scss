@@ -22,6 +22,21 @@
   --mat-button-filled-ripple-color: color-mix(in srgb, var(--mat-sys-on-tertiary, #ffffff) 12%, transparent);
 }
 
+// Borderless image lightbox (Document Upload Guide). The CDK overlay renders
+// the dialog container outside the Angular component tree, so this can't live
+// in ImageLightboxDialogComponent's own (view-encapsulated) stylesheet.
+.image-lightbox-panel .mdc-dialog__surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.image-lightbox-backdrop {
+  background: rgba(15, 23, 42, 0.75);
+}
+
 .custom-snackbar-success {
   --mat-snackbar-container-color: green;
   --mat-mdc-snack-bar-button-color: white;
