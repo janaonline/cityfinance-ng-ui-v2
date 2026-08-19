@@ -136,13 +136,16 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     () =>
       this._commissionerStatus() === 'VALID' &&
       this._accountantStatus() === 'VALID' &&
-      !this.isSaving(),
+      !this.isSaving() &&
+      !this.sendingOtp(),
   );
 
   // ── State / MoHUA flow ───────────────────────────────────────
   readonly stateProfile = signal<StateProfile | null>(null);
   readonly editingStateProfile = signal(false);
   readonly otpStep = signal(false);
+  /** The exact address the OTP was sent to — shown in the OTP box so the user knows which inbox to check. */
+  readonly otpEmail = signal('');
   readonly otpValue = signal('');
   readonly sendingOtp = signal(false);
   // C2 — resend cooldown countdown (seconds)
@@ -315,6 +318,11 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.editingAccountant.set(true);
   }
 
+  /**
+   * Validates both contact cards, then sends an OTP to the ULB Nodal Officer's email
+   * (`accountantEmail`) to confirm the ULB actually has access to that inbox before the
+   * contacts are saved. The actual save happens in `persistUlbContacts()` after OTP verification.
+   */
   onSaveAndContinue(): void {
     if (this.commissionerForm.invalid) {
       this.openEditCommissioner();
@@ -329,9 +337,50 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       this.errorMsg.set('Session expired. Please log in again.');
       return;
     }
-    this.isSaving.set(true);
+
+    this.sendOtpAndShowStep(this.accountantForm.getRawValue().accountantEmail);
+  }
+
+  /**
+   * Shared by ULB (`onSaveAndContinue`) and STATE/MoHUA (`onSaveStateProfile`): sends an OTP to
+   * `email` and, on success, flips the UI into the OTP-entry step. `onSent` runs first so a
+   * caller can close its own edit mode (STATE does this; ULB has nothing to close).
+   */
+  private sendOtpAndShowStep(email: string, onSent?: () => void): void {
+    this.sendingOtp.set(true);
     this.errorMsg.set('');
 
+    this.profileService.sendProfileOtp(email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ sent }) => {
+          this.sendingOtp.set(false);
+          if (!sent) {
+            this.errorMsg.set('Failed to send OTP. Please try again.');
+            return;
+          }
+          onSent?.();
+          this.otpEmail.set(email);
+          this.otpStep.set(true);
+          this.otpValue.set('');
+          this.errorMsg.set('');
+          this.startResendCooldown();
+          this.scrollOtpStepIntoView();
+        },
+      });
+  }
+
+  /** Scrolls the OTP box into view once it renders — it can otherwise land below the fold under
+   *  the contact cards (ULB) or the profile card (STATE/MoHUA), leaving users unsure where to
+   *  enter the code without scrolling down themselves. */
+  private scrollOtpStepIntoView(): void {
+    setTimeout(() => {
+      document.getElementById('pv-otp-step')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  /** Persists both contact cards — called only after the Nodal Officer's OTP is verified. */
+  private persistUlbContacts(): void {
     // Always send all commissioner fields even when empty — backend transforms "" → null
     // so the DB field is explicitly cleared rather than left with its old value.
     const commRaw = this.commissionerForm.getRawValue();
@@ -351,6 +400,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
         next: ({ ok, fieldErrors }) => {
           if (!ok) {
             this.isSaving.set(false);
+            this.otpStep.set(false);
             if (fieldErrors?.['commissionerEmail']) {
               this.openEditCommissioner();
               const control = this.commissionerForm.controls.commissionerEmail;
@@ -421,30 +471,34 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       this.errorMsg.set('Session expired. Please log in again.');
       return;
     }
-    this.sendingOtp.set(true);
-    this.errorMsg.set('');
 
-    this.profileService.sendProfileOtp(email)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ({ sent }) => {
-          this.sendingOtp.set(false);
-          if (!sent) {
-            this.errorMsg.set('Failed to send OTP. Please try again.');
-            return;
-          }
-          this.editingStateProfile.set(false);
-          this.otpStep.set(true);
-          this.otpValue.set('');
-          this.errorMsg.set('');
-          this.startResendCooldown(); // C2
-        },
-      });
+    this.sendOtpAndShowStep(email, () => this.editingStateProfile.set(false));
   }
 
   onConfirmOtp(): void {
     const otp = this.otpValue();
     if (!/^\d{4}$/.test(otp)) return; // H3
+
+    if (this.role === 'ulb') {
+      const nodalOfficerEmail = this.accountantForm.getRawValue().accountantEmail;
+      if (!this.userId) { this.errorMsg.set('Session expired. Please log in again.'); return; }
+      this.isSaving.set(true);
+      this.errorMsg.set('');
+
+      this.profileService.verifyProfileOtp(nodalOfficerEmail, otp)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ({ verified }) => {
+            if (!verified) {
+              this.isSaving.set(false);
+              this.errorMsg.set('Invalid or expired OTP. Please check the Nodal Officer\'s email and try again.');
+              return;
+            }
+            this.persistUlbContacts();
+          },
+        });
+      return;
+    }
 
     const email = this.stateProfile()?.email ?? '';
     if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
@@ -456,55 +510,45 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     this.errorMsg.set('');
 
     if (this.role === 'mohua') {
-      // MOHUA: OTP verify → issue save token → if isNewUser: set password; else: mark verified
-      this.profileService.verifyProfileOtp(email, otp).pipe(
-        takeUntilDestroyed(this.destroyRef),
-        filter(({ verified }) => {
-          if (!verified) {
-            this.isSaving.set(false);
-            this.errorMsg.set('Invalid or expired OTP. Please check your email and try again.');
-          }
-          return verified;
-        }),
-        switchMap(() => this.profileService.issueProfileSaveToken(this.userId)),
-        filter(({ token }) => {
-          if (!token) {
-            this.isSaving.set(false);
-            this.errorMsg.set('Could not secure save session. Please verify your email again.');
-          }
-          return token.length > 0;
-        }),
-      ).subscribe({
-        next: ({ token }) => {
-          if (this.isNewUser()) {
-            this.isSaving.set(false);
-            this.profileSaveToken = token;
-            this.passwordStep.set(true);
-          } else {
-            this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token, { isXviFcdeleted: false })
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe({
-                next: ({ ok }) => {
-                  if (!ok) {
-                    this.isSaving.set(false);
-                    this.errorMsg.set('Profile save failed. Please try again.');
-                    return;
-                  }
-                  this.markVerifiedInStorage();
-                  this.snackBar.open('Email verified successfully!', 'Close', {
-                    duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
-                    panelClass: ['snack-success'],
-                  });
-                  void this.navigateToHome();
-                },
-              });
-          }
-        },
+      // MOHUA: verified but doesn't redisplay the profile or restore name/mobile/designation into
+      // localStorage afterward — only STATE does that (preserved as-is, not unified).
+      this.verifyOtpThenSaveProfile({
+        email, otp, name, firstName, lastName, mobile, designation,
+        extraSaveFields: { isXviFcdeleted: false },
+        successMessage: 'Email verified successfully!',
+        updateStateProfileAfterSave: false,
       });
       return;
     }
 
-    // STATE: OTP verify → issue save token → if isNewUser: show password step; else: save profile
+    // STATE
+    this.verifyOtpThenSaveProfile({
+      email, otp, name, firstName, lastName, mobile, designation,
+      successMessage: 'Profile verified successfully!',
+      updateStateProfileAfterSave: true,
+    });
+  }
+
+  /**
+   * Shared by the STATE and MoHUA branches of `onConfirmOtp()`: OTP verify → issue a single-use
+   * save token → if this is a new user's first login, show the set-password step; otherwise save
+   * the profile fields and navigate home. `extraSaveFields`/`updateStateProfileAfterSave` carry
+   * the only two real differences between the STATE and MoHUA call sites.
+   */
+  private verifyOtpThenSaveProfile(options: {
+    email: string;
+    otp: string;
+    name: string;
+    firstName: string;
+    lastName: string;
+    mobile: string;
+    designation: string;
+    extraSaveFields?: Record<string, unknown>;
+    successMessage: string;
+    updateStateProfileAfterSave: boolean;
+  }): void {
+    const { email, otp, name, firstName, lastName, mobile, designation, extraSaveFields, successMessage, updateStateProfileAfterSave } = options;
+
     this.profileService.verifyProfileOtp(email, otp).pipe(
       takeUntilDestroyed(this.destroyRef),
       filter(({ verified }) => {
@@ -528,26 +572,30 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
           this.isSaving.set(false);
           this.profileSaveToken = token;
           this.passwordStep.set(true);
-        } else {
-          this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token)
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({
-              next: ({ ok }) => {
-                if (!ok) {
-                  this.isSaving.set(false);
-                  this.errorMsg.set('Profile save failed. Please try again.');
-                  return;
-                }
+          return;
+        }
+        this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token, extraSaveFields)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: ({ ok }) => {
+              if (!ok) {
+                this.isSaving.set(false);
+                this.errorMsg.set('Profile save failed. Please try again.');
+                return;
+              }
+              if (updateStateProfileAfterSave) {
                 this.stateProfile.set({ name, firstName, lastName, mobile, designation, email });
                 this.markVerifiedInStorage({ name, mobile, designation });
-                this.snackBar.open('Profile verified successfully!', 'Close', {
-                  duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
-                  panelClass: ['snack-success'],
-                });
-                void this.navigateToHome();
-              },
-            });
-        }
+              } else {
+                this.markVerifiedInStorage();
+              }
+              this.snackBar.open(successMessage, 'Close', {
+                duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+                panelClass: ['snack-success'],
+              });
+              void this.navigateToHome();
+            },
+          });
       },
     });
   }
@@ -601,7 +649,11 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     if (!this.canResend()) return;
     this.otpStep.set(false);
     this.otpValue.set('');
-    this.onSaveStateProfile();
+    if (this.role === 'ulb') {
+      this.onSaveAndContinue();
+    } else {
+      this.onSaveStateProfile();
+    }
   }
 
   // L4 — typed event handler (no $any); H3 — strip non-digits

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { MOHUA_ROLES_CONFIG } from '../shared/roles-teams-overview/roles-teams-overview.models';
 
 export const MOHUA_ROUTES: Routes = [
   {
@@ -17,9 +18,10 @@ export const MOHUA_ROUTES: Routes = [
       {
         path: 'roles-teams-unified-view',
         loadComponent: () =>
-          import('./roles-teams-overview/roles-teams-overview.component').then(
-            (m) => m.MohuaRolesTeamsOverviewComponent,
+          import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+            (m) => m.RolesTeamsOverviewComponent,
           ),
+        data: { rolesConfig: MOHUA_ROLES_CONFIG },
       },
       {
         path: 'review-state-submissions',

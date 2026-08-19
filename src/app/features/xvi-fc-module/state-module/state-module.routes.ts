@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { unsavedChangesGuard } from '../../../core/guards/unsaved-changes.guard';
+import { STATE_ROLES_CONFIG } from '../shared/roles-teams-overview/roles-teams-overview.models';
 
 type DeferredStateRoute = Readonly<{
   path: string;
@@ -85,7 +86,10 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'roles-teams-unified-view',
     loadComponent: () =>
-      import('./roles-teams-overview/roles-teams-overview.component').then((m) => m.RolesTeamsOverviewComponent),
+      import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+        (m) => m.RolesTeamsOverviewComponent,
+      ),
+    data: { rolesConfig: STATE_ROLES_CONFIG },
   },
   {
     path: 'register-ulb',

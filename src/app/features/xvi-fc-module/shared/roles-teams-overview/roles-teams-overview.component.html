@@ -14,7 +14,7 @@
     <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-3">
       <div>
         <h1 class="fs-4 fw-bold mb-1">Team &amp; Roles</h1>
-        <p class="text-muted small mb-0">Manage who has access and what they can do.</p>
+        <p class="text-muted small mb-0">{{ pageSubtitle }}</p>
       </div>
     </div>
 
@@ -315,7 +315,7 @@
             [dataSource]="members()"
             [trackBy]="trackByMemberId"
             class="w-100"
-            aria-label="State team members"
+            [attr.aria-label]="tableAriaLabel"
           >
             @for (col of tableColumns; track col.key) {
               <ng-container [matColumnDef]="col.key">
