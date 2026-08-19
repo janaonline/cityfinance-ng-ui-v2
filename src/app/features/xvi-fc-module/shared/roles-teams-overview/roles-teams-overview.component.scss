@@ -1,6 +1,10 @@
 @use '../../styles/xvi-fc-theme' as theme;
+@use '../../styles/shared-layout' as layout;
 
-:host { display: block; }
+:host {
+  display: block;
+  @include layout.form-layout;
+}
 
 .team-page {
   max-width: 1160px;
@@ -161,7 +165,7 @@ mat-card {
   }
 }
 
-// ─── Role Select (inline) ─────────────────────────────────────────────────────
+// ─── Role Select (inline, not inside form group) ──────────────────────────────
 .role-select {
   font-size: 0.82rem;
   min-width: 90px;
@@ -200,8 +204,8 @@ mat-card {
   }
 
   &--editor {
-    background: linear-gradient(135deg, #0369a1, #0ea5e9);
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
   }
 
   &--viewer {
@@ -209,6 +213,8 @@ mat-card {
     box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.1);
   }
 }
+
+// inactive rows → Bootstrap opacity-50 | self row → Bootstrap table-active
 
 // ─── Current-user badge ───────────────────────────────────────────────────────
 .you-badge {
@@ -286,10 +292,10 @@ mat-card {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.role-label-view  { animation: roleFadeSlide 180ms ease forwards; }
+.role-label-view { animation: roleFadeSlide 180ms ease forwards; }
 .role-select-enter { animation: roleFadeSlide 220ms 60ms ease both; }
 
-// ─── Action icon buttons ─────────────────────────────────────────────────────
+
 .action-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -410,11 +416,12 @@ mat-card {
     &:last-of-type .mat-mdc-cell { border-bottom: none; }
   }
 
+  // Compact role-select inside cell
   .mat-mdc-select { font-size: 0.82rem; }
   .mat-mdc-select-trigger { padding: 4px 8px; }
 }
 
-// CDK overlay panel
+// CDK overlay panel escapes view encapsulation — must be at root level
 ::ng-deep .role-select-panel { min-width: 140px !important; }
 
 // ─── Animations ───────────────────────────────────────────────────────────────
