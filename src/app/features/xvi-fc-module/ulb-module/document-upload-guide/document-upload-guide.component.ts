@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { ImageLightboxDialogComponent, ImageLightboxDialogData } from './image-lightbox-dialog/image-lightbox-dialog.component';
+import {
+  ImageLightboxDialogComponent,
+  ImageLightboxDialogData,
+} from '../../shared/image-lightbox-dialog/image-lightbox-dialog.component';
 
 const IMAGE_BASE = 'assets/images/document-upload-guide';
 
