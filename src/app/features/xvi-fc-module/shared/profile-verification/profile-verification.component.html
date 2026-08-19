@@ -102,30 +102,32 @@
                   Municipal Commissioner / Executive Officer
                   <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
                 </mat-card-title>
-                @if (!editingCommissioner()) {
-                  <button
-                    mat-stroked-button
-                    class="ms-auto"
-                    style="height: 32px; font-size: 12px"
-                    (click)="openEditCommissioner()"
-                  >
-                    <i class="bi bi-pencil-fill me-1"></i> Edit
-                  </button>
-                } @else {
-                  <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
-                  <div class="d-flex flex-column align-items-end ms-auto">
+                @if (!otpStep()) {
+                  @if (!editingCommissioner()) {
                     <button
-                      mat-flat-button
-                      color="primary"
+                      mat-stroked-button
+                      class="ms-auto"
                       style="height: 32px; font-size: 12px"
-                      (click)="editingCommissioner.set(false)"
+                      (click)="openEditCommissioner()"
                     >
-                      <i class="bi bi-check-lg me-1"></i> Done
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
                     </button>
-                    <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
-                      Saved when you click <strong>Save &amp; Continue</strong>
-                    </p>
-                  </div>
+                  } @else {
+                    <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
+                    <div class="d-flex flex-column align-items-end ms-auto">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        style="height: 32px; font-size: 12px"
+                        (click)="editingCommissioner.set(false)"
+                      >
+                        <i class="bi bi-check-lg me-1"></i> Done
+                      </button>
+                      <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
+                        Saved when you click <strong>Save &amp; Continue</strong>
+                      </p>
+                    </div>
+                  }
                 }
               </mat-card-header>
               <mat-divider />
@@ -329,30 +331,32 @@
                   ULB Nodal Officer
                   <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
                 </mat-card-title>
-                @if (!editingAccountant()) {
-                  <button
-                    mat-stroked-button
-                    class="ms-auto"
-                    style="height: 32px; font-size: 12px"
-                    (click)="openEditAccountant()"
-                  >
-                    <i class="bi bi-pencil-fill me-1"></i> Edit
-                  </button>
-                } @else {
-                  <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
-                  <div class="d-flex flex-column align-items-end ms-auto">
+                @if (!otpStep()) {
+                  @if (!editingAccountant()) {
                     <button
-                      mat-flat-button
-                      color="primary"
+                      mat-stroked-button
+                      class="ms-auto"
                       style="height: 32px; font-size: 12px"
-                      (click)="editingAccountant.set(false)"
+                      (click)="openEditAccountant()"
                     >
-                      <i class="bi bi-check-lg me-1"></i> Done
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
                     </button>
-                    <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
-                      Saved when you click <strong>Save &amp; Continue</strong>
-                    </p>
-                  </div>
+                  } @else {
+                    <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
+                    <div class="d-flex flex-column align-items-end ms-auto">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        style="height: 32px; font-size: 12px"
+                        (click)="editingAccountant.set(false)"
+                      >
+                        <i class="bi bi-check-lg me-1"></i> Done
+                      </button>
+                      <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
+                        Saved when you click <strong>Save &amp; Continue</strong>
+                      </p>
+                    </div>
+                  }
                 }
               </mat-card-header>
               <mat-divider />
