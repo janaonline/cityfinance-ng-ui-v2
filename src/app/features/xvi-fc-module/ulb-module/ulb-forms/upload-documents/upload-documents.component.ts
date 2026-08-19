@@ -15,7 +15,7 @@ import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -260,7 +260,6 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
   styleUrl: './upload-documents.component.scss',
 })
 export class UploadDocumentsComponent implements OnInit, OnDestroy {
-  private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly route = inject(ActivatedRoute);
@@ -765,7 +764,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       await firstValueFrom(
         this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section, selfDeclared: true }),
       );
-      this.router.navigate(['../ulb-forms'], { relativeTo: this.route });
+      // Stay on this page — refresh the section's status/lock state in place instead of
+      // navigating back to the conditions overview.
+      await this.loadExistingData();
     } catch (err) {
       console.error('[submit] failed to submit section', err);
     }

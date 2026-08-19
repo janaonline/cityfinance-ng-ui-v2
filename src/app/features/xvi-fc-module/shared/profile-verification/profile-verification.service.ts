@@ -39,6 +39,8 @@ export class ProfileVerificationService {
       .patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
         ...contacts,
         isXVIFCProfileVerified: true,
+        // saveUlbContacts() is only ever called after the Nodal Officer's OTP has been verified.
+        isXviFcEmailVerified: true,
       })
       .pipe(
         map(() => ({ ok: true })),
@@ -106,6 +108,8 @@ export class ProfileVerificationService {
         designation: profile.designation,
         saveToken,
         isXVIFCProfileVerified: true,
+        // saveStateProfile() is only ever called after verifyProfileOtp() has succeeded.
+        isXviFcEmailVerified: true,
         ...extraFields,
       })
       .pipe(

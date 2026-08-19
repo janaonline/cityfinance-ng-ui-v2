@@ -1,4 +1,3 @@
-import { Location } from '@angular/common';
 import { Component, computed, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
@@ -77,7 +76,6 @@ interface ApiErrorBody {
   styleUrl: './xvi-fc-bank-account.component.scss',
 })
 export class XviFcBankAccountComponent {
-  private readonly location = inject(Location);
   private readonly destroyRef = inject(DestroyRef);
   private readonly bankAccountService = inject(XviFcBankAccountService);
   private readonly utilityService = inject(UtilityService);
@@ -343,7 +341,6 @@ export class XviFcBankAccountComponent {
           this.submittedSuccessfully.set(true);
           this.syncFormControlsState();
           this.utilityService.triggerSnackbar('Bank account form submitted successfully.');
-          this.location.back();
         },
         error: (error) => this.handleSubmitError(error),
       })
@@ -404,7 +401,11 @@ export class XviFcBankAccountComponent {
 
           if (record) {
             this.existingRecord.set(record);
-            this.selectedProof.set(this.hasProof(record.proofFile) ? record.proofFile : null);
+            // A returned form's stale (possibly-rejected) proof isn't pre-filled — the ULB must
+            // upload a fresh document before resubmitting.
+            this.selectedProof.set(
+              this.isReturnedStatus() || !this.hasProof(record.proofFile) ? null : record.proofFile,
+            );
             this.form.patchValue(
               {
                 ifscCode: record.ifscCode,

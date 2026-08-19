@@ -82,7 +82,7 @@
               These contact details are from 15th Finance Commission records. Please make sure they are accurate -
               official communications and verification codes for 16th FC grants will be sent to these addresses.
             </p>
-            @if (errorMsg()) {
+            @if (errorMsg() && !otpStep()) {
               <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
                 <i class="bi bi-exclamation-triangle-fill"></i>
                 <span class="flex-grow-1">{{ errorMsg() }}</span>
@@ -102,30 +102,32 @@
                   Municipal Commissioner / Executive Officer
                   <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
                 </mat-card-title>
-                @if (!editingCommissioner()) {
-                  <button
-                    mat-stroked-button
-                    class="ms-auto"
-                    style="height: 32px; font-size: 12px"
-                    (click)="openEditCommissioner()"
-                  >
-                    <i class="bi bi-pencil-fill me-1"></i> Edit
-                  </button>
-                } @else {
-                  <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
-                  <div class="d-flex flex-column align-items-end ms-auto">
+                @if (!otpStep()) {
+                  @if (!editingCommissioner()) {
                     <button
-                      mat-flat-button
-                      color="primary"
+                      mat-stroked-button
+                      class="ms-auto"
                       style="height: 32px; font-size: 12px"
-                      (click)="editingCommissioner.set(false)"
+                      (click)="openEditCommissioner()"
                     >
-                      <i class="bi bi-check-lg me-1"></i> Done
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
                     </button>
-                    <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
-                      Saved when you click <strong>Save &amp; Continue</strong>
-                    </p>
-                  </div>
+                  } @else {
+                    <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
+                    <div class="d-flex flex-column align-items-end ms-auto">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        style="height: 32px; font-size: 12px"
+                        (click)="editingCommissioner.set(false)"
+                      >
+                        <i class="bi bi-check-lg me-1"></i> Done
+                      </button>
+                      <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
+                        Saved when you click <strong>Save &amp; Continue</strong>
+                      </p>
+                    </div>
+                  }
                 }
               </mat-card-header>
               <mat-divider />
@@ -329,30 +331,32 @@
                   ULB Nodal Officer
                   <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
                 </mat-card-title>
-                @if (!editingAccountant()) {
-                  <button
-                    mat-stroked-button
-                    class="ms-auto"
-                    style="height: 32px; font-size: 12px"
-                    (click)="openEditAccountant()"
-                  >
-                    <i class="bi bi-pencil-fill me-1"></i> Edit
-                  </button>
-                } @else {
-                  <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
-                  <div class="d-flex flex-column align-items-end ms-auto">
+                @if (!otpStep()) {
+                  @if (!editingAccountant()) {
                     <button
-                      mat-flat-button
-                      color="primary"
+                      mat-stroked-button
+                      class="ms-auto"
                       style="height: 32px; font-size: 12px"
-                      (click)="editingAccountant.set(false)"
+                      (click)="openEditAccountant()"
                     >
-                      <i class="bi bi-check-lg me-1"></i> Done
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
                     </button>
-                    <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
-                      Saved when you click <strong>Save &amp; Continue</strong>
-                    </p>
-                  </div>
+                  } @else {
+                    <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
+                    <div class="d-flex flex-column align-items-end ms-auto">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        style="height: 32px; font-size: 12px"
+                        (click)="editingAccountant.set(false)"
+                      >
+                        <i class="bi bi-check-lg me-1"></i> Done
+                      </button>
+                      <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
+                        Saved when you click <strong>Save &amp; Continue</strong>
+                      </p>
+                    </div>
+                  }
                 }
               </mat-card-header>
               <mat-divider />
@@ -560,16 +564,65 @@
               }
             </mat-card>
 
-            <!-- Footer -->
-            <div class="d-flex align-items-center justify-content-end gap-3 mt-2">
-              <button mat-flat-button color="primary" [disabled]="!canProceed()" (click)="onSaveAndContinue()">
-                @if (isSaving()) {
-                  <span class="pv-spin pv-spin--light me-1"></span> Saving…
-                } @else {
-                  Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+            @if (otpStep()) {
+              <!-- OTP verification step — confirms the ULB actually has access to the Nodal
+                   Officer's inbox before the contacts are saved. -->
+              <div id="pv-otp-step" class="border rounded-3 p-3 mt-3 bg-white">
+                <p class="small text-secondary mb-3">
+                  <i class="bi bi-envelope-check me-1"></i>
+                  An OTP has been sent to the ULB Nodal Officer's email <strong>{{ otpEmail() }}</strong>. Enter it
+                  below to confirm and save — valid for 10 minutes.
+                </p>
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 180px">
+                    <mat-label>Enter OTP</mat-label>
+                    <input
+                      matInput
+                      type="tel"
+                      inputmode="numeric"
+                      maxlength="4"
+                      placeholder="4-digit OTP"
+                      [value]="otpValue()"
+                      (input)="onOtpInput($event)"
+                      aria-label="One-time password"
+                      autocomplete="one-time-code"
+                    />
+                  </mat-form-field>
+                  <div class="d-flex gap-2 flex-wrap align-items-center mt-1">
+                    <button mat-flat-button color="primary" [disabled]="!canConfirmOtp()" (click)="onConfirmOtp()">
+                      @if (isSaving()) {
+                        <span class="pv-spin pv-spin--light me-1"></span> Verifying…
+                      } @else {
+                        <i class="bi bi-shield-check me-1"></i> Verify &amp; Save
+                      }
+                    </button>
+                    <button mat-stroked-button (click)="resendOtp()" [disabled]="!canResend()">
+                      @if (sendingOtp()) {
+                        <span class="pv-spin me-1"></span> Sending…
+                      } @else if (resendCooldown() > 0) {
+                        <i class="bi bi-clock me-1"></i> Resend in {{ resendCooldown() }}s
+                      } @else {
+                        <i class="bi bi-arrow-repeat me-1"></i> Resend OTP
+                      }
+                    </button>
+                  </div>
+                </div>
+                @if (errorMsg()) {
+                  <p class="text-danger small mt-2 mb-0">{{ errorMsg() }}</p>
                 }
-              </button>
-            </div>
+              </div>
+            } @else {
+              <!-- Footer -->
+              <div class="d-flex align-items-center justify-content-end gap-3 mt-2">
+                <button mat-flat-button color="primary" [disabled]="!canProceed()" (click)="onSaveAndContinue()">
+                  @if (sendingOtp()) {
+                    <span class="pv-spin pv-spin--light me-1"></span> Sending OTP…
+                  } @else {
+                    Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+                  }
+                </button>
+              </div>
+            }
           }
         }
 
@@ -907,13 +960,12 @@
 
             @if (otpStep()) {
               <!-- OTP verification step -->
-              <div class="border rounded-3 p-3 mt-3 bg-white">
-                <p class="small text-secondary mb-1">
+              <div id="pv-otp-step" class="border rounded-3 p-3 mt-3 bg-white">
+                <p class="small text-secondary mb-3">
                   <i class="bi bi-envelope-check me-1"></i>
-                  An OTP has been sent to your registered email address. Enter it below to confirm.
+                  An OTP has been sent to <strong>{{ otpEmail() }}</strong>. Enter it below to confirm — valid for 10
+                  minutes.
                 </p>
-                <!-- M2 — OTP expiry hint -->
-                <p class="small text-muted mb-3"><i class="bi bi-clock me-1"></i>OTP is valid for 10 minutes.</p>
                 <div class="d-flex align-items-start gap-3 flex-wrap">
                   <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 180px">
                     <mat-label>Enter OTP</mat-label>

@@ -14,6 +14,7 @@ import { SlbComponent } from './slb.component';
 import { SlbService } from './slb.service';
 import { SlbFormData } from './slb.models';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
+import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-body.component';
 
 @Component({ selector: 'app-dynamic-form', standalone: true, template: '' })
 class MockDynamicFormComponent {
@@ -107,8 +108,12 @@ describe('SlbComponent', () => {
       ],
     })
       .overrideComponent(SlbComponent, {
-        remove: { imports: [HttpClientTestingModule, RouterTestingModule, DynamicFormComponent] },
-        add: { imports: [HttpClientTestingModule, RouterTestingModule, MockDynamicFormComponent, MockPreLoaderComponent] },
+        remove: { imports: [HttpClientTestingModule, RouterTestingModule] },
+        add: { imports: [HttpClientTestingModule, RouterTestingModule, MockPreLoaderComponent] },
+      })
+      .overrideComponent(SlbFormBodyComponent, {
+        remove: { imports: [DynamicFormComponent] },
+        add: { imports: [MockDynamicFormComponent] },
       })
       .compileComponents();
 
@@ -140,8 +145,6 @@ describe('SlbComponent', () => {
     expect(getControl('ind1.actual')).toBeTruthy();
     expect(getControl('ind1.target')).toBeTruthy();
     expect(getControl('checkboxConfirmation')).toBeTruthy();
-    expect(component.indicatorFields().map((f) => f.key)).toEqual(['ind1', 'ind10']);
-    expect(component.declarationFields().map((f) => f.key)).toEqual(['checkboxConfirmation']);
   }));
 
   it('shows the current status as a plain pill, not a multi-actor review stepper', fakeAsync(() => {
@@ -153,16 +156,6 @@ describe('SlbComponent', () => {
     expect(component.currentFormStatusLabel()).toBe('Not Started');
     expect(element.querySelector('.status-pill')?.textContent?.trim()).toBe('Not Started');
     expect(element.querySelector('app-form-progress')).toBeNull();
-  }));
-
-  it('groups indicator fields by meta.section, preserving section order of first appearance', fakeAsync(() => {
-    createComponent();
-    fixture.detectChanges();
-    tick(1);
-
-    expect(component.groupedIndicatorFields().map((g) => g.section)).toEqual(['Water Supply', 'Sewerage Management']);
-    expect(component.groupedIndicatorFields()[0].fields.map((f) => f.key)).toEqual(['ind1']);
-    expect(component.groupedIndicatorFields()[1].fields.map((f) => f.key)).toEqual(['ind10']);
   }));
 
   it('renders the indicator table with actual/target inputs, unit suffix, and section header rows', fakeAsync(() => {
@@ -198,7 +191,6 @@ describe('SlbComponent', () => {
     targetControl?.markAsTouched();
     fixture.detectChanges();
 
-    expect(component.hasIndicatorError('ind1', 'target', 'actualLessThanOrEqualToTarget')).toBeTrue();
     let indicatorRow = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr'),
     ).find((row) => row.textContent?.includes('Per capita supply of water'));
@@ -207,7 +199,6 @@ describe('SlbComponent', () => {
     actualControl?.setValue(80);
     fixture.detectChanges();
 
-    expect(component.hasIndicatorError('ind1', 'target', 'actualLessThanOrEqualToTarget')).toBeFalse();
     indicatorRow = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr'),
     ).find((row) => row.textContent?.includes('Per capita supply of water'));

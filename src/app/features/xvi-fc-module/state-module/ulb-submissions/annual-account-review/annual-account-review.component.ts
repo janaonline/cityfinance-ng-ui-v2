@@ -823,7 +823,9 @@ export class AnnualAccountReviewComponent {
   }
 
   goBack(): void {
-    this.router.navigate(['../..'], { relativeTo: this.route });
+    // Carries the currently-active tab back so the submissions list can restore its "Select
+    // Form" dropdown instead of resetting to its default (Audited Statements).
+    this.router.navigate(['../..'], { relativeTo: this.route, queryParams: { form: this.activeSection() } });
   }
 
   private async submitDocumentDecision(docId: string, decision: Decision, note: string | undefined): Promise<void> {
