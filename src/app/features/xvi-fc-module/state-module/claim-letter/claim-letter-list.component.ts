@@ -5,7 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import { UtilityService } from '../../../../core/services/utility.service';
+import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import {
@@ -20,7 +22,6 @@ import {
   ClaimLetterSummaryTilesComponent,
 } from './components/summary-tiles/claim-letter-summary-tiles.component';
 import { ClaimLetterService } from './claim-letter.service';
-import { formatCrore } from './claim-letter.utils';
 const CLAIM_LETTER_HISTORY_PAGE_SIZE = 10;
 
 @Component({
@@ -32,6 +33,7 @@ const CLAIM_LETTER_HISTORY_PAGE_SIZE = 10;
     PreLoaderComponent,
     ClaimLetterSummaryTilesComponent,
     ClaimLetterEligibilityChecklistComponent,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './claim-letter-list.component.html',
   styleUrl: './claim-letter-list.component.scss',
@@ -42,6 +44,7 @@ export class ClaimLetterListComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
   private readonly claimLetterService = inject(ClaimLetterService);
   private readonly moduleService = inject(XvifcModuleService);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
 
   readonly isLoading = signal(false);
   readonly loadError = signal(false);
@@ -148,7 +151,7 @@ export class ClaimLetterListComponent implements OnInit {
     ];
   });
 
-  readonly formatCrore = formatCrore;
+  readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'auto');
   readonly installment = CLAIM_LETTER_INSTALLMENT;
 
   toggleInstructions(): void {

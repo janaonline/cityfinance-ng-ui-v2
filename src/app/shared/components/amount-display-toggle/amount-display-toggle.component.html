@@ -1,0 +1,13 @@
+<mat-form-field appearance="outline" class="">
+  <mat-label>Amounts shown as</mat-label>
+  <mat-select
+    [value]="override()"
+    (selectionChange)="onChange($event.value)"
+    aria-label="Amount display unit"
+    data-cy="amount-display-toggle"
+  >
+    @for (option of options; track option.label) {
+      <mat-option [value]="option.value">{{ option.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>

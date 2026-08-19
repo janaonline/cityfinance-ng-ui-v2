@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, map, Observable, of, forkJoin } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
+import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import {
   DisbursementColumn,
   DisbursementRow,
@@ -16,6 +17,7 @@ import { OverviewData } from '../../shared/overview-card/overview-card.component
 })
 export class OverviewService {
   private readonly http = inject(HttpClient);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
 
   // private readonly baseUrl = 'http://localhost:3001/api/v2';
   private readonly baseUrl = environment.api.url2;
@@ -69,7 +71,7 @@ export class OverviewService {
       financialYear: `FY-${response.years}`,
       subHeader1: 'TOTAL 5-YEAR ALLOCATION',
       subHeader2: 'BASIC + PERFORMANCE',
-      totalAllocation: this.formatCrore(response.totalAllocation),
+      totalAllocation: this.formatAmount(response.totalAllocation),
       totalAllocationNote: `For ${response.totalUlbs} ULBs in ${response.stateName}`,
       grantSections: [
         {
@@ -77,7 +79,7 @@ export class OverviewService {
           label: 'Basic Grants',
           componentLabel: 'Grant Component',
           title: 'Basic Grants',
-          amount: this.formatCrore(totalBasic),
+          amount: this.formatAmount(totalBasic),
           description: 'Basic grants are allocated as 50% tied and 50% untied, subject to:',
           points: [
             'Confirmation of an active SFC and timely submission of the ATR',
@@ -90,7 +92,7 @@ export class OverviewService {
           label: 'Performance Grants',
           componentLabel: 'Grant Component',
           title: 'Performance Grants',
-          amount: this.formatCrore(totalPerformance),
+          amount: this.formatAmount(totalPerformance),
           description: 'Untied performance grants contingent on:',
           points: [
             'Achievement of 5% annual increase in OSR',
@@ -140,8 +142,8 @@ export class OverviewService {
 
     response.tableData.forEach((row) => {
       const key = this.toColumnKey(row.year);
-      basicValues[key] = this.formatCrore(row.basic);
-      performanceValues[key] = row.performance > 0 ? this.formatCrore(row.performance) : '—';
+      basicValues[key] = this.formatAmount(row.basic);
+      performanceValues[key] = row.performance > 0 ? this.formatAmount(row.performance) : '—';
     });
 
     return [
@@ -154,7 +156,7 @@ export class OverviewService {
     return year.toLowerCase().replace(/\s+/g, '').replace(/-/g, '_');
   }
 
-  private formatCrore(value: number): string {
-    return `₹${new Intl.NumberFormat('en-IN').format(value)} crore`;
+  private formatAmount(value: number): string {
+    return this.amountDisplay.format(value, 'auto');
   }
 }

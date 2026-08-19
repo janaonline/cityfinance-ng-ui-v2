@@ -185,23 +185,6 @@ export function getDfValidationStatusLabel(status: DfValidationStatus): string {
   }
 }
 
-/**
- * Formats a rupee amount for display. Auto-scales to Cr / Lakh for large values
- * (mirrors InrFormatPipe 'auto' mode without requiring a non-standalone pipe import).
- */
-export function formatRupees(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '—';
-  const n = Number(value);
-  if (isNaN(n)) return '—';
-  const absN = Math.abs(n);
-  if (absN >= 1e7) {
-    return `₹ ${(n / 1e7).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr`;
-  } else if (absN >= 1e5) {
-    return `₹ ${(n / 1e5).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Lakh`;
-  }
-  return `₹ ${n.toLocaleString('en-IN')}`;
-}
-
 export function isDfRowValidationStatus(value: unknown): value is DfRowValidationStatus {
   return value === 'VALID' || value === 'INVALID';
 }

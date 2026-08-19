@@ -15,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged, merge, Subject, takeUntil } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 import { UtilityService } from '../../../../../../core/services/utility.service';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
@@ -32,7 +33,6 @@ import {
   buildDfRowUpdatePayload,
   buildDfRowViewModel,
   DfRowViewModel,
-  formatRupees,
   isDfRowValidationStatus,
   parseDfRowUpdateErrors,
 } from '../../devolution-formula.utils';
@@ -69,6 +69,7 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<DevolutionFormulaRowsDialogComponent>);
   private readonly data = inject<DevolutionRowsDialogData>(MAT_DIALOG_DATA);
   private readonly fb = inject(FormBuilder);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
 
   readonly stateId = this.data.stateId;
   readonly yearId = this.data.yearId;
@@ -95,7 +96,7 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
 
   readonly validationStatusOptions = DF_ROW_VALIDATION_STATUS_OPTIONS;
 
-  protected readonly formatRupees = formatRupees;
+  protected readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
 
   private loadRequestId = 0;
   private hasSavedRowChanges = false;

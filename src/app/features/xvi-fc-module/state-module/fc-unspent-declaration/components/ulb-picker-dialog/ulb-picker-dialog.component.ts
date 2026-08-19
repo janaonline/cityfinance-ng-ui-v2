@@ -4,10 +4,10 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 import { FcUnspentDeclarationService } from '../../fc-unspent-declaration.service';
 import { FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { buildUlbOptionsCacheKey, FcUnspentUlbOptionsCacheService } from '../../fc-unspent-ulb-options-cache.service';
-import { formatCrore, formatCroreFull } from '../../fc-unspent-declaration.utils';
 
 export interface UlbPickerDialogData {
   stateId: string;
@@ -40,16 +40,17 @@ const ULB_PICKER_PAGE_SIZE = 20;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UlbPickerDialogComponent implements OnInit {
-  readonly formatCrore = formatCrore;
-  readonly formatCroreFull = formatCroreFull;
-
   private readonly service = inject(FcUnspentDeclarationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialogRef = inject(MatDialogRef<UlbPickerDialogComponent, FcUnspentUlbOption[]>);
   /** Optional so the dialog degrades to an always-network call if ever opened without the parent
    *  page's shared injector (see `UnspentUlbTableComponent.openPicker`) — never a hard dependency. */
   private readonly cache = inject(FcUnspentUlbOptionsCacheService, { optional: true });
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   readonly data = inject<UlbPickerDialogData>(MAT_DIALOG_DATA);
+
+  readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
+  readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
 
   readonly search = new FormControl('', { nonNullable: true });
 

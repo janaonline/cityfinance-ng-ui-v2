@@ -246,7 +246,7 @@
                   (click)="startEditAtField(vm.row, 'totalGrantAllocation')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-1">
-                    <span>{{ formatRupees(row.totalGrantAllocation) }}</span>
+                    <span>{{ formatAmount(row.totalGrantAllocation) }}</span>
                     @if (vm.cellHasError['totalGrantAllocation']) {
                       <i
                         class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
@@ -266,7 +266,7 @@
                   (click)="startEditAtField(vm.row, 'installment1Amount')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-1">
-                    <span>{{ formatRupees(row.installment1Amount) }}</span>
+                    <span>{{ formatAmount(row.installment1Amount) }}</span>
                     @if (vm.cellHasError['installment1Amount']) {
                       <i
                         class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
@@ -286,7 +286,7 @@
                   (click)="startEditAtField(vm.row, 'installment2Amount')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-1">
-                    <span>{{ formatRupees(row.installment2Amount) }}</span>
+                    <span>{{ formatAmount(row.installment2Amount) }}</span>
                     @if (vm.cellHasError['installment2Amount']) {
                       <i
                         class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"

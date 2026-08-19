@@ -16,6 +16,7 @@ import {
   themedDialogConfig,
 } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { AmountDisplayToggleComponent } from '../../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { PreLoaderComponent } from '../../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
@@ -49,6 +50,7 @@ import {
   ClaimLetterUlbRow,
   ClaimLetterUlbSelection,
 } from '../claim-letter.models';
+import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { ClaimLetterService } from '../claim-letter.service';
 import { buildBatchNarrative } from '../claim-letter.utils';
 import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
@@ -91,6 +93,7 @@ const CLAIM_LETTER_SUBMIT_CONFIRM: Required<ConfirmDialogData> = {
     FormProgressComponent,
     XvifcBreadcrumbComponent,
     ClaimLetterSummaryTilesComponent,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './claim-letter-detail.component.html',
   styleUrl: './claim-letter-detail.component.scss',
@@ -103,6 +106,7 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly claimLetterService = inject(ClaimLetterService);
   private readonly moduleService = inject(XvifcModuleService);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   /** Applies the feature's current theme to all confirm dialogs opened by this component. */
   private readonly dialogConfig = themedDialogConfig();
   /** Raw theme class for the preview dialog opened directly via `MatDialog` (needs a bare
@@ -391,6 +395,7 @@ export class ClaimLetterDetailComponent implements OnInit {
       remainingAfterThisBatch,
       slotsRemaining,
       installment: CLAIM_LETTER_INSTALLMENT,
+      formatAmount: (value) => this.amountDisplay.format(value, 'auto'),
     });
   });
 

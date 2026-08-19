@@ -15,14 +15,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
-import {
-  computeClaimDifferencePercentage,
-  formatCrore,
-  formatCroreFull,
-  isClaimWithinVariance,
-} from '../../claim-letter.utils';
+import { computeClaimDifferencePercentage, isClaimWithinVariance } from '../../claim-letter.utils';
 import {
   ClaimLetterUlbPickerDialogComponent,
   ClaimLetterUlbPickerDialogData,
@@ -58,7 +54,7 @@ interface ClaimUlbRowViewModel {
 }
 
 /** No backend `rowEditFields`-style metadata exists for claim-letter rows (unlike FC Unspent) — the
- *  DTO validation is just `ulbId: MongoId`, `claimedAmount: number, min(0.01)`, so this builds each
+ *  DTO validation is just `ulbId: MongoId`, `claimedAmount: whole Rupee, min(1)`, so this builds each
  *  row with plain Validators instead of the shared `DynamicFormService`/backend-field-config route. */
 export function createClaimUlbRowGroup(
   canEdit: boolean,
@@ -67,7 +63,7 @@ export function createClaimUlbRowGroup(
   const group = new FormGroup<ClaimUlbRowForm>({
     ulbId: new FormControl<string | null>(existingRow?.ulbId ?? null, { validators: [Validators.required] }),
     claimedAmount: new FormControl<number | null>(existingRow?.claimedAmount ?? null, {
-      validators: [Validators.required, Validators.min(0.01)],
+      validators: [Validators.required, Validators.min(1)],
     }),
   });
 
@@ -79,7 +75,7 @@ export function createClaimUlbRowGroup(
 function claimedAmountErrorText(control: AbstractControl): string | null {
   if (!control.touched || !control.errors) return null;
   if (control.errors['required']) return 'Claim amount is required.';
-  if (control.errors['min']) return 'Claim amount must be greater than 0.';
+  if (control.errors['min']) return 'Claim amount must be at least ₹1.';
   return null;
 }
 
@@ -93,6 +89,7 @@ function claimedAmountErrorText(control: AbstractControl): string | null {
 export class ClaimUlbTableComponent {
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   private readonly themeClass = resolveThemeClass();
   /** Passed through to `MatDialog.open` so the picker resolves against this component's own
    *  injector rather than the root one — kept for parity with FC Unspent's table even though the
@@ -189,8 +186,8 @@ export class ClaimUlbTableComponent {
   );
   readonly totalClaim = computed(() => this.rowValues().reduce((sum, row) => sum + (row.claimedAmount ?? 0), 0));
 
-  readonly formatCrore = formatCrore;
-  readonly formatCroreFull = formatCroreFull;
+  readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
+  readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
   readonly claimedAmountErrorText = claimedAmountErrorText;
 
   /** Opens the picker to add one or more brand-new rows, in the order they were selected. */

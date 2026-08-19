@@ -5,6 +5,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { StateDashboardService } from '../state-dashboard/state-dashboard.service';
@@ -34,6 +35,7 @@ export class RequirementsComponent implements OnInit {
   private readonly moduleService = inject(XvifcModuleService);
   private readonly stateDashboardService = inject(StateDashboardService);
   private readonly claimLetterService = inject(ClaimLetterService);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** V1 only supports Installment 1 — same "static for now, dynamic later" constant the
@@ -57,7 +59,7 @@ export class RequirementsComponent implements OnInit {
   });
   readonly formattedAllocation = computed(() => {
     const value = this.totalAllocation();
-    return value === null ? '—' : this.formatAllocation(value);
+    return value === null ? '—' : this.amountDisplay.format(value, 'auto');
   });
 
   ngOnInit(): void {
@@ -120,12 +122,5 @@ export class RequirementsComponent implements OnInit {
   private resolveStateId(): string {
     const stateId = this.authService.getCurrentUserSnapshot()?.state;
     return typeof stateId === 'string' ? stateId.trim() : '';
-  }
-
-  /** Matches the existing static markup's "₹1,562 crore" style — same `Intl.NumberFormat('en-IN')`
-   *  approach as `StateDashboardComponent.formatAmount()`, kept local since that method isn't shared. */
-  private formatAllocation(value: number): string {
-    const formatted = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(value);
-    return `₹${formatted} crore`;
   }
 }

@@ -6,6 +6,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, Subject, throwError } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UploadedFileMetadata } from '../../../../../shared/dynamic-form/components/file/file-metadata.types';
@@ -21,7 +22,6 @@ import {
   ClaimLetterUlbRow,
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
-import { formatCrore } from '../claim-letter.utils';
 import FileSaver from 'file-saver';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
 
@@ -225,7 +225,8 @@ describe('ClaimLetterDetailComponent', () => {
       expect(narrative[0]).toBe('This batch includes 1 of 10 eligible ULBs (10.0%).');
       expect(narrative[1]).toContain('Installment 1 allocation');
       expect(narrative[1]).toContain('20.0%'); // 5 / 25
-      expect(narrative[2]).toContain('10 Cr.'); // 15 (availableToClaim) - 5 (live claim)
+      // 15 (availableToClaim) - 5 (live claim)
+      expect(narrative[2]).toContain(TestBed.inject(AmountDisplayModeService).format(10, 'auto'));
     });
 
     it('breadcrumb reads Claim Letter > New Claim Letter, linking back to the list', () => {
@@ -455,7 +456,7 @@ describe('ClaimLetterDetailComponent', () => {
 
       const narrative = component.batchNarrative();
       // If the (incorrect) raw overview totals were used instead, this would read 25-5-3-2-21=-6.
-      expect(narrative[2]).toContain(formatCrore(25 - 5 - 0 - 0 - 21));
+      expect(narrative[2]).toContain(TestBed.inject(AmountDisplayModeService).format(25 - 5 - 0 - 0 - 21, 'auto'));
     });
 
     it('narrative is empty (hidden) once the batch is no longer editable', async () => {

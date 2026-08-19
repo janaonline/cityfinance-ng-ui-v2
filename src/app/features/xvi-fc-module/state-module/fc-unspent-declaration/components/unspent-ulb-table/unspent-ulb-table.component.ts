@@ -15,10 +15,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
-import { formatCrore, formatCroreFull } from '../../fc-unspent-declaration.utils';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dialog/ulb-picker-dialog.component';
 
@@ -130,13 +130,14 @@ export function createFcUnspentUlbRowGroup(
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UnspentUlbTableComponent {
-  readonly formatCrore = formatCrore;
-  readonly formatCroreFull = formatCroreFull;
-
   private readonly dynamicService = inject(DynamicFormService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   private readonly themeClass = resolveThemeClass();
+
+  readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
+  readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
   /** Passed through to `MatDialog.open` so the picker resolves the same feature-scoped
    *  `FcUnspentUlbOptionsCacheService` instance provided on `FcUnspentDeclarationComponent` — by
    *  default a dialog is created against the root injector, not this component's own. */

@@ -5,7 +5,6 @@ import {
   buildDfRowUpdatePayload,
   extractApiErrorResponse,
   extractValidationSummaryFromError,
-  formatRupees,
   getDfValidationStatusLabel,
   getDuplicateUlbMessage,
   getRegisterUlbErrorMessage,
@@ -236,16 +235,6 @@ describe('isDfRowValidationStatus', () => {
   it('returns false for "NOT_VALIDATED"', () => expect(isDfRowValidationStatus('NOT_VALIDATED')).toBeFalse());
   it('returns false for empty string', () => expect(isDfRowValidationStatus('')).toBeFalse());
   it('returns false for null', () => expect(isDfRowValidationStatus(null)).toBeFalse());
-});
-
-// ─── formatRupees ─────────────────────────────────────────────────────────────
-
-describe('formatRupees', () => {
-  it('returns "—" for null', () => expect(formatRupees(null)).toBe('—'));
-  it('returns "—" for undefined', () => expect(formatRupees(undefined)).toBe('—'));
-  it('formats crore amounts with Cr suffix', () => expect(formatRupees(50000000)).toContain('Cr'));
-  it('formats lakh amounts with Lakh suffix', () => expect(formatRupees(500000)).toContain('Lakh'));
-  it('formats plain amounts with ₹ prefix', () => expect(formatRupees(5000)).toContain('₹'));
 });
 
 // ─── buildDfRowUpdatePayload ──────────────────────────────────────────────────
