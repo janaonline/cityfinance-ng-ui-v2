@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, of, Subject, throwError } from 'rxjs';
 import FileSaver from 'file-saver';
@@ -24,8 +24,23 @@ import {
   EulbFinalSubmitPayload,
   EulbFormResponseData,
   EulbSaveDraftPayload,
+  EulbValidationSummary,
 } from './eulb-status.models';
 import { EulbStatusService } from './eulb-status.service';
+import { EulbRowsDialogComponent } from './dialogs/rows-dialog/eulb-rows-dialog.component';
+
+const mockValidationSummary: EulbValidationSummary = {
+  dbUlbCount: 42,
+  maxAllowedExcelRows: 42,
+  excelRowCount: 42,
+  matchedDbUlbCount: 42,
+  missingDbUlbCount: 0,
+  extraExcelRowCount: 0,
+  duplicateUlbCount: 0,
+  errorRowCount: 0,
+  validationStatus: 'VALID',
+  activeDatasetVersion: 1,
+};
 
 @Component({ selector: 'app-dynamic-form', standalone: true, template: '' })
 class MockDynamicFormComponent {
@@ -570,6 +585,66 @@ describe('ElectedBodyStatusComponent', () => {
     component.onSupportingAction({ fieldKey: 'ulbCount', actionId: 'register-ulb' });
 
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  // ─── view-uploaded-data supporting action ─────────────────────────────────
+
+  describe('view-uploaded-data supporting action', () => {
+    beforeEach(() => {
+      dialog.open.and.returnValue({ afterClosed: () => of({}) } as unknown as MatDialogRef<unknown>);
+    });
+
+    it('opens the rows dialog with stateId, yearId, rowEditFields, and canEdit', () => {
+      component.onSupportingAction({ fieldKey: 'electedBodyExcelFile', actionId: 'view-uploaded-data' });
+
+      expect(dialog.open).toHaveBeenCalledOnceWith(
+        EulbRowsDialogComponent,
+        jasmine.objectContaining({
+          data: jasmine.objectContaining({ stateId, yearId, canEdit: true }),
+        }),
+      );
+    });
+
+    it('passes initialValidationStatusFilter: INVALID when the loaded form has row errors', () => {
+      eulbService.getFormData.and.returnValue(
+        of({ ...createFormResponse(), validationSummary: { ...mockValidationSummary, errorRowCount: 3 } }),
+      );
+      const summaryFixture = TestBed.createComponent(ElectedBodyStatusComponent);
+      summaryFixture.detectChanges();
+      dialog.open.calls.reset();
+
+      summaryFixture.componentInstance.onSupportingAction({
+        fieldKey: 'electedBodyExcelFile',
+        actionId: 'view-uploaded-data',
+      });
+
+      const callArgs = dialog.open.calls.mostRecent().args[1] as { data: { initialValidationStatusFilter?: string } };
+      expect(callArgs.data.initialValidationStatusFilter).toBe('INVALID');
+    });
+
+    it('passes no filter (defaults to All) when there are no row errors', () => {
+      eulbService.getFormData.and.returnValue(
+        of({ ...createFormResponse(), validationSummary: { ...mockValidationSummary, errorRowCount: 0 } }),
+      );
+      const summaryFixture = TestBed.createComponent(ElectedBodyStatusComponent);
+      summaryFixture.detectChanges();
+      dialog.open.calls.reset();
+
+      summaryFixture.componentInstance.onSupportingAction({
+        fieldKey: 'electedBodyExcelFile',
+        actionId: 'view-uploaded-data',
+      });
+
+      const callArgs = dialog.open.calls.mostRecent().args[1] as { data: { initialValidationStatusFilter?: string } };
+      expect(callArgs.data.initialValidationStatusFilter).toBeUndefined();
+    });
+
+    it('passes no filter when the form has never loaded a validationSummary', () => {
+      component.onSupportingAction({ fieldKey: 'electedBodyExcelFile', actionId: 'view-uploaded-data' });
+
+      const callArgs = dialog.open.calls.mostRecent().args[1] as { data: { initialValidationStatusFilter?: string } };
+      expect(callArgs.data.initialValidationStatusFilter).toBeUndefined();
+    });
   });
 
   // ─── downloadElectedBodiesListDocument (signedElectedbodyFile field) ──────

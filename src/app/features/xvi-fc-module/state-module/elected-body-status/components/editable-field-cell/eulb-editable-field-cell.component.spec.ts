@@ -169,7 +169,7 @@ describe('EulbEditableFieldCellComponent', () => {
 
     const cell = fixture.debugElement.query(By.css('td[app-eulb-editable-field-cell]'));
     const input = fixture.debugElement.query(
-      By.css('input[aria-label="Date on which the elected body is in place."]'),
+      By.css('input[aria-label="Date on which the elected body is in place"]'),
     );
     const tooltips = getTooltipSources(cell);
 

@@ -29,16 +29,6 @@
           }
         </select>
       </div>
-
-      <div class="eulb-filter-error-field">
-        <label class="form-label small fw-semibold mb-1" for="eulb-efield">Error field</label>
-        <select id="eulb-efield" class="form-select form-select-sm" formControlName="errorField">
-          <option value="">All</option>
-          @for (opt of errorFieldOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-      </div>
     </form>
   </div>
 

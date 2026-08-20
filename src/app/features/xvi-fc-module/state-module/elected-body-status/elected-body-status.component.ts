@@ -41,7 +41,9 @@ import {
   EulbRevalidateExcelResponse,
   EulbRowError,
   EulbRowsDialogResult,
+  EulbRowValidationStatus,
   EulbSaveDraftPayload,
+  EulbValidationSummary,
   SubmitType,
 } from './eulb-status.models';
 import {
@@ -171,6 +173,11 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
   readonly isDownloadingElectedBodiesList = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
 
+  /** Latest known validation summary — used to land the "Uploaded Data" dialog directly on the
+   *  Invalid filter when the last upload/validation had row errors, mirroring Devolution Formula's
+   *  own `validationSummary` signal. */
+  readonly validationSummary = signal<EulbValidationSummary | null>(null);
+
   readonly permissions = signal<EulbPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
@@ -260,6 +267,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
           this.stateName.set(data.stateName ?? '');
           this.actors.set(data.actors ?? []);
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
+          this.validationSummary.set(data.validationSummary ?? null);
 
           const fileField = data.questions.find((q) => q.key === 'electedBodyExcelFile');
           this.lastPersistedExcelFile = normalizeUploadedFileMetadata(fileField?.value);
@@ -491,10 +499,13 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
 
   /**
    * Opens the full-screen rows dialog for reviewing uploaded EULB data.
+   * If the last known validation had row errors, lands the user directly on the Invalid filter
+   * instead of "All" — still fully user-initiated, no dialog opens without a click (mirrors
+   * Devolution Formula's `openRowsDialog`).
    * Reloads the form when the dialog closes with an updated summary so backend-driven
    * action/badge state is refreshed.
    */
-  openRowsDialog(): void {
+  openRowsDialog(initialFilter?: EulbRowValidationStatus): void {
     const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'eulb-rows-dialog-panel'];
     this.rowsDialogRef = this.dialog.open(EulbRowsDialogComponent, {
       panelClass,
@@ -507,6 +518,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
         yearId: this.yearId,
         rowEditFields: this.rowEditFields(),
         canEdit: this.canEdit(),
+        initialValidationStatusFilter: initialFilter,
       },
     });
 
@@ -539,7 +551,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
         this.downloadTemplate();
         return;
       case EULB_SUPPORTING_ACTION.VIEW_UPLOADED_DATA:
-        this.openRowsDialog();
+        this.openRowsDialog(this.validationSummary()?.errorRowCount ? 'INVALID' : undefined);
         return;
       case EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET:
         this.downloadErrorSheet();

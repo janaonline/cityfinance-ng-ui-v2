@@ -149,7 +149,7 @@ export class EulbStatusService {
    * Fetches a paginated, filterable list of uploaded EULB rows.
    * @param stateId - The state identifier.
    * @param yearId - The finance commission year identifier.
-   * @param query - Optional filters: `page`, `limit`, `search`, `validationStatus`, `errorField`.
+   * @param query - Optional filters: `page`, `limit`, `search`, `validationStatus`.
    */
   getRows(stateId: string, yearId: string, query: EulbRowsQuery = {}): Observable<EulbRowsApiResponse> {
     let params = new HttpParams();
@@ -157,7 +157,6 @@ export class EulbStatusService {
     if (query.limit !== undefined) params = params.set('limit', String(query.limit));
     if (query.search) params = params.set('search', query.search);
     if (query.validationStatus) params = params.set('validationStatus', query.validationStatus);
-    if (query.errorField) params = params.set('errorField', query.errorField);
 
     return this.http
       .get<EulbRowsApiResponse>(`${this.baseUrl}${stateId}/${yearId}/rows`, { params })
