@@ -70,10 +70,6 @@ export class LoginService {
     return this.otpAuth.verifyOtp(identifier, otp) as Observable<unknown>;
   }
 
-  setPassword(identifier: string, newPassword: string, confirmPassword: string): Observable<unknown> {
-    return this.auth.setPassword(identifier, newPassword, confirmPassword) as Observable<unknown>;
-  }
-
   extractUser(response: unknown): IUserLoggedInDetails | null {
     return this.auth.extractUser(response);
   }
