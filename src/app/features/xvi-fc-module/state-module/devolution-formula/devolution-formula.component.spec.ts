@@ -128,7 +128,9 @@ describe('DevolutionFormulaComponent', () => {
   let confirmDialogService: jasmine.SpyObj<ConfirmDialogService>;
   let dialogOpenSpy: jasmine.Spy;
   let mockDialogRef: jasmine.SpyObj<MatDialogRef<unknown>>;
-  let moduleService: { yearId: ReturnType<typeof signal<string | null>> };
+  let moduleService: {
+    yearId: ReturnType<typeof signal<string | null>>;
+  };
 
   beforeEach(async () => {
     dfService = jasmine.createSpyObj<DevolutionFormulaService>('DevolutionFormulaService', [
@@ -170,8 +172,8 @@ describe('DevolutionFormulaComponent', () => {
         timestamp: '',
       }),
     );
-    dfService.downloadTemplate.and.returnValue(of(new Blob(['template'])));
-    dfService.downloadErrorSheet.and.returnValue(of(new Blob(['errors'])));
+    dfService.downloadTemplate.and.returnValue(of({ blob: new Blob(['template']), fileName: null }));
+    dfService.downloadErrorSheet.and.returnValue(of({ blob: new Blob(['errors']), fileName: null }));
     dfService.deleteUploadedExcel.and.returnValue(of({ success: true, data: {}, timestamp: '' }));
 
     utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', [
@@ -858,14 +860,30 @@ describe('DevolutionFormulaComponent', () => {
       expect(dfService.downloadTemplate).not.toHaveBeenCalled();
     });
 
-    it('saves downloaded template blob via FileSaver', () => {
+    it('saves downloaded template blob via FileSaver, falling back to a literal filename when Content-Disposition is absent', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-template' });
-      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'ulb-wise-allocation-template.xlsx');
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'Devolution-formula-template.xlsx');
     });
 
-    it('saves downloaded error sheet blob via FileSaver', () => {
+    it('saves downloaded template blob under the backend Content-Disposition filename verbatim when present', () => {
+      dfService.downloadTemplate.and.returnValue(
+        of({
+          blob: new Blob(['template']),
+          fileName: 'CF_Test-State_devolution-formula-template_2024-25.xlsx',
+        }),
+      );
+
+      component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-template' });
+
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(
+        jasmine.any(Blob),
+        'CF_Test-State_devolution-formula-template_2024-25.xlsx',
+      );
+    });
+
+    it('saves downloaded error sheet blob via FileSaver, falling back to a literal filename when Content-Disposition is absent', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-error-sheet' });
-      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'ulb-wise-allocation-error-sheet.xlsx');
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'Devolution-formula-error-sheet.xlsx');
     });
   });
 
@@ -903,7 +921,7 @@ describe('DevolutionFormulaComponent', () => {
     }
 
     it('shows loading on download-template while in flight, independent of download-error-sheet', () => {
-      const subject = new Subject<Blob>();
+      const subject = new Subject<{ blob: Blob; fileName: null }>();
       dfService.downloadTemplate.and.returnValue(subject);
 
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-template' });
@@ -912,14 +930,14 @@ describe('DevolutionFormulaComponent', () => {
       expect(findAction('download-template')?.loadingLabel).toBe('Downloading template…');
       expect(findAction('download-error-sheet')?.loading).toBeFalsy();
 
-      subject.next(new Blob(['x']));
+      subject.next({ blob: new Blob(['x']), fileName: null });
       subject.complete();
 
       expect(findAction('download-template')?.loading).toBeFalsy();
     });
 
     it('shows loading on download-error-sheet while in flight, independent of download-template', () => {
-      const subject = new Subject<Blob>();
+      const subject = new Subject<{ blob: Blob; fileName: null }>();
       dfService.downloadErrorSheet.and.returnValue(subject);
 
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-error-sheet' });
@@ -927,7 +945,7 @@ describe('DevolutionFormulaComponent', () => {
       expect(findAction('download-error-sheet')?.loading).toBeTrue();
       expect(findAction('download-template')?.loading).toBeFalsy();
 
-      subject.next(new Blob(['x']));
+      subject.next({ blob: new Blob(['x']), fileName: null });
       subject.complete();
 
       expect(findAction('download-error-sheet')?.loading).toBeFalsy();

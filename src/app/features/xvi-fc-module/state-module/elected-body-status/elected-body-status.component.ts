@@ -478,8 +478,8 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       .downloadTemplate(this.stateId, this.yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'elected-bodies-template.xlsx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Elected-body-template.xlsx');
           this.isDownloadingTemplate.set(false);
         },
         error: () => {
@@ -570,8 +570,8 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       .downloadErrorSheet(stateId, yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'elected-bodies-error-sheet.xlsx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Elected-body-error-sheet.xlsx');
           this.isDownloadingErrorSheet.set(false);
           this.utilityService.triggerSnackbar('Error sheet downloaded successfully.');
         },
@@ -606,8 +606,8 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       .downloadElectedBodiesListDocument(stateId, yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'elected-bodies-list.docx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Elected-body-list.docx');
           this.isDownloadingElectedBodiesList.set(false);
           this.utilityService.triggerSnackbar('Elected bodies list downloaded successfully.');
         },

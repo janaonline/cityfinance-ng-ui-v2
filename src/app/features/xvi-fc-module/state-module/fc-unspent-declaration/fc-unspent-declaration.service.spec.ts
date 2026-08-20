@@ -140,18 +140,33 @@ describe('FcUnspentDeclarationService', () => {
     const yearId = 'year-1';
     const url = `${BASE_URL}${stateId}/${yearId}/fc-unspent-declaration-document`;
 
-    it('calls the exact GET URL and emits the raw blob on success', () => {
+    it('calls the exact GET URL and emits the blob plus the parsed Content-Disposition filename', () => {
       const blob = new Blob(['docx content']);
 
-      let result: Blob | undefined;
+      let result: { blob: Blob; fileName: string | null } | undefined;
       service.downloadDeclarationDocument(stateId, yearId).subscribe((data) => (result = data));
 
       const req = httpMock.expectOne(url);
       expect(req.request.method).toBe('GET');
       expect(req.request.responseType).toBe('blob');
-      req.flush(blob);
+      req.flush(blob, {
+        headers: { 'Content-Disposition': 'attachment; filename="fc-unspent-declaration_2026-08-14.docx"' },
+      });
 
-      expect(result).toEqual(blob);
+      expect(result?.blob).toEqual(blob);
+      expect(result?.fileName).toEqual('fc-unspent-declaration_2026-08-14.docx');
+    });
+
+    it('resolves fileName to null when the response has no Content-Disposition header', () => {
+      const blob = new Blob(['docx content']);
+
+      let result: { blob: Blob; fileName: unknown } | undefined;
+      service.downloadDeclarationDocument(stateId, yearId).subscribe((data) => (result = data));
+
+      httpMock.expectOne(url).flush(blob);
+
+      expect(result?.blob).toEqual(blob);
+      expect(result?.fileName).toBeNull();
     });
 
     it('requests a Blob response, not the JSON envelope the old static-template endpoint used', () => {

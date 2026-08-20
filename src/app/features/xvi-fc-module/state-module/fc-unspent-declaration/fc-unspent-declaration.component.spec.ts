@@ -1103,7 +1103,7 @@ describe('FcUnspentDeclarationComponent', () => {
     }
 
     beforeEach(() => {
-      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of(blob));
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of({ blob, fileName: null }));
       saveAsSpy = spyOn(FileSaver, 'saveAs');
     });
 
@@ -1144,7 +1144,7 @@ describe('FcUnspentDeclarationComponent', () => {
     });
 
     it('ignores duplicate clicks while a download is already in flight', () => {
-      const pending = new Subject<Blob>();
+      const pending = new Subject<{ blob: Blob; fileName: null }>();
       downloadSpy.and.returnValue(pending);
 
       triggerYesBranchDownload();
@@ -1152,17 +1152,23 @@ describe('FcUnspentDeclarationComponent', () => {
       triggerYesBranchDownload();
 
       expect(downloadSpy).toHaveBeenCalledTimes(1);
-      pending.next(blob);
+      pending.next({ blob, fileName: null });
       pending.complete();
     });
 
-    it('saves the returned blob via FileSaver under a fixed filename', () => {
+    it('saves the returned blob via FileSaver, falling back to a literal branch-based filename when Content-Disposition is absent', () => {
       triggerYesBranchDownload();
-      expect(saveAsSpy).toHaveBeenCalledOnceWith(blob, 'fc-unspent-declaration.docx');
+      expect(saveAsSpy).toHaveBeenCalledOnceWith(blob, 'Fc-unspent-declaration-yes.docx');
+    });
+
+    it('saves the returned blob under the backend Content-Disposition filename verbatim when present', () => {
+      downloadSpy.and.returnValue(of({ blob, fileName: 'CF_Sample-State_fc-unspent-declaration_2024-25.docx' }));
+      triggerYesBranchDownload();
+      expect(saveAsSpy).toHaveBeenCalledOnceWith(blob, 'CF_Sample-State_fc-unspent-declaration_2024-25.docx');
     });
 
     it('shows loading on the download-declaration action (Yes branch) while the request is in flight, then clears it', () => {
-      const pending = new Subject<Blob>();
+      const pending = new Subject<{ blob: Blob; fileName: null }>();
       downloadSpy.and.returnValue(pending);
 
       function findAction() {
@@ -1178,7 +1184,7 @@ describe('FcUnspentDeclarationComponent', () => {
       expect(findAction()?.loading).toBeTrue();
       expect(findAction()?.loadingLabel).toBe('Downloading declaration…');
 
-      pending.next(blob);
+      pending.next({ blob, fileName: null });
       pending.complete();
 
       expect(findAction()?.loading).toBeFalsy();
@@ -1188,7 +1194,7 @@ describe('FcUnspentDeclarationComponent', () => {
       // fcDeclaration is only visible when isFcUnspent is 'no' — loaded already-saved as No (not
       // switched to locally) so hasUnsavedBranchChange() is false and the action isn't disabled.
       const scenarioComponent = createComponentForScenario(NO_BRANCH_PREVIEW_DATA).componentInstance;
-      const pending = new Subject<Blob>();
+      const pending = new Subject<{ blob: Blob; fileName: null }>();
       downloadSpy.and.returnValue(pending);
 
       function findAction() {
@@ -1203,7 +1209,7 @@ describe('FcUnspentDeclarationComponent', () => {
 
       expect(findAction()?.loading).toBeTrue();
 
-      pending.next(blob);
+      pending.next({ blob, fileName: null });
       pending.complete();
 
       expect(findAction()?.loading).toBeFalsy();
@@ -1366,7 +1372,7 @@ describe('FcUnspentDeclarationComponent', () => {
     let downloadSpy: jasmine.Spy;
 
     beforeEach(() => {
-      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of(new Blob()));
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of({ blob: new Blob(), fileName: null }));
     });
 
     it('does not call the service for fcDeclaration while the branch is unsaved', () => {
@@ -1467,7 +1473,7 @@ describe('FcUnspentDeclarationComponent', () => {
       await waitUntil(() => component.formLevelErrors().length > 0);
       expect(component.formLevelErrors()).toEqual(['stale error']);
 
-      downloadSpy.and.returnValue(of(new Blob()));
+      downloadSpy.and.returnValue(of({ blob: new Blob(), fileName: null }));
       component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
       await waitUntil(() => component.formLevelErrors().length === 0);
       expect(component.formLevelErrors()).toEqual([]);

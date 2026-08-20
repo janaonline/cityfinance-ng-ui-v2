@@ -576,7 +576,7 @@ describe('ElectedBodyStatusComponent', () => {
 
   describe('download-elected-bodies-list supporting action', () => {
     it('routes download-elected-bodies-list actions on signedElectedbodyFile to the download service call', () => {
-      eulbService.downloadElectedBodiesListDocument.and.returnValue(of(new Blob(['docx'])));
+      eulbService.downloadElectedBodiesListDocument.and.returnValue(of({ blob: new Blob(['docx']), fileName: null }));
 
       component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
 
@@ -589,17 +589,29 @@ describe('ElectedBodyStatusComponent', () => {
       expect(eulbService.downloadElectedBodiesListDocument).not.toHaveBeenCalled();
     });
 
-    it('saves the returned blob via FileSaver and shows a success snackbar', () => {
+    it('saves the returned blob via FileSaver and shows a success snackbar, falling back to a literal filename when Content-Disposition is absent', () => {
       const blob = new Blob(['docx content']);
-      eulbService.downloadElectedBodiesListDocument.and.returnValue(of(blob));
+      eulbService.downloadElectedBodiesListDocument.and.returnValue(of({ blob, fileName: null }));
       spyOn(FileSaver, 'saveAs');
       utilityService.triggerSnackbar.calls.reset();
 
       component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
 
-      expect(FileSaver.saveAs).toHaveBeenCalledOnceWith(blob, 'elected-bodies-list.docx');
+      expect(FileSaver.saveAs).toHaveBeenCalledOnceWith(blob, 'Elected-body-list.docx');
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Elected bodies list downloaded successfully.');
       expect(component.isDownloadingElectedBodiesList()).toBeFalse();
+    });
+
+    it('saves the returned blob under the backend Content-Disposition filename verbatim when present', () => {
+      const blob = new Blob(['docx content']);
+      eulbService.downloadElectedBodiesListDocument.and.returnValue(
+        of({ blob, fileName: 'CF_Test-State_elected-bodies-list_2024-25.docx' }),
+      );
+      spyOn(FileSaver, 'saveAs');
+
+      component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
+
+      expect(FileSaver.saveAs).toHaveBeenCalledOnceWith(blob, 'CF_Test-State_elected-bodies-list_2024-25.docx');
     });
 
     it('on a 400 gate failure, shows the backend message and stamps it onto the signedElectedbodyFile control', async () => {
@@ -700,7 +712,7 @@ describe('ElectedBodyStatusComponent', () => {
     });
 
     it('shows loading on download-template while downloadTemplate() is in flight, independent of download-error-sheet', () => {
-      const subject = new Subject<Blob>();
+      const subject = new Subject<{ blob: Blob; fileName: null }>();
       eulbService.downloadTemplate.and.returnValue(subject);
 
       component.downloadTemplate();
@@ -709,14 +721,14 @@ describe('ElectedBodyStatusComponent', () => {
       expect(findAction('electedBodyExcelFile', 'download-template')?.loadingLabel).toBe('Downloading template…');
       expect(findAction('electedBodyExcelFile', 'download-error-sheet')?.loading).toBeFalsy();
 
-      subject.next(new Blob(['x']));
+      subject.next({ blob: new Blob(['x']), fileName: null });
       subject.complete();
 
       expect(findAction('electedBodyExcelFile', 'download-template')?.loading).toBeFalsy();
     });
 
     it('shows loading on download-error-sheet while downloadErrorSheet() is in flight', () => {
-      const subject = new Subject<Blob>();
+      const subject = new Subject<{ blob: Blob; fileName: null }>();
       eulbService.downloadErrorSheet.and.returnValue(subject);
 
       component.downloadErrorSheet();
@@ -724,14 +736,14 @@ describe('ElectedBodyStatusComponent', () => {
       expect(findAction('electedBodyExcelFile', 'download-error-sheet')?.loading).toBeTrue();
       expect(findAction('electedBodyExcelFile', 'download-template')?.loading).toBeFalsy();
 
-      subject.next(new Blob(['x']));
+      subject.next({ blob: new Blob(['x']), fileName: null });
       subject.complete();
 
       expect(findAction('electedBodyExcelFile', 'download-error-sheet')?.loading).toBeFalsy();
     });
 
     it('shows loading on download-elected-bodies-list while downloadElectedBodiesListDocument() is in flight', () => {
-      const subject = new Subject<Blob>();
+      const subject = new Subject<{ blob: Blob; fileName: null }>();
       eulbService.downloadElectedBodiesListDocument.and.returnValue(subject);
 
       component.onSupportingAction({ fieldKey: 'signedElectedbodyFile', actionId: 'download-elected-bodies-list' });
@@ -741,7 +753,7 @@ describe('ElectedBodyStatusComponent', () => {
         'Downloading list…',
       );
 
-      subject.next(new Blob(['docx']));
+      subject.next({ blob: new Blob(['docx']), fileName: null });
       subject.complete();
 
       expect(findAction('signedElectedbodyFile', 'download-elected-bodies-list')?.loading).toBeFalsy();

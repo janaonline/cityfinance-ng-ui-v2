@@ -434,7 +434,9 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (blob) => FileSaver.saveAs(blob, 'fc-unspent-declaration.docx'),
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? `Fc-unspent-declaration-${this.isYesBranch() ? 'yes' : 'no'}.docx`);
+        },
         error: (err: unknown) => {
           console.error('Failed to download the FC Unspent declaration document', err);
           this.handleDownloadApiError(err, 'Failed to download the declaration document.');

@@ -395,16 +395,30 @@ describe('ClaimLetterService', () => {
     it('GETs the PDF endpoint as a blob', () => {
       const url = `${BASE_URL}${claimLetterId}/document/pdf`;
       const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
-      let result: Blob | undefined;
+      let result: { blob: Blob; fileName: unknown } | undefined;
 
-      service.downloadDocumentPdf(claimLetterId).subscribe((blob) => (result = blob));
+      service.downloadDocumentPdf(claimLetterId).subscribe((data) => (result = data));
 
       const req = httpMock.expectOne(url);
       expect(req.request.method).toBe('GET');
       expect(req.request.responseType).toBe('blob');
       req.flush(sampleBlob);
 
-      expect(result).toBe(sampleBlob);
+      expect(result?.blob).toBe(sampleBlob);
+    });
+
+    it('parses the backend Content-Disposition filename', () => {
+      const url = `${BASE_URL}${claimLetterId}/document/pdf`;
+      const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+      let result: { blob: Blob; fileName: string | null } | undefined;
+
+      service.downloadDocumentPdf(claimLetterId).subscribe((data) => (result = data));
+
+      httpMock.expectOne(url).flush(sampleBlob, {
+        headers: { 'Content-Disposition': 'attachment; filename="claim-letter-CL-AP-2026-27-1-1.pdf"' },
+      });
+
+      expect(result?.fileName).toEqual('claim-letter-CL-AP-2026-27-1-1.pdf');
     });
   });
 
