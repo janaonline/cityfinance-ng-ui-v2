@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import {
   UploadDocument,
@@ -9,6 +10,7 @@ import {
   UploadPageConfig,
 } from './upload-documents.component';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
+import { UtilityService } from '../../../../../core/services/utility.service';
 import { UploadDocumentsService } from './upload-documents.service';
 
 // Mirrors the shape the private `emptyDoc()` produces — only the fields the
@@ -94,6 +96,10 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
           },
         },
         { provide: UploadDocumentsService, useValue: { getUploadConfig: () => of(config) } },
+        {
+          provide: UtilityService,
+          useValue: jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']),
+        },
       ],
     }).compileComponents();
 
@@ -134,6 +140,8 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
   let component: UploadDocumentsComponent;
   let fixture: ComponentFixture<UploadDocumentsComponent>;
   let httpMock: HttpTestingController;
+  let utilityService: jasmine.SpyObj<UtilityService>;
+  let dialog: jasmine.SpyObj<MatDialog>;
 
   const requiredDoc: UploadDocumentDef = {
     id: 'auditors-report',
@@ -188,6 +196,9 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
     localStorage.setItem('xvifc_selectedYearId', 'year-1');
     localStorage.setItem('userData', JSON.stringify({ ulb: 'ulb-1' }));
 
+    utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
+    dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
+
     await TestBed.configureTestingModule({
       imports: [UploadDocumentsComponent, HttpClientTestingModule],
       providers: [
@@ -207,8 +218,18 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
           },
         },
         { provide: UploadDocumentsService, useValue: { getUploadConfig: () => of(config) } },
+        { provide: UtilityService, useValue: utilityService },
+        { provide: MatDialog, useValue: dialog },
       ],
-    }).compileComponents();
+    })
+      // The component imports MatDialogModule directly (for typing, unused in its own template) —
+      // that own-imports provider would otherwise shadow the TestBed-level MatDialog override above
+      // for this component specifically, so it's re-overridden here at the component level too,
+      // which always wins over a standalone component's own `imports`.
+      .overrideComponent(UploadDocumentsComponent, {
+        set: { providers: [{ provide: MatDialog, useValue: dialog }] },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(UploadDocumentsComponent);
     component = fixture.componentInstance;
@@ -245,6 +266,81 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
 
       const doc = component.documents().find((d) => d.id === 'auditors-report');
       expect(doc?.latestDecision?.status).toBe('RETURNED');
+    }),
+  );
+
+  it(
+    'keeps polling after a transient status-check failure, instead of leaving the document stuck processing',
+    fakeAsync(() => {
+      component.ngOnInit();
+      tick();
+      const initial = backendDoc('IN_PROGRESS');
+      initial.data.documents[0].processingStatus = 'PROCESSING';
+      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: initial });
+      tick();
+
+      expect(component.documents().find((d) => d.id === 'auditors-report')?.status).toBe('processing');
+
+      // First poll tick fails transiently.
+      tick(5000);
+      httpMock
+        .expectOne((r) => r.url.includes('/account-1/status'))
+        .flush('server error', { status: 500, statusText: 'Server Error' });
+
+      // Polling must still be alive for the next tick — this is the regression this test guards:
+      // an uncaught error inside switchMap would silently kill the outer interval subscription,
+      // and this second expectOne would then find no request at all.
+      tick(5000);
+      httpMock
+        .expectOne((r) => r.url.includes('/account-1/status'))
+        .flush({
+          success: true,
+          data: {
+            annualAccountId: 'account-1',
+            data: {
+              documents: [
+                {
+                  docId: 'auditors-report',
+                  processingStatus: 'PASSED',
+                  isStale: false,
+                  currentUpload: { uploadId: 'upload-1', ocrInfo: { progressStep: null, validationStatus: null, validationDetails: null, failedChecks: [] } },
+                },
+              ],
+            },
+          },
+        });
+      tick();
+
+      expect(component.documents().find((d) => d.id === 'auditors-report')?.status).toBe('passed');
+    }),
+  );
+
+  it(
+    'keeps the document and surfaces an error when server-side removal fails',
+    fakeAsync(() => {
+      component.ngOnInit();
+      tick();
+      httpMock
+        .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+        .flush({ success: true, data: backendDoc('APPROVED_BY_STATE') });
+      tick();
+
+      const dialogRef = jasmine.createSpyObj<MatDialogRef<unknown, string>>('MatDialogRef', ['afterClosed']);
+      dialogRef.afterClosed.and.returnValue(of('remove'));
+      dialog.open.and.returnValue(dialogRef);
+
+      component.removeDocument('auditors-report');
+      tick();
+
+      httpMock
+        .expectOne((r) => r.url.includes('/account-1/documents/auditors-report'))
+        .flush('server error', { status: 500, statusText: 'Server Error' });
+      tick();
+
+      const doc = component.documents().find((d) => d.id === 'auditors-report');
+      expect(doc?.status).toBe('passed');
+      expect(doc?.fileName).toBe('report.pdf');
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
     }),
   );
 });
