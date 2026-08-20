@@ -139,5 +139,8 @@
         }
       </div>
     }
+    @if (item.validationMessage) {
+      <p class="text-danger mt-2 mb-0" role="alert">{{ item.validationMessage }}</p>
+    }
   </div>
 }
