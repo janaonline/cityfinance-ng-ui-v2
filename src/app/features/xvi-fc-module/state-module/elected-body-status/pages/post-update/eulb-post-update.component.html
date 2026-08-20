@@ -106,7 +106,7 @@
                 <br />
                 If elections have since been held, certify that below and attach the supporting details. MoHUA will
                 review your update and supporting documents. Once approved, the ULB becomes eligible and can be included
-                in the next available claim letter — there is no penalty for a later election.
+                in the next available claim letter - there is no penalty for a later election.
               </p>
             </div>
 
@@ -230,16 +230,18 @@
                         </caption>
                         <thead class="table-light border-bottom border-top">
                           <tr class="py-3">
-                            <th scope="col" class="small text-nowrap fw-semibold">#</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">Census Code</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">ULB Name</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">Elected Body Status</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">Date on which the elected body is in place.</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">Date of Expiry</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">Remarks</th>
-                            <th scope="col" class="small text-nowrap fw-semibold">Validation</th>
+                            <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">#</th>
+                            <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">Census Code</th>
+                            <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">ULB Name</th>
+                            <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">Elected Body Status</th>
+                            <th scope="col" class="small align-middle text-center fw-semibold">
+                              Date on which the elected body is in place
+                            </th>
+                            <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">Date of Expiry</th>
+                            <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">Remarks</th>
+                            <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">Validation</th>
                             @if (canEditRows()) {
-                              <th scope="col" class="small fw-semibold">Actions</th>
+                              <th scope="col" class="small align-middle text-center fw-semibold">Actions</th>
                             }
                           </tr>
                         </thead>
@@ -433,7 +435,7 @@
               <!-- Upload proof of election document via dynamic form. -->
               <div>
                 <p class="p-0 m-0 mb-2">
-                  Upload a single supporting document covering all the ULBs selected above — for example, the State
+                  Upload a single supporting document covering all the ULBs selected above - for example, the State
                   Election Commission notification confirming the election results.
                 </p>
                 <app-dynamic-form [field]="proofOfElectionField" [group]="proofOfElectionForm"></app-dynamic-form>
