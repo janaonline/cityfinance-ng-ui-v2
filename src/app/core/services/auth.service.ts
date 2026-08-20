@@ -385,17 +385,6 @@ export class AuthService {
     );
   }
 
-  setPassword(identifier: string, newPassword: string, confirmPassword: string): Observable<{
-    success: boolean;
-    data: { message: string };
-  }> {
-    return this.http.post<{ success: boolean; data: { message: string } }>(
-      `${environment.api.url2}auth/set-password`,
-      { identifier, newPassword, confirmPassword },
-      { withCredentials: true },
-    );
-  }
-
   clearLocalStorage(excludeKeys = ['userInfo']) {
     this.clearAccessToken();
 
