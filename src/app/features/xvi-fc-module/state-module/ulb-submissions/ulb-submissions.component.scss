@@ -1,7 +1,7 @@
 @use '../../styles/shared-layout' as layout;
 
 :host {
-  @include layout.shared-page-header;
+  @include layout.form-layout;
 
   .page-title {
     font-size: 1.4rem;

@@ -1,7 +1,11 @@
 <input #proofInput type="file" accept=".pdf,.jpg,.jpeg,.png" class="d-none" aria-hidden="true"
   (change)="onProofSelected($event)" />
 
-<div class="container py-3 xvifc-theme">
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+<div class="container xvifc-theme">
   <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
     <h1 class="fs-4 fw-bold mb-0">{{ pageTitle }}</h1>
     @if (existingRecord(); as record) {
@@ -146,5 +150,9 @@
     @if (isEditable() && submitBlockedReason(); as reason) {
     <p class="text-danger small mt-2 mb-0" role="status">{{ reason }}</p>
     }
+  </div>
+</div>
+      </div>
+    </div>
   </div>
 </div>

@@ -1,5 +1,6 @@
 // Reuses this page's own established tokens (annual-account-review.component.scss's
 // .checks-badge green, muted grays) rather than a different palette from elsewhere in the app.
+// Indicator-table/declaration-card styling lives in the shared app-slb-form-body component now.
 
 .slb-approved-banner {
   background-color: #e6f6ec;
@@ -12,37 +13,4 @@
     font-size: 1.1rem;
     margin-top: 0.1rem;
   }
-}
-
-.slb-indicators-card,
-.slb-declaration-card {
-  border: 1px solid var(--mat-sys-outline-variant, #e2e6ec);
-}
-
-.slb-review-table {
-  .slb-col-num {
-    width: 2.5rem;
-  }
-
-  thead th {
-    color: #647085;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    background: #f3f5f8;
-    border-bottom: none;
-  }
-
-  .slb-sector-row td {
-    background: #f3f5f8;
-    color: #374151;
-    font-weight: 700;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    padding-top: 0.6rem;
-    padding-bottom: 0.6rem;
-  }
-}
-
-.slb-doc-chip {
-  color: var(--color-primary, #114551);
 }

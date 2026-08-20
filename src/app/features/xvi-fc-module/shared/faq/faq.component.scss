@@ -1,26 +1,29 @@
+@use '../../styles/page-shell' as shell;
+
 :host {
   display: block;
 }
 
 .sh-page-title {
-  font-size: clamp(1.35rem, 1.8vw, 1.9rem);
-  font-weight: 800;
-  line-height: 1.1;
-  color: #0f172a;
+  @include shell.xvifc-page-title-typography;
 }
 
 .sh-page-subtitle {
-  font-size: 0.9rem;
-  line-height: 1.55;
-  color: #667085;
-  max-width: 760px;
+  @include shell.xvifc-page-subtitle-typography;
+}
+
+.faq-section-card {
+  @include shell.xvifc-section-card-padding;
+}
+
+// Shadow/border/radius come from the shared "card border-0 shadow-sm rounded-3"
+// utility classes (same box design used by the document upload cards).
+.faq-section-card {
+  padding: 1.25rem 1.5rem;
 }
 
 .faq-section-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 0.75rem;
+  @include shell.xvifc-section-title-typography;
 }
 
 .faq-panel {
@@ -31,6 +34,12 @@
 
   &::before {
     display: none;
+  }
+
+  // Accordion headers should blend into the white section card instead of
+  // using Material's default surface color.
+  ::ng-deep .mat-expansion-panel-header {
+    background-color: #ffffff;
   }
 }
 
@@ -45,6 +54,21 @@
 .faq-number {
   color: #667085;
   font-weight: 600;
+}
+
+.faq-question {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.faq-toggle-icon {
+  margin-left: auto;
+  padding-left: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #667085;
 }
 
 // Content is injected via [innerHTML] from JSON, so nested rules must pierce
@@ -87,21 +111,9 @@
 }
 
 .faq-help-box {
-  background: #f8fafc;
-  border-radius: 0.5rem;
-  padding: 1rem 1.25rem;
-  color: #667085;
-  font-size: 0.92rem;
-
-  a {
-    color: inherit;
-    text-decoration: underline;
-  }
+  @include shell.xvifc-help-box;
 }
 
 .faq-help-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 0.5rem;
+  @include shell.xvifc-help-title-typography;
 }
