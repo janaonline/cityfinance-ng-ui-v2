@@ -22,5 +22,7 @@ export interface DisbursementColumn {
 export interface DisbursementRow {
   id: string;
   label: string;
-  values: Record<string, string>;
+  /** Raw amounts, `null` where there's nothing to show (e.g. zero performance grant) — formatted
+   *  at render time so the display reacts live to `AmountDisplayModeService`'s override. */
+  values: Record<string, number | null>;
 }

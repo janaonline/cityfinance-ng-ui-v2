@@ -3,6 +3,7 @@ import {
   OverviewCardComponent,
   OverviewData,
 } from '../../shared/overview-card/overview-card.component';
+import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import { OverviewService } from './overview-card.service';
 import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 
@@ -15,6 +16,12 @@ import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 })
 export class OverviewComponent implements OnInit {
   private readonly overviewService = inject(OverviewService);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
+
+  /** Same 'auto' state-wide-aggregate page default used everywhere else on this dashboard;
+   *  `null` renders as '—' (year had no performance grant, see `OverviewService.mapToDisbursementRows`). */
+  readonly formatAmount = (value: number | null) =>
+    value === null ? '—' : this.amountDisplay.format(value, 'auto');
 
   get selectedYear(): string | null {
     return localStorage.getItem('xvifc_selectedYearString') ?? null;

@@ -18,14 +18,18 @@
         <!-- <hr class="my-0 text-body-tertiary" /> -->
 
         @if (isLoading()) {
-          <section class="my-4">
-            <p class="text-secondary mb-0">Loading state requirements…</p>
-          </section>
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
         } @else if (errorMessage()) {
           <section class="my-4">
             <p class="text-danger mb-0">{{ errorMessage() }}</p>
           </section>
         } @else {
+          <div class="d-flex justify-content-end mb-2">
+            <app-amount-display-toggle />
+          </div>
+
           <section class="summary-banner">
             <span class="hero-deco hero-deco--1" aria-hidden="true"></span>
             <span class="hero-deco hero-deco--2" aria-hidden="true"></span>

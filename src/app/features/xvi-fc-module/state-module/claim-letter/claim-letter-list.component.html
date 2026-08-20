@@ -169,7 +169,10 @@
           }
 
           @if (summaryTiles().length) {
-            <app-claim-letter-summary-tiles [tiles]="summaryTiles()" />
+            <div>
+              <app-amount-display-toggle class="mb-2 text-end" />
+              <app-claim-letter-summary-tiles [tiles]="summaryTiles()" />
+            </div>
           }
 
           <mat-card appearance="outlined">
@@ -207,7 +210,9 @@
                           <td class="small">{{ claim.version }}</td>
                           <td class="small">{{ claim.currentFormStatusLabel }}</td>
                           <td class="small text-end">{{ claim.ulbCount }}</td>
-                          <td class="small text-end">{{ formatCrore(claim.financialSummary.currentSelectedClaim) }}</td>
+                          <td class="small text-end">
+                            {{ formatAmount(claim.financialSummary.currentSelectedClaim) }}
+                          </td>
                           <td class="small text-center">
                             {{ claim.submittedAt ? (claim.submittedAt | date: 'mediumDate') : '-' }}
                           </td>

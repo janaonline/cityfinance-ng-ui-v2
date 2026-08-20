@@ -162,7 +162,10 @@ export interface FieldConfig {
   verifyStatus?: number;
   allowedFileTypes?: string[];
   fileRejectOptions?: string[];
-  decimal?: 0;
+  /** Max decimal places allowed; `0` means whole numbers only. Feeds both `DecimalLimitDirective`
+   *  (keystroke-blocking on the rendered input) and, via a `{ name: 'decimal', validator: N }`
+   *  entry in `validations`, a real `decimalPlacesValidator` FormControl error. */
+  decimal?: number;
   file?: LegacyFileValue;
   fileViewType?: 'button' | 'dropzone';
   folderPath?: string;

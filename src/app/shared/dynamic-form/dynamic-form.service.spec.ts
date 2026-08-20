@@ -364,6 +364,12 @@ describe('DynamicFormService', () => {
     expect(dateControl.valid).toBeFalse();
   });
 
+  it('binds a "decimal" validations entry to a real decimalPlacesValidator error', () => {
+    const wholeNumberValidator = service.bindValidations([{ name: 'decimal', validator: 0 }] as any);
+    expect(new FormControl(100, wholeNumberValidator).valid).toBeTrue();
+    expect(new FormControl(100.5, wholeNumberValidator).hasError('decimal')).toBeTrue();
+  });
+
   it('creates a tab control with table, questionnaire, file, and regular fields', () => {
     const form = service.tabControl([
       {

@@ -51,6 +51,10 @@
               </p> -->
             </header>
 
+            <div class="d-flex justify-content-end">
+              <app-amount-display-toggle />
+            </div>
+
             <section class="metric-grid" aria-label="State grant metrics">
               @for (metric of metricCards; track metric.key) {
                 <mat-card appearance="outlined" class="metric-card" [attr.data-metric-key]="metric.key">
