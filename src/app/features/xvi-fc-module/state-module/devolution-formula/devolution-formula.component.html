@@ -1,169 +1,165 @@
-<div class="component-shell">
-  <div class="form-container">
-    <div class="top-accent"></div>
+<div class="top-accent"></div>
 
-    <div class="content-wrap p-3 p-md-4">
-      <div class="content-stack d-flex flex-column gap-4">
-        <div>
-          <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
-            <span class="text-secondary"> 16th Finance Commission </span>
-            @if (stateName()) {
-              &nbsp;&middot;&nbsp; {{ stateName() }}
-            }
-          </div>
-
-          <h1 class="page-title mb-2">ULB-wise Allocation</h1>
-
-          <p class="page-subtitle text-secondary mb-0">
-            Please upload the ULB-wise allocation data for all ULBs in your state. The file must include the explicit
-            grant amount for each ULB and the formula applied to arrive at that figure.
-          </p>
-
-          <div class="d-flex align-items-center gap-2 mt-3">
-            <span class="text-secondary small fw-medium">Installment:</span>
-            <div class="d-flex align-items-center gap-2" role="group" aria-label="Select installment">
-              <button
-                type="button"
-                [matButton]="installment() === 1 ? 'filled' : 'outlined'"
-                [disabled]="isLoading() || isSubmitting() || isValidating() || isDeleting()"
-                [attr.aria-pressed]="installment() === 1"
-                (click)="switchInstallment(1)"
-                data-cy="df-installment-1-btn"
-              >
-                Installment 1
-              </button>
-              <span
-                [matTooltip]="isInstallment2Locked() ? installment2LockReason() : ''"
-                [matTooltipDisabled]="!isInstallment2Locked()"
-              >
-                <button
-                  type="button"
-                  [matButton]="installment() === 2 ? 'filled' : 'outlined'"
-                  [disabled]="isLoading() || isSubmitting() || isValidating() || isDeleting() || isInstallment2Locked()"
-                  [attr.aria-disabled]="isInstallment2Locked()"
-                  [attr.aria-pressed]="installment() === 2"
-                  (click)="switchInstallment(2)"
-                  data-cy="df-installment-2-btn"
-                >
-                  Installment 2
-                </button>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <hr class="my-0 text-body-tertiary" />
-
-        @if (isLoading()) {
-          <app-pre-loader></app-pre-loader>
-          <app-pre-loader></app-pre-loader>
-          <app-pre-loader></app-pre-loader>
-        } @else {
-          @if (installment() === 2 && isInstallment2Locked()) {
-            <div
-              class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-0"
-              role="alert"
-              data-cy="df-installment2-locked-alert"
-            >
-              <i class="bi bi-lock-fill flex-shrink-0" aria-hidden="true"></i>
-              <span class="small">{{ installment2LockReason() }}</span>
-            </div>
-          }
-
-          @if (actors().length) {
-            <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
-            <hr class="my-0 text-body-tertiary" />
-          }
-
-          <form class="content-body" [formGroup]="form">
-            @for (item of effectiveVisibleFields(); track item.key; let isLast = $last) {
-              <div
-                class="my-2"
-                [class.border-bottom]="!isLast"
-                [class.border-secondary]="!isLast"
-                [class.border-opacity-25]="!isLast"
-              >
-                <app-dynamic-form
-                  class="p-2 d-block"
-                  [field]="item"
-                  [group]="form"
-                  [mode]="canEdit() ? 'edit' : 'view'"
-                  (supportingAction)="onSupportingAction($event)"
-                ></app-dynamic-form>
-              </div>
-            }
-          </form>
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div>
+      <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+        <span class="text-secondary"> 16th Finance Commission </span>
+        @if (stateName()) {
+          &nbsp;&middot;&nbsp; {{ stateName() }}
         }
+      </div>
+
+      <h1 class="page-title mb-2">ULB-wise Allocation</h1>
+
+      <p class="page-subtitle text-secondary mb-0">
+        Please upload the ULB-wise allocation data for all ULBs in your state. The file must include the explicit grant
+        amount for each ULB and the formula applied to arrive at that figure.
+      </p>
+
+      <div class="d-flex align-items-center gap-2 mt-3">
+        <span class="text-secondary small fw-medium">Installment:</span>
+        <div class="d-flex align-items-center gap-2" role="group" aria-label="Select installment">
+          <button
+            type="button"
+            [matButton]="installment() === 1 ? 'filled' : 'outlined'"
+            [disabled]="isLoading() || isSubmitting() || isValidating() || isDeleting()"
+            [attr.aria-pressed]="installment() === 1"
+            (click)="switchInstallment(1)"
+            data-cy="df-installment-1-btn"
+          >
+            Installment 1
+          </button>
+          <span
+            [matTooltip]="isInstallment2Locked() ? installment2LockReason() : ''"
+            [matTooltipDisabled]="!isInstallment2Locked()"
+          >
+            <button
+              type="button"
+              [matButton]="installment() === 2 ? 'filled' : 'outlined'"
+              [disabled]="isLoading() || isSubmitting() || isValidating() || isDeleting() || isInstallment2Locked()"
+              [attr.aria-disabled]="isInstallment2Locked()"
+              [attr.aria-pressed]="installment() === 2"
+              (click)="switchInstallment(2)"
+              data-cy="df-installment-2-btn"
+            >
+              Installment 2
+            </button>
+          </span>
+        </div>
       </div>
     </div>
 
-    @if (canEdit() || canFinalSubmit()) {
-      <div class="acknowledgement">
-        <div class="acknowledgement-inner">
-          @if (canEdit()) {
-            <button
-              type="button"
-              matButton="outlined"
-              [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
-              (click)="onCancel()"
-              data-cy="df-cancel-test"
-            >
-              <i class="bi bi-x-circle-fill d-md-none"></i>
-              <span class="d-none d-md-inline">Cancel</span>
-            </button>
+    <hr class="my-0 text-body-tertiary" />
 
-            <button
-              type="submit"
-              matButton="filled"
-              [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
-              (click)="onSubmit('saveAsDraft')"
-              data-cy="df-save-draft-test"
-            >
-              @if (isSavingDraft()) {
-                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                <span class="d-none d-md-inline">Saving&hellip;</span>
-              } @else {
-                <i class="bi bi-bookmark-check-fill d-md-none"></i>
-                <span class="d-none d-md-inline">Save</span>
-              }
-            </button>
-
-            @if (canFinalSubmit()) {
-              <button
-                type="button"
-                matButton="filled"
-                [disabled]="
-                  !canFinalSubmit() ||
-                  (installment() === 2 && isInstallment2Locked()) ||
-                  isSubmitting() ||
-                  isLoading() ||
-                  isValidating() ||
-                  !visibleFields().length
-                "
-                (click)="onSubmit('finalSubmit')"
-                data-cy="df-final-submit-test"
-              >
-                @if (isFinalSubmitting()) {
-                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                  <span class="d-none d-md-inline">Submitting&hellip;</span>
-                } @else {
-                  <i class="bi bi-send-check-fill d-md-none"></i>
-                  <span class="d-none d-md-inline">Final Submit</span>
-                }
-              </button>
-            }
-          }
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else {
+      @if (installment() === 2 && isInstallment2Locked()) {
+        <div
+          class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-0"
+          role="alert"
+          data-cy="df-installment2-locked-alert"
+        >
+          <i class="bi bi-lock-fill flex-shrink-0" aria-hidden="true"></i>
+          <span class="small">{{ installment2LockReason() }}</span>
         </div>
-      </div>
-    }
+      }
 
-    @if (isValidating()) {
-      <div class="df-verification-overlay" role="status" aria-live="polite">
-        <div class="df-verification-card shadow-sm">
-          <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
-          <span class="small fw-medium">Verifying uploaded Excel. Please wait&hellip;</span>
-        </div>
-      </div>
+      @if (actors().length) {
+        <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
+        <hr class="my-0 text-body-tertiary" />
+      }
+
+      <form class="content-body" [formGroup]="form">
+        @for (item of effectiveVisibleFields(); track item.key; let isLast = $last) {
+          <div
+            class="my-2"
+            [class.border-bottom]="!isLast"
+            [class.border-secondary]="!isLast"
+            [class.border-opacity-25]="!isLast"
+          >
+            <app-dynamic-form
+              class="p-2 d-block"
+              [field]="item"
+              [group]="form"
+              [mode]="canEdit() ? 'edit' : 'view'"
+              (supportingAction)="onSupportingAction($event)"
+            ></app-dynamic-form>
+          </div>
+        }
+      </form>
     }
   </div>
-</div>
+</section>
+
+@if (canEdit() || canFinalSubmit()) {
+  <div class="acknowledgement">
+    <div class="acknowledgement-inner">
+      @if (canEdit()) {
+        <button
+          type="button"
+          matButton="outlined"
+          [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
+          (click)="onCancel()"
+          data-cy="df-cancel-test"
+        >
+          <i class="bi bi-x-circle-fill d-md-none"></i>
+          <span class="d-none d-md-inline">Cancel</span>
+        </button>
+
+        <button
+          type="submit"
+          matButton="filled"
+          [disabled]="!canEdit() || isSubmitting() || isLoading() || isValidating() || !visibleFields().length"
+          (click)="onSubmit('saveAsDraft')"
+          data-cy="df-save-draft-test"
+        >
+          @if (isSavingDraft()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            <span class="d-none d-md-inline">Saving&hellip;</span>
+          } @else {
+            <i class="bi bi-bookmark-check-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Save</span>
+          }
+        </button>
+
+        @if (canFinalSubmit()) {
+          <button
+            type="button"
+            matButton="filled"
+            [disabled]="
+              !canFinalSubmit() ||
+              (installment() === 2 && isInstallment2Locked()) ||
+              isSubmitting() ||
+              isLoading() ||
+              isValidating() ||
+              !visibleFields().length
+            "
+            (click)="onSubmit('finalSubmit')"
+            data-cy="df-final-submit-test"
+          >
+            @if (isFinalSubmitting()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span class="d-none d-md-inline">Submitting&hellip;</span>
+            } @else {
+              <i class="bi bi-send-check-fill d-md-none"></i>
+              <span class="d-none d-md-inline">Final Submit</span>
+            }
+          </button>
+        }
+      }
+    </div>
+  </div>
+}
+
+@if (isValidating()) {
+  <div class="df-verification-overlay" role="status" aria-live="polite">
+    <div class="df-verification-card shadow-sm">
+      <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+      <span class="small fw-medium">Verifying uploaded Excel. Please wait&hellip;</span>
+    </div>
+  </div>
+}
