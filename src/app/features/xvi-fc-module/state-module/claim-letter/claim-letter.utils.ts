@@ -1,30 +1,10 @@
 import { ClaimLetterInstallment, ClaimLetterUlbEligibilityTally } from './claim-letter.models';
 
 /**
- * Formats an already Crore-denominated, display-ready amount. Never rescales — the backend has
- * already done the paise→Crore conversion (see `claim-letter.models.ts`'s `ClaimLetterFinancialSummary`
- * doc comment); this only appends the unit, mirroring Devolution's local `formatRupees` convention.
- */
-export function formatCrore(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '—';
-  const n = Number(value);
-  if (isNaN(n)) return '—';
-  return `${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr.`;
-}
-
-/** Full-precision sibling of `formatCrore`, for hover/title text — never rounds. */
-export function formatCroreFull(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '—';
-  const n = Number(value);
-  if (isNaN(n)) return '—';
-  return `${n.toLocaleString('en-IN', { maximumFractionDigits: 20 })} Cr.`;
-}
-
-/**
  * Client-side preview of the backend's ±10% claimed-vs-allocated variance check
  * (`isClaimedAmountWithinVariance`/`computeDifferencePercentageBasisPoints` in
- * `claim-letter-financial.helpers.ts`), operating on Crore floats rather than the backend's exact
- * paise integers — a live typing-time preview only; the backend remains authoritative at save time.
+ * `claim-letter-financial.helpers.ts`) — a live typing-time preview only; the backend remains
+ * authoritative at save time.
  */
 export function computeClaimDifferencePercentage(allocationAmount: number, claimedAmount: number): number {
   if (allocationAmount === 0) return 0;
@@ -98,16 +78,19 @@ export interface BatchNarrativeInput {
   rowCount: number;
   /** State-wide expected ULB count, from the eligibility summary. */
   expectedUlbCount: number;
-  /** Live sum of claimed amounts across the batch's current rows (Crore). */
+  /** Live sum of claimed amounts across the batch's current rows (whole Rupees). */
   liveClaimedTotal: number;
-  /** State-wide Installment allocation pool (Crore). */
+  /** State-wide Installment allocation pool (whole Rupees). */
   totalInstallmentAllocation: number;
-  /** What would remain state-wide after this batch, at its current live claim total (Crore). */
+  /** What would remain state-wide after this batch, at its current live claim total (whole Rupees). */
   remainingAfterThisBatch: number;
   /** How many more batches (of `CLAIM_LETTER_MAX_BATCH_NUMBER`) could still be created after this
    *  one — 0 or negative means none. */
   slotsRemaining: number;
   installment: ClaimLetterInstallment;
+  /** Renders a whole-Rupee amount per the caller's current display mode — plain function param since
+   *  this file has no DI access to `AmountDisplayModeService`. */
+  formatAmount: (value: number) => string;
 }
 
 /**
@@ -132,9 +115,9 @@ export function buildBatchNarrative(input: BatchNarrativeInput): string[] {
 
   return [
     `This batch includes ${input.rowCount} of ${input.expectedUlbCount} eligible ULBs (${ulbPercent}%).`,
-    `You're claiming ${formatCrore(input.liveClaimedTotal)} - ${claimPercent}% of the state's total ` +
-      `Installment ${input.installment} allocation (${formatCrore(input.totalInstallmentAllocation)}).`,
-    `${formatCrore(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch - ` +
+    `You're claiming ${input.formatAmount(input.liveClaimedTotal)} - ${claimPercent}% of the state's total ` +
+      `Installment ${input.installment} allocation (${input.formatAmount(input.totalInstallmentAllocation)}).`,
+    `${input.formatAmount(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch - ` +
       `enough for ${slotsRemaining} more ${batchWord}.`,
   ];
 }

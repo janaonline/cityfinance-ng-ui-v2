@@ -40,7 +40,7 @@
           <tr>
             <th scope="col" class="ps-3 small fw-semibold">ULB Name</th>
             <th scope="col" class="small fw-semibold">Census Code</th>
-            <th scope="col" class="small fw-semibold text-end">Allocation (in Cr.)</th>
+            <th scope="col" class="small fw-semibold text-end">Allocation (in {{ allocationUnitSuffix() }})</th>
             <th scope="col" class="small fw-semibold text-end pe-3">Select</th>
           </tr>
         </thead>
@@ -54,8 +54,8 @@
             >
               <td class="ps-3 small">{{ option.ulbName }}</td>
               <td class="small">{{ option.censusCode ?? option.sbCode ?? '—' }}</td>
-              <td class="small text-end" [title]="formatCroreFull(option.allocationAmount)">
-                {{ formatCrore(option.allocationAmount) }}
+              <td class="small text-end" [title]="formatAmountExact(option.allocationAmount)">
+                {{ formatAmount(option.allocationAmount) }}
               </td>
               <td class="text-end pe-3">
                 <div class="d-inline-flex align-items-center justify-content-end gap-2">

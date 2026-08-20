@@ -1,0 +1,27 @@
+<div class="amount-display-toggle" role="group" aria-label="Amount display unit" data-cy="amount-display-toggle">
+  <span class="text-secondary small me-1">Units:</span>
+  @for (option of options; track option.label) {
+    <button
+      type="button"
+      [matButton]="override() === option.value ? 'filled' : 'outlined'"
+      class="amount-display-toggle-pill"
+      [attr.aria-pressed]="override() === option.value"
+      (click)="onChange(option.value)"
+      [attr.data-cy]="'amount-display-toggle-option-' + (option.value ?? 'default')"
+      [attr.aria-label]="option.label"
+    >
+      {{ option.shortKey }}
+    </button>
+  }
+  <button
+    type="button"
+    class="btn btn-link btn-sm p-0 amount-display-toggle-reset"
+    [disabled]="override() === null"
+    (click)="onChange(null)"
+    aria-label="Reset to default"
+    matTooltip="Reset to default"
+    data-cy="amount-display-toggle-reset"
+  >
+    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+  </button>
+</div>

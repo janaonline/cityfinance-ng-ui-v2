@@ -87,10 +87,12 @@ const TEST_ROW_EDIT_FIELDS: ConditionalFieldConfig[] = [
     key: 'unspentAmount',
     label: 'Unspent Amount',
     formFieldType: 'number',
+    decimal: 0,
     validations: [
       { name: 'required', validator: null, message: 'Unspent amount is required.' },
       { name: 'min', validator: Number.MIN_VALUE, message: 'Unspent amount must be greater than zero.' },
       { name: 'max', validator: 1000, message: 'Unspent amount cannot exceed 1000.' },
+      { name: 'decimal', validator: 0, message: 'Unspent amount must be a whole number (no decimals).' },
     ],
   },
 ];
@@ -589,6 +591,27 @@ describe('UnspentUlbTableComponent', () => {
     const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-unspentamount-error-icon"]'));
     expect(icon).toBeTruthy();
     expect(icon.injector.get(MatTooltip).message).toBe('Unspent amount cannot exceed 1000.');
+  });
+
+  it('shows the decimal-validator message once a non-whole amount is entered and the control is touched', () => {
+    setupWithRows(
+      [
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: null,
+        }),
+      ],
+      { savedRows: SAVED_ROWS },
+    );
+
+    const control = rows.at(0).controls.unspentAmount;
+    control.setValue(100.5);
+    control.markAsTouched();
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-unspentamount-error-icon"]'));
+    expect(icon).toBeTruthy();
+    expect(icon.injector.get(MatTooltip).message).toBe('Unspent amount must be a whole number (no decimals).');
   });
 
   it('shows the message from the current rowEditFields input, not a hardcoded string', () => {

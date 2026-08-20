@@ -48,6 +48,10 @@
           <span class="badge text-bg-secondary align-self-center">{{ data.currentFormStatusLabel }}</span>
         </div>
 
+        <div class="d-flex justify-content-end mb-2">
+          <app-amount-display-toggle />
+        </div>
+
         @if (formError()) {
           <div class="alert alert-danger py-2 px-3 small mb-2" role="alert" data-cy="fc-unspent-review-form-error">
             {{ formError() }}
@@ -273,10 +277,12 @@
                     <td class="small text-secondary">{{ row.rowNumber }}</td>
                     <td class="small text-secondary text-nowrap">{{ row.censusCode ?? row.sbCode ?? '—' }}</td>
                     <td class="small">{{ row.ulbName }}</td>
-                    <td class="small text-end text-secondary" [title]="formatCroreFull(row.allocationAmount)">
-                      {{ formatCrore(row.allocationAmount) }}
+                    <td class="small text-end text-secondary" [title]="formatAmountExact(row.allocationAmount)">
+                      {{ formatAmount(row.allocationAmount) }}
                     </td>
-                    <td class="small text-end">{{ row.unspentAmount }}</td>
+                    <td class="small text-end" [title]="formatAmountExact(row.unspentAmount)">
+                      {{ formatAmount(row.unspentAmount) }}
+                    </td>
                     <td class="small text-end">{{ row.allocationPerc | number: '1.0-2' }}%</td>
                     <td class="small">
                       @if (row.eligibility) {

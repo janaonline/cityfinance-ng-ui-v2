@@ -16,6 +16,7 @@ import {
   themedDialogConfig,
 } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { AmountDisplayToggleComponent } from '../../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { PreLoaderComponent } from '../../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
@@ -42,6 +43,7 @@ import {
 } from '../components/summary-tiles/claim-letter-summary-tiles.component';
 import {
   CLAIM_LETTER_INSTALLMENT,
+  ClaimLetterApiErrorMap,
   ClaimLetterApiErrorResponse,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
@@ -49,6 +51,8 @@ import {
   ClaimLetterUlbRow,
   ClaimLetterUlbSelection,
 } from '../claim-letter.models';
+import { parseFieldPrefixedMessages } from '../../../common/utils/xvi-fc-error-lookup.utils';
+import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { ClaimLetterService } from '../claim-letter.service';
 import { buildBatchNarrative } from '../claim-letter.utils';
 import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
@@ -80,6 +84,12 @@ const CLAIM_LETTER_SUBMIT_CONFIRM: Required<ConfirmDialogData> = {
   icon: 'bi-send-check-fill',
 };
 
+/** Matches the backend's `ulbSelections.<index>.<field>` error keys — either from a structured
+ *  `errors` map, or synthesized by `buildErrorMapFromMessages` from a bare class-validator
+ *  `message: string[]` (see `FcUnspentDeclarationComponent`'s identically-shaped
+ *  `ROW_ERROR_KEY_PATTERN`, which this mirrors). */
+const CLAIM_ROW_ERROR_KEY_PATTERN = /^ulbSelections\.(\d+)\.(ulbId|claimedAmount)$/;
+
 @Component({
   selector: 'app-claim-letter-detail',
   imports: [
@@ -91,6 +101,7 @@ const CLAIM_LETTER_SUBMIT_CONFIRM: Required<ConfirmDialogData> = {
     FormProgressComponent,
     XvifcBreadcrumbComponent,
     ClaimLetterSummaryTilesComponent,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './claim-letter-detail.component.html',
   styleUrl: './claim-letter-detail.component.scss',
@@ -103,6 +114,7 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly claimLetterService = inject(ClaimLetterService);
   private readonly moduleService = inject(XvifcModuleService);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   /** Applies the feature's current theme to all confirm dialogs opened by this component. */
   private readonly dialogConfig = themedDialogConfig();
   /** Raw theme class for the preview dialog opened directly via `MatDialog` (needs a bare
@@ -391,6 +403,7 @@ export class ClaimLetterDetailComponent implements OnInit {
       remainingAfterThisBatch,
       slotsRemaining,
       installment: CLAIM_LETTER_INSTALLMENT,
+      formatAmount: (value) => this.amountDisplay.format(value, 'auto'),
     });
   });
 
@@ -813,29 +826,111 @@ export class ClaimLetterDetailComponent implements OnInit {
     const message = response?.message ?? fallbackMessage;
     this.utilityService.triggerSnackbar(message, 'snackbar-danger');
     this.formLevelErrors.set([message]);
+
+    if (response?.errors) {
+      this.applyRowApiErrors(response.errors);
+    }
   }
 
   /**
    * Extracts a structured error response from two possible error shapes:
-   * 1. `HttpErrorResponse` (HTTP 4xx): body is in `err.error` with `{ statusCode, message }`.
-   * 2. Service map throw (2xx with success:false): `err` itself is `{ success, message }`.
+   * 1. `HttpErrorResponse` (HTTP 4xx): body is in `err.error` with `{ statusCode, message, errors }`.
+   * 2. Service map throw (2xx with success:false): `err` itself is `{ success, message, errors }`.
+   *
+   * `message` may be either NestJS's normal single string, or the plain `string[]` a
+   * `ValidationPipe`/class-validator 400 sends when no custom `errors` map exists (e.g. `@IsInt()`
+   * rejecting a decimal `claimedAmount`) — previously only the string case was recognized, so this
+   * shape fell through to `null` entirely and the real backend message was dropped. When there's no
+   * structured `errors` map already, one is synthesized from the message array via
+   * `buildErrorMapFromMessages` so `applyRowApiErrors` needs no separate path.
    */
   private extractApiErrorResponse(err: unknown): ClaimLetterApiErrorResponse | null {
     if (!this.isObject(err)) return null;
 
     const errorBody = err['error'];
-    if (this.isObject(errorBody) && typeof errorBody['message'] === 'string') {
-      return {
-        statusCode: typeof errorBody['statusCode'] === 'number' ? errorBody['statusCode'] : undefined,
-        message: errorBody['message'],
-      };
+    if (this.isObject(errorBody) && this.hasMessage(errorBody)) {
+      return this.buildApiErrorResponse(errorBody);
     }
 
-    if (err['success'] === false && typeof err['message'] === 'string') {
-      return { message: err['message'] };
+    if (err['success'] === false && this.hasMessage(err)) {
+      return this.buildApiErrorResponse(err);
     }
 
     return null;
+  }
+
+  private hasMessage(body: Record<string, unknown>): boolean {
+    return typeof body['message'] === 'string' || this.isStringArray(body['message']);
+  }
+
+  private isStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every((v) => typeof v === 'string');
+  }
+
+  private buildApiErrorResponse(body: Record<string, unknown>): ClaimLetterApiErrorResponse {
+    const rawMessage = body['message'];
+    const messages = typeof rawMessage === 'string' ? [rawMessage] : this.isStringArray(rawMessage) ? rawMessage : [];
+    const structuredErrors = this.isApiErrorMap(body['errors']) ? body['errors'] : undefined;
+
+    return {
+      statusCode: typeof body['statusCode'] === 'number' ? body['statusCode'] : undefined,
+      message: messages.join(' '),
+      errors: structuredErrors ?? this.buildErrorMapFromMessages(messages),
+    };
+  }
+
+  private isApiErrorMap(value: unknown): value is ClaimLetterApiErrorMap {
+    if (!this.isObject(value)) return false;
+    return Object.values(value).every(
+      (fieldErrors) =>
+        Array.isArray(fieldErrors) &&
+        fieldErrors.every((error: unknown) => this.isObject(error) && typeof error['message'] === 'string'),
+    );
+  }
+
+  /** Parses a plain class-validator `message: string[]` (no `errors` map) into
+   *  `ulbSelections.<row>.<ulbId|claimedAmount>` keys — see `parseFieldPrefixedMessages`'s doc
+   *  comment for why this parsing is safe, not a heuristic. Unmatched messages are tagged `_form`;
+   *  `applyRowApiErrors` below has no control for that key, so they're silently skipped there —
+   *  `handleSaveError` already shows the full joined message as the generic snackbar/banner. */
+  private buildErrorMapFromMessages(messages: readonly string[]): ClaimLetterApiErrorMap | undefined {
+    if (!messages.length) return undefined;
+
+    const { claimed, unclaimed } = parseFieldPrefixedMessages(messages, ['ulbId', 'claimedAmount'], 'ulbSelections');
+    const errors: ClaimLetterApiErrorMap = {};
+    for (const entry of claimed) {
+      const key = entry.rowIndex !== null ? `ulbSelections.${entry.rowIndex}.${entry.field}` : entry.field;
+      errors[key] = [...(errors[key] ?? []), { message: entry.message }];
+    }
+    if (unclaimed.length) {
+      errors['_form'] = unclaimed.map((message) => ({ message }));
+    }
+    return Object.keys(errors).length ? errors : undefined;
+  }
+
+  /** Routes `ulbSelections.<index>.<ulbId|claimedAmount>` backend error keys to the matching row
+   *  control's `apiErrors`, mirroring `FcUnspentDeclarationComponent.applyApiErrors`/
+   *  `applyRowApiError`. `buildUlbSelections()`'s array index always matches `this.rows.controls`'s
+   *  — a save is only ever sent once `validateRows()` confirms every row already has a non-null
+   *  `ulbId`/`claimedAmount`, the same predicate `buildUlbSelections()` filters on. */
+  private applyRowApiErrors(errors: ClaimLetterApiErrorMap): void {
+    for (const [key, fieldErrors] of Object.entries(errors)) {
+      if (!fieldErrors?.length) continue;
+
+      const rowMatch = CLAIM_ROW_ERROR_KEY_PATTERN.exec(key);
+      if (!rowMatch) continue;
+
+      const row = this.rows.controls[Number(rowMatch[1])];
+      const control = row?.controls[rowMatch[2] as 'ulbId' | 'claimedAmount'];
+      if (!control) continue;
+
+      control.setErrors({ ...(control.errors ?? {}), apiErrors: fieldErrors.map((e) => e.message) });
+      control.markAsTouched();
+    }
+
+    // Row `apiErrors`/touched state was just mutated from outside the child's own template — its
+    // OnPush view needs an explicit nudge, same reason `validateRows()` calls this below.
+    this.claimTable()?.refreshValidationDisplay();
   }
 
   private isObject(value: unknown): value is Record<string, unknown> {

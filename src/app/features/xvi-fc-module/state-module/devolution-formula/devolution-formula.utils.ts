@@ -1,5 +1,9 @@
 import { isUploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
-import { getXviFcFieldErrorMessage, getXviFcRowErrorMessage } from '../../common/utils/xvi-fc-error-lookup.utils';
+import {
+  getXviFcFieldErrorMessage,
+  getXviFcRowErrorMessage,
+  parseFieldPrefixedMessages,
+} from '../../common/utils/xvi-fc-error-lookup.utils';
 import {
   ApiErrorMap,
   ApiErrorResponse,
@@ -185,23 +189,6 @@ export function getDfValidationStatusLabel(status: DfValidationStatus): string {
   }
 }
 
-/**
- * Formats a rupee amount for display. Auto-scales to Cr / Lakh for large values
- * (mirrors InrFormatPipe 'auto' mode without requiring a non-standalone pipe import).
- */
-export function formatRupees(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '—';
-  const n = Number(value);
-  if (isNaN(n)) return '—';
-  const absN = Math.abs(n);
-  if (absN >= 1e7) {
-    return `₹ ${(n / 1e7).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr`;
-  } else if (absN >= 1e5) {
-    return `₹ ${(n / 1e5).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Lakh`;
-  }
-  return `₹ ${n.toLocaleString('en-IN')}`;
-}
-
 export function isDfRowValidationStatus(value: unknown): value is DfRowValidationStatus {
   return value === 'VALID' || value === 'INVALID';
 }
@@ -249,12 +236,35 @@ function dfErrorsMapToRowErrors(errorsMap: unknown): DfRowUpdateApiError[] {
   return result;
 }
 
+/** This row PATCH's DTO (`UpdateRowDevolutionFormulaDto`) has no array wrapper, so a plain
+ *  class-validator 400 (`{ message: string[] }`, no `errors` map — e.g. `@IsInt()` rejecting a
+ *  decimal `installment2Amount`) never reaches `dfErrorsMapToRowErrors` above. Messages that don't
+ *  match one of this row's editable fields are tagged `_form`, which `applyRowUpdateErrors`
+ *  already treats as "no matching control" and surfaces via a snackbar instead of dropping. */
+const DF_ROW_UPDATE_KNOWN_FIELDS = [
+  'totalGrantAllocation',
+  'installment1Amount',
+  'installment2Amount',
+  'devolutionFormula',
+] as const;
+
+function dfMessagesToRowErrors(message: unknown): DfRowUpdateApiError[] {
+  if (!Array.isArray(message) || !message.every((m): m is string => typeof m === 'string')) return [];
+  const { claimed, unclaimed } = parseFieldPrefixedMessages(message, DF_ROW_UPDATE_KNOWN_FIELDS);
+  return [
+    ...claimed.map((entry) => ({ field: entry.field, message: entry.message })),
+    ...unclaimed.map((msg) => ({ field: '_form', message: msg })),
+  ];
+}
+
 export function parseDfRowUpdateErrors(error: unknown): DfRowUpdateApiError[] {
   if (!isRecord(error)) return [];
   const httpErrorBody = error['error'];
   if (isRecord(httpErrorBody)) {
     const parsed = dfErrorsMapToRowErrors(httpErrorBody['errors']);
     if (parsed.length) return parsed;
+    const fromMessage = dfMessagesToRowErrors(httpErrorBody['message']);
+    if (fromMessage.length) return fromMessage;
   }
   return dfErrorsMapToRowErrors(error['errors']);
 }
