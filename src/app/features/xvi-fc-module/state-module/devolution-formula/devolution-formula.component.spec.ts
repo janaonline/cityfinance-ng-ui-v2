@@ -862,14 +862,14 @@ describe('DevolutionFormulaComponent', () => {
 
     it('saves downloaded template blob via FileSaver, falling back to a literal filename when Content-Disposition is absent', () => {
       component.onSupportingAction({ fieldKey: 'excelFile', actionId: 'download-template' });
-      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'Devolution-formula-template.xlsx');
+      expect(FileSaver.saveAs).toHaveBeenCalledWith(jasmine.any(Blob), 'Ulb-wise-allocation-formula-template.xlsx');
     });
 
     it('saves downloaded template blob under the backend Content-Disposition filename verbatim when present', () => {
       dfService.downloadTemplate.and.returnValue(
         of({
           blob: new Blob(['template']),
-          fileName: 'CF_Test-State_devolution-formula-template_2024-25.xlsx',
+          fileName: 'CF_Test-State_ulb-wise-allocation-formula-template_2024-25.xlsx',
         }),
       );
 
@@ -877,7 +877,7 @@ describe('DevolutionFormulaComponent', () => {
 
       expect(FileSaver.saveAs).toHaveBeenCalledWith(
         jasmine.any(Blob),
-        'CF_Test-State_devolution-formula-template_2024-25.xlsx',
+        'CF_Test-State_ulb-wise-allocation-formula-template_2024-25.xlsx',
       );
     });
 

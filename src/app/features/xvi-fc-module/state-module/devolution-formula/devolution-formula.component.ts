@@ -612,7 +612,7 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ blob, fileName }) => {
-          FileSaver.saveAs(blob, fileName ?? 'Devolution-formula-template.xlsx');
+          FileSaver.saveAs(blob, fileName ?? 'Ulb-wise-allocation-formula-template.xlsx');
           this.isDownloadingTemplate.set(false);
         },
         error: () => {

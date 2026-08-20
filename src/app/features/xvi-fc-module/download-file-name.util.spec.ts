@@ -7,10 +7,10 @@ describe('parseContentDispositionFileName', () => {
 
   it('parses a plain quoted filename="..." header and returns it as-is', () => {
     const parsed = parseContentDispositionFileName(
-      'attachment; filename="CF_Chhattisgarh_devolution-formula-template_2024-25.xlsx"',
+      'attachment; filename="CF_Chhattisgarh_ulb-wise-allocation-formula-template_2024-25.xlsx"',
     );
 
-    expect(parsed).toBe('CF_Chhattisgarh_devolution-formula-template_2024-25.xlsx');
+    expect(parsed).toBe('CF_Chhattisgarh_ulb-wise-allocation-formula-template_2024-25.xlsx');
   });
 
   it('parses an RFC 5987 filename*=UTF-8\'\'... header and decodes it', () => {
