@@ -82,7 +82,7 @@
             ></app-dynamic-form>
 
             @if (item.key === 'isFcUnspent' && isYesBranch()) {
-              <div class="d-flex justify-content-end mb-2">
+              <div class="d-flex justify-content-end">
                 <app-amount-display-toggle />
               </div>
               <app-unspent-ulb-table
@@ -97,6 +97,22 @@
                 [rowEditFields]="rowEditFields()"
                 [blockingMessage]="dependency().blockingMessage"
               ></app-unspent-ulb-table>
+
+              @if (!hasSavedUnspentRows()) {
+                <div
+                  class="alert alert-info small d-flex gap-2 mb-2"
+                  role="status"
+                  data-cy="fc-unspent-declaration-save-prompt"
+                >
+                  <i class="bi bi-info-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                  @if (unspentUlbData.length === 0) {
+                    Add at least one ULB with an unspent balance, then save your draft to unlock the signed declaration
+                    upload.
+                  } @else {
+                    You have unsaved ULB-wise entries. Save your draft to unlock the signed declaration upload.
+                  }
+                </div>
+              }
             }
           </div>
         }

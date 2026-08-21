@@ -30,6 +30,8 @@ describe('EulbPostUpdateEditFormFacade', () => {
           case 'notIn':
             return !condition.value.includes(rawValue);
           case 'yearGreaterThan':
+          case 'isNotEmpty':
+          case 'isEmpty':
             return false;
         }
       });

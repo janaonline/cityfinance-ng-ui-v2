@@ -309,6 +309,18 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       this.form.addControl(field.key, formControl);
     }
 
+    // Synthetic control, not part of the backend's FieldConfig[] (same pattern as
+    // fc-unspent-declaration's `unspentUlbData` / register-ulb's `'state'` control) — bridges
+    // `validationSummary` (a plain signal, sibling to `questions` in the GET response) into the
+    // reactive form so signedElectedbodyFile's visibleWhen can gate on Excel *validity*, not just
+    // presence. `validationSummary` is set once, right before this method runs (see loadForm), and
+    // every action that can change validity goes through a full reloadForm() → loadForm() rebuild,
+    // so no extra re-sync is needed here.
+    this.form.addControl(
+      'electedBodyExcelValidationStatus',
+      this.fb.control(this.validationSummary()?.validationStatus ?? 'NOT_VALIDATED'),
+    );
+
     this.dependencyIndex = this.visibilityService.createDependencyIndex(this.fields());
 
     this.visibilityService.bindVisibility({

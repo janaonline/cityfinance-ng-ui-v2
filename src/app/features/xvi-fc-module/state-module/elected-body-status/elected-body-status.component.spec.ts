@@ -158,7 +158,69 @@ describe('ElectedBodyStatusComponent', () => {
       'electedBodyExcelFile',
       'signedElectedbodyFile',
       'checkboxConfirmation',
+      'electedBodyExcelValidationStatus',
     ]);
+  });
+
+  // ─── electedBodyExcelValidationStatus synthetic control ───────────────────
+  // Bridges validationSummary (a plain signal, sibling to `questions` in the GET response) into
+  // the reactive form so signedElectedbodyFile's backend-driven visibleWhen can gate on Excel
+  // *validity*, not just presence — see createFormControls() in the component.
+
+  /**
+   * `component.form` is a strictly-typed `FormGroup<{}>` (built via `this.fb.group({})`, then
+   * mutated at runtime with `addControl`) — TypeScript doesn't see runtime-added keys, so
+   * `.get('electedBodyExcelValidationStatus')` needs an explicit cast rather than the inferred
+   * (and here, overly narrow) type.
+   */
+  function syntheticStatusControl(form: { get(path: string): AbstractControl | null }): AbstractControl | null {
+    return form.get('electedBodyExcelValidationStatus');
+  }
+
+  it('defaults electedBodyExcelValidationStatus to NOT_VALIDATED when the form has no validationSummary yet', () => {
+    expect(syntheticStatusControl(component.form)?.value).toBe('NOT_VALIDATED');
+  });
+
+  it('initializes electedBodyExcelValidationStatus from the loaded validationSummary.validationStatus', () => {
+    eulbService.getFormData.and.returnValue(
+      of({ ...createFormResponse(), validationSummary: { ...mockValidationSummary, validationStatus: 'VALID' } }),
+    );
+    const summaryFixture = TestBed.createComponent(ElectedBodyStatusComponent);
+    summaryFixture.detectChanges();
+
+    expect(syntheticStatusControl(summaryFixture.componentInstance.form)?.value).toBe('VALID');
+  });
+
+  it('hides signedElectedbodyFile until electedBodyExcelValidationStatus is VALID, per its visibleWhen', () => {
+    const questionsWithGate = createQuestions(fileValue).map((q) =>
+      q.key === 'signedElectedbodyFile'
+        ? {
+            ...q,
+            visibleWhen: {
+              mode: 'all' as const,
+              conditions: [
+                { key: 'electedBodyExcelValidationStatus', operator: 'equals' as const, value: 'VALID' as const },
+              ],
+            },
+          }
+        : q,
+    );
+    eulbService.getFormData.and.returnValue(
+      of({
+        ...createFormResponse(fileValue),
+        questions: questionsWithGate,
+        validationSummary: { ...mockValidationSummary, validationStatus: 'NOT_VALIDATED' },
+      }),
+    );
+    const gatedFixture = TestBed.createComponent(ElectedBodyStatusComponent);
+    gatedFixture.detectChanges();
+    const gatedComponent = gatedFixture.componentInstance;
+
+    expect(gatedComponent.fields().find((f) => f.key === 'signedElectedbodyFile')?.hidden).toBeTrue();
+
+    syntheticStatusControl(gatedComponent.form)?.setValue('VALID');
+
+    expect(gatedComponent.fields().find((f) => f.key === 'signedElectedbodyFile')?.hidden).toBeFalse();
   });
 
   it('uses the current data-cy selectors for footer actions', () => {
