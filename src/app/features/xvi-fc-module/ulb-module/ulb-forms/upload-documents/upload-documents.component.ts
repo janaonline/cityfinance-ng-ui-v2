@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
+import { UtilityService } from '../../../../../core/services/utility.service';
 import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -21,7 +22,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EMPTY, Subscription, firstValueFrom, interval, switchMap } from 'rxjs';
+import { EMPTY, Subscription, catchError, firstValueFrom, interval, switchMap } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
@@ -266,6 +267,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly permissions = inject(AuthPermissionService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
+  private readonly utilityService = inject(UtilityService);
   private readonly fileService = inject(FileService);
 
   readonly canUpload = () => this.permissions.canUploadDocuments();
@@ -390,7 +392,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
   );
 
-  private static readonly SUPPORT_EMAIL = '16fcgrant@cityfinance.in';
+  private static readonly SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 
   readonly supportMailto = computed(() => {
     const details = this.ulbDetails();
@@ -713,6 +715,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         );
       } catch (err) {
         console.error('[remove] failed to delete document from server', err);
+        this.utilityService.triggerSnackbar('Unable to remove the document. Please try again.', 'snackbar-danger');
+        return;
       }
     }
 
@@ -930,7 +934,15 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       .pipe(
         switchMap(() =>
           this.documents().some((d) => d.status === 'processing')
-            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`)
+            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`).pipe(
+                // A transient failure here must not kill the outer interval subscription — swallow
+                // it and let the next tick retry, rather than leaving documents stuck "processing"
+                // until something else happens to call startPolling() again.
+                catchError((err) => {
+                  console.error('[poll] status check failed', err);
+                  return EMPTY;
+                }),
+              )
             : EMPTY,
         ),
         takeUntilDestroyed(this.destroyRef),
