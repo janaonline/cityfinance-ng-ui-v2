@@ -476,6 +476,26 @@ describe('DynamicFormService', () => {
       expect(form.controls['b'].errors).toBeNull();
     });
 
+    it('does not clear the required error on construction when both matchesField controls start empty', () => {
+      // Real-world repro (xvi-fc-bank-account's confirmAccountNumber): a field declares both
+      // `required` and `matchesField`. FormGroup's constructor synchronously runs the group
+      // validators once — with both controls starting at '', matchesFieldValidator must not wipe
+      // the required error the control's own validator already set moments earlier in the same call.
+      const form = service.toFormGroup([
+        { key: 'accountNumber', label: 'Account Number', formFieldType: 'text' } as FieldConfig,
+        {
+          key: 'confirmAccountNumber',
+          label: 'Confirm',
+          formFieldType: 'text',
+          required: true,
+          validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+          matchesField: 'accountNumber',
+        } as FieldConfig,
+      ]);
+
+      expect(form.controls['confirmAccountNumber'].hasError('required')).toBeTrue();
+    });
+
     it('resolves matchesField against dotted flat keys, not nested paths', () => {
       const form = service.toFormGroup([
         { key: 'bankDetails.accountNumber', label: 'Account', formFieldType: 'text' } as FieldConfig,
