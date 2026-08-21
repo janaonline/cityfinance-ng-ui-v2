@@ -114,15 +114,31 @@ describe('DevolutionFormulaService', () => {
       const installment = 1 as const;
       const url = `${BASE_URL}${stateId}/${yearId}/${installment}/template`;
 
-      let result: Blob | undefined;
-      service.downloadTemplate(stateId, yearId, installment).subscribe({ next: (blob) => (result = blob) });
+      let result: { blob: Blob; fileName: unknown } | undefined;
+      service.downloadTemplate(stateId, yearId, installment).subscribe({ next: (data) => (result = data) });
 
       const req = httpMock.expectOne(url);
       expect(req.request.method).toBe('GET');
       expect(req.request.responseType).toBe('blob');
       req.flush(new Blob(['data']));
 
-      expect(result).toBeInstanceOf(Blob);
+      expect(result?.blob).toBeInstanceOf(Blob);
+    });
+
+    it('parses the backend Content-Disposition filename', () => {
+      const stateId = 'state-1';
+      const yearId = 'year-1';
+      const installment = 1 as const;
+      const url = `${BASE_URL}${stateId}/${yearId}/${installment}/template`;
+
+      let result: { blob: Blob; fileName: string | null } | undefined;
+      service.downloadTemplate(stateId, yearId, installment).subscribe({ next: (data) => (result = data) });
+
+      httpMock.expectOne(url).flush(new Blob(['data']), {
+        headers: { 'Content-Disposition': 'attachment; filename="ulb-wise-allocation-template_2026-08-14.xlsx"' },
+      });
+
+      expect(result?.fileName).toEqual('ulb-wise-allocation-template_2026-08-14.xlsx');
     });
   });
 
@@ -135,15 +151,15 @@ describe('DevolutionFormulaService', () => {
       const installment = 1 as const;
       const url = `${BASE_URL}${stateId}/${yearId}/${installment}/error-sheet`;
 
-      let result: Blob | undefined;
-      service.downloadErrorSheet(stateId, yearId, installment).subscribe({ next: (blob) => (result = blob) });
+      let result: { blob: Blob; fileName: unknown } | undefined;
+      service.downloadErrorSheet(stateId, yearId, installment).subscribe({ next: (data) => (result = data) });
 
       const req = httpMock.expectOne(url);
       expect(req.request.method).toBe('GET');
       expect(req.request.responseType).toBe('blob');
       req.flush(new Blob(['errors']));
 
-      expect(result).toBeInstanceOf(Blob);
+      expect(result?.blob).toBeInstanceOf(Blob);
     });
   });
 });

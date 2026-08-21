@@ -221,7 +221,7 @@ export class EulbPostUpdateComponent implements OnInit, CanComponentDeactivate {
       },
       {
         count: summary.exemptCount,
-        label: '6th Schedule (Cantonment / NAC)',
+        label: '6th Schedule',
         borderClass: 'border-secondary',
         textClass: '',
       },

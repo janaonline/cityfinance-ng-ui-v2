@@ -4,7 +4,7 @@
     <button
       type="button"
       [matButton]="override() === option.value ? 'filled' : 'outlined'"
-      class="amount-display-toggle-pill"
+      class="amount-display-toggle-pill px-3"
       [attr.aria-pressed]="override() === option.value"
       (click)="onChange(option.value)"
       [attr.data-cy]="'amount-display-toggle-option-' + (option.value ?? 'default')"

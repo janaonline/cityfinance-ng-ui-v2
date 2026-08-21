@@ -22,7 +22,6 @@ import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../.
 import { EulbStatusService } from '../../eulb-status.service';
 import {
   EulbBodyStatus,
-  EulbEditableFieldKey,
   EulbRow,
   EulbRowEditFormValue,
   EulbRowError,
@@ -51,13 +50,6 @@ function toStringArray(value: unknown): string[] {
 }
 
 type EulbRowStringEditField = 'dateOfConstitution' | 'dateOfExpiry' | 'remarks';
-
-const ERROR_FIELD_OPTIONS: ReadonlyArray<{ readonly value: EulbEditableFieldKey; readonly label: string }> = [
-  { value: 'electedBodyStatus', label: 'Elected Body Status' },
-  { value: 'dateOfConstitution', label: 'Date on which the elected body is in place.' },
-  { value: 'dateOfExpiry', label: 'Date of Expiry' },
-  { value: 'remarks', label: 'Remarks' },
-];
 
 @Component({
   selector: 'app-eulb-rows-dialog',
@@ -109,7 +101,6 @@ export class EulbRowsDialogComponent implements OnInit {
 
   readonly electedBodyStatusOptions: EulbBodyStatus[] = ['Constituted', 'Not Constituted', '6th Schedule'];
   readonly validationStatusOptions = EULB_ROW_VALIDATION_STATUS_OPTIONS;
-  readonly errorFieldOptions = ERROR_FIELD_OPTIONS;
 
   private hasSavedRowChanges = false;
   private loadRequestId = 0;
@@ -119,13 +110,19 @@ export class EulbRowsDialogComponent implements OnInit {
   filterForm = this.fb.group({
     search: [''],
     validationStatus: [''],
-    errorField: [''],
   });
 
   editForm: FormGroup = this.fb.group({});
 
-  /** Initialises the dialog: loads the first page and wires up filter subscriptions. */
+  /** Initialises the dialog: pre-selects the Invalid filter when the opener requested it (e.g.
+   *  the last known validation had row errors), loads the first page, and wires up filter
+   *  subscriptions — mirrors Devolution Formula's `DevolutionFormulaRowsDialogComponent`. */
   ngOnInit(): void {
+    if (this.data.initialValidationStatusFilter) {
+      this.filterForm.controls.validationStatus.setValue(this.data.initialValidationStatusFilter, {
+        emitEvent: false,
+      });
+    }
     this.loadRows();
     this.setupFilterSubscription();
   }
@@ -138,13 +135,12 @@ export class EulbRowsDialogComponent implements OnInit {
     const requestId = ++this.loadRequestId;
     this.isLoading.set(true);
 
-    const { search, validationStatus, errorField } = this.filterForm.getRawValue();
+    const { search, validationStatus } = this.filterForm.getRawValue();
     const query: EulbRowsQuery = {
       page: this.page(),
       limit: this.limit,
       search: search || undefined,
       validationStatus: isEulbRowValidationStatus(validationStatus) ? validationStatus : undefined,
-      errorField: errorField || undefined,
     };
 
     this.service
@@ -526,13 +522,9 @@ export class EulbRowsDialogComponent implements OnInit {
    * The `search` field is debounced by 400 ms; all other controls react immediately.
    */
   private setupFilterSubscription(): void {
-    const { search, validationStatus, errorField } = this.filterForm.controls;
+    const { search, validationStatus } = this.filterForm.controls;
 
-    merge(
-      search.valueChanges.pipe(debounceTime(400), distinctUntilChanged()),
-      validationStatus.valueChanges,
-      errorField.valueChanges,
-    )
+    merge(search.valueChanges.pipe(debounceTime(400), distinctUntilChanged()), validationStatus.valueChanges)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.page.set(1);

@@ -120,6 +120,8 @@ export type FieldSupportingContent =
       descriptionTone?: FieldSupportingActionTone;
       actions: FieldSupportingAction[];
       badges?: FieldSupportingBadge[];
+      /** Plain-English fix message shown after badges when the form is invalid. */
+      validationMessage?: string;
     };
 
 export type { UploadedFileMetadata } from './components/file/file-metadata.types';
