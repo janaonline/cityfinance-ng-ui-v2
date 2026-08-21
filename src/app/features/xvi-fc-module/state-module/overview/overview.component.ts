@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   OverviewCardComponent,
   OverviewData,
@@ -17,6 +18,8 @@ import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 export class OverviewComponent implements OnInit {
   private readonly overviewService = inject(OverviewService);
   private readonly amountDisplay = inject(AmountDisplayModeService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   /** Same 'auto' state-wide-aggregate page default used everywhere else on this dashboard;
    *  `null` renders as '—' (year had no performance grant, see `OverviewService.mapToDisbursementRows`). */
@@ -69,6 +72,6 @@ export class OverviewComponent implements OnInit {
   }
 
   onViewRequirements(): void {
-    console.log('Navigate to requirements page');
+    void this.router.navigate(['../requirements'], { relativeTo: this.route });
   }
 }

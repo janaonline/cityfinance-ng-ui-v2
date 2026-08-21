@@ -101,7 +101,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   protected readonly errorMessage = signal('');
 
   protected readonly supportEmail = computed(() =>
-    this.typeKey() === '15thFC' ? '15fcgrant@cityfinance.in' : '16fcgrant@cityfinance.in',
+    this.typeKey() === '15thFC' ? '15fcgrant@cityfinance.in' : '16fc.grant@cityfinance.in',
   );
 
   protected readonly captchaEnabled = environment.captchaEnabled;

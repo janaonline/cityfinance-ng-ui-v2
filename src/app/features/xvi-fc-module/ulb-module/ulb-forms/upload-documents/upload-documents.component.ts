@@ -392,7 +392,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
   );
 
-  private static readonly SUPPORT_EMAIL = '16fcgrant@cityfinance.in';
+  private static readonly SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 
   readonly supportMailto = computed(() => {
     const details = this.ulbDetails();
