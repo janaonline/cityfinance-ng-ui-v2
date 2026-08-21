@@ -9,12 +9,11 @@ import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
-import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import {
-  ManualReviewRejectDialogComponent,
-  ManualReviewRejectDialogData,
-} from './dialogs/manual-review-reject-dialog/manual-review-reject-dialog.component';
+  ManualReviewDecisionDialogComponent,
+  ManualReviewDecisionDialogData,
+} from './dialogs/manual-review-decision-dialog/manual-review-decision-dialog.component';
 import { AnnualAccountSectionKey, ManualReviewQueueRow } from './manual-review-queue.models';
 import { ManualReviewQueueService } from './manual-review-queue.service';
 
@@ -37,7 +36,6 @@ export class ManualReviewQueueComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly service = inject(ManualReviewQueueService);
   private readonly utilityService = inject(UtilityService);
-  private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly dialog = inject(MatDialog);
 
   readonly displayedColumns = ['serialNo', 'details', 'validationIssues', 'requestedAt', 'actions'];
@@ -115,63 +113,34 @@ export class ManualReviewQueueComponent implements OnInit {
   }
 
   onApprove(row: ManualReviewQueueRow): void {
-    if (this.decidingRowKey()) return;
-
-    this.confirmDialogService
-      .confirm({
-        title: 'Approve this document?',
-        message: `This overrides the failed OCR validation and marks "${row.fileName ?? row.docId}" as passed. This cannot be undone.`,
-        confirmText: 'Yes, approve',
-        cancelText: 'Cancel',
-        confirmButtonColor: 'primary',
-        icon: 'bi-check-circle-fill',
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((confirmed) => {
-        if (confirmed) this.submitApprove(row);
-      });
-  }
-
-  private submitApprove(row: ManualReviewQueueRow): void {
-    const key = this.rowKey(row);
-    this.decidingRowKey.set(key);
-
-    this.service
-      .decide(row.annualAccountId, row.section, row.docId, { decision: 'APPROVED' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.decidingRowKey.set(null);
-          this.removeRow(row);
-          this.utilityService.triggerSnackbar('Document approved.', 'snackbar-success');
-        },
-        error: (err: unknown) => {
-          this.decidingRowKey.set(null);
-          const message = (err as { error?: { message?: string } })?.error?.message;
-          this.utilityService.triggerSnackbar(message ?? 'Unable to approve this document.', 'snackbar-danger');
-        },
-      });
+    this.openDecisionDialog(row, 'APPROVED');
   }
 
   onReject(row: ManualReviewQueueRow): void {
+    this.openDecisionDialog(row, 'RETURNED');
+  }
+
+  private openDecisionDialog(row: ManualReviewQueueRow, decision: 'APPROVED' | 'RETURNED'): void {
     if (this.decidingRowKey()) return;
 
-    const dialogData: ManualReviewRejectDialogData = {
+    const dialogData: ManualReviewDecisionDialogData = {
       annualAccountId: row.annualAccountId,
       section: row.section,
       docId: row.docId,
       ulbName: row.ulbName,
       fileName: row.fileName,
+      decision,
     };
 
     this.dialog
-      .open(ManualReviewRejectDialogComponent, { data: dialogData, width: '480px' })
+      .open(ManualReviewDecisionDialogComponent, { data: dialogData, width: '480px' })
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((succeeded) => {
         if (!succeeded) return;
         this.removeRow(row);
-        this.utilityService.triggerSnackbar('Document rejected and returned to the ULB.', 'snackbar-success');
+        const message = decision === 'APPROVED' ? 'Document approved.' : 'Document rejected and returned to the ULB.';
+        this.utilityService.triggerSnackbar(message, 'snackbar-success');
       });
   }
 

@@ -1,0 +1,55 @@
+<h2 mat-dialog-title>{{ isReject ? 'Reject manual review' : 'Approve this document?' }}</h2>
+<mat-dialog-content>
+  @if (isReject) {
+    <p class="text-secondary small mb-2">
+      This returns the document to the ULB with your note explaining what needs to be fixed
+      @if (data.ulbName) {
+        &mdash; <strong>{{ data.ulbName }}</strong>
+      }
+      @if (data.fileName) {
+        ({{ data.fileName }})
+      }.
+    </p>
+  } @else {
+    <p class="text-secondary small mb-2">
+      This overrides the failed OCR validation and marks
+      @if (data.fileName) {
+        "<strong>{{ data.fileName }}</strong>"
+      } @else {
+        this document
+      }
+      as passed
+      @if (data.ulbName) {
+        for <strong>{{ data.ulbName }}</strong>
+      }. This cannot be undone.
+    </p>
+  }
+
+  @if (formError()) {
+    <div class="alert alert-danger py-2 px-3 small mb-2" role="alert">{{ formError() }}</div>
+  }
+
+  <label class="form-label small fw-semibold" for="manual-review-decision-note">
+    Note {{ isReject ? 'to the ULB' : '(optional)' }}
+  </label>
+  <textarea
+    id="manual-review-decision-note"
+    class="form-control"
+    [class.is-invalid]="showRequiredError()"
+    rows="4"
+    [formControl]="note"
+    [disabled]="isSubmitting()"
+  ></textarea>
+  @if (showRequiredError()) {
+    <div class="invalid-feedback d-block">A note is required when rejecting a document.</div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+  <button matButton="filled" type="button" [disabled]="isSubmitting()" (click)="submit()">
+    @if (isSubmitting()) {
+      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+    }
+    {{ isReject ? 'Reject document' : 'Yes, approve' }}
+  </button>
+</mat-dialog-actions>
