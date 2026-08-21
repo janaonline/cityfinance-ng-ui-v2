@@ -38,7 +38,7 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     validationError: null,
     latestDecision: null,
     manualReviewDecision: null,
-    hasRetried: false,
+    retryValidationCount: 0,
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,

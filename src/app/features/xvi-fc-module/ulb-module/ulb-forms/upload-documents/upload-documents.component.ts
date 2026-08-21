@@ -95,9 +95,9 @@ export interface UploadDocument extends UploadDocumentDef {
   latestDecision: BackendDecision | null;
   // ADMIN's verdict on a manual-review request for this document — null if never requested/decided.
   manualReviewDecision: BackendDecision | null;
-  // Client-side only — true once this doc's OCR has failed and the ULB has retried at least
-  // once this session. Gates the "Request Manual Review" button; resets on reload.
-  hasRetried: boolean;
+  // How many times the ULB has retried OCR on this exact uploaded file — persisted server-side,
+  // so it survives a reload. Gates the "Request Manual Review" button (retried at least once).
+  retryValidationCount: number;
   isManualReviewRequested: boolean;
   manualReviewError: string | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
@@ -143,6 +143,8 @@ interface BackendStatusDoc {
     ocrInfo: BackendOcrInfo;
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
+    /** How many times the ULB has retried OCR on this exact uploaded file — persisted server-side. */
+    retryValidationCount: number;
   } | null;
   // STATE's current decision on this document, or null if undecided/undone.
   stateDecision: BackendDecision | null;
@@ -238,7 +240,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     validationError: null,
     latestDecision: null,
     manualReviewDecision: null,
-    hasRetried: false,
+    retryValidationCount: 0,
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
@@ -328,6 +330,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.latestDecision?.status === 'APPROVED';
   }
 
+  /** True while a manual-review request is outstanding and ADMIN hasn't decided yet — mirrors the
+   *  backend's isAwaitingManualReviewDecision guard, which blocks re-upload/retry until then. */
+  isAwaitingManualReview(doc: UploadDocument): boolean {
+    return doc.isManualReviewRequested && !doc.manualReviewDecision;
+  }
+
   /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
   toRuntimeState(doc: UploadDocument): DocumentRuntimeState {
     const processingStatusMap: Record<UploadDocument['status'], DocumentRuntimeState['processingStatus']> = {
@@ -346,12 +354,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
       isStale: doc.isStale,
       manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
+      isAwaitingManualReview: this.isAwaitingManualReview(doc),
     };
   }
 
   /** Routes the shared action-row component's click event to the existing handlers — the
    *  gate/resolver only decide what to show; permission is re-checked here at the point of action. */
   onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    const doc = this.documents().find((d) => d.id === event.docKey);
+    if (doc && this.isAwaitingManualReview(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
+
     switch (event.action) {
       case 'upload':
       case 'reupload':
@@ -489,6 +501,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     const docId = this.pendingDocId;
     this.pendingDocId = null;
+    const existingDoc = this.documents().find((d) => d.id === docId);
+    if (existingDoc && this.isAwaitingManualReview(existingDoc)) return;
     const docDef = this.config()!.documents.find((d) => d.id === docId)!;
 
     const validationMsg = await this.checkFileValidity(file, docDef);
@@ -590,6 +604,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   async retryUpload(docId: string): Promise<void> {
     const doc = this.documents().find((d) => d.id === docId);
     if (!doc?.uploadId || !this.annualAccountId()) return;
+    if (this.isAwaitingManualReview(doc)) return;
 
     this.documents.update((docs) =>
       docs.map((d) =>
@@ -601,7 +616,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
-              hasRetried: true,
+              retryValidationCount: d.retryValidationCount + 1,
               isManualReviewRequested: false,
               manualReviewError: null,
               isStale: false,
@@ -902,6 +917,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
             isManualReviewRequested: cu.ocrInfo.isManualReviewRequested ?? false,
+            retryValidationCount: cu.retryValidationCount ?? 0,
             isStale: saved.isStale,
             latestDecision,
             manualReviewDecision,
@@ -974,6 +990,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
                 isManualReviewRequested: remote.currentUpload.ocrInfo.isManualReviewRequested ?? false,
+                retryValidationCount: remote.currentUpload.retryValidationCount ?? 0,
                 isStale: remote.isStale,
               };
             }),
