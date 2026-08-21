@@ -39,6 +39,7 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     latestDecision: null,
     manualReviewDecision: null,
     retryValidationCount: 0,
+    retryValidationAt: null,
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
@@ -276,6 +277,9 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
       tick();
       const initial = backendDoc('IN_PROGRESS');
       initial.data.documents[0].processingStatus = 'PROCESSING';
+      // Must be recent — the polling loop stops for anything stuck PROCESSING past the timeout,
+      // and this test's whole point is to observe polling continue through a transient failure.
+      initial.data.documents[0].currentUpload.uploadedAt = new Date().toISOString();
       httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: initial });
       tick();
 
