@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { Subscription, filter, fromEvent, switchMap } from 'rxjs';
+import { EMPTY, Subscription, filter, fromEvent, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -338,13 +338,18 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.sendOtpAndShowStep(this.accountantForm.getRawValue().accountantEmail);
+    this.sendOtpAndShowStep(this.accountantForm.getRawValue().accountantEmail, () => {
+      this.editingCommissioner.set(false);
+      this.editingAccountant.set(false);
+    });
   }
 
   /**
    * Shared by ULB (`onSaveAndContinue`) and STATE/MoHUA (`onSaveStateProfile`): sends an OTP to
    * `email` and, on success, flips the UI into the OTP-entry step. `onSent` runs first so a
-   * caller can close its own edit mode (STATE does this; ULB has nothing to close).
+   * caller can close its own edit mode — both cards must be locked once the OTP box is showing,
+   * or a still-editable Nodal Officer email field would let the user change it after the code
+   * was sent to the original address, verifying against the wrong email.
    */
   private sendOtpAndShowStep(email: string, onSent?: () => void): void {
     this.sendingOtp.set(true);
@@ -379,8 +384,9 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Persists both contact cards — called only after the Nodal Officer's OTP is verified. */
-  private persistUlbContacts(): void {
+  /** Persists both contact cards — called only after the Nodal Officer's OTP is verified and a
+   *  save token has been issued for that verification (see onConfirmOtp's ULB branch). */
+  private persistUlbContacts(saveToken: string): void {
     // Always send all commissioner fields even when empty — backend transforms "" → null
     // so the DB field is explicitly cleared rather than left with its old value.
     const commRaw = this.commissionerForm.getRawValue();
@@ -391,10 +397,14 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     };
 
     this.profileService
-      .saveUlbContacts(this.userId, {
-        ...commissionerPayload,
-        ...this.accountantForm.getRawValue(),
-      })
+      .saveUlbContacts(
+        this.userId,
+        {
+          ...commissionerPayload,
+          ...this.accountantForm.getRawValue(),
+        },
+        saveToken,
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ ok, fieldErrors }) => {
@@ -480,21 +490,37 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     if (!/^\d{4}$/.test(otp)) return; // H3
 
     if (this.role === 'ulb') {
-      const nodalOfficerEmail = this.accountantForm.getRawValue().accountantEmail;
+      // Verify against the address the OTP was actually sent to (otpEmail), not a fresh read of
+      // the form — the form is locked during this step, but this stays correct even if that ever
+      // regresses, and avoids checking the code against a different email than it was issued for.
+      const nodalOfficerEmail = this.otpEmail();
       if (!this.userId) { this.errorMsg.set('Session expired. Please log in again.'); return; }
       this.isSaving.set(true);
       this.errorMsg.set('');
 
       this.profileService.verifyProfileOtp(nodalOfficerEmail, otp)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: ({ verified }) => {
+        .pipe(
+          switchMap(({ verified }) => {
             if (!verified) {
               this.isSaving.set(false);
               this.errorMsg.set('Invalid or expired OTP. Please check the Nodal Officer\'s email and try again.');
+              return EMPTY;
+            }
+            // The backend requires this save token as proof OTP verification actually happened —
+            // saveUlbContacts() alone (client-side "only called after verified") is not a security
+            // boundary, same reasoning as the STATE/MoHUA save-token flow below.
+            return this.profileService.issueProfileSaveToken(this.userId);
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: ({ token }) => {
+            if (!token) {
+              this.isSaving.set(false);
+              this.errorMsg.set('Could not secure save session. Please verify your email again.');
               return;
             }
-            this.persistUlbContacts();
+            this.persistUlbContacts(token);
           },
         });
       return;
@@ -612,7 +638,7 @@ export class ProfileVerificationComponent implements OnInit, OnDestroy {
     const token = this.profileSaveToken;
 
     if (this.role === 'mohua') {
-      this.profileService.setNewPassword(newPassword, token)
+      this.profileService.setNewPassword(newPassword, token, { name, mobile, designation })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: ({ ok }) => {

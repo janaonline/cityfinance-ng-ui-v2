@@ -1012,6 +1012,17 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const isPdfMime = file.type === 'application/pdf';
       const isPdfExt = file.name.toLowerCase().endsWith('.pdf');
       if (!isPdfMime && !isPdfExt) return 'Please upload a PDF file only.';
+    } else {
+      // No PDF-specific (magic-byte/content) validation exists for other configured types — at
+      // minimum, reject anything whose extension isn't in the allow-list, rather than accepting
+      // any file at all. An empty allow-list means nothing is configured as acceptable here.
+      const ext = file.name.toLowerCase().split('.').pop() ?? '';
+      const allowed = doc.allowedFileTypes.map((t) => t.toLowerCase());
+      if (allowed.length === 0 || !allowed.includes(ext)) {
+        return doc.allowedFileTypes.length
+          ? `Please upload a file of type: ${doc.allowedFileTypes.join(', ')}.`
+          : 'No file type is configured as acceptable for this document.';
+      }
     }
 
     if (file.size === 0) return 'The selected file is empty. Please upload a valid file.';
@@ -1057,16 +1068,18 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  /** Resolved from the route first (matches annual-account-review.component.ts's own
+   *  resolveDesignYearId) — localStorage is a single global value shared across tabs, so it must
+   *  never win over what the URL actually says, or a stale/cross-tab value could silently drive
+   *  this page's document loads/uploads/submissions onto the wrong year's data. */
   private resolveDesignYearId(): string | null {
-    const stored = localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
-    if (stored) return stored;
     let current: ActivatedRoute | null = this.route;
     while (current) {
       const yearId = current.snapshot.paramMap.get('yearId');
       if (yearId) return yearId;
       current = current.parent;
     }
-    return null;
+    return localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
   }
 
   private resolveUlbId(): string | null {

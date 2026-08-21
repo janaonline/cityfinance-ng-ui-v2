@@ -32,4 +32,12 @@ describe('OverviewComponent', () => {
 
     expect(ensureLoadedSpy).toHaveBeenCalled();
   });
+
+  it('does not throw when userData in localStorage is malformed JSON', () => {
+    localStorage.setItem('userData', 'not-json{{{');
+
+    expect(() => component.ngOnInit()).not.toThrow();
+
+    localStorage.removeItem('userData');
+  });
 });

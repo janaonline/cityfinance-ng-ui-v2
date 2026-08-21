@@ -349,3 +349,69 @@ describe('AnnualAccountReviewComponent — optional document gating', () => {
     });
   });
 });
+
+// A single global localStorage value shared across every open tab must never override what the
+// URL itself says — otherwise a stale/cross-tab year could silently drive this write-action page's
+// approve/return decisions onto the wrong year's data. Separate TestBed setup since it needs a
+// route with its own :yearId param, unlike the other describe block above.
+describe('AnnualAccountReviewComponent — designYearId precedence (route over localStorage)', () => {
+  let component: AnnualAccountReviewComponent;
+  let fixture: ComponentFixture<AnnualAccountReviewComponent>;
+
+  afterEach(() => localStorage.removeItem(XVIFC_LS_KEYS.selectedYearId));
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AnnualAccountReviewComponent, HttpClientTestingModule],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: convertToParamMap({ ulbId: 'ulb-1' }),
+              queryParamMap: convertToParamMap({}),
+              data: {},
+            },
+            parent: {
+              snapshot: { paramMap: convertToParamMap({ yearId: 'year-route' }) },
+              parent: null,
+            },
+          },
+        },
+        { provide: UtilityService, useValue: {} },
+        { provide: ConfirmDialogService, useValue: {} },
+        { provide: NoteDialogService, useValue: {} },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(AnnualAccountReviewComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('uses the route\'s yearId even when localStorage holds a different (stale/cross-tab) value', async () => {
+    localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, 'year-stale');
+    const slbService = TestBed.inject(SlbService);
+    const getSlbFormSpy = spyOn(slbService, 'getSlbForm').and.returnValue(
+      of({
+        _id: 'slb-1',
+        formName: 'SLB',
+        formId: 32,
+        ulbId: 'ulb-1',
+        yearId: 'year-route',
+        designYear: '2026-27',
+        actualYearLabel: '2025-26',
+        ulbName: 'Test ULB',
+        actors: [],
+        currentFormStatus: 3,
+        currentFormStatusLabel: 'Under Review by State',
+        questions: [],
+        permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+        meta: { version: 1 },
+      } as SlbFormData),
+    );
+
+    await component.switchTab('SLB');
+
+    expect(getSlbFormSpy).toHaveBeenCalledWith('ulb-1', 'year-route');
+  });
+});

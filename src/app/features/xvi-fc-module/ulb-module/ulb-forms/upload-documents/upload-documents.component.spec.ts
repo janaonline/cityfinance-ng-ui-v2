@@ -134,6 +134,48 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
 
     expect(component.allPassed()).toBe(false);
   });
+
+  describe('checkFileValidity() for a document not configured for pdf', () => {
+    const docxDoc: UploadDocumentDef = {
+      id: 'other-doc',
+      title: 'Other Document',
+      subtitle: '',
+      required: true,
+      allowedFileTypes: ['docx'],
+      maxFileSize: 50,
+    };
+
+    function checkFileValidity(file: File, doc: UploadDocumentDef): Promise<string | null> {
+      return (
+        component as unknown as { checkFileValidity(file: File, doc: UploadDocumentDef): Promise<string | null> }
+      ).checkFileValidity(file, doc);
+    }
+
+    it('accepts a file matching the configured (non-pdf) extension', async () => {
+      const file = new File(['content'], 'report.docx', { type: 'application/vnd.openxmlformats' });
+
+      const result = await checkFileValidity(file, docxDoc);
+
+      expect(result).toBeNull();
+    });
+
+    it('rejects a file whose extension is not in allowedFileTypes, instead of accepting anything', async () => {
+      const file = new File(['MZ...'], 'malware.exe', { type: 'application/octet-stream' });
+
+      const result = await checkFileValidity(file, docxDoc);
+
+      expect(result).toContain('Please upload a file of type');
+    });
+
+    it('rejects every file when allowedFileTypes is empty (misconfigured document)', async () => {
+      const noTypesDoc: UploadDocumentDef = { ...docxDoc, allowedFileTypes: [] };
+      const file = new File(['content'], 'anything.docx', { type: 'application/octet-stream' });
+
+      const result = await checkFileValidity(file, noTypesDoc);
+
+      expect(result).toContain('No file type is configured');
+    });
+  });
 });
 
 describe('UploadDocumentsComponent — masks provisional STATE decisions during review', () => {
@@ -341,6 +383,90 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
       expect(doc?.status).toBe('passed');
       expect(doc?.fileName).toBe('report.pdf');
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
+    }),
+  );
+});
+
+// A single global localStorage value shared across every open tab must never override what the
+// URL itself says — otherwise a stale/cross-tab year could silently drive this page's document
+// loads/uploads onto the wrong year's data. Separate TestBed setup since it needs a route with
+// its own :yearId param, unlike the other describe blocks above.
+describe('UploadDocumentsComponent — designYearId precedence (route over localStorage)', () => {
+  let component: UploadDocumentsComponent;
+  let fixture: ComponentFixture<UploadDocumentsComponent>;
+  let httpMock: HttpTestingController;
+
+  const config: UploadPageConfig = {
+    type: 'audited',
+    description: '',
+    confirmLabel: 'Submit',
+    documentYearId: 'year-route',
+    documentYear: 'FY 2026-27',
+    actionGates: [],
+    documents: [
+      {
+        id: 'auditors-report',
+        title: 'Auditor Report',
+        subtitle: '',
+        required: true,
+        allowedFileTypes: ['pdf'],
+        maxFileSize: 50,
+      },
+    ],
+  };
+
+  beforeEach(async () => {
+    localStorage.setItem('xvifc_selectedYearId', 'year-stale');
+    localStorage.setItem('userData', JSON.stringify({ ulb: 'ulb-1' }));
+
+    await TestBed.configureTestingModule({
+      imports: [UploadDocumentsComponent, HttpClientTestingModule],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { data: { uploadType: 'audited' }, paramMap: convertToParamMap({}) },
+            parent: {
+              snapshot: { paramMap: convertToParamMap({ yearId: 'year-route' }) },
+              parent: null,
+            },
+          },
+        },
+        {
+          provide: AuthPermissionService,
+          useValue: {
+            canUploadDocuments: () => true,
+            canDeleteDocuments: () => true,
+            canSubmitToStateDma: () => true,
+          },
+        },
+        { provide: UploadDocumentsService, useValue: { getUploadConfig: () => of(config) } },
+        {
+          provide: UtilityService,
+          useValue: jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']),
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(UploadDocumentsComponent);
+    component = fixture.componentInstance;
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    httpMock.verify();
+  });
+
+  it(
+    "uses the route's yearId even when localStorage holds a different (stale/cross-tab) value",
+    fakeAsync(() => {
+      component.ngOnInit();
+      tick();
+
+      const req = httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-route'));
+      expect(req.request.url).toContain('year-route');
+      req.flush({ success: true, data: null });
     }),
   );
 });
