@@ -41,7 +41,9 @@ import {
   EulbRevalidateExcelResponse,
   EulbRowError,
   EulbRowsDialogResult,
+  EulbRowValidationStatus,
   EulbSaveDraftPayload,
+  EulbValidationSummary,
   SubmitType,
 } from './eulb-status.models';
 import {
@@ -171,6 +173,11 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
   readonly isDownloadingElectedBodiesList = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
 
+  /** Latest known validation summary — used to land the "Uploaded Data" dialog directly on the
+   *  Invalid filter when the last upload/validation had row errors, mirroring Devolution Formula's
+   *  own `validationSummary` signal. */
+  readonly validationSummary = signal<EulbValidationSummary | null>(null);
+
   readonly permissions = signal<EulbPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
@@ -260,6 +267,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
           this.stateName.set(data.stateName ?? '');
           this.actors.set(data.actors ?? []);
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
+          this.validationSummary.set(data.validationSummary ?? null);
 
           const fileField = data.questions.find((q) => q.key === 'electedBodyExcelFile');
           this.lastPersistedExcelFile = normalizeUploadedFileMetadata(fileField?.value);
@@ -300,6 +308,18 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       const formControl = this.dynamicService.createContorl(field, false, field.readonly);
       this.form.addControl(field.key, formControl);
     }
+
+    // Synthetic control, not part of the backend's FieldConfig[] (same pattern as
+    // fc-unspent-declaration's `unspentUlbData` / register-ulb's `'state'` control) — bridges
+    // `validationSummary` (a plain signal, sibling to `questions` in the GET response) into the
+    // reactive form so signedElectedbodyFile's visibleWhen can gate on Excel *validity*, not just
+    // presence. `validationSummary` is set once, right before this method runs (see loadForm), and
+    // every action that can change validity goes through a full reloadForm() → loadForm() rebuild,
+    // so no extra re-sync is needed here.
+    this.form.addControl(
+      'electedBodyExcelValidationStatus',
+      this.fb.control(this.validationSummary()?.validationStatus ?? 'NOT_VALIDATED'),
+    );
 
     this.dependencyIndex = this.visibilityService.createDependencyIndex(this.fields());
 
@@ -478,8 +498,8 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       .downloadTemplate(this.stateId, this.yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'elected-bodies-template.xlsx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Elected-body-template.xlsx');
           this.isDownloadingTemplate.set(false);
         },
         error: () => {
@@ -491,10 +511,13 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
 
   /**
    * Opens the full-screen rows dialog for reviewing uploaded EULB data.
+   * If the last known validation had row errors, lands the user directly on the Invalid filter
+   * instead of "All" — still fully user-initiated, no dialog opens without a click (mirrors
+   * Devolution Formula's `openRowsDialog`).
    * Reloads the form when the dialog closes with an updated summary so backend-driven
    * action/badge state is refreshed.
    */
-  openRowsDialog(): void {
+  openRowsDialog(initialFilter?: EulbRowValidationStatus): void {
     const panelClass = [...(this.themeClass ? [this.themeClass] : []), 'eulb-rows-dialog-panel'];
     this.rowsDialogRef = this.dialog.open(EulbRowsDialogComponent, {
       panelClass,
@@ -507,6 +530,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
         yearId: this.yearId,
         rowEditFields: this.rowEditFields(),
         canEdit: this.canEdit(),
+        initialValidationStatusFilter: initialFilter,
       },
     });
 
@@ -539,7 +563,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
         this.downloadTemplate();
         return;
       case EULB_SUPPORTING_ACTION.VIEW_UPLOADED_DATA:
-        this.openRowsDialog();
+        this.openRowsDialog(this.validationSummary()?.errorRowCount ? 'INVALID' : undefined);
         return;
       case EULB_SUPPORTING_ACTION.DOWNLOAD_ERROR_SHEET:
         this.downloadErrorSheet();
@@ -570,8 +594,8 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       .downloadErrorSheet(stateId, yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'elected-bodies-error-sheet.xlsx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Elected-body-error-sheet.xlsx');
           this.isDownloadingErrorSheet.set(false);
           this.utilityService.triggerSnackbar('Error sheet downloaded successfully.');
         },
@@ -606,8 +630,8 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       .downloadElectedBodiesListDocument(stateId, yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'elected-bodies-list.docx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Elected-body-list.docx');
           this.isDownloadingElectedBodiesList.set(false);
           this.utilityService.triggerSnackbar('Elected bodies list downloaded successfully.');
         },

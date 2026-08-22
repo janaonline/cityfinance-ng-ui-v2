@@ -60,6 +60,37 @@ describe('comparison validators', () => {
 
       expect(group.controls['confirm.value'].errors).toEqual({ matchesField: true });
     });
+
+    it('does not overwrite unrelated errors already on the declaring control when values differ', () => {
+      const group = buildFlatGroup('123', '456');
+      group.controls['confirmAccountNumber'].setErrors({ required: true });
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ required: true, matchesField: true });
+    });
+
+    it('preserves unrelated errors when clearing matchesField', () => {
+      const group = buildFlatGroup('456', '456');
+      group.controls['confirmAccountNumber'].setErrors({ required: true, matchesField: true });
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ required: true });
+    });
+
+    it('does not clear the required error when both fields start empty and equal', () => {
+      // Reproduces the real bank-account bug: confirmAccountNumber declares both `required` and
+      // `matchesField`. Its own control-level validator sets `required` first; before the fix, the
+      // group-level matchesFieldValidator would then wipe it via a bare setErrors(null) simply
+      // because both empty strings are equal.
+      const group = buildFlatGroup('', '');
+      group.controls['confirmAccountNumber'].setErrors({ required: true });
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ required: true });
+    });
   });
 
   describe('digitsOnlyValidator', () => {

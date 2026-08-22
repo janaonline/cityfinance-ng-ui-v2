@@ -4,10 +4,7 @@ import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import FileSaver from 'file-saver';
 import { Subject, finalize, from, map, startWith, takeUntil } from 'rxjs';
-import {
-  CanComponentDeactivate,
-  warnBeforeUnloadWhenDirty,
-} from '../../../../core/guards/unsaved-changes.guard';
+import { CanComponentDeactivate, warnBeforeUnloadWhenDirty } from '../../../../core/guards/unsaved-changes.guard';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
@@ -112,6 +109,10 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
    *  kept alongside the editable FormArray so the table can render already-saved rows without ever
    *  needing to open the ULB picker. */
   readonly savedUnspentUlbData = signal<readonly FcUnspentUlbData[]>([]);
+  /** Drives the save-prompt banner: fcUnspentDeclaration's backend visibleWhen hides the whole
+   *  field (not just its download action) until at least one row is saved, which also hides that
+   *  field's own in-field "save your changes" message along with it — this banner fills that gap. */
+  readonly hasSavedUnspentRows = computed(() => this.savedUnspentUlbData().length > 0);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -167,14 +168,15 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
 
     return {
       ...withActionState,
-      supportingContent: withActionState.supportingContent?.map((block): FieldSupportingContent =>
-        block.type === 'actions'
-          ? {
-              ...block,
-              description: 'Save your changes as a draft before downloading the declaration.',
-              descriptionTone: 'danger',
-            }
-          : block,
+      supportingContent: withActionState.supportingContent?.map(
+        (block): FieldSupportingContent =>
+          block.type === 'actions'
+            ? {
+                ...block,
+                description: 'Save your changes as a draft before downloading the declaration.',
+                descriptionTone: 'danger',
+              }
+            : block,
       ),
     };
   }
@@ -211,7 +213,9 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   private readonly liveUnspentRows = toSignal(
     this.unspentUlbData.valueChanges.pipe(
       startWith(this.unspentUlbData.getRawValue()),
-      map((values) => values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null }))),
+      map((values) =>
+        values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null })),
+      ),
     ),
     { initialValue: [] as { ulbId: string | null; unspentAmount: number | null }[] },
   );
@@ -350,6 +354,11 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
     this.form.addControl('unspentUlbData', this.unspentUlbData);
     this.hydrateUnspentUlbData(savedRows);
 
+    // Synthetic control bridging saved row data into the reactive form.
+    // Used by fcUnspentDeclaration.visibleWhen to check for saved rows, not live FormArray data.
+    // It reflects only persisted data and updates on loadForm()/reloadForm().
+    this.form.addControl('savedUnspentUlbData', this.fb.control(savedRows));
+
     const isFcUnspentControl = this.form.get('isFcUnspent');
     const initialIsFcUnspentRaw: unknown = isFcUnspentControl?.value;
     const initialIsFcUnspent = typeof initialIsFcUnspentRaw === 'string' ? initialIsFcUnspentRaw : null;
@@ -434,7 +443,9 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (blob) => FileSaver.saveAs(blob, 'fc-unspent-declaration.docx'),
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? `Fc-unspent-declaration-${this.isYesBranch() ? 'yes' : 'no'}.docx`);
+        },
         error: (err: unknown) => {
           console.error('Failed to download the FC Unspent declaration document', err);
           this.handleDownloadApiError(err, 'Failed to download the declaration document.');

@@ -45,9 +45,9 @@
     </div>
   } @else {
     @if (overviewData; as data) {
-      <div class="mb-2">
+      <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
         <h2
-          class="title-with-badge"
+          class="title-with-badge my-1"
           [matBadge]="selectedYear"
           [matBadgeHidden]="!selectedYear"
           matBadgeOverlap="false"
@@ -56,9 +56,6 @@
         >
           {{ data.name }}
         </h2>
-      </div>
-
-      <div class="d-flex justify-content-end mb-2">
         <app-amount-display-toggle />
       </div>
 

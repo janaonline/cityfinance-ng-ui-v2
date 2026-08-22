@@ -146,31 +146,37 @@ describe('EulbStatusService', () => {
     }
   });
 
-  it('passes blob downloads straight through without applying the success:false check', () => {
+  it('passes blob downloads straight through without applying the success:false check, and parses Content-Disposition', () => {
     const blobContent = new Blob(['test'], { type: 'application/vnd.ms-excel' });
+    const dispositionHeaders = { 'Content-Disposition': 'attachment; filename="elected-bodies-template_2026-08-14.xlsx"' };
 
-    let templateResult: Blob | undefined;
-    service.downloadTemplate(stateId, yearId).subscribe((blob) => (templateResult = blob));
+    let templateResult: { blob: Blob; fileName: string | null } | undefined;
+    service.downloadTemplate(stateId, yearId).subscribe((result) => (templateResult = result));
     httpMock
       .expectOne((r) => r.method === 'GET' && r.url.includes('/template') && r.responseType === 'blob')
-      .flush(blobContent);
-    expect(templateResult).toBe(blobContent);
+      .flush(blobContent, { headers: dispositionHeaders });
+    expect(templateResult?.blob).toBe(blobContent);
+    expect(templateResult?.fileName).toEqual('elected-bodies-template_2026-08-14.xlsx');
 
-    let errorSheetResult: Blob | undefined;
-    service.downloadErrorSheet(stateId, yearId).subscribe((blob) => (errorSheetResult = blob));
+    let errorSheetResult: { blob: Blob; fileName: unknown } | undefined;
+    service.downloadErrorSheet(stateId, yearId).subscribe((result) => (errorSheetResult = result));
     httpMock
       .expectOne((r) => r.method === 'GET' && r.url.includes('/error-sheet') && r.responseType === 'blob')
       .flush(blobContent);
-    expect(errorSheetResult).toBe(blobContent);
+    expect(errorSheetResult?.blob).toBe(blobContent);
+    expect(errorSheetResult?.fileName).toBeNull();
 
-    let electedBodiesListResult: Blob | undefined;
-    service.downloadElectedBodiesListDocument(stateId, yearId).subscribe((blob) => (electedBodiesListResult = blob));
+    let electedBodiesListResult: { blob: Blob; fileName: unknown } | undefined;
+    service
+      .downloadElectedBodiesListDocument(stateId, yearId)
+      .subscribe((result) => (electedBodiesListResult = result));
     httpMock
       .expectOne(
         (r) => r.method === 'GET' && r.url.includes('/elected-bodies-list-document') && r.responseType === 'blob',
       )
       .flush(blobContent);
-    expect(electedBodiesListResult).toBe(blobContent);
+    expect(electedBodiesListResult?.blob).toBe(blobContent);
+    expect(electedBodiesListResult?.fileName).toBeNull();
   });
 
   it('keeps successful save draft responses on the success path', () => {

@@ -389,6 +389,46 @@ describe('DynamicFieldSupportingContentComponent', () => {
     });
   });
 
+  describe('actions — validationMessage', () => {
+    it('renders the validation message in danger-colored text when present', () => {
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [],
+          validationMessage: 'To submit, fix 3 row error(s).',
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const message = fixture.debugElement.query(By.css('p.text-danger'));
+      expect(message.nativeElement.textContent.trim()).toBe('To submit, fix 3 row error(s).');
+    });
+
+    it('renders nothing when validationMessage is absent', () => {
+      componentRef.setInput('supportingContent', [{ type: 'actions', actions: [] } satisfies FieldSupportingContent]);
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('p.text-danger'))).toBeNull();
+    });
+
+    it('renders after the badges, not before', () => {
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [],
+          badges: [{ label: '3 error(s)', tone: 'danger' }],
+          validationMessage: 'To submit, fix 3 row error(s).',
+        } satisfies FieldSupportingContent,
+      ]);
+      fixture.detectChanges();
+
+      const badge = fixture.debugElement.query(By.css('.badge'));
+      const message = fixture.debugElement.query(By.css('p.text-danger'));
+      expect(badge).toBeTruthy();
+      expect(message.nativeElement.textContent.trim()).toBe('To submit, fix 3 row error(s).');
+    });
+  });
+
   describe('multiple items', () => {
     it('renders multiple content items in the same position', () => {
       componentRef.setInput('supportingContent', [

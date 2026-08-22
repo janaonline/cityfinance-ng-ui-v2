@@ -12,7 +12,10 @@ export type VisibilityCondition =
   | { key: string; operator: 'notEquals'; value: unknown }
   | { key: string; operator: 'in'; value: unknown[] }
   | { key: string; operator: 'notIn'; value: unknown[] }
-  | { key: string; operator: 'yearGreaterThan'; value: number };
+  | { key: string; operator: 'yearGreaterThan'; value: number }
+  /** Unary — tests whether the looked-up field currently holds a value; no `value` needed. */
+  | { key: string; operator: 'isNotEmpty' }
+  | { key: string; operator: 'isEmpty' };
 
 export interface VisibleWhen {
   mode: VisibleWhenMode;
@@ -296,6 +299,12 @@ export class DynamicFormVisibilityService {
         return year !== null && year > condition.value;
       }
 
+      case 'isNotEmpty':
+        return this.isValuePresent(rawValue);
+
+      case 'isEmpty':
+        return !this.isValuePresent(rawValue);
+
       default:
         return false;
     }
@@ -315,5 +324,26 @@ export class DynamicFormVisibilityService {
 
     const year = Number(parts[2]);
     return Number.isFinite(year) ? year : null;
+  }
+
+  /**
+   * Unary presence check backing the isNotEmpty/isEmpty operators. Duck-types file-shaped objects
+   * (`{fileUrl/path, fileName/originalName, ...}`) the same way the backend's
+   * `DynamicFormValidationService.validateFileField` does, so "has a file actually been uploaded"
+   * reads correctly rather than treating a file control's default empty shape as present. Mirror
+   * any change here in the backend's `dynamic-form-validation.service.ts#isValuePresent`.
+   */
+  private isValuePresent(value: unknown): boolean {
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      if (['fileUrl', 'path', 'fileName', 'originalName'].some((k) => k in obj)) {
+        return Boolean(obj['fileUrl'] ?? obj['path']) || Boolean(obj['fileName'] ?? obj['originalName']);
+      }
+      return Object.keys(obj).length > 0;
+    }
+    return true; // numbers/booleans (incl. 0/false) are explicit present values
   }
 }
