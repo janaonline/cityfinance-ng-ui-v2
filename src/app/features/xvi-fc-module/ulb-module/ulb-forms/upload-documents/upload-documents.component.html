@@ -216,10 +216,10 @@
                         } @else if (doc.isManualReviewRequested) {
                           <div class="manual-review-note mt-2">
                             <mat-icon class="align-middle">support_agent</mat-icon>
-                            Manual review requested — our team will review this document.
+                            Manual review requested — our team will review this document within 48 hours.
                           </div>
                         } @else if (canDelete() && !sectionLocked()) {
-                          @if (doc.hasRetried) {
+                          @if (doc.retryValidationCount > 0) {
                             <div class="d-flex mt-2">
                               <button
                                 mat-stroked-button

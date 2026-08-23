@@ -616,9 +616,12 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   /** The PDF itself is rendered server-side (`ClaimLetterService.downloadDocumentPdf()`) — client-
    *  side `pdfmake` generation needed `'unsafe-eval'` in `script-src`, which a strict CSP rejects.
-   *  Still goes through `loadDocumentData()` first, purely for the cached `refNo` the filename is
-   *  built from — the single-flight/revision-invalidation behavior it shares with Preview is
-   *  otherwise unaffected. */
+   *  Still goes through `loadDocumentData()` first — the single-flight/revision-invalidation cache it
+   *  shares with Preview is unaffected by the filename source below, and its cached `refNo` is kept
+   *  as the fallback filename (used only if the backend's `Content-Disposition` header is
+   *  missing/unparseable) since a state can have multiple claim letters in flight (different
+   *  installments/batches) — a bare `claim-letter.pdf` fallback would reintroduce the exact
+   *  filename-collision problem `refNo` exists to prevent. */
   downloadTemplate(): void {
     if (this.isDownloadingDocument()) return;
     this.isDownloadingDocument.set(true);
@@ -630,9 +633,11 @@ export class ClaimLetterDetailComponent implements OnInit {
         switchMap((documentData) => {
           if (!claimLetterId) throw new Error('Cannot download the claim letter before it has an id.');
           const fileNameSafeRefNo = documentData.refNo.replace(/[/\\]/g, '-');
-          return this.claimLetterService
-            .downloadDocumentPdf(claimLetterId)
-            .pipe(tap((blob) => FileSaver.saveAs(blob, `claim-letter-${fileNameSafeRefNo}.pdf`)));
+          return this.claimLetterService.downloadDocumentPdf(claimLetterId).pipe(
+            tap(({ blob, fileName }) => {
+              FileSaver.saveAs(blob, fileName ?? `Claim-letter-${fileNameSafeRefNo}.pdf`);
+            }),
+          );
         }),
         takeUntilDestroyed(this.destroyRef),
       )

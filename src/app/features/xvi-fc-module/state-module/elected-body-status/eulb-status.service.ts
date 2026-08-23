@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { parseContentDispositionFileName, XviFcDownloadedFile } from '../../download-file-name.util';
 import {
   EulbDeleteUploadedExcelResponse,
   EulbFinalSubmitPayload,
@@ -63,35 +64,53 @@ export class EulbStatusService {
   }
 
   /**
-   * Downloads the EULB Excel template as a blob.
+   * Downloads the EULB Excel template. `observe: 'response'` (rather than the default body-only
+   * observe) lets the caller read the backend's complete `Content-Disposition` filename via
+   * `download-file-name.util.ts`'s `parseContentDispositionFileName` — the component saves it
+   * verbatim rather than reconstructing it client-side.
    * @param stateId - The state identifier.
    * @param yearId - The finance commission year identifier.
    */
-  downloadTemplate(stateId: string, yearId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}${stateId}/${yearId}/template`, { responseType: 'blob' });
+  downloadTemplate(stateId: string, yearId: string): Observable<XviFcDownloadedFile> {
+    return this.http
+      .get(`${this.baseUrl}${stateId}/${yearId}/template`, { responseType: 'blob', observe: 'response' })
+      .pipe(map((response) => this.toDownloadedFile(response)));
   }
 
   /**
-   * Fetches an on-demand error sheet blob for rows that failed validation.
-   * Returns HTTP 400 if no uploaded data exists yet.
+   * Fetches an on-demand error sheet for rows that failed validation. Returns HTTP 400 if no
+   * uploaded data exists yet.
    * @param stateId - The state identifier.
    * @param yearId - The finance commission year identifier.
    */
-  downloadErrorSheet(stateId: string, yearId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}${stateId}/${yearId}/error-sheet`, { responseType: 'blob' });
+  downloadErrorSheet(stateId: string, yearId: string): Observable<XviFcDownloadedFile> {
+    return this.http
+      .get(`${this.baseUrl}${stateId}/${yearId}/error-sheet`, { responseType: 'blob', observe: 'response' })
+      .pipe(map((response) => this.toDownloadedFile(response)));
   }
 
   /**
-   * Fetches the "Elected Bodies List" declaration letter (Word doc) as a blob, generated on demand
-   * from the state's active elected-body row dataset. Returns HTTP 400 if there are no active rows,
-   * or if any active row has not passed validation.
+   * Fetches the "Elected Bodies List" declaration letter (Word doc), generated on demand from the
+   * state's active elected-body row dataset. Returns HTTP 400 if there are no active rows, or if any
+   * active row has not passed validation.
    * @param stateId - The state identifier.
    * @param yearId - The finance commission year identifier.
    */
-  downloadElectedBodiesListDocument(stateId: string, yearId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}${stateId}/${yearId}/elected-bodies-list-document`, {
-      responseType: 'blob',
-    });
+  downloadElectedBodiesListDocument(stateId: string, yearId: string): Observable<XviFcDownloadedFile> {
+    return this.http
+      .get(`${this.baseUrl}${stateId}/${yearId}/elected-bodies-list-document`, {
+        responseType: 'blob',
+        observe: 'response',
+      })
+      .pipe(map((response) => this.toDownloadedFile(response)));
+  }
+
+  /** Shared by the three blob downloads above. */
+  private toDownloadedFile(response: HttpResponse<Blob>): XviFcDownloadedFile {
+    return {
+      blob: response.body as Blob,
+      fileName: parseContentDispositionFileName(response.headers.get('Content-Disposition')),
+    };
   }
 
   /**
@@ -130,7 +149,7 @@ export class EulbStatusService {
    * Fetches a paginated, filterable list of uploaded EULB rows.
    * @param stateId - The state identifier.
    * @param yearId - The finance commission year identifier.
-   * @param query - Optional filters: `page`, `limit`, `search`, `validationStatus`, `errorField`.
+   * @param query - Optional filters: `page`, `limit`, `search`, `validationStatus`.
    */
   getRows(stateId: string, yearId: string, query: EulbRowsQuery = {}): Observable<EulbRowsApiResponse> {
     let params = new HttpParams();
@@ -138,7 +157,6 @@ export class EulbStatusService {
     if (query.limit !== undefined) params = params.set('limit', String(query.limit));
     if (query.search) params = params.set('search', query.search);
     if (query.validationStatus) params = params.set('validationStatus', query.validationStatus);
-    if (query.errorField) params = params.set('errorField', query.errorField);
 
     return this.http
       .get<EulbRowsApiResponse>(`${this.baseUrl}${stateId}/${yearId}/rows`, { params })

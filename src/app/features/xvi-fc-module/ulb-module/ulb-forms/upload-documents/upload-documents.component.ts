@@ -95,9 +95,12 @@ export interface UploadDocument extends UploadDocumentDef {
   latestDecision: BackendDecision | null;
   // ADMIN's verdict on a manual-review request for this document — null if never requested/decided.
   manualReviewDecision: BackendDecision | null;
-  // Client-side only — true once this doc's OCR has failed and the ULB has retried at least
-  // once this session. Gates the "Request Manual Review" button; resets on reload.
-  hasRetried: boolean;
+  // How many times the ULB has retried OCR on this exact uploaded file — persisted server-side,
+  // so it survives a reload. Gates the "Request Manual Review" button (retried at least once).
+  retryValidationCount: number;
+  // When the most recent retry was kicked off — null if never retried. Used (falling back to
+  // uploadedAt) as the reference point for the stuck-processing poll timeout.
+  retryValidationAt: Date | null;
   isManualReviewRequested: boolean;
   manualReviewError: string | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
@@ -143,6 +146,10 @@ interface BackendStatusDoc {
     ocrInfo: BackendOcrInfo;
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
+    /** How many times the ULB has retried OCR on this exact uploaded file — persisted server-side. */
+    retryValidationCount: number;
+    /** When the most recent retry was kicked off — null if never retried. */
+    retryValidationAt: string | null;
   } | null;
   // STATE's current decision on this document, or null if undecided/undone.
   stateDecision: BackendDecision | null;
@@ -207,6 +214,9 @@ interface UploadResponse {
 
 const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
+/** Stop polling a document that's been stuck PROCESSING this long — the backend's cron fallback
+ *  will eventually settle it, and a full page reload will pick up the final status. */
+const PROCESSING_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
 // The dev backend may return bare objects instead of { success, data } wrappers.
 // This helper extracts the payload from either shape.
@@ -238,7 +248,8 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     validationError: null,
     latestDecision: null,
     manualReviewDecision: null,
-    hasRetried: false,
+    retryValidationCount: 0,
+    retryValidationAt: null,
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
@@ -328,6 +339,26 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.latestDecision?.status === 'APPROVED';
   }
 
+  /** True while a manual-review request is outstanding and ADMIN hasn't decided yet — mirrors the
+   *  backend's isAwaitingManualReviewDecision guard, which blocks re-upload/retry until then. */
+  isAwaitingManualReview(doc: UploadDocument): boolean {
+    return doc.isManualReviewRequested && !doc.manualReviewDecision;
+  }
+
+  /** True once a PROCESSING document has been stuck long enough that polling it further is
+   *  pointless — the backend's cron fallback will settle it eventually. Measured from the most
+   *  recent retry if there's been one, since a retry restarts the OCR attempt from scratch —
+   *  otherwise a retry on an old upload would look timed-out the instant it's kicked off. */
+  private isProcessingTimedOut(doc: UploadDocument): boolean {
+    const referenceTime = doc.retryValidationAt ?? doc.uploadedAt;
+    return !!referenceTime && Date.now() - referenceTime.getTime() > PROCESSING_POLL_TIMEOUT_MS;
+  }
+
+  /** Docs that should keep the polling loop alive — PROCESSING and not yet timed out. */
+  private hasActivePolling(docs: readonly UploadDocument[]): boolean {
+    return docs.some((d) => d.status === 'processing' && !this.isProcessingTimedOut(d));
+  }
+
   /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
   toRuntimeState(doc: UploadDocument): DocumentRuntimeState {
     const processingStatusMap: Record<UploadDocument['status'], DocumentRuntimeState['processingStatus']> = {
@@ -346,12 +377,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
       isStale: doc.isStale,
       manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
+      isAwaitingManualReview: this.isAwaitingManualReview(doc),
     };
   }
 
   /** Routes the shared action-row component's click event to the existing handlers — the
    *  gate/resolver only decide what to show; permission is re-checked here at the point of action. */
   onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    const doc = this.documents().find((d) => d.id === event.docKey);
+    if (doc && this.isAwaitingManualReview(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
+
     switch (event.action) {
       case 'upload':
       case 'reupload':
@@ -489,6 +524,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     const docId = this.pendingDocId;
     this.pendingDocId = null;
+    const existingDoc = this.documents().find((d) => d.id === docId);
+    if (existingDoc && this.isAwaitingManualReview(existingDoc)) return;
     const docDef = this.config()!.documents.find((d) => d.id === docId)!;
 
     const validationMsg = await this.checkFileValidity(file, docDef);
@@ -590,6 +627,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   async retryUpload(docId: string): Promise<void> {
     const doc = this.documents().find((d) => d.id === docId);
     if (!doc?.uploadId || !this.annualAccountId()) return;
+    if (this.isAwaitingManualReview(doc)) return;
 
     this.documents.update((docs) =>
       docs.map((d) =>
@@ -601,7 +639,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
-              hasRetried: true,
+              retryValidationCount: d.retryValidationCount + 1,
+              retryValidationAt: new Date(),
               isManualReviewRequested: false,
               manualReviewError: null,
               isStale: false,
@@ -902,6 +941,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
             isManualReviewRequested: cu.ocrInfo.isManualReviewRequested ?? false,
+            retryValidationCount: cu.retryValidationCount ?? 0,
+            retryValidationAt: cu.retryValidationAt ? new Date(cu.retryValidationAt) : null,
             isStale: saved.isStale,
             latestDecision,
             manualReviewDecision,
@@ -909,8 +950,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         }),
       );
 
-      // Start polling if any doc is still processing
-      if (this.documents().some((d) => d.status === 'processing')) {
+      // Start polling if any doc is still processing (and hasn't already timed out)
+      if (this.hasActivePolling(this.documents())) {
         this.startPolling();
       }
     } catch (err: unknown) {
@@ -932,19 +973,23 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     this.pollingSub = interval(POLL_INTERVAL_MS)
       .pipe(
-        switchMap(() =>
-          this.documents().some((d) => d.status === 'processing')
-            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`).pipe(
-                // A transient failure here must not kill the outer interval subscription — swallow
-                // it and let the next tick retry, rather than leaving documents stuck "processing"
-                // until something else happens to call startPolling() again.
-                catchError((err) => {
-                  console.error('[poll] status check failed', err);
-                  return EMPTY;
-                }),
-              )
-            : EMPTY,
-        ),
+        switchMap(() => {
+          if (!this.hasActivePolling(this.documents())) {
+            // Nothing left worth polling for (either resolved, or timed out) — tear the
+            // interval down instead of ticking forever with nothing to do.
+            this.stopPolling();
+            return EMPTY;
+          }
+          return this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`).pipe(
+            // A transient failure here must not kill the outer interval subscription — swallow
+            // it and let the next tick retry, rather than leaving documents stuck "processing"
+            // until something else happens to call startPolling() again.
+            catchError((err) => {
+              console.error('[poll] status check failed', err);
+              return EMPTY;
+            }),
+          );
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -974,12 +1019,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
                 isManualReviewRequested: remote.currentUpload.ocrInfo.isManualReviewRequested ?? false,
+                retryValidationCount: remote.currentUpload.retryValidationCount ?? 0,
+                retryValidationAt: remote.currentUpload.retryValidationAt
+                  ? new Date(remote.currentUpload.retryValidationAt)
+                  : null,
                 isStale: remote.isStale,
               };
             }),
           );
 
-          if (!this.documents().some((d) => d.status === 'processing')) {
+          if (!this.hasActivePolling(this.documents())) {
             this.stopPolling();
           }
         },

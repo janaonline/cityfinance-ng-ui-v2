@@ -38,7 +38,8 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     validationError: null,
     latestDecision: null,
     manualReviewDecision: null,
-    hasRetried: false,
+    retryValidationCount: 0,
+    retryValidationAt: null,
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
@@ -283,108 +284,102 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
     httpMock.verify();
   });
 
-  it(
-    'hides a RETURNED decision while the section is still UNDER_REVIEW_BY_STATE',
-    fakeAsync(() => {
-      component.ngOnInit();
-      tick();
-      const req = httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'));
-      req.flush({ success: true, data: backendDoc('UNDER_REVIEW_BY_STATE') });
-      tick();
+  it('hides a RETURNED decision while the section is still UNDER_REVIEW_BY_STATE', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const req = httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'));
+    req.flush({ success: true, data: backendDoc('UNDER_REVIEW_BY_STATE') });
+    tick();
 
-      const doc = component.documents().find((d) => d.id === 'auditors-report');
-      expect(doc?.latestDecision).toBeNull();
-    }),
-  );
+    const doc = component.documents().find((d) => d.id === 'auditors-report');
+    expect(doc?.latestDecision).toBeNull();
+  }));
 
-  it(
-    'reveals the RETURNED decision once the section is finalized (RETURNED_BY_STATE)',
-    fakeAsync(() => {
-      component.ngOnInit();
-      tick();
-      const req = httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'));
-      req.flush({ success: true, data: backendDoc('RETURNED_BY_STATE') });
-      tick();
+  it('reveals the RETURNED decision once the section is finalized (RETURNED_BY_STATE)', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const req = httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'));
+    req.flush({ success: true, data: backendDoc('RETURNED_BY_STATE') });
+    tick();
 
-      const doc = component.documents().find((d) => d.id === 'auditors-report');
-      expect(doc?.latestDecision?.status).toBe('RETURNED');
-    }),
-  );
+    const doc = component.documents().find((d) => d.id === 'auditors-report');
+    expect(doc?.latestDecision?.status).toBe('RETURNED');
+  }));
 
-  it(
-    'keeps polling after a transient status-check failure, instead of leaving the document stuck processing',
-    fakeAsync(() => {
-      component.ngOnInit();
-      tick();
-      const initial = backendDoc('IN_PROGRESS');
-      initial.data.documents[0].processingStatus = 'PROCESSING';
-      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: initial });
-      tick();
+  it('keeps polling after a transient status-check failure, instead of leaving the document stuck processing', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const initial = backendDoc('IN_PROGRESS');
+    initial.data.documents[0].processingStatus = 'PROCESSING';
+    // Must be recent — the polling loop stops for anything stuck PROCESSING past the timeout,
+    // and this test's whole point is to observe polling continue through a transient failure.
+    initial.data.documents[0].currentUpload.uploadedAt = new Date().toISOString();
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: initial });
+    tick();
 
-      expect(component.documents().find((d) => d.id === 'auditors-report')?.status).toBe('processing');
+    expect(component.documents().find((d) => d.id === 'auditors-report')?.status).toBe('processing');
 
-      // First poll tick fails transiently.
-      tick(5000);
-      httpMock
-        .expectOne((r) => r.url.includes('/account-1/status'))
-        .flush('server error', { status: 500, statusText: 'Server Error' });
+    // First poll tick fails transiently.
+    tick(5000);
+    httpMock
+      .expectOne((r) => r.url.includes('/account-1/status'))
+      .flush('server error', { status: 500, statusText: 'Server Error' });
 
-      // Polling must still be alive for the next tick — this is the regression this test guards:
-      // an uncaught error inside switchMap would silently kill the outer interval subscription,
-      // and this second expectOne would then find no request at all.
-      tick(5000);
-      httpMock
-        .expectOne((r) => r.url.includes('/account-1/status'))
-        .flush({
-          success: true,
+    // Polling must still be alive for the next tick — this is the regression this test guards:
+    // an uncaught error inside switchMap would silently kill the outer interval subscription,
+    // and this second expectOne would then find no request at all.
+    tick(5000);
+    httpMock
+      .expectOne((r) => r.url.includes('/account-1/status'))
+      .flush({
+        success: true,
+        data: {
+          annualAccountId: 'account-1',
           data: {
-            annualAccountId: 'account-1',
-            data: {
-              documents: [
-                {
-                  docId: 'auditors-report',
-                  processingStatus: 'PASSED',
-                  isStale: false,
-                  currentUpload: { uploadId: 'upload-1', ocrInfo: { progressStep: null, validationStatus: null, validationDetails: null, failedChecks: [] } },
+            documents: [
+              {
+                docId: 'auditors-report',
+                processingStatus: 'PASSED',
+                isStale: false,
+                currentUpload: {
+                  uploadId: 'upload-1',
+                  ocrInfo: { progressStep: null, validationStatus: null, validationDetails: null, failedChecks: [] },
                 },
-              ],
-            },
+              },
+            ],
           },
-        });
-      tick();
+        },
+      });
+    tick();
 
-      expect(component.documents().find((d) => d.id === 'auditors-report')?.status).toBe('passed');
-    }),
-  );
+    expect(component.documents().find((d) => d.id === 'auditors-report')?.status).toBe('passed');
+  }));
 
-  it(
-    'keeps the document and surfaces an error when server-side removal fails',
-    fakeAsync(() => {
-      component.ngOnInit();
-      tick();
-      httpMock
-        .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
-        .flush({ success: true, data: backendDoc('APPROVED_BY_STATE') });
-      tick();
+  it('keeps the document and surfaces an error when server-side removal fails', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    httpMock
+      .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+      .flush({ success: true, data: backendDoc('APPROVED_BY_STATE') });
+    tick();
 
-      const dialogRef = jasmine.createSpyObj<MatDialogRef<unknown, string>>('MatDialogRef', ['afterClosed']);
-      dialogRef.afterClosed.and.returnValue(of('remove'));
-      dialog.open.and.returnValue(dialogRef);
+    const dialogRef = jasmine.createSpyObj<MatDialogRef<unknown, string>>('MatDialogRef', ['afterClosed']);
+    dialogRef.afterClosed.and.returnValue(of('remove'));
+    dialog.open.and.returnValue(dialogRef);
 
-      component.removeDocument('auditors-report');
-      tick();
+    component.removeDocument('auditors-report');
+    tick();
 
-      httpMock
-        .expectOne((r) => r.url.includes('/account-1/documents/auditors-report'))
-        .flush('server error', { status: 500, statusText: 'Server Error' });
-      tick();
+    httpMock
+      .expectOne((r) => r.url.includes('/account-1/documents/auditors-report'))
+      .flush('server error', { status: 500, statusText: 'Server Error' });
+    tick();
 
-      const doc = component.documents().find((d) => d.id === 'auditors-report');
-      expect(doc?.status).toBe('passed');
-      expect(doc?.fileName).toBe('report.pdf');
-      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
-    }),
-  );
+    const doc = component.documents().find((d) => d.id === 'auditors-report');
+    expect(doc?.status).toBe('passed');
+    expect(doc?.fileName).toBe('report.pdf');
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
+  }));
 });
 
 // A single global localStorage value shared across every open tab must never override what the
@@ -458,15 +453,12 @@ describe('UploadDocumentsComponent — designYearId precedence (route over local
     httpMock.verify();
   });
 
-  it(
-    "uses the route's yearId even when localStorage holds a different (stale/cross-tab) value",
-    fakeAsync(() => {
-      component.ngOnInit();
-      tick();
+  it("uses the route's yearId even when localStorage holds a different (stale/cross-tab) value", fakeAsync(() => {
+    component.ngOnInit();
+    tick();
 
-      const req = httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-route'));
-      expect(req.request.url).toContain('year-route');
-      req.flush({ success: true, data: null });
-    }),
-  );
+    const req = httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-route'));
+    expect(req.request.url).toContain('year-route');
+    req.flush({ success: true, data: null });
+  }));
 });
