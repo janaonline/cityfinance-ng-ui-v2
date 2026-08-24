@@ -20,6 +20,7 @@ const proofFile: XviFcBankAccountProofFile = {
   sizeKb: 12.25,
   s3Key: proofPath,
   sha256: 'a'.repeat(64),
+  fileUrl: fullProofUrl,
 };
 
 const responseRecord: XviFcBankAccountResponse = {

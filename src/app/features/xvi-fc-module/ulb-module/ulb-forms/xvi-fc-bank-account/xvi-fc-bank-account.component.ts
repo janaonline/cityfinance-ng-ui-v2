@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
-import { S3Service } from '../../../../../core/services/s3.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -79,7 +78,6 @@ export class XviFcBankAccountComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly bankAccountService = inject(XviFcBankAccountService);
   private readonly utilityService = inject(UtilityService);
-  private readonly s3Service = inject(S3Service);
   private readonly dynamicFormService = inject(DynamicFormService);
 
   @ViewChild('proofInput') private readonly proofInputRef!: ElementRef<HTMLInputElement>;
@@ -272,6 +270,7 @@ export class XviFcBankAccountComponent {
         sizeKb: Number((file.size / 1024).toFixed(2)),
         s3Key: signedUrl.path,
         sha256,
+        fileUrl: signedUrl.fileUrl,
       });
       this.utilityService.triggerSnackbar('Proof uploaded successfully.');
     } catch (error) {
@@ -352,23 +351,12 @@ export class XviFcBankAccountComponent {
     return `${sizeKb.toFixed(2)} KB`;
   }
 
-  proofStoragePath(proof: XviFcBankAccountProofFile): string {
-    return this.toStoragePath(proof.s3Key);
-  }
-
-  async viewProof(proof: XviFcBankAccountProofFile): Promise<void> {
-    const storagePath = this.proofStoragePath(proof);
-    if (!storagePath) return;
-
-    try {
-      const signedUrl = await firstValueFrom(this.s3Service.getSignedUrl(storagePath));
-      if (!signedUrl) {
-        throw new Error('Signed URL is missing.');
-      }
-      window.open(signedUrl, '_blank', 'noopener,noreferrer');
-    } catch {
+  viewProof(proof: XviFcBankAccountProofFile): void {
+    if (!proof.fileUrl) {
       this.utilityService.triggerSnackbar('Unable to open proof document. Please try again.', 'snackbar-danger');
+      return;
     }
+    window.open(proof.fileUrl, '_blank', 'noopener,noreferrer');
   }
 
   private controlValue(key: string): string | undefined {
@@ -472,18 +460,6 @@ export class XviFcBankAccountComponent {
 
   private hasProof(proofFile: XviFcBankAccountProofFile | null | undefined): proofFile is XviFcBankAccountProofFile {
     return !!proofFile?.originalName && !!proofFile.s3Key && !!proofFile.mimeType && !!proofFile.sha256;
-  }
-
-  private toStoragePath(value: string): string {
-    const trimmed = value.trim();
-    if (!trimmed) return '';
-
-    try {
-      const url = new URL(trimmed);
-      return url.pathname.replace(/^\/+/, '');
-    } catch {
-      return trimmed.split('?')[0];
-    }
   }
 
   private async calculateSha256(file: File): Promise<string> {
