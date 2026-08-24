@@ -5,12 +5,18 @@ import { firstValueFrom, forkJoin } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
 import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import { checkPdfHasContent } from '../../../../../shared/dynamic-form/utils/pdf-blank-check.util';
+import {
+  UlbFormsDialogComponent,
+  ULB_FORMS_DIALOG_PANEL_CLASS,
+  type UlbFormsDialogData,
+} from '../upload-documents/ulb-forms-dialog.component';
 import {
   FORM_STATUS,
   FormStatusType,
@@ -70,7 +76,7 @@ interface ApiErrorBody {
 
 @Component({
   selector: 'app-xvi-fc-bank-account',
-  imports: [DynamicFormComponent, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [DynamicFormComponent, MatButtonModule, MatDialogModule, MatIconModule, MatTooltipModule],
   templateUrl: './xvi-fc-bank-account.component.html',
   styleUrl: './xvi-fc-bank-account.component.scss',
 })
@@ -79,6 +85,7 @@ export class XviFcBankAccountComponent {
   private readonly bankAccountService = inject(XviFcBankAccountService);
   private readonly utilityService = inject(UtilityService);
   private readonly dynamicFormService = inject(DynamicFormService);
+  private readonly dialog = inject(MatDialog);
 
   @ViewChild('proofInput') private readonly proofInputRef!: ElementRef<HTMLInputElement>;
 
@@ -87,7 +94,7 @@ export class XviFcBankAccountComponent {
     'Confirm that your ULB has created a dedicated bank account to receive 16th Finance Commission grants linked to PFMS.';
 
   readonly proofField = {
-    label: 'Proof of Account Existence',
+    label: 'Proof of account linkage with PFMS',
     uploadLabel: 'Click to upload cancelled cheque',
     acceptedFormatsText: 'PDF, JPG, or PNG',
     maxSizeMb: MAX_FILE_SIZE_BYTES / (1024 * 1024),
@@ -288,7 +295,7 @@ export class XviFcBankAccountComponent {
     this.proofError.set(null);
   }
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.form.markAllAsTouched();
 
     if (!this.isEditable()) {
@@ -310,6 +317,30 @@ export class XviFcBankAccountComponent {
 
     if (!this.canSubmit() || !proof) return;
 
+    const confirmData: UlbFormsDialogData = {
+      title: 'Submit to State DMA?',
+      description:
+        "You're about to send this bank account detail to the State DMA for review. Once submitted, it cannot be changed until the State DMA sends it back for correction.",
+      buttons: [
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
+        { label: 'Submit to State DMA', result: 'submit', variant: 'flat' },
+      ],
+    };
+
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
+          data: confirmData,
+          disableClose: true,
+          width: '500px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
+        })
+        .afterClosed(),
+    );
+    if (confirmed !== 'submit') return;
+
     const bankDetails: XviFcBankDetails = {
       name: this.controlValue('bankDetails.name') ?? '',
       branch: this.controlValue('bankDetails.branch') ?? '',
@@ -318,6 +349,8 @@ export class XviFcBankAccountComponent {
       state: this.controlValue('bankDetails.state') ?? undefined,
       micr: this.controlValue('bankDetails.micr') ?? null,
     };
+
+    const { fileUrl: _proofFileUrl, ...proofFilePayload } = proof;
 
     this.isSubmitting.set(true);
     this.bankAccountService
@@ -329,7 +362,7 @@ export class XviFcBankAccountComponent {
         accountNumber: this.controlValue('accountNumber') ?? '',
         confirmAccountNumber: this.controlValue('confirmAccountNumber') ?? '',
         bankDetails,
-        proofFile: proof,
+        proofFile: proofFilePayload,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

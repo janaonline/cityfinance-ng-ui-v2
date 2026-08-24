@@ -198,7 +198,7 @@
         @if (isBudgetDocLoading()) {
           <span class="condition-icon condition-icon--pending-neutral flex-shrink-0" aria-hidden="true"></span>
           <div class="flex-grow-1 min-w-0">
-            <p class="condition-title fw-semibold mb-0">Annual Budget Document</p>
+            <p class="condition-title fw-semibold mb-0">Annual Budget Document {{ details.selectedYear }}</p>
             <p class="condition-subtitle text-muted mb-0">Loading…</p>
           </div>
         } @else {
@@ -212,7 +212,7 @@
           }
 
           <div class="flex-grow-1 min-w-0">
-            <p class="condition-title fw-semibold mb-0">Annual Budget Document</p>
+            <p class="condition-title fw-semibold mb-0">Annual Budget Document {{ details.selectedYear }}</p>
             @if (doc?.file; as file) {
               <p class="condition-subtitle text-muted mb-0">Uploaded: {{ file.name }}</p>
             } @else {
