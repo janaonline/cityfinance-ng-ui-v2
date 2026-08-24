@@ -30,6 +30,8 @@ describe('EulbPostUpdateEditFormFacade', () => {
           case 'notIn':
             return !condition.value.includes(rawValue);
           case 'yearGreaterThan':
+          case 'isNotEmpty':
+          case 'isEmpty':
             return false;
         }
       });
@@ -90,7 +92,7 @@ describe('EulbPostUpdateEditFormFacade', () => {
       },
       {
         key: 'dateOfConstitution',
-        label: 'Date on which the elected body is in place.',
+        label: 'Date on which the elected body is in place',
         formFieldType: 'date',
         enabledWhen: enabledWhenConstituted,
         clearValueWhenDisabled: true,

@@ -3,7 +3,7 @@
   class="fs-6 fw-semibold border-bottom mb-0 py-1 d-flex align-items-center justify-content-between"
   data-cy="df-rows-dialog-title"
 >
-  <span>Uploaded Data — ULB-wise Allocation</span>
+  <span>Uploaded Data - ULB-wise Allocation</span>
   <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="close()">
     <i class="bi bi-x-circle-fill fs-5"></i>
   </button>
@@ -37,6 +37,9 @@
             <option [value]="opt.value">{{ opt.label }}</option>
           }
         </select>
+      </div>
+      <div class="ms-auto">
+        <app-amount-display-toggle />
       </div>
     </form>
   </div>
@@ -72,9 +75,9 @@
             <th class="ps-3 text-nowrap small fw-semibold">#</th>
             <th class="text-nowrap small fw-semibold">Census Code</th>
             <th class="text-nowrap small fw-semibold">ULB Name</th>
-            <th class="text-nowrap small fw-semibold">Total Allocation</th>
             <th class="text-nowrap small fw-semibold">Installment 1</th>
             <th class="text-nowrap small fw-semibold">Installment 2</th>
+            <th class="text-nowrap small fw-semibold">Total Allocation</th>
             <th class="text-nowrap small fw-semibold">Allocation Formula</th>
             <th class="text-nowrap small fw-semibold">Status</th>
             @if (canEdit) {
@@ -97,51 +100,69 @@
                 <td class="small text-secondary text-nowrap">{{ row.censusCode }}</td>
                 <td class="small fw-medium">{{ row.ulbName }}</td>
 
-                <td [class.df-cell-invalid]="hasEditFieldError('totalGrantAllocation')">
-                  @if (tgaCtrl) {
-                    <input
-                      type="number"
-                      class="form-control form-control-sm df-edit-control"
-                      min="0"
-                      aria-label="Total Grant Allocation"
-                      [class.is-invalid]="hasEditFieldError('totalGrantAllocation')"
-                      [matTooltip]="getEditFieldErrorText('totalGrantAllocation')"
-                      [matTooltipDisabled]="!hasEditFieldError('totalGrantAllocation')"
-                      [formControl]="tgaCtrl"
-                      data-df-edit-field="totalGrantAllocation"
-                    />
-                  }
-                </td>
-
                 <td [class.df-cell-invalid]="hasEditFieldError('installment1Amount')">
                   @if (i1Ctrl) {
-                    <input
-                      type="number"
-                      class="form-control form-control-sm df-edit-control"
-                      min="0"
-                      aria-label="Installment 1 Amount"
-                      [class.is-invalid]="hasEditFieldError('installment1Amount')"
-                      [matTooltip]="getEditFieldErrorText('installment1Amount')"
-                      [matTooltipDisabled]="!hasEditFieldError('installment1Amount')"
-                      [formControl]="i1Ctrl"
-                      data-df-edit-field="installment1Amount"
-                    />
+                    <div class="d-inline-flex align-items-center gap-1">
+                      <input
+                        type="number"
+                        class="form-control form-control-sm df-edit-control"
+                        min="0"
+                        step="1"
+                        [appDecimalLimit]="0"
+                        appZeroOnStepChange
+                        aria-label="Installment 1 Amount"
+                        [class.is-invalid]="hasEditFieldError('installment1Amount')"
+                        [matTooltip]="getEditFieldErrorText('installment1Amount')"
+                        [matTooltipDisabled]="!hasEditFieldError('installment1Amount')"
+                        [formControl]="i1Ctrl"
+                        data-df-edit-field="installment1Amount"
+                      />
+                      <app-info-icon [text]="wholeNumberInfoText(i1Ctrl.value)" />
+                    </div>
                   }
                 </td>
 
                 <td [class.df-cell-invalid]="hasEditFieldError('installment2Amount')">
                   @if (i2Ctrl) {
-                    <input
-                      type="number"
-                      class="form-control form-control-sm df-edit-control"
-                      min="0"
-                      aria-label="Installment 2 Amount"
-                      [class.is-invalid]="hasEditFieldError('installment2Amount')"
-                      [matTooltip]="getEditFieldErrorText('installment2Amount')"
-                      [matTooltipDisabled]="!hasEditFieldError('installment2Amount')"
-                      [formControl]="i2Ctrl"
-                      data-df-edit-field="installment2Amount"
-                    />
+                    <div class="d-inline-flex align-items-center gap-1">
+                      <input
+                        type="number"
+                        class="form-control form-control-sm df-edit-control"
+                        min="0"
+                        step="1"
+                        [appDecimalLimit]="0"
+                        appZeroOnStepChange
+                        aria-label="Installment 2 Amount"
+                        [class.is-invalid]="hasEditFieldError('installment2Amount')"
+                        [matTooltip]="getEditFieldErrorText('installment2Amount')"
+                        [matTooltipDisabled]="!hasEditFieldError('installment2Amount')"
+                        [formControl]="i2Ctrl"
+                        data-df-edit-field="installment2Amount"
+                      />
+                      <app-info-icon [text]="wholeNumberInfoText(i2Ctrl.value)" />
+                    </div>
+                  }
+                </td>
+
+                <td [class.df-cell-invalid]="hasEditFieldError('totalGrantAllocation')">
+                  @if (tgaCtrl) {
+                    <div class="d-inline-flex align-items-center gap-1">
+                      <input
+                        type="number"
+                        class="form-control form-control-sm df-edit-control"
+                        min="0"
+                        step="1"
+                        [appDecimalLimit]="0"
+                        appZeroOnStepChange
+                        aria-label="Total Grant Allocation"
+                        [class.is-invalid]="hasEditFieldError('totalGrantAllocation')"
+                        [matTooltip]="getEditFieldErrorText('totalGrantAllocation')"
+                        [matTooltipDisabled]="!hasEditFieldError('totalGrantAllocation')"
+                        [formControl]="tgaCtrl"
+                        data-df-edit-field="totalGrantAllocation"
+                      />
+                      <app-info-icon [text]="wholeNumberInfoText(tgaCtrl.value)" />
+                    </div>
                   }
                 </td>
 
@@ -237,26 +258,6 @@
                 </td>
                 <td
                   class="small text-nowrap"
-                  [class.df-cell-invalid]="!!vm.cellHasError['totalGrantAllocation']"
-                  [class.cursor-pointer]="
-                    !!vm.cellHasError['totalGrantAllocation'] && canEdit && editingRowId() === null
-                  "
-                  [matTooltip]="vm.cellErrorText['totalGrantAllocation'] ?? ''"
-                  [matTooltipDisabled]="!vm.cellHasError['totalGrantAllocation']"
-                  (click)="startEditAtField(vm.row, 'totalGrantAllocation')"
-                >
-                  <div class="d-flex align-items-center justify-content-between gap-1">
-                    <span>{{ formatRupees(row.totalGrantAllocation) }}</span>
-                    @if (vm.cellHasError['totalGrantAllocation']) {
-                      <i
-                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
-                        aria-label="Validation error"
-                      ></i>
-                    }
-                  </div>
-                </td>
-                <td
-                  class="small text-nowrap"
                   [class.df-cell-invalid]="!!vm.cellHasError['installment1Amount']"
                   [class.df-cell-clickable]="
                     !!vm.cellHasError['installment1Amount'] && canEdit && editingRowId() === null
@@ -266,7 +267,7 @@
                   (click)="startEditAtField(vm.row, 'installment1Amount')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-1">
-                    <span>{{ formatRupees(row.installment1Amount) }}</span>
+                    <span [title]="formatAmountExact(row.installment1Amount)">{{ formatAmount(row.installment1Amount) }}</span>
                     @if (vm.cellHasError['installment1Amount']) {
                       <i
                         class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
@@ -286,8 +287,28 @@
                   (click)="startEditAtField(vm.row, 'installment2Amount')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-1">
-                    <span>{{ formatRupees(row.installment2Amount) }}</span>
+                    <span [title]="formatAmountExact(row.installment2Amount)">{{ formatAmount(row.installment2Amount) }}</span>
                     @if (vm.cellHasError['installment2Amount']) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
+                        aria-label="Validation error"
+                      ></i>
+                    }
+                  </div>
+                </td>
+                <td
+                  class="small text-nowrap"
+                  [class.df-cell-invalid]="!!vm.cellHasError['totalGrantAllocation']"
+                  [class.cursor-pointer]="
+                    !!vm.cellHasError['totalGrantAllocation'] && canEdit && editingRowId() === null
+                  "
+                  [matTooltip]="vm.cellErrorText['totalGrantAllocation'] ?? ''"
+                  [matTooltipDisabled]="!vm.cellHasError['totalGrantAllocation']"
+                  (click)="startEditAtField(vm.row, 'totalGrantAllocation')"
+                >
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span [title]="formatAmountExact(row.totalGrantAllocation)">{{ formatAmount(row.totalGrantAllocation) }}</span>
+                    @if (vm.cellHasError['totalGrantAllocation']) {
                       <i
                         class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"
                         aria-label="Validation error"

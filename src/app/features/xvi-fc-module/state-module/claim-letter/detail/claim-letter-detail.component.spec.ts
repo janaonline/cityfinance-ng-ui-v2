@@ -6,6 +6,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, Subject, throwError } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UploadedFileMetadata } from '../../../../../shared/dynamic-form/components/file/file-metadata.types';
@@ -21,7 +22,6 @@ import {
   ClaimLetterUlbRow,
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
-import { formatCrore } from '../claim-letter.utils';
 import FileSaver from 'file-saver';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
 
@@ -225,7 +225,8 @@ describe('ClaimLetterDetailComponent', () => {
       expect(narrative[0]).toBe('This batch includes 1 of 10 eligible ULBs (10.0%).');
       expect(narrative[1]).toContain('Installment 1 allocation');
       expect(narrative[1]).toContain('20.0%'); // 5 / 25
-      expect(narrative[2]).toContain('10 Cr.'); // 15 (availableToClaim) - 5 (live claim)
+      // 15 (availableToClaim) - 5 (live claim)
+      expect(narrative[2]).toContain(TestBed.inject(AmountDisplayModeService).format(10, 'auto'));
     });
 
     it('breadcrumb reads Claim Letter > New Claim Letter, linking back to the list', () => {
@@ -455,7 +456,7 @@ describe('ClaimLetterDetailComponent', () => {
 
       const narrative = component.batchNarrative();
       // If the (incorrect) raw overview totals were used instead, this would read 25-5-3-2-21=-6.
-      expect(narrative[2]).toContain(formatCrore(25 - 5 - 0 - 0 - 21));
+      expect(narrative[2]).toContain(TestBed.inject(AmountDisplayModeService).format(25 - 5 - 0 - 0 - 21, 'auto'));
     });
 
     it('narrative is empty (hidden) once the batch is no longer editable', async () => {
@@ -538,6 +539,35 @@ describe('ClaimLetterDetailComponent', () => {
         'snackbar-danger',
       );
       expect(claimLetterService.getDetail).not.toHaveBeenCalled();
+    });
+
+    it('maps a bare class-validator message array (no errors map) to the matching row control', async () => {
+      await setupEdit(buildClaim({ revision: 4 }));
+      spyOn(claimLetterService, 'updateDraft').and.returnValue(
+        throwError(() => ({
+          success: false,
+          message: ['ulbSelections.0.claimedAmount must be an integer number'],
+        })),
+      );
+
+      component.saveChanges();
+
+      const control = component.rows.at(0).controls.claimedAmount;
+      expect(control.errors?.['apiErrors']).toEqual(['ulbSelections.0.claimedAmount must be an integer number']);
+    });
+
+    it('surfaces an unmatched bare message via the generic banner instead of dropping it', async () => {
+      await setupEdit(buildClaim({ revision: 4 }));
+      spyOn(claimLetterService, 'updateDraft').and.returnValue(
+        throwError(() => ({
+          success: false,
+          message: ['expectedRevision must be an integer number'],
+        })),
+      );
+
+      component.saveChanges();
+
+      expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
     });
 
     it('abandonDraft is a no-op when not editable', async () => {
@@ -695,25 +725,39 @@ describe('ClaimLetterDetailComponent', () => {
         );
       });
 
-      it('onSupportingAction routes download-template to downloadTemplate()', async () => {
+      it('onSupportingAction routes download-template to downloadTemplate(), falling back to a literal refNo-based name when Content-Disposition is absent', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
         spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
         const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
-        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(of(sampleBlob));
+        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(of({ blob: sampleBlob, fileName: null }));
         const saveAsSpy = spyOn(FileSaver, 'saveAs');
 
         component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
 
         expect(claimLetterService.getDocumentData).toHaveBeenCalledWith('claim-1');
         expect(claimLetterService.downloadDocumentPdf).toHaveBeenCalledWith('claim-1');
-        expect(saveAsSpy).toHaveBeenCalledWith(sampleBlob, 'claim-letter-CL-AP-2026-27-1-1.pdf');
+        expect(saveAsSpy).toHaveBeenCalledWith(sampleBlob, 'Claim-letter-CL-AP-2026-27-1-1.pdf');
+      });
+
+      it('saves under the backend Content-Disposition filename verbatim when present', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
+        const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(
+          of({ blob: sampleBlob, fileName: 'CF_Test-State_claim-letter_2024-25.pdf' }),
+        );
+        const saveAsSpy = spyOn(FileSaver, 'saveAs');
+
+        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
+
+        expect(saveAsSpy).toHaveBeenCalledWith(sampleBlob, 'CF_Test-State_claim-letter_2024-25.pdf');
       });
 
       it('shares one fetch between previewTemplate() and downloadTemplate() (single-flight cache)', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
         const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
         spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(
-          of(new Blob(['pdf-bytes'], { type: 'application/pdf' })),
+          of({ blob: new Blob(['pdf-bytes'], { type: 'application/pdf' }), fileName: null }),
         );
         spyOn(FileSaver, 'saveAs');
 
@@ -820,7 +864,7 @@ describe('ClaimLetterDetailComponent', () => {
       it('downloadTemplate() shows loading only on download-template while in flight, then clears it', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
         spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        const pending = new Subject<Blob>();
+        const pending = new Subject<{ blob: Blob; fileName: string | null }>();
         spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(pending);
         spyOn(FileSaver, 'saveAs');
 
@@ -830,7 +874,7 @@ describe('ClaimLetterDetailComponent', () => {
         expect(findAction('download-template')?.loadingLabel).toBe('Preparing download…');
         expect(findAction('preview-template')?.loading).toBeFalsy();
 
-        pending.next(new Blob(['pdf-bytes'], { type: 'application/pdf' }));
+        pending.next({ blob: new Blob(['pdf-bytes'], { type: 'application/pdf' }), fileName: null });
         pending.complete();
 
         expect(findAction('download-template')?.loading).toBeFalsy();

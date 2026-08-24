@@ -39,12 +39,16 @@
     <p class="body-xs text-danger mb-3">
       * Required documents must be uploaded before submitting. Documents marked "Optional" are not required.
     </p>
+    <p class="body-xs text-muted mb-3">
+      These automated checks use AI and may occasionally produce incorrect results. You can request a manual review
+      at any time.
+    </p>
 
     <div class="support-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
       <mat-icon class="support-banner-icon">mail_outline</mat-icon>
       <span class="body-sm">
         If you're facing an issue with any document, email
-        <a [href]="supportMailto()">16fcgrant&#64;cityfinance.in</a>
+        <a [href]="supportMailto()">16fc.grant&#64;cityfinance.in</a>
         for help.
       </span>
     </div>
@@ -216,10 +220,10 @@
                         } @else if (doc.isManualReviewRequested) {
                           <div class="manual-review-note mt-2">
                             <mat-icon class="align-middle">support_agent</mat-icon>
-                            Manual review requested — our team will review this document.
+                            Manual review requested — our team will review this document within 48 hours.
                           </div>
                         } @else if (canDelete() && !sectionLocked()) {
-                          @if (doc.hasRetried) {
+                          @if (doc.retryValidationCount > 0) {
                             <div class="d-flex mt-2">
                               <button
                                 mat-stroked-button

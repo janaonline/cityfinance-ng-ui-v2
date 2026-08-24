@@ -7,9 +7,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, merge } from 'rxjs';
 import { SignedUrlDirective } from '../../../../core/directives/storage-url.directive';
+import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import { StateService } from '../../../../core/services/state/state.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { IState } from '../../../../core/models/state/state';
+import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import {
@@ -33,13 +35,7 @@ import {
   RowStatusType,
 } from './fc-unspent-review.models';
 import { FcUnspentMohuaReviewService } from './fc-unspent-review.service';
-import {
-  extractApiErrorResponse,
-  formatCrore,
-  formatCroreFull,
-  ROW_STATUS_BADGE_CLASS,
-  ROW_STATUS_LABEL,
-} from './fc-unspent-review.utils';
+import { extractApiErrorResponse, ROW_STATUS_BADGE_CLASS, ROW_STATUS_LABEL } from './fc-unspent-review.utils';
 
 const ROWS_PAGE_SIZE = 20;
 
@@ -53,21 +49,23 @@ const ROWS_PAGE_SIZE = 20;
     SignedUrlDirective,
     DatePipe,
     DecimalPipe,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './fc-unspent-review.component.html',
   styleUrl: './fc-unspent-review.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FcUnspentMohuaReviewComponent implements OnInit {
-  readonly formatCrore = formatCrore;
-  readonly formatCroreFull = formatCroreFull;
-
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly service = inject(FcUnspentMohuaReviewService);
   private readonly stateService = inject(StateService);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
+
+  readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
+  readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly utilityService = inject(UtilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);

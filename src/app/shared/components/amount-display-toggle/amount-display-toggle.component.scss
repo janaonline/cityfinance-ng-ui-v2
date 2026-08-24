@@ -1,0 +1,17 @@
+:host {
+  // Block so consumers can apply standard Bootstrap spacing/alignment utilities
+  display: block;
+}
+
+.amount-display-toggle {
+  // inline-flex (not flex) so the host's text-align utility (e.g. "text-end")
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.amount-display-toggle-pill {
+  height: 30px;
+  min-width: 0;
+}

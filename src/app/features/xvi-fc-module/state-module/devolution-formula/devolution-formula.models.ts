@@ -93,6 +93,7 @@ export interface DevolutionValidationSummary {
   validRowCount: number;
   errorRowCount: number;
   missingUlbCount: number;
+  /** Whole Rupees, no decimals — see the backend's devolution-formula/CLAUDE.md. */
   totalMoHUAAllocation: number;
   totalAllocatedSum: number;
   allUlbsCovered: boolean;
@@ -209,6 +210,8 @@ export interface DevolutionRow {
   ulbId: string | null;
   censusCode: string;
   ulbName: string;
+  /** Whole Rupees only — no decimals. Enforced backend-side by @IsInt() and the Excel-upload
+   *  validator's isWholeNumber check. */
   totalGrantAllocation: number;
   installment1Amount: number;
   installment2Amount: number;

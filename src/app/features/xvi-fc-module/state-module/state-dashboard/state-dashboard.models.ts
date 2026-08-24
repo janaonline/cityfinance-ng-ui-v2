@@ -23,9 +23,12 @@ export interface StateDashboardCompliance {
 
 export interface StateDashboardMetrics {
   totalUlbs: number;
+  /** Whole Rupees, no decimals (see amountUnit). */
   allocatedAmount: number;
   claimedAmount: number;
-  amountUnit: 'CRORE';
+  /** Informational only — display no longer branches on this. `AmountDisplayModeService.format()`
+   *  always treats amounts as whole Rupees regardless of this field's value. */
+  amountUnit: 'RUPEE';
   currency: 'INR';
   compliance: StateDashboardCompliance;
 }

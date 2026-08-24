@@ -11,6 +11,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, ActivatedRouteSnapshot, ParamMap, Router } from '@angular/router';
 import { catchError, combineLatest, distinctUntilChanged, map, of, Subject, switchMap } from 'rxjs';
 
+import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
+import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import {
   StateDashboardApiResponse,
@@ -45,6 +47,7 @@ interface DashboardLoadResult {
     MatDividerModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './state-dashboard.component.html',
   styleUrl: './state-dashboard.component.scss',
@@ -54,6 +57,7 @@ export class StateDashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly stateDashboardService = inject(StateDashboardService);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dashboardRequests$ = new Subject<DashboardRequestContext>();
   private lastDashboardRequestKey: string | null = null;
@@ -78,14 +82,8 @@ export class StateDashboardComponent implements OnInit {
     this.loadDashboard(true);
   }
 
-  formatAmount(value: number, currency: 'INR', amountUnit: 'CRORE'): string {
-    const safeValue = Number.isFinite(value) ? value : 0;
-    const formattedValue = new Intl.NumberFormat('en-IN', {
-      maximumFractionDigits: 2,
-    }).format(safeValue);
-    const currencySymbol = currency === 'INR' ? '₹' : currency;
-
-    return `${currencySymbol}${formattedValue} ${amountUnit.toLowerCase()}`;
+  formatAmount(value: number): string {
+    return this.amountDisplay.format(Number.isFinite(value) ? value : 0, 'auto');
   }
 
   getCompletionPercentage(completed: number, total: number): number {
@@ -294,13 +292,13 @@ export class StateDashboardComponent implements OnInit {
       {
         key: 'allocated',
         label: 'Allocated',
-        value: this.formatAmount(metrics.allocatedAmount, metrics.currency, metrics.amountUnit),
+        value: this.formatAmount(metrics.allocatedAmount),
         description: context.grantType ? `${context.grantType} · ${context.financialYear}` : context.financialYear,
       },
       {
         key: 'claimed',
         label: 'Claimed',
-        value: this.formatAmount(metrics.claimedAmount, metrics.currency, metrics.amountUnit),
+        value: this.formatAmount(metrics.claimedAmount),
         description: 'Claim letters issued to date',
       },
       {

@@ -628,9 +628,9 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       createComponent([row]);
       fixture.detectChanges();
 
-      // column order: #(0), census(1), ulb(2), totalGrantAllocation(3)
+      // column order: #(0), census(1), ulb(2), installment1(3), installment2(4), totalGrantAllocation(5)
       const tds = fixture.nativeElement.querySelectorAll('[data-cy="df-rows-row"] td');
-      (tds[3] as HTMLElement).click();
+      (tds[5] as HTMLElement).click();
       tick(50);
       fixture.detectChanges();
 
@@ -658,8 +658,9 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       createComponent([row]);
       fixture.detectChanges();
 
+      // column order: #(0), census(1), ulb(2), installment1(3), installment2(4), totalGrantAllocation(5)
       const tds = fixture.nativeElement.querySelectorAll('[data-cy="df-rows-row"] td');
-      expect((tds[3] as HTMLElement).classList).toContain('cursor-pointer');
+      expect((tds[5] as HTMLElement).classList).toContain('cursor-pointer');
     });
 
     it('clicking a non-editable cell (censusCode) does not enter edit mode', fakeAsync(() => {

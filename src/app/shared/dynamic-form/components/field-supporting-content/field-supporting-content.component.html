@@ -16,19 +16,19 @@
 }
 
 @for (item of infoItems(); track $index) {
-  <div class="sc-info d-flex gap-2 p-3 rounded border mb-2 small" role="note">
-    <i class="bi bi-info-circle-fill flex-shrink-0 text-primary" aria-hidden="true"></i>
+  <div class="sc-info alert alert-info d-flex gap-2 mb-2 small" role="note">
+    <i class="bi bi-info-circle-fill flex-shrink-0" aria-hidden="true"></i>
     <div>
       @if (item.title) {
         <div class="fw-semibold mb-1">{{ item.title }}</div>
       }
-      <div class="text-body-secondary">{{ item.description }}</div>
+      <div class="">{{ item.description }}</div>
     </div>
   </div>
 }
 
 @for (item of warningItems(); track $index) {
-  <div class="alert alert-warning d-flex gap-2 p-3 rounded mb-2 small" role="alert">
+  <div class="alert alert-warning d-flex gap-2 mb-2 small" role="alert">
     <i class="bi bi-exclamation-triangle-fill flex-shrink-0" aria-hidden="true"></i>
     <div>
       @if (item.title) {
@@ -138,6 +138,9 @@
           </div>
         }
       </div>
+    }
+    @if (item.validationMessage) {
+      <p class="text-danger mt-2 mb-0" role="alert">{{ item.validationMessage }}</p>
     }
   </div>
 }

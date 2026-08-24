@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { parseContentDispositionFileName, XviFcDownloadedFile } from '../../download-file-name.util';
 import {
   DeleteUploadedExcelResponseData,
   DevolutionFormResponseData,
@@ -67,8 +68,16 @@ export class DevolutionFormulaService {
       .pipe(map(ensureSuccessfulVoidResponse));
   }
 
-  downloadTemplate(stateId: string, yearId: string, installment: DfInstallment): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}${stateId}/${yearId}/${installment}/template`, { responseType: 'blob' });
+  /** `observe: 'response'` lets the caller read the backend's complete `Content-Disposition`
+   *  filename via `download-file-name.util.ts`'s `parseContentDispositionFileName` — the component
+   *  saves it verbatim rather than reconstructing it client-side. */
+  downloadTemplate(stateId: string, yearId: string, installment: DfInstallment): Observable<XviFcDownloadedFile> {
+    return this.http
+      .get(`${this.baseUrl}${stateId}/${yearId}/${installment}/template`, {
+        responseType: 'blob',
+        observe: 'response',
+      })
+      .pipe(map((response) => this.toDownloadedFile(response)));
   }
 
   getRows(
@@ -116,8 +125,16 @@ export class DevolutionFormulaService {
       .pipe(map((response) => ensureSuccessfulResponse(response)));
   }
 
-  downloadErrorSheet(stateId: string, yearId: string, installment: DfInstallment): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}${stateId}/${yearId}/${installment}/error-sheet`, { responseType: 'blob' });
+  /** `observe: 'response'` lets the caller read the backend's complete `Content-Disposition`
+   *  filename via `download-file-name.util.ts`'s `parseContentDispositionFileName` — the component
+   *  saves it verbatim rather than reconstructing it client-side. */
+  downloadErrorSheet(stateId: string, yearId: string, installment: DfInstallment): Observable<XviFcDownloadedFile> {
+    return this.http
+      .get(`${this.baseUrl}${stateId}/${yearId}/${installment}/error-sheet`, {
+        responseType: 'blob',
+        observe: 'response',
+      })
+      .pipe(map((response) => this.toDownloadedFile(response)));
   }
 
   revalidateExcel(
@@ -134,5 +151,14 @@ export class DevolutionFormulaService {
 
   downloadDump(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}dump`, { responseType: 'blob' });
+  }
+
+  /** Shared by `downloadTemplate`/`downloadErrorSheet` above — deliberately not used by
+   *  `downloadDump`, an admin-only export with no call site anywhere in `xvi-fc-module`. */
+  private toDownloadedFile(response: HttpResponse<Blob>): XviFcDownloadedFile {
+    return {
+      blob: response.body as Blob,
+      fileName: parseContentDispositionFileName(response.headers.get('Content-Disposition')),
+    };
   }
 }

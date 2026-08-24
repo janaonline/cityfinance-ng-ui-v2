@@ -45,9 +45,9 @@
     </div>
   } @else {
     @if (overviewData; as data) {
-      <div class="mb-2">
+      <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
         <h2
-          class="title-with-badge"
+          class="title-with-badge my-1"
           [matBadge]="selectedYear"
           [matBadgeHidden]="!selectedYear"
           matBadgeOverlap="false"
@@ -56,6 +56,7 @@
         >
           {{ data.name }}
         </h2>
+        <app-amount-display-toggle />
       </div>
 
       <section class="ap-overview__hero mb-4">
@@ -66,7 +67,9 @@
           <div class="hero-layout">
             <div class="hero-main">
               <p class="hero-band__eyebrow mb-2">{{ data.subHeader1 }}</p>
-              <h3 class="hero-band__amount mb-2">{{ data.totalAllocation }}</h3>
+              <h3 class="hero-band__amount mb-2">
+                {{ isAmountNumber(data.totalAllocation) ? formatAmount(data.totalAllocation) : data.totalAllocation }}
+              </h3>
               <p class="hero-band__meta mb-1">
                 {{ data.financialYear }}&ensp;·&ensp;{{ data.subHeader2 }}
               </p>
@@ -80,7 +83,9 @@
                 @if (section.id === 'basic' || section.id === 'performance') {
                   <div class="hero-chip">
                     <span class="hero-chip__label">{{ section.label }}</span>
-                    <span class="hero-chip__amount">{{ section.amount }}</span>
+                    <span class="hero-chip__amount">
+                      {{ isAmountNumber(section.amount) ? formatAmount(section.amount) : section.amount }}
+                    </span>
                   </div>
                 }
               }
@@ -121,7 +126,7 @@
 
                 @if (activeGrant.amount) {
                   <div class="grant-content__amount mb-4">
-                    {{ activeGrant.amount }}
+                    {{ isAmountNumber(activeGrant.amount) ? formatAmount(activeGrant.amount) : activeGrant.amount }}
                     @if (activeGrant.amountSuffix) {
                       <span class="grant-content__amount-suffix">{{ activeGrant.amountSuffix }}</span>
                     }

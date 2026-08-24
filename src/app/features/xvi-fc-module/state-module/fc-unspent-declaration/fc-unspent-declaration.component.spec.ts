@@ -2,7 +2,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormControl } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import FileSaver from 'file-saver';
 import { Subject, of, throwError } from 'rxjs';
@@ -179,6 +179,10 @@ const FC_UNSPENT_DECLARATION_FIELDS: ConditionalFieldConfig[] = [
           key: 'isFcUnspent',
           operator: 'equals',
           value: 'yes',
+        },
+        {
+          key: 'savedUnspentUlbData',
+          operator: 'isNotEmpty',
         },
       ],
     },
@@ -919,6 +923,36 @@ describe('FcUnspentDeclarationComponent', () => {
     expect(control.errors?.['apiErrors']).toBeUndefined();
   });
 
+  it('maps a bare class-validator message array (no errors map) to the matching row control', () => {
+    spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
+    spyOn(fcUnspentService, 'saveDraft').and.returnValue(
+      throwError(() => ({
+        success: false as const,
+        message: ['unspentUlbData.0.unspentAmount must be an integer number'],
+      })),
+    );
+
+    component.onSubmit('saveAsDraft');
+
+    const control = component.unspentUlbData.controls[0].controls.unspentAmount;
+    expect(control.errors?.['apiErrors']).toEqual(['unspentUlbData.0.unspentAmount must be an integer number']);
+  });
+
+  it('surfaces an unmatched bare message via the compact alert instead of dropping it', () => {
+    spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
+    spyOn(fcUnspentService, 'saveDraft').and.returnValue(
+      throwError(() => ({
+        success: false as const,
+        message: ['expectedRevision must be an integer number'],
+      })),
+    );
+
+    component.onSubmit('saveAsDraft');
+    fixture.detectChanges();
+
+    expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
+  });
+
   it('shows a _form error in the compact alert', () => {
     spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
     spyOn(fcUnspentService, 'saveDraft').and.returnValue(
@@ -1073,7 +1107,7 @@ describe('FcUnspentDeclarationComponent', () => {
     }
 
     beforeEach(() => {
-      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of(blob));
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of({ blob, fileName: null }));
       saveAsSpy = spyOn(FileSaver, 'saveAs');
     });
 
@@ -1114,7 +1148,7 @@ describe('FcUnspentDeclarationComponent', () => {
     });
 
     it('ignores duplicate clicks while a download is already in flight', () => {
-      const pending = new Subject<Blob>();
+      const pending = new Subject<{ blob: Blob; fileName: null }>();
       downloadSpy.and.returnValue(pending);
 
       triggerYesBranchDownload();
@@ -1122,17 +1156,23 @@ describe('FcUnspentDeclarationComponent', () => {
       triggerYesBranchDownload();
 
       expect(downloadSpy).toHaveBeenCalledTimes(1);
-      pending.next(blob);
+      pending.next({ blob, fileName: null });
       pending.complete();
     });
 
-    it('saves the returned blob via FileSaver under a fixed filename', () => {
+    it('saves the returned blob via FileSaver, falling back to a literal branch-based filename when Content-Disposition is absent', () => {
       triggerYesBranchDownload();
-      expect(saveAsSpy).toHaveBeenCalledOnceWith(blob, 'fc-unspent-declaration.docx');
+      expect(saveAsSpy).toHaveBeenCalledOnceWith(blob, 'Fc-unspent-declaration-yes.docx');
+    });
+
+    it('saves the returned blob under the backend Content-Disposition filename verbatim when present', () => {
+      downloadSpy.and.returnValue(of({ blob, fileName: 'CF_Sample-State_fc-unspent-declaration_2024-25.docx' }));
+      triggerYesBranchDownload();
+      expect(saveAsSpy).toHaveBeenCalledOnceWith(blob, 'CF_Sample-State_fc-unspent-declaration_2024-25.docx');
     });
 
     it('shows loading on the download-declaration action (Yes branch) while the request is in flight, then clears it', () => {
-      const pending = new Subject<Blob>();
+      const pending = new Subject<{ blob: Blob; fileName: null }>();
       downloadSpy.and.returnValue(pending);
 
       function findAction() {
@@ -1148,7 +1188,7 @@ describe('FcUnspentDeclarationComponent', () => {
       expect(findAction()?.loading).toBeTrue();
       expect(findAction()?.loadingLabel).toBe('Downloading declaration…');
 
-      pending.next(blob);
+      pending.next({ blob, fileName: null });
       pending.complete();
 
       expect(findAction()?.loading).toBeFalsy();
@@ -1158,7 +1198,7 @@ describe('FcUnspentDeclarationComponent', () => {
       // fcDeclaration is only visible when isFcUnspent is 'no' — loaded already-saved as No (not
       // switched to locally) so hasUnsavedBranchChange() is false and the action isn't disabled.
       const scenarioComponent = createComponentForScenario(NO_BRANCH_PREVIEW_DATA).componentInstance;
-      const pending = new Subject<Blob>();
+      const pending = new Subject<{ blob: Blob; fileName: null }>();
       downloadSpy.and.returnValue(pending);
 
       function findAction() {
@@ -1173,7 +1213,7 @@ describe('FcUnspentDeclarationComponent', () => {
 
       expect(findAction()?.loading).toBeTrue();
 
-      pending.next(blob);
+      pending.next({ blob, fileName: null });
       pending.complete();
 
       expect(findAction()?.loading).toBeFalsy();
@@ -1304,12 +1344,19 @@ describe('FcUnspentDeclarationComponent', () => {
       );
     });
 
-    it("disables fcUnspentDeclaration's action when the branch was switched to yes without saving", () => {
+    it('hides fcUnspentDeclaration entirely (not just disabled) when the branch is switched to yes locally but no rows have ever been saved', () => {
+      // NO_BRANCH_PREVIEW_DATA has an empty savedUnspentUlbData (isFcUnspent was saved as No), so
+      // switching the live radio to Yes without saving can never leave the field visible-but-
+      // disabled the way fcDeclaration's branch-switch case above does — savedUnspentUlbData can
+      // only be non-empty when the saved isFcUnspent was already 'yes' (see getForm's gate), so
+      // this combination (isFcUnspent live-switched to yes, savedUnspentUlbData empty) always
+      // means the field's visibleWhen is unmet and it's hidden, not disabled.
       const scenarioComponent = createComponentForScenario(NO_BRANCH_PREVIEW_DATA).componentInstance;
       isFcUnspentControl(scenarioComponent).setValue('yes');
 
       const action = findAction(scenarioComponent, 'fcUnspentDeclaration', 'download-declaration');
-      expect(action?.disabled).toBeTrue();
+      expect(action).toBeUndefined();
+      expect(scenarioComponent.fields().find((f) => f.key === 'fcUnspentDeclaration')?.hidden).toBeTrue();
     });
 
     it('disables fcUnspentDeclaration\'s action when only a row amount changed (branch unchanged)', () => {
@@ -1332,11 +1379,95 @@ describe('FcUnspentDeclarationComponent', () => {
     });
   });
 
+  // ─── savedUnspentUlbData synthetic control + fcUnspentDeclaration visibility gate ───────────
+  // Bridges the saved-row snapshot into the reactive form so fcUnspentDeclaration's backend
+  // visibleWhen can gate on "at least one row has actually been saved", not just isFcUnspent.
+
+  describe('savedUnspentUlbData synthetic control', () => {
+    it("initializes from the GET response's unspentUlbData", () => {
+      expect(getFormControl<FcUnspentUlbData[]>(component, 'savedUnspentUlbData').value).toEqual(
+        UNSPENT_ULB_ROWS,
+      );
+    });
+
+    it('shows fcUnspentDeclaration when isFcUnspent is yes and rows were saved (mock default)', () => {
+      expect(component.fields().find((f) => f.key === 'fcUnspentDeclaration')?.hidden).toBeFalse();
+    });
+
+    it('hides fcUnspentDeclaration when isFcUnspent is yes but no rows were ever saved', () => {
+      const emptyYesScenario: FcUnspentDeclarationData = {
+        ...FC_UNSPENT_SCENARIO_DEVOLUTION_UNDER_REVIEW,
+        unspentUlbData: [],
+      };
+      const scenarioComponent = createComponentForScenario(emptyYesScenario).componentInstance;
+
+      expect(getFormControl<FcUnspentUlbData[]>(scenarioComponent, 'savedUnspentUlbData').value).toEqual([]);
+      expect(scenarioComponent.fields().find((f) => f.key === 'fcUnspentDeclaration')?.hidden).toBeTrue();
+      expect(
+        scenarioComponent.effectiveVisibleFields().some((f) => f.key === 'fcUnspentDeclaration'),
+      ).toBeFalse();
+    });
+
+    it('hides fcUnspentDeclaration on the No branch (unaffected — driven by the unchanged isFcUnspent condition)', () => {
+      const scenarioComponent = createComponentForScenario(NO_BRANCH_PREVIEW_DATA).componentInstance;
+      expect(scenarioComponent.fields().find((f) => f.key === 'fcUnspentDeclaration')?.hidden).toBeTrue();
+    });
+  });
+
+  describe('fc-unspent-declaration-save-prompt banner', () => {
+    function savePrompt(fixtureToQuery: ComponentFixture<FcUnspentDeclarationComponent>) {
+      return fixtureToQuery.debugElement.query(By.css('[data-cy="fc-unspent-declaration-save-prompt"]'));
+    }
+
+    it('is absent when rows have been saved (mock default)', () => {
+      expect(savePrompt(fixture)).toBeNull();
+    });
+
+    it('shows the "add a ULB" message when Yes is selected with zero rows, live or saved', () => {
+      const emptyYesScenario: FcUnspentDeclarationData = {
+        ...FC_UNSPENT_SCENARIO_DEVOLUTION_UNDER_REVIEW,
+        unspentUlbData: [],
+      };
+      const scenarioFixture = createComponentForScenario(emptyYesScenario);
+      scenarioFixture.detectChanges();
+
+      const banner = savePrompt(scenarioFixture);
+      expect(banner).not.toBeNull();
+      expect(banner.nativeElement.textContent).toContain('Add at least one ULB');
+    });
+
+    it('shows the "save your draft" message when a row exists locally but hasn\'t been saved', () => {
+      const emptyYesScenario: FcUnspentDeclarationData = {
+        ...FC_UNSPENT_SCENARIO_DEVOLUTION_UNDER_REVIEW,
+        unspentUlbData: [],
+      };
+      const scenarioFixture = createComponentForScenario(emptyYesScenario);
+      const scenarioComponent = scenarioFixture.componentInstance;
+      scenarioComponent.unspentUlbData.push(
+        new FormGroup({
+          ulbId: new FormControl<string | null>(UNSPENT_ULB_ROWS[0].ulbId),
+          unspentAmount: new FormControl<number | null>(5),
+        }),
+      );
+      scenarioFixture.detectChanges();
+
+      const banner = savePrompt(scenarioFixture);
+      expect(banner).not.toBeNull();
+      expect(banner.nativeElement.textContent).toContain('Save your draft');
+    });
+
+    it('disappears once at least one row is saved', () => {
+      const scenarioFixture = createComponentForScenario(FC_UNSPENT_SCENARIO_DEVOLUTION_UNDER_REVIEW);
+      scenarioFixture.detectChanges();
+      expect(savePrompt(scenarioFixture)).toBeNull();
+    });
+  });
+
   describe('belt-and-suspenders guard in onSupportingAction while unsaved', () => {
     let downloadSpy: jasmine.Spy;
 
     beforeEach(() => {
-      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of(new Blob()));
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of({ blob: new Blob(), fileName: null }));
     });
 
     it('does not call the service for fcDeclaration while the branch is unsaved', () => {
@@ -1437,7 +1568,7 @@ describe('FcUnspentDeclarationComponent', () => {
       await waitUntil(() => component.formLevelErrors().length > 0);
       expect(component.formLevelErrors()).toEqual(['stale error']);
 
-      downloadSpy.and.returnValue(of(new Blob()));
+      downloadSpy.and.returnValue(of({ blob: new Blob(), fileName: null }));
       component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
       await waitUntil(() => component.formLevelErrors().length === 0);
       expect(component.formLevelErrors()).toEqual([]);

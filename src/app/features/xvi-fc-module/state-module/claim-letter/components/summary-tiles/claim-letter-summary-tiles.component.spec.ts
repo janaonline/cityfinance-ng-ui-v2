@@ -13,19 +13,19 @@ describe('ClaimLetterSummaryTilesComponent', () => {
     fixture = TestBed.createComponent(ClaimLetterSummaryTilesComponent);
   });
 
-  it('renders one tile per input entry, with its label and formatted Crore value', () => {
+  it('renders one tile per input entry, with its label and a whole-Rupee amount auto-scaled to Cr', () => {
     fixture.componentRef.setInput('tiles', [
-      { label: 'Total Allocation', value: 25 },
-      { label: 'Already Claimed', value: 5 },
+      { label: 'Total Allocation', value: 250_000_000 },
+      { label: 'Already Claimed', value: 50_000_000 },
     ]);
     fixture.detectChanges();
 
     const tiles = fixture.debugElement.queryAll(By.css('.summary-tile'));
     expect(tiles.length).toBe(2);
     expect(tiles[0].nativeElement.textContent).toContain('Total Allocation');
-    expect(tiles[0].nativeElement.textContent).toContain('25 Cr.');
+    expect(tiles[0].nativeElement.textContent).toContain('25 Cr');
     expect(tiles[1].nativeElement.textContent).toContain('Already Claimed');
-    expect(tiles[1].nativeElement.textContent).toContain('5 Cr.');
+    expect(tiles[1].nativeElement.textContent).toContain('5 Cr');
   });
 
   it('renders nothing when given an empty tile list', () => {

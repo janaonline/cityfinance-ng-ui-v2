@@ -17,12 +17,11 @@
   gap: 0.5rem;
 }
 
+// Left Menu
 .component-menu-col {
   flex: 0 0 auto;
   min-width: 0;
-  // min-height: 100vh;
-  min-height: calc(100vh - var(--app-header-height, 91px));
-  // background-color: var(--color-primary);
+  height: calc(100vh - var(--app-header-height, 91px));
 }
 
 .component-menu {
@@ -33,6 +32,15 @@
   height: 100%;
 }
 
+// Right Content
 .component-content {
   width: 0px;
+  scrollbar-width: thin;
+  height: calc(100vh - var(--app-header-height, 91px));
+  overflow-y: scroll;
+  border-radius: var(--radius-split-squared);
+  background: var(--color-primary-accent);
+  color: var(--color-primary);
+
+  position: relative;
 }

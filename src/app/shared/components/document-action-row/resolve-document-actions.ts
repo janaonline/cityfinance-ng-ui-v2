@@ -63,9 +63,13 @@ export function resolveDocumentActions(
     }
     if (doc.processingStatus === 'PROCESSING') {
       if (!doc.isStale) return [];
+      if (doc.isAwaitingManualReview) return [];
       return (['retry', 'reupload'] as const).filter(gated).map((a) => build(a, false));
     }
     if (doc.processingStatus === 'FAILED') {
+      // A manual-review request is pending ADMIN's decision — retrying or re-uploading now would
+      // change the file out from under them (or silently cancel the request), so hide both.
+      if (doc.isAwaitingManualReview) return [];
       // Once ADMIN has declined a manual-review request, retrying OCR on the same file would
       // just fail the same way again — only Re-upload makes sense at that point.
       const availableActions = doc.manualReviewReturned === true ? (['reupload'] as const) : (['retry', 'reupload'] as const);

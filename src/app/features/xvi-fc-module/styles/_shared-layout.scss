@@ -29,30 +29,9 @@
   }
 }
 
-@mixin shared-panel-surface {
-  .form-container {
-    scrollbar-width: thin;
-    // max-height: 90vh;
-    max-height: calc(100vh - var(--app-header-height, 91px));
-    overflow-y: scroll;
-    border-radius: var(--radius-split-squared);
-    background: var(--color-primary-accent);
-    color: var(--color-primary);
-    margin-inline: 0.5rem;
-    position: relative;
-  }
-}
-
 @mixin form-layout {
   @include shared-content-stack;
   @include shared-page-header;
-  @include shared-panel-surface;
-
-  .form-container {
-    min-width: 0;
-    // width: 100%;
-    padding: 0;
-  }
 
   .top-accent {
     height: 4px;
@@ -72,17 +51,7 @@
     overflow-wrap: anywhere;
   }
 
-  @media (max-width: 991.98px) {
-    .form-container {
-      margin-inline: 0 0.5rem;
-    }
-  }
-
   @media (max-width: 767.98px) {
-    .component-shell {
-      gap: 0.5rem !important;
-    }
-
     .field-label {
       margin-bottom: 0.35rem;
     }
@@ -114,6 +83,7 @@
   }
 
   @media (min-width: 1200px) {
+
     .content-wrap,
     .acknowledgement {
       padding-inline: 2rem !important;
@@ -181,7 +151,6 @@
 @mixin form-summary-layout {
   @include shared-content-stack;
   @include shared-page-header;
-  @include shared-panel-surface;
 
   .content-stack {
     max-width: 1080px;
