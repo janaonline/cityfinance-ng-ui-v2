@@ -530,7 +530,9 @@ describe('XviFcBankAccountComponent', () => {
     const payload = service.submitBankAccount.calls.mostRecent().args[0];
     expect(payload.ifscCode).toBe('SBIN0123456');
     expect(payload.bankDetails.name).toBe('State Bank of India');
-    expect(payload.proofFile).toEqual(proofFile);
+    const { fileUrl: _proofFileUrl, ...expectedProofFilePayload } = proofFile;
+    expect(payload.proofFile).toEqual(expectedProofFilePayload);
+    expect('fileUrl' in payload.proofFile).toBeFalse();
     expect(payload).not.toEqual(jasmine.objectContaining({ proof: jasmine.any(Object) }));
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Bank account form submitted successfully.');
   });

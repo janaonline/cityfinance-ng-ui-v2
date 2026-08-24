@@ -94,7 +94,7 @@ export class XviFcBankAccountComponent {
     'Confirm that your ULB has created a dedicated bank account to receive 16th Finance Commission grants linked to PFMS.';
 
   readonly proofField = {
-    label: 'Proof of Account Existence',
+    label: 'Proof of account linkage with PFMS',
     uploadLabel: 'Click to upload cancelled cheque',
     acceptedFormatsText: 'PDF, JPG, or PNG',
     maxSizeMb: MAX_FILE_SIZE_BYTES / (1024 * 1024),
@@ -350,6 +350,8 @@ export class XviFcBankAccountComponent {
       micr: this.controlValue('bankDetails.micr') ?? null,
     };
 
+    const { fileUrl: _proofFileUrl, ...proofFilePayload } = proof;
+
     this.isSubmitting.set(true);
     this.bankAccountService
       .submitBankAccount({
@@ -360,7 +362,7 @@ export class XviFcBankAccountComponent {
         accountNumber: this.controlValue('accountNumber') ?? '',
         confirmAccountNumber: this.controlValue('confirmAccountNumber') ?? '',
         bankDetails,
-        proofFile: proof,
+        proofFile: proofFilePayload,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
