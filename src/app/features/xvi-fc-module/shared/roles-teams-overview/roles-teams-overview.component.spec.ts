@@ -6,6 +6,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RolesTeamsOverviewComponent } from './roles-teams-overview.component';
 import { STATE_ROLES_CONFIG, MOHUA_ROLES_CONFIG } from './roles-teams-overview.models';
 import { environment } from '../../../../../environments/environment';
+import { AuthService } from '../../../../core/services/auth.service';
 
 describe('RolesTeamsOverviewComponent', () => {
   let component: RolesTeamsOverviewComponent;
@@ -13,10 +14,13 @@ describe('RolesTeamsOverviewComponent', () => {
   let httpMock: HttpTestingController;
   const baseUrl = environment.api.url2;
 
-  function setup(rolesConfig = STATE_ROLES_CONFIG): void {
-    TestBed.configureTestingModule({
+  async function setup(rolesConfig = STATE_ROLES_CONFIG): Promise<void> {
+    await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, NoopAnimationsModule, RolesTeamsOverviewComponent],
-      providers: [{ provide: ActivatedRoute, useValue: { snapshot: { data: { rolesConfig } } } }],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { data: { rolesConfig } } } },
+        { provide: AuthService, useValue: { refreshAccessToken: () => ({ pipe: () => ({ subscribe: () => {} }) }) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RolesTeamsOverviewComponent);
@@ -27,29 +31,29 @@ describe('RolesTeamsOverviewComponent', () => {
 
   afterEach(() => httpMock?.verify());
 
-  it('should create with the STATE config', () => {
-    setup(STATE_ROLES_CONFIG);
+  it('should create with the STATE config', async () => {
+    await setup(STATE_ROLES_CONFIG);
     expect(component).toBeTruthy();
     httpMock.expectOne(`${baseUrl}users/permission-matrix`).flush([]);
     httpMock.expectOne(`${baseUrl}users/state-members`).flush([]);
   });
 
-  it('should create with the MoHUA config and hit MoHUA-specific endpoints', () => {
-    setup(MOHUA_ROLES_CONFIG);
+  it('should create with the MoHUA config and hit MoHUA-specific endpoints', async () => {
+    await setup(MOHUA_ROLES_CONFIG);
     expect(component).toBeTruthy();
     httpMock.expectOne(`${baseUrl}users/mohua-permission-matrix`).flush([]);
     httpMock.expectOne(`${baseUrl}users/mohua-members`).flush([]);
   });
 
-  it('falls back to each config\'s defaultSubRole when the stored user has none', () => {
-    setup(STATE_ROLES_CONFIG);
+  it('falls back to each config\'s defaultSubRole when the stored user has none', async () => {
+    await setup(STATE_ROLES_CONFIG);
     httpMock.expectOne(`${baseUrl}users/permission-matrix`).flush([]);
     httpMock.expectOne(`${baseUrl}users/state-members`).flush([]);
     expect(component.currentSubRole()).toBe('SUBMITTER');
   });
 
-  it('builds member-action URLs from memberActionBasePath (MoHUA prefixes with mohua-members)', () => {
-    setup(MOHUA_ROLES_CONFIG);
+  it('builds member-action URLs from memberActionBasePath (MoHUA prefixes with mohua-members)', async () => {
+    await setup(MOHUA_ROLES_CONFIG);
     httpMock.expectOne(`${baseUrl}users/mohua-permission-matrix`).flush([]);
     httpMock.expectOne(`${baseUrl}users/mohua-members`).flush([]);
 
