@@ -47,7 +47,8 @@ export interface SubmitXviFcBankAccountPayload {
   accountNumber: string;
   confirmAccountNumber: string;
   bankDetails: XviFcBankDetails;
-  proofFile: XviFcBankAccountProofFile;
+  /** fileUrl is server-computed on responses only — the backend DTO rejects it as an unknown property. */
+  proofFile: Omit<XviFcBankAccountProofFile, 'fileUrl'>;
 }
 
 export interface XviFcBankAccountDecision {
