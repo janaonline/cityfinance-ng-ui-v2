@@ -1,19 +1,19 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RolesTeamsOverviewComponent } from './roles-teams-overview.component';
+import { UlbRolesTeamsOverviewComponent } from './roles-teams-overview.component';
 
-describe('RolesTeamsOverviewComponent', () => {
-  let component: RolesTeamsOverviewComponent;
-  let fixture: ComponentFixture<RolesTeamsOverviewComponent>;
+describe('UlbRolesTeamsOverviewComponent', () => {
+  let component: UlbRolesTeamsOverviewComponent;
+  let fixture: ComponentFixture<UlbRolesTeamsOverviewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, RolesTeamsOverviewComponent]
+      imports: [HttpClientTestingModule, UlbRolesTeamsOverviewComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(RolesTeamsOverviewComponent);
+    fixture = TestBed.createComponent(UlbRolesTeamsOverviewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
