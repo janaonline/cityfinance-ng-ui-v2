@@ -37,6 +37,7 @@ const proofFile: XviFcBankAccountProofFile = {
   sizeKb: 12.25,
   s3Key: proofPath,
   sha256: 'a'.repeat(64),
+  fileUrl: fullProofUrl,
 };
 
 const testFields: FieldConfig[] = [
@@ -385,6 +386,7 @@ describe('XviFcBankAccountComponent', () => {
       sizeKb: 2,
       s3Key: proofPath,
       sha256: jasmine.stringMatching(/^[a-f0-9]{64}$/),
+      fileUrl: fullProofUrl,
     });
   });
 
@@ -422,26 +424,26 @@ describe('XviFcBankAccountComponent', () => {
     );
   });
 
-  it('normalizes full S3 proof URLs to storage paths for signed viewing', () => {
-    createComponent();
-
-    expect(component.proofStoragePath({ ...proofFile, s3Key: `${fullProofUrl}?X-Amz-Signature=secret` })).toBe(
-      proofPath,
-    );
-  });
-
-  it('opens proof document with a signed URL in a new tab', async () => {
+  it('opens the proof document using the server-signed fileUrl in a new tab', () => {
     createComponent();
     const openSpy = spyOn(window, 'open');
-    const viewPromise = component.viewProof({ ...proofFile, s3Key: `${fullProofUrl}?X-Amz-Signature=secret` });
 
-    const req = httpMock.expectOne((request) => request.url.endsWith('get-signed-url'));
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ fileUrl: proofPath });
-    req.flush({ success: true, message: 'OK', data: { signedUrl: signedPutUrl } });
-    await viewPromise;
+    component.viewProof(proofFile);
 
-    expect(openSpy).toHaveBeenCalledWith(signedPutUrl, '_blank', 'noopener,noreferrer');
+    expect(openSpy).toHaveBeenCalledWith(fullProofUrl, '_blank', 'noopener,noreferrer');
+  });
+
+  it('shows an error snackbar when the proof document has no fileUrl', () => {
+    createComponent();
+    const openSpy = spyOn(window, 'open');
+
+    component.viewProof({ ...proofFile, fileUrl: null });
+
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+      'Unable to open proof document. Please try again.',
+      'snackbar-danger',
+    );
   });
 
   it('blocks submit when proof is missing', () => {
