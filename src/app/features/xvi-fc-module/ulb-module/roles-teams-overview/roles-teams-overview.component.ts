@@ -55,7 +55,7 @@ interface ProfileContactsApiResponse extends UlbContacts {
 }
 
 @Component({
-  selector: 'app-roles-teams-overview',
+  selector: 'app-ulb-roles-teams-overview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
@@ -83,7 +83,7 @@ interface ProfileContactsApiResponse extends UlbContacts {
     ]),
   ],
 })
-export class RolesTeamsOverviewComponent implements OnInit {
+export class UlbRolesTeamsOverviewComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
@@ -142,7 +142,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
-        Validators.pattern(RolesTeamsOverviewComponent.NAME_PATTERN),
+        Validators.pattern(UlbRolesTeamsOverviewComponent.NAME_PATTERN),
         noHtmlOrScript,
         noMongoOperators,
       ],
@@ -346,7 +346,7 @@ export class RolesTeamsOverviewComponent implements OnInit {
       name,
       email,
       mobile,
-      nameInvalid: !name.trim() || !RolesTeamsOverviewComponent.NAME_PATTERN.test(name),
+      nameInvalid: !name.trim() || !UlbRolesTeamsOverviewComponent.NAME_PATTERN.test(name),
       // Email is optional — only flag if a value is present but malformed
       emailInvalid: emailTrimmed.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed),
       mobileInvalid: !mobile.trim() || !/^[6-9]\d{9}$/.test(mobile),
