@@ -1,8 +1,11 @@
 import { Component, Input } from '@angular/core';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Location } from '@angular/common';
 import { FormGroup } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
@@ -108,7 +111,7 @@ describe('XviFcBankAccountComponent', () => {
   let fixture: ComponentFixture<XviFcBankAccountComponent>;
   let service: jasmine.SpyObj<XviFcBankAccountService>;
   let utilityService: jasmine.SpyObj<UtilityService>;
-  let location: jasmine.SpyObj<Location>;
+  let dialog: jasmine.SpyObj<MatDialog>;
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
@@ -141,19 +144,29 @@ describe('XviFcBankAccountComponent', () => {
     );
 
     utilityService = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
-    location = jasmine.createSpyObj<Location>('Location', ['back']);
+
+    dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
+    const confirmDialogRef = jasmine.createSpyObj<MatDialogRef<unknown, string>>('MatDialogRef', ['afterClosed']);
+    confirmDialogRef.afterClosed.and.returnValue(of('submit'));
+    dialog.open.and.returnValue(confirmDialogRef);
 
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, XviFcBankAccountComponent],
       providers: [
         { provide: XviFcBankAccountService, useValue: service },
         { provide: UtilityService, useValue: utilityService },
-        { provide: Location, useValue: location },
+        { provide: MatDialog, useValue: dialog },
       ],
     })
+      // The component imports MatDialogModule directly, which would otherwise shadow the
+      // TestBed-level MatDialog override above — see upload-documents.component.spec.ts for the
+      // same fix. Angular disallows mixing `set` with `add`/`remove` in one override, so the
+      // DynamicFormComponent swap is expressed as a full `set` too.
       .overrideComponent(XviFcBankAccountComponent, {
-        remove: { imports: [DynamicFormComponent] },
-        add: { imports: [StubDynamicFormComponent] },
+        set: {
+          imports: [StubDynamicFormComponent, MatButtonModule, MatDialogModule, MatIconModule, MatTooltipModule],
+          providers: [{ provide: MatDialog, useValue: dialog }],
+        },
       })
       .compileComponents();
   });
@@ -476,11 +489,43 @@ describe('XviFcBankAccountComponent', () => {
     expect(service.submitBankAccount).not.toHaveBeenCalled();
   });
 
-  it('submits uploaded proof metadata and bank details read off form controls', () => {
+  it('asks for confirmation before submitting to State DMA', async () => {
     createComponent();
     hydrateValidForm();
 
-    component.submit();
+    await component.submit();
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      jasmine.any(Function),
+      jasmine.objectContaining({
+        data: jasmine.objectContaining({
+          title: 'Submit to State DMA?',
+          buttons: [
+            jasmine.objectContaining({ label: 'Cancel', result: 'cancel' }),
+            jasmine.objectContaining({ label: 'Submit to State DMA', result: 'submit' }),
+          ],
+        }),
+      }),
+    );
+  });
+
+  it('does not submit when the confirmation dialog is cancelled', async () => {
+    const dialogRef = jasmine.createSpyObj<MatDialogRef<unknown, string>>('MatDialogRef', ['afterClosed']);
+    dialogRef.afterClosed.and.returnValue(of('cancel'));
+    dialog.open.and.returnValue(dialogRef);
+    createComponent();
+    hydrateValidForm();
+
+    await component.submit();
+
+    expect(service.submitBankAccount).not.toHaveBeenCalled();
+  });
+
+  it('submits uploaded proof metadata and bank details read off form controls', async () => {
+    createComponent();
+    hydrateValidForm();
+
+    await component.submit();
 
     const payload = service.submitBankAccount.calls.mostRecent().args[0];
     expect(payload.ifscCode).toBe('SBIN0123456');
@@ -488,24 +533,23 @@ describe('XviFcBankAccountComponent', () => {
     expect(payload.proofFile).toEqual(proofFile);
     expect(payload).not.toEqual(jasmine.objectContaining({ proof: jasmine.any(Object) }));
     expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('Bank account form submitted successfully.');
-    expect(location.back).toHaveBeenCalled();
   });
 
-  it('locks the form after successful submit even when response status is editable', () => {
+  it('locks the form after successful submit even when response status is editable', async () => {
     service.submitBankAccount.and.returnValue(
       of(record({ currentFormStatus: FORM_STATUS.IN_PROGRESS, currentFormStatusLabel: 'In Progress' })),
     );
     createComponent();
     hydrateValidForm();
 
-    component.submit();
+    await component.submit();
     fixture.detectChanges();
 
     expect(component.isEditable()).toBeFalse();
     expect(component.form.controls['ifscCode'].disabled).toBeTrue();
   });
 
-  it('maps backend validation errors to controls and proof', () => {
+  it('maps backend validation errors to controls and proof', async () => {
     service.submitBankAccount.and.returnValue(
       throwError(() => ({
         error: {
@@ -517,7 +561,7 @@ describe('XviFcBankAccountComponent', () => {
     createComponent();
     hydrateValidForm();
 
-    component.submit();
+    await component.submit();
 
     expect(component.form.controls['accountNumber'].errors?.['api']).toBe('Invalid account number.');
     expect(component.proofError()).toBe('Proof is invalid.');
