@@ -35,43 +35,80 @@
           </button>
         }
 
-        @for (menu of menus; track $index) {
-          @if (menu.child?.length) {
-            <li class="active" [matMenuTriggerFor]="DashboardMenu">
-              <a class="nav-link" routerLinkActive="active"> {{ menu.name }}<i class="bi bi-caret-down-fill"></i> </a>
+        @for (menu of menus; track menu.id) {
+          @if (menu.children?.length) {
+            <li class="active" [matMenuTriggerFor]="childMenu">
+              <a class="nav-link" routerLinkActive="active">
+                @if (menu.icon) {
+                  <i [class]="menu.icon"></i>&nbsp;
+                }
+                {{ menu.label }}<i class="bi bi-caret-down-fill"></i>
+              </a>
             </li>
-            <mat-menu #DashboardMenu="matMenu">
-              @for (childMenu of menu.child; track childMenu) {
-                @if (childMenu.link) {
-                  <a mat-menu-item [routerLink]="childMenu.link" class="" routerLinkActive="active">
-                    {{ childMenu.name }}
+            <mat-menu #childMenu="matMenu">
+              @for (child of menu.children; track child.id) {
+                @if (child.resolvedLink) {
+                  <a mat-menu-item [routerLink]="child.resolvedLink" class="" routerLinkActive="active">
+                    @if (child.icon) {
+                      <i [class]="child.icon"></i>&nbsp;
+                    }
+                    <span [innerHTML]="child.label"></span>
                   </a>
                 } @else {
-                  <a mat-menu-item [href]="childMenu.href" class="" routerLinkActive="active">
-                    {{ childMenu.name }}
+                  <a
+                    mat-menu-item
+                    [href]="child.resolvedHref"
+                    [target]="child.target || '_self'"
+                    class=""
+                    routerLinkActive="active"
+                  >
+                    @if (child.icon) {
+                      <i [class]="child.icon"></i>&nbsp;
+                    }
+                    <span [innerHTML]="child.label"></span>
                   </a>
                 }
               }
             </mat-menu>
+          } @else if (menu.renderAs === 'button') {
+            <li class="active">
+              <button
+                type="button"
+                class="btn"
+                [ngClass]="menu.buttonClass || 'btn-cfPrimary fw-bold'"
+                [routerLink]="menu.resolvedLink"
+              >
+                @if (menu.icon) {
+                  <i [class]="menu.icon"></i>&nbsp;
+                }
+                {{ menu.label }}
+              </button>
+            </li>
           } @else {
             <li class="active">
-              @if (menu.link) {
+              @if (menu.imageUrl) {
+                @if (menu.resolvedLink) {
+                  <a class="nav-link cfr-img-logo" [routerLink]="menu.resolvedLink">
+                    <img [src]="menu.imageUrl" [alt]="menu.imageAlt" />
+                  </a>
+                } @else {
+                  <a class="nav-link cfr-img-logo" [href]="menu.resolvedHref" [target]="menu.target || '_self'">
+                    <img [src]="menu.imageUrl" [alt]="menu.imageAlt" />
+                  </a>
+                }
+              } @else if (menu.resolvedLink) {
+                <a class="nav-link" [routerLink]="menu.resolvedLink" routerLinkActive="active">
+                  @if (menu.icon) {
+                    <i [class]="menu.icon"></i>&nbsp;
+                  }
+                  <span [innerHTML]="menu.label"></span>
+                </a>
+              } @else {
                 <a
                   class="nav-link"
-                  [ngClass]="menu.class"
-                  [routerLink]="menu.link"
-                  routerLinkActive="active"
-                  [innerHTML]="menu.name"
-                ></a>
-              }
-              @if (menu.href) {
-                <a
-                  class="nav-link"
-                  [ngClass]="menu.class"
-                  [attr.href]="menu.href"
-                  [innerHTML]="menu.name"
-                  [target]="menu.target"
-                  routerLinkActive="active"
+                  [href]="menu.resolvedHref"
+                  [target]="menu.target || '_self'"
+                  [innerHTML]="menu.label"
                 ></a>
               }
             </li>
