@@ -207,7 +207,7 @@ const TAB_SLIDE = trigger('tabSlide', [
   ]),
 ]);
 
-const RETURN_NOTE_MIN_LENGTH = 50;
+const RETURN_NOTE_MIN_LENGTH = 10;
 const RETURN_NOTE_MAX_LENGTH = 200;
 
 @Component({
@@ -596,6 +596,10 @@ export class AnnualAccountReviewComponent {
               placeholder: 'e.g. Balance Sheet figures do not match the Income and Expenditure Statement.',
               confirmText: 'Return section',
               required: true,
+              // Same bounds as the per-document return-reason box (isReturnNoteValid) — this note
+              // drives the same backend field, so it must be validated the same way.
+              minLength: RETURN_NOTE_MIN_LENGTH,
+              maxLength: RETURN_NOTE_MAX_LENGTH,
             },
             this.dialogConfig,
           ),
@@ -823,7 +827,9 @@ export class AnnualAccountReviewComponent {
   }
 
   goBack(): void {
-    this.router.navigate(['../..'], { relativeTo: this.route });
+    // Carries the currently-active tab back so the submissions list can restore its "Select
+    // Form" dropdown instead of resetting to its default (Audited Statements).
+    this.router.navigate(['../..'], { relativeTo: this.route, queryParams: { form: this.activeSection() } });
   }
 
   private async submitDocumentDecision(docId: string, decision: Decision, note: string | undefined): Promise<void> {
@@ -968,17 +974,19 @@ export class AnnualAccountReviewComponent {
     }
   }
 
-  /** The design year the reviewer is currently in — the same value the ULB's own upload-config lookup uses. */
+  /** The design year the reviewer is currently in — the same value the ULB's own upload-config lookup uses.
+   *  Resolved from the route first (matches ulb-submissions.component.ts's own resolveDesignYearId) —
+   *  localStorage is a single global value shared across tabs, so it must never win over what the URL
+   *  actually says, or a stale/cross-tab value could silently drive this page's approve/return actions
+   *  onto the wrong year's data. */
   private resolveDesignYearId(): string | null {
-    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) : null;
-    if (stored) return stored;
     let current: ActivatedRoute | null = this.route;
     while (current) {
       const yearId = current.snapshot.paramMap.get('yearId');
       if (yearId) return yearId;
       current = current.parent;
     }
-    return null;
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) : null;
   }
 
   private resolveInitialSection(): TabKey {

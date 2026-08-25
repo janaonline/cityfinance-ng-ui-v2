@@ -1,35 +1,42 @@
 <div class="container-fluid px-3 px-md-4 px-xl-5 py-4 faq-page">
   <div class="sh-page-header mb-3">
-    <h1 class="sh-page-title mb-1">Frequently Asked Questions</h1>
-    <p class="sh-page-subtitle mb-0">
-      Common questions about signing in, what your ULB needs to submit, and how grants are released under the 16th
-      Finance Commission.
-    </p>
+    <h2 class="sh-page-title mb-1">Frequently Asked Questions</h2>
+    <p class="sh-page-subtitle mb-0">{{ subtitle() }}</p>
   </div>
 
-  @for (section of sections; track section.id) {
-    <h2 class="faq-section-title">{{ section.title }}</h2>
-    <mat-accordion class="mb-4" multi>
-      @for (item of section.questions; track item.number) {
-        <mat-expansion-panel class="faq-panel">
-          <mat-expansion-panel-header>
-            <mat-panel-title class="faq-panel-title">
-              <span class="faq-number">{{ item.number }}.</span>
-              <span class="faq-question">{{ item.question }}</span>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-          <div class="faq-answer" [innerHTML]="item.answer"></div>
-        </mat-expansion-panel>
-      }
-    </mat-accordion>
+  @for (section of sections(); track section.id) {
+    <div class="card border-0 shadow-sm rounded-3 faq-section-card mb-4">
+      <h3 class="faq-section-title">{{ section.title }}</h3>
+      <mat-accordion multi>
+        @for (item of section.questions; track item.number) {
+          <mat-expansion-panel class="faq-panel" hideToggle #panel="matExpansionPanel">
+            <mat-expansion-panel-header>
+              <mat-panel-title class="faq-panel-title">
+                <span class="faq-number">{{ item.number }}.</span>
+                <p class="faq-question">{{ item.question }}</p>
+              </mat-panel-title>
+              <span class="faq-toggle-icon" aria-hidden="true">{{ panel.expanded ? '−' : '+' }}</span>
+            </mat-expansion-panel-header>
+            <div class="faq-answer" [innerHTML]="item.answer"></div>
+          </mat-expansion-panel>
+        }
+      </mat-accordion>
+    </div>
   }
 
   <div class="faq-help-box">
     <h3 class="faq-help-title">Still need help?</h3>
-    <p class="mb-0">
-      Write to <a href="mailto:updates@cityfinance.in"><strong>updates&#64;cityfinance.in</strong></a> and we will
-      respond within 24 hours, or join a <a routerLink="../support-hours"><strong>Support Hour</strong></a> to ask
-      the CityFinance Product &amp; PMU team directly.
-    </p>
+    @if (isState()) {
+      <p class="mb-0">
+        Write to <a href="mailto:updates@cityfinance.in"><strong>updates&#64;cityfinance.in</strong></a> and we will
+        respond within 24 hours. You can also use <strong>Give feedback</strong> to tell us what is not working.
+      </p>
+    } @else {
+      <p class="mb-0">
+        Write to <a href="mailto:updates@cityfinance.in"><strong>updates&#64;cityfinance.in</strong></a> and we will
+        respond within 24 hours, or join a <a routerLink="../support-hours"><strong>Support Hour</strong></a> to ask
+        the CityFinance Product &amp; PMU team directly.
+      </p>
+    }
   </div>
 </div>

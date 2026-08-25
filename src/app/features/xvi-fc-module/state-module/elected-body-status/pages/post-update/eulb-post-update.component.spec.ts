@@ -59,7 +59,7 @@ describe('EulbPostUpdateComponent', () => {
           formFieldType: 'select',
           options: ['Constituted', 'Not Constituted', '6th Schedule'],
         },
-        { key: 'dateOfConstitution', label: 'Date on which the elected body is in place.', formFieldType: 'date' },
+        { key: 'dateOfConstitution', label: 'Date on which the elected body is in place', formFieldType: 'date' },
         { key: 'dateOfExpiry', label: 'Date of Expiry', formFieldType: 'date' },
         { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
       ],
@@ -354,7 +354,7 @@ describe('EulbPostUpdateComponent', () => {
     expect(component.editingRowId()).toBe('row-1');
     expect(fixture.debugElement.query(By.css('select[aria-label="Elected Body Status"]'))).not.toBeNull();
     expect(
-      fixture.debugElement.query(By.css('input[aria-label="Date on which the elected body is in place."]')),
+      fixture.debugElement.query(By.css('input[aria-label="Date on which the elected body is in place"]')),
     ).not.toBeNull();
     expect(fixture.debugElement.query(By.css('input[aria-label="Remarks"]'))).not.toBeNull();
   });

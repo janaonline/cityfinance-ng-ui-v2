@@ -24,8 +24,12 @@ export class OverviewComponent implements OnInit {
   }
 
   private get ulbId(): string {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
-    return raw ? JSON.parse(raw)?.ulb ?? '' : '';
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
+      return raw ? ((JSON.parse(raw) as { ulb?: string }).ulb ?? '') : '';
+    } catch {
+      return '';
+    }
   }
 
   currentRequirementYear = 'FY 2026-27';

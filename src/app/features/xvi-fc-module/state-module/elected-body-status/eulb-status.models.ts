@@ -127,7 +127,6 @@ export interface EulbRowsQuery {
   limit?: number;
   search?: string;
   validationStatus?: EulbRowValidationStatus | '';
-  errorField?: string;
 }
 
 export interface EulbRowsApiResponse {
@@ -203,6 +202,9 @@ export interface EulbRowsDialogData {
   yearId: string;
   rowEditFields?: ConditionalFieldConfig[];
   canEdit: boolean;
+  /** Pre-selects the Validation filter to this status on open — used to land the user directly
+   *  on Invalid rows when the last known validation had errors, instead of "All". */
+  initialValidationStatusFilter?: EulbRowValidationStatus;
 }
 
 export interface EulbRowsDialogResult {

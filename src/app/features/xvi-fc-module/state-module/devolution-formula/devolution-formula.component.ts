@@ -611,8 +611,8 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
       .downloadTemplate(this.stateId, this.yearId, this.installment())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'ulb-wise-allocation-template.xlsx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Ulb-wise-allocation-formula-template.xlsx');
           this.isDownloadingTemplate.set(false);
         },
         error: () => {
@@ -634,8 +634,8 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
       .downloadErrorSheet(stateId, yearId, this.installment())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (blob) => {
-          FileSaver.saveAs(blob, 'ulb-wise-allocation-error-sheet.xlsx');
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'Devolution-formula-error-sheet.xlsx');
           this.isDownloadingErrorSheet.set(false);
           this.utilityService.triggerSnackbar('Error sheet downloaded successfully.');
         },

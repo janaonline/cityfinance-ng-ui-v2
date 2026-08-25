@@ -1,7 +1,17 @@
+import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SlbReviewComponent } from './slb-review.component';
+import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-body.component';
+import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import type { SlbFormData } from '../../../ulb-module/ulb-forms/slb/slb.models';
 import type { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
+
+@Component({ selector: 'app-dynamic-form', standalone: true, template: '{{ field?.label }}: {{ field?.value }}' })
+class MockDynamicFormComponent {
+  @Input() field: unknown;
+  @Input() group: unknown;
+  @Input() mode: unknown;
+}
 
 function indicator(overrides: Partial<ConditionalFieldConfig> = {}): ConditionalFieldConfig {
   return {
@@ -11,7 +21,7 @@ function indicator(overrides: Partial<ConditionalFieldConfig> = {}): Conditional
     position: 1,
     value: { actual: 10, target: 20 },
     inputCardConfig: { suffixText: '%' },
-    meta: { sector: 'Water Supply' },
+    meta: { section: 'Water Supply' },
     ...overrides,
   } as ConditionalFieldConfig;
 }
@@ -41,7 +51,12 @@ describe('SlbReviewComponent', () => {
   let fixture: ComponentFixture<SlbReviewComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [SlbReviewComponent] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [SlbReviewComponent] })
+      .overrideComponent(SlbFormBodyComponent, {
+        remove: { imports: [DynamicFormComponent] },
+        add: { imports: [MockDynamicFormComponent] },
+      })
+      .compileComponents();
     fixture = TestBed.createComponent(SlbReviewComponent);
     component = fixture.componentInstance;
   });
@@ -61,23 +76,32 @@ describe('SlbReviewComponent', () => {
     expect(component.yearLabel()).toBe('2026-27');
   });
 
-  it('groups actualTarget indicators by meta.sector, preserving first-encounter order', () => {
+  it('renders the deemed-approved banner and no approve/return controls', () => {
+    fixture.componentRef.setInput('data', formData());
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('deemed approved on submission');
+    expect(fixture.nativeElement.querySelector('button[color="warn"]')).toBeNull();
+  });
+
+  it('groups actualTarget indicators by meta.section, preserving first-encounter order, in the shared table', () => {
     fixture.componentRef.setInput(
       'data',
       formData({
         questions: [
-          indicator({ key: 'a', position: 1, meta: { sector: 'Water Supply' } }),
-          indicator({ key: 'b', position: 10, meta: { sector: 'Solid Waste Management' } }),
-          indicator({ key: 'c', position: 2, meta: { sector: 'Water Supply' } }),
+          indicator({ key: 'a', position: 1, meta: { section: 'Water Supply' } }),
+          indicator({ key: 'b', position: 10, meta: { section: 'Solid Waste Management' } }),
+          indicator({ key: 'c', position: 2, meta: { section: 'Water Supply' } }),
         ],
       }),
     );
     fixture.detectChanges();
 
-    const groups = component.sectorGroups();
-    expect(groups.map((g) => g.sector)).toEqual(['Water Supply', 'Solid Waste Management']);
-    expect(groups[0].rows.map((r) => r.key)).toEqual(['a', 'c']);
-    expect(groups[1].rows.map((r) => r.key)).toEqual(['b']);
+    const sectionRows = (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-section-row');
+    expect(sectionRows.length).toBe(2);
+    expect(sectionRows[0].textContent).toContain('Water Supply');
+    expect(sectionRows[1].textContent).toContain('Solid Waste Management');
   });
 
   it('excludes non-actualTarget fields (declaration fields) from the indicator table', () => {
@@ -92,81 +116,37 @@ describe('SlbReviewComponent', () => {
     );
     fixture.detectChanges();
 
-    const allKeys = component.sectorGroups().flatMap((g) => g.rows.map((r) => r.key));
-    expect(allKeys).toEqual(['a']);
+    const rows = (fixture.nativeElement as HTMLElement).querySelectorAll('.slb-indicator-table tbody tr');
+    // one section-header row + one indicator row; the text field is rendered separately, not as a table row
+    expect(rows.length).toBe(2);
   });
 
-  it('reads actual/target values and unit from inputCardConfig.suffixText', () => {
-    fixture.componentRef.setInput(
-      'data',
-      formData({ questions: [indicator({ key: 'a', value: { actual: 151, target: 160 }, inputCardConfig: { suffixText: 'lpcd' } })] }),
-    );
-    fixture.detectChanges();
-
-    const row = component.sectorGroups()[0].rows[0];
-    expect(row.actual).toBe(151);
-    expect(row.target).toBe(160);
-    expect(row.unit).toBe('lpcd');
-  });
-
-  it('exposes declarant name/designation and supporting document from the questions array', () => {
+  it('renders declaration fields (name, designation, supporting document) read-only via app-dynamic-form', () => {
     fixture.componentRef.setInput(
       'data',
       formData({
         questions: [
           { key: 'declarantName', label: 'Name', formFieldType: 'text', value: 'K. Ramesh Babu' } as ConditionalFieldConfig,
-          { key: 'declarantDesignation', label: 'Designation', formFieldType: 'text', value: 'Municipal Engineer' } as ConditionalFieldConfig,
           {
-            key: 'supportingDocumentFile',
-            label: 'Supporting Document',
-            formFieldType: 'file',
-            value: { fileUrl: 'https://signed.example.com/doc.pdf', fileName: 'SLB_Workings.pdf' },
+            key: 'declarantDesignation',
+            label: 'Designation',
+            formFieldType: 'text',
+            value: 'Municipal Engineer',
           } as ConditionalFieldConfig,
         ],
       }),
     );
     fixture.detectChanges();
 
-    expect(component.declarantName()).toBe('K. Ramesh Babu');
-    expect(component.declarantDesignation()).toBe('Municipal Engineer');
-    expect(component.supportingDocument()).toEqual({ name: 'SLB_Workings.pdf', url: 'https://signed.example.com/doc.pdf' });
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('K. Ramesh Babu');
+    expect(text).toContain('Municipal Engineer');
   });
 
-  it('returns null supporting document when the field is absent', () => {
-    fixture.componentRef.setInput('data', formData({ questions: [] }));
+  it('builds a disabled FormGroup so the shared form body renders in permanent read-only mode', () => {
+    fixture.componentRef.setInput('data', formData({ questions: [indicator({ key: 'a' })] }));
     fixture.detectChanges();
 
-    expect(component.supportingDocument()).toBeNull();
-  });
-
-  it('opens the supporting document URL in a new tab', () => {
-    fixture.componentRef.setInput(
-      'data',
-      formData({
-        questions: [
-          {
-            key: 'supportingDocumentFile',
-            label: 'Supporting Document',
-            formFieldType: 'file',
-            value: { fileUrl: 'https://signed.example.com/doc.pdf', fileName: 'doc.pdf' },
-          } as ConditionalFieldConfig,
-        ],
-      }),
-    );
-    fixture.detectChanges();
-    const openSpy = spyOn(window, 'open');
-
-    component.openSupportingDocument();
-
-    expect(openSpy).toHaveBeenCalledWith('https://signed.example.com/doc.pdf', '_blank', 'noopener');
-  });
-
-  it('renders the deemed-approved banner and no approve/return controls', () => {
-    fixture.componentRef.setInput('data', formData());
-    fixture.detectChanges();
-
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('deemed approved on submission');
-    expect(fixture.nativeElement.querySelector('button[color="warn"]')).toBeNull();
+    expect(component.form().disabled).toBeTrue();
   });
 });

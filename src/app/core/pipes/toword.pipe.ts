@@ -6,10 +6,12 @@ import { ToWords } from 'to-words';
   standalone: true,
 })
 export class TowordPipe implements PipeTransform {
-  transform(value: number, ...args: unknown[]): unknown {
+  /** Defaults to `en-IN` (Indian numbering — crore/lakh), and includes the "Rupees" suffix without
+   *  the "Only" that `to-words` would otherwise append. */
+  transform(value: number): string {
     if (!value) return '';
     return new ToWords().convert(Number(value), {
-      currency: false,
+      currency: true,
       doNotAddOnly: true,
     });
   }

@@ -364,6 +364,12 @@ describe('DynamicFormService', () => {
     expect(dateControl.valid).toBeFalse();
   });
 
+  it('binds a "decimal" validations entry to a real decimalPlacesValidator error', () => {
+    const wholeNumberValidator = service.bindValidations([{ name: 'decimal', validator: 0 }] as any);
+    expect(new FormControl(100, wholeNumberValidator).valid).toBeTrue();
+    expect(new FormControl(100.5, wholeNumberValidator).hasError('decimal')).toBeTrue();
+  });
+
   it('creates a tab control with table, questionnaire, file, and regular fields', () => {
     const form = service.tabControl([
       {
@@ -468,6 +474,26 @@ describe('DynamicFormService', () => {
 
       expect(form.controls['a'].errors).toBeNull();
       expect(form.controls['b'].errors).toBeNull();
+    });
+
+    it('does not clear the required error on construction when both matchesField controls start empty', () => {
+      // Real-world repro (xvi-fc-bank-account's confirmAccountNumber): a field declares both
+      // `required` and `matchesField`. FormGroup's constructor synchronously runs the group
+      // validators once — with both controls starting at '', matchesFieldValidator must not wipe
+      // the required error the control's own validator already set moments earlier in the same call.
+      const form = service.toFormGroup([
+        { key: 'accountNumber', label: 'Account Number', formFieldType: 'text' } as FieldConfig,
+        {
+          key: 'confirmAccountNumber',
+          label: 'Confirm',
+          formFieldType: 'text',
+          required: true,
+          validations: [{ name: 'required', validator: null, message: 'This field is required.' }],
+          matchesField: 'accountNumber',
+        } as FieldConfig,
+      ]);
+
+      expect(form.controls['confirmAccountNumber'].hasError('required')).toBeTrue();
     });
 
     it('resolves matchesField against dotted flat keys, not nested paths', () => {

@@ -1,18 +1,22 @@
-import { Location } from '@angular/common';
 import { Component, computed, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
-import { S3Service } from '../../../../../core/services/s3.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
 import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import { checkPdfHasContent } from '../../../../../shared/dynamic-form/utils/pdf-blank-check.util';
+import {
+  UlbFormsDialogComponent,
+  ULB_FORMS_DIALOG_PANEL_CLASS,
+  type UlbFormsDialogData,
+} from '../upload-documents/ulb-forms-dialog.component';
 import {
   FORM_STATUS,
   FormStatusType,
@@ -72,17 +76,16 @@ interface ApiErrorBody {
 
 @Component({
   selector: 'app-xvi-fc-bank-account',
-  imports: [DynamicFormComponent, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [DynamicFormComponent, MatButtonModule, MatDialogModule, MatIconModule, MatTooltipModule],
   templateUrl: './xvi-fc-bank-account.component.html',
   styleUrl: './xvi-fc-bank-account.component.scss',
 })
 export class XviFcBankAccountComponent {
-  private readonly location = inject(Location);
   private readonly destroyRef = inject(DestroyRef);
   private readonly bankAccountService = inject(XviFcBankAccountService);
   private readonly utilityService = inject(UtilityService);
-  private readonly s3Service = inject(S3Service);
   private readonly dynamicFormService = inject(DynamicFormService);
+  private readonly dialog = inject(MatDialog);
 
   @ViewChild('proofInput') private readonly proofInputRef!: ElementRef<HTMLInputElement>;
 
@@ -91,7 +94,7 @@ export class XviFcBankAccountComponent {
     'Confirm that your ULB has created a dedicated bank account to receive 16th Finance Commission grants linked to PFMS.';
 
   readonly proofField = {
-    label: 'Proof of Account Existence',
+    label: 'Proof of account linkage with PFMS',
     uploadLabel: 'Click to upload cancelled cheque',
     acceptedFormatsText: 'PDF, JPG, or PNG',
     maxSizeMb: MAX_FILE_SIZE_BYTES / (1024 * 1024),
@@ -274,6 +277,7 @@ export class XviFcBankAccountComponent {
         sizeKb: Number((file.size / 1024).toFixed(2)),
         s3Key: signedUrl.path,
         sha256,
+        fileUrl: signedUrl.fileUrl,
       });
       this.utilityService.triggerSnackbar('Proof uploaded successfully.');
     } catch (error) {
@@ -291,7 +295,7 @@ export class XviFcBankAccountComponent {
     this.proofError.set(null);
   }
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.form.markAllAsTouched();
 
     if (!this.isEditable()) {
@@ -313,6 +317,30 @@ export class XviFcBankAccountComponent {
 
     if (!this.canSubmit() || !proof) return;
 
+    const confirmData: UlbFormsDialogData = {
+      title: 'Submit to State DMA?',
+      description:
+        "You're about to send this bank account detail to the State DMA for review. Once submitted, it cannot be changed until the State DMA sends it back for correction.",
+      buttons: [
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
+        { label: 'Submit to State DMA', result: 'submit', variant: 'flat' },
+      ],
+    };
+
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
+          data: confirmData,
+          disableClose: true,
+          width: '500px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
+        })
+        .afterClosed(),
+    );
+    if (confirmed !== 'submit') return;
+
     const bankDetails: XviFcBankDetails = {
       name: this.controlValue('bankDetails.name') ?? '',
       branch: this.controlValue('bankDetails.branch') ?? '',
@@ -321,6 +349,8 @@ export class XviFcBankAccountComponent {
       state: this.controlValue('bankDetails.state') ?? undefined,
       micr: this.controlValue('bankDetails.micr') ?? null,
     };
+
+    const { fileUrl: _proofFileUrl, ...proofFilePayload } = proof;
 
     this.isSubmitting.set(true);
     this.bankAccountService
@@ -332,7 +362,7 @@ export class XviFcBankAccountComponent {
         accountNumber: this.controlValue('accountNumber') ?? '',
         confirmAccountNumber: this.controlValue('confirmAccountNumber') ?? '',
         bankDetails,
-        proofFile: proof,
+        proofFile: proofFilePayload,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -343,7 +373,6 @@ export class XviFcBankAccountComponent {
           this.submittedSuccessfully.set(true);
           this.syncFormControlsState();
           this.utilityService.triggerSnackbar('Bank account form submitted successfully.');
-          this.location.back();
         },
         error: (error) => this.handleSubmitError(error),
       })
@@ -355,23 +384,12 @@ export class XviFcBankAccountComponent {
     return `${sizeKb.toFixed(2)} KB`;
   }
 
-  proofStoragePath(proof: XviFcBankAccountProofFile): string {
-    return this.toStoragePath(proof.s3Key);
-  }
-
-  async viewProof(proof: XviFcBankAccountProofFile): Promise<void> {
-    const storagePath = this.proofStoragePath(proof);
-    if (!storagePath) return;
-
-    try {
-      const signedUrl = await firstValueFrom(this.s3Service.getSignedUrl(storagePath));
-      if (!signedUrl) {
-        throw new Error('Signed URL is missing.');
-      }
-      window.open(signedUrl, '_blank', 'noopener,noreferrer');
-    } catch {
+  viewProof(proof: XviFcBankAccountProofFile): void {
+    if (!proof.fileUrl) {
       this.utilityService.triggerSnackbar('Unable to open proof document. Please try again.', 'snackbar-danger');
+      return;
     }
+    window.open(proof.fileUrl, '_blank', 'noopener,noreferrer');
   }
 
   private controlValue(key: string): string | undefined {
@@ -404,7 +422,11 @@ export class XviFcBankAccountComponent {
 
           if (record) {
             this.existingRecord.set(record);
-            this.selectedProof.set(this.hasProof(record.proofFile) ? record.proofFile : null);
+            // A returned form's stale (possibly-rejected) proof isn't pre-filled — the ULB must
+            // upload a fresh document before resubmitting.
+            this.selectedProof.set(
+              this.isReturnedStatus() || !this.hasProof(record.proofFile) ? null : record.proofFile,
+            );
             this.form.patchValue(
               {
                 ifscCode: record.ifscCode,
@@ -471,18 +493,6 @@ export class XviFcBankAccountComponent {
 
   private hasProof(proofFile: XviFcBankAccountProofFile | null | undefined): proofFile is XviFcBankAccountProofFile {
     return !!proofFile?.originalName && !!proofFile.s3Key && !!proofFile.mimeType && !!proofFile.sha256;
-  }
-
-  private toStoragePath(value: string): string {
-    const trimmed = value.trim();
-    if (!trimmed) return '';
-
-    try {
-      const url = new URL(trimmed);
-      return url.pathname.replace(/^\/+/, '');
-    } catch {
-      return trimmed.split('?')[0];
-    }
   }
 
   private async calculateSha256(file: File): Promise<string> {

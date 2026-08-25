@@ -24,6 +24,13 @@ export const ULB_ROUTES: Routes = [
         loadComponent: () => import('../shared/faq/faq.component').then((m) => m.FaqComponent),
       },
       {
+        path: 'document-upload-guide',
+        loadComponent: () =>
+          import('./document-upload-guide/document-upload-guide.component').then(
+            (m) => m.DocumentUploadGuideComponent,
+          ),
+      },
+      {
         path: 'ulb-forms',
         loadComponent: () => import('./ulb-forms/ulb-forms.component').then((m) => m.UlbFormsComponent),
       },
@@ -60,7 +67,9 @@ export const ULB_ROUTES: Routes = [
       {
         path: 'roles-teams-unified-view',
         loadComponent: () =>
-          import('./roles-teams-overview/roles-teams-overview.component').then((m) => m.RolesTeamsOverviewComponent),
+          import('./roles-teams-overview/roles-teams-overview.component').then(
+            (m) => m.UlbRolesTeamsOverviewComponent,
+          ),
       },
       {
         path: '**',

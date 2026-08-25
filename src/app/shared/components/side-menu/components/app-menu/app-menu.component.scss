@@ -11,22 +11,14 @@ hr {
 
 // ─── Wrapper ─────────────────────────────────────────────────────────────────
 // height: 100% gives the wrapper real height so .layout-menu can fill it
-// overflow: visible is kept so the edge-toggle tab (right: -14px) isn't clipped.
-
 .menu-wrapper {
-  position: relative;
-  display: block; // NOT flex — toggle must not add layout width
   width: var(--nav-width);
-  // height: 100%;
-  height: calc(100vh - var(--app-header-height, 91px));
-  flex-shrink: 0;
-  overflow: visible; // edge-toggle tab overflows right edge intentionally
+  height: 100%;
   transition: width 0.3s ease;
 }
 
 // ─── Sidebar panel ───────────────────────────────────────────────────────────
 // height: 100% fills the wrapper. overflow: hidden clips content; scrolling is
-// delegated to .layout-menu-ul-pimary only. Sign Out stays at the bottom via
 // flex: 0 0 auto on .layout-menu-ul-secondary.
 
 .layout-menu {
@@ -63,18 +55,14 @@ hr {
 
     background-color: var(--nav-surface);
     background-image:
-      radial-gradient(
-        circle at 95% 8%,
+      radial-gradient(circle at 95% 8%,
         transparent 0 76px,
         var(--nav-pattern-ring-color-strong) 77px 78px,
-        transparent 79px
-      ),
-      radial-gradient(
-        circle at 112% 22%,
+        transparent 79px),
+      radial-gradient(circle at 112% 22%,
         transparent 0 54px,
         var(--nav-pattern-ring-color-soft) 55px 56px,
-        transparent 57px
-      ),
+        transparent 57px),
       radial-gradient(var(--nav-pattern-dot-color) 1px, transparent 1px),
       linear-gradient(110deg, transparent 0 74%, var(--nav-pattern-sheen-color) 74% 100%),
       radial-gradient(circle at 96% 0%, var(--nav-pattern-glow-primary), transparent 25%),
@@ -175,6 +163,7 @@ hr {
 // ─── Mobile overlay (≤ 991.98px) ─────────────────────────────────────────────
 
 @media (max-width: 991.98px) {
+
   // Wrapper collapses to zero — the drawer is position: fixed and does not
   // participate in document flow at all.
   .sidebar--overlay.menu-wrapper {

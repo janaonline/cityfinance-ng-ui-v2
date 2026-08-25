@@ -18,6 +18,8 @@ export interface XviFcBankAccountProofFile {
   sizeKb: number;
   s3Key: string;
   sha256: string;
+  /** Server-signed, ready-to-open inline URL — computed fresh on every response, never stored. */
+  fileUrl: string | null;
 }
 
 export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
@@ -45,7 +47,8 @@ export interface SubmitXviFcBankAccountPayload {
   accountNumber: string;
   confirmAccountNumber: string;
   bankDetails: XviFcBankDetails;
-  proofFile: XviFcBankAccountProofFile;
+  /** fileUrl is server-computed on responses only — the backend DTO rejects it as an unknown property. */
+  proofFile: Omit<XviFcBankAccountProofFile, 'fileUrl'>;
 }
 
 export interface XviFcBankAccountDecision {

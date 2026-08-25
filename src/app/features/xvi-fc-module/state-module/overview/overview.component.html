@@ -1,4 +1,7 @@
-<main class="container-fluid px-3 px-md-4 px-xl-5 py-4 py-lg-5">
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
   @if (errorMessage) {
     <div class="alert alert-danger mb-4" role="alert">
       {{ errorMessage }}
@@ -95,7 +98,7 @@
 
                     @for (column of disbursementColumns; track column.key) {
                       <td class="text-center" [class.yearwise-table__highlight]="column.highlight">
-                        {{ row.values[column.key] }}
+                        {{ formatAmount(row.values[column.key]) }}
                       </td>
                     }
                   </tr>
@@ -124,4 +127,7 @@
       </section>
     }
   }
-</main>
+      </div>
+    </div>
+  </div>
+</div>

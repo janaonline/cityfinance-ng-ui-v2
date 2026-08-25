@@ -57,7 +57,7 @@ export type EulbEditableFieldCellControl =
               [class.is-invalid]="cellHasError"
               [attr.min]="dateMin"
               [attr.max]="dateMax"
-              aria-label="Date on which the elected body is in place."
+              aria-label="Date on which the elected body is in place"
               [attr.aria-invalid]="cellHasError || null"
               [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
               [attr.data-eulb-post-edit-field]="editFieldDataAttribute === 'data-eulb-post-edit-field' ? field : null"

@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { DatePipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
+import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 import { ClaimLetterDocumentData } from '../../claim-letter.models';
-import { formatCrore, formatCroreFull } from '../../claim-letter.utils';
 
 export interface ClaimLetterDocumentPreviewDialogData {
   documentData: ClaimLetterDocumentData;
@@ -25,9 +25,13 @@ export interface ClaimLetterDocumentPreviewDialogData {
 export class ClaimLetterDocumentPreviewDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<ClaimLetterDocumentPreviewDialogComponent>);
   readonly data = inject<ClaimLetterDocumentPreviewDialogData>(MAT_DIALOG_DATA);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
 
-  readonly formatCrore = formatCrore;
-  readonly formatCroreFull = formatCroreFull;
+  // Mirrors the exact PDF byte-for-byte (see class doc comment) — must never drift because of a
+  // user's global display override, so this always shows exact whole Rupees.
+  readonly formatAmount = (value: number | null | undefined) =>
+    this.amountDisplay.format(value, 'inr', { ignoreOverride: true });
+  readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
 
   /** "AFS = Audited Financial Statement · Provisional FS = ..." — dynamically generated from
    *  whichever criteria are actually enabled, so the legend always matches Annexure 2's columns

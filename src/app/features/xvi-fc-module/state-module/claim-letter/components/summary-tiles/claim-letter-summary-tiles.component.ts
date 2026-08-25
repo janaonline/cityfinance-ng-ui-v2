@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { formatCrore } from '../../claim-letter.utils';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 
 export interface ClaimLetterSummaryTile {
   label: string;
@@ -23,5 +23,6 @@ export interface ClaimLetterSummaryTile {
 export class ClaimLetterSummaryTilesComponent {
   readonly tiles = input.required<readonly ClaimLetterSummaryTile[]>();
 
-  readonly formatCrore = formatCrore;
+  private readonly amountDisplay = inject(AmountDisplayModeService);
+  readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'auto');
 }

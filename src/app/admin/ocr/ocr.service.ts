@@ -60,6 +60,7 @@ export interface BenchmarkFieldValue {
   ulb_name?: string | null;
   financial_year?: string | null;
   doc_type?: string | null;
+  audit_type?: string | null;
   language?: string | null;
   seal_present?: boolean | null;
   signature_present?: boolean | null;
@@ -134,6 +135,7 @@ export interface EvalFieldMatch {
   ulb_name: boolean | null;
   financial_year: boolean | null;
   doc_type: boolean | null;
+  audit_type: boolean | null;
   language: boolean | null;
   seal_present: boolean | null;
   signature_present: boolean | null;

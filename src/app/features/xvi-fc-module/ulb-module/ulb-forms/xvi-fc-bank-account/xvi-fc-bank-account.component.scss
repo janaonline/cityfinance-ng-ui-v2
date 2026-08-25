@@ -1,5 +1,8 @@
+@use '../../../styles/shared-layout' as layout;
+
 :host {
   display: block;
+  @include layout.form-layout;
 }
 
 :host ::ng-deep .xvifc-theme {
@@ -28,6 +31,43 @@
 
 .account-card {
   max-width: 600px;
+
+  // Flatten Material's outlined text fields to a plain, simply-bordered box — no field here
+  // uses an inline mat-label, so there's no notch to account for.
+  ::ng-deep .mat-mdc-form-field {
+    --mdc-outlined-text-field-outline-color: #d5dbe1;
+    --mdc-outlined-text-field-hover-outline-color: #b7c0c9;
+    --mdc-outlined-text-field-focus-outline-color: var(--color-primary, #14783d);
+    --mdc-outlined-text-field-container-shape: 8px;
+    width: 100%;
+  }
+}
+
+.proof-dropzone {
+  border: 1px dashed #cbd5e1;
+  background: #ffffff;
+  padding: 1.5rem 1rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #9ca3af;
+    background: #f9fafb;
+  }
+
+  &--disabled {
+    cursor: default;
+    opacity: 0.6;
+
+    &:hover {
+      border-color: #cbd5e1;
+      background: #ffffff;
+    }
+  }
+}
+
+.proof-dropzone__icon {
+  font-size: 1.5rem;
+  color: var(--color-primary, #14783d);
 }
 
 .account-card__title {

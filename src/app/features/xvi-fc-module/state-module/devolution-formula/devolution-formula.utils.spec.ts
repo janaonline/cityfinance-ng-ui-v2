@@ -5,7 +5,6 @@ import {
   buildDfRowUpdatePayload,
   extractApiErrorResponse,
   extractValidationSummaryFromError,
-  formatRupees,
   getDfValidationStatusLabel,
   getDuplicateUlbMessage,
   getRegisterUlbErrorMessage,
@@ -13,6 +12,7 @@ import {
   isDfRowValidationStatus,
   isRecord,
   isValidDevolutionFileRef,
+  parseDfRowUpdateErrors,
 } from './devolution-formula.utils';
 
 const mockFileValue = {
@@ -238,16 +238,6 @@ describe('isDfRowValidationStatus', () => {
   it('returns false for null', () => expect(isDfRowValidationStatus(null)).toBeFalse());
 });
 
-// ─── formatRupees ─────────────────────────────────────────────────────────────
-
-describe('formatRupees', () => {
-  it('returns "—" for null', () => expect(formatRupees(null)).toBe('—'));
-  it('returns "—" for undefined', () => expect(formatRupees(undefined)).toBe('—'));
-  it('formats crore amounts with Cr suffix', () => expect(formatRupees(50000000)).toContain('Cr'));
-  it('formats lakh amounts with Lakh suffix', () => expect(formatRupees(500000)).toContain('Lakh'));
-  it('formats plain amounts with ₹ prefix', () => expect(formatRupees(5000)).toContain('₹'));
-});
-
 // ─── buildDfRowUpdatePayload ──────────────────────────────────────────────────
 
 describe('buildDfRowUpdatePayload', () => {
@@ -393,5 +383,48 @@ describe('buildDevolutionFinalSubmitPayloadData', () => {
     });
     expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
     expect((result as unknown as Record<string, unknown>)?.['ulbCount']).toBeUndefined();
+  });
+});
+
+// ─── parseDfRowUpdateErrors ────────────────────────────────────────────────────
+
+describe('parseDfRowUpdateErrors', () => {
+  it('returns [] for a non-object error', () => {
+    expect(parseDfRowUpdateErrors('boom')).toEqual([]);
+    expect(parseDfRowUpdateErrors(null)).toEqual([]);
+  });
+
+  it('prefers a structured errors map over a bare message array when both are present', () => {
+    const err = {
+      error: {
+        message: ['installment2Amount must be an integer number'],
+        errors: { installment1Amount: [{ message: 'From the map.' }] },
+      },
+    };
+    expect(parseDfRowUpdateErrors(err)).toEqual([{ field: 'installment1Amount', message: 'From the map.', code: undefined }]);
+  });
+
+  it('falls back to the bare class-validator message array when there is no errors map', () => {
+    const err = { error: { message: ['installment2Amount must be an integer number'] } };
+    expect(parseDfRowUpdateErrors(err)).toEqual([
+      { field: 'installment2Amount', message: 'installment2Amount must be an integer number' },
+    ]);
+  });
+
+  it('tags a message that matches none of this row\'s editable fields as _form', () => {
+    const err = { error: { message: ['unknownProperty should not exist'] } };
+    expect(parseDfRowUpdateErrors(err)).toEqual([{ field: '_form', message: 'unknownProperty should not exist' }]);
+  });
+
+  it('handles multiple bare messages across known and unknown fields', () => {
+    const err = {
+      error: {
+        message: ['totalGrantAllocation must be an integer number', 'installment2Amount must be an integer number'],
+      },
+    };
+    expect(parseDfRowUpdateErrors(err)).toEqual([
+      { field: 'totalGrantAllocation', message: 'totalGrantAllocation must be an integer number' },
+      { field: 'installment2Amount', message: 'installment2Amount must be an integer number' },
+    ]);
   });
 });

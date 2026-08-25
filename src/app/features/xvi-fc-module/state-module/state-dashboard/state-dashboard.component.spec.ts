@@ -134,14 +134,14 @@ describe('StateDashboardComponent', () => {
     expect(metricValue('total-ulbs')).toBe('123');
   });
 
-  it('renders the allocated amount', () => {
+  it('renders the allocated amount, auto-scaled to Cr', () => {
     createComponent();
-    expect(metricValue('allocated')).toContain('15,62,00,00,000');
+    expect(metricValue('allocated')).toBe('₹ 1,562 Cr');
   });
 
   it('renders the claimed amount', () => {
     createComponent();
-    expect(metricValue('claimed')).toBe('₹0 crore');
+    expect(metricValue('claimed')).toBe('₹ 0');
   });
 
   it('renders the compliance rate', () => {
@@ -174,14 +174,14 @@ describe('StateDashboardComponent', () => {
     expect(fixture.debugElement.queryAll(By.css('.claim-letter-row')).length).toBe(2);
   });
 
-  it('formats 15620000000 without converting its numeric scale', () => {
+  it('auto-scales a whole-Rupee amount to Cr via AmountDisplayModeService', () => {
     createComponent();
-    expect(component.formatAmount(15_620_000_000, 'INR', 'CRORE')).toBe('₹15,62,00,00,000 crore');
+    expect(component.formatAmount(15_620_000_000)).toBe('₹ 1,562 Cr');
   });
 
-  it('displays CRORE as the amount unit label', () => {
+  it('displays Cr as the amount unit label for a Crore-scale figure', () => {
     createComponent();
-    expect(metricValue('allocated')).toContain('crore');
+    expect(metricValue('allocated')).toContain('Cr');
   });
 
   it('displays INR with the rupee symbol', () => {
@@ -392,7 +392,7 @@ const dashboardData: StateDashboardData = {
     totalUlbs: 123,
     allocatedAmount: 15_620_000_000,
     claimedAmount: 0,
-    amountUnit: 'CRORE',
+    amountUnit: 'RUPEE',
     currency: 'INR',
     compliance: { rate: 18, compliantUlbs: 22, totalUlbs: 123 },
   },

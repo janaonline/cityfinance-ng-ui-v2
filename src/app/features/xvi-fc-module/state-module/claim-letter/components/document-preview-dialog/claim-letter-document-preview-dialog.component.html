@@ -30,7 +30,7 @@
               <tr>
                 <th scope="col">S.No.</th>
                 <th scope="col">Urban Local Body</th>
-                <th scope="col" class="text-end">Amount (₹ Cr.)</th>
+                <th scope="col" class="text-end">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -38,14 +38,14 @@
                 <tr>
                   <td>{{ row.slNo }}</td>
                   <td>{{ row.ulbName }}</td>
-                  <td class="text-end">{{ formatCrore(row.claimAmount) }}</td>
+                  <td class="text-end">{{ formatAmount(row.claimAmount) }}</td>
                 </tr>
               }
             </tbody>
             <tfoot>
               <tr class="fw-semibold">
                 <td colspan="2" class="text-end">Total</td>
-                <td class="text-end">{{ formatCrore(data.documentData.totalClaimAmount) }}</td>
+                <td class="text-end">{{ formatAmount(data.documentData.totalClaimAmount) }}</td>
               </tr>
             </tfoot>
           </table>
@@ -77,8 +77,8 @@
               <tr>
                 <th scope="col">S.No.</th>
                 <th scope="col">Urban Local Body</th>
-                <th scope="col" class="text-end">{{ data.documentData.priorFcCycleLabel }} Unspent (₹ Cr.)</th>
-                <th scope="col" class="text-end">16th FC Allocation (₹ Cr.)</th>
+                <th scope="col" class="text-end">{{ data.documentData.priorFcCycleLabel }} Unspent</th>
+                <th scope="col" class="text-end">16th FC Allocation</th>
                 <th scope="col" class="text-center">Eligible (&lt;10%)</th>
               </tr>
             </thead>
@@ -87,9 +87,9 @@
                 <tr>
                   <td>{{ row.slNo }}</td>
                   <td>{{ row.ulbName }}</td>
-                  <td class="text-end">{{ formatCrore(row.priorFcUnspentAmount) }}</td>
-                  <td class="text-end" [title]="formatCroreFull(row.claimedAmount)">
-                    {{ formatCrore(row.claimedAmount) }}
+                  <td class="text-end">{{ formatAmount(row.priorFcUnspentAmount) }}</td>
+                  <td class="text-end" [title]="formatAmountExact(row.claimedAmount)">
+                    {{ formatAmount(row.claimedAmount) }}
                   </td>
                   <td class="text-center">
                     @if (row.eligible) {
