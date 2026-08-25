@@ -46,7 +46,7 @@ export class OcrEvalBenchmarksComponent implements OnInit {
   });
 
   readonly runForm = this.fb.nonNullable.group({
-    extractionModel: ['gemini-2.5-flash'],
+    extractionModel: ['gemini-3-flash-preview'],
     validationModel: ['gemini-2.5-pro'],
     enableFinancialValidation: [false],
   });
