@@ -41,6 +41,7 @@ export class UlbListComponent implements OnInit {
   search = '';
   stateFilter = '';
   approvalStatusFilter: '' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXISTING' = '';
+  activeStatusFilter: '' | 'true' | 'false' = '';
   pageIndex = 0;
   pageSize = 10;
   totalItems = 0;
@@ -88,6 +89,7 @@ export class UlbListComponent implements OnInit {
         search: this.search || undefined,
         state: this.stateFilter || undefined,
         approvalStatus: this.approvalStatusFilter || undefined,
+        isActive: this.activeStatusFilter ? this.activeStatusFilter === 'true' : undefined,
         sortBy: 'createdAt',
         sortDir: -1,
         page: this.pageIndex + 1,
@@ -118,6 +120,7 @@ export class UlbListComponent implements OnInit {
     this.search = '';
     this.stateFilter = '';
     this.approvalStatusFilter = '';
+    this.activeStatusFilter = '';
     this.onSearchChange();
   }
 
