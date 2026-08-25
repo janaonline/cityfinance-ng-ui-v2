@@ -16,6 +16,23 @@ a {
   display: none;
 }
 
+// mat-menu content is portaled to the CDK overlay, outside this component's
+// encapsulated view — ::ng-deep (same pattern already used below for
+// .notification-menu-panel) is what lets routerLinkActive's "active" class
+// actually show up once a dropdown item matches the current route, and what
+// gets the dropdown items themselves to fw-semibold (600) to match SSR's
+// top-level nav weight — `fw-semibold` on the <ul> above never reaches this
+// portaled content, so it has to be set explicitly here.
+::ng-deep .mat-mdc-menu-item {
+  font-weight: var(--fw-semi-bold);
+}
+
+::ng-deep .mat-mdc-menu-item.active {
+  background: var(--clr-primary-soft, rgba(29, 82, 144, 0.08));
+  color: var(--clr-primary);
+  font-weight: var(--fw-semi-bold);
+}
+
 .primary-navigation {
   margin: 0;
   padding: 0;
@@ -36,7 +53,7 @@ a {
   padding-block: 1.25rem;
   border-bottom: 2px solid transparent;
   color: var(--clr-secondary);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semi-bold);
 
   &:not(.cfr-img-logo):hover,
   &:not(.cfr-img-logo).active {
@@ -98,17 +115,17 @@ a {
     padding-block: 0.25rem;
   }
 
-  nav > div {
+  nav>div {
     padding-block: 0.35rem;
   }
 }
 
 .login-menu-item--new {
-  font-weight: 700 !important;
+  font-weight: var(--fw-semi-bold) !important;
 }
 
 .login-menu-label--new {
-  font-weight: 700;
+  font-weight: var(--fw-semi-bold);
   color: #0f3540;
 }
 
@@ -121,7 +138,7 @@ a {
   background: #e8530a;
   color: #fff;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: var(--fw-semi-bold);
   letter-spacing: 0.06em;
   line-height: 1.6;
   vertical-align: middle;
@@ -160,28 +177,36 @@ a {
 }
 
 @keyframes notification-bell-ring {
+
   0%,
   100% {
     transform: rotate(0deg);
   }
+
   1% {
     transform: rotate(14deg);
   }
+
   3% {
     transform: rotate(-12deg);
   }
+
   5% {
     transform: rotate(10deg);
   }
+
   7% {
     transform: rotate(-8deg);
   }
+
   9% {
     transform: rotate(6deg);
   }
+
   11% {
     transform: rotate(-4deg);
   }
+
   13% {
     transform: rotate(0deg);
   }

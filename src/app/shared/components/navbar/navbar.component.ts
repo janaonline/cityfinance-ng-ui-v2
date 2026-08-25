@@ -16,7 +16,7 @@ import { MODULES_NAME } from '../../../core/util/access/modules';
 import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 import { XVIFC_LS_KEYS } from '../../../features/xvi-fc-module/shared/years-selection/years-selection.component';
 import { UlbNotificationService } from '../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
-import { NAV_MENU_ITEMS, NavMenuItem, resolveMenus } from './nav-menu.config';
+import { NAV_MENU_ITEMS, NavMenuItem, matchesAnyRoutePrefix, resolveMenus } from './nav-menu.config';
 
 @Component({
   selector: 'app-navbar',
@@ -181,8 +181,27 @@ export class NavbarComponent implements OnInit {
    * from the full filtered tree, so nothing gets lost based on auth state.
    */
   private refreshMenus(): void {
-    const resolved = resolveMenus(NAV_MENU_ITEMS, (item) => this.isMenuItemVisible(item));
+    const resolved = resolveMenus(
+      NAV_MENU_ITEMS,
+      (item) => this.isMenuItemVisible(item),
+      (item) => this.isActiveGroupChild(item),
+    );
     this.menus = resolved.map((item) => this.resolveLinks(item));
+  }
+
+  /**
+   * True when `item` is this app's own route AND the current URL is either
+   * exactly its match path or a descendant of it (boundary-safe: '/xvifc'
+   * matches '/xvifc/year' and '/xvifc/2024-25/...', but never '/xvifc-form',
+   * which merely happens to share the same string prefix without a '/').
+   * `activePathPrefix` overrides `path` for items whose real flow lives under
+   * a broader/different url root than their own link target — see nav-menu.config.ts.
+   */
+  private isActiveGroupChild(item: NavMenuItem): boolean {
+    if (item.hostApp !== 'v2') return false;
+    const prefix = item.activePathPrefix ?? item.path;
+    if (!prefix) return false;
+    return matchesAnyRoutePrefix(this._router.url, [prefix]);
   }
 
   private isMenuItemVisible(item: NavMenuItem): boolean {
@@ -193,17 +212,34 @@ export class NavbarComponent implements OnInit {
 
     if (v.showOnMobileOnly) return false; // no mobile-only slot in V2 today
     if (v.ocrRouteOnly && !this.isOcrRoute()) return false;
-    if (v.nonProdOnly && this.isProd) return false;
+    if (v.isHiddenInProd && this.isProd) return false;
     if (v.requiresAuth && !this.isLoggedIn) return false;
     if (v.loggedOutOnly && this.isLoggedIn) return false;
     if (v.roles && !this.inRole(v.roles)) return false;
     if (v.excludeRoles && this.inRole(v.excludeRoles)) return false;
-    // readonlyGated / moduleAccess: V2 has neither isReadonlyUser() nor a
-    // "Users" item wired up today (deferred per the nav-unification plan) —
-    // no item that includes 'v2' in `apps` currently sets these, so there's
-    // nothing to evaluate yet. Add handling here if that changes.
+    // Second, independent gating dimension: which page the user is on right
+    // now (AND'd with the role checks above). Recomputed on every
+    // NavigationEnd via bindRouteChanges() -> refreshMenus(), so this updates
+    // live as the user navigates, same as the role checks do on login/logout.
+    if (v.showOnlyOnRoutePrefixes && !matchesAnyRoutePrefix(this._router.url, v.showOnlyOnRoutePrefixes)) {
+      return false;
+    }
+    if (v.hideOnRoutePrefixes && matchesAnyRoutePrefix(this._router.url, v.hideOnRoutePrefixes)) {
+      return false;
+    }
+    // readonlyGated: mirrors SSR/UI's isReadonlyUser() (inverted 3-email
+    // allowlist), now that rankings-22-form (the first V2 item to set this
+    // flag) is visible here too. moduleAccess still has no V2 equivalent —
+    // no item that includes 'v2' in `apps` sets it today.
+    if (v.readonlyGated && !this.isReadonlyUser()) return false;
 
     return true;
+  }
+
+  private readonly readonlyEmails = ['doe@cityfinance.in', 'cca-mohua@gov.in', 'cag@cityfinance.in'];
+
+  private isReadonlyUser(): boolean {
+    return !this.readonlyEmails.includes(this.user?.email ?? '');
   }
 
   /** Turns hostApp/path into a concrete routerLink or href for THIS app (V2). */

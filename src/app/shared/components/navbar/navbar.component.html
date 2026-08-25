@@ -20,7 +20,7 @@
     <div class="d-flex flex-grow-1 align-items-center justify-content-end gap-1">
       <ul
         id="primary-navigation"
-        class="primary-navigation d-flex gap-3"
+        class="primary-navigation d-flex gap-3 fw-semibold"
         [ngClass]="showMobileNav ? 'primary-navigation-data-visible' : ''"
       >
         <!-- Cancel Hamburger Menu -->
@@ -38,17 +38,17 @@
         @for (menu of menus; track menu.id) {
           @if (menu.children?.length) {
             <li class="active" [matMenuTriggerFor]="childMenu">
-              <a class="nav-link" routerLinkActive="active">
+              <a class="nav-link" [class.active]="menu.isActiveRoute">
                 @if (menu.icon) {
                   <i [class]="menu.icon"></i>&nbsp;
                 }
-                {{ menu.label }}<i class="bi bi-caret-down-fill"></i>
+                <span class="fw-semibold" [innerHTML]="menu.label"></span><i class="bi bi-caret-down-fill"></i>
               </a>
             </li>
             <mat-menu #childMenu="matMenu">
               @for (child of menu.children; track child.id) {
                 @if (child.resolvedLink) {
-                  <a mat-menu-item [routerLink]="child.resolvedLink" class="" routerLinkActive="active">
+                  <a mat-menu-item [routerLink]="child.resolvedLink" [class.active]="child.isActiveRoute">
                     @if (child.icon) {
                       <i [class]="child.icon"></i>&nbsp;
                     }
@@ -59,8 +59,7 @@
                     mat-menu-item
                     [href]="child.resolvedHref"
                     [target]="child.target || '_self'"
-                    class=""
-                    routerLinkActive="active"
+                    [class.active]="child.isActiveRoute"
                   >
                     @if (child.icon) {
                       <i [class]="child.icon"></i>&nbsp;
@@ -81,7 +80,7 @@
                 @if (menu.icon) {
                   <i [class]="menu.icon"></i>&nbsp;
                 }
-                {{ menu.label }}
+                <span [innerHTML]="menu.label"></span>
               </button>
             </li>
           } @else {
@@ -97,7 +96,7 @@
                   </a>
                 }
               } @else if (menu.resolvedLink) {
-                <a class="nav-link" [routerLink]="menu.resolvedLink" routerLinkActive="active">
+                <a class="nav-link" [routerLink]="menu.resolvedLink" [class.active]="menu.isActiveRoute">
                   @if (menu.icon) {
                     <i [class]="menu.icon"></i>&nbsp;
                   }
